@@ -1,0 +1,28 @@
+# Dépendances principales
+python-docx==1.2.0
+PySimpleGUI==5.0.10
+docxtpl==0.20.1
+openpyxl==3.1.5
+docx2pdf==0.1.8
+pandas==2.3.1
+
+# Dépendances secondaires requises
+typing_extensions==4.14.1
+lxml==6.0.0
+Jinja2==3.1.6
+et-xmlfile==2.0.0
+python-dateutil==2.9.0.post0
+babel==2.14.0
+pytz==2025.2
+numpy==2.3.2
+pywin32==311
+six==1.17.0
+tqdm==4.67.1
+PySimpleGUI==5.0.10
+python-dateutil==2.9.0.post0
+python-docx==1.2.0
+pytz==2025.2
+pywin32==311
+six==1.17.0
+tqdm==4.67.1
+tzdata==2025.2
