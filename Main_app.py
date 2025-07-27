@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 from pathlib import Path
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 from tkcalendar import Calendar
 from docxtpl import DocxTemplate
 import openpyxl
@@ -10,11 +10,11 @@ from docx2pdf import convert
 
 # Define headers for the Excel file
 excel_headers = [
-    "DEN_STE", "FORME_JUR", "ICE", "CAPITAL", "DATE_ICE", "CIVIL", "PRENOM",
-    "NOM", "DATE_NAISS", "LIEU_NAISS", "GERANT_ADRESS", "CIN_NUM",
+    "DEN_STE", "FORME_JUR", "ICE", "CAPITAL", "PART_SOCIAL", "NATIONALITY", "STE_ADRESS", "DATE_ICE",
+    "CIVIL", "PRENOM","NOM", "DATE_NAISS", "LIEU_NAISS", "GERANT_ADRESS", "CIN_NUM",
     "CIN_VALIDATY", "GERANT_QUALITY", "GERANT_PHONE", "GERANT_EMAIL",
     "TRIBUNAL", "PERIOD_DOMCIL", "DOM_DATEDEB", "DOM_DATEFIN",
-    "DTAE_CONTRAT", "PRIX_CONTRAT", "PRIX_INTERMEDIARE_CONTRAT"
+    "DATE_CONTRAT", "PRIX_CONTRAT", "PRIX_INTERMEDIARE_CONTRAT", "INTERMEDIARE"
 ]
 
 # Path of the template files
@@ -61,7 +61,7 @@ date_inverser = today.strftime("%Y_%m_%d")
 class DomiciliationApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Générer Mes Docs")
+        self.root.title("Genérateurs Docs Juridiques")
         self.values = {}
         self.setup_gui()
 
@@ -94,11 +94,15 @@ class DomiciliationApp:
         self.buttons_frame.pack(pady=10, side=tk.BOTTOM)
 
         # Create buttons with proper spacing
-        ttk.Button(self.buttons_frame, text="Générer Les Docx Lemedaj",
+        ttk.Button(self.buttons_frame, text="Générer les documents Word",
                   command=self.generer_docs).pack(side=tk.LEFT, padx=5)
-        ttk.Button(self.buttons_frame, text="Save As Pdf",
+        ttk.Button(self.buttons_frame, text="Générer les documents Word et PDF",
                   command=self.save_as_pdf).pack(side=tk.LEFT, padx=5)
-        ttk.Button(self.buttons_frame, text="Exit",
+        ttk.Button(self.buttons_frame, text="Nouvelle Société",
+                  command=self.clear_form).pack(side=tk.LEFT, padx=5)
+        ttk.Button(self.buttons_frame, text="Sauvegarder dans la BDD",
+                  command=self.save_to_database).pack(side=tk.LEFT, padx=5)
+        ttk.Button(self.buttons_frame, text="Quitter",
                   command=self.root.quit).pack(side=tk.LEFT, padx=5)
 
     def initialize_ste_section(self):
@@ -381,7 +385,7 @@ class DomiciliationApp:
                 f"Erreur lors de l'insertion dans Excel : {str(e)}")
 
     def generer_docs(self):
-        """Handle document generation"""
+        """Handle document generation with custom save location"""
         self.collect_values()
 
         try:
@@ -389,12 +393,17 @@ class DomiciliationApp:
                 messagebox.showerror("Erreur", "Veuillez entrer un nom de société!")
                 return
 
+            # Ask user for save location
             folder_name = f"{date_inverser}_DCons_{self.values['DEN_STE']}"
-            folder_path = os.path.join(os.getcwd(), folder_name)
-            os.makedirs(folder_path, exist_ok=True)
+            folder_path = tk.filedialog.askdirectory(
+                title="Choisir l'emplacement pour sauvegarder les documents Word"
+            )
 
-            # Insert data into Excel
-            self.insert_data_to_excel()
+            if not folder_path:  # User cancelled
+                return
+
+            folder_path = os.path.join(folder_path, folder_name)
+            os.makedirs(folder_path, exist_ok=True)
 
             # Generate DOCX files
             documents = {
@@ -412,47 +421,75 @@ class DomiciliationApp:
                     f"{date_inverser}_{doc_name}_{self.values['DEN_STE']}.docx")
                 template.save(output_path)
 
-                if doc_name == 'Contrat_Domiciliation':
-                    pdf_path = output_path.replace('.docx', '.pdf')
-                    convert(output_path, pdf_path)
-
             messagebox.showinfo("Succès",
-                f"Documents créés avec succès dans le dossier '{folder_name}'!")
-
-            # Clear form
-            self.clear_form()
+                f"Documents créés avec succès dans le dossier:\n{folder_path}")
 
         except Exception as e:
             messagebox.showerror("Erreur", str(e))
 
     def save_as_pdf(self):
-        """Convert all documents to PDF"""
+        """Generate or convert documents to PDF with custom save location"""
         try:
             self.collect_values()
 
             if not self.values['DEN_STE']:
-                messagebox.showerror("Erreur", "Veuillez d'abord générer les documents!")
+                messagebox.showerror("Erreur", "Veuillez entrer un nom de société!")
                 return
 
+            # Ask user for save location
             folder_name = f"{date_inverser}_DCons_{self.values['DEN_STE']}"
-            folder_path = os.path.join(os.getcwd(), folder_name)
+            folder_path = tk.filedialog.askdirectory(
+                title="Choisir l'emplacement pour sauvegarder les documents PDF"
+            )
 
-            if not os.path.exists(folder_path):
-                messagebox.showerror("Erreur", "Veuillez d'abord générer les documents!")
+            if not folder_path:  # User cancelled
                 return
 
-            # Convert all DOCX files to PDF
-            for doc_name in ['Annonce_légale', 'Attestation_Domiciliation', 'Contrat_Domiciliation',
-                           'Déclaration_Imm_Rc', 'Dépot_légal', 'Statuts']:
-                docx_path = os.path.join(folder_path, f"{date_inverser}_{doc_name}_{self.values['DEN_STE']}.docx")
-                if os.path.exists(docx_path):
-                    pdf_path = docx_path.replace('.docx', '.pdf')
-                    convert(docx_path, pdf_path)
+            folder_path = os.path.join(folder_path, folder_name)
+            os.makedirs(folder_path, exist_ok=True)
 
-            messagebox.showinfo("Succès", "Conversion en PDF terminée!")
+            # First generate DOCX files if they don't exist
+            documents = {
+                'Annonce_légale': docAnnonceJournal,
+                'Attestation_Domiciliation': docAttestDomicil,
+                'Contrat_Domiciliation': docContratDomicil,
+                'Déclaration_Imm_Rc': docDeclImmRc,
+                'Dépot_légal': docDepotLegalRc,
+                'Statuts': docStatuts
+            }
+
+            for doc_name, template in documents.items():
+                # Create DOCX
+                template.render(self.values)
+                docx_path = os.path.join(folder_path,
+                    f"{date_inverser}_{doc_name}_{self.values['DEN_STE']}.docx")
+                template.save(docx_path)
+
+                # Convert to PDF
+                pdf_path = docx_path.replace('.docx', '.pdf')
+                convert(docx_path, pdf_path)
+
+            messagebox.showinfo("Succès",
+                f"Documents PDF créés avec succès dans le dossier:\n{folder_path}")
 
         except Exception as e:
-            messagebox.showerror("Erreur", f"Erreur lors de la conversion en PDF : {str(e)}")
+            messagebox.showerror("Erreur", f"Erreur lors de la génération des PDF : {str(e)}")
+
+    def save_to_database(self):
+        """Save current form data to database"""
+        try:
+            self.collect_values()
+
+            if not self.values['DEN_STE']:
+                messagebox.showerror("Erreur", "Veuillez entrer un nom de société!")
+                return
+
+            self.insert_data_to_excel()
+            messagebox.showinfo("Succès", "Données sauvegardées avec succès dans la base de données!")
+
+        except Exception as e:
+            messagebox.showerror("Erreur",
+                f"Erreur lors de la sauvegarde dans la base de données : {str(e)}")
 
     def clear_form(self):
         """Clear all form fields"""
