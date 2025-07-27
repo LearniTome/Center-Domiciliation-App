@@ -61,7 +61,8 @@ date_inverser = today.strftime("%Y_%m_%d")
 class DomiciliationApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Genérateurs Docs Juridiques")
+        if isinstance(root, tk.Tk):
+            self.root.title("Genérateurs Docs Juridiques")
         self.values = {}
         self.setup_gui()
 
@@ -345,7 +346,7 @@ class DomiciliationApp:
             "GERANT_EMAIL": self.gerant_email_var.get(),
 
             # Infos Contrat
-            "DTAE_CONTRAT": self.date_contrat_var.get(),
+            "DATE_CONTRAT": self.date_contrat_var.get(),
             "PERIOD_DOMCIL": self.period_var.get(),
             "PRIX_CONTRAT": self.prix_mensuel_var.get(),
             "PRIX_INTERMEDIARE_CONTRAT": self.prix_inter_var.get(),
@@ -513,5 +514,6 @@ class DomiciliationApp:
 # Create and run the application
 if __name__ == "__main__":
     root = tk.Tk()
+    root.geometry("1200x800")
     app = DomiciliationApp(root)
     root.mainloop()
