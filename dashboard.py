@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import openpyxl
 from Main_app import excel_headers, DomiciliationApp
+from ttkthemes import ThemedStyle
 
 class DomiciliationDashboard:
     def __init__(self, root):
@@ -12,6 +13,36 @@ class DomiciliationDashboard:
         if isinstance(root, tk.Tk):
             self.root.title("Dashboard Domiciliation")
             self.root.geometry("1200x800")
+
+            # Appliquer un thème moderne
+            self.style = ThemedStyle(self.root)
+            self.style.set_theme("arc")  # Thème moderne
+
+            # Configurer les styles personnalisés
+            self.style.configure("Treeview",
+                               background="#f0f0f0",
+                               foreground="black",
+                               rowheight=25,
+                               fieldbackground="#f0f0f0")
+            self.style.configure("Treeview.Heading",
+                               background="#4a90e2",
+                               foreground="white",
+                               relief="flat")
+            self.style.map("Treeview.Heading",
+                          background=[("active", "#2171cd")])
+
+            # Configurer le style des boutons
+            self.style.configure("Action.TButton",
+                               padding=6,
+                               relief="flat",
+                               background="#4a90e2",
+                               foreground="white")
+            self.style.map("Action.TButton",
+                          background=[("active", "#2171cd")])
+
+        # Création de la barre de statut
+        self.status_bar = ttk.Label(self.root, text="Prêt", relief=tk.SUNKEN, anchor=tk.W)
+        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
         # Charger les données
         self.load_data()
@@ -48,31 +79,49 @@ class DomiciliationDashboard:
 
             # Réorganiser les colonnes dans le même ordre que excel_headers
             self.df = self.df[excel_headers]
-            print("Colonnes après réorganisation:", self.df.columns.tolist())
 
         except Exception as e:
             messagebox.showerror("Erreur", f"Erreur lors du chargement des données: {str(e)}")
             self.df = pd.DataFrame(columns=excel_headers)
 
     def setup_gui(self):
-        # Frame de recherche
-        search_frame = ttk.LabelFrame(self.root, text="Recherche", padding="10")
-        search_frame.pack(fill="x", padx=10, pady=5)
+        # Frame principal pour la barre d'outils
+        toolbar_frame = ttk.Frame(self.root)
+        toolbar_frame.pack(fill="x", padx=10, pady=5)
 
-        ttk.Label(search_frame, text="Rechercher:").pack(side="left", padx=5)
+        # Frame de recherche (à gauche)
+        search_frame = ttk.LabelFrame(toolbar_frame, text="Recherche avancée", padding="10")
+        search_frame.pack(side="left", fill="x", expand=True)
+
+        # Zone de recherche avec style amélioré
+        search_container = ttk.Frame(search_frame)
+        search_container.pack(fill="x", expand=True)
+
+        ttk.Label(search_container, text="🔍").pack(side="left", padx=5)
         self.search_var = tk.StringVar()
-        self.search_entry = ttk.Entry(search_frame, textvariable=self.search_var, width=40)
-        self.search_entry.pack(side="left", padx=5)
+        self.search_entry = ttk.Entry(search_container, textvariable=self.search_var, width=40)
+        self.search_entry.pack(side="left", padx=5, fill="x", expand=True)
         self.search_entry.bind('<KeyRelease>', self.search_records)
 
-        # Frame des boutons
-        button_frame = ttk.Frame(self.root)
-        button_frame.pack(fill="x", padx=10, pady=5)
+        # Menu déroulant pour le filtre de recherche
+        self.filter_var = tk.StringVar(value="Tout")
+        filter_menu = ttk.OptionMenu(search_container, self.filter_var, "Tout",
+                                   "Société", "Gérant", "Contrat")
+        filter_menu.pack(side="left", padx=5)
 
-        ttk.Button(button_frame, text="Ajouter", command=self.add_society).pack(side="left", padx=5)
-        ttk.Button(button_frame, text="Modifier", command=self.edit_society).pack(side="left", padx=5)
-        ttk.Button(button_frame, text="Supprimer", command=self.delete_society).pack(side="left", padx=5)
-        ttk.Button(button_frame, text="Actualiser", command=self.refresh_data).pack(side="left", padx=5)
+        # Frame des boutons (à droite)
+        button_frame = ttk.Frame(toolbar_frame)
+        button_frame.pack(side="right", padx=10)
+
+        # Boutons avec style amélioré
+        ttk.Button(button_frame, text="➕ Ajouter",
+                  style="Action.TButton", command=self.add_society).pack(side="left", padx=5)
+        ttk.Button(button_frame, text="✏️ Modifier",
+                  style="Action.TButton", command=self.edit_society).pack(side="left", padx=5)
+        ttk.Button(button_frame, text="🗑️ Supprimer",
+                  style="Action.TButton", command=self.delete_society).pack(side="left", padx=5)
+        ttk.Button(button_frame, text="🔄 Actualiser",
+                  style="Action.TButton", command=self.refresh_data).pack(side="left", padx=5)
 
         # Treeview pour afficher les données
         self.setup_treeview()
@@ -211,6 +260,11 @@ class DomiciliationDashboard:
 
     def search_records(self, event=None):
         search_term = self.search_var.get().lower()
+        search_filter = self.filter_var.get()
+
+        # Mettre à jour la barre de statut
+        self.status_bar.config(text="Recherche en cours...")
+        self.root.update()
 
         # Effacer les résultats précédents
         for item in self.tree.get_children():
@@ -219,11 +273,26 @@ class DomiciliationDashboard:
         # Si le terme de recherche est vide, afficher toutes les données
         if not search_term:
             self.populate_treeview()
+            self.status_bar.config(text="Prêt")
             return
 
-        # Rechercher dans toutes les colonnes
-        mask = self.df.astype(str).apply(lambda x: x.str.contains(search_term, case=False)).any(axis=1)
+        # Définir les colonnes à rechercher selon le filtre
+        if search_filter == "Société":
+            columns = ["DEN_STE", "FORME_JUR", "ICE", "CAPITAL", "STE_ADRESS"]
+        elif search_filter == "Gérant":
+            columns = ["CIVIL", "PRENOM", "NOM", "CIN_NUM", "GERANT_QUALITY", "GERANT_PHONE", "GERANT_EMAIL"]
+        elif search_filter == "Contrat":
+            columns = ["PERIOD_DOMCIL", "DOM_DATEDEB", "DOM_DATEFIN", "DATE_CONTRAT", "PRIX_CONTRAT"]
+        else:
+            columns = self.df.columns
+
+        # Rechercher dans les colonnes sélectionnées
+        mask = self.df[columns].astype(str).apply(
+            lambda x: x.str.contains(search_term, case=False)).any(axis=1)
         filtered_df = self.df[mask]
+
+        # Mettre à jour la barre de statut avec le nombre de résultats
+        self.status_bar.config(text=f"{len(filtered_df)} résultat(s) trouvé(s)")
 
         # Afficher les résultats filtrés
         for index, row in filtered_df.iterrows():
