@@ -7,6 +7,7 @@ from tkcalendar import Calendar
 from docxtpl import DocxTemplate
 import openpyxl
 from docx2pdf import convert
+import pandas as pd
 
 # Define headers for the Excel file
 excel_headers = [
@@ -17,24 +18,17 @@ excel_headers = [
     "DATE_CONTRAT", "PRIX_CONTRAT", "PRIX_INTERMEDIARE_CONTRAT", "INTERMEDIARE"
 ]
 
+from utils import PathManager
+
 # Path of the template files
-annonce_journal_path = Path(__file__).parent / "Models" / "My_Annonce_Journal.docx"
-docAnnonceJournal = DocxTemplate(annonce_journal_path)
+PathManager.ensure_directories()
 
-attest_domicil_path = Path(__file__).parent / "Models" / "My_Attest_domiciliation.docx"
-docAttestDomicil = DocxTemplate(attest_domicil_path)
-
-contrat_domicil_path = Path(__file__).parent / "Models" / "My_Contrat_domiciliation.docx"
-docContratDomicil = DocxTemplate(contrat_domicil_path)
-
-decl_imm_rc_path = Path(__file__).parent / "Models" / "My_Décl_Imm_Rc.docx"
-docDeclImmRc = DocxTemplate(decl_imm_rc_path)
-
-depot_legal_rc_path = Path(__file__).parent / "Models" / "My_Dépot_Légal.docx"
-docDepotLegalRc = DocxTemplate(depot_legal_rc_path)
-
-statuts_path = Path(__file__).parent / "Models" / "My_Statuts_SARL_AU.docx"
-docStatuts = DocxTemplate(statuts_path)
+docAnnonceJournal = DocxTemplate(PathManager.get_model_path("My_Annonce_Journal.docx"))
+docAttestDomicil = DocxTemplate(PathManager.get_model_path("My_Attest_domiciliation.docx"))
+docContratDomicil = DocxTemplate(PathManager.get_model_path("My_Contrat_domiciliation.docx"))
+docDeclImmRc = DocxTemplate(PathManager.get_model_path("My_Décl_Imm_Rc.docx"))
+docDepotLegalRc = DocxTemplate(PathManager.get_model_path("My_Dépot_Légal.docx"))
+docStatuts = DocxTemplate(PathManager.get_model_path("My_Statuts_SARL_AU.docx"))
 
 # Identifier Dictionary of input
 DenSte = ["ASTRAPIA", "SAOUZ", "F 4", "OLA MOVING", "LOHACOM", "SKY NEST", "SKY MA", "MAROFLEET"]
@@ -58,11 +52,23 @@ Activities = ["Travaux Divers ou de Construction", "Marchand effectuant Import E
 today = datetime.today()
 date_inverser = today.strftime("%Y_%m_%d")
 
+from utils import ThemeManager, WidgetFactory, WindowManager
+
 class DomiciliationApp:
     def __init__(self, root):
         self.root = root
         if isinstance(root, tk.Tk):
             self.root.title("Genérateurs Docs Juridiques")
+
+            # Configuration du thème
+            self.theme_manager = ThemeManager(self.root)
+            self.style = self.theme_manager.style
+
+            # Configuration des styles personnalisés pour les onglets
+            self.style.configure('TNotebook.Tab',
+                               padding=(15, 5),
+                               font=('Segoe UI', 10, 'bold'))
+
         self.values = {}
         self.setup_gui()
 
@@ -90,21 +96,54 @@ class DomiciliationApp:
         self.setup_buttons()
 
     def setup_buttons(self):
-        # Single buttons frame at the bottom of the window
+        # Conteneur principal pour les boutons
         self.buttons_frame = ttk.Frame(self.root)
-        self.buttons_frame.pack(pady=10, side=tk.BOTTOM)
+        self.buttons_frame.pack(pady=15, side=tk.BOTTOM, fill=tk.X, padx=20)
 
-        # Create buttons with proper spacing
-        ttk.Button(self.buttons_frame, text="Générer les documents Word",
-                  command=self.generer_docs).pack(side=tk.LEFT, padx=5)
-        ttk.Button(self.buttons_frame, text="Générer les documents Word et PDF",
-                  command=self.save_as_pdf).pack(side=tk.LEFT, padx=5)
-        ttk.Button(self.buttons_frame, text="Nouvelle Société",
-                  command=self.clear_form).pack(side=tk.LEFT, padx=5)
-        ttk.Button(self.buttons_frame, text="Sauvegarder dans la BDD",
-                  command=self.save_to_database).pack(side=tk.LEFT, padx=5)
-        ttk.Button(self.buttons_frame, text="Quitter",
-                  command=self.root.quit).pack(side=tk.LEFT, padx=5)
+        # Configuration de la grille pour l'alignement
+        self.buttons_frame.grid_columnconfigure(2, weight=1)  # Espace flexible au milieu
+
+        # Boutons principaux (à gauche)
+        WidgetFactory.create_button(
+            self.buttons_frame,
+            text="📄 Documents Word",
+            command=self.generer_docs,
+            style='Action.TButton',
+            tooltip="Générer tous les documents au format Word"
+        ).grid(row=0, column=0, padx=5)
+
+        WidgetFactory.create_button(
+            self.buttons_frame,
+            text="📑 Word et PDF",
+            command=self.save_as_pdf,
+            style='Action.TButton',
+            tooltip="Générer tous les documents en Word et PDF"
+        ).grid(row=0, column=1, padx=5)
+
+        # Boutons de contrôle (à droite)
+        WidgetFactory.create_button(
+            self.buttons_frame,
+            text="🆕 Nouvelle",
+            command=self.clear_form,
+            style='Secondary.TButton',
+            tooltip="Effacer tous les champs pour une nouvelle société"
+        ).grid(row=0, column=3, padx=5)
+
+        WidgetFactory.create_button(
+            self.buttons_frame,
+            text="💾 Sauvegarder",
+            command=self.save_to_database,
+            style='Secondary.TButton',
+            tooltip="Sauvegarder les informations dans la base de données"
+        ).grid(row=0, column=4, padx=5)
+
+        WidgetFactory.create_button(
+            self.buttons_frame,
+            text="❌ Quitter",
+            command=self.root.quit,
+            style='Secondary.TButton',
+            tooltip="Fermer l'application"
+        ).grid(row=0, column=5, padx=5)
 
     def initialize_ste_section(self):
         row = 0
@@ -484,6 +523,14 @@ class DomiciliationApp:
             if not self.values['DEN_STE']:
                 messagebox.showerror("Erreur", "Veuillez entrer un nom de société!")
                 return
+
+            # Vérifier si une société avec le même nom existe déjà
+            excel_file_path = os.path.join(os.path.dirname(__file__), 'databases', 'DataBase_domiciliation.xlsx')
+            if os.path.exists(excel_file_path):
+                existing_df = pd.read_excel(excel_file_path, sheet_name="DataBaseDom")
+                if not existing_df.empty and self.values['DEN_STE'] in existing_df['DEN_STE'].values:
+                    messagebox.showerror("Erreur", "Une société avec ce nom existe déjà dans la base de données!")
+                    return
 
             self.insert_data_to_excel()
             messagebox.showinfo("Succès", "Données sauvegardées avec succès dans la base de données!")

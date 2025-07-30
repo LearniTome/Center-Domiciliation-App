@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from Main_app import DomiciliationApp
 from dashboard import DomiciliationDashboard
-from ttkthemes import ThemedStyle
+from utils import ThemeManager, WidgetFactory, WindowManager
 
 class AppSwitcher:
     def __init__(self, root):
@@ -10,12 +10,8 @@ class AppSwitcher:
         self.root.title("Centre de Domiciliation")
 
         # Configuration du thème
-        self.style = ThemedStyle(self.root)
-        self.style.configure('.', font=('Segoe UI', 10))
-
-        # Configuration initiale du thème
-        self.is_dark_mode = True
-        self.apply_theme()
+        self.theme_manager = ThemeManager(self.root)
+        self.style = self.theme_manager.style
 
         # Configuration des raccourcis clavier
         self.root.bind('<Control-t>', lambda e: self.toggle_theme())
@@ -23,41 +19,11 @@ class AppSwitcher:
         self.current_frame = None
         self.setup_gui()
 
-    def apply_theme(self):
-        # Définir les couleurs pour chaque thème
-        dark_colors = {
-            'bg': '#464646',
-            'fg': 'white',
-            'theme': 'black'
-        }
-        light_colors = {
-            'bg': '#f0f0f0',
-            'fg': 'black',
-            'theme': 'arc'
-        }
-
-        # Sélectionner les couleurs en fonction du mode
-        colors = dark_colors if self.is_dark_mode else light_colors
-
-        # Appliquer le thème une seule fois
-        self.style.set_theme(colors['theme'])
-
-        # Configurer les styles de base
-        self.root.configure(bg=colors['bg'])
-
-        # Configurer tous les styles en une seule fois
-        self.style.configure('.',
-                           background=colors['bg'],
-                           foreground=colors['fg'])
-
-        # Mettre à jour le texte du bouton de thème
-        theme_text = "☀️ Mode Clair" if self.is_dark_mode else "🌙 Mode Sombre"
+    def toggle_theme(self):
+        self.theme_manager.toggle_theme()
+        theme_text = "☀️ Mode Clair" if self.theme_manager.is_dark_mode else "🌙 Mode Sombre"
         if hasattr(self, 'theme_button'):
             self.theme_button.configure(text=theme_text)
-
-    def toggle_theme(self):
-        self.is_dark_mode = not self.is_dark_mode
-        self.apply_theme()
 
     def setup_gui(self):
         # Configuration des poids pour le redimensionnement
@@ -84,22 +50,26 @@ class AppSwitcher:
 
         # Boutons de navigation (à gauche)
         nav_buttons = [
-            ("📄 Application Principale", self.show_main_app),
+            ("📄 Principale", self.show_main_app),
             ("📊 Dashboard", self.show_dashboard)
         ]
 
         for i, (text, command) in enumerate(nav_buttons):
-            btn = ttk.Button(left_buttons,
-                           text=text,
-                           style='Nav.TButton',
-                           command=command)
+            btn = WidgetFactory.create_button(
+                left_buttons,
+                text=text,
+                command=command,
+                tooltip=f"Ouvrir {text.split()[1]}"
+            )
             btn.grid(row=0, column=i, padx=5)
 
         # Bouton de thème (à droite)
-        self.theme_button = ttk.Button(right_buttons,
-                                     text="🌓 Changer le thème",
-                                     style='Nav.TButton',
-                                     command=self.toggle_theme)
+        self.theme_button = WidgetFactory.create_button(
+            right_buttons,
+            text="🌓 Changer le thème",
+            command=self.toggle_theme,
+            tooltip="Basculer entre le mode clair et sombre (Ctrl+T)"
+        )
         self.theme_button.grid(row=0, column=0, padx=5)
 
         # Frame principal pour le contenu avec padding
@@ -135,25 +105,6 @@ class AppSwitcher:
 
 if __name__ == "__main__":
     root = tk.Tk()
-
-    # Obtenir les dimensions de l'écran
-    screen_width = root.winfo_screenwidth()
-    screen_height = root.winfo_screenheight()
-
-    # Définir la taille minimale de la fenêtre
-    root.minsize(1024, 768)
-
-    # Centrer la fenêtre
-    x = (screen_width - 1200) // 2
-    y = (screen_height - 800) // 2
-    root.geometry(f"1200x800+{x}+{y}")
-
-    # Mettre la fenêtre en plein écran
-    import platform
-    if platform.system() == "Linux":
-        root.attributes('-fullscreen', True)
-    else:  # Windows
-        root.state('zoomed')
-
+    WindowManager.setup_window(root, "Centre de Domiciliation")
     app = AppSwitcher(root)
     root.mainloop()

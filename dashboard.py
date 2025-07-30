@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 import openpyxl
 from Main_app import excel_headers, DomiciliationApp
-from ttkthemes import ThemedStyle
+from utils import ThemeManager, WidgetFactory, PathManager
 
 class DomiciliationDashboard:
     def __init__(self, root):
@@ -14,16 +14,14 @@ class DomiciliationDashboard:
             self.root.title("Dashboard Domiciliation")
             self.root.geometry("1200x800")
 
-            # Appliquer un thème moderne
-            self.style = ThemedStyle(self.root)
-            self.style.set_theme("arc")  # Thème moderne
+            # Configuration du thème
+            self.theme_manager = ThemeManager(self.root)
+            self.style = self.theme_manager.style
 
             # Configurer les styles personnalisés
             self.style.configure("Treeview",
-                               background="#f0f0f0",
-                               foreground="black",
                                rowheight=25,
-                               fieldbackground="#f0f0f0")
+                               fieldbackground=self.theme_manager.colors['bg'])
             self.style.configure("Treeview.Heading",
                                background="#4a90e2",
                                foreground="white",
@@ -62,10 +60,10 @@ class DomiciliationDashboard:
     def load_data(self):
         """Charge les données depuis le fichier Excel ou crée un nouveau fichier si nécessaire."""
         try:
-            excel_file_path = Path(__file__).parent / 'databases' / 'DataBase_domiciliation.xlsx'
-            os.makedirs(os.path.dirname(excel_file_path), exist_ok=True)
+            PathManager.ensure_directories()
+            excel_file_path = PathManager.get_database_path('DataBase_domiciliation.xlsx')
 
-            if not os.path.exists(excel_file_path):
+            if not excel_file_path.exists():
                 self.df = pd.DataFrame(columns=excel_headers)
                 self.save_data(excel_file_path)
                 return
@@ -314,11 +312,17 @@ class DomiciliationDashboard:
 
     def add_society(self):
         from Main_app import DomiciliationApp
+        from utils import WindowManager
 
-        # Ouvrir une nouvelle fenêtre pour l'ajout
-        add_window = tk.Toplevel(self.root)
-        add_window.title("Ajouter une nouvelle société")
-        add_window.geometry("1200x800")
+        # Trouver la fenêtre principale
+        main_window = self.root.winfo_toplevel()
+
+        # Masquer la fenêtre principale
+        main_window.withdraw()
+
+        # Créer une nouvelle fenêtre pour l'ajout
+        add_window = tk.Toplevel(main_window)
+        WindowManager.setup_window(add_window, "Ajouter une nouvelle société")
 
         # Créer une instance de DomiciliationApp dans la nouvelle fenêtre
         app = DomiciliationApp(add_window)
@@ -328,13 +332,26 @@ class DomiciliationDashboard:
             app.save_to_database()  # Sauvegarder dans la base de données
             self.refresh_data()     # Actualiser le tableau
             add_window.destroy()    # Fermer la fenêtre
+            main_window.deiconify()   # Réafficher la fenêtre principale
 
-        save_button = ttk.Button(app.buttons_frame, text="Sauvegarder et Fermer",
-                               command=save_and_close)
-        save_button.pack(side=tk.LEFT, padx=5)
+        def on_closing():
+            add_window.destroy()    # Fermer la fenêtre
+            main_window.deiconify()   # Réafficher la fenêtre principale
+
+        WidgetFactory.create_button(
+            app.buttons_frame,
+            text="💾 Sauvegarder et Fermer",
+            command=save_and_close,
+            style='Secondary.TButton',
+            tooltip="Sauvegarder les modifications et fermer la fenêtre"
+        ).grid(row=0, column=6, padx=5)
+
+        # Configurer le gestionnaire de fermeture de fenêtre
+        add_window.protocol("WM_DELETE_WINDOW", on_closing)
 
     def edit_society(self):
         from Main_app import DomiciliationApp
+        from utils import WindowManager
 
         # Obtenir l'élément sélectionné
         selected_item = self.tree.selection()
@@ -346,10 +363,15 @@ class DomiciliationDashboard:
         item = self.tree.item(selected_item[0])
         den_ste = item['values'][0]  # Nom de la société
 
+        # Trouver la fenêtre principale
+        main_window = self.root.winfo_toplevel()
+
+        # Masquer la fenêtre principale
+        main_window.withdraw()
+
         # Ouvrir une nouvelle fenêtre pour la modification
-        edit_window = tk.Toplevel(self.root)
-        edit_window.title(f"Modifier {den_ste}")
-        edit_window.geometry("1200x800")
+        edit_window = tk.Toplevel(main_window)
+        WindowManager.setup_window(edit_window, f"Modifier {den_ste}")
 
         # Créer une instance de DomiciliationApp dans la nouvelle fenêtre
         app = DomiciliationApp(edit_window)
@@ -396,6 +418,63 @@ class DomiciliationDashboard:
                 except Exception as e:
                     print(f"Erreur lors de la mise à jour du champ {excel_col}: {str(e)}")
 
+        # Ajouter les boutons personnalisés pour la sauvegarde et la fermeture
+        def save_and_close():
+            try:
+                # Supprimer l'ancienne entrée de la société
+                self.df = self.df[self.df['DEN_STE'].str.strip() != str(den_ste).strip()]
+
+                # Collecter et sauvegarder les nouvelles valeurs
+                app.collect_values()  # S'assurer que toutes les valeurs sont collectées
+
+                # Créer une nouvelle ligne avec les valeurs mises à jour
+                new_row = {}
+                for excel_col, var_name in field_mappings.items():
+                    if hasattr(app, var_name):
+                        new_row[excel_col] = getattr(app, var_name).get()
+
+                # Ajouter la nouvelle ligne au DataFrame
+                self.df = pd.concat([self.df, pd.DataFrame([new_row])], ignore_index=True)
+
+                # Sauvegarder dans la base de données
+                self.save_data()
+
+                # Actualiser l'affichage
+                self.refresh_data()
+
+                messagebox.showinfo("Succès", "Modifications enregistrées avec succès!")
+                edit_window.destroy()
+                main_window.deiconify()
+
+            except Exception as e:
+                messagebox.showerror("Erreur", f"Erreur lors de la sauvegarde : {str(e)}")
+
+        def just_close():
+            if messagebox.askyesno("Confirmation", "Êtes-vous sûr de vouloir fermer sans sauvegarder les modifications ?"):
+                edit_window.destroy()
+                main_window.deiconify()
+
+        # Bouton de sauvegarde
+        WidgetFactory.create_button(
+            app.buttons_frame,
+            text="💾 Sauvegarder et Fermer",
+            command=save_and_close,
+            style='Secondary.TButton',
+            tooltip="Sauvegarder les modifications et fermer la fenêtre"
+        ).grid(row=0, column=6, padx=5)
+
+        # Bouton pour fermer sans sauvegarder
+        WidgetFactory.create_button(
+            app.buttons_frame,
+            text="❌ Fermer sans sauvegarder",
+            command=just_close,
+            style='Secondary.TButton',
+            tooltip="Fermer sans sauvegarder les modifications"
+        ).grid(row=0, column=7, padx=5)
+
+        # Configurer le gestionnaire de fermeture de fenêtre
+        edit_window.protocol("WM_DELETE_WINDOW", just_close)
+
     def delete_society(self):
         selected_item = self.tree.selection()
         if not selected_item:
@@ -403,16 +482,14 @@ class DomiciliationDashboard:
             return
 
         if messagebox.askyesno("Confirmation", "Êtes-vous sûr de vouloir supprimer cette société?"):
-            item = self.tree.item(selected_item[0])
-            den_ste = item['values'][0]  # Nom de la société
+            # Récupérer l'index de l'élément dans le Treeview
+            tree_index = self.tree.index(selected_item[0])
 
-            print(f"Tentative de suppression de la société: {den_ste}")  # Debug
-            print("DataFrame avant suppression:", self.df['DEN_STE'].tolist())  # Debug
+            # Supprimer la ligne correspondante dans le DataFrame
+            self.df = self.df.drop(self.df.index[tree_index])
 
-            # Supprimer du DataFrame (cette ligne filtre pour garder toutes les sociétés SAUF celle à supprimer)
-            self.df = self.df[self.df['DEN_STE'].str.strip() != str(den_ste).strip()]
-
-            print("DataFrame après suppression:", self.df['DEN_STE'].tolist())  # Debug
+            # Réinitialiser les index du DataFrame
+            self.df = self.df.reset_index(drop=True)
 
             # Sauvegarder dans Excel
             try:
