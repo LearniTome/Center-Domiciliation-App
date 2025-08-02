@@ -1,3 +1,6 @@
+import warnings
+warnings.filterwarnings('ignore', message='pkg_resources is deprecated as an API.*')
+
 import tkinter as tk
 from tkinter import ttk
 from Main_app import DomiciliationApp
@@ -9,17 +12,40 @@ class AppSwitcher:
         self.root = root
         self.root.title("Centre de Domiciliation")
 
-        # Configuration du thème
+        # Configuration du thème et des styles
         self.theme_manager = ThemeManager(self.root)
         self.style = self.theme_manager.style
+        self.setup_styles()
 
-        # Configuration des raccourcis clavier
-        self.root.bind('<Control-t>', lambda e: self.toggle_theme())
+        # Configuration des raccourcis clavier globaux
+        self.setup_keyboard_shortcuts()
 
         self.current_frame = None
         self.setup_gui()
 
+    def setup_styles(self):
+        """Configure les styles personnalisés pour le switcher"""
+        # Style de la barre de navigation
+        self.style.configure('Nav.TFrame',
+                           padding=10)
+
+        # Style des boutons de navigation
+        self.style.configure('Nav.TButton',
+                           padding=(15, 8),
+                           font=('Segoe UI', 10))
+
+        # Style du bouton de thème
+        self.style.configure('Theme.TButton',
+                           padding=(10, 5),
+                           font=('Segoe UI', 9))
+
+    def setup_keyboard_shortcuts(self):
+        """Configure les raccourcis clavier globaux"""
+        self.root.bind('<Control-t>', lambda e: self.toggle_theme())
+        self.root.bind('<Control-q>', lambda e: self.root.quit())
+
     def toggle_theme(self):
+        """Bascule entre les thèmes clair et sombre"""
         self.theme_manager.toggle_theme()
         theme_text = "☀️ Mode Clair" if self.theme_manager.is_dark_mode else "🌙 Mode Sombre"
         if hasattr(self, 'theme_button'):
@@ -70,7 +96,7 @@ class AppSwitcher:
             command=self.toggle_theme,
             tooltip="Basculer entre le mode clair et sombre (Ctrl+T)"
         )
-        self.theme_button.grid(row=0, column=0, padx=5)
+        self.theme_button.grid(row=0, column=0, padx=15)
 
         # Frame principal pour le contenu avec padding
         self.content_frame = ttk.Frame(self.root, style='Content.TFrame', padding="20")

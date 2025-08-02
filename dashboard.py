@@ -1,42 +1,42 @@
 import tkinter as tk
+from tkinter import ttk
+import pandas as pd
+import os
+from utils import ThemeManager, WidgetFactory
 from tkinter import ttk, messagebox
 import pandas as pd
 import os
 from pathlib import Path
 import openpyxl
-from Main_app import excel_headers, DomiciliationApp
+from Main_app import societe_headers, associe_headers, contrat_headers, DomiciliationApp
 from utils import ThemeManager, WidgetFactory, PathManager
+
+# Combine all headers for the dashboard view
+# We keep all headers including IDs as they're needed for data operations
+excel_headers = societe_headers + associe_headers[2:] + contrat_headers[2:]  # Skip ID fields from associe and contrat
+
+# Headers to display in the treeview (excluding technical IDs)
+display_headers = [h for h in excel_headers if not h.startswith('ID_')]
 
 class DomiciliationDashboard:
     def __init__(self, root):
         self.root = root
+
+        # Determine if we're working with a root window or a frame
         if isinstance(root, tk.Tk):
             self.root.title("Dashboard Domiciliation")
             self.root.geometry("1200x800")
+            window = root
+        else:
+            window = root.winfo_toplevel()
 
-            # Configuration du thème
-            self.theme_manager = ThemeManager(self.root)
-            self.style = self.theme_manager.style
+        # Configuration du thème et des styles
+        self.theme_manager = ThemeManager(window)
+        self.style = self.theme_manager.style
 
-            # Configurer les styles personnalisés
-            self.style.configure("Treeview",
-                               rowheight=25,
-                               fieldbackground=self.theme_manager.colors['bg'])
-            self.style.configure("Treeview.Heading",
-                               background="#4a90e2",
-                               foreground="white",
-                               relief="flat")
-            self.style.map("Treeview.Heading",
-                          background=[("active", "#2171cd")])
-
-            # Configurer le style des boutons
-            self.style.configure("Action.TButton",
-                               padding=6,
-                               relief="flat",
-                               background="#4a90e2",
-                               foreground="white")
-            self.style.map("Action.TButton",
-                          background=[("active", "#2171cd")])
+        # Configuration initiale
+        self.setup_styles()
+        self.setup_column_configs()
 
         # Création de la barre de statut
         self.status_bar = ttk.Label(self.root, text="Prêt", relief=tk.SUNKEN, anchor=tk.W)
@@ -47,7 +47,129 @@ class DomiciliationDashboard:
         # Créer l'interface
         self.setup_gui()
 
+    def setup_styles(self):
+        """Configure les styles personnalisés pour le dashboard"""
+        # Style du Treeview
+        self.style.configure('Custom.Treeview',
+                           rowheight=30,
+                           font=('Segoe UI', 9))
+        self.style.configure('Custom.Treeview.Heading',
+                           font=('Segoe UI', 9, 'bold'))
 
+        # Style des boutons de contrôle
+        self.style.configure('Control.TButton',
+                           padding=(10, 5),
+                           font=('Segoe UI', 9))
+
+        # Style des filtres
+        self.style.configure('Filter.TFrame',
+                           padding=10)
+
+        # Style de la barre d'outils
+        self.style.configure('Toolbar.TFrame',
+                           padding=5)
+
+        # Style des labels d'info
+        self.style.configure('Info.TLabel',
+                           font=('Segoe UI', 9),
+                           padding=(5, 2))
+        """Configure les styles pour les widgets"""
+        # Style pour les Treeviews
+        self.style.configure("Treeview",
+                           rowheight=25,
+                           fieldbackground=self.theme_manager.colors['bg'])
+        # Style pour les en-têtes avec texte en gras et centré
+        self.style.configure("Treeview.Heading",
+                           background="#4a90e2",
+                           foreground="white",
+                           relief="flat",
+                           font=('TkDefaultFont', 9, 'bold'),  # Ajout du style gras
+                           justify='center')  # Centrage du texte
+        self.style.map("Treeview.Heading",
+                      background=[("active", "#2171cd")])
+
+        # Style pour les boutons
+        self.style.configure("Action.TButton",
+                           padding=6,
+                           relief="flat",
+                           background="#4a90e2",
+                           foreground="white")
+        self.style.map("Action.TButton",
+                      background=[("active", "#2171cd")])
+
+    def setup_column_configs(self):
+        """Configure les colonnes et leurs propriétés"""
+        # Configuration des largeurs de colonnes
+        self.column_widths = {
+            # Colonnes de la société
+            "DEN_STE": 200,        # Plus large pour les noms de société
+            "FORME_JUR": 120,      # Largeur standard
+            "ICE": 100,            # Plus étroit pour les numéros
+            "CAPITAL": 100,        # Plus étroit pour les montants
+            "PART_SOCIAL": 100,    # Plus étroit pour les montants
+            "STE_ADRESS": 200,     # Plus large pour les adresses
+            "DATE_ICE": 100,       # Plus étroit pour les dates
+            "TRIBUNAL": 150,       # Largeur standard
+
+            # Colonnes des associés
+            "CIVIL": 80,           # Plus étroit
+            "PRENOM": 120,         # Largeur standard
+            "NOM": 120,            # Largeur standard
+            "NATIONALITY": 120,    # Largeur standard
+            "CIN_NUM": 100,        # Plus étroit pour les numéros
+            "CIN_VALIDATY": 100,   # Plus étroit pour les dates
+            "DATE_NAISS": 100,     # Plus étroit pour les dates
+            "LIEU_NAISS": 150,     # Largeur standard
+            "ADRESSE": 200,        # Plus large pour les adresses
+            "PHONE": 120,          # Largeur standard
+            "EMAIL": 150,          # Plus large pour les emails
+            "PARTS": 80,           # Plus étroit
+            "IS_GERANT": 80,       # Plus étroit
+            "QUALITY": 120,        # Largeur standard
+
+            # Colonnes du contrat
+            "PERIOD_DOMCIL": 100,  # Plus étroit
+            "PRIX_CONTRAT": 100,   # Plus étroit pour les montants
+            "PRIX_INTERMEDIARE_CONTRAT": 120,  # Largeur standard
+            "DOM_DATEDEB": 100,    # Plus étroit pour les dates
+            "DOM_DATEFIN": 100,    # Plus étroit pour les dates
+        }
+
+        # Noms d'affichage pour les colonnes
+        self.column_names = {
+            # Colonnes de la société
+            "DEN_STE": "Société",
+            "FORME_JUR": "Forme Juridique",
+            "ICE": "ICE",
+            "CAPITAL": "Capital",
+            "PART_SOCIAL": "Part Social",
+            "STE_ADRESS": "Adresse Société",
+            "DATE_ICE": "Date ICE",
+            "TRIBUNAL": "Tribunal",
+
+            # Colonnes des associés
+            "CIVIL": "Civilité",
+            "PRENOM": "Prénom",
+            "NOM": "Nom",
+            "NATIONALITY": "Nationalité",
+            "CIN_NUM": "CIN",
+            "CIN_VALIDATY": "Validité CIN",
+            "DATE_NAISS": "Date Naissance",
+            "LIEU_NAISS": "Lieu Naissance",
+            "ADRESSE": "Adresse",
+            "PHONE": "Téléphone",
+            "EMAIL": "Email",
+            "PARTS": "Parts",
+            "IS_GERANT": "Est Gérant",
+            "QUALITY": "Qualité",
+
+            # Colonnes du contrat
+            "PERIOD_DOMCIL": "Période",
+            "PRIX_CONTRAT": "Prix Contrat",
+            "PRIX_INTERMEDIARE_CONTRAT": "Prix Intermédiaire",
+            "DOM_DATEDEB": "Date Début",
+            "DOM_DATEFIN": "Date Fin"
+        }
 
     def save_data(self, excel_file_path=None):
         """Sauvegarde les données dans le fichier Excel."""
@@ -72,8 +194,7 @@ class DomiciliationDashboard:
 
             for col in excel_headers:
                 if col not in self.df.columns:
-                    print(f"Ajout de la colonne manquante: {col}")
-                    self.df[col] = ""
+                    self.df[col] = ""  # Ajout silencieux des colonnes manquantes
 
             # Réorganiser les colonnes dans le même ordre que excel_headers
             self.df = self.df[excel_headers]
@@ -103,8 +224,8 @@ class DomiciliationDashboard:
 
         # Menu déroulant pour le filtre de recherche
         self.filter_var = tk.StringVar(value="Tout")
-        filter_menu = ttk.OptionMenu(search_container, self.filter_var, "Tout",
-                                   "Société", "Gérant", "Contrat")
+        filter_menu = ttk.OptionMenu(search_container, self.filter_var,
+                                     "Tout","Société", "Gérant", "Contrat")
         filter_menu.pack(side="left", padx=5)
 
         # Frame des boutons (à droite)
@@ -124,10 +245,21 @@ class DomiciliationDashboard:
         # Treeview pour afficher les données
         self.setup_treeview()
 
-    def setup_treeview(self):
-        # Frame pour le treeview avec scrollbar
-        tree_frame = ttk.Frame(self.root)
-        tree_frame.pack(fill="both", expand=True, padx=10, pady=5)
+    def create_treeview(self, parent, columns, title):
+        """Crée un treeview avec scrollbars"""
+        # Frame pour contenir le treeview
+        frame = ttk.LabelFrame(parent, text=title, padding="2")
+        frame.pack(fill="both", padx=2, pady=1)  # Réduit les marges
+
+        # Frame interne pour le treeview et les scrollbars
+        tree_frame = ttk.Frame(frame)
+        tree_frame.pack(fill="both", expand=True)
+
+        # Style pour les lignes de société (en gras)
+        self.style.configure("societe.Treeview", font=('TkDefaultFont', 9, 'bold'))
+
+        # Définir une hauteur fixe pour le treeview
+        height = 8 if title == "Sociétés" else 6  # Hauteur augmentée pour Associés et Contrats
 
         # Scrollbars
         y_scrollbar = ttk.Scrollbar(tree_frame)
@@ -136,95 +268,206 @@ class DomiciliationDashboard:
         x_scrollbar = ttk.Scrollbar(tree_frame, orient="horizontal")
         x_scrollbar.pack(side="bottom", fill="x")
 
-        # Utiliser toutes les colonnes de excel_headers
-        columns = excel_headers
-
-        self.tree = ttk.Treeview(tree_frame, columns=columns, show="headings",
-                                yscrollcommand=y_scrollbar.set,
-                                xscrollcommand=x_scrollbar.set)
+        # Création du treeview avec hauteur fixe
+        tree = ttk.Treeview(tree_frame, columns=columns, show="headings",
+                           yscrollcommand=y_scrollbar.set,
+                           xscrollcommand=x_scrollbar.set,
+                           height=height)  # Définir la hauteur en nombre de lignes
 
         # Configuration des scrollbars
-        y_scrollbar.config(command=self.tree.yview)
-        x_scrollbar.config(command=self.tree.xview)
+        y_scrollbar.config(command=tree.yview)
+        x_scrollbar.config(command=tree.xview)
 
-        # Configuration des largeurs de colonnes avec des valeurs par défaut
+        # Configuration des colonnes avec centrage
+        for col in columns:
+            tree.heading(col, text=self.column_names[col],
+                        command=lambda c=col: self.sort_treeview(tree, c))
+            tree.column(col, width=self.column_widths[col], minwidth=50, anchor='center')
+
+        tree.pack(fill="both", expand=True)
+        return tree
+
+    def setup_treeview(self):
+        # Créer un canvas avec scrollbar pour contenir tous les treeviews
+        canvas = tk.Canvas(self.root)
+        scrollbar = ttk.Scrollbar(self.root, orient="vertical", command=canvas.yview)
+
+        # Frame principal qui contiendra tous les treeviews
+        main_frame = ttk.Frame(canvas)
+
+        # Configurer le canvas
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        # Pack le canvas et la scrollbar
+        scrollbar.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
+
+        # Créer une fenêtre dans le canvas avec le main_frame
+        canvas.create_window((0, 0), window=main_frame, anchor="nw", width=canvas.winfo_width())
+
+        # Créer les trois panneaux verticaux avec des poids différents
+        societe_frame = ttk.Frame(main_frame)
+        societe_frame.pack(side="top", fill="both", expand=True, pady=1)
+
+        associe_frame = ttk.Frame(main_frame)
+        associe_frame.pack(side="top", fill="both", expand=True, pady=1)
+
+        contrat_frame = ttk.Frame(main_frame)
+        contrat_frame.pack(side="top", fill="both", expand=True, pady=1)
+
+        # Fonction pour mettre à jour la région de défilement
+        def _on_frame_configure(event=None):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+
+        # Lier la configuration du frame
+        main_frame.bind("<Configure>", _on_frame_configure)
+
+        # Lier le redimensionnement de la fenêtre
+        def _on_canvas_configure(event):
+            canvas.itemconfig(canvas.find_withtag("all")[0], width=event.width)
+
+        canvas.bind("<Configure>", _on_canvas_configure)
+
+        # Configurer le défilement avec la molette de la souris
+        def _on_mousewheel(event):
+            try:
+                canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+            except Exception as e:
+                print(f"Erreur de défilement: {str(e)}")  # Pour le débogage
+                pass
+
+        # Lier l'événement de la molette uniquement au canvas et à ses enfants
+        canvas.bind("<MouseWheel>", _on_mousewheel)
+        main_frame.bind("<MouseWheel>", _on_mousewheel)
+        # Assurer que le défilement fonctionne aussi sur les widgets enfants
+        for frame in [societe_frame, associe_frame, contrat_frame]:
+            frame.bind("<MouseWheel>", _on_mousewheel)
+            for child in frame.winfo_children():
+                child.bind("<MouseWheel>", _on_mousewheel)
+
+        # Unbind events when destroying the widget
+        def _on_destroy(event):
+            try:
+                canvas.unbind_all("<MouseWheel>")
+            except:
+                pass
+
+        canvas.bind("<Destroy>", _on_destroy)
+
+        # Définir les colonnes pour chaque treeview
+
+        # Définir les colonnes pour chaque treeview (en excluant les IDs)
+        societe_columns = [
+            "DEN_STE", "FORME_JUR", "ICE", "CAPITAL", "PART_SOCIAL",
+            "STE_ADRESS", "DATE_ICE", "TRIBUNAL"
+        ]
+
+        associe_columns = [
+            "DEN_STE",  # Ajout du nom de la société
+            "CIVIL", "PRENOM", "NOM", "NATIONALITY", "CIN_NUM", "CIN_VALIDATY",
+            "DATE_NAISS", "LIEU_NAISS", "ADRESSE", "PHONE", "EMAIL",
+            "PARTS", "IS_GERANT", "QUALITY"
+        ]
+
+        contrat_columns = [
+            "DEN_STE",  # Ajout du nom de la société
+            "PERIOD_DOMCIL", "PRIX_CONTRAT", "PRIX_INTERMEDIARE_CONTRAT",
+            "DOM_DATEDEB", "DOM_DATEFIN"
+        ]
+
+        # Créer les trois treeviews
+        self.societe_tree = self.create_treeview(societe_frame, societe_columns, "Sociétés")
+        self.associe_tree = self.create_treeview(associe_frame, associe_columns, "Associés")
+        self.contrat_tree = self.create_treeview(contrat_frame, contrat_columns, "Contrats")
+
+        # Appeler populate_treeviews après la création
+        self.populate_treeviews()
+
+        # Configuration des colonnes spécifiques à chaque vue
         column_widths = {
+            # Colonnes de la société
+            "ID_SOCIETE": 100,     # ID technique
             "DEN_STE": 200,        # Plus large pour les noms de société
             "FORME_JUR": 120,      # Largeur standard
             "ICE": 100,            # Plus étroit pour les numéros
             "CAPITAL": 100,        # Plus étroit pour les montants
             "PART_SOCIAL": 100,    # Plus étroit pour les montants
-            "NATIONALITY": 120,    # Largeur standard
             "STE_ADRESS": 200,     # Plus large pour les adresses
             "DATE_ICE": 100,       # Plus étroit pour les dates
+            "TRIBUNAL": 150,       # Largeur standard
+
+            # Colonnes des associés
             "CIVIL": 80,           # Plus étroit
             "PRENOM": 120,         # Largeur standard
             "NOM": 120,            # Largeur standard
-            "DATE_NAISS": 100,     # Plus étroit pour les dates
-            "LIEU_NAISS": 150,     # Largeur standard
-            "GERANT_ADRESS": 200,  # Plus large pour les adresses
+            "NATIONALITY": 120,    # Largeur standard
             "CIN_NUM": 100,        # Plus étroit pour les numéros
             "CIN_VALIDATY": 100,   # Plus étroit pour les dates
-            "GERANT_QUALITY": 120, # Largeur standard
-            "GERANT_PHONE": 120,   # Largeur standard
-            "GERANT_EMAIL": 150,   # Plus large pour les emails
-            "TRIBUNAL": 150,       # Largeur standard
+            "DATE_NAISS": 100,     # Plus étroit pour les dates
+            "LIEU_NAISS": 150,     # Largeur standard
+            "ADRESSE": 200,        # Plus large pour les adresses
+            "PHONE": 120,          # Largeur standard
+            "EMAIL": 150,          # Plus large pour les emails
+            "PARTS": 80,           # Plus étroit
+            "IS_GERANT": 80,       # Plus étroit
+            "QUALITY": 120,        # Largeur standard
+
+            # Colonnes du contrat
             "PERIOD_DOMCIL": 100,  # Plus étroit
-            "DOM_DATEDEB": 100,    # Plus étroit pour les dates
-            "DOM_DATEFIN": 100,    # Plus étroit pour les dates
-            "DATE_CONTRAT": 100,   # Plus étroit pour les dates
             "PRIX_CONTRAT": 100,   # Plus étroit pour les montants
             "PRIX_INTERMEDIARE_CONTRAT": 120,  # Largeur standard
-            "INTERMEDIARE": 150    # Largeur standard
+            "DOM_DATEDEB": 100,    # Plus étroit pour les dates
+            "DOM_DATEFIN": 100,    # Plus étroit pour les dates
         }
 
         # Noms d'affichage pour toutes les colonnes
         column_names = {
+            # Colonnes de la société
+            "ID_SOCIETE": "ID Société",
             "DEN_STE": "Société",
             "FORME_JUR": "Forme Juridique",
             "ICE": "ICE",
             "CAPITAL": "Capital",
             "PART_SOCIAL": "Part Social",
-            "NATIONALITY": "Nationalité",
             "STE_ADRESS": "Adresse Société",
             "DATE_ICE": "Date ICE",
+            "TRIBUNAL": "Tribunal",
+
+            # Colonnes des associés
             "CIVIL": "Civilité",
             "PRENOM": "Prénom",
             "NOM": "Nom",
-            "DATE_NAISS": "Date Naissance",
-            "LIEU_NAISS": "Lieu Naissance",
-            "GERANT_ADRESS": "Adresse Gérant",
+            "NATIONALITY": "Nationalité",
             "CIN_NUM": "CIN",
             "CIN_VALIDATY": "Validité CIN",
-            "GERANT_QUALITY": "Qualité Gérant",
-            "GERANT_PHONE": "Téléphone",
-            "GERANT_EMAIL": "Email",
-            "TRIBUNAL": "Tribunal",
+            "DATE_NAISS": "Date Naissance",
+            "LIEU_NAISS": "Lieu Naissance",
+            "ADRESSE": "Adresse",
+            "PHONE": "Téléphone",
+            "EMAIL": "Email",
+            "PARTS": "Parts",
+            "IS_GERANT": "Est Gérant",
+            "QUALITY": "Qualité",
+
+            # Colonnes du contrat
             "PERIOD_DOMCIL": "Période",
-            "DOM_DATEDEB": "Date Début",
-            "DOM_DATEFIN": "Date Fin",
-            "DATE_CONTRAT": "Date Contrat",
             "PRIX_CONTRAT": "Prix Contrat",
             "PRIX_INTERMEDIARE_CONTRAT": "Prix Intermédiaire",
-            "INTERMEDIARE": "Intermédiaire"
+            "DOM_DATEDEB": "Date Début",
+            "DOM_DATEFIN": "Date Fin"
         }
 
-        for col in columns:
-            self.tree.heading(col, text=column_names[col],
-                            command=lambda c=col: self.sort_treeview(c))
-            self.tree.column(col, width=column_widths[col], minwidth=50)
+        # Removed redundant code - treeview configuration is now handled in create_treeview
+        self.populate_treeviews()
 
-        self.tree.pack(fill="both", expand=True)
-        self.populate_treeview()
-
-    def populate_treeview(self):
-        # Effacer les données existantes
-        for item in self.tree.get_children():
-            self.tree.delete(item)
-
+    def populate_treeviews(self):
+        """Remplit les trois treeviews avec les données correspondantes"""
         # Vérifier si le DataFrame est vide
         if self.df.empty:
             return
+
+        # Effacer les données existantes
+        self.clear_all_treeviews()
 
         # Remplir les valeurs NaN avec des chaînes vides
         df_display = self.df.fillna("")
@@ -233,28 +476,105 @@ class DomiciliationDashboard:
         for col in df_display.columns:
             df_display[col] = df_display[col].astype(str).str.strip()
 
-        # S'assurer que nous avons toutes les colonnes dans le bon ordre
-        for col in excel_headers:
-            if col not in df_display.columns:
-                df_display[col] = ""
-        df_display = df_display[excel_headers]
+        # Grouper les données par société en utilisant DEN_STE au lieu de ID_SOCIETE
+        for societe_name in df_display['DEN_STE'].unique():
+            # Données de la société
+            societe_data = df_display[df_display['DEN_STE'] == societe_name]
+            if not societe_data.empty:
+                self.populate_societe_tree(societe_data.iloc[0])
+                self.populate_associe_tree(societe_data)
+                self.populate_contrat_tree(societe_data)
 
-        # Ajouter chaque ligne au Treeview avec toutes les colonnes
-        for index, row in df_display.iterrows():
-            try:
-                values = []
-                for col in excel_headers:  # Utiliser excel_headers au lieu de self.tree["columns"]
-                    values.append(str(row[col]))
-                self.tree.insert("", "end", values=values)
-            except Exception as e:
-                print(f"Erreur lors de l'ajout de la ligne {index}: {str(e)}")
-                print(f"Valeurs : {values}")
-                print(f"Colonnes disponibles : {row.index.tolist()}")
+        # Mettre à jour le statut avec le nombre total de sociétés
+        total_societes = len(df_display['DEN_STE'].unique())
+        self.status_bar.config(text=f"Total des sociétés : {total_societes}")
 
-    def sort_treeview(self, col):
-        # Trier le DataFrame
-        self.df = self.df.sort_values(by=[col])
-        self.populate_treeview()
+    def populate_societe_tree(self, societe_row):
+        """Remplit le treeview des sociétés"""
+        values = []
+        for col in self.societe_tree['columns']:
+            values.append(str(societe_row.get(col, "")))
+
+        # Créer un ID unique pour chaque entrée en utilisant DEN_STE
+        iid = f"soc_{societe_row['DEN_STE']}"
+
+        # Vérifier si cette société existe déjà dans le treeview
+        existing_items = self.societe_tree.get_children()
+        exists = False
+        for item in existing_items:
+            if self.societe_tree.item(item)['values'][0] == societe_row['DEN_STE']:
+                exists = True
+                break
+
+        # Insérer seulement si la société n'existe pas déjà
+        if not exists:
+            self.societe_tree.insert("", "end", values=values, iid=iid)
+
+    def populate_associe_tree(self, societe_data):
+        """Remplit le treeview des associés"""
+        if not societe_data.empty:
+            societe_name = societe_data.iloc[0]['DEN_STE']
+            # Créer un parent node pour la société avec un ID unique basé sur le nom
+            societe_iid = f"soc_assoc_{societe_name}"
+
+            # Vérifier si ce nœud de société existe déjà
+            existing_items = self.associe_tree.get_children()
+            if societe_iid not in existing_items:
+                self.associe_tree.insert("", "end", values=[societe_name] + ["" for _ in range(len(self.associe_tree['columns'])-1)],
+                                       iid=societe_iid, tags=('societe',))
+
+            # Ajouter les associés sous le noeud de la société
+            for idx, row in societe_data.iterrows():
+                values = [societe_name]  # Ajouter le nom de la société comme première colonne
+                for col in self.associe_tree['columns'][1:]:  # Skip first column which is DEN_STE
+                    values.append(str(row.get(col, "")))
+                # Créer un ID unique pour chaque associé
+                iid = f"assoc_{societe_name}_{idx}"
+                self.associe_tree.insert(societe_iid, "end", values=values, iid=iid)  # Insérer sous le parent
+
+    def populate_contrat_tree(self, societe_data):
+        """Remplit le treeview des contrats"""
+        if not societe_data.empty:
+            societe_name = societe_data.iloc[0]['DEN_STE']
+            # Créer un parent node pour la société
+            societe_iid = f"soc_cont_{societe_data.iloc[0]['ID_SOCIETE']}"
+
+        # Vérifier si ce nœud de société existe déjà
+        existing_items = self.contrat_tree.get_children()
+        if societe_iid not in existing_items:
+            self.contrat_tree.insert("", "end", values=[societe_name] + ["" for _ in range(len(self.contrat_tree['columns'])-1)],
+                                   iid=societe_iid, tags=('societe',))
+
+        # Ajouter les contrats sous le noeud de la société
+        for idx, row in societe_data.iterrows():
+            values = [societe_name]  # Ajouter le nom de la société comme première colonne
+            for col in self.contrat_tree['columns'][1:]:
+                values.append(str(row.get(col, "")))
+            # Créer un ID unique pour chaque contrat
+            iid = f"cont_{societe_name}_{idx}"
+            self.contrat_tree.insert(societe_iid, "end", values=values, iid=iid)
+
+        return
+
+    def clear_all_treeviews(self):
+       #Efface les données de tous les treeviews"""
+       for tree in [self.societe_tree, self.associe_tree, self.contrat_tree]:
+          for item in tree.get_children():
+            tree.delete(item)
+
+    def sort_treeview(self, tree, col):
+        """Trie un treeview spécifique selon une colonne"""
+        # Récupérer toutes les lignes
+        items = [(tree.set(item, col), item) for item in tree.get_children("")]
+
+        # Trier les lignes
+        items.sort()
+
+        # Réorganiser les lignes dans le treeview
+        for index, (val, item) in enumerate(items):
+            tree.move(item, "", index)
+
+        return
 
     def search_records(self, event=None):
         search_term = self.search_var.get().lower()
@@ -265,27 +585,31 @@ class DomiciliationDashboard:
         self.root.update()
 
         # Effacer les résultats précédents
-        for item in self.tree.get_children():
-            self.tree.delete(item)
+        self.clear_all_treeviews()
 
-        # Si le terme de recherche est vide, afficher toutes les données
+                # Si le terme de recherche est vide, afficher toutes les données
         if not search_term:
-            self.populate_treeview()
+            self.populate_treeviews()
             self.status_bar.config(text="Prêt")
             return
 
         # Définir les colonnes à rechercher selon le filtre
         if search_filter == "Société":
-            columns = ["DEN_STE", "FORME_JUR", "ICE", "CAPITAL", "STE_ADRESS"]
-        elif search_filter == "Gérant":
-            columns = ["CIVIL", "PRENOM", "NOM", "CIN_NUM", "GERANT_QUALITY", "GERANT_PHONE", "GERANT_EMAIL"]
+            search_columns = ["DEN_STE", "FORME_JUR", "ICE", "CAPITAL", "STE_ADRESS"]
+            trees_to_search = [self.societe_tree]
+        elif search_filter == "Associés":
+            search_columns = ["CIVIL", "PRENOM", "NOM", "CIN_NUM", "PHONE", "EMAIL"]
+            trees_to_search = [self.associe_tree]
         elif search_filter == "Contrat":
-            columns = ["PERIOD_DOMCIL", "DOM_DATEDEB", "DOM_DATEFIN", "DATE_CONTRAT", "PRIX_CONTRAT"]
+            search_columns = ["PERIOD_DOMCIL", "DOM_DATEDEB", "DOM_DATEFIN", "PRIX_CONTRAT"]
+            trees_to_search = [self.contrat_tree]
         else:
-            columns = self.df.columns
+            # Pour "Tout", rechercher dans toutes les colonnes
+            trees_to_search = [self.societe_tree, self.associe_tree, self.contrat_tree]
+            search_columns = self.df.columns
 
         # Rechercher dans les colonnes sélectionnées
-        mask = self.df[columns].astype(str).apply(
+        mask = self.df[search_columns].astype(str).apply(
             lambda x: x.str.contains(search_term, case=False)).any(axis=1)
         filtered_df = self.df[mask]
 
@@ -293,21 +617,19 @@ class DomiciliationDashboard:
         self.status_bar.config(text=f"{len(filtered_df)} résultat(s) trouvé(s)")
 
         # Afficher les résultats filtrés
-        for index, row in filtered_df.iterrows():
-            try:
-                values = []
-                for col in self.tree["columns"]:
-                    val = row.get(col, "")
-                    if pd.isna(val):
-                        val = ""
-                    values.append(str(val))
-                self.tree.insert("", "end", values=values)
-            except Exception as e:
-                print(f"Erreur lors de l'ajout de la ligne {index}: {str(e)}")
+        for societe_id in filtered_df['ID_SOCIETE'].unique():
+            societe_data = filtered_df[filtered_df['ID_SOCIETE'] == societe_id]
+            if not societe_data.empty:
+                if self.societe_tree in trees_to_search:
+                    self.populate_societe_tree(societe_data.iloc[0])
+                if self.associe_tree in trees_to_search:
+                    self.populate_associe_tree(societe_data)
+                if self.contrat_tree in trees_to_search:
+                    self.populate_contrat_tree(societe_data)
 
     def refresh_data(self):
         self.load_data()
-        self.populate_treeview()
+        self.populate_treeviews()
         messagebox.showinfo("Succès", "Données actualisées avec succès!")
 
     def add_society(self):
@@ -354,13 +676,13 @@ class DomiciliationDashboard:
         from utils import WindowManager
 
         # Obtenir l'élément sélectionné
-        selected_item = self.tree.selection()
+        selected_item = self.societe_tree.selection()
         if not selected_item:
             messagebox.showwarning("Attention", "Veuillez sélectionner une société à modifier.")
             return
 
         # Obtenir les données de la société sélectionnée
-        item = self.tree.item(selected_item[0])
+        item = self.societe_tree.item(selected_item[0])
         den_ste = item['values'][0]  # Nom de la société
 
         # Trouver la fenêtre principale
@@ -476,17 +798,18 @@ class DomiciliationDashboard:
         edit_window.protocol("WM_DELETE_WINDOW", just_close)
 
     def delete_society(self):
-        selected_item = self.tree.selection()
+        selected_item = self.societe_tree.selection()
         if not selected_item:
             messagebox.showwarning("Attention", "Veuillez sélectionner une société à supprimer.")
             return
 
         if messagebox.askyesno("Confirmation", "Êtes-vous sûr de vouloir supprimer cette société?"):
-            # Récupérer l'index de l'élément dans le Treeview
-            tree_index = self.tree.index(selected_item[0])
+            # Récupérer l'ID de la société à partir de l'iid sélectionné
+            societe_iid = selected_item[0]
+            societe_id = societe_iid.split('_')[1]  # Extrait l'ID de la société du format "soc_ID"
 
-            # Supprimer la ligne correspondante dans le DataFrame
-            self.df = self.df.drop(self.df.index[tree_index])
+            # Supprimer toutes les lignes correspondant à cette société
+            self.df = self.df[self.df['ID_SOCIETE'] != societe_id]
 
             # Réinitialiser les index du DataFrame
             self.df = self.df.reset_index(drop=True)
