@@ -35,7 +35,6 @@ date_inverser = today.strftime("%Y_%m_%d")
 class DomiciliationApp:
     def __init__(self, root):
         self.root = root
-        self.associe_frames = []  # Liste pour stocker les cadres des associés
 
         # Initialisation du dictionnaire avec toutes les clés possibles
         self.values = {
@@ -360,17 +359,11 @@ class DomiciliationApp:
         if not self.associes_list:
             self.add_associe()
 
-    def remove_associe(self, associe_frame, associe_vars):
-        """Supprime un associé de l'interface."""
-        associe_frame.destroy()  # Supprime le cadre de l'associé
-        self.associe_frames.remove(associe_frame)  # Retire le cadre de la liste
-
     def add_associe(self):
         """Ajoute un nouvel associé avec une disposition verticale"""
         # Frame principale avec style card et effet d'ombre
         associe_frame = ttk.Frame(self.associes_inner_frame, style='Card.TFrame')
         associe_frame.pack(fill="x", padx=20, pady=15)
-        self.associe_frames.append(associe_frame)  # Ajouter le cadre à la liste
 
         # Variables pour l'associé
         associe_vars = {
@@ -423,8 +416,8 @@ class DomiciliationApp:
         # Section Informations de base
         info_section = ttk.LabelFrame(main_container)
         info_section.pack(fill="x", pady=5)
-
-        ttk.Label(info_section, text="📝 Informations de base", font=('Segoe UI', 10, 'bold')).pack(
+        
+        ttk.Label(info_section, text="📝 Informations de base", **section_style).pack(
             anchor="w", padx=10, pady=5)
 
         # Container pour les champs
@@ -434,7 +427,7 @@ class DomiciliationApp:
         # Civilité
         field_frame = ttk.Frame(info_fields)
         field_frame.pack(fill="x", pady=5)
-        ttk.Label(field_frame, text="Civilité", font=('Segoe UI', 9)).pack(anchor="w")
+        ttk.Label(field_frame, text="Civilité", **label_style).pack(anchor="w")
         civil_combo = ttk.Combobox(field_frame, textvariable=associe_vars['civil'],
                                 values=Civility, width=entry_width)
         civil_combo.pack(fill="x", pady=(2, 0))
@@ -442,7 +435,7 @@ class DomiciliationApp:
         # Prénom
         field_frame = ttk.Frame(info_fields)
         field_frame.pack(fill="x", pady=5)
-        ttk.Label(field_frame, text="Prénom", font=('Segoe UI', 9)).pack(anchor="w")
+        ttk.Label(field_frame, text="Prénom", **label_style).pack(anchor="w")
         prenom_entry = ttk.Entry(field_frame, textvariable=associe_vars['prenom'],
                               width=entry_width)
         prenom_entry.pack(fill="x", pady=(2, 0))
@@ -451,22 +444,22 @@ class DomiciliationApp:
         # Nom
         field_frame = ttk.Frame(info_fields)
         field_frame.pack(fill="x", pady=5)
-        ttk.Label(field_frame, text="Nom", font=('Segoe UI', 9)).pack(anchor="w")
+        ttk.Label(field_frame, text="Nom", **label_style).pack(anchor="w")
         ttk.Entry(field_frame, textvariable=associe_vars['nom'],
                 width=entry_width).pack(fill="x", pady=(2, 0))
 
         # Parts
         field_frame = ttk.Frame(info_fields)
         field_frame.pack(fill="x", pady=5)
-        ttk.Label(field_frame, text="Parts (%)", font=('Segoe UI', 9)).pack(anchor="w")
+        ttk.Label(field_frame, text="Parts (%)", **label_style).pack(anchor="w")
         ttk.Entry(field_frame, textvariable=associe_vars['parts'],
                 width=entry_width).pack(fill="x", pady=(2, 0))
 
         # Section Identité
         identity_section = ttk.LabelFrame(main_container)
         identity_section.pack(fill="x", pady=5)
-
-        ttk.Label(identity_section, text="🪪 Identité", font=('Segoe UI', 10, 'bold')).pack(
+        
+        ttk.Label(identity_section, text="🪪 Identité", **section_style).pack(
             anchor="w", padx=10, pady=5)
 
         # Container pour les champs d'identité
@@ -476,21 +469,21 @@ class DomiciliationApp:
         # Nationalité
         field_frame = ttk.Frame(identity_fields)
         field_frame.pack(fill="x", pady=5)
-        ttk.Label(field_frame, text="Nationalité", font=('Segoe UI', 9)).pack(anchor="w")
+        ttk.Label(field_frame, text="Nationalité", **label_style).pack(anchor="w")
         ttk.Combobox(field_frame, textvariable=associe_vars['nationality'],
                    values=Nationalite, width=entry_width).pack(fill="x", pady=(2, 0))
 
         # N° CIN
         field_frame = ttk.Frame(identity_fields)
         field_frame.pack(fill="x", pady=5)
-        ttk.Label(field_frame, text="N° CIN", font=('Segoe UI', 9)).pack(anchor="w")
+        ttk.Label(field_frame, text="N° CIN", **label_style).pack(anchor="w")
         ttk.Entry(field_frame, textvariable=associe_vars['cin_num'],
                 width=entry_width).pack(fill="x", pady=(2, 0))
 
         # Validité CIN
         field_frame = ttk.Frame(identity_fields)
         field_frame.pack(fill="x", pady=5)
-        ttk.Label(field_frame, text="Validité CIN", font=('Segoe UI', 9)).pack(anchor="w")
+        ttk.Label(field_frame, text="Validité CIN", **label_style).pack(anchor="w")
         cin_frame = ttk.Frame(field_frame)
         cin_frame.pack(fill="x", pady=(2, 0))
         ttk.Entry(cin_frame, textvariable=associe_vars['cin_validaty'],
@@ -502,8 +495,8 @@ class DomiciliationApp:
         # Section Naissance
         birth_section = ttk.LabelFrame(main_container)
         birth_section.pack(fill="x", pady=5)
-
-        ttk.Label(birth_section, text="👶 Naissance", font=('Segoe UI', 10, 'bold')).pack(
+        
+        ttk.Label(birth_section, text="👶 Naissance", **section_style).pack(
             anchor="w", padx=10, pady=5)
 
         # Container pour les champs de naissance
@@ -513,7 +506,7 @@ class DomiciliationApp:
         # Date de naissance
         field_frame = ttk.Frame(birth_fields)
         field_frame.pack(fill="x", pady=5)
-        ttk.Label(field_frame, text="Date de naissance", font=('Segoe UI', 9)).pack(anchor="w")
+        ttk.Label(field_frame, text="Date de naissance", **label_style).pack(anchor="w")
         date_frame = ttk.Frame(field_frame)
         date_frame.pack(fill="x", pady=(2, 0))
         ttk.Entry(date_frame, textvariable=associe_vars['date_naiss'],
@@ -525,15 +518,15 @@ class DomiciliationApp:
         # Lieu de naissance
         field_frame = ttk.Frame(birth_fields)
         field_frame.pack(fill="x", pady=5)
-        ttk.Label(field_frame, text="Lieu de naissance", font=('Segoe UI', 9)).pack(anchor="w")
+        ttk.Label(field_frame, text="Lieu de naissance", **label_style).pack(anchor="w")
         ttk.Entry(field_frame, textvariable=associe_vars['lieu_naiss'],
                 width=entry_width).pack(fill="x", pady=(2, 0))
 
         # Section Contact
         contact_section = ttk.LabelFrame(main_container)
         contact_section.pack(fill="x", pady=5)
-
-        ttk.Label(contact_section, text="📞 Contact", font=('Segoe UI', 10, 'bold')).pack(
+        
+        ttk.Label(contact_section, text="📞 Contact", **section_style).pack(
             anchor="w", padx=10, pady=5)
 
         # Container pour les champs de contact
@@ -543,29 +536,29 @@ class DomiciliationApp:
         # Adresse
         field_frame = ttk.Frame(contact_fields)
         field_frame.pack(fill="x", pady=5)
-        ttk.Label(field_frame, text="Adresse", font=('Segoe UI', 9)).pack(anchor="w")
+        ttk.Label(field_frame, text="Adresse", **label_style).pack(anchor="w")
         ttk.Entry(field_frame, textvariable=associe_vars['adresse'],
                 width=entry_width).pack(fill="x", pady=(2, 0))
 
         # Téléphone
         field_frame = ttk.Frame(contact_fields)
         field_frame.pack(fill="x", pady=5)
-        ttk.Label(field_frame, text="Téléphone", font=('Segoe UI', 9)).pack(anchor="w")
+        ttk.Label(field_frame, text="Téléphone", **label_style).pack(anchor="w")
         ttk.Entry(field_frame, textvariable=associe_vars['phone'],
                 width=entry_width).pack(fill="x", pady=(2, 0))
 
         # Email
         field_frame = ttk.Frame(contact_fields)
         field_frame.pack(fill="x", pady=5)
-        ttk.Label(field_frame, text="Email", font=('Segoe UI', 9)).pack(anchor="w")
+        ttk.Label(field_frame, text="Email", **label_style).pack(anchor="w")
         ttk.Entry(field_frame, textvariable=associe_vars['email'],
                 width=entry_width).pack(fill="x", pady=(2, 0))
 
         # Section Gérant
         gerant_section = ttk.LabelFrame(main_container)
         gerant_section.pack(fill="x", pady=5)
-
-        ttk.Label(gerant_section, text="👔 Statut de Gérant", font=('Segoe UI', 10, 'bold')).pack(
+        
+        ttk.Label(gerant_section, text="👔 Statut de Gérant", **section_style).pack(
             anchor="w", padx=10, pady=5)
 
         # Container pour les champs de gérant
@@ -581,7 +574,7 @@ class DomiciliationApp:
         # Qualité
         field_frame = ttk.Frame(gerant_fields)
         field_frame.pack(fill="x", pady=5)
-        ttk.Label(field_frame, text="Qualité", font=('Segoe UI', 9)).pack(anchor="w")
+        ttk.Label(field_frame, text="Qualité", **label_style).pack(anchor="w")
         quality_combo = ttk.Combobox(field_frame, textvariable=associe_vars['quality'],
                                   values=QualityGerant, width=entry_width, state='disabled')
         quality_combo.pack(fill="x", pady=(2, 0))

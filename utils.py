@@ -5,6 +5,45 @@ import os
 from pathlib import Path
 import json
 import logging
+import traceback
+from typing import Optional, Callable, Any
+
+# Configuration du logging
+logging.basicConfig(
+    filename='app.log',
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+class ErrorHandler:
+    """Gestionnaire d'erreurs centralisé pour l'application"""
+    @staticmethod
+    def handle_error(error: Exception,
+                    message: str = "Une erreur s'est produite",
+                    show_dialog: bool = True,
+                    callback: Optional[Callable] = None) -> None:
+        """
+        Gère une erreur de manière centralisée
+        Args:
+            error: L'exception à gérer
+            message: Message à afficher à l'utilisateur
+            show_dialog: Si True, affiche une boîte de dialogue
+            callback: Fonction à appeler après le traitement de l'erreur
+        """
+        # Log l'erreur
+        logger.error(f"{message}: {str(error)}\n{traceback.format_exc()}")
+
+        # Affiche la boîte de dialogue si demandé
+        if show_dialog:
+            messagebox.showerror("Erreur", f"{message}\n\nDétails: {str(error)}")
+
+        # Exécute le callback si fourni
+        if callback:
+            try:
+                callback()
+            except Exception as e:
+                logger.error(f"Erreur dans le callback: {str(e)}")
 
 class ToolTip:
     def __init__(self, widget, text):
@@ -36,66 +75,31 @@ class ThemeManager:
     def __init__(self, root):
         self.root = root
         self.style = ThemedStyle(root)
-        self.load_preferences()
         self.setup_colors()
         self.apply_theme()
 
-    def load_preferences(self):
-        try:
-            with open('config/preferences.json', 'r') as f:
-                prefs = json.load(f)
-                self.is_dark_mode = prefs.get('theme') == 'dark'
-        except:
-            self.is_dark_mode = True
-
     def setup_colors(self):
-        # Couleurs de base
-        if self.is_dark_mode:
-            self.colors = {
-                'bg': '#2E2E2E',
-                'fg': '#FFFFFF',
-                'accent': '#4A90E2',
-                'error': '#E74C3C',
-                'success': '#2ECC71',
-                'warning': '#F39C12',
-                'input_bg': '#3E3E3E',
-                'input_fg': '#FFFFFF',
-                'label_fg': '#CCCCCC',
-                'border': '#555555',
-                'theme': 'black',
-                'button_bg': '#555555',
-                'button_fg': 'white',
-                'entry_bg': '#666666',
-                'entry_fg': 'white'
-            }
-        else:
-            self.colors = {
-                'bg': '#f0f0f0',
-                'fg': 'black',
-                'accent': '#2980b9',
-                'error': '#c0392b',
-                'success': '#27ae60',
-                'warning': '#f39c12',
-                'input_bg': 'white',
-                'input_fg': 'black',
-                'label_fg': '#2c3e50',
-                'border': '#bdc3c7',
-                'theme': 'arc',
-                'button_bg': '#e0e0e0',
-                'button_fg': 'black',
-                'entry_bg': 'white',
-                'entry_fg': 'black'
-            }
-
-    def save_preferences(self):
-        os.makedirs('config', exist_ok=True)
-        with open('config/preferences.json', 'w') as f:
-            json.dump({
-                'theme': 'dark' if self.is_dark_mode else 'light'
-            }, f)
+        # Configuration du thème sombre uniquement
+        self.colors = {
+            'bg': '#2E2E2E',
+            'fg': '#FFFFFF',
+            'accent': '#4A90E2',
+            'error': '#E74C3C',
+            'success': '#2ECC71',
+            'warning': '#F39C12',
+            'input_bg': '#3E3E3E',
+            'input_fg': '#FFFFFF',
+            'label_fg': '#CCCCCC',
+            'border': '#555555',
+            'theme': 'black',
+            'button_bg': '#555555',
+            'button_fg': 'white',
+            'entry_bg': '#666666',
+            'entry_fg': 'white'
+        }
 
     def apply_theme(self):
-        self.style.set_theme(self.colors['theme'])
+        self.style.set_theme('black')  # Toujours utiliser le thème sombre
 
         # Style de base pour l'application
         self.style.configure('.',
@@ -224,12 +228,6 @@ class ThemeManager:
             background=self.colors['bg'],
             padding=(5, 2))
 
-    def toggle_theme(self):
-        self.is_dark_mode = not self.is_dark_mode
-        self.setup_colors()
-        self.apply_theme()
-        self.save_preferences()
-
     def apply_widget_styles(self, widget):
         """Applique automatiquement le style approprié à un widget"""
         if isinstance(widget, ttk.Entry):
@@ -323,20 +321,58 @@ def apply_style(widget, theme_manager):
     return theme_manager.apply_widget_styles(widget)
 
 class PathManager:
+    """Gestionnaire centralisé des chemins de fichiers de l'application"""
     BASE_DIR = Path(__file__).parent
     MODELS_DIR = BASE_DIR / "Models"
     DATABASE_DIR = BASE_DIR / "databases"
     CONFIG_DIR = BASE_DIR / "config"
+    ALLOWED_EXTENSIONS = {
+        'models': ['.docx', '.doc'],
+        'database': ['.xlsx', '.xls'],
+        'config': ['.json']
+    }
 
     @classmethod
-    def ensure_directories(cls):
-        for dir_path in [cls.MODELS_DIR, cls.DATABASE_DIR, cls.CONFIG_DIR]:
-            dir_path.mkdir(parents=True, exist_ok=True)
+    def ensure_directories(cls) -> None:
+        """Crée les répertoires nécessaires s'ils n'existent pas"""
+        try:
+            for dir_path in [cls.MODELS_DIR, cls.DATABASE_DIR, cls.CONFIG_DIR]:
+                dir_path.mkdir(parents=True, exist_ok=True)
+        except Exception as e:
+            ErrorHandler.handle_error(e, "Erreur lors de la création des répertoires")
 
     @classmethod
-    def get_model_path(cls, filename):
-        return cls.MODELS_DIR / filename
+    def validate_file(cls, filepath: Path, file_type: str) -> bool:
+        """
+        Valide un fichier selon son type
+        Args:
+            filepath: Chemin du fichier
+            file_type: Type de fichier ('models', 'database', 'config')
+        Returns:
+            bool: True si le fichier est valide
+        """
+        if not filepath.exists():
+            logger.warning(f"Fichier non trouvé: {filepath}")
+            return False
+
+        if not filepath.suffix.lower() in cls.ALLOWED_EXTENSIONS.get(file_type, []):
+            logger.warning(f"Extension non autorisée: {filepath}")
+            return False
+
+        return True
 
     @classmethod
-    def get_database_path(cls, filename):
-        return cls.DATABASE_DIR / filename
+    def get_model_path(cls, filename: str) -> Path:
+        """Retourne le chemin d'un fichier modèle"""
+        path = cls.MODELS_DIR / filename
+        if not cls.validate_file(path, 'models'):
+            raise FileNotFoundError(f"Modèle invalide ou non trouvé: {filename}")
+        return path
+
+    @classmethod
+    def get_database_path(cls, filename: str) -> Path:
+        """Retourne le chemin d'un fichier de base de données"""
+        path = cls.DATABASE_DIR / filename
+        if not cls.validate_file(path, 'database'):
+            raise FileNotFoundError(f"Base de données invalide ou non trouvée: {filename}")
+        return path

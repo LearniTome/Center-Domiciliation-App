@@ -34,22 +34,9 @@ class AppSwitcher:
                            padding=(15, 8),
                            font=('Segoe UI', 10))
 
-        # Style du bouton de thème
-        self.style.configure('Theme.TButton',
-                           padding=(10, 5),
-                           font=('Segoe UI', 9))
-
     def setup_keyboard_shortcuts(self):
         """Configure les raccourcis clavier globaux"""
-        self.root.bind('<Control-t>', lambda e: self.toggle_theme())
         self.root.bind('<Control-q>', lambda e: self.root.quit())
-
-    def toggle_theme(self):
-        """Bascule entre les thèmes clair et sombre"""
-        self.theme_manager.toggle_theme()
-        theme_text = "☀️ Mode Clair" if self.theme_manager.is_dark_mode else "🌙 Mode Sombre"
-        if hasattr(self, 'theme_button'):
-            self.theme_button.configure(text=theme_text)
 
     def setup_gui(self):
         # Configuration des poids pour le redimensionnement
@@ -74,7 +61,7 @@ class AppSwitcher:
                            padding=(20, 10),
                            font=('Segoe UI', 10, 'bold'))
 
-        # Boutons de navigation (à gauche)
+        # Boutons de navigation
         nav_buttons = [
             ("📄 Principale", self.show_main_app),
             ("📊 Dashboard", self.show_dashboard)
@@ -88,15 +75,6 @@ class AppSwitcher:
                 tooltip=f"Ouvrir {text.split()[1]}"
             )
             btn.grid(row=0, column=i, padx=5)
-
-        # Bouton de thème (à droite)
-        self.theme_button = WidgetFactory.create_button(
-            right_buttons,
-            text="🌓 Changer le thème",
-            command=self.toggle_theme,
-            tooltip="Basculer entre le mode clair et sombre (Ctrl+T)"
-        )
-        self.theme_button.grid(row=0, column=0, padx=15)
 
         # Frame principal pour le contenu avec padding
         self.content_frame = ttk.Frame(self.root, style='Content.TFrame', padding="20")

@@ -1,0 +1,10 @@
+2025-08-03 15:09:50,161 - dashboard - INFO - Données chargées: 26 enregistrements trouvés
+2025-08-03 15:09:50,174 - dashboard - WARNING - Colonnes manquantes ajoutées: ['ID_SOCIETE', 'ADRESSE', 'PHONE', 'EMAIL', 'PARTS', 'IS_GERANT', 'QUALITY']
+2025-08-03 15:15:02,811 - dashboard - INFO - Données chargées: 26 enregistrements trouvés
+2025-08-03 15:15:02,811 - dashboard - WARNING - Colonnes manquantes ajoutées: ['ID_SOCIETE', 'ADRESSE', 'PHONE', 'EMAIL', 'PARTS', 'IS_GERANT', 'QUALITY']
+2025-08-03 15:15:18,930 - dashboard - INFO - Données chargées: 26 enregistrements trouvés
+2025-08-03 15:15:18,930 - dashboard - WARNING - Colonnes manquantes ajoutées: ['ID_SOCIETE', 'ADRESSE', 'PHONE', 'EMAIL', 'PARTS', 'IS_GERANT', 'QUALITY']
+2025-08-03 15:44:38,372 - dashboard - INFO - Données chargées: 26 enregistrements trouvés
+2025-08-03 15:44:38,372 - dashboard - WARNING - Colonnes manquantes ajoutées: ['ID_SOCIETE', 'ADRESSE', 'PHONE', 'EMAIL', 'PARTS', 'IS_GERANT', 'QUALITY']
+2025-08-03 16:27:16,355 - dashboard - INFO - Données chargées: 26 enregistrements trouvés
+2025-08-03 16:27:16,355 - dashboard - WARNING - Colonnes manquantes ajoutées: ['ID_SOCIETE', 'ADRESSE', 'PHONE', 'EMAIL', 'PARTS', 'IS_GERANT', 'QUALITY']

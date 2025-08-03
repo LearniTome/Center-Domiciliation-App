@@ -1,15 +1,20 @@
 import tkinter as tk
-from tkinter import ttk
-import pandas as pd
-import os
-from utils import ThemeManager, WidgetFactory
 from tkinter import ttk, messagebox
 import pandas as pd
 import os
 from pathlib import Path
 import openpyxl
+import logging
 from Main_app import societe_headers, associe_headers, contrat_headers, DomiciliationApp
-from utils import ThemeManager, WidgetFactory, PathManager
+from utils import (
+    ThemeManager,
+    WidgetFactory,
+    PathManager,
+    ErrorHandler
+)
+
+# Configuration du logging
+logger = logging.getLogger(__name__)
 
 # Combine all headers for the dashboard view
 # We keep all headers including IDs as they're needed for data operations
@@ -188,20 +193,44 @@ class DomiciliationDashboard:
             if not excel_file_path.exists():
                 self.df = pd.DataFrame(columns=excel_headers)
                 self.save_data(excel_file_path)
+                logger.info("Nouvelle base de données créée")
                 return
 
             self.df = pd.read_excel(excel_file_path, sheet_name="DataBaseDom", engine='openpyxl')
+            logger.info(f"Données chargées: {len(self.df)} enregistrements trouvés")
 
-            for col in excel_headers:
-                if col not in self.df.columns:
-                    self.df[col] = ""  # Ajout silencieux des colonnes manquantes
+            # Vérification et correction de la structure
+            missing_cols = [col for col in excel_headers if col not in self.df.columns]
+            if missing_cols:
+                logger.warning(f"Colonnes manquantes ajoutées: {missing_cols}")
+                for col in missing_cols:
+                    self.df[col] = ""
 
             # Réorganiser les colonnes dans le même ordre que excel_headers
             self.df = self.df[excel_headers]
 
+        except FileNotFoundError as e:
+            ErrorHandler.handle_error(
+                e,
+                "Le fichier de base de données est introuvable",
+                callback=lambda: self.create_empty_database()
+            )
         except Exception as e:
-            messagebox.showerror("Erreur", f"Erreur lors du chargement des données: {str(e)}")
-            self.df = pd.DataFrame(columns=excel_headers)
+            ErrorHandler.handle_error(
+                e,
+                "Erreur lors du chargement des données",
+                callback=lambda: self.create_empty_database()
+            )
+
+    def create_empty_database(self):
+        """Crée une base de données vide en cas d'erreur"""
+        self.df = pd.DataFrame(columns=excel_headers)
+        try:
+            self.save_data()
+            logger.info("Base de données vide créée suite à une erreur")
+            messagebox.showinfo("Information", "Une nouvelle base de données vide a été créée")
+        except Exception as e:
+            ErrorHandler.handle_error(e, "Erreur lors de la création de la base de données vide")
 
     def setup_gui(self):
         # Frame principal pour la barre d'outils
@@ -232,15 +261,38 @@ class DomiciliationDashboard:
         button_frame = ttk.Frame(toolbar_frame)
         button_frame.pack(side="right", padx=10)
 
-        # Boutons avec style amélioré
-        ttk.Button(button_frame, text="➕ Ajouter",
-                  style="Action.TButton", command=self.add_society).pack(side="left", padx=5)
-        ttk.Button(button_frame, text="✏️ Modifier",
-                  style="Action.TButton", command=self.edit_society).pack(side="left", padx=5)
-        ttk.Button(button_frame, text="🗑️ Supprimer",
-                  style="Action.TButton", command=self.delete_society).pack(side="left", padx=5)
-        ttk.Button(button_frame, text="🔄 Actualiser",
-                  style="Action.TButton", command=self.refresh_data).pack(side="left", padx=5)
+        # Boutons avec WidgetFactory et tooltips
+        WidgetFactory.create_button(
+            button_frame,
+            text="➕ Ajouter",
+            command=self.add_society,
+            style="Action.TButton",
+            tooltip="Ajouter une nouvelle société"
+        ).pack(side="left", padx=5)
+
+        WidgetFactory.create_button(
+            button_frame,
+            text="✏️ Modifier",
+            command=self.edit_society,
+            style="Action.TButton",
+            tooltip="Modifier la société sélectionnée"
+        ).pack(side="left", padx=5)
+
+        WidgetFactory.create_button(
+            button_frame,
+            text="🗑️ Supprimer",
+            command=self.delete_society,
+            style="Action.TButton",
+            tooltip="Supprimer la société sélectionnée"
+        ).pack(side="left", padx=5)
+
+        WidgetFactory.create_button(
+            button_frame,
+            text="🔄 Actualiser",
+            command=self.refresh_data,
+            style="Action.TButton",
+            tooltip="Actualiser les données"
+        ).pack(side="left", padx=5)
 
         # Treeview pour afficher les données
         self.setup_treeview()
@@ -534,25 +586,29 @@ class DomiciliationDashboard:
 
     def populate_contrat_tree(self, societe_data):
         """Remplit le treeview des contrats"""
+        # Initialize variables
+        societe_iid = None
+        societe_name = None
+
         if not societe_data.empty:
             societe_name = societe_data.iloc[0]['DEN_STE']
             # Créer un parent node pour la société
             societe_iid = f"soc_cont_{societe_data.iloc[0]['ID_SOCIETE']}"
 
-        # Vérifier si ce nœud de société existe déjà
-        existing_items = self.contrat_tree.get_children()
-        if societe_iid not in existing_items:
-            self.contrat_tree.insert("", "end", values=[societe_name] + ["" for _ in range(len(self.contrat_tree['columns'])-1)],
-                                   iid=societe_iid, tags=('societe',))
+            # Vérifier si ce nœud de société existe déjà
+            existing_items = self.contrat_tree.get_children()
+            if societe_iid not in existing_items:
+                self.contrat_tree.insert("", "end", values=[societe_name] + ["" for _ in range(len(self.contrat_tree['columns'])-1)],
+                                       iid=societe_iid, tags=('societe',))
 
-        # Ajouter les contrats sous le noeud de la société
-        for idx, row in societe_data.iterrows():
-            values = [societe_name]  # Ajouter le nom de la société comme première colonne
-            for col in self.contrat_tree['columns'][1:]:
-                values.append(str(row.get(col, "")))
-            # Créer un ID unique pour chaque contrat
-            iid = f"cont_{societe_name}_{idx}"
-            self.contrat_tree.insert(societe_iid, "end", values=values, iid=iid)
+            # Ajouter les contrats sous le noeud de la société
+            for idx, row in societe_data.iterrows():
+                values = [societe_name]  # Ajouter le nom de la société comme première colonne
+                for col in self.contrat_tree['columns'][1:]:
+                    values.append(str(row.get(col, "")))
+                # Créer un ID unique pour chaque contrat
+                iid = f"cont_{societe_name}_{idx}"
+                self.contrat_tree.insert(societe_iid, "end", values=values, iid=iid)
 
         return
 
