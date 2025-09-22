@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from ttkthemes import ThemedStyle
+from .styles import ModernTheme
 import os
 from pathlib import Path
 import json
@@ -73,29 +73,36 @@ class ToolTip:
 
 class ThemeManager:
     def __init__(self, root):
-        self.root = root
-        self.style = ThemedStyle(root)
-        self.setup_colors()
-        self.apply_theme()
+        self.theme = ModernTheme(root)
+        self.style = self.theme.style
+        self.colors = self.theme.colors
 
     def setup_colors(self):
-        # Configuration du thème sombre uniquement
+        # Configuration des couleurs modernes
         self.colors = {
-            'bg': '#2E2E2E',
-            'fg': '#FFFFFF',
-            'accent': '#4A90E2',
-            'error': '#E74C3C',
-            'success': '#2ECC71',
-            'warning': '#F39C12',
-            'input_bg': '#3E3E3E',
-            'input_fg': '#FFFFFF',
-            'label_fg': '#CCCCCC',
-            'border': '#555555',
-            'theme': 'black',
-            'button_bg': '#555555',
-            'button_fg': 'white',
-            'entry_bg': '#666666',
-            'entry_fg': 'white'
+            'bg': '#1e1e1e',  # Fond sombre
+            'fg': '#ffffff',   # Texte clair
+            'accent': '#2171cd',
+            'accent_light': '#4a90e2',
+            'error': '#dc3545',
+            'success': '#28a745',
+            'warning': '#ffc107',
+            'info': '#17a2b8',
+            'border': '#3e3e3e',  # Bordure plus subtile
+            'hover': '#2a2a2a',   # Effet hover plus subtil
+            'disabled': '#6c757d',
+            'label_fg': '#cccccc', # Labels légèrement plus clairs
+            'input_bg': '#2d2d2d', # Fond des champs de saisie
+            'input_border': '#3e3e3e',
+            'section_bg': '#252526', # Fond des sections
+            'section_header_bg': '#323233', # Fond des en-têtes de section
+            'section_header_fg': '#ffffff', # Texte des en-têtes de section
+            'input_fg': '#ffffff',
+            'button_bg': '#323233',
+            'button_fg': '#ffffff',
+            'entry_bg': '#2d2d2d',
+            'entry_fg': '#ffffff',
+            'section_border': '#3e3e3e' # Bordure des sections
         }
 
     def apply_theme(self):
@@ -215,18 +222,51 @@ class ThemeManager:
     def setup_section_styles(self):
         # Style de base pour les sections
         self.style.configure('Section.TLabelFrame',
-            background=self.colors['bg'],
+            background=self.colors['section_bg'],
             foreground=self.colors['fg'],
             borderwidth=1,
             relief='solid',
-            padding=10)
+            bordercolor=self.colors['section_border'],
+            padding=15)
 
         # Style pour les titres de section
         self.style.configure('Section.TLabelFrame.Label',
+            font=('Segoe UI', 10, 'bold'),
+            foreground=self.colors['section_header_fg'],
+            background=self.colors['section_header_bg'],
+            padding=(10, 5))
+
+        # Style pour les sous-sections
+        self.style.configure('SubSection.TLabelFrame',
+            background=self.colors['section_bg'],
+            foreground=self.colors['fg'],
+            borderwidth=1,
+            relief='solid',
+            bordercolor=self.colors['section_border'],
+            padding=10)
+
+        # Style pour les titres de sous-sections
+        self.style.configure('SubSection.TLabelFrame.Label',
             font=('Segoe UI', 9, 'bold'),
-            foreground=self.colors['accent'],
-            background=self.colors['bg'],
-            padding=(5, 2))
+            foreground=self.colors['section_header_fg'],
+            background=self.colors['section_bg'],
+            padding=(8, 4))
+
+        # Style spécial pour les sections d'information
+        self.style.configure('Info.TLabelFrame',
+            background=self.colors['section_bg'],
+            foreground=self.colors['fg'],
+            borderwidth=1,
+            relief='solid',
+            bordercolor=self.colors['info'],
+            padding=15)
+
+        # Style pour les titres des sections d'information
+        self.style.configure('Info.TLabelFrame.Label',
+            font=('Segoe UI', 10, 'bold'),
+            foreground=self.colors['info'],
+            background=self.colors['section_header_bg'],
+            padding=(10, 5))
 
     def apply_widget_styles(self, widget):
         """Applique automatiquement le style approprié à un widget"""
@@ -235,17 +275,30 @@ class ThemeManager:
         elif isinstance(widget, ttk.Combobox):
             widget.configure(style='App.TCombobox')
         elif isinstance(widget, ttk.Label):
-            # Détermine si le label est un label de champ ou un label général
-            if widget.winfo_parent() and 'field' in widget.winfo_parent().lower():
+            # Détermine le style approprié selon le contexte
+            parent_name = widget.winfo_parent().lower() if widget.winfo_parent() else ''
+            if 'field' in parent_name:
                 widget.configure(style='Field.TLabel')
+            elif 'info' in parent_name:
+                widget.configure(style='Info.TLabel')
             else:
                 widget.configure(style='FieldLabel.TLabel')
         elif isinstance(widget, ttk.LabelFrame):
-            widget.configure(style='Section.TLabelFrame')
+            # Détermine le style de section approprié
+            widget_name = widget.winfo_name().lower()
+            if 'info' in widget_name:
+                widget.configure(style='Info.TLabelFrame')
+            elif 'sub' in widget_name:
+                widget.configure(style='SubSection.TLabelFrame')
+            else:
+                widget.configure(style='Section.TLabelFrame')
         elif isinstance(widget, ttk.Frame):
-            # Détermine si le frame est un conteneur de champ
-            if widget.winfo_parent() and 'field' in widget.winfo_parent().lower():
+            # Détermine le style de frame approprié
+            parent_name = widget.winfo_parent().lower() if widget.winfo_parent() else ''
+            if 'field' in parent_name:
                 widget.configure(style='Field.TFrame')
+            elif 'info' in parent_name:
+                widget.configure(style='Info.TFrame')
             else:
                 widget.configure(style='App.TFrame')
         elif isinstance(widget, ttk.Checkbutton):
@@ -322,7 +375,7 @@ def apply_style(widget, theme_manager):
 
 class PathManager:
     """Gestionnaire centralisé des chemins de fichiers de l'application"""
-    BASE_DIR = Path(__file__).parent
+    BASE_DIR = Path(__file__).resolve().parent.parent.parent
     MODELS_DIR = BASE_DIR / "Models"
     DATABASE_DIR = BASE_DIR / "databases"
     CONFIG_DIR = BASE_DIR / "config"

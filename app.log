@@ -8,3 +8,237 @@
 2025-08-03 15:44:38,372 - dashboard - WARNING - Colonnes manquantes ajoutées: ['ID_SOCIETE', 'ADRESSE', 'PHONE', 'EMAIL', 'PARTS', 'IS_GERANT', 'QUALITY']
 2025-08-03 16:27:16,355 - dashboard - INFO - Données chargées: 26 enregistrements trouvés
 2025-08-03 16:27:16,355 - dashboard - WARNING - Colonnes manquantes ajoutées: ['ID_SOCIETE', 'ADRESSE', 'PHONE', 'EMAIL', 'PARTS', 'IS_GERANT', 'QUALITY']
+2025-09-22 19:36:22,475 - __main__ - INFO - Formulaires réinitialisés
+2025-09-22 19:36:30,181 - __main__ - INFO - Données sauvegardées avec succès
+2025-09-22 19:36:31,070 - __main__ - INFO - Données sauvegardées avec succès
+2025-09-22 19:36:33,062 - __main__ - INFO - Documents Word générés avec succès
+2025-09-22 19:36:34,152 - __main__ - INFO - Documents PDF générés avec succès
+2025-09-22 19:36:35,660 - __main__ - INFO - Données sauvegardées avec succès
+2025-09-22 19:36:37,010 - __main__ - INFO - Documents PDF générés avec succès
+2025-09-22 19:36:37,540 - __main__ - INFO - Documents Word générés avec succès
+2025-09-22 19:41:48,189 - __main__ - INFO - Formulaires réinitialisés
+2025-09-22 19:41:48,830 - __main__ - INFO - Données sauvegardées avec succès
+2025-09-22 19:41:50,622 - __main__ - INFO - Données sauvegardées avec succès
+2025-09-22 19:42:34,922 - __main__ - INFO - Formulaires réinitialisés
+2025-09-22 19:42:43,224 - __main__ - INFO - Données sauvegardées avec succès
+2025-09-22 19:42:44,946 - __main__ - INFO - Documents Word générés avec succès
+2025-09-22 19:42:46,128 - __main__ - INFO - Documents Word générés avec succès
+2025-09-22 19:42:46,781 - __main__ - INFO - Documents PDF générés avec succès
+2025-09-22 20:03:35,741 - root - CRITICAL - Failed to start application: cannot use geometry manager pack inside .!notebook.!associeform.!frame.!canvas.!frame.!frame.!frame2.!labelframe2.!frame.!frame3.!frame which already has slaves managed by grid
+Traceback (most recent call last):
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\main.py", line 175, in <module>
+    app = MainApp()
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\main.py", line 31, in __init__
+    self.setup_gui()
+    ~~~~~~~~~~~~~~^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\main.py", line 40, in setup_gui
+    self.setup_tabs()
+    ~~~~~~~~~~~~~~~^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\main.py", line 52, in setup_tabs
+    self.associe_form = AssocieForm(self.notebook, self.values)
+                        ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\associe_form.py", line 24, in __init__
+    self.setup_gui()
+    ~~~~~~~~~~~~~~^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\associe_form.py", line 39, in setup_gui
+    self.add_first_associe()
+    ~~~~~~~~~~~~~~~~~~~~~~^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\associe_form.py", line 99, in add_first_associe
+    self.add_associe()
+    ~~~~~~~~~~~~~~~~^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\associe_form.py", line 135, in add_associe
+    self.create_identity_section(content, associe_vars)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\associe_form.py", line 181, in create_identity_section
+    self.create_date_field(section, "Validité CIN", vars['cin_validaty'], row=0, column=2)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\associe_form.py", line 289, in create_date_field
+    width=35).pack(side="left")
+              ~~~~^^^^^^^^^^^^^
+  File "C:\Python313\Lib\tkinter\__init__.py", line 2596, in pack_configure
+    self.tk.call(
+    ~~~~~~~~~~~~^
+          ('pack', 'configure', self._w)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          + self._options(cnf, kw))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+_tkinter.TclError: cannot use geometry manager pack inside .!notebook.!associeform.!frame.!canvas.!frame.!frame.!frame2.!labelframe2.!frame.!frame3.!frame which already has slaves managed by grid
+2025-09-22 20:08:26,703 - __main__ - INFO - Formulaires réinitialisés
+2025-09-22 20:08:40,072 - __main__ - INFO - Documents Word générés avec succès
+2025-09-22 20:08:41,288 - __main__ - INFO - Documents PDF générés avec succès
+2025-09-22 20:24:40,476 - src.forms.dashboard_view - INFO - Données chargées: 26 enregistrements
+2025-09-22 20:29:32,378 - __main__ - INFO - Formulaires réinitialisés
+2025-09-22 20:39:20,885 - root - CRITICAL - Failed to start application: cannot use geometry manager pack inside .!frame.!mainform.!canvas.!frame.!frame.!associeform.!frame2 which already has slaves managed by grid
+Traceback (most recent call last):
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\main.py", line 159, in <module>
+    app = MainApp()
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\main.py", line 31, in __init__
+    self.setup_gui()
+    ~~~~~~~~~~~~~~^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\main.py", line 40, in setup_gui
+    self.main_form = MainForm(self.main_container, self.values)
+                     ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\main_form.py", line 22, in __init__
+    self.setup_forms()
+    ~~~~~~~~~~~~~~~~^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\main_form.py", line 89, in setup_forms
+    self.associe_form = AssocieForm(main_grid, self.values)
+                        ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\associe_form.py", line 24, in __init__
+    self.setup_gui()
+    ~~~~~~~~~~~~~~^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\associe_form.py", line 62, in setup_gui
+    self.setup_control_buttons()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\associe_form.py", line 120, in setup_control_buttons
+    add_button.pack(side="right", padx=15)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\tkinter\__init__.py", line 2596, in pack_configure
+    self.tk.call(
+    ~~~~~~~~~~~~^
+          ('pack', 'configure', self._w)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          + self._options(cnf, kw))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+_tkinter.TclError: cannot use geometry manager pack inside .!frame.!mainform.!canvas.!frame.!frame.!associeform.!frame2 which already has slaves managed by grid
+2025-09-22 20:46:26,795 - __main__ - INFO - Données sauvegardées avec succès
+2025-09-22 20:46:29,503 - __main__ - INFO - Documents PDF générés avec succès
+2025-09-22 20:46:30,505 - __main__ - INFO - Documents PDF générés avec succès
+2025-09-22 20:46:31,057 - __main__ - INFO - Documents Word générés avec succès
+2025-09-22 20:46:31,956 - __main__ - INFO - Documents PDF générés avec succès
+2025-09-22 20:46:39,901 - src.forms.dashboard_view - INFO - Données chargées: 26 enregistrements
+2025-09-22 20:46:49,768 - src.forms.dashboard_view - INFO - Données chargées: 26 enregistrements
+2025-09-22 20:48:13,605 - __main__ - INFO - Formulaires réinitialisés
+2025-09-22 20:48:24,501 - __main__ - INFO - Formulaires réinitialisés
+2025-09-22 21:00:52,697 - root - CRITICAL - Failed to start application: bad ipady value "-20": must be positive screen distance
+Traceback (most recent call last):
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\main.py", line 159, in <module>
+    app = MainApp()
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\main.py", line 31, in __init__
+    self.setup_gui()
+    ~~~~~~~~~~~~~~^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\main.py", line 40, in setup_gui
+    self.main_form = MainForm(self.main_container, self.values)
+                     ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\main_form.py", line 22, in __init__
+    self.setup_forms()
+    ~~~~~~~~~~~~~~~~^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\main_form.py", line 102, in setup_forms
+    self.contrat_form.grid(row=3, column=0, columnspan=2, sticky="nsew", padx=5, ipady=-20)  # Reduced internal padding
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\tkinter\__init__.py", line 2693, in grid_configure
+    self.tk.call(
+    ~~~~~~~~~~~~^
+          ('grid', 'configure', self._w)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          + self._options(cnf, kw))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+_tkinter.TclError: bad ipady value "-20": must be positive screen distance
+2025-09-22 21:01:13,607 - root - CRITICAL - Failed to start application: bad ipady value "-20": must be positive screen distance
+Traceback (most recent call last):
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\main.py", line 159, in <module>
+    app = MainApp()
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\main.py", line 31, in __init__
+    self.setup_gui()
+    ~~~~~~~~~~~~~~^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\main.py", line 40, in setup_gui
+    self.main_form = MainForm(self.main_container, self.values)
+                     ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\main_form.py", line 22, in __init__
+    self.setup_forms()
+    ~~~~~~~~~~~~~~~~^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\main_form.py", line 102, in setup_forms
+    self.contrat_form.grid(row=3, column=0, columnspan=2, sticky="nsew", padx=5, ipady=-20)  # Reduced internal padding
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\tkinter\__init__.py", line 2693, in grid_configure
+    self.tk.call(
+    ~~~~~~~~~~~~^
+          ('grid', 'configure', self._w)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          + self._options(cnf, kw))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+_tkinter.TclError: bad ipady value "-20": must be positive screen distance
+2025-09-22 21:52:14,127 - root - CRITICAL - Failed to start application: 'date_naiss'
+Traceback (most recent call last):
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\main.py", line 159, in <module>
+    app = MainApp()
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\main.py", line 31, in __init__
+    self.setup_gui()
+    ~~~~~~~~~~~~~~^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\main.py", line 40, in setup_gui
+    self.main_form = MainForm(self.main_container, self.values)
+                     ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\main_form.py", line 22, in __init__
+    self.setup_forms()
+    ~~~~~~~~~~~~~~~~^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\main_form.py", line 82, in setup_forms
+    self.create_associe_section(main_grid)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\main_form.py", line 120, in create_associe_section
+    self.associe_form = AssocieForm(associe_frame, self.values)
+                        ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\associe_form.py", line 27, in __init__
+    self.setup_gui()
+    ~~~~~~~~~~~~~~^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\associe_form.py", line 47, in setup_gui
+    self.add_first_associe()
+    ~~~~~~~~~~~~~~~~~~~~~~^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\associe_form.py", line 109, in add_first_associe
+    self.add_associe()
+    ~~~~~~~~~~~~~~~~^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\associe_form.py", line 105, in add_associe
+    self.setup_associe_form(associe_container, len(self.associe_vars) - 1)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\associe_form.py", line 172, in setup_associe_form
+    field = ttk.Entry(birth, textvariable=self.associe_vars[index][var])
+                                          ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+KeyError: 'date_naiss'
+2025-09-22 21:56:08,113 - root - CRITICAL - Failed to start application: 'date_naiss'
+Traceback (most recent call last):
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\main.py", line 159, in <module>
+    app = MainApp()
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\main.py", line 31, in __init__
+    self.setup_gui()
+    ~~~~~~~~~~~~~~^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\main.py", line 40, in setup_gui
+    self.main_form = MainForm(self.main_container, self.values)
+                     ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\main_form.py", line 22, in __init__
+    self.setup_forms()
+    ~~~~~~~~~~~~~~~~^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\main_form.py", line 82, in setup_forms
+    self.create_associe_section(main_grid)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\main_form.py", line 120, in create_associe_section
+    self.associe_form = AssocieForm(associe_frame, self.values)
+                        ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\associe_form.py", line 27, in __init__
+    self.setup_gui()
+    ~~~~~~~~~~~~~~^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\associe_form.py", line 46, in setup_gui
+    self.add_first_associe()
+    ~~~~~~~~~~~~~~~~~~~~~~^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\associe_form.py", line 195, in add_first_associe
+    self.add_associe()
+    ~~~~~~~~~~~~~~~~^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\associe_form.py", line 190, in add_associe
+    vars_dict = self.create_associe_fields(self.associes_frame, len(self.associe_vars))
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\associe_form.py", line 109, in create_associe_fields
+    self.create_identity_info(associe_frame, vars_dict, 4)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\associe_form.py", line 146, in create_identity_info
+    entry = ttk.Entry(frame, textvariable=vars_dict[var])
+                                          ~~~~~~~~~^^^^^
+KeyError: 'date_naiss'
+2025-09-22 22:16:03,662 - __main__ - INFO - Formulaires réinitialisés
+2025-09-22 22:37:38,984 - __main__ - INFO - Formulaires réinitialisés
+2025-09-22 22:38:02,278 - __main__ - INFO - Formulaires réinitialisés
+2025-09-22 22:43:13,582 - __main__ - INFO - Formulaires réinitialisés
+2025-09-22 22:47:07,470 - __main__ - INFO - Formulaires réinitialisés
+2025-09-22 22:47:48,698 - __main__ - INFO - Formulaires réinitialisés
+2025-09-22 22:51:10,772 - __main__ - INFO - Formulaires réinitialisés
+2025-09-22 22:51:17,040 - __main__ - INFO - Formulaires réinitialisés
+2025-09-22 22:51:32,844 - __main__ - INFO - Formulaires réinitialisés
+2025-09-22 22:52:08,964 - __main__ - INFO - Formulaires réinitialisés
+2025-09-22 23:00:09,251 - __main__ - INFO - Formulaires réinitialisés
+2025-09-22 23:00:20,381 - __main__ - INFO - Formulaires réinitialisés
