@@ -242,3 +242,37 @@ KeyError: 'date_naiss'
 2025-09-22 22:52:08,964 - __main__ - INFO - Formulaires réinitialisés
 2025-09-22 23:00:09,251 - __main__ - INFO - Formulaires réinitialisés
 2025-09-22 23:00:20,381 - __main__ - INFO - Formulaires réinitialisés
+2025-09-23 11:43:34,193 - __main__ - INFO - Documents Word générés avec succès
+2025-09-23 11:43:35,160 - __main__ - INFO - Documents PDF générés avec succès
+2025-09-23 11:50:56,088 - root - CRITICAL - Failed to start application: 'num_piece'
+Traceback (most recent call last):
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\main.py", line 159, in <module>
+    app = MainApp()
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\main.py", line 31, in __init__
+    self.setup_gui()
+    ~~~~~~~~~~~~~~^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\main.py", line 40, in setup_gui
+    self.main_form = MainForm(self.main_container, self.values)
+                     ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\main_form.py", line 22, in __init__
+    self.setup_forms()
+    ~~~~~~~~~~~~~~~~^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\main_form.py", line 78, in setup_forms
+    self.create_associe_section(self.forms_container)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\main_form.py", line 116, in create_associe_section
+    self.associe_form = AssocieForm(associe_frame, self.theme_manager)
+                        ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\associe_form.py", line 25, in __init__
+    self.add_first_associe()
+    ~~~~~~~~~~~~~~~~~~~~~~^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\associe_form.py", line 282, in add_first_associe
+    self.add_associe()
+    ~~~~~~~~~~~~~~~~^^
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\associe_form.py", line 293, in add_associe
+    vars_dict = self.create_associe_fields(self.associes_frame, len(self.associe_vars))
+  File "c:\Users\Dev\Desktop\LearniTome_repos\center-domiciliation-app\src\forms\associe_form.py", line 109, in create_associe_fields
+    ttk.Entry(identite_grid, textvariable=vars_dict['num_piece']).grid(row=1, column=1, sticky="ew", padx=2, pady=2)
+                                          ~~~~~~~~~^^^^^^^^^^^^^
+KeyError: 'num_piece'
+2025-09-23 11:57:00,044 - __main__ - INFO - Formulaires réinitialisés

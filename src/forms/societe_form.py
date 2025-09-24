@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from tkcalendar import Calendar
+from tkcalendar import Calendar, DateEntry
 from ..utils.constants import DenSte, Formjur, Capital, PartsSocial, SteAdresse, Tribunnaux, Activities
 from ..utils.utils import ThemeManager, WidgetFactory, ToolTip
 
@@ -59,117 +59,160 @@ class SocieteForm(ttk.Frame):
 
     def create_identification_section(self, parent):
         """Crée la section d'identification"""
-        frame = ttk.LabelFrame(parent, text="Identification", padding=(5, 5))
+        frame = ttk.LabelFrame(parent, text="Identification", padding=(10, 5))
         frame.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
-        frame.grid_columnconfigure(1, weight=1)
+        
+        # Container principal avec grid
+        grid = ttk.Frame(frame)
+        grid.pack(fill="x", padx=5, pady=5)
+        grid.columnconfigure(1, weight=1)
 
-        # Dénomination Société
-        self.create_combo_field(frame, "Dénomination", self.den_ste_var, DenSte, 0)
+        # Dénomination
+        ttk.Label(grid, text="Dénomination:", anchor="e", width=15).grid(
+            row=0, column=0, padx=(0, 5), pady=2)
+        combo = ttk.Combobox(grid, textvariable=self.den_ste_var,
+                           values=DenSte, width=30)
+        combo.grid(row=0, column=1, sticky="ew", pady=2)
+        self.combos.append(combo)
 
-        # ICE et Date ICE
-        ice_frame = ttk.Frame(frame)
-        ice_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=5)
-        ice_frame.grid_columnconfigure(1, weight=1)
-        ice_frame.grid_columnconfigure(3, weight=1)
+        # Sous-frame pour ICE et Date
+        ice_frame = ttk.Frame(grid)
+        ice_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=2)
+        ice_frame.columnconfigure(1, weight=1)
+        ice_frame.columnconfigure(3, weight=1)
 
-        ttk.Label(ice_frame, text="ICE:").grid(row=0, column=0, padx=(0, 5))
-        ttk.Entry(ice_frame, textvariable=self.ice_var).grid(row=0, column=1, sticky="ew", padx=5)
-        ttk.Label(ice_frame, text="Date:").grid(row=0, column=2, padx=5)
-        date_frame = ttk.Frame(ice_frame)
-        date_frame.grid(row=0, column=3, sticky="ew")
-        ttk.Entry(date_frame, textvariable=self.date_ice_var).pack(side="left", fill="x", expand=True)
-        ttk.Button(date_frame, text="📅", width=3,
-                  command=lambda: self.show_calendar(self.date_ice_var)).pack(side="right", padx=(5, 0))
+        # ICE
+        ttk.Label(ice_frame, text="ICE:", anchor="e", width=12).grid(
+            row=0, column=0, padx=(0, 5))
+        ttk.Entry(ice_frame, textvariable=self.ice_var).grid(
+            row=0, column=1, sticky="ew", padx=(0, 15))
+
+        # Date ICE
+        ttk.Label(ice_frame, text="Date:", anchor="e", width=8).grid(
+            row=0, column=2, padx=(0, 5))
+        date_container = ttk.Frame(ice_frame)
+        date_container.grid(row=0, column=3, sticky="ew")
+        
+        DateEntry(date_container, textvariable=self.date_ice_var,
+                 date_pattern='dd/mm/yyyy', width=12).pack(side="left", fill="x", expand=True)
 
     def create_legal_section(self, parent):
         """Crée la section légale"""
-        frame = ttk.LabelFrame(parent, text="Informations Légales", padding=(5, 5))
+        frame = ttk.LabelFrame(parent, text="Informations Légales", padding=(10, 5))
         frame.grid(row=0, column=1, padx=5, pady=5, sticky="nsew")
-        frame.grid_columnconfigure(1, weight=1)
+        
+        # Container principal avec grid
+        grid = ttk.Frame(frame)
+        grid.pack(fill="x", padx=5, pady=5)
+        grid.columnconfigure(1, weight=1)
 
         # Forme Juridique
-        self.create_combo_field(frame, "Forme Juridique", self.forme_jur_var, Formjur, 0)
+        ttk.Label(grid, text="Forme Juridique:", anchor="e", width=15).grid(
+            row=0, column=0, padx=(0, 5), pady=2)
+        combo = ttk.Combobox(grid, textvariable=self.forme_jur_var,
+                           values=Formjur, width=30)
+        combo.grid(row=0, column=1, sticky="ew", pady=2)
+        self.combos.append(combo)
 
-        # Capital et Parts
-        capital_frame = ttk.Frame(frame)
-        capital_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=5)
-        capital_frame.grid_columnconfigure(1, weight=1)
-        capital_frame.grid_columnconfigure(3, weight=1)
+        # Sous-frame pour Capital et Parts
+        capital_frame = ttk.Frame(grid)
+        capital_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=2)
+        capital_frame.columnconfigure(1, weight=1)
+        capital_frame.columnconfigure(3, weight=1)
 
-        ttk.Label(capital_frame, text="Capital:").grid(row=0, column=0, padx=(0, 5))
-        ttk.Entry(capital_frame, textvariable=self.capital_var).grid(row=0, column=1, sticky="ew", padx=5)
-        ttk.Label(capital_frame, text="Parts:").grid(row=0, column=2, padx=5)
-        ttk.Entry(capital_frame, textvariable=self.parts_social_var).grid(row=0, column=3, sticky="ew")
+        # Capital
+        ttk.Label(capital_frame, text="Capital:", anchor="e", width=12).grid(
+            row=0, column=0, padx=(0, 5))
+        ttk.Entry(capital_frame, textvariable=self.capital_var).grid(
+            row=0, column=1, sticky="ew", padx=(0, 15))
+
+        # Parts
+        ttk.Label(capital_frame, text="Parts:", anchor="e", width=8).grid(
+            row=0, column=2, padx=(0, 5))
+        ttk.Entry(capital_frame, textvariable=self.parts_social_var).grid(
+            row=0, column=3, sticky="ew")
 
     def create_address_section(self, parent):
         """Crée la section adresse"""
-        frame = ttk.LabelFrame(parent, text="Localisation", padding=(5, 5))
+        frame = ttk.LabelFrame(parent, text="Localisation", padding=(10, 5))
         frame.grid(row=1, column=0, columnspan=2, padx=5, pady=5, sticky="ew")
-        frame.grid_columnconfigure(1, weight=1)
+        
+        # Container principal avec grid
+        grid = ttk.Frame(frame)
+        grid.pack(fill="x", padx=5, pady=5)
+        grid.columnconfigure(1, weight=1)
 
-        # Adresse et Tribunal
-        self.create_combo_field(frame, "Adresse", self.ste_adress_var, SteAdresse, 0)
-        self.create_combo_field(frame, "Tribunal", self.tribunal_var, Tribunnaux, 1)
+        # Adresse
+        ttk.Label(grid, text="Adresse:", anchor="e", width=15).grid(
+            row=0, column=0, padx=(0, 5), pady=2)
+        combo = ttk.Combobox(grid, textvariable=self.ste_adress_var,
+                           values=SteAdresse, width=50)
+        combo.grid(row=0, column=1, sticky="ew", pady=2)
+        self.combos.append(combo)
+
+        # Tribunal
+        ttk.Label(grid, text="Tribunal:", anchor="e", width=15).grid(
+            row=1, column=0, padx=(0, 5), pady=2)
+        combo = ttk.Combobox(grid, textvariable=self.tribunal_var,
+                           values=Tribunnaux, width=50)
+        combo.grid(row=1, column=1, sticky="ew", pady=2)
+        self.combos.append(combo)
 
     def create_activities_section(self, parent):
         """Crée la section des activités"""
-        frame = ttk.LabelFrame(parent, text="Activités", padding=(5, 5))
+        frame = ttk.LabelFrame(parent, text="Activités", padding=(10, 5))
         frame.grid(row=2, column=0, columnspan=2, padx=5, pady=5, sticky="ew")
-        frame.grid_columnconfigure(1, weight=1)
 
-        # Zone des activités
-        self.activities_container = ttk.Frame(frame)
+        # Container pour les activités
+        content_frame = ttk.Frame(frame)
+        content_frame.pack(fill="x", padx=5, pady=5)
+        content_frame.columnconfigure(0, weight=1)
+
+        # Label d'information
+        info_label = ttk.Label(content_frame, 
+                             text="Ajoutez jusqu'à 6 activités principales",
+                             anchor="center")
+        info_label.pack(pady=(0, 5))
+
+        # Container pour les activités
+        self.activities_container = ttk.Frame(content_frame)
         self.activities_container.pack(fill="x", expand=True)
 
-        def add_activity():
-            if len(self.activites_vars) >= 6:
-                messagebox.showwarning("Limite atteinte",
-                                     "Maximum 6 activités autorisées.")
-                return
+        # Bouton d'ajout
+        add_btn = ttk.Button(content_frame, 
+                           text="➕ Ajouter une activité",
+                           command=self.add_activity,
+                           style='Action.TButton')
+        add_btn.pack(pady=(5, 0))
 
-            var = tk.StringVar()
-            self.activites_vars.append(var)
+    def add_activity(self):
+        """Ajoute une nouvelle activité"""
+        if len(self.activites_vars) >= 6:
+            messagebox.showwarning("Limite atteinte",
+                                 "Maximum 6 activités autorisées.")
+            return
 
-            activity_frame = ttk.Frame(self.activities_container)
-            activity_frame.pack(fill="x", pady=2)
+        var = tk.StringVar()
+        self.activites_vars.append(var)
 
-            combo = ttk.Combobox(activity_frame, textvariable=var,
-                               values=Activities, width=50)
-            combo.pack(side="left", fill="x", expand=True)
+        # Frame pour l'activité
+        activity_frame = ttk.Frame(self.activities_container)
+        activity_frame.pack(fill="x", pady=2)
+        activity_frame.columnconfigure(0, weight=1)
 
-            ttk.Button(activity_frame, text="❌", width=3,
-                      command=lambda f=activity_frame, v=var: self.remove_activity(f, v)).pack(
-                          side="right", padx=(5, 0))
+        # Combobox pour l'activité
+        combo = ttk.Combobox(activity_frame, 
+                           textvariable=var,
+                           values=Activities)
+        combo.pack(side="left", fill="x", expand=True, padx=(0, 5))
 
-        ttk.Label(frame, text="Ajoutez jusqu'à 6 activités principales").pack(pady=(0, 5))
-        ttk.Button(frame, text="➕ Ajouter une activité",
-                  command=add_activity).pack(pady=(0, 5))
-
-    def create_combo_field(self, parent, label, variable, values, row):
-        """Crée un champ combo avec label"""
-        ttk.Label(parent, text=label + ":").grid(row=row, column=0,
-                                                sticky="e", padx=(0, 5), pady=3)
-
-        combo = ttk.Combobox(parent, textvariable=variable, values=values)
-        combo.set("")  # Valeur par défaut vide
-
-        combo.grid(row=row, column=1, sticky="ew", pady=3)
-        if hasattr(self, "combos"):
-            self.combos.append(combo)
-        return combo
-
-    def show_calendar(self, var):
-        """Affiche un calendrier pour sélectionner une date"""
-        top = tk.Toplevel(self)
-        top.title("Sélectionner une date")
-        cal = Calendar(top, selectmode="day", date_pattern="dd/mm/y")
-        cal.pack(padx=10, pady=10)
-
-        def set_date():
-            var.set(cal.get_date())
-            top.destroy()
-
-        ttk.Button(top, text="OK", command=set_date).pack(pady=5)
+        # Bouton de suppression
+        remove_btn = ttk.Button(activity_frame,
+                              text="❌",
+                              width=3,
+                              style='Danger.TButton',
+                              command=lambda f=activity_frame, v=var: self.remove_activity(f, v))
+        remove_btn.pack(side="right")
 
     def remove_activity(self, frame, var):
         """Supprime une activité"""
@@ -179,7 +222,7 @@ class SocieteForm(ttk.Frame):
     def get_values(self):
         """Récupère toutes les valeurs du formulaire"""
         return {
-            'denomination_sociale': self.den_ste_var.get(),
+            'denomination': self.den_ste_var.get(),
             'forme_juridique': self.forme_jur_var.get(),
             'ice': self.ice_var.get(),
             'date_ice': self.date_ice_var.get(),
@@ -187,47 +230,27 @@ class SocieteForm(ttk.Frame):
             'parts_social': self.parts_social_var.get(),
             'adresse': self.ste_adress_var.get(),
             'tribunal': self.tribunal_var.get(),
-            'activites': [var.get() for var in self.activites_vars if var.get()]
+            'activites': [var.get() for var in self.activites_vars]
         }
 
-    def set_values(self, values):
+    def set_values(self, values_dict):
         """Définit les valeurs du formulaire"""
-        if not values:
-            self.reset()
+        if not values_dict:
             return
 
-        self.den_ste_var.set(values.get('denomination_sociale', ''))
-        self.forme_jur_var.set(values.get('forme_juridique', ''))
-        self.ice_var.set(values.get('ice', ''))
-        self.date_ice_var.set(values.get('date_ice', ''))
-        self.capital_var.set(values.get('capital', ''))
-        self.parts_social_var.set(values.get('parts_social', ''))
-        self.ste_adress_var.set(values.get('adresse', ''))
-        self.tribunal_var.set(values.get('tribunal', ''))
+        # Mise à jour des champs simples
+        self.den_ste_var.set(values_dict.get('denomination', ''))
+        self.forme_jur_var.set(values_dict.get('forme_juridique', ''))
+        self.ice_var.set(values_dict.get('ice', ''))
+        self.date_ice_var.set(values_dict.get('date_ice', ''))
+        self.capital_var.set(values_dict.get('capital', ''))
+        self.parts_social_var.set(values_dict.get('parts_social', ''))
+        self.ste_adress_var.set(values_dict.get('adresse', ''))
+        self.tribunal_var.set(values_dict.get('tribunal', ''))
 
-    def reset(self):
-        """Réinitialise complètement le formulaire"""
-        # Réinitialiser toutes les variables de texte
-        for var in [self.den_ste_var, self.forme_jur_var, self.ice_var,
-                   self.date_ice_var, self.capital_var, self.parts_social_var,
-                   self.ste_adress_var, self.tribunal_var]:
-            var.set("")
-
-        # Réinitialiser les combobox
-        for combo in self.combos:
-            combo.set("")
-
-        # Réinitialiser les activités
-        if hasattr(self, 'activities_container'):
-            # Supprimer tous les widgets d'activités
-            for child in self.activities_container.winfo_children():
-                child.destroy()
-            # Vider la liste des variables d'activités
-            self.activites_vars.clear()
-
-        # Réinitialiser le dictionnaire de valeurs
-        self.values = {}
-
-        # Force la mise à jour de l'affichage
-        self.update_idletasks()
-        self.event_generate("<<Reset>>")
+        # Mise à jour des activités
+        activites = values_dict.get('activites', [])
+        for activite in activites:
+            if len(self.activites_vars) < 6:  # Vérifier la limite
+                self.add_activity()
+                self.activites_vars[-1].set(activite)

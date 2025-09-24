@@ -20,19 +20,22 @@ Application de bureau pour la gestion des services de domiciliation d'entreprise
 ## 🚀 Installation
 
 1. Clonez le dépôt :
+
 ```bash
 git clone https://github.com/LearniTome/center-domiciliation-app.git
 cd center-domiciliation-app
 ```
 
-2. Créez un environnement virtuel (recommandé) :
+1. Créez un environnement virtuel (recommandé) :
+
 ```bash
 python -m venv venv
 source venv/bin/activate  # Sur Linux/Mac
 venv\Scripts\activate     # Sur Windows
 ```
 
-3. Installez les dépendances :
+1. Installez les dépendances :
+
 ```bash
 pip install -r requirements.txt
 ```
@@ -40,25 +43,28 @@ pip install -r requirements.txt
 ## 💻 Utilisation
 
 1. Lancez l'application :
+
 ```bash
 python -m main
 ```
 
-2. Interface principale :
-   - **Société** : Informations de la société domiciliée
-   - **Associés** : Détails des associés (jusqu'à 10)
-   - **Contrat** : Détails du contrat de domiciliation
+1. Interface principale :
 
-3. Fonctions principales :
-   - 📄 Générer des documents Word
-   - 📑 Générer des documents Word et PDF
-   - 🆕 Créer une nouvelle fiche
-   - 💾 Sauvegarder dans la base de données
-   - ❌ Quitter l'application
+- **Société** : Informations de la société domiciliée
+- **Associés** : Détails des associés (jusqu'à 10)
+- **Contrat** : Détails du contrat de domiciliation
+
+1. Fonctions principales :
+
+- 📄 Générer des documents Word
+- 📑 Générer des documents Word et PDF
+- 🆕 Créer une nouvelle fiche
+- 💾 Sauvegarder dans la base de données
+- ❌ Quitter l'application
 
 ## 📁 Structure du Projet
 
-```
+```text
 center-domiciliation-app/
 ├── main.py                 # Point d'entrée de l'application
 ├── requirements.txt        # Dépendances Python

@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from tkcalendar import DateEntry
-from ..utils.utils import ThemeManager
+from src.utils.utils import ThemeManager
 
 class AssocieForm(ttk.Frame):
     def __init__(self, parent, theme_manager: ThemeManager):
@@ -30,16 +30,20 @@ class AssocieForm(ttk.Frame):
     def create_associe_vars(self):
         """Crée et retourne les variables pour un nouvel associé"""
         return {
+            'civilite': tk.StringVar(),
             'nom': tk.StringVar(),
             'prenom': tk.StringVar(),
+            'parts': tk.StringVar(),
             'date_naiss': tk.StringVar(),
             'lieu_naiss': tk.StringVar(),
             'nationalite': tk.StringVar(),
-            'type_piece': tk.StringVar(),
             'num_piece': tk.StringVar(),
             'validite_piece': tk.StringVar(),
             'adresse': tk.StringVar(),
-            'pays_residence': tk.StringVar(),
+            'telephone': tk.StringVar(),
+            'email': tk.StringVar(),
+            'est_gerant': tk.BooleanVar(),
+            'qualite': tk.StringVar(),
             'capital_detenu': tk.StringVar(),
             'num_parts': tk.StringVar()
         }
@@ -48,90 +52,43 @@ class AssocieForm(ttk.Frame):
         """Crée les champs pour un associé"""
         vars_dict = self.create_associe_vars()
 
+        # Frame principal de l'associé
         frame = ttk.LabelFrame(parent, text=f"👤 Associé {index + 1}")
-        frame.pack(fill="x", padx=5, pady=5, expand=True)
+        frame.pack(fill="x", padx=5, pady=5)
 
-        # Configure frame grid weights
-        frame.grid_columnconfigure(0, weight=1)
+        # Conteneur principal à deux colonnes
+        main_grid = ttk.Frame(frame)
+        main_grid.pack(fill="x", padx=5, pady=5)
+        main_grid.columnconfigure(0, weight=1)
+        main_grid.columnconfigure(1, weight=1)
 
-        # Identification section
-        id_frame = ttk.Frame(frame)
-        id_frame.pack(fill="both", padx=5, pady=5, expand=True)
+        # === COLONNE GAUCHE ===
+        left_column = ttk.Frame(main_grid)
+        left_column.grid(row=0, column=0, sticky="nsew", padx=5)
 
-        # Row 1
-        row1 = ttk.Frame(id_frame)
-        row1.pack(fill="x", pady=2)
-        ttk.Label(row1, text="Nom:").pack(side="left", padx=5)
-        ttk.Entry(row1, textvariable=vars_dict['nom']).pack(side="left", padx=5, fill="x", expand=True)
-        ttk.Label(row1, text="Prénom:").pack(side="left", padx=5)
-        ttk.Entry(row1, textvariable=vars_dict['prenom']).pack(side="left", padx=5, fill="x", expand=True)
+        # Section Informations de base
+        self.create_basic_info_section(left_column, vars_dict)
+        
+        # Section Naissance
+        self.create_birth_section(left_column, vars_dict)
 
-        # Row 2
-        row2 = ttk.Frame(id_frame)
-        row2.pack(fill="x", pady=2)
-        ttk.Label(row2, text="Date de naissance:").pack(side="left", padx=5)
-        date_frame = ttk.Frame(row2)
-        date_frame.pack(side="left", padx=5, fill="x", expand=True)
-        DateEntry(date_frame, textvariable=vars_dict['date_naiss'], date_pattern='dd/mm/yyyy').pack(fill="x")
+        # Section Statut de Gérant
+        self.create_manager_section(left_column, vars_dict)
 
-        ttk.Label(row2, text="Lieu de naissance:").pack(side="left", padx=5)
-        ttk.Entry(row2, textvariable=vars_dict['lieu_naiss']).pack(side="left", padx=5, fill="x", expand=True)
+        # === COLONNE DROITE ===
+        right_column = ttk.Frame(main_grid)
+        right_column.grid(row=0, column=1, sticky="nsew", padx=5)
 
-        # Row 3
-        row3 = ttk.Frame(id_frame)
-        row3.pack(fill="x", pady=2)
-        ttk.Label(row3, text="Nationalité:").pack(side="left", padx=5)
-        ttk.Entry(row3, textvariable=vars_dict['nationalite']).pack(side="left", padx=5, fill="x", expand=True)
+        # Section Identité
+        self.create_identity_section(right_column, vars_dict)
 
-        # Document section
-        doc_frame = ttk.Frame(frame)
-        doc_frame.pack(fill="x", padx=5, pady=5)
+        # Section Contact
+        self.create_contact_section(right_column, vars_dict)
 
-        # Row 4
-        row4 = ttk.Frame(doc_frame)
-        row4.pack(fill="x", pady=2)
-        ttk.Label(row4, text="Type de pièce:").pack(side="left", padx=5)
-        ttk.Entry(row4, textvariable=vars_dict['type_piece']).pack(side="left", padx=5, fill="x", expand=True)
-        ttk.Label(row4, text="Numéro:").pack(side="left", padx=5)
-        ttk.Entry(row4, textvariable=vars_dict['num_piece']).pack(side="left", padx=5, fill="x", expand=True)
+        # Section Capital
+        self.create_capital_section(right_column, vars_dict)
 
-        # Row 5
-        row5 = ttk.Frame(doc_frame)
-        row5.pack(fill="x", pady=2)
-        ttk.Label(row5, text="Validité:").pack(side="left", padx=5)
-        date_frame = ttk.Frame(row5)
-        date_frame.pack(side="left", padx=5, fill="x", expand=True)
-        DateEntry(date_frame, textvariable=vars_dict['validite_piece'], date_pattern='dd/mm/yyyy').pack(fill="x")
-
-        # Address section
-        addr_frame = ttk.Frame(frame)
-        addr_frame.pack(fill="x", padx=5, pady=5)
-
-        # Row 6
-        row6 = ttk.Frame(addr_frame)
-        row6.pack(fill="x", pady=2)
-        ttk.Label(row6, text="Adresse:").pack(side="left", padx=5)
-        ttk.Entry(row6, textvariable=vars_dict['adresse']).pack(side="left", padx=5, fill="x", expand=True)
-
-        # Row 7
-        row7 = ttk.Frame(addr_frame)
-        row7.pack(fill="x", pady=2)
-        ttk.Label(row7, text="Pays de résidence:").pack(side="left", padx=5)
-        ttk.Entry(row7, textvariable=vars_dict['pays_residence']).pack(side="left", padx=5, fill="x", expand=True)
-
-        # Capital section
-        cap_frame = ttk.Frame(frame)
-        cap_frame.pack(fill="x", padx=5, pady=5)
-
-        # Row 8
-        row8 = ttk.Frame(cap_frame)
-        row8.pack(fill="x", pady=2)
-        ttk.Label(row8, text="Capital détenu (%):").pack(side="left", padx=5)
-        ttk.Entry(row8, textvariable=vars_dict['capital_detenu']).pack(side="left", padx=5, fill="x", expand=True)
-        ttk.Label(row8, text="Nombre de parts:").pack(side="left", padx=5)
-        ttk.Entry(row8, textvariable=vars_dict['num_parts']).pack(side="left", padx=5, fill="x", expand=True)
-
-        # Remove button
+        # Bouton Supprimer
         remove_btn = ttk.Button(
             frame,
             text="❌ Supprimer",
@@ -140,11 +97,136 @@ class AssocieForm(ttk.Frame):
         )
         remove_btn.pack(side="right", padx=5, pady=5)
 
-        return vars_dict
+        self.associe_vars.append(vars_dict)
+        return frame
+
+    def create_basic_info_section(self, parent, vars_dict):
+        """Crée la section Informations de base"""
+        info_frame = ttk.LabelFrame(parent, text="📝 Informations de base")
+        info_frame.pack(fill="x", pady=5)
+
+        grid = ttk.Frame(info_frame)
+        grid.pack(fill="x", padx=5, pady=5)
+        grid.columnconfigure(1, weight=1)
+        grid.columnconfigure(3, weight=1)
+
+        # Ligne 1: Civilité et Prénom
+        ttk.Label(grid, text="Civilité:", anchor="e", width=12).grid(row=0, column=0, padx=(0, 5), pady=2)
+        civilite_cb = ttk.Combobox(grid, textvariable=vars_dict['civilite'],
+                                values=["M.", "Mme", "Mlle"], width=8)
+        civilite_cb.grid(row=0, column=1, sticky="w", padx=(0, 15), pady=2)
+
+        ttk.Label(grid, text="Prénom:", anchor="e", width=12).grid(row=0, column=2, padx=(0, 5), pady=2)
+        ttk.Entry(grid, textvariable=vars_dict['prenom']).grid(row=0, column=3, sticky="ew", pady=2)
+
+        # Ligne 2: Nom et Parts
+        ttk.Label(grid, text="Nom:", anchor="e", width=12).grid(row=1, column=0, padx=(0, 5), pady=2)
+        ttk.Entry(grid, textvariable=vars_dict['nom']).grid(row=1, column=1, sticky="ew", padx=(0, 15), pady=2)
+
+        ttk.Label(grid, text="Parts (%):", anchor="e", width=12).grid(row=1, column=2, padx=(0, 5), pady=2)
+        ttk.Entry(grid, textvariable=vars_dict['parts']).grid(row=1, column=3, sticky="ew", pady=2)
+
+    def create_birth_section(self, parent, vars_dict):
+        """Crée la section Naissance"""
+        birth_frame = ttk.LabelFrame(parent, text="👶 Naissance")
+        birth_frame.pack(fill="x", pady=5)
+
+        grid = ttk.Frame(birth_frame)
+        grid.pack(fill="x", padx=5, pady=5)
+        grid.columnconfigure(1, weight=1)
+
+        # Date de naissance
+        ttk.Label(grid, text="Date de naissance:", anchor="e", width=15).grid(row=0, column=0, padx=(0, 5), pady=2)
+        DateEntry(grid, textvariable=vars_dict['date_naiss'],
+                date_pattern='dd/mm/yyyy', width=12).grid(row=0, column=1, sticky="w", pady=2)
+
+        # Lieu de naissance
+        ttk.Label(grid, text="Lieu de naissance:", anchor="e", width=15).grid(row=1, column=0, padx=(0, 5), pady=2)
+        ttk.Entry(grid, textvariable=vars_dict['lieu_naiss']).grid(row=1, column=1, sticky="ew", pady=2)
+
+    def create_manager_section(self, parent, vars_dict):
+        """Crée la section Statut de Gérant"""
+        manager_frame = ttk.LabelFrame(parent, text="👔 Statut de Gérant")
+        manager_frame.pack(fill="x", pady=5)
+
+        grid = ttk.Frame(manager_frame)
+        grid.pack(fill="x", padx=5, pady=5)
+        grid.columnconfigure(1, weight=1)
+
+        # Checkbox Est Gérant
+        ttk.Checkbutton(grid, text="Est Gérant", variable=vars_dict['est_gerant']).grid(
+            row=0, column=0, columnspan=2, sticky="w", pady=2)
+
+        # Qualité
+        ttk.Label(grid, text="Qualité:", anchor="e", width=12).grid(row=1, column=0, padx=(0, 5), pady=2)
+        ttk.Entry(grid, textvariable=vars_dict['qualite']).grid(row=1, column=1, sticky="ew", pady=2)
+
+    def create_identity_section(self, parent, vars_dict):
+        """Crée la section Identité"""
+        identity_frame = ttk.LabelFrame(parent, text="🆔 Identité")
+        identity_frame.pack(fill="x", pady=5)
+
+        grid = ttk.Frame(identity_frame)
+        grid.pack(fill="x", padx=5, pady=5)
+        grid.columnconfigure(1, weight=1)
+
+        # Nationalité
+        ttk.Label(grid, text="Nationalité:", anchor="e", width=12).grid(row=0, column=0, padx=(0, 5), pady=2)
+        ttk.Entry(grid, textvariable=vars_dict['nationalite']).grid(row=0, column=1, sticky="ew", pady=2)
+
+        # N° CIN
+        ttk.Label(grid, text="N° CIN:", anchor="e", width=12).grid(row=1, column=0, padx=(0, 5), pady=2)
+        ttk.Entry(grid, textvariable=vars_dict['num_piece']).grid(row=1, column=1, sticky="ew", pady=2)
+
+        # Validité CIN
+        ttk.Label(grid, text="Validité CIN:", anchor="e", width=12).grid(row=2, column=0, padx=(0, 5), pady=2)
+        date_container = ttk.Frame(grid)
+        date_container.grid(row=2, column=1, sticky="ew", pady=2)
+        date_container.columnconfigure(0, weight=1)
+        
+        DateEntry(date_container, textvariable=vars_dict['validite_piece'],
+                date_pattern='dd/mm/yyyy', width=12).grid(row=0, column=0, sticky="w")
+
+    def create_contact_section(self, parent, vars_dict):
+        """Crée la section Contact"""
+        contact_frame = ttk.LabelFrame(parent, text="📞 Contact")
+        contact_frame.pack(fill="x", pady=5)
+
+        grid = ttk.Frame(contact_frame)
+        grid.pack(fill="x", padx=5, pady=5)
+        grid.columnconfigure(1, weight=1)
+
+        # Adresse
+        ttk.Label(grid, text="Adresse:", anchor="e", width=12).grid(row=0, column=0, padx=(0, 5), pady=2)
+        ttk.Entry(grid, textvariable=vars_dict['adresse']).grid(row=0, column=1, sticky="ew", pady=2)
+
+        # Téléphone
+        ttk.Label(grid, text="Téléphone:", anchor="e", width=12).grid(row=1, column=0, padx=(0, 5), pady=2)
+        ttk.Entry(grid, textvariable=vars_dict['telephone']).grid(row=1, column=1, sticky="ew", pady=2)
+
+        # Email
+        ttk.Label(grid, text="Email:", anchor="e", width=12).grid(row=2, column=0, padx=(0, 5), pady=2)
+        ttk.Entry(grid, textvariable=vars_dict['email']).grid(row=2, column=1, sticky="ew", pady=2)
+
+    def create_capital_section(self, parent, vars_dict):
+        """Crée la section Capital"""
+        capital_frame = ttk.LabelFrame(parent, text="💰 Capital")
+        capital_frame.pack(fill="x", pady=5)
+
+        grid = ttk.Frame(capital_frame)
+        grid.pack(fill="x", padx=5, pady=5)
+        grid.columnconfigure(1, weight=1)
+        grid.columnconfigure(3, weight=1)
+
+        # Capital détenu et Nombre de parts
+        ttk.Label(grid, text="Capital détenu (%):", anchor="e", width=15).grid(row=0, column=0, padx=(0, 5), pady=2)
+        ttk.Entry(grid, textvariable=vars_dict['capital_detenu']).grid(row=0, column=1, sticky="ew", padx=(0, 15), pady=2)
+
+        ttk.Label(grid, text="Nombre de parts:", anchor="e", width=15).grid(row=0, column=2, padx=(0, 5), pady=2)
+        ttk.Entry(grid, textvariable=vars_dict['num_parts']).grid(row=0, column=3, sticky="ew", pady=2)
 
     def setup_scrollable_container(self):
         """Configure le conteneur scrollable pour les associés"""
-        # Create canvas and scrollbar
         canvas_frame = ttk.Frame(self.main_container)
         canvas_frame.grid(row=0, column=0, sticky="nsew")
         canvas_frame.grid_columnconfigure(0, weight=1)
@@ -159,11 +241,8 @@ class AssocieForm(ttk.Frame):
         # Configure canvas
         self.associes_frame = ttk.Frame(self.canvas)
         self.associes_frame.grid_columnconfigure(0, weight=1)
-        self.associes_frame.grid_rowconfigure(0, weight=1)
         self.canvas.configure(yscrollcommand=scrollbar.set)
-
-        # Configure canvas size
-        self.canvas.configure(width=800)  # Set a minimum width
+        self.canvas.configure(width=800)
 
         # Create the canvas window
         self.canvas_window = self.canvas.create_window((0, 0), window=self.associes_frame, anchor="nw")
@@ -171,7 +250,6 @@ class AssocieForm(ttk.Frame):
         # Configure canvas resizing
         def on_configure(event):
             self.canvas.configure(scrollregion=self.canvas.bbox("all"))
-            # Ajuster la largeur du contenu à celle du canvas
             self.canvas.itemconfig(self.canvas_window, width=self.canvas.winfo_width())
 
         self.associes_frame.bind("<Configure>", on_configure)
@@ -188,7 +266,7 @@ class AssocieForm(ttk.Frame):
         """Configure les boutons de contrôle"""
         buttons_frame = ttk.Frame(self.main_container)
         buttons_frame.grid(row=1, column=0, sticky="ew", pady=5, padx=5)
-        buttons_frame.grid_columnconfigure(1, weight=1)  # Pour pousser le bouton à droite
+        buttons_frame.grid_columnconfigure(1, weight=1)
 
         add_button = ttk.Button(
             buttons_frame,
@@ -211,8 +289,7 @@ class AssocieForm(ttk.Frame):
             )
             return
 
-        vars_dict = self.create_associe_fields(self.associes_frame, len(self.associe_vars))
-        self.associe_vars.append(vars_dict)
+        self.create_associe_fields(self.associes_frame, len(self.associe_vars))
 
     def remove_associe(self, frame, vars_dict):
         """Supprime un associé"""
@@ -223,57 +300,11 @@ class AssocieForm(ttk.Frame):
             self.update_associes_numbers()
 
     def update_associes_numbers(self):
-        """Met à jour la numérotation des associés"""
-        for i, frame in enumerate(self.associes_frame.winfo_children(), 1):
+        """Met à jour les numéros des associés après une suppression"""
+        for i, frame in enumerate(self.associes_frame.winfo_children()):
             if isinstance(frame, ttk.LabelFrame):
-                frame.configure(text=f"👤 Associé {i}")
+                frame.configure(text=f"👤 Associé {i + 1}")
 
-    def get_values(self):
-        """Retourne les valeurs des champs pour tous les associés"""
-        values_list = []
-        for vars_dict in self.associe_vars:
-            associe_values = {}
-            for key, var in vars_dict.items():
-                associe_values[key] = var.get()
-            values_list.append(associe_values)
-        return values_list
-
-    def set_values(self, values_list):
-        """Définit les valeurs des champs pour tous les associés"""
-        # Supprimer tous les associés existants
-        for frame in self.associes_frame.winfo_children():
-            frame.destroy()
-        self.associe_vars.clear()
-
-        # Pas de valeurs à définir
-        if not values_list:
-            self.add_first_associe()
-            return
-
-        # Ajouter et remplir les nouveaux associés
-        for values in values_list:
-            vars_dict = self.create_associe_fields(self.associes_frame, len(self.associe_vars))
-            for key, value in values.items():
-                if key in vars_dict:
-                    vars_dict[key].set(value if value is not None else "")
-            self.associe_vars.append(vars_dict)
-
-    def reset(self):
-        """Réinitialise complètement le formulaire"""
-        # Supprimer tous les widgets associés existants
-        for frame in self.associes_frame.winfo_children():
-            frame.destroy()
-        # Vider la liste des variables
-        self.associe_vars.clear()
-        # Ajouter un nouvel associé vide
-        self.add_first_associe()
-        # Forcer la mise à jour de l'affichage
-        self.canvas.yview_moveto(0)
-
-    def _cleanup(self, event=None):
-        """Nettoie les événements lors de la destruction du widget"""
-        try:
-            self.unbind_all("<MouseWheel>")
-            self.unbind("<Destroy>")
-        except Exception:
-            pass  # Ignorer les erreurs de nettoyage
+    def _cleanup(self, event):
+        """Nettoyage lors de la destruction"""
+        self.canvas.unbind_all("<MouseWheel>")
