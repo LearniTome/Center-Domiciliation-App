@@ -114,3 +114,15 @@ Les contributions sont les bienvenues ! N'hésitez pas à ouvrir une issue ou un
 ## 📜 Licence
 
 Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
+
+## ✅ Run smoke test
+
+To quickly verify the application imports and instantiates without errors, run the provided smoke test (uses the project's virtual environment):
+
+```powershell
+# from project root (Windows PowerShell)
+venv\Scripts\Activate.ps1
+python tests/smoke_test.py
+```
+
+On success the script prints: `"Smoke test: MainApp instantiated successfully"`.
