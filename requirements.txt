@@ -6,7 +6,7 @@ openpyxl==3.1.5
 docx2pdf==0.1.8
 pandas==2.3.1
 setuptools<81.0.0  # Required for docxcompose compatibility
-tkcalendar  # Added for date picker widget
+tkcalendar>=1.6.1  # Added for date picker widget (pin to a recent version)
 
 # Dépendances secondaires requises
 typing_extensions==4.14.1
