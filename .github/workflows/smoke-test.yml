@@ -25,7 +25,31 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r requirements.txt >> pip_install.log 2>&1
+        continue-on-error: true
+
+      - name: Check for pip install errors
+        id: pip_check
+        run: |
+          if [ $? -ne 0 ]; then
+            echo "pip_failed=true" >> $GITHUB_ENV
+          else
+            echo "pip_failed=false" >> $GITHUB_ENV
+          fi
+        shell: bash
+
+      - name: Upload pip logs on failure
+        if: env.pip_failed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pip-logs-ubuntu
+          path: pip_install.log
+
+      - name: Stop workflow on failure
+        if: env.pip_failed == 'true'
+        run: |
+          echo "Pip install failed. Stopping workflow."
+          exit 1
 
       - name: Install windows-only dependencies
         if: runner.os == 'Windows'
