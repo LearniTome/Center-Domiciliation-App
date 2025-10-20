@@ -67,6 +67,11 @@ class MainForm(ttk.Frame):
         self.canvas.grid(row=0, column=0, sticky="nsew")
         scrollbar.grid(row=0, column=1, sticky="ns")
 
+    # Footer container for navigation (fixed, not inside the scroll area)
+    # Placed directly inside this frame so it stays visible when content scrolls
+    self.footer_container = ttk.Frame(self)
+    self.footer_container.pack(fill="x", padx=10, pady=(5, 10))
+
     def setup_forms(self):
         """Create one page per logical section and prepare navigation.
 
@@ -196,9 +201,10 @@ class MainForm(ttk.Frame):
         between created pages. Save stores the current page's values into
         `self.values`. Finish will save then emit an event `<<FormsFinished>>`.
         """
-        nav_frame = ttk.Frame(self.forms_container)
-        nav_frame.grid(row=99, column=0, sticky="ew", padx=20, pady=15)
-        nav_frame.grid_columnconfigure(0, weight=1)
+    # Create the navigation bar in the fixed footer so it doesn't scroll
+    nav_frame = ttk.Frame(self.footer_container)
+    nav_frame.pack(fill="x")
+    nav_frame.grid_columnconfigure(0, weight=1)
 
         # Previous
         self.prev_btn = WidgetFactory.create_button(
@@ -221,6 +227,15 @@ class MainForm(ttk.Frame):
         self.finish_btn.grid(row=0, column=4, sticky="e", padx=5)
 
         self.update_nav_buttons()
+
+        # Keyboard shortcuts on the top-level window
+        try:
+            top = self.winfo_toplevel()
+            top.bind('<Left>', lambda e: self.prev_page())
+            top.bind('<Right>', lambda e: self.next_page())
+            top.bind('<Control-s>', lambda e: self.save_current())
+        except Exception:
+            pass
 
     def show_dashboard(self):
         """Switch to dashboard view"""
