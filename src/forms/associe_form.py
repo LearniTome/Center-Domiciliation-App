@@ -4,8 +4,30 @@ from tkcalendar import DateEntry
 from src.utils.utils import ThemeManager
 
 class AssocieForm(ttk.Frame):
-    def __init__(self, parent, theme_manager: ThemeManager):
+    def __init__(self, parent, theme_manager: ThemeManager = None, values_dict=None):
+        """AssocieForm supports two calling conventions for backward compatibility:
+
+        - AssocieForm(parent, theme_manager)
+        - AssocieForm(parent, values_dict={})  # legacy dashboard usage
+
+        We detect the types and adapt accordingly.
+        """
         super().__init__(parent)
+
+        # Backwards-compatible handling: if the second positional arg is a dict or list,
+        # it's actually the legacy `values_dict`.
+        if isinstance(theme_manager, (dict, list)) and values_dict is None:
+            values_dict = theme_manager
+            theme_manager = None
+
+        # Ensure we have a ThemeManager instance
+        if theme_manager is None:
+            try:
+                theme_manager = ThemeManager(self.winfo_toplevel())
+            except Exception:
+                # Fallback: set to None; some methods expect theme_manager.colors
+                theme_manager = ThemeManager(self) if 'ThemeManager' in globals() else None
+
         self.theme_manager = theme_manager
         self.associe_vars = []
 
@@ -18,14 +40,30 @@ class AssocieForm(ttk.Frame):
         self.main_container.grid(row=0, column=0, sticky="nsew")
         self.main_container.grid_columnconfigure(0, weight=1)
         self.main_container.grid_rowconfigure(0, weight=1)
-
         # Setup UI components
         self.setup_scrollable_container()
         self.setup_control_buttons()
-        self.add_first_associe()
+        # Note: do NOT auto-add an initial associé here. The parent MainForm
+        # will control how many associés are created initially to avoid
+        # duplications when embedded in different contexts.
 
         # Cleanup on destroy
         self.bind("<Destroy>", self._cleanup)
+
+        # If legacy values_dict was provided, populate fields
+        if values_dict is not None:
+            # If it's a list of associés, set them all
+            if isinstance(values_dict, list):
+                if len(values_dict) == 0:
+                    # create a single empty associe to allow data entry
+                    self.add_associe()
+                else:
+                    self.set_values(values_dict)
+            elif isinstance(values_dict, dict):
+                # create one associe and populate
+                self.add_associe()
+                if len(values_dict) > 0:
+                    self.set_values([values_dict])
 
     def create_associe_vars(self):
         """Crée et retourne les variables pour un nouvel associé"""
@@ -68,7 +106,7 @@ class AssocieForm(ttk.Frame):
 
         # Section Informations de base
         self.create_basic_info_section(left_column, vars_dict)
-        
+
         # Section Naissance
         self.create_birth_section(left_column, vars_dict)
 
@@ -183,7 +221,7 @@ class AssocieForm(ttk.Frame):
         date_container = ttk.Frame(grid)
         date_container.grid(row=2, column=1, sticky="ew", pady=2)
         date_container.columnconfigure(0, weight=1)
-        
+
         DateEntry(date_container, textvariable=vars_dict['validite_piece'],
                 date_pattern='dd/mm/yyyy', width=12).grid(row=0, column=0, sticky="w")
 
@@ -278,7 +316,8 @@ class AssocieForm(ttk.Frame):
 
     def add_first_associe(self):
         """Ajoute le premier associé"""
-        self.add_associe()
+        # kept for backward compatibility but left intentionally empty
+        return
 
     def add_associe(self):
         """Ajoute un nouvel associé"""
@@ -290,6 +329,48 @@ class AssocieForm(ttk.Frame):
             return
 
         self.create_associe_fields(self.associes_frame, len(self.associe_vars))
+
+    def get_values(self):
+        """Retourne la liste des associés sous forme de dictionnaires."""
+        results = []
+        for vars_dict in self.associe_vars:
+            item = {}
+            for k, v in vars_dict.items():
+                try:
+                    # BooleanVar -> bool
+                    if isinstance(v, tk.BooleanVar):
+                        item[k] = bool(v.get())
+                    else:
+                        item[k] = v.get()
+                except Exception:
+                    item[k] = None
+            results.append(item)
+        return results
+
+    def set_values(self, associes_list):
+        """Remplit le formulaire des associés avec une liste de dicts.
+
+        Each element of associes_list should be a dict mapping the field names
+        to values. This will clear existing entries and recreate them.
+        """
+        # Clear existing UI
+        for child in list(self.associes_frame.winfo_children()):
+            child.destroy()
+        self.associe_vars = []
+
+        for assoc in associes_list:
+            self.create_associe_fields(self.associes_frame, len(self.associe_vars))
+            # Populate the latest vars dict
+            vars_dict = self.associe_vars[-1]
+            for k, val in assoc.items():
+                if k in vars_dict:
+                    try:
+                        if isinstance(vars_dict[k], tk.BooleanVar):
+                            vars_dict[k].set(bool(val))
+                        else:
+                            vars_dict[k].set(val)
+                    except Exception:
+                        pass
 
     def remove_associe(self, frame, vars_dict):
         """Supprime un associé"""

@@ -92,38 +92,57 @@ class MainForm(ttk.Frame):
     def create_section_header(self, parent, text, icon, row, column, columnspan=1):
         """Crée un en-tête de section stylisé"""
         header_frame = ttk.Frame(parent, style='Section.TFrame')
-        header_frame.grid(row=row, column=column, columnspan=columnspan,
-                         sticky="ew", pady=(0, 10), padx=5)
+        # Ensure the header frame expands horizontally within its parent
+        try:
+            header_frame.grid(row=row, column=column, columnspan=columnspan,
+                              sticky="ew", pady=(0, 10), padx=5)
+            header_frame.grid_columnconfigure(0, weight=1)
+        except Exception:
+            # Fallback to pack if grid placement isn't supported
+            header_frame.pack(fill="x", pady=(0, 10), padx=5)
 
-        label = ttk.Label(header_frame,
-                         text=f"{icon} {text}",
-                         style='SectionHeader.TLabel')
+        label = ttk.Label(
+            header_frame,
+            text=f"{icon} {text}",
+            style='SectionHeader.TLabel'
+        )
         label.pack(fill="x", expand=True)
+
         return header_frame
 
     def create_societe_page(self):
-        header = self.create_section_header(self.forms_container, "Informations Société", "📝", 0, 0)
+        # Create a dedicated page container and put the header inside it so
+        # the header shows/hides together with the page.
         page = ttk.Frame(self.forms_container, style='Section.TFrame')
         page.grid(row=1, column=0, sticky="nsew", padx=5, pady=(0, 10))
+        header = self.create_section_header(page, "Informations de la Société", "📝", 0, 0)
         self.societe_form = SocieteForm(page, self.values.get('societe', {}))
-        self.societe_form.pack(fill="both", expand=True, padx=10, pady=10)
+        self.societe_form.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
         self.pages.append(('societe', page, self.societe_form))
 
     def create_associe_page(self):
-        header = self.create_section_header(self.forms_container, "Informations Associés", "👥", 0, 0)
         page = ttk.Frame(self.forms_container, style='Section.TFrame')
         page.grid(row=1, column=0, sticky="nsew", padx=5, pady=(0, 10))
+        header = self.create_section_header(page, "Informations des Associés", "👥", 0, 0)
         # AssocieForm expects a ThemeManager instance
         self.associe_form = AssocieForm(page, self.theme_manager)
-        self.associe_form.pack(fill="both", expand=True, padx=10, pady=10)
+        self.associe_form.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
+        # Ensure exactly one initial associé form is present
+        try:
+            # add one initial associé if none exist yet
+            if len(self.associe_form.associe_vars) == 0:
+                self.associe_form.add_associe()
+        except Exception:
+            # conservative: ignore errors here to avoid breaking startup
+            pass
         self.pages.append(('associes', page, self.associe_form))
 
     def create_contrat_page(self):
-        header = self.create_section_header(self.forms_container, "Informations Contrat", "📋", 0, 0)
         page = ttk.Frame(self.forms_container, style='Section.TFrame')
         page.grid(row=1, column=0, sticky="nsew", padx=5, pady=(0, 10))
+        header = self.create_section_header(page, "Informations du Contrat", "📋", 0, 0)
         self.contrat_form = ContratForm(page, self.values.get('contrat', {}))
-        self.contrat_form.pack(fill="both", expand=True, padx=10, pady=10)
+        self.contrat_form.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
         self.pages.append(('contrat', page, self.contrat_form))
 
     def create_collapsible_section(self, title, form_creator):

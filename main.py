@@ -1,5 +1,15 @@
+import warnings
 import tkinter as tk
 from tkinter import ttk, messagebox
+
+# Suppress known SyntaxWarning from tkcalendar about an invalid escape sequence in its font string
+# This is non-fatal; the package still works. We filter the specific message to avoid noisy output.
+warnings.filterwarnings(
+    "ignore",
+    message=r"invalid escape sequence '\\ '",
+    category=SyntaxWarning,
+    module=r"tkcalendar\..*",
+)
 from src.forms.main_form import MainForm
 from src.utils import WindowManager, ThemeManager, PathManager, ErrorHandler
 import pandas as pd
@@ -52,26 +62,43 @@ class MainApp(tk.Tk):
         buttons_frame.grid_columnconfigure(2, weight=1)
 
         # Boutons de génération (gauche)
-        ttk.Button(buttons_frame,
-                  text="📄 Documents Word",
-                  command=self.generate_docs).grid(row=0, column=0, padx=5)
+        ttk.Button(
+            buttons_frame,
+            text="📄 Documents Word",
+            command=self.generate_docs,
+        ).grid(row=0, column=0, padx=5)
 
-        ttk.Button(buttons_frame,
-                  text="📑 Word et PDF",
-                  command=self.generate_pdf).grid(row=0, column=1, padx=5)
+        ttk.Button(
+            buttons_frame,
+            text="📑 Word et PDF",
+            command=self.generate_pdf,
+        ).grid(row=0, column=1, padx=5)
+
+        # Dashboard button (left)
+        ttk.Button(
+            buttons_frame,
+            text="📊 Tableau de bord",
+            command=self.main_form.show_dashboard,
+        ).grid(row=0, column=2, padx=5)
 
         # Boutons de contrôle (droite)
-        ttk.Button(buttons_frame,
-                  text="🆕 Nouvelle",
-                  command=self.clear_form).grid(row=0, column=3, padx=5)
+        ttk.Button(
+            buttons_frame,
+            text="🆕 Nouvelle",
+            command=self.clear_form,
+        ).grid(row=0, column=3, padx=5)
 
-        ttk.Button(buttons_frame,
-                  text="💾 Sauvegarder",
-                  command=self.save_to_db).grid(row=0, column=4, padx=5)
+        ttk.Button(
+            buttons_frame,
+            text="💾 Sauvegarder",
+            command=self.save_to_db,
+        ).grid(row=0, column=4, padx=5)
 
-        ttk.Button(buttons_frame,
-                  text="❌ Quitter",
-                  command=self.quit).grid(row=0, column=5, padx=5)
+        ttk.Button(
+            buttons_frame,
+            text="❌ Quitter",
+            command=self.quit,
+        ).grid(row=0, column=5, padx=5)
 
     def collect_values(self):
         """Collecte toutes les valeurs des formulaires"""
