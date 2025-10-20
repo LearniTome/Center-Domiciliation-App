@@ -14,6 +14,12 @@ from src.forms.main_form import MainForm
 from src.utils import WindowManager, ThemeManager, PathManager, ErrorHandler
 import pandas as pd
 import logging
+from tkinter import filedialog, simpledialog
+from typing import Optional
+import threading
+import time
+from src.utils.doc_generator import render_templates
+from pathlib import Path
 
 # Configuration du logging
 logging.basicConfig(
@@ -64,13 +70,13 @@ class MainApp(tk.Tk):
         # Boutons de génération (gauche)
         ttk.Button(
             buttons_frame,
-            text="📄 Documents Word",
+            text="Générer (Word)",
             command=self.generate_docs,
         ).grid(row=0, column=0, padx=5)
 
         ttk.Button(
             buttons_frame,
-            text="📑 Word et PDF",
+            text="Générer (Word & PDF)",
             command=self.generate_pdf,
         ).grid(row=0, column=1, padx=5)
 
@@ -109,8 +115,28 @@ class MainApp(tk.Tk):
         """Génère les documents Word"""
         try:
             self.collect_values()
-            # Code de génération des documents Word...
-            logger.info("Documents Word générés avec succès")
+            # Provide immediate user feedback while generation logic is implemented
+            logger.info("Démarrage de la génération Word")
+            messagebox.showinfo("Génération Word", "La génération des documents Word a démarré.\nVérifiez le journal pour la progression.")
+            # Example: show a small summary of collected values (non-sensitive)
+            summary = f"Société: {self.values.get('societe', {}).get('denomination', '')}\nAssociés: {len(self.values.get('associes', []))}"
+            logger.debug(f"Valeurs collectées pour génération Word: {self.values}")
+            messagebox.showinfo("Résumé", summary)
+            logger.info("Documents Word - action user notified")
+            # Let user choose which templates to generate
+            templates = self.choose_templates()
+            if templates is None:
+                return
+            if not templates:
+                messagebox.showinfo("Aucun modèle", "Aucun modèle sélectionné. Annulation.")
+                return
+
+            out_dir = filedialog.askdirectory(title="Choisir le dossier de sortie")
+            if not out_dir:
+                return
+            to_pdf = messagebox.askyesno("PDF", "Voulez-vous également générer des PDF ?")
+            # Start generation with modal progress, passing selected templates
+            self.start_generation(out_dir, to_pdf, templates_list=templates)
         except Exception as e:
             logger.error(f"Erreur lors de la génération des documents Word: {e}")
 
@@ -118,10 +144,105 @@ class MainApp(tk.Tk):
         """Génère les documents Word et PDF"""
         try:
             self.collect_values()
-            # Code de génération des documents PDF...
-            logger.info("Documents PDF générés avec succès")
+            logger.info("Démarrage de la génération Word et PDF")
+            messagebox.showinfo("Génération Word+PDF", "La génération Word + PDF a démarré.\nVérifiez le journal pour la progression.")
+            summary = f"Société: {self.values.get('societe', {}).get('denomination', '')}\nAssociés: {len(self.values.get('associes', []))}"
+            logger.debug(f"Valeurs collectées pour génération PDF: {self.values}")
+            messagebox.showinfo("Résumé", summary)
+            logger.info("Documents Word+PDF - action user notified")
+            templates = self.choose_templates()
+            if templates is None:
+                return
+            if not templates:
+                messagebox.showinfo("Aucun modèle", "Aucun modèle sélectionné. Annulation.")
+                return
+            out_dir = filedialog.askdirectory(title="Choisir le dossier de sortie")
+            if not out_dir:
+                return
+            # Force PDF generation
+            self.start_generation(out_dir, True, templates_list=templates)
         except Exception as e:
             logger.error(f"Erreur lors de la génération des PDF: {e}")
+
+    def start_generation(self, out_dir: str, to_pdf: bool, templates_list: Optional[list] = None):
+        """Start generation on a background thread and show modal progress."""
+        # Create modal progress window
+        progress_win = tk.Toplevel(self)
+        progress_win.title("Génération en cours")
+        progress_win.transient(self)
+        progress_win.grab_set()
+        ttk.Label(progress_win, text="Génération en cours, veuillez patienter...").pack(padx=20, pady=(10, 5))
+        pb = ttk.Progressbar(progress_win, mode='indeterminate', length=300)
+        pb.pack(padx=20, pady=(0, 10))
+        pb.start(10)
+
+        def worker():
+            try:
+                # call generator (pass templates_list if provided)
+                report = render_templates(self.values, str(PathManager.MODELS_DIR), out_dir, to_pdf=to_pdf, templates_list=templates_list)
+                # Save a short summary to log
+                logging.info('Generation finished, %d templates processed', len(report))
+                # Show final message in main thread
+                self.after(10, lambda: messagebox.showinfo('Génération terminée', f"Génération terminée. Fichiers enregistrés dans {out_dir}"))
+            except Exception as e:
+                logging.exception('Generation failed: %s', e)
+                self.after(10, lambda: ErrorHandler.handle_error(e, 'Erreur pendant la génération'))
+            finally:
+                # stop progress and destroy modal
+                self.after(10, lambda: (pb.stop(), progress_win.grab_release(), progress_win.destroy()))
+
+        t = threading.Thread(target=worker, daemon=True)
+        t.start()
+
+    def choose_templates(self):
+        """Open a modal dialog to let the user pick which .docx templates in Models/ to generate.
+
+        Returns a list of absolute file paths (strings), an empty list if none selected,
+        or None if the user cancelled the dialog.
+        """
+        models_dir = Path(PathManager.MODELS_DIR)
+        templates = list(models_dir.glob('*.docx'))
+
+        dlg = tk.Toplevel(self)
+        dlg.title('Sélection des modèles')
+        dlg.transient(self)
+        dlg.grab_set()
+
+        frame = ttk.Frame(dlg)
+        frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        vars_map = {}
+        row = 0
+        if not templates:
+            ttk.Label(frame, text='Aucun modèle .docx trouvé dans le dossier Models/').grid(row=0, column=0)
+        else:
+            for tpl in templates:
+                v = tk.BooleanVar(value=True)
+                chk = ttk.Checkbutton(frame, text=tpl.name, variable=v)
+                chk.grid(row=row, column=0, sticky='w', pady=2)
+                vars_map[tpl] = v
+                row += 1
+
+        btn_frame = ttk.Frame(dlg)
+        btn_frame.pack(fill='x', pady=(5, 10), padx=10)
+        selected = {'value': None}
+
+        def on_ok():
+            chosen = [str(p.resolve()) for p, bv in vars_map.items() if bv.get()]
+            selected['value'] = chosen
+            dlg.grab_release()
+            dlg.destroy()
+
+        def on_cancel():
+            selected['value'] = None
+            dlg.grab_release()
+            dlg.destroy()
+
+        ttk.Button(btn_frame, text='OK', command=on_ok).pack(side='right', padx=5)
+        ttk.Button(btn_frame, text='Annuler', command=on_cancel).pack(side='right')
+
+        self.wait_window(dlg)
+        return selected['value']
 
     def save_to_db(self):
         """Sauvegarde les données dans la base"""

@@ -11,6 +11,12 @@ class MainForm(ttk.Frame):
         self.parent = parent
         self.values = values_dict or {}
 
+        # Allow this main frame to expand inside its parent
+        try:
+            self.pack(fill="both", expand=True)
+        except Exception:
+            pass
+
         # Initialize theme manager
         self.theme_manager = ThemeManager(self.winfo_toplevel())
         self.style = self.theme_manager.style
@@ -36,7 +42,12 @@ class MainForm(ttk.Frame):
 
         # Create main container for forms
         self.forms_container = ttk.Frame(self.canvas)
+        # Make sure forms container will expand within the canvas window
         self.forms_container.grid_columnconfigure(0, weight=1)
+        # Allow multiple rows to stretch if necessary
+        # Pages are placed at row=1 below any header rows; set row 0..2 to stretch
+        for r in range(0, 3):
+            self.forms_container.grid_rowconfigure(r, weight=1)
 
         # Create the canvas window with auto-width
         self.canvas_window = self.canvas.create_window(
@@ -63,14 +74,17 @@ class MainForm(ttk.Frame):
 
         self.canvas.bind_all("<MouseWheel>", _on_mousewheel)
 
-        # Grid layout for better control
+        # Grid layout for better control — make canvas expand
+        container.grid_rowconfigure(0, weight=1)
+        container.grid_columnconfigure(0, weight=1)
         self.canvas.grid(row=0, column=0, sticky="nsew")
         scrollbar.grid(row=0, column=1, sticky="ns")
 
-    # Footer container for navigation (fixed, not inside the scroll area)
-    # Placed directly inside this frame so it stays visible when content scrolls
-    self.footer_container = ttk.Frame(self)
-    self.footer_container.pack(fill="x", padx=10, pady=(5, 10))
+        # Footer container for navigation (fixed, not inside the scroll area)
+        # Placed directly inside this frame so it stays visible when content scrolls
+        self.footer_container = ttk.Frame(self)
+        # Do not expand footer vertically — keep it fixed height
+        self.footer_container.pack(fill="x", padx=10, pady=(5, 10))
 
     def setup_forms(self):
         """Create one page per logical section and prepare navigation.
@@ -118,20 +132,40 @@ class MainForm(ttk.Frame):
     def create_societe_page(self):
         # Create a dedicated page container and put the header inside it so
         # the header shows/hides together with the page.
-        page = ttk.Frame(self.forms_container, style='Section.TFrame')
+        # Use a plain frame for the page so the header's styled frame provides
+        # the visual section border/strip; avoids nested Section.TFrame borders
+        page = ttk.Frame(self.forms_container)
         page.grid(row=1, column=0, sticky="nsew", padx=5, pady=(0, 10))
+        # Make the page expand so its inner form can stretch
+        page.grid_rowconfigure(0, weight=0)
+        page.grid_rowconfigure(1, weight=1)
+        page.grid_columnconfigure(0, weight=1)
         header = self.create_section_header(page, "Informations de la Société", "📝", 0, 0)
         self.societe_form = SocieteForm(page, self.values.get('societe', {}))
         self.societe_form.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
         self.pages.append(('societe', page, self.societe_form))
 
     def create_associe_page(self):
-        page = ttk.Frame(self.forms_container, style='Section.TFrame')
+        page = ttk.Frame(self.forms_container)
         page.grid(row=1, column=0, sticky="nsew", padx=5, pady=(0, 10))
+        # Expand the page so the associe list/canvas can grow
+        page.grid_rowconfigure(0, weight=0)
+        page.grid_rowconfigure(1, weight=1)
+        page.grid_columnconfigure(0, weight=1)
         header = self.create_section_header(page, "Informations des Associés", "👥", 0, 0)
         # AssocieForm expects a ThemeManager instance
         self.associe_form = AssocieForm(page, self.theme_manager)
         self.associe_form.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
+        # Defensive: remove any accidental scrollbar widgets that might have been
+        # created inside the page by older code or third-party widgets. We want
+        # a single scrollbar (the one on the main form canvas) to control
+        # vertical scrolling for the whole page.
+        for child in list(page.winfo_children()):
+            try:
+                if isinstance(child, ttk.Scrollbar):
+                    child.destroy()
+            except Exception:
+                pass
         # Ensure exactly one initial associé form is present
         try:
             # add one initial associé if none exist yet
@@ -143,8 +177,12 @@ class MainForm(ttk.Frame):
         self.pages.append(('associes', page, self.associe_form))
 
     def create_contrat_page(self):
-        page = ttk.Frame(self.forms_container, style='Section.TFrame')
+        page = ttk.Frame(self.forms_container)
         page.grid(row=1, column=0, sticky="nsew", padx=5, pady=(0, 10))
+        # Expand the page so its inner form can stretch
+        page.grid_rowconfigure(0, weight=0)
+        page.grid_rowconfigure(1, weight=1)
+        page.grid_columnconfigure(0, weight=1)
         header = self.create_section_header(page, "Informations du Contrat", "📋", 0, 0)
         self.contrat_form = ContratForm(page, self.values.get('contrat', {}))
         self.contrat_form.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
@@ -201,10 +239,10 @@ class MainForm(ttk.Frame):
         between created pages. Save stores the current page's values into
         `self.values`. Finish will save then emit an event `<<FormsFinished>>`.
         """
-    # Create the navigation bar in the fixed footer so it doesn't scroll
-    nav_frame = ttk.Frame(self.footer_container)
-    nav_frame.pack(fill="x")
-    nav_frame.grid_columnconfigure(0, weight=1)
+        # Create the navigation bar in the fixed footer so it doesn't scroll
+        nav_frame = ttk.Frame(self.footer_container)
+        nav_frame.pack(fill="x")
+        nav_frame.grid_columnconfigure(0, weight=1)
 
         # Previous
         self.prev_btn = WidgetFactory.create_button(

@@ -1,10 +1,11 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from tkcalendar import DateEntry
+from typing import Optional
 from src.utils.utils import ThemeManager
 
 class AssocieForm(ttk.Frame):
-    def __init__(self, parent, theme_manager: ThemeManager = None, values_dict=None):
+    def __init__(self, parent, theme_manager: Optional[ThemeManager] = None, values_dict=None):
         """AssocieForm supports two calling conventions for backward compatibility:
 
         - AssocieForm(parent, theme_manager)
@@ -25,8 +26,11 @@ class AssocieForm(ttk.Frame):
             try:
                 theme_manager = ThemeManager(self.winfo_toplevel())
             except Exception:
-                # Fallback: set to None; some methods expect theme_manager.colors
-                theme_manager = ThemeManager(self) if 'ThemeManager' in globals() else None
+                # Fallback: try constructing with self; if not available keep None
+                try:
+                    theme_manager = ThemeManager(self)
+                except Exception:
+                    theme_manager = None
 
         self.theme_manager = theme_manager
         self.associe_vars = []
@@ -92,11 +96,11 @@ class AssocieForm(ttk.Frame):
 
         # Frame principal de l'associé
         frame = ttk.LabelFrame(parent, text=f"👤 Associé {index + 1}")
-        frame.pack(fill="x", padx=5, pady=5)
+        frame.pack(fill="x", padx=5, pady=5, expand=True)
 
         # Conteneur principal à deux colonnes
         main_grid = ttk.Frame(frame)
-        main_grid.pack(fill="x", padx=5, pady=5)
+        main_grid.pack(fill="x", padx=5, pady=5, expand=True)
         main_grid.columnconfigure(0, weight=1)
         main_grid.columnconfigure(1, weight=1)
 
@@ -141,10 +145,10 @@ class AssocieForm(ttk.Frame):
     def create_basic_info_section(self, parent, vars_dict):
         """Crée la section Informations de base"""
         info_frame = ttk.LabelFrame(parent, text="📝 Informations de base")
-        info_frame.pack(fill="x", pady=5)
+        info_frame.pack(fill="x", pady=5, expand=True)
 
         grid = ttk.Frame(info_frame)
-        grid.pack(fill="x", padx=5, pady=5)
+        grid.pack(fill="x", padx=5, pady=5, expand=True)
         grid.columnconfigure(1, weight=1)
         grid.columnconfigure(3, weight=1)
 
@@ -167,10 +171,10 @@ class AssocieForm(ttk.Frame):
     def create_birth_section(self, parent, vars_dict):
         """Crée la section Naissance"""
         birth_frame = ttk.LabelFrame(parent, text="👶 Naissance")
-        birth_frame.pack(fill="x", pady=5)
+        birth_frame.pack(fill="x", pady=5, expand=True)
 
         grid = ttk.Frame(birth_frame)
-        grid.pack(fill="x", padx=5, pady=5)
+        grid.pack(fill="x", padx=5, pady=5, expand=True)
         grid.columnconfigure(1, weight=1)
 
         # Date de naissance
@@ -185,10 +189,10 @@ class AssocieForm(ttk.Frame):
     def create_manager_section(self, parent, vars_dict):
         """Crée la section Statut de Gérant"""
         manager_frame = ttk.LabelFrame(parent, text="👔 Statut de Gérant")
-        manager_frame.pack(fill="x", pady=5)
+        manager_frame.pack(fill="x", pady=5, expand=True)
 
         grid = ttk.Frame(manager_frame)
-        grid.pack(fill="x", padx=5, pady=5)
+        grid.pack(fill="x", padx=5, pady=5, expand=True)
         grid.columnconfigure(1, weight=1)
 
         # Checkbox Est Gérant
@@ -202,10 +206,10 @@ class AssocieForm(ttk.Frame):
     def create_identity_section(self, parent, vars_dict):
         """Crée la section Identité"""
         identity_frame = ttk.LabelFrame(parent, text="🆔 Identité")
-        identity_frame.pack(fill="x", pady=5)
+        identity_frame.pack(fill="x", pady=5, expand=True)
 
         grid = ttk.Frame(identity_frame)
-        grid.pack(fill="x", padx=5, pady=5)
+        grid.pack(fill="x", padx=5, pady=5, expand=True)
         grid.columnconfigure(1, weight=1)
 
         # Nationalité
@@ -228,10 +232,10 @@ class AssocieForm(ttk.Frame):
     def create_contact_section(self, parent, vars_dict):
         """Crée la section Contact"""
         contact_frame = ttk.LabelFrame(parent, text="📞 Contact")
-        contact_frame.pack(fill="x", pady=5)
+        contact_frame.pack(fill="x", pady=5, expand=True)
 
         grid = ttk.Frame(contact_frame)
-        grid.pack(fill="x", padx=5, pady=5)
+        grid.pack(fill="x", padx=5, pady=5, expand=True)
         grid.columnconfigure(1, weight=1)
 
         # Adresse
@@ -249,10 +253,10 @@ class AssocieForm(ttk.Frame):
     def create_capital_section(self, parent, vars_dict):
         """Crée la section Capital"""
         capital_frame = ttk.LabelFrame(parent, text="💰 Capital")
-        capital_frame.pack(fill="x", pady=5)
+        capital_frame.pack(fill="x", pady=5, expand=True)
 
         grid = ttk.Frame(capital_frame)
-        grid.pack(fill="x", padx=5, pady=5)
+        grid.pack(fill="x", padx=5, pady=5, expand=True)
         grid.columnconfigure(1, weight=1)
         grid.columnconfigure(3, weight=1)
 
@@ -265,40 +269,19 @@ class AssocieForm(ttk.Frame):
 
     def setup_scrollable_container(self):
         """Configure le conteneur scrollable pour les associés"""
+        # Use a simple frame inside the main container. The outer MainForm
+        # canvas (the page container) will handle scrolling for the whole page.
         canvas_frame = ttk.Frame(self.main_container)
         canvas_frame.grid(row=0, column=0, sticky="nsew")
         canvas_frame.grid_columnconfigure(0, weight=1)
         canvas_frame.grid_rowconfigure(0, weight=1)
 
-        self.canvas = tk.Canvas(canvas_frame, background=self.theme_manager.colors['bg'])
-        self.canvas.grid(row=0, column=0, sticky="nsew")
-
-        scrollbar = ttk.Scrollbar(canvas_frame, orient="vertical", command=self.canvas.yview)
-        scrollbar.grid(row=0, column=1, sticky="ns")
-
-        # Configure canvas
-        self.associes_frame = ttk.Frame(self.canvas)
+        # The associes_frame holds the individual associé LabelFrames.
+        # It is a plain Frame (no inner canvas/scrollbar) so the outer
+        # MainForm canvas controls scrolling for the whole page.
+        self.associes_frame = ttk.Frame(canvas_frame)
+        self.associes_frame.grid(row=0, column=0, sticky="nsew")
         self.associes_frame.grid_columnconfigure(0, weight=1)
-        self.canvas.configure(yscrollcommand=scrollbar.set)
-        self.canvas.configure(width=800)
-
-        # Create the canvas window
-        self.canvas_window = self.canvas.create_window((0, 0), window=self.associes_frame, anchor="nw")
-
-        # Configure canvas resizing
-        def on_configure(event):
-            self.canvas.configure(scrollregion=self.canvas.bbox("all"))
-            self.canvas.itemconfig(self.canvas_window, width=self.canvas.winfo_width())
-
-        self.associes_frame.bind("<Configure>", on_configure)
-        self.canvas.bind("<Configure>", lambda e: self.canvas.itemconfig(
-            self.canvas_window, width=e.width))
-
-        # Mouse wheel scrolling
-        def on_mousewheel(event):
-            self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
-
-        self.canvas.bind_all("<MouseWheel>", on_mousewheel)
 
     def setup_control_buttons(self):
         """Configure les boutons de contrôle"""
@@ -388,4 +371,8 @@ class AssocieForm(ttk.Frame):
 
     def _cleanup(self, event):
         """Nettoyage lors de la destruction"""
-        self.canvas.unbind_all("<MouseWheel>")
+        try:
+            if hasattr(self, 'canvas'):
+                self.canvas.unbind_all("<MouseWheel>")
+        except Exception:
+            pass
