@@ -73,7 +73,12 @@ class AssocieForm(ttk.Frame):
         """Crée et retourne les variables pour un nouvel associé"""
         from ..utils.constants import Nationalite
 
-        # sensible defaults: civilite 'M.', nationality first option, empty strings otherwise
+        # sensible defaults per request:
+        # - civilite default to 'M.'
+        # - est_gerant checked by default
+        # - qualite default to 'Associé Gérant'
+        # - num_parts default to '1000'
+        # - capital_detenu default to '100000'
         return {
             'civilite': tk.StringVar(value='M.'),
             'nom': tk.StringVar(value=''),
@@ -87,10 +92,10 @@ class AssocieForm(ttk.Frame):
             'adresse': tk.StringVar(value=''),
             'telephone': tk.StringVar(value=''),
             'email': tk.StringVar(value=''),
-            'est_gerant': tk.BooleanVar(value=False),
-            'qualite': tk.StringVar(value=''),
-            'capital_detenu': tk.StringVar(value=''),
-            'num_parts': tk.StringVar(value='')
+            'est_gerant': tk.BooleanVar(value=True),
+            'qualite': tk.StringVar(value='Associé Gérant'),
+            'capital_detenu': tk.StringVar(value='100000'),
+            'num_parts': tk.StringVar(value='1000')
         }
 
     def create_associe_fields(self, parent, index):
@@ -164,12 +169,9 @@ class AssocieForm(ttk.Frame):
         ttk.Label(grid, text="Prénom:", anchor="e", width=12).grid(row=0, column=2, padx=(0, 5), pady=2)
         ttk.Entry(grid, textvariable=vars_dict['prenom']).grid(row=0, column=3, sticky="ew", pady=2)
 
-        # Ligne 2: Nom et Parts
+        # Ligne 2: Nom (Parts removed per request)
         ttk.Label(grid, text="Nom:", anchor="e", width=12).grid(row=1, column=0, padx=(0, 5), pady=2)
         ttk.Entry(grid, textvariable=vars_dict['nom']).grid(row=1, column=1, sticky="ew", padx=(0, 15), pady=2)
-
-        ttk.Label(grid, text="Parts (%):", anchor="e", width=12).grid(row=1, column=2, padx=(0, 5), pady=2)
-        ttk.Entry(grid, textvariable=vars_dict['parts']).grid(row=1, column=3, sticky="ew", pady=2)
 
     def create_birth_section(self, parent, vars_dict):
         """Crée la section Naissance"""
@@ -180,10 +182,9 @@ class AssocieForm(ttk.Frame):
         grid.pack(fill="x", padx=5, pady=5, expand=True)
         grid.columnconfigure(1, weight=1)
 
-        # Date de naissance
+        # Date de naissance (empty by default) - use Entry to allow empty value
         ttk.Label(grid, text="Date de naissance:", anchor="e", width=15).grid(row=0, column=0, padx=(0, 5), pady=2)
-        DateEntry(grid, textvariable=vars_dict['date_naiss'],
-                date_pattern='dd/mm/yyyy', width=12).grid(row=0, column=1, sticky="w", pady=2)
+        ttk.Entry(grid, textvariable=vars_dict['date_naiss']).grid(row=0, column=1, sticky="w", pady=2)
 
         # Lieu de naissance
         ttk.Label(grid, text="Lieu de naissance:", anchor="e", width=15).grid(row=1, column=0, padx=(0, 5), pady=2)
@@ -223,14 +224,9 @@ class AssocieForm(ttk.Frame):
         ttk.Label(grid, text="N° CIN:", anchor="e", width=12).grid(row=1, column=0, padx=(0, 5), pady=2)
         ttk.Entry(grid, textvariable=vars_dict['num_piece']).grid(row=1, column=1, sticky="ew", pady=2)
 
-        # Validité CIN
+        # Validité CIN (empty by default) - use Entry to allow empty value
         ttk.Label(grid, text="Validité CIN:", anchor="e", width=12).grid(row=2, column=0, padx=(0, 5), pady=2)
-        date_container = ttk.Frame(grid)
-        date_container.grid(row=2, column=1, sticky="ew", pady=2)
-        date_container.columnconfigure(0, weight=1)
-
-        DateEntry(date_container, textvariable=vars_dict['validite_piece'],
-                date_pattern='dd/mm/yyyy', width=12).grid(row=0, column=0, sticky="w")
+        ttk.Entry(grid, textvariable=vars_dict['validite_piece']).grid(row=2, column=1, sticky="w", pady=2)
 
     def create_contact_section(self, parent, vars_dict):
         """Crée la section Contact"""
