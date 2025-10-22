@@ -72,8 +72,12 @@ class ToolTip:
             self.tooltip = None
 
 class ThemeManager:
+    """ThemeManager simplifié : délègue tout à ModernTheme dans `src.utils.styles`.
+
+    Ceci évite la duplication des styles dans plusieurs fichiers et garde
+    un seul endroit (`ModernTheme`) responsable des apparences.
+    """
     def __init__(self, root):
-        # Read persisted preference if available
         self.root = root
         self.pref_path = Path(__file__).resolve().parent.parent.parent / 'config' / 'preferences.json'
         mode = 'dark'
@@ -85,15 +89,21 @@ class ThemeManager:
         except Exception:
             mode = 'dark'
 
+        # Use the centralized ModernTheme from src.utils.styles
         self.theme = ModernTheme(root, mode=mode)
         self.style = self.theme.style
         self.colors = self.theme.colors
+        # Apply background to root and existing canvases to keep tk widgets in sync
+        try:
+            self._apply_root_background()
+            self._update_canvas_backgrounds()
+        except Exception:
+            logger.debug('Failed to update canvas/background on init', exc_info=True)
 
     def set_theme(self, mode: str):
-        """Set theme mode ('light' or 'dark') and persist preference."""
         if mode not in ('light', 'dark'):
             return
-        # Recreate theme with new mode
+        # Recreate centralized theme
         self.theme = ModernTheme(self.root, mode=mode)
         self.style = self.theme.style
         self.colors = self.theme.colors
@@ -105,237 +115,85 @@ class ThemeManager:
                 json.dump(prefs, f, ensure_ascii=False, indent=2)
         except Exception:
             logger.exception('Failed to persist theme preference')
+        # Update root and existing canvases so widgets created before theme change update
+        try:
+            self._apply_root_background()
+            self._update_canvas_backgrounds()
+        except Exception:
+            logger.debug('Failed to update canvas/background after set_theme', exc_info=True)
 
     def toggle_theme(self):
         new_mode = 'dark' if self.theme.mode == 'light' else 'light'
         self.set_theme(new_mode)
 
-    def setup_colors(self):
-        # Configuration des couleurs modernes
-        self.colors = {
-            'bg': '#1e1e1e',  # Fond sombre
-            'fg': '#ffffff',   # Texte clair
-            'accent': '#2171cd',
-            'accent_light': '#4a90e2',
-            'error': '#dc3545',
-            'success': '#28a745',
-            'warning': '#ffc107',
-            'info': '#17a2b8',
-            'border': '#3e3e3e',  # Bordure plus subtile
-            'hover': '#2a2a2a',   # Effet hover plus subtil
-            'disabled': '#6c757d',
-            'label_fg': '#cccccc', # Labels légèrement plus clairs
-            'input_bg': '#2d2d2d', # Fond des champs de saisie
-            'input_border': '#3e3e3e',
-            'section_bg': '#252526', # Fond des sections
-            'section_header_bg': '#323233', # Fond des en-têtes de section
-            'section_header_fg': '#ffffff', # Texte des en-têtes de section
-            'input_fg': '#ffffff',
-            'button_bg': '#323233',
-            'button_fg': '#ffffff',
-            'entry_bg': '#2d2d2d',
-            'entry_fg': '#ffffff',
-            'section_border': '#3e3e3e' # Bordure des sections
-        }
+    def _apply_root_background(self):
+        """Configure the top-level root background to the current theme bg color."""
+        try:
+            if hasattr(self.root, 'configure'):
+                # Some platforms expect 'background' or 'bg'
+                try:
+                    self.root.configure(background=self.colors['bg'])
+                except Exception:
+                    try:
+                        self.root.configure(bg=self.colors['bg'])
+                    except Exception:
+                        pass
+        except Exception:
+            logger.debug('Failed to apply root background', exc_info=True)
 
-    def apply_theme(self):
-        self.style.set_theme('black')  # Toujours utiliser le thème sombre
+    def _update_canvas_backgrounds(self):
+        """Recursively find tk.Canvas widgets under root and update their background.
 
-        # Style de base pour l'application
-        self.style.configure('.',
-            background=self.colors['bg'],
-            foreground=self.colors['fg'],
-            font=('Segoe UI', 10))
+        This ensures Canvas widgets (which are not ttk and do not follow ttk styles)
+        reflect the current theme background when the theme is changed at runtime.
+        """
+        try:
+            # recursive walk
+            def _walk(widget):
+                for child in widget.winfo_children():
+                    # tk.Canvas class is available as tk.Canvas
+                    if isinstance(child, tk.Canvas):
+                        try:
+                            child.configure(background=self.colors['bg'])
+                        except Exception:
+                            try:
+                                child.configure(bg=self.colors['bg'])
+                            except Exception:
+                                pass
+                    # recurse
+                    try:
+                        _walk(child)
+                    except Exception:
+                        pass
 
-        # Styles pour les widgets de base
-        self.setup_frame_styles()
-        self.setup_input_styles()
-        self.setup_button_styles()
-        self.setup_section_styles()
-
-    def setup_frame_styles(self):
-        # Style de base pour les frames
-        self.style.configure('App.TFrame',
-            background=self.colors['bg'])
-
-        # Style pour les cartes
-        self.style.configure('Card.TFrame',
-            background=self.colors['bg'],
-            borderwidth=1,
-            relief='solid')
-
-        # Style pour les séparateurs
-        self.style.configure('Separator.TFrame',
-            background=self.colors['accent'],
-            height=1)
-
-    def setup_input_styles(self):
-        # Style commun pour les champs de saisie
-        input_style = {
-            'fieldbackground': self.colors['input_bg'],
-            'foreground': self.colors['input_fg'],
-            'borderwidth': 1,
-            'relief': 'solid',
-            'padding': 5
-        }
-
-        # Entry
-        self.style.configure('App.TEntry',
-            **input_style,
-            font=('Segoe UI', 9))
-
-        # Combobox
-        self.style.configure('App.TCombobox',
-            **input_style,
-            font=('Segoe UI', 9),
-            arrowsize=12)
-
-        # Labels
-        self.style.configure('FieldLabel.TLabel',
-            background=self.colors['bg'],
-            foreground=self.colors['label_fg'],
-            font=('Segoe UI', 9),
-            padding=(5, 2))
-
-        # Style des labels de champs
-        self.style.configure('Field.TLabel',
-            background=self.colors['bg'],
-            foreground=self.colors['fg'],
-            font=('Segoe UI', 9),
-            padding=(0, 5))
-
-        # Cases à cocher
-        self.style.configure('App.TCheckbutton',
-            background=self.colors['bg'],
-            foreground=self.colors['fg'],
-            padding=5)
-
-        # Style pour les conteneurs de champs
-        self.style.configure('Field.TFrame',
-            background=self.colors['bg'],
-            padding=(5, 2))
-
-    def setup_button_styles(self):
-        # Style commun pour tous les boutons
-        button_base = {
-            'padding': (15, 8),
-            'relief': 'groove',
-            'font': ('Segoe UI', 10, 'bold')
-        }
-
-        # Boutons de navigation
-        self.style.configure('Nav.TButton',
-            **button_base,
-            width=18,
-            background=self.colors['button_bg'])
-
-        # Boutons d'action
-        self.style.configure('Action.TButton',
-            **button_base,
-            width=22,
-            background=self.colors['accent'])
-
-        # Boutons secondaires
-        self.style.configure('Secondary.TButton',
-            **button_base,
-            width=16,
-            background=self.colors['bg'])
-
-        # Boutons de danger
-        self.style.configure('Danger.TButton',
-            **button_base,
-            background=self.colors['error'],
-            foreground=self.colors['fg'])
-
-        # Boutons de calendrier
-        self.style.configure('Calendar.TButton',
-            padding=2,
-            width=3)
-
-    def setup_section_styles(self):
-        # Style de base pour les sections
-        self.style.configure('Section.TLabelFrame',
-            background=self.colors['section_bg'],
-            foreground=self.colors['fg'],
-            borderwidth=1,
-            relief='solid',
-            bordercolor=self.colors['section_border'],
-            padding=15)
-
-        # Style pour les titres de section
-        self.style.configure('Section.TLabelFrame.Label',
-            font=('Segoe UI', 10, 'bold'),
-            foreground=self.colors['section_header_fg'],
-            background=self.colors['section_header_bg'],
-            padding=(10, 5))
-
-        # Style pour les sous-sections
-        self.style.configure('SubSection.TLabelFrame',
-            background=self.colors['section_bg'],
-            foreground=self.colors['fg'],
-            borderwidth=1,
-            relief='solid',
-            bordercolor=self.colors['section_border'],
-            padding=10)
-
-        # Style pour les titres de sous-sections
-        self.style.configure('SubSection.TLabelFrame.Label',
-            font=('Segoe UI', 9, 'bold'),
-            foreground=self.colors['section_header_fg'],
-            background=self.colors['section_bg'],
-            padding=(8, 4))
-
-        # Style spécial pour les sections d'information
-        self.style.configure('Info.TLabelFrame',
-            background=self.colors['section_bg'],
-            foreground=self.colors['fg'],
-            borderwidth=1,
-            relief='solid',
-            bordercolor=self.colors['info'],
-            padding=15)
-
-        # Style pour les titres des sections d'information
-        self.style.configure('Info.TLabelFrame.Label',
-            font=('Segoe UI', 10, 'bold'),
-            foreground=self.colors['info'],
-            background=self.colors['section_header_bg'],
-            padding=(10, 5))
+            _walk(self.root)
+        except Exception:
+            logger.debug('Failed to update canvas backgrounds', exc_info=True)
 
     def apply_widget_styles(self, widget):
-        """Applique automatiquement le style approprié à un widget"""
-        if isinstance(widget, ttk.Entry):
-            widget.configure(style='App.TEntry')
-        elif isinstance(widget, ttk.Combobox):
-            widget.configure(style='App.TCombobox')
-        elif isinstance(widget, ttk.Label):
-            # Détermine le style approprié selon le contexte
-            parent_name = widget.winfo_parent().lower() if widget.winfo_parent() else ''
-            if 'field' in parent_name:
-                widget.configure(style='Field.TLabel')
-            elif 'info' in parent_name:
-                widget.configure(style='Info.TLabel')
-            else:
+        """Applique un style cohérent en utilisant les noms définis dans ModernTheme.
+
+        Cette méthode remplace les styles locaux et force l'utilisation du
+        fichier unique `src/utils/styles.py` comme source de vérité.
+        """
+        try:
+            if isinstance(widget, ttk.Entry):
+                widget.configure(style='TEntry')
+            elif isinstance(widget, ttk.Combobox):
+                widget.configure(style='TCombobox')
+            elif isinstance(widget, ttk.Label):
                 widget.configure(style='FieldLabel.TLabel')
-        elif isinstance(widget, ttk.LabelFrame):
-            # Détermine le style de section approprié
-            widget_name = widget.winfo_name().lower()
-            if 'info' in widget_name:
-                widget.configure(style='Info.TLabelFrame')
-            elif 'sub' in widget_name:
-                widget.configure(style='SubSection.TLabelFrame')
-            else:
-                widget.configure(style='Section.TLabelFrame')
-        elif isinstance(widget, ttk.Frame):
-            # Détermine le style de frame approprié
-            parent_name = widget.winfo_parent().lower() if widget.winfo_parent() else ''
-            if 'field' in parent_name:
-                widget.configure(style='Field.TFrame')
-            elif 'info' in parent_name:
-                widget.configure(style='Info.TFrame')
-            else:
-                widget.configure(style='App.TFrame')
-        elif isinstance(widget, ttk.Checkbutton):
-            widget.configure(style='App.TCheckbutton')
+            elif isinstance(widget, ttk.LabelFrame):
+                # Use Section frame style for labeled sections
+                widget.configure(style='Section.TFrame')
+            elif isinstance(widget, ttk.Frame):
+                widget.configure(style='TFrame')
+            elif isinstance(widget, ttk.Checkbutton):
+                # fall back to default checkbutton style
+                widget.configure(style='TCheckbutton')
+        except Exception:
+            # Defensive: ignore failures to avoid breaking UI creation
+            logger.debug('apply_widget_styles: failed to configure widget style', exc_info=True)
         return widget
 
 class WidgetFactory:
@@ -394,6 +252,33 @@ class WindowManager:
 
         # Configurer la touche Échap pour quitter le plein écran
         root.bind('<Escape>', lambda e: root.state('normal'))
+
+    @staticmethod
+    def center_window(win):
+        """Center a Toplevel or root window on the screen or on its parent."""
+        try:
+            win.update_idletasks()
+            # If window has a parent (transient), center on parent
+            parent = getattr(win, 'master', None)
+            if parent and parent.winfo_ismapped():
+                pw = parent.winfo_width()
+                ph = parent.winfo_height()
+                px = parent.winfo_rootx()
+                py = parent.winfo_rooty()
+                ww = win.winfo_width()
+                wh = win.winfo_height()
+                x = px + max(0, (pw - ww) // 2)
+                y = py + max(0, (ph - wh) // 2)
+            else:
+                screen_w = win.winfo_screenwidth()
+                screen_h = win.winfo_screenheight()
+                ww = win.winfo_width()
+                wh = win.winfo_height()
+                x = (screen_w - ww) // 2
+                y = (screen_h - wh) // 2
+            win.geometry(f"+{x}+{y}")
+        except Exception:
+            pass
 
 # Fonction utilitaire pour appliquer les styles
 def apply_style(widget, theme_manager):

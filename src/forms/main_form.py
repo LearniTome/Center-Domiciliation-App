@@ -82,9 +82,16 @@ class MainForm(ttk.Frame):
 
         # Footer container for navigation (fixed, not inside the scroll area)
         # Placed directly inside this frame so it stays visible when content scrolls
-        self.footer_container = ttk.Frame(self)
-        # Do not expand footer vertically — keep it fixed height
-        self.footer_container.pack(fill="x", padx=10, pady=(5, 10))
+        # Use Card.TFrame style if available so footer is visually separated
+        try:
+            self.footer_container = ttk.Frame(self, style='Card.TFrame')
+        except Exception:
+            self.footer_container = ttk.Frame(self)
+        # Keep footer fixed height and add padding so content doesn't overlap
+        self.footer_container.pack(fill="x", padx=10, pady=(8, 10))
+        # Internal container to host navigation widgets consistently
+        self.footer_inner = ttk.Frame(self.footer_container)
+        self.footer_inner.pack(fill="x")
 
     def setup_forms(self):
         """Create one page per logical section and prepare navigation.
@@ -125,7 +132,7 @@ class MainForm(ttk.Frame):
             text=f"{icon} {text}",
             style='SectionHeader.TLabel'
         )
-        label.pack(fill="x", expand=True)
+        label.pack(fill="x", expand=True, padx=6, pady=4)
 
         return header_frame
 

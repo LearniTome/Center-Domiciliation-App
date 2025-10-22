@@ -152,6 +152,9 @@ class MainApp(tk.Tk):
             progress_win.title("Génération en cours")
             progress_win.transient(self)
             progress_win.grab_set()
+            # center the progress window
+            from src.utils.utils import WindowManager
+            WindowManager.center_window(progress_win)
             progress_frame = ttk.Frame(progress_win, padding=12)
             progress_frame.pack(fill='both', expand=True)
 
@@ -252,6 +255,8 @@ class MainApp(tk.Tk):
         dlg.title('Sélection des modèles')
         dlg.transient(self)
         dlg.grab_set()
+        from src.utils.utils import WindowManager
+        WindowManager.center_window(dlg)
 
         frame = ttk.Frame(dlg)
         frame.pack(fill='both', expand=True, padx=10, pady=10)
@@ -304,6 +309,8 @@ class MainApp(tk.Tk):
         dlg.title('Sélection des modèles et du format')
         dlg.transient(self)
         dlg.grab_set()
+        from src.utils.utils import WindowManager
+        WindowManager.center_window(dlg)
 
         frame = ttk.Frame(dlg, padding=10)
         frame.pack(fill='both', expand=True)

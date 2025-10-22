@@ -31,22 +31,28 @@ class ModernTheme:
         }
 
         PALETTE_DARK = {
-            'bg': '#1e1e1e',
-            'fg': '#e6e6e6',
+            # Slightly lighter main background to avoid pure black which can hide borders
+            'bg': '#1f1f1f',
+            # Ensure high contrast text on dark backgrounds
+            'fg': '#f3f3f3',
             'accent': '#4a90e2',
             'accent_light': '#6fb3ff',
             'error': '#ff6b6b',
             'success': '#28a745',
             'warning': '#ffc107',
             'info': '#17a2b8',
-            'border': '#2e2e2e',
-            'hover': '#2a2a2a',
-            'disabled': '#6c757d',
-            'label_fg': '#cccccc',
-            'input_bg': '#2d2d2d',
-            'input_border': '#3e3e3e',
-            'section_bg': '#252526',
-            'section_header_bg': '#323233',
+            # Make borders slightly brighter than background so framed sections are visible
+            'border': '#3a3a3a',
+            'hover': '#2b2b2b',
+            'disabled': '#7a848c',
+            # Label color more readable
+            'label_fg': '#e6e6e6',
+            # Inputs slightly lighter than background to stand out
+            'input_bg': '#262626',
+            'input_border': '#4a4a4a',
+            # Section backgrounds: keep subtle contrast but visible
+            'section_bg': '#232323',
+            'section_header_bg': '#2b2b2b',
         }
 
         self.colors = PALETTE_DARK if self.mode == 'dark' else PALETTE_LIGHT
@@ -56,6 +62,7 @@ class ModernTheme:
         self.style.set_theme("clam")
 
         # Configuration générale
+        # Base style applied to all widgets: set default font and colors
         self.style.configure(".",
             background=self.colors['bg'],
             foreground=self.colors['fg'],
@@ -71,44 +78,51 @@ class ModernTheme:
 
     def _setup_section_styles(self):
         """Configure les styles pour les sections de formulaire"""
+        # Section frame with visible border and padding so content doesn't touch edges
         self.style.configure('Section.TFrame',
             background=self.colors['section_bg'],
-            relief='groove',
-            borderwidth=1)
+            relief='solid',
+            borderwidth=1,
+            padding=(8, 8))
 
+        # Header uses accent color and stronger padding to avoid cramped text
         self.style.configure('SectionHeader.TLabel',
             background=self.colors['section_header_bg'],
             foreground=self.colors['accent'],
             font=('Segoe UI', 11, 'bold'),
-            padding=(10, 5))
+            padding=(12, 8))
 
+        # Field labels: add more padding and slightly bolder font for readability
         self.style.configure('FieldLabel.TLabel',
             background=self.colors['bg'],
             foreground=self.colors['label_fg'],
-            font=('Segoe UI', 10),
-            padding=(5, 2))
+            font=('Segoe UI', 10, 'normal'),
+            padding=(6, 4))
 
     def _setup_entry_styles(self):
         """Configure les styles pour les champs de saisie"""
+        # Entries: ensure visible border and internal padding so text isn't clipped
         self.style.configure('TEntry',
             fieldbackground=self.colors['input_bg'],
             selectbackground=self.colors['accent'],
             selectforeground='white',
             borderwidth=1,
             relief='solid',
-            padding=5)
+            padding=(6, 6))
 
         self.style.map('TEntry',
             fieldbackground=[('readonly', self.colors['section_bg'])],
-            bordercolor=[('focus', self.colors['accent'])])
+            # Some ttk themes may not support bordercolor; provide focus background as fallback
+            background=[('focus', self.colors['input_bg'])])
 
     def _setup_button_styles(self):
         # Style principal pour les boutons
+        # Buttons: keep consistent padding and ensure foreground on dark themes
         self.style.configure('TButton',
             background=self.colors['accent'],
             foreground='white',
             font=('Segoe UI', 10),
-            padding=(10, 5),
+            padding=(10, 6),
             relief='flat',
             borderwidth=0)
 
@@ -123,9 +137,13 @@ class ModernTheme:
             foreground=[('disabled', '#ffffff')])
 
         # Boutons secondaires
+        # Secondary buttons should have clear border and contrast
         self.style.configure('Secondary.TButton',
             background=self.colors['border'],
-            foreground=self.colors['fg'])
+            foreground=self.colors['fg'],
+            relief='solid',
+            borderwidth=1,
+            padding=(8, 6))
 
         # Boutons de danger
         self.style.configure('Danger.TButton',
@@ -140,14 +158,15 @@ class ModernTheme:
             selectforeground=self.colors['fg'],
             borderwidth=1,
             arrowsize=12,
-            padding=5)
+            padding=(6, 4))
 
     def _setup_treeview_styles(self):
+        # Treeview rows slightly taller for readability and visible separators
         self.style.configure('Treeview',
             background=self.colors['bg'],
             fieldbackground=self.colors['bg'],
             foreground=self.colors['fg'],
-            rowheight=25,
+            rowheight=28,
             borderwidth=1)
 
         self.style.configure('Treeview.Heading',
@@ -175,6 +194,7 @@ class ModernTheme:
             expand=[('selected', [1, 1, 1, 0])])
 
     def _setup_frame_styles(self):
+        # Default frame background
         self.style.configure('TFrame',
             background=self.colors['bg'])
 
@@ -184,6 +204,7 @@ class ModernTheme:
             borderwidth=1)
 
     def _setup_label_styles(self):
+        # Labels: ensure they inherit background and have enough padding where needed
         self.style.configure('TLabel',
             background=self.colors['bg'],
             foreground=self.colors['fg'],
@@ -196,3 +217,21 @@ class ModernTheme:
         self.style.configure('Subheader.TLabel',
             font=('Segoe UI', 12),
             foreground=self.colors['label_fg'])
+        # Ensure checkbuttons and radiobuttons have visible selection color
+        try:
+            self.style.configure('TCheckbutton',
+                background=self.colors['bg'],
+                foreground=self.colors['fg'])
+            self.style.map('TCheckbutton',
+                background=[('active', self.colors['hover']), ('selected', self.colors['accent'])],
+                foreground=[('selected', 'white')])
+
+            self.style.configure('TRadiobutton',
+                background=self.colors['bg'],
+                foreground=self.colors['fg'])
+            self.style.map('TRadiobutton',
+                background=[('active', self.colors['hover']), ('selected', self.colors['accent'])],
+                foreground=[('selected', 'white')])
+        except Exception:
+            # Some themes may not support mapping these states; ignore safely
+            pass
