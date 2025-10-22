@@ -37,6 +37,16 @@ class ContratForm(ttk.Frame):
         self.prix_inter_var = tk.StringVar(value='')
         self.date_debut_var = tk.StringVar(value=today)
         self.date_fin_var = tk.StringVar(value='')
+        # When period or start date change, update end date automatically
+        try:
+            self.period_var.trace_add('write', lambda *a: self._update_date_fin())
+        except Exception:
+            # older Tkinter versions
+            self.period_var.trace('w', lambda *a: self._update_date_fin())
+        try:
+            self.date_debut_var.trace_add('write', lambda *a: self._update_date_fin())
+        except Exception:
+            self.date_debut_var.trace('w', lambda *a: self._update_date_fin())
 
     def setup_gui(self):
         """Configure l'interface utilisateur principale"""
@@ -158,6 +168,41 @@ class ContratForm(ttk.Frame):
             'date_debut': self.date_debut_var.get(),
             'date_fin': self.date_fin_var.get()
         }
+
+    def _update_date_fin(self):
+        """Calcule et met à jour `date_fin` à partir de `date_debut` + `period` mois.
+
+        Expects dates in dd/mm/YYYY and period as number of months (string like '12' or '06').
+        """
+        import datetime
+        from calendar import monthrange
+
+        start = self.date_debut_var.get()
+        period = self.period_var.get()
+
+        if not start or not period:
+            return
+
+        # parse period as int (handle leading zeros)
+        try:
+            months = int(period)
+        except Exception:
+            return
+
+        try:
+            day, month, year = [int(x) for x in start.split('/')]
+            # Compute target month/year
+            total_month = month - 1 + months
+            new_year = year + total_month // 12
+            new_month = total_month % 12 + 1
+            # clamp day to last day of target month
+            last_day = monthrange(new_year, new_month)[1]
+            new_day = min(day, last_day)
+            new_date = datetime.date(new_year, new_month, new_day)
+            self.date_fin_var.set(new_date.strftime('%d/%m/%Y'))
+        except Exception:
+            # if parsing fails silently ignore
+            return
 
     def set_values(self, values):
         """Définit les valeurs du formulaire"""
