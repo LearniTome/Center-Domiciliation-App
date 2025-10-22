@@ -44,13 +44,39 @@ class ContratForm(ttk.Frame):
         main_frame = ttk.Frame(self)
         main_frame.pack(fill="both", expand=True, padx=5, pady=5)
 
-        # Configuration de la grille (3 colonnes, 2 lignes)
-        for i in range(3):
-            main_frame.grid_columnconfigure(i, weight=1, uniform="col")
+        # Create two logical groups: Dates & Periods, and Prices
+        # Dates group on top, Prices group below
+        dates_group = ttk.LabelFrame(main_frame, text="Dates & Durée", padding=(8, 6))
+        dates_group.pack(fill="x", padx=5, pady=(0, 8))
+        dates_group.grid_columnconfigure(0, weight=1)
+        dates_group.grid_columnconfigure(1, weight=1)
 
-        # Création des champs en 2 lignes de 3 champs
-        self.create_fields_row1(main_frame)
-        self.create_fields_row2(main_frame)
+        prices_group = ttk.LabelFrame(main_frame, text="Tarifs", padding=(8, 6))
+        prices_group.pack(fill="x", padx=5, pady=(0, 8))
+        prices_group.grid_columnconfigure(0, weight=1)
+        prices_group.grid_columnconfigure(1, weight=1)
+
+        # Dates & Periods (2 columns)
+        # Date Contrat | Période
+        date_frame = self.create_date_field_group(dates_group, "Date Contrat", self.date_contrat_var)
+        date_frame.grid(row=0, column=0, padx=5, pady=5, sticky="ew")
+
+        period_frame = self.create_combo_field_group(dates_group, "Période de Contrat", self.period_var, Nbmois)
+        period_frame.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
+
+        # Date Début | Date Fin
+        date_debut_frame = self.create_date_field_group(dates_group, "Date Début", self.date_debut_var)
+        date_debut_frame.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
+
+        date_fin_frame = self.create_date_field_group(dates_group, "Date Fin", self.date_fin_var)
+        date_fin_frame.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
+
+        # Prices group: Prix mensuel | Prix intermédiaire
+        prix_frame = self.create_entry_field_group(prices_group, "Prix mensuel", self.prix_mensuel_var)
+        prix_frame.grid(row=0, column=0, padx=5, pady=5, sticky="ew")
+
+        prix_inter_frame = self.create_entry_field_group(prices_group, "Prix intermédiaire", self.prix_inter_var)
+        prix_inter_frame.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
 
     def create_fields_row1(self, parent):
         """Crée la première ligne de champs"""
