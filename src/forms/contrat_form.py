@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from tkcalendar import Calendar
+from tkcalendar import DateEntry
 from ..utils.constants import Nbmois
 from ..utils.utils import ThemeManager, WidgetFactory
 
@@ -87,51 +87,40 @@ class ContratForm(ttk.Frame):
         date_fin_frame.grid(row=1, column=2, padx=5, pady=5, sticky="ew")
 
     def create_date_field_group(self, parent, label_text, variable):
-        """Crée un groupe de champs pour les dates"""
-        frame = ttk.LabelFrame(parent, text=label_text, padding=(5, 5, 5, 5))
+        """Crée un groupe de champs pour les dates.
 
-        entry_frame = ttk.Frame(frame)
-        entry_frame.pack(fill="x", expand=True)
+        Use a plain frame with a label above the widget (no LabelFrame border) to avoid
+        the double-border appearance.
+        """
+        frame = ttk.Frame(parent)
 
-        entry = ttk.Entry(entry_frame, textvariable=variable)
-        entry.pack(side="left", fill="x", expand=True)
-
-        cal_button = WidgetFactory.create_button(entry_frame, text="📅",
-                      command=lambda v=variable: self.show_calendar(v), style='Secondary.TButton')
-        cal_button.pack(side="right", padx=(5, 0))
+        # Label on top, widget below (matches AssocieForm style)
+        ttk.Label(frame, text=label_text + ':', anchor='w').grid(row=0, column=0, sticky='w')
+        DateEntry(frame, textvariable=variable, date_pattern='dd/mm/yyyy', width=12).grid(row=1, column=0, sticky='ew', pady=(2, 0))
+        frame.grid_columnconfigure(0, weight=1)
 
         return frame
 
     def create_entry_field_group(self, parent, label_text, variable):
-        """Crée un groupe de champs pour les entrées simples"""
-        frame = ttk.LabelFrame(parent, text=label_text, padding=(5, 5, 5, 5))
-
-        entry = ttk.Entry(frame, textvariable=variable)
-        entry.pack(fill="x", expand=True)
-
+        """Crée un groupe de champs pour les entrées simples (label + entry)"""
+        frame = ttk.Frame(parent)
+        ttk.Label(frame, text=label_text + ':', anchor='w').grid(row=0, column=0, sticky='w')
+        ttk.Entry(frame, textvariable=variable).grid(row=1, column=0, sticky='ew', pady=(2, 0))
+        frame.grid_columnconfigure(0, weight=1)
         return frame
 
     def create_combo_field_group(self, parent, label_text, variable, values):
-        """Crée un groupe de champs pour les combobox"""
-        frame = ttk.LabelFrame(parent, text=label_text, padding=(5, 5, 5, 5))
-
-        combo = ttk.Combobox(frame, textvariable=variable, values=values)
-        combo.pack(fill="x", expand=True)
-
+        """Crée un groupe de champs pour les combobox (label + combobox)"""
+        frame = ttk.Frame(parent)
+        ttk.Label(frame, text=label_text + ':', anchor='w').grid(row=0, column=0, sticky='w')
+        ttk.Combobox(frame, textvariable=variable, values=values).grid(row=1, column=0, sticky='ew', pady=(2, 0))
+        frame.grid_columnconfigure(0, weight=1)
         return frame
 
     def show_calendar(self, var):
         """Affiche un calendrier pour sélectionner une date"""
-        top = tk.Toplevel(self)
-        top.title("Sélectionner une date")
-        cal = Calendar(top, selectmode="day", date_pattern="dd/mm/y")
-        cal.pack(padx=10, pady=10)
-
-        def set_date():
-            var.set(cal.get_date())
-            top.destroy()
-
-        WidgetFactory.create_button(top, text="OK", command=set_date, style='Secondary.TButton').pack(pady=5)
+        # removed: replaced by inline DateEntry widgets
+        return
 
     def get_values(self):
         """Récupère toutes les valeurs du formulaire"""
