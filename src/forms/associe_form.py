@@ -71,23 +71,26 @@ class AssocieForm(ttk.Frame):
 
     def create_associe_vars(self):
         """Crée et retourne les variables pour un nouvel associé"""
+        from ..utils.constants import Nationalite
+
+        # sensible defaults: civilite 'M.', nationality first option, empty strings otherwise
         return {
-            'civilite': tk.StringVar(),
-            'nom': tk.StringVar(),
-            'prenom': tk.StringVar(),
-            'parts': tk.StringVar(),
-            'date_naiss': tk.StringVar(),
-            'lieu_naiss': tk.StringVar(),
-            'nationalite': tk.StringVar(),
-            'num_piece': tk.StringVar(),
-            'validite_piece': tk.StringVar(),
-            'adresse': tk.StringVar(),
-            'telephone': tk.StringVar(),
-            'email': tk.StringVar(),
-            'est_gerant': tk.BooleanVar(),
-            'qualite': tk.StringVar(),
-            'capital_detenu': tk.StringVar(),
-            'num_parts': tk.StringVar()
+            'civilite': tk.StringVar(value='M.'),
+            'nom': tk.StringVar(value=''),
+            'prenom': tk.StringVar(value=''),
+            'parts': tk.StringVar(value=''),
+            'date_naiss': tk.StringVar(value=''),
+            'lieu_naiss': tk.StringVar(value=''),
+            'nationalite': tk.StringVar(value=(Nationalite[0] if Nationalite else '')),
+            'num_piece': tk.StringVar(value=''),
+            'validite_piece': tk.StringVar(value=''),
+            'adresse': tk.StringVar(value=''),
+            'telephone': tk.StringVar(value=''),
+            'email': tk.StringVar(value=''),
+            'est_gerant': tk.BooleanVar(value=False),
+            'qualite': tk.StringVar(value=''),
+            'capital_detenu': tk.StringVar(value=''),
+            'num_parts': tk.StringVar(value='')
         }
 
     def create_associe_fields(self, parent, index):

@@ -28,16 +28,21 @@ class SocieteForm(ttk.Frame):
             self.set_values(values_dict)
 
     def initialize_variables(self):
-        """Initialise toutes les variables du formulaire"""
-        # Variables pour les champs de texte
-        self.den_ste_var = tk.StringVar(value="")
-        self.forme_jur_var = tk.StringVar(value="")
+        """Initialise toutes les variables du formulaire avec des valeurs par défaut raisonnables"""
+        # Variables pour les champs de texte — valeurs par défaut prises depuis les constantes
+        from ..utils.constants import DenSte, Formjur, Capital, PartsSocial, SteAdresse, Tribunnaux
+
+        self.den_ste_var = tk.StringVar(value=DenSte[0] if DenSte else "")
+        self.forme_jur_var = tk.StringVar(value=Formjur[0] if Formjur else "")
         self.ice_var = tk.StringVar(value="")
-        self.date_ice_var = tk.StringVar(value="")
-        self.capital_var = tk.StringVar(value="")
-        self.parts_social_var = tk.StringVar(value="")
-        self.ste_adress_var = tk.StringVar(value="")
-        self.tribunal_var = tk.StringVar(value="")
+        # default date to today's date in dd/mm/yyyy
+        import datetime
+        today = datetime.date.today().strftime('%d/%m/%Y')
+        self.date_ice_var = tk.StringVar(value=today)
+        self.capital_var = tk.StringVar(value=Capital[0] if Capital else "")
+        self.parts_social_var = tk.StringVar(value=PartsSocial[0] if PartsSocial else "")
+        self.ste_adress_var = tk.StringVar(value=SteAdresse[0] if SteAdresse else "")
+        self.tribunal_var = tk.StringVar(value=Tribunnaux[0] if Tribunnaux else "")
 
         # Liste pour stocker les variables des activités
         self.activites_vars = []

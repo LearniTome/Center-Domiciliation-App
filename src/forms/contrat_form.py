@@ -25,12 +25,18 @@ class ContratForm(ttk.Frame):
 
     def initialize_variables(self):
         """Initialise les variables du formulaire"""
-        self.date_contrat_var = tk.StringVar()
-        self.period_var = tk.StringVar()
-        self.prix_mensuel_var = tk.StringVar()
-        self.prix_inter_var = tk.StringVar()
-        self.date_debut_var = tk.StringVar()
-        self.date_fin_var = tk.StringVar()
+        import datetime
+        from ..utils.constants import Nbmois
+
+        today = datetime.date.today().strftime('%d/%m/%Y')
+
+        # Defaults: today's date for contract and start, default period to 12 months if available
+        self.date_contrat_var = tk.StringVar(value=today)
+        self.period_var = tk.StringVar(value=(Nbmois[1] if len(Nbmois) > 1 else (Nbmois[0] if Nbmois else '')))
+        self.prix_mensuel_var = tk.StringVar(value='')
+        self.prix_inter_var = tk.StringVar(value='')
+        self.date_debut_var = tk.StringVar(value=today)
+        self.date_fin_var = tk.StringVar(value='')
 
     def setup_gui(self):
         """Configure l'interface utilisateur principale"""
@@ -152,11 +158,15 @@ class ContratForm(ttk.Frame):
 
     def reset(self):
         """Réinitialise complètement le formulaire"""
-        self.date_contrat_var.set('')
-        self.period_var.set('')
+        import datetime
+        from ..utils.constants import Nbmois
+        today = datetime.date.today().strftime('%d/%m/%Y')
+
+        self.date_contrat_var.set(today)
+        self.period_var.set((Nbmois[1] if len(Nbmois) > 1 else (Nbmois[0] if Nbmois else '')))
         self.prix_mensuel_var.set('')
         self.prix_inter_var.set('')
-        self.date_debut_var.set('')
+        self.date_debut_var.set(today)
         self.date_fin_var.set('')
         self.values = {}
 
