@@ -90,8 +90,8 @@ class ContratForm(ttk.Frame):
         entry = ttk.Entry(entry_frame, textvariable=variable)
         entry.pack(side="left", fill="x", expand=True)
 
-        cal_button = ttk.Button(entry_frame, text="📅", width=3,
-                              command=lambda v=variable: self.show_calendar(v))
+        cal_button = WidgetFactory.create_button(entry_frame, text="📅",
+                      command=lambda v=variable: self.show_calendar(v), style='Secondary.TButton')
         cal_button.pack(side="right", padx=(5, 0))
 
         return frame
@@ -125,7 +125,7 @@ class ContratForm(ttk.Frame):
             var.set(cal.get_date())
             top.destroy()
 
-        ttk.Button(top, text="OK", command=set_date).pack(pady=5)
+        WidgetFactory.create_button(top, text="OK", command=set_date, style='Secondary.TButton').pack(pady=5)
 
     def get_values(self):
         """Récupère toutes les valeurs du formulaire"""

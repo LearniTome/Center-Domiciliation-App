@@ -3,7 +3,7 @@ from tkinter import ttk, messagebox
 from .societe_form import SocieteForm
 from .associe_form import AssocieForm
 from .contrat_form import ContratForm
-from ..utils.utils import ThemeManager, WidgetFactory
+from ..utils.utils import ThemeManager, WidgetFactory, WindowManager
 
 class MainForm(ttk.Frame):
     def __init__(self, parent, values_dict=None):
@@ -254,12 +254,17 @@ class MainForm(ttk.Frame):
         # Previous
         self.prev_btn = WidgetFactory.create_button(
             nav_frame, text="◀ Précédent", command=self.prev_page)
-        self.prev_btn.grid(row=0, column=0, sticky="w", padx=5)
+        self.prev_btn.grid(row=0, column=1, sticky="w", padx=5)
 
         # Next
         self.next_btn = WidgetFactory.create_button(
             nav_frame, text="Suivant ▶", command=self.next_page)
         self.next_btn.grid(row=0, column=2, sticky="e", padx=5)
+
+        # Configuration
+        self.config_btn = WidgetFactory.create_button(
+            nav_frame, text="⚙ Configuration", command=self.open_configuration, style='Secondary.TButton')
+        self.config_btn.grid(row=0, column=0, sticky="w", padx=5)
 
         # Save
         self.save_btn = WidgetFactory.create_button(
@@ -286,6 +291,61 @@ class MainForm(ttk.Frame):
         """Switch to dashboard view"""
         from .dashboard_view import DashboardView
         dashboard = DashboardView(self.winfo_toplevel())  # Window is now modal by default
+
+    def open_configuration(self):
+        """Open a simple configuration dialog to change theme and other prefs."""
+        try:
+            top = tk.Toplevel(self.winfo_toplevel())
+            top.transient(self.winfo_toplevel())
+            top.title('Configuration')
+            top.resizable(False, False)
+            # modal
+            try:
+                top.grab_set()
+            except Exception:
+                pass
+
+            inner = ttk.Frame(top, padding=12)
+            inner.pack(fill='both', expand=True)
+
+            # Theme selection
+            ttk.Label(inner, text='Thème', style='Header.TLabel').pack(anchor='w', pady=(0, 6))
+            theme_var = tk.StringVar(value=getattr(self.theme_manager.theme, 'mode', 'dark'))
+
+            rb_dark = ttk.Radiobutton(inner, text='Sombre', variable=theme_var, value='dark')
+            rb_light = ttk.Radiobutton(inner, text='Clair', variable=theme_var, value='light')
+            rb_dark.pack(anchor='w')
+            rb_light.pack(anchor='w')
+
+            # Actions
+            actions = ttk.Frame(inner)
+            actions.pack(fill='x', pady=(12, 0))
+
+            def _save():
+                try:
+                    chosen = theme_var.get()
+                    self.theme_manager.set_theme(chosen)
+                    messagebox.showinfo('Configuration', 'Préférences enregistrées.')
+                    try:
+                        top.destroy()
+                    except Exception:
+                        pass
+                except Exception as e:
+                    messagebox.showerror('Erreur', f"Impossible d'enregistrer: {e}")
+
+            save_btn = WidgetFactory.create_button(actions, text='Enregistrer', command=_save, style='Action.TButton')
+            save_btn.pack(side='right', padx=4)
+
+            close_btn = WidgetFactory.create_button(actions, text='Fermer', command=lambda: top.destroy())
+            close_btn.pack(side='right')
+
+            # Center the dialog
+            try:
+                WindowManager.center_window(top)
+            except Exception:
+                pass
+        except Exception:
+            messagebox.showerror('Erreur', "Impossible d'ouvrir la configuration")
 
     def get_values(self):
         """Get values from all forms"""

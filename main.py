@@ -12,6 +12,7 @@ warnings.filterwarnings(
 )
 from src.forms.main_form import MainForm
 from src.utils import WindowManager, ThemeManager, PathManager, ErrorHandler
+from src.utils.utils import WidgetFactory
 import pandas as pd
 import logging
 from tkinter import filedialog, simpledialog
@@ -68,21 +69,20 @@ class MainApp(tk.Tk):
         buttons_frame.grid_columnconfigure(2, weight=1)
 
         # Single generation button (modern style)
-        style = ttk.Style()
-        style.configure('Primary.TButton', foreground='white', background='#0066CC', font=('Segoe UI', 10, 'bold'))
-        gen_btn = ttk.Button(
+        # Use the unified configuration button style for all main buttons
+        gen_btn = WidgetFactory.create_button(
             buttons_frame,
             text="Générer les documents",
-            style='Primary.TButton',
             command=self.generate_documents,
+            style='Secondary.TButton'
         )
         gen_btn.grid(row=0, column=0, padx=5)
 
         # Dashboard button (left)
-        ttk.Button(
+        WidgetFactory.create_button(
             buttons_frame,
             text="📊 Tableau de bord",
-            command=self.main_form.show_dashboard,
+            command=self.main_form.show_dashboard
         ).grid(row=0, column=2, padx=5)
 
         # Theme toggle
@@ -96,27 +96,13 @@ class MainApp(tk.Tk):
             except Exception:
                 pass
 
-        theme_btn = ttk.Button(buttons_frame, text=('🌙' if self.theme_manager.theme.mode == 'dark' else '☀️'), command=_toggle_theme)
+        theme_btn = WidgetFactory.create_button(buttons_frame, text=('🌙' if self.theme_manager.theme.mode == 'dark' else '☀️'), command=_toggle_theme)
         theme_btn.grid(row=0, column=6, padx=5)
 
         # Boutons de contrôle (droite)
-        ttk.Button(
-            buttons_frame,
-            text="🆕 Nouvelle",
-            command=self.clear_form,
-        ).grid(row=0, column=3, padx=5)
-
-        ttk.Button(
-            buttons_frame,
-            text="💾 Sauvegarder",
-            command=self.save_to_db,
-        ).grid(row=0, column=4, padx=5)
-
-        ttk.Button(
-            buttons_frame,
-            text="❌ Quitter",
-            command=self.quit,
-        ).grid(row=0, column=5, padx=5)
+        WidgetFactory.create_button(buttons_frame, text="🆕 Nouvelle", command=self.clear_form).grid(row=0, column=3, padx=5)
+        WidgetFactory.create_button(buttons_frame, text="💾 Sauvegarder", command=self.save_to_db).grid(row=0, column=4, padx=5)
+        WidgetFactory.create_button(buttons_frame, text="❌ Quitter", command=self.quit).grid(row=0, column=5, padx=5)
 
     def collect_values(self):
         """Collecte toutes les valeurs des formulaires"""
@@ -291,8 +277,9 @@ class MainApp(tk.Tk):
             dlg.grab_release()
             dlg.destroy()
 
-        ttk.Button(btn_frame, text='OK', command=on_ok).pack(side='right', padx=5)
-        ttk.Button(btn_frame, text='Annuler', command=on_cancel).pack(side='right')
+        from src.utils.utils import WidgetFactory as _WF
+        _WF.create_button(btn_frame, text='OK', command=on_ok, style='Secondary.TButton').pack(side='right', padx=5)
+        _WF.create_button(btn_frame, text='Annuler', command=on_cancel, style='Secondary.TButton').pack(side='right')
 
         self.wait_window(dlg)
         return selected_value
@@ -352,8 +339,9 @@ class MainApp(tk.Tk):
 
         btn_frame = ttk.Frame(dlg)
         btn_frame.pack(fill='x', pady=(8, 6))
-        ttk.Button(btn_frame, text='OK', command=on_ok).pack(side='right', padx=5)
-        ttk.Button(btn_frame, text='Annuler', command=on_cancel).pack(side='right')
+        from src.utils.utils import WidgetFactory as _WF
+        _WF.create_button(btn_frame, text='OK', command=on_ok, style='Secondary.TButton').pack(side='right', padx=5)
+        _WF.create_button(btn_frame, text='Annuler', command=on_cancel, style='Secondary.TButton').pack(side='right')
 
         self.wait_window(dlg)
         if result['paths'] is None:

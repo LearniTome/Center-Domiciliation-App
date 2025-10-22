@@ -122,33 +122,79 @@ class ModernTheme:
             background=self.colors['accent'],
             foreground='white',
             font=('Segoe UI', 10),
-            padding=(10, 6),
+            padding=(10, 8),
+            relief='flat',
+            borderwidth=0)
+
+        # Navigation / primary buttons used throughout the app
+        self.style.configure('Nav.TButton',
+            background=self.colors['accent'],
+            foreground='white',
+            font=('Segoe UI', 10),
+            padding=(10, 8),
             relief='flat',
             borderwidth=0)
 
         # Style pour les boutons d'action
         self.style.configure('Action.TButton',
             background=self.colors['accent_light'],
-            padding=(15, 8))
+            padding=(12, 8))
 
         self.style.map('TButton',
             background=[('active', self.colors['accent_light']),
                        ('disabled', self.colors['disabled'])],
             foreground=[('disabled', '#ffffff')])
 
-        # Boutons secondaires
-        # Secondary buttons should have clear border and contrast
+        # Boutons secondaires (Configuration style) — bordered, neutral background
         self.style.configure('Secondary.TButton',
-            background=self.colors['border'],
+            background=self.colors['bg'],
             foreground=self.colors['fg'],
             relief='solid',
             borderwidth=1,
-            padding=(8, 6))
+            padding=(10, 8))
+
+        # Make other logical button styles visually match Secondary by default
+        try:
+            self.style.configure('Nav.TButton',
+                background=self.colors['bg'],
+                foreground=self.colors['fg'],
+                relief='solid',
+                borderwidth=1,
+                padding=(10, 8))
+            self.style.configure('Action.TButton',
+                background=self.colors['bg'],
+                foreground=self.colors['fg'],
+                relief='solid',
+                borderwidth=1,
+                padding=(10, 8))
+            self.style.configure('Danger.TButton',
+                background=self.colors['bg'],
+                foreground=self.colors['fg'],
+                relief='solid',
+                borderwidth=1,
+                padding=(10, 8))
+        except Exception:
+            pass
 
         # Boutons de danger
         self.style.configure('Danger.TButton',
             background=self.colors['error'],
             foreground='white')
+
+        # Make sure focus/active mappings don't introduce a distinct blue ring
+        try:
+            # Keep background consistent on focus/pressed so OS focus rings are less prominent
+            self.style.map('TButton',
+                background=[('active', self.colors['accent_light']), ('disabled', self.colors['disabled']), ('pressed', self.colors['accent_light'])],
+                foreground=[('disabled', '#ffffff')])
+            self.style.map('Nav.TButton',
+                background=[('active', self.colors['accent_light']), ('disabled', self.colors['disabled']), ('pressed', self.colors['accent_light'])],
+                foreground=[('disabled', '#ffffff')])
+            self.style.map('Secondary.TButton',
+                background=[('active', self.colors['hover']), ('disabled', self.colors['disabled'])],
+                foreground=[('disabled', self.colors['fg'])])
+        except Exception:
+            pass
 
     def _setup_combobox_styles(self):
         self.style.configure('TCombobox',

@@ -68,7 +68,10 @@ class ToolTip:
 
     def leave(self, event=None):
         if self.tooltip:
-            self.tooltip.destroy()
+            try:
+                self.tooltip.destroy()
+            except Exception:
+                pass
             self.tooltip = None
 
 class ThemeManager:
@@ -99,6 +102,13 @@ class ThemeManager:
             self._update_canvas_backgrounds()
         except Exception:
             logger.debug('Failed to update canvas/background on init', exc_info=True)
+        # Start background monitor to ensure dynamically created non-ttk widgets
+        # (like Combobox popdown Listbox) get themed shortly after creation.
+        try:
+            # _start_non_ttk_monitor is defined on this class below
+            self._start_non_ttk_monitor()
+        except Exception:
+            logger.debug('Failed to start non-ttk monitor', exc_info=True)
 
     def set_theme(self, mode: str):
         if mode not in ('light', 'dark'):
@@ -119,6 +129,8 @@ class ThemeManager:
         try:
             self._apply_root_background()
             self._update_canvas_backgrounds()
+            # Update non-ttk widget styles for existing widgets
+            self._apply_non_ttk_styles()
         except Exception:
             logger.debug('Failed to update canvas/background after set_theme', exc_info=True)
 
@@ -170,6 +182,84 @@ class ThemeManager:
         except Exception:
             logger.debug('Failed to update canvas backgrounds', exc_info=True)
 
+    def _apply_non_ttk_styles(self):
+        """Apply colors to non-ttk widgets (Listbox, Menu, Text) and update existing instances.
+
+        This uses root.option_add to set defaults for new widgets and walks the widget tree
+        to update already-created widgets so their selection colors match the theme.
+        """
+        try:
+            # Set global defaults for new widgets
+            try:
+                self.root.option_add('*Listbox.background', self.colors['bg'])
+                self.root.option_add('*Listbox.foreground', self.colors['fg'])
+                self.root.option_add('*Listbox.selectBackground', self.colors['accent'])
+                self.root.option_add('*Listbox.selectForeground', 'white')
+
+                self.root.option_add('*Text.background', self.colors['bg'])
+                self.root.option_add('*Text.foreground', self.colors['fg'])
+                self.root.option_add('*Text.insertBackground', self.colors['fg'])
+
+                self.root.option_add('*Menu.background', self.colors['bg'])
+                self.root.option_add('*Menu.foreground', self.colors['fg'])
+                self.root.option_add('*Menu.activeBackground', self.colors['accent'])
+                self.root.option_add('*Menu.activeForeground', 'white')
+            except Exception:
+                pass
+
+            # Walk existing widgets and update instances
+            def _walk_update(widget):
+                for child in widget.winfo_children():
+                    try:
+                        if isinstance(child, tk.Listbox):
+                            child.configure(background=self.colors['bg'], foreground=self.colors['fg'], selectbackground=self.colors['accent'], selectforeground='white')
+                        elif isinstance(child, tk.Text):
+                            child.configure(background=self.colors['bg'], foreground=self.colors['fg'], insertbackground=self.colors['fg'])
+                        elif isinstance(child, tk.Menu):
+                            try:
+                                child.configure(background=self.colors['bg'], foreground=self.colors['fg'], activebackground=self.colors['accent'], activeforeground='white')
+                            except Exception:
+                                pass
+                    except Exception:
+                        pass
+                    # Recurse
+                    try:
+                        _walk_update(child)
+                    except Exception:
+                        pass
+
+            _walk_update(self.root)
+        except Exception:
+            logger.debug('Failed to apply non-ttk styles', exc_info=True)
+
+    def _start_non_ttk_monitor(self, interval_ms: int = 400):
+        """Start a periodic after() loop that reapplies non-ttk styles.
+
+        This ensures popdown widgets created later (combobox lists) are themed.
+        """
+        try:
+            # cancel previous if any
+            if hasattr(self, '_monitor_id') and self._monitor_id:
+                try:
+                    self.root.after_cancel(self._monitor_id)
+                except Exception:
+                    pass
+
+            def _monitor():
+                try:
+                    self._apply_non_ttk_styles()
+                except Exception:
+                    pass
+                try:
+                    self._monitor_id = self.root.after(interval_ms, _monitor)
+                except Exception:
+                    pass
+
+            # schedule first run
+            self._monitor_id = self.root.after(interval_ms, _monitor)
+        except Exception:
+            logger.debug('Failed to start monitor', exc_info=True)
+
     def apply_widget_styles(self, widget):
         """Applique un style cohérent en utilisant les noms définis dans ModernTheme.
 
@@ -198,8 +288,8 @@ class ThemeManager:
 
 class WidgetFactory:
     @staticmethod
-    def create_button(parent, text, command, style='Nav.TButton', tooltip=None):
-        btn = ttk.Button(parent, text=text, command=command, style=style)
+    def create_button(parent, text, command, style='Secondary.TButton', tooltip=None):
+        btn = ttk.Button(parent, text=text, command=command, style=style, takefocus=False)
         if tooltip:
             WidgetFactory.create_tooltip(btn, tooltip)
         return btn

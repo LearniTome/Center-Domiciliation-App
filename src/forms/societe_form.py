@@ -61,7 +61,7 @@ class SocieteForm(ttk.Frame):
         """Crée la section d'identification"""
         frame = ttk.LabelFrame(parent, text="Identification", padding=(10, 5))
         frame.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
-        
+
         # Container principal avec grid
         grid = ttk.Frame(frame)
         grid.pack(fill="x", padx=5, pady=5)
@@ -92,7 +92,7 @@ class SocieteForm(ttk.Frame):
             row=0, column=2, padx=(0, 5))
         date_container = ttk.Frame(ice_frame)
         date_container.grid(row=0, column=3, sticky="ew")
-        
+
         DateEntry(date_container, textvariable=self.date_ice_var,
                  date_pattern='dd/mm/yyyy', width=12).pack(side="left", fill="x", expand=True)
 
@@ -100,7 +100,7 @@ class SocieteForm(ttk.Frame):
         """Crée la section légale"""
         frame = ttk.LabelFrame(parent, text="Informations Légales", padding=(10, 5))
         frame.grid(row=0, column=1, padx=5, pady=5, sticky="nsew")
-        
+
         # Container principal avec grid
         grid = ttk.Frame(frame)
         grid.pack(fill="x", padx=5, pady=5)
@@ -136,7 +136,7 @@ class SocieteForm(ttk.Frame):
         """Crée la section adresse"""
         frame = ttk.LabelFrame(parent, text="Localisation", padding=(10, 5))
         frame.grid(row=1, column=0, columnspan=2, padx=5, pady=5, sticky="ew")
-        
+
         # Container principal avec grid
         grid = ttk.Frame(frame)
         grid.pack(fill="x", padx=5, pady=5)
@@ -169,7 +169,7 @@ class SocieteForm(ttk.Frame):
         content_frame.columnconfigure(0, weight=1)
 
         # Label d'information
-        info_label = ttk.Label(content_frame, 
+        info_label = ttk.Label(content_frame,
                              text="Ajoutez jusqu'à 6 activités principales",
                              anchor="center")
         info_label.pack(pady=(0, 5))
@@ -179,10 +179,10 @@ class SocieteForm(ttk.Frame):
         self.activities_container.pack(fill="x", expand=True)
 
         # Bouton d'ajout
-        add_btn = ttk.Button(content_frame, 
-                           text="➕ Ajouter une activité",
-                           command=self.add_activity,
-                           style='Action.TButton')
+        add_btn = WidgetFactory.create_button(content_frame,
+                   text="➕ Ajouter une activité",
+                   command=self.add_activity,
+                   style='Secondary.TButton')
         add_btn.pack(pady=(5, 0))
 
     def add_activity(self):
@@ -201,17 +201,17 @@ class SocieteForm(ttk.Frame):
         activity_frame.columnconfigure(0, weight=1)
 
         # Combobox pour l'activité
-        combo = ttk.Combobox(activity_frame, 
+        combo = ttk.Combobox(activity_frame,
                            textvariable=var,
                            values=Activities)
         combo.pack(side="left", fill="x", expand=True, padx=(0, 5))
 
         # Bouton de suppression
-        remove_btn = ttk.Button(activity_frame,
-                              text="❌",
-                              width=3,
-                              style='Danger.TButton',
-                              command=lambda f=activity_frame, v=var: self.remove_activity(f, v))
+        remove_btn = WidgetFactory.create_button(activity_frame,
+                      text="❌",
+                      command=lambda f=activity_frame, v=var: self.remove_activity(f, v),
+                      style='Danger.TButton')
+        # keep small width via padding instead of width to keep uniform height
         remove_btn.pack(side="right")
 
     def remove_activity(self, frame, var):
