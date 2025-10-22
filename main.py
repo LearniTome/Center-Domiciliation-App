@@ -187,7 +187,23 @@ class MainApp(tk.Tk):
                 finally:
                     self.after(10, lambda: (progress_win.grab_release(), progress_win.destroy()))
 
-            t = threading.Thread(target=worker, daemon=True)
+            def worker_wrapper():
+                # detect if user selected the project's tmp_out directory and request cleanup
+                try:
+                    cleanup_tmp_flag = Path(out_dir).name == 'tmp_out'
+                except Exception:
+                    cleanup_tmp_flag = False
+                # run worker with cleanup flag captured via closure
+                try:
+                    report = render_templates(self.values, str(PathManager.MODELS_DIR), out_dir, to_pdf=to_pdf, templates_list=tpl_paths, progress_callback=progress_cb, cleanup_tmp=cleanup_tmp_flag)
+                    self.after(10, lambda: messagebox.showinfo('Génération terminée', f"Génération terminée. {len(report)} modèles traités. Fichiers enregistrés dans {out_dir}"))
+                except Exception as e:
+                    logging.exception('Generation failed: %s', e)
+                    self.after(10, lambda: ErrorHandler.handle_error(e, 'Erreur pendant la génération'))
+                finally:
+                    self.after(10, lambda: (progress_win.grab_release(), progress_win.destroy()))
+
+            t = threading.Thread(target=worker_wrapper, daemon=True)
             t.start()
 
         except Exception as e:

@@ -53,3 +53,6 @@ ENV/
 # Windows
 Thumbs.db
 Desktop.ini
+
+# Generated output
+tmp_out/

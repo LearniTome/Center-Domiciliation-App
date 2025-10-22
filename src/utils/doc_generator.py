@@ -63,6 +63,7 @@ def render_templates(
     to_pdf: bool = False,
     templates_list: Optional[List[str]] = None,
     progress_callback: Optional[Callable[[int, int, str, Dict], None]] = None,
+    cleanup_tmp: bool = False,
 ) -> List[Dict]:
     """Render .docx templates.
 
@@ -169,5 +170,23 @@ def render_templates(
         logger.info("Saved generation report to %s", report_path)
     except Exception:
         logger.exception("Failed to write generation report")
+
+    # Optionally remove generated files in out_dir after saving the report.
+    # Keep the generation_report.json file but delete other files (docx/pdf) when cleanup_tmp is True.
+    if cleanup_tmp:
+        try:
+            for child in out_dir.iterdir():
+                # keep the report file
+                if child.name == report_path.name:
+                    continue
+                # only remove files (avoid removing directories unintentionally)
+                if child.is_file():
+                    try:
+                        child.unlink()
+                    except Exception:
+                        logger.debug("Failed to remove temporary file %s", child, exc_info=True)
+            logger.info("Cleaned up temporary output files in %s", out_dir)
+        except Exception:
+            logger.exception("Failed to cleanup temporary output directory %s", out_dir)
 
     return report
