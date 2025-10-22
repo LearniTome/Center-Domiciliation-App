@@ -73,9 +73,42 @@ class ToolTip:
 
 class ThemeManager:
     def __init__(self, root):
-        self.theme = ModernTheme(root)
+        # Read persisted preference if available
+        self.root = root
+        self.pref_path = Path(__file__).resolve().parent.parent.parent / 'config' / 'preferences.json'
+        mode = 'dark'
+        try:
+            if self.pref_path.exists():
+                with self.pref_path.open('r', encoding='utf-8') as f:
+                    prefs = json.load(f)
+                    mode = prefs.get('theme', 'dark')
+        except Exception:
+            mode = 'dark'
+
+        self.theme = ModernTheme(root, mode=mode)
         self.style = self.theme.style
         self.colors = self.theme.colors
+
+    def set_theme(self, mode: str):
+        """Set theme mode ('light' or 'dark') and persist preference."""
+        if mode not in ('light', 'dark'):
+            return
+        # Recreate theme with new mode
+        self.theme = ModernTheme(self.root, mode=mode)
+        self.style = self.theme.style
+        self.colors = self.theme.colors
+        # Persist
+        try:
+            prefs = {'theme': mode}
+            self.pref_path.parent.mkdir(parents=True, exist_ok=True)
+            with self.pref_path.open('w', encoding='utf-8') as f:
+                json.dump(prefs, f, ensure_ascii=False, indent=2)
+        except Exception:
+            logger.exception('Failed to persist theme preference')
+
+    def toggle_theme(self):
+        new_mode = 'dark' if self.theme.mode == 'light' else 'light'
+        self.set_theme(new_mode)
 
     def setup_colors(self):
         # Configuration des couleurs modernes

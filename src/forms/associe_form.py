@@ -372,7 +372,8 @@ class AssocieForm(ttk.Frame):
     def _cleanup(self, event):
         """Nettoyage lors de la destruction"""
         try:
-            if hasattr(self, 'canvas'):
-                self.canvas.unbind_all("<MouseWheel>")
+            canvas = getattr(self, 'canvas', None)
+            if canvas is not None:
+                canvas.unbind_all("<MouseWheel>")
         except Exception:
             pass

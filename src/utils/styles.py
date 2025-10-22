@@ -2,15 +2,16 @@ from tkinter import ttk
 from ttkthemes import ThemedStyle
 
 class ModernTheme:
-    def __init__(self, root):
+    def __init__(self, root, mode: str = 'light'):
         self.root = root
         self.style = ThemedStyle(root)
+        self.mode = mode if mode in ('light', 'dark') else 'light'
         self.setup_colors()
         self.apply_theme()
 
     def setup_colors(self):
-        """Configure le thème de couleurs modernes"""
-        self.colors = {
+        """Configure le thème de couleurs modernes pour light et dark"""
+        PALETTE_LIGHT = {
             'bg': '#ffffff',
             'fg': '#333333',
             'accent': '#2171cd',
@@ -28,6 +29,27 @@ class ModernTheme:
             'section_bg': '#f8f9fa',
             'section_header_bg': '#e9ecef',
         }
+
+        PALETTE_DARK = {
+            'bg': '#1e1e1e',
+            'fg': '#e6e6e6',
+            'accent': '#4a90e2',
+            'accent_light': '#6fb3ff',
+            'error': '#ff6b6b',
+            'success': '#28a745',
+            'warning': '#ffc107',
+            'info': '#17a2b8',
+            'border': '#2e2e2e',
+            'hover': '#2a2a2a',
+            'disabled': '#6c757d',
+            'label_fg': '#cccccc',
+            'input_bg': '#2d2d2d',
+            'input_border': '#3e3e3e',
+            'section_bg': '#252526',
+            'section_header_bg': '#323233',
+        }
+
+        self.colors = PALETTE_DARK if self.mode == 'dark' else PALETTE_LIGHT
 
     def apply_theme(self):
         """Applique le thème moderne à tous les widgets"""
