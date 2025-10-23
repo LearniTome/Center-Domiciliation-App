@@ -8,6 +8,13 @@ import json
 import logging
 import traceback
 from typing import Optional, Callable, Any
+import datetime
+from openpyxl import load_workbook
+from openpyxl.utils import get_column_letter
+from openpyxl import Workbook
+from pathlib import Path as _Path
+import pandas as _pd
+import shutil
 
 # Configuration du logging
 logging.basicConfig(
@@ -437,6 +444,256 @@ def ensure_excel_db(path, sheets: dict):
     if modified:
         wb.save(path)
     return
+
+
+def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_vals: dict):
+    """Write the provided records into the Excel workbook at `path`.
+
+    This function is idempotent and will compute incremental integer IDs
+    for Societes/Associes/Contrats based on existing rows in the workbook.
+    Date-like fields are converted to datetime so Excel stores them as dates.
+    """
+    path = _Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    # import constants lazily to avoid circular imports
+    from . import constants as _const
+
+    # Helper to load existing sheet into DataFrame safely
+    def _load_sheet_df(sheet_name):
+        try:
+            return _pd.read_excel(path, sheet_name=sheet_name, dtype=str)
+        except Exception:
+            return _pd.DataFrame(columns=_const.excel_sheets.get(sheet_name, []))
+
+    # Helper next ID
+    def _next_id(sheet_name, id_col):
+        df = _load_sheet_df(sheet_name)
+        if id_col in df.columns and not df.empty:
+            try:
+                nums = _pd.to_numeric(df[id_col], errors='coerce').dropna()
+                if not nums.empty:
+                    return int(nums.max()) + 1
+            except Exception:
+                pass
+            return len(df) + 1
+        return 1
+
+    def _to_datetime(val):
+        # Return pandas.Timestamp or None
+        if val is None or (isinstance(val, str) and val.strip() == ''):
+            return None
+        try:
+            return _pd.to_datetime(val, dayfirst=True, errors='coerce')
+        except Exception:
+            return None
+
+    # Build rows aligned with headers
+    soc_df = _pd.DataFrame(columns=_const.societe_headers)
+    assoc_df = _pd.DataFrame(columns=_const.associe_headers)
+    contrat_df = _pd.DataFrame(columns=_const.contrat_headers)
+
+    # Societe
+    if societe_vals:
+        sid = _next_id('Societes', 'ID_SOCIETE')
+        # initialize with None so columns can hold datetimes or numbers
+        row: dict = {h: None for h in _const.societe_headers}
+        row['ID_SOCIETE'] = sid
+        # mapping from form keys to headers (best-effort)
+        mapping = {
+            'denomination': 'DEN_STE',
+            'forme_juridique': 'FORME_JUR',
+            'ice': 'ICE',
+            'date_ice': 'DATE_ICE',
+            'capital': 'CAPITAL',
+            'parts_social': 'PART_SOCIAL',
+            'adresse': 'STE_ADRESS',
+            'tribunal': 'TRIBUNAL'
+        }
+        for k, h in mapping.items():
+            if k in societe_vals:
+                v = societe_vals.get(k)
+                # try to parse dates into datetime
+                if h.upper().find('DATE') >= 0:
+                    dt = _to_datetime(v)
+                    row[h] = dt.to_pydatetime() if dt is not None else None
+                else:
+                    if v is None:
+                        row[h] = None
+                    elif isinstance(v, bool):
+                        row[h] = int(v)
+                    elif isinstance(v, (int, float)):
+                        row[h] = v
+                    else:
+                        row[h] = str(v)
+        soc_df = _pd.DataFrame([row])
+
+    # Associes
+    if associes_list:
+        aid = _next_id('Associes', 'ID_ASSOCIE')
+        assoc_rows = []
+        # Determine linked societe id
+        linked_sid = soc_df['ID_SOCIETE'].iloc[0] if not soc_df.empty else ''
+        for a in associes_list:
+            if not isinstance(a, dict):
+                continue
+            r: dict = {h: None for h in _const.associe_headers}
+            r['ID_ASSOCIE'] = aid
+            aid += 1
+            r['ID_SOCIETE'] = linked_sid
+            map_a = {
+                'civilite': 'CIVIL', 'prenom': 'PRENOM', 'nom': 'NOM',
+                'nationalite': 'NATIONALITY', 'num_piece': 'CIN_NUM',
+                'validite_piece': 'CIN_VALIDATY', 'date_naiss': 'DATE_NAISS',
+                'lieu_naiss': 'LIEU_NAISS', 'adresse': 'ADRESSE',
+                'telephone': 'PHONE', 'email': 'EMAIL', 'parts': 'PARTS',
+                'est_gerant': 'IS_GERANT', 'qualite': 'QUALITY'
+            }
+            for k, h in map_a.items():
+                if k in a:
+                    v = a.get(k)
+                    if h.upper().find('DATE') >= 0:
+                        dt = _to_datetime(v)
+                        r[h] = dt.to_pydatetime() if dt is not None else None
+                    else:
+                        if v is None:
+                            r[h] = None
+                        elif isinstance(v, bool):
+                            r[h] = int(v)
+                        elif isinstance(v, (int, float)):
+                            r[h] = v
+                        else:
+                            r[h] = str(v)
+            assoc_rows.append(r)
+        if assoc_rows:
+            assoc_df = _pd.DataFrame(assoc_rows)
+
+    # Contrat
+    if contrat_vals:
+        cid = _next_id('Contrats', 'ID_CONTRAT')
+        r: dict = {h: None for h in _const.contrat_headers}
+        r['ID_CONTRAT'] = cid
+        r['ID_SOCIETE'] = soc_df['ID_SOCIETE'].iloc[0] if not soc_df.empty else None
+        map_c = {'date_contrat': 'DATE_CONTRAT', 'period_domcil': 'PERIOD_DOMCIL',
+                 'prix_contrat': 'PRIX_CONTRAT', 'prix_intermediare': 'PRIX_INTERMEDIARE_CONTRAT',
+                 'dom_datedeb': 'DOM_DATEDEB', 'dom_datefin': 'DOM_DATEFIN'}
+        for k, h in map_c.items():
+            if k in contrat_vals:
+                v = contrat_vals.get(k)
+                if h.upper().find('DATE') >= 0:
+                    dt = _to_datetime(v)
+                    r[h] = dt.to_pydatetime() if dt is not None else None
+                else:
+                    if v is None:
+                        r[h] = None
+                    elif isinstance(v, (int, float)):
+                        r[h] = v
+                    else:
+                        r[h] = str(v)
+        contrat_df = _pd.DataFrame([r])
+
+    # Write into workbook
+    # If file exists, append; otherwise create fresh workbook
+    if not path.exists():
+        with _pd.ExcelWriter(path, engine='openpyxl') as writer:
+            if not soc_df.empty:
+                soc_df.to_excel(writer, sheet_name='Societes', index=False)
+            else:
+                # ensure header exists
+                _pd.DataFrame(columns=_const.societe_headers).to_excel(writer, sheet_name='Societes', index=False)
+            if not assoc_df.empty:
+                assoc_df.to_excel(writer, sheet_name='Associes', index=False)
+            else:
+                _pd.DataFrame(columns=_const.associe_headers).to_excel(writer, sheet_name='Associes', index=False)
+            if not contrat_df.empty:
+                contrat_df.to_excel(writer, sheet_name='Contrats', index=False)
+            else:
+                _pd.DataFrame(columns=_const.contrat_headers).to_excel(writer, sheet_name='Contrats', index=False)
+        return
+
+    # Append to existing workbook
+    with _pd.ExcelWriter(path, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+        if not soc_df.empty:
+            if 'Societes' in writer.book.sheetnames:
+                start = writer.book['Societes'].max_row
+                soc_df.to_excel(writer, sheet_name='Societes', index=False, header=False, startrow=start)
+            else:
+                soc_df.to_excel(writer, sheet_name='Societes', index=False)
+        if not assoc_df.empty:
+            if 'Associes' in writer.book.sheetnames:
+                start = writer.book['Associes'].max_row
+                assoc_df.to_excel(writer, sheet_name='Associes', index=False, header=False, startrow=start)
+            else:
+                assoc_df.to_excel(writer, sheet_name='Associes', index=False)
+        if not contrat_df.empty:
+            if 'Contrats' in writer.book.sheetnames:
+                start = writer.book['Contrats'].max_row
+                contrat_df.to_excel(writer, sheet_name='Contrats', index=False, header=False, startrow=start)
+            else:
+                contrat_df.to_excel(writer, sheet_name='Contrats', index=False)
+
+
+def migrate_excel_workbook(path):
+    """Detects sheets that look like canonical sheets but have different names
+    and merges their rows into the canonical sheet, then removes the old sheet.
+    """
+    path = _Path(path)
+    if not path.exists():
+        return
+    try:
+        # Create a timestamped backup before modifying the workbook
+        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        backup_name = f"{path.stem}_backup_{timestamp}{path.suffix}"
+        backup_path = path.parent / backup_name
+        shutil.copy2(path, backup_path)
+        logger.info(f"Created backup of workbook before migration: {backup_path}")
+    except Exception:
+        logger.exception('Failed to create backup before migration; continuing without backup')
+    from . import constants as _const
+    wb = load_workbook(path)
+    changed = False
+    # Build set of canonical header sets for quick matching
+    canonical = {name: set([h.upper() for h in cols]) for name, cols in _const.excel_sheets.items()}
+    to_remove = []
+    for sheet in list(wb.sheetnames):
+        if sheet in canonical:
+            continue
+        try:
+            df = _pd.read_excel(path, sheet_name=sheet, dtype=str)
+        except Exception:
+            continue
+        hdrs = set([c.upper() for c in df.columns])
+        # find best matching canonical sheet
+        for cname, cheaders in canonical.items():
+            # if overlap is large relative to the legacy sheet size, consider it a match
+            # this lets small legacy extracts (few columns) be merged
+            overlap = len(hdrs & cheaders)
+            if overlap >= max(1, int(len(hdrs) * 0.5)):
+                # append df to canonical sheet
+                try:
+                    existing = _pd.read_excel(path, sheet_name=cname, dtype=str)
+                except Exception:
+                    existing = _pd.DataFrame(columns=_const.excel_sheets.get(cname, []))
+                # Align legacy df to canonical headers to ensure correct column placement
+                canonical_cols = _const.excel_sheets.get(cname, [])
+                df_aligned = df.reindex(columns=canonical_cols, fill_value='')
+                # write back by appending
+                with _pd.ExcelWriter(path, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+                    startrow = writer.book[cname].max_row if cname in writer.book.sheetnames else 0
+                    df_aligned.to_excel(writer, sheet_name=cname, index=False, header=False, startrow=startrow)
+                to_remove.append(sheet)
+                changed = True
+                break
+    if to_remove:
+        # reload workbook to ensure any appended data is present before removing old sheets
+        wb = load_workbook(path)
+        for s in to_remove:
+            try:
+                std = wb[s]
+                wb.remove(std)
+            except Exception:
+                pass
+        wb.save(path)
     @classmethod
     def validate_file(cls, filepath: Path, file_type: str) -> bool:
         """
