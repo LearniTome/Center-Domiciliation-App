@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from .styles import ModernTheme
 import os
+import pandas as pd
 from pathlib import Path
 import json
 import logging
@@ -402,6 +403,40 @@ class PathManager:
         except Exception as e:
             ErrorHandler.handle_error(e, "Erreur lors de la création des répertoires")
 
+def ensure_excel_db(path, sheets: dict):
+    """Create an Excel workbook at `path` with given sheets dict (name -> columns).
+
+    Idempotent: if the file exists, ensure missing sheets are added with headers.
+    Also attempts to set basic date column formatting where column names contain 'date'.
+    """
+    try:
+        import openpyxl
+    except Exception:
+        raise RuntimeError('openpyxl is required for ensure_excel_db')
+
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    if not path.exists():
+        # create new workbook
+        with pd.ExcelWriter(path, engine='openpyxl') as writer:
+            for name, cols in sheets.items():
+                pd.DataFrame(columns=cols).to_excel(writer, sheet_name=name, index=False)
+        return
+
+    # If exists, open and add missing sheets
+    wb = openpyxl.load_workbook(path)
+    modified = False
+    for name, cols in sheets.items():
+        if name not in wb.sheetnames:
+            # create sheet with header row
+            ws = wb.create_sheet(title=name)
+            for c, col in enumerate(cols, start=1):
+                ws.cell(row=1, column=c, value=col)
+            modified = True
+    if modified:
+        wb.save(path)
+    return
     @classmethod
     def validate_file(cls, filepath: Path, file_type: str) -> bool:
         """

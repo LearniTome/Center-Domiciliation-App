@@ -11,6 +11,8 @@ Key facts (why/read these files):
 - Document generation: `src/utils/doc_generator.py` — renders `.docx` with `docxtpl`, optional PDF conversion (docx2pdf or LibreOffice), and creates an output folder named `<YYYY-MM-DD>_<Company>_Constitution`.
 - Paths & helpers: `src/utils/utils.py` — `PathManager`, `ThemeManager`, `WidgetFactory`, `WindowManager`, and `ErrorHandler` centralize patterns used everywhere.
 
+Note: prefer using the centralized constants and helpers in `src/utils/` (for example, `src/utils/constants.py` defines `excel_sheets` and header names and should be used for DB/sheet creation).
+
 Developer workflows & commands (verified from repo):
 
 - Run app (with venv active): `python main.py`
@@ -34,6 +36,8 @@ Patterns to follow when editing code:
 - Use `PathManager` for file locations: `PathManager.MODELS_DIR`, `PathManager.DATABASE_DIR`, `PathManager.CONFIG_DIR`.
 - Persist preferences via `config/preferences.json` (ThemeManager reads/writes it).
 - Error handling: prefer `ErrorHandler.handle_error(exception, message)` to show user dialogs and log tracebacks.
+
+- When creating or modifying the Excel database, use `src/utils/constants.py` (`excel_sheets`) for sheet names and headers and `src/utils/utils.py` helpers (e.g., `ensure_excel_db`) to keep creation idempotent and consistent.
 
 Tests and quick checks:
 

@@ -21,6 +21,7 @@ import threading
 import time
 from src.utils.doc_generator import render_templates
 from pathlib import Path
+from src.utils import constants as _const
 
 # Configuration du logging
 logging.basicConfig(
@@ -100,8 +101,10 @@ class MainApp(tk.Tk):
         theme_btn.grid(row=0, column=6, padx=5)
 
         # Boutons de contrôle (droite)
+        # Keep only non-redundant toolbar actions here. The main form already
+        # provides a Save button in its footer/navigation, so we avoid creating
+        # a duplicate "Sauvegarder" button in the global toolbar.
         WidgetFactory.create_button(buttons_frame, text="🆕 Nouvelle", command=self.clear_form).grid(row=0, column=3, padx=5)
-        WidgetFactory.create_button(buttons_frame, text="💾 Sauvegarder", command=self.save_to_db).grid(row=0, column=4, padx=5)
         WidgetFactory.create_button(buttons_frame, text="❌ Quitter", command=self.quit).grid(row=0, column=5, padx=5)
 
     def collect_values(self):
@@ -354,65 +357,157 @@ class MainApp(tk.Tk):
         try:
             self.collect_values()
 
-            db_path = PathManager.get_database_path("DataBase_domiciliation.xlsx")
+            # Use centralized DB filename from constants
+            db_path = PathManager.DATABASE_DIR / _const.DB_FILENAME
+            # Ensure workbook and sheets exist
+            from src.utils.utils import ensure_excel_db
+            ensure_excel_db(db_path, _const.excel_sheets)
 
-            # Préparer les données pour chaque feuille
-            # Get all values from the main form after collection
+            # Prepare raw values from forms
             societe_vals = self.values.get('societe', {}) or {}
             contrat_vals = self.values.get('contrat', {}) or {}
             associes_list = self.values.get('associes', []) or []
 
-            # Write Societe as a single-row DataFrame
-            df_societe = pd.DataFrame([societe_vals]) if societe_vals else pd.DataFrame()
+            # Helper: determine next integer ID in a sheet
+            def _next_id(sheet_name, id_col):
+                try:
+                    existing = pd.read_excel(db_path, sheet_name=sheet_name)
+                    if id_col in existing.columns and not existing.empty:
+                        # Try numeric conversion
+                        try:
+                            nums = pd.to_numeric(existing[id_col], errors='coerce').dropna()
+                            if not nums.empty:
+                                return int(nums.max()) + 1
+                        except Exception:
+                            pass
+                        return len(existing) + 1
+                except Exception:
+                    pass
+                return 1
 
-            # Normalize associes: ensure each associe is a flat dict and attach societe identifier
-            societe_id = societe_vals.get('denomination', '') or societe_vals.get('denomination_sociale', '')
-            normalized_associes = []
-            for a in associes_list:
-                if isinstance(a, dict):
-                    row = dict(a)
-                    row['societe_id'] = societe_id
-                    normalized_associes.append(row)
-            df_associes = pd.DataFrame(normalized_associes) if normalized_associes else pd.DataFrame()
+            def _to_cell(v):
+                if v is None:
+                    return ''
+                # Keep simple types as strings for Excel cells
+                try:
+                    return str(v)
+                except Exception:
+                    return ''
 
-            df_contrat = pd.DataFrame([contrat_vals]) if contrat_vals else pd.DataFrame()
+            # Map form keys to canonical excel headers
+            societe_map = {
+                'denomination': 'DEN_STE',
+                'forme_juridique': 'FORME_JUR',
+                'ice': 'ICE',
+                'date_ice': 'DATE_ICE',
+                'capital': 'CAPITAL',
+                'parts_social': 'PART_SOCIAL',
+                'adresse': 'STE_ADRESS',
+                'tribunal': 'TRIBUNAL'
+            }
+
+            associe_map = {
+                'civilite': 'CIVIL',
+                'prenom': 'PRENOM',
+                'nom': 'NOM',
+                'nationalite': 'NATIONALITY',
+                'num_piece': 'CIN_NUM',
+                'validite_piece': 'CIN_VALIDATY',
+                'date_naiss': 'DATE_NAISS',
+                'lieu_naiss': 'LIEU_NAISS',
+                'adresse': 'ADRESSE',
+                'telephone': 'PHONE',
+                'email': 'EMAIL',
+                'parts': 'PARTS',
+                'est_gerant': 'IS_GERANT',
+                'qualite': 'QUALITY'
+            }
+
+            contrat_map = {
+                'date_contrat': 'DATE_CONTRAT',
+                'period_domcil': 'PERIOD_DOMCIL',
+                'prix_contrat': 'PRIX_CONTRAT',
+                'prix_intermediare': 'PRIX_INTERMEDIARE_CONTRAT',
+                'dom_datedeb': 'DOM_DATEDEB',
+                'dom_datefin': 'DOM_DATEFIN'
+            }
+
+            # Build Societe DataFrame aligned with headers
+            df_societe = pd.DataFrame(columns=_const.societe_headers)
+            if societe_vals:
+                soc_id = _next_id('Societes', 'ID_SOCIETE')
+                row = {h: '' for h in _const.societe_headers}
+                row['ID_SOCIETE'] = _to_cell(soc_id)
+                for k, v in societe_map.items():
+                    if k in societe_vals:
+                        row[v] = _to_cell(societe_vals.get(k, ''))
+                df_societe = pd.DataFrame([row])
+
+            # Build Associes DataFrame aligned with headers
+            df_associes = pd.DataFrame(columns=_const.associe_headers)
+            if associes_list:
+                next_assoc_id = _next_id('Associes', 'ID_ASSOCIE')
+                assoc_rows = []
+                # Determine societe id for linking
+                soc_id_for_assoc = df_societe['ID_SOCIETE'].iloc[0] if not df_societe.empty else (societe_vals.get('id') or '')
+                try:
+                    soc_id_for_assoc = int(soc_id_for_assoc)
+                except Exception:
+                    pass
+                for a in associes_list:
+                    if isinstance(a, dict):
+                        r = {h: '' for h in _const.associe_headers}
+                        r['ID_ASSOCIE'] = _to_cell(next_assoc_id)
+                        next_assoc_id += 1
+                        r['ID_SOCIETE'] = _to_cell(soc_id_for_assoc)
+                        for k, v in associe_map.items():
+                            if k in a:
+                                val = a.get(k, '')
+                                if isinstance(val, bool):
+                                    val = int(val)
+                                r[v] = _to_cell(val)
+                        assoc_rows.append(r)
+                if assoc_rows:
+                    df_associes = pd.DataFrame(assoc_rows)
+
+            # Build Contrat DataFrame aligned with headers
+            df_contrat = pd.DataFrame(columns=_const.contrat_headers)
+            if contrat_vals:
+                next_contrat_id = _next_id('Contrats', 'ID_CONTRAT')
+                r = {h: '' for h in _const.contrat_headers}
+                r['ID_CONTRAT'] = _to_cell(next_contrat_id)
+                r['ID_SOCIETE'] = _to_cell(df_societe['ID_SOCIETE'].iloc[0] if not df_societe.empty else '')
+                for k, v in contrat_map.items():
+                    if k in contrat_vals:
+                        r[v] = _to_cell(contrat_vals.get(k, ''))
+                df_contrat = pd.DataFrame([r])
 
             # Use ExcelWriter to write multiple sheets; create file if missing
-            if not db_path.exists():
-                # create a fresh workbook
-                with pd.ExcelWriter(db_path, engine='openpyxl') as writer:
-                    if not df_societe.empty:
-                        df_societe.to_excel(writer, sheet_name='Societe', index=False)
-                    if not df_associes.empty:
+            # Append to existing workbook using the canonical sheet names from constants
+            with pd.ExcelWriter(db_path, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+                # Societes
+                if not df_societe.empty:
+                    if 'Societes' in writer.book.sheetnames:
+                        startrow = writer.book['Societes'].max_row
+                        df_societe.to_excel(writer, sheet_name='Societes', index=False, header=False, startrow=startrow)
+                    else:
+                        df_societe.to_excel(writer, sheet_name='Societes', index=False)
+
+                # Associes
+                if not df_associes.empty:
+                    if 'Associes' in writer.book.sheetnames:
+                        startrow = writer.book['Associes'].max_row
+                        df_associes.to_excel(writer, sheet_name='Associes', index=False, header=False, startrow=startrow)
+                    else:
                         df_associes.to_excel(writer, sheet_name='Associes', index=False)
-                    if not df_contrat.empty:
-                        df_contrat.to_excel(writer, sheet_name='Contrat', index=False)
-            else:
-                # Append to existing workbook; if_sheet_exists='overlay' to append rows
-                with pd.ExcelWriter(db_path, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
-                    # Societe
-                    if not df_societe.empty:
-                        if 'Societe' in writer.book.sheetnames:
-                            startrow = writer.book['Societe'].max_row
-                            df_societe.to_excel(writer, sheet_name='Societe', index=False, header=False, startrow=startrow)
-                        else:
-                            df_societe.to_excel(writer, sheet_name='Societe', index=False)
 
-                    # Associes
-                    if not df_associes.empty:
-                        if 'Associes' in writer.book.sheetnames:
-                            startrow = writer.book['Associes'].max_row
-                            df_associes.to_excel(writer, sheet_name='Associes', index=False, header=False, startrow=startrow)
-                        else:
-                            df_associes.to_excel(writer, sheet_name='Associes', index=False)
-
-                    # Contrat
-                    if not df_contrat.empty:
-                        if 'Contrat' in writer.book.sheetnames:
-                            startrow = writer.book['Contrat'].max_row
-                            df_contrat.to_excel(writer, sheet_name='Contrat', index=False, header=False, startrow=startrow)
-                        else:
-                            df_contrat.to_excel(writer, sheet_name='Contrat', index=False)
+                # Contrats
+                if not df_contrat.empty:
+                    if 'Contrats' in writer.book.sheetnames:
+                        startrow = writer.book['Contrats'].max_row
+                        df_contrat.to_excel(writer, sheet_name='Contrats', index=False, header=False, startrow=startrow)
+                    else:
+                        df_contrat.to_excel(writer, sheet_name='Contrats', index=False)
 
             messagebox.showinfo("Succès", "Données sauvegardées avec succès dans le fichier Excel.")
             logger.info("Données sauvegardées avec succès")

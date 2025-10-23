@@ -3,7 +3,9 @@ from tkinter import ttk, messagebox
 from .societe_form import SocieteForm
 from .associe_form import AssocieForm
 from .contrat_form import ContratForm
-from ..utils.utils import ThemeManager, WidgetFactory, WindowManager
+from ..utils.utils import ThemeManager, WidgetFactory, WindowManager, PathManager, ensure_excel_db
+from ..utils import constants as _const
+from pathlib import Path
 
 class MainForm(ttk.Frame):
     def __init__(self, parent, values_dict=None):
@@ -246,35 +248,41 @@ class MainForm(ttk.Frame):
         between created pages. Save stores the current page's values into
         `self.values`. Finish will save then emit an event `<<FormsFinished>>`.
         """
-        # Create the navigation bar in the fixed footer so it doesn't scroll
-        nav_frame = ttk.Frame(self.footer_container)
+        # Create the navigation bar in the fixed footer_inner so it stays on a
+        # single line and does not wrap when the window is resized.
+        nav_frame = ttk.Frame(self.footer_inner)
         nav_frame.pack(fill="x")
-        nav_frame.grid_columnconfigure(0, weight=1)
+        # Reserve a flexible center column to push items to the sides
+        for i in range(0, 8):
+            nav_frame.grid_columnconfigure(i, weight=(1 if i == 2 else 0))
 
-        # Previous
-        self.prev_btn = WidgetFactory.create_button(
-            nav_frame, text="◀ Précédent", command=self.prev_page)
-        self.prev_btn.grid(row=0, column=1, sticky="w", padx=5)
-
-        # Next
-        self.next_btn = WidgetFactory.create_button(
-            nav_frame, text="Suivant ▶", command=self.next_page)
-        self.next_btn.grid(row=0, column=2, sticky="e", padx=5)
-
-        # Configuration
+        # Configuration (left)
         self.config_btn = WidgetFactory.create_button(
             nav_frame, text="⚙ Configuration", command=self.open_configuration, style='Secondary.TButton')
         self.config_btn.grid(row=0, column=0, sticky="w", padx=5)
 
-        # Save
+        # Previous (left)
+        self.prev_btn = WidgetFactory.create_button(
+            nav_frame, text="◀ Précédent", command=self.prev_page)
+        self.prev_btn.grid(row=0, column=1, sticky="w", padx=5)
+
+        # Flexible spacer in column 2 keeps buttons on a single line
+        nav_frame.grid_columnconfigure(2, weight=1)
+
+        # Next (right cluster)
+        self.next_btn = WidgetFactory.create_button(
+            nav_frame, text="Suivant ▶", command=self.next_page)
+        self.next_btn.grid(row=0, column=3, sticky="e", padx=5)
+
+        # Save (right cluster)
         self.save_btn = WidgetFactory.create_button(
             nav_frame, text="💾 Sauvegarder", command=self.save_current)
-        self.save_btn.grid(row=0, column=3, sticky="e", padx=5)
+        self.save_btn.grid(row=0, column=4, sticky="e", padx=5)
 
-        # Finish
+        # Finish (rightmost)
         self.finish_btn = WidgetFactory.create_button(
             nav_frame, text="🏁 Terminer", command=self.finish)
-        self.finish_btn.grid(row=0, column=4, sticky="e", padx=5)
+        self.finish_btn.grid(row=0, column=5, sticky="e", padx=5)
 
         self.update_nav_buttons()
 
@@ -421,8 +429,48 @@ class MainForm(ttk.Frame):
         # Save current and gather all values
         self.save_current()
         all_values = self.get_values()
-        # TODO: hook this into actual persistence (Excel/db/doc generation)
-        messagebox.showinfo("Terminé", "Toutes les sections ont été sauvegardées.")
+        # Ensure the Excel database exists and has expected sheets
+        # Build the DB path explicitly to avoid static-analysis warnings about
+        # PathManager.get_database_path. Use the centralized DB filename from
+        # constants so the path is consistent.
+        try:
+            db_path = Path(PathManager.DATABASE_DIR) / _const.DB_FILENAME
+        except Exception:
+            db_path = Path.cwd() / _const.DB_FILENAME
+
+        try:
+            # Create the Excel DB using centralized headers from constants; ensure idempotent creation
+            ensure_excel_db(db_path, _const.excel_sheets)
+        except Exception as e:
+            # non-fatal: log and show an error to the user
+            try:
+                from ..utils.utils import ErrorHandler
+                ErrorHandler.handle_error(e, 'Erreur lors de la création de la base de données', show_dialog=True)
+            except Exception:
+                messagebox.showerror('Erreur', f"Impossible de créer la base de données: {e}")
+            return
+
+        # Now attempt to persist the collected values to the workbook by calling
+        # the top-level application's save_to_db. This will collect values from
+        # the forms and write them to the Excel file.
+        try:
+            top = self.winfo_toplevel()
+            save_fn = getattr(top, 'save_to_db', None)
+            if callable(save_fn):
+                save_fn()
+        except PermissionError as pe:
+            # Common on Windows when the file is open in Excel
+            messagebox.showerror('Erreur lors de la sauvegarde des données', 'Le fichier Excel est ouvert dans une autre application. Fermez Excel et réessayez.')
+            return
+        except Exception as e:
+            try:
+                from ..utils.utils import ErrorHandler
+                ErrorHandler.handle_error(e, 'Erreur lors de la sauvegarde des données', show_dialog=True)
+            except Exception:
+                messagebox.showerror('Erreur', f"Erreur lors de la sauvegarde: {e}")
+            return
+
+        messagebox.showinfo("Terminé", "Toutes les sections ont été sauvegardées dans le fichier Excel.")
         # Emit a virtual event so outer code can handle finalization if needed
         try:
             self.event_generate('<<FormsFinished>>')
