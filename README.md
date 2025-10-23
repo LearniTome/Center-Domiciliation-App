@@ -101,6 +101,27 @@ Document generation
 - Documents live in `Models/` as .docx templates. The app fills templates using `docxtpl` and writes output to `tmp_out/`.
 - PDF export uses `docx2pdf` when available (Windows with Word installed) or external converters.
 
+Generation reports
+
+
+- After a generation run the app writes a human-friendly HTML report into the generation output folder. The file name uses this pattern:
+
+  `yyyy-mm-dd_<CompanyName>_Raport_Docs_generer.html`
+
+  Example: `2025-10-23_ASTRAPIA_Raport_Docs_generer.html`.
+
+- For backward compatibility a `generation_report.json` file is still written in the same folder. The HTML report embeds the same JSON inside a `<pre id="genjson">` block so tooling can extract it easily.
+
+- The included verification script `scripts/check_generation.py` prefers the HTML report (it will extract the embedded JSON) and falls back to `generation_report.json` when needed. To validate a generation and assert basic expectations run:
+
+
+```powershell
+.\venv\Scripts\Activate.ps1
+python .\scripts\check_generation.py --expect-company ASTRAPIA --expect-associe "Abdeljalil"
+```
+
+The script prints a JSON summary and exits with code 0 on success (or when no expectations were given) and non-zero if any expectation fails.
+
 ## Tests and validation
 
 Run the provided smoke test to ensure basic imports and app instantiation work:
