@@ -185,6 +185,11 @@ class AssocieForm(ttk.Frame):
         # Date de naissance (use DateEntry for convenience)
         ttk.Label(grid, text="Date de naissance:", anchor="e", width=15).grid(row=0, column=0, padx=(0, 5), pady=2)
         DateEntry(grid, textvariable=vars_dict['date_naiss'], date_pattern='dd/mm/yyyy', width=12).grid(row=0, column=1, sticky="w", pady=2)
+        # Start with an empty date so the user must pick one explicitly
+        try:
+            vars_dict['date_naiss'].set('')
+        except Exception:
+            pass
 
         # Lieu de naissance
         ttk.Label(grid, text="Lieu de naissance:", anchor="e", width=15).grid(row=1, column=0, padx=(0, 5), pady=2)
@@ -203,9 +208,14 @@ class AssocieForm(ttk.Frame):
         ttk.Checkbutton(grid, text="Est Gérant", variable=vars_dict['est_gerant']).grid(
             row=0, column=0, columnspan=2, sticky="w", pady=2)
 
-        # Qualité
+        # Qualité — use Combobox to present common roles while keeping the current default
         ttk.Label(grid, text="Qualité:", anchor="e", width=12).grid(row=1, column=0, padx=(0, 5), pady=2)
-        ttk.Entry(grid, textvariable=vars_dict['qualite']).grid(row=1, column=1, sticky="ew", pady=2)
+        try:
+            from ..utils import constants as _constants
+            qual_options = getattr(_constants, 'Qualites', ["Associé Gérant", "Associé"])
+        except Exception:
+            qual_options = ["Associé Gérant", "Associé"]
+        ttk.Combobox(grid, textvariable=vars_dict['qualite'], values=qual_options).grid(row=1, column=1, sticky="ew", pady=2)
 
     def create_identity_section(self, parent, vars_dict):
         """Crée la section Identité"""
@@ -216,9 +226,14 @@ class AssocieForm(ttk.Frame):
         grid.pack(fill="x", padx=5, pady=5, expand=True)
         grid.columnconfigure(1, weight=1)
 
-        # Nationalité
+        # Nationalité — prefer a Combobox with values from constants when available
         ttk.Label(grid, text="Nationalité:", anchor="e", width=12).grid(row=0, column=0, padx=(0, 5), pady=2)
-        ttk.Entry(grid, textvariable=vars_dict['nationalite']).grid(row=0, column=1, sticky="ew", pady=2)
+        try:
+            from ..utils.constants import Nationalite
+            nat_options = Nationalite
+        except Exception:
+            nat_options = []
+        ttk.Combobox(grid, textvariable=vars_dict['nationalite'], values=nat_options).grid(row=0, column=1, sticky="ew", pady=2)
 
         # N° CIN
         ttk.Label(grid, text="N° CIN:", anchor="e", width=12).grid(row=1, column=0, padx=(0, 5), pady=2)
@@ -227,6 +242,11 @@ class AssocieForm(ttk.Frame):
         # Validité CIN (use DateEntry for convenience)
         ttk.Label(grid, text="Validité CIN:", anchor="e", width=12).grid(row=2, column=0, padx=(0, 5), pady=2)
         DateEntry(grid, textvariable=vars_dict['validite_piece'], date_pattern='dd/mm/yyyy', width=12).grid(row=2, column=1, sticky="w", pady=2)
+        # Keep the validity date empty until the user selects it
+        try:
+            vars_dict['validite_piece'].set('')
+        except Exception:
+            pass
 
     def create_contact_section(self, parent, vars_dict):
         """Crée la section Contact"""
