@@ -479,14 +479,21 @@ class DashboardView(tk.Toplevel):
         def save_and_close():
             try:
                 # Collecter les données de tous les formulaires
-                all_values = {}
-                all_values.update(societe_form.get_values())
-                all_values.update(associe_form.get_values())
-                all_values.update(contrat_form.get_values())
+                societe_vals = societe_form.get_values() or {}
+                associes_vals = associe_form.get_values() or []
+                contrat_vals = contrat_form.get_values() or {}
 
-                # Ajouter à la base de données
-                new_row = pd.Series(all_values)
-                self.df = pd.concat([self.df, pd.DataFrame([new_row])], ignore_index=True)
+                # Build a single row where each section is stored under its key.
+                # This avoids calling dict.update() with a list (which would iterate keys).
+                all_values = {
+                    'societe': societe_vals,
+                    'associes': associes_vals,
+                    'contrat': contrat_vals
+                }
+
+                # Ajouter à la base de données: create a one-row DataFrame and concat
+                new_row_df = pd.DataFrame([all_values])
+                self.df = pd.concat([self.df, new_row_df], ignore_index=True)
                 self.save_data()
                 self.refresh_display()
 

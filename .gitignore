@@ -1,4 +1,22 @@
-# Excel temporary files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+env/
+.venv/
+app.log
+*.log
+databases/*.xlsx
+*.bak
+*_new.py
+*.swp
+.DS_Store
+/.vscode/
+/.idea/
+/.pytest_cache/
+*.egg-info/
+dist/# Excel temporary files
 ~$*.xlsx
 ~$*.xls
 
@@ -35,3 +53,6 @@ ENV/
 # Windows
 Thumbs.db
 Desktop.ini
+
+# Generated output
+tmp_out/

@@ -69,3 +69,6 @@ excel_sheets = {
     "Associes": associe_headers,
     "Contrats": contrat_headers
 }
+
+# Default database filename used across the app
+DB_FILENAME = "DataBase_domiciliation.xlsx"

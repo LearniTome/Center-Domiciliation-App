@@ -2,11 +2,19 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from .styles import ModernTheme
 import os
+import pandas as pd
 from pathlib import Path
 import json
 import logging
 import traceback
 from typing import Optional, Callable, Any
+import datetime
+from openpyxl import load_workbook
+from openpyxl.utils import get_column_letter
+from openpyxl import Workbook
+from pathlib import Path as _Path
+import pandas as _pd
+import shutil
 
 # Configuration du logging
 logging.basicConfig(
@@ -68,247 +76,228 @@ class ToolTip:
 
     def leave(self, event=None):
         if self.tooltip:
-            self.tooltip.destroy()
+            try:
+                self.tooltip.destroy()
+            except Exception:
+                pass
             self.tooltip = None
 
 class ThemeManager:
+    """ThemeManager simplifié : délègue tout à ModernTheme dans `src.utils.styles`.
+
+    Ceci évite la duplication des styles dans plusieurs fichiers et garde
+    un seul endroit (`ModernTheme`) responsable des apparences.
+    """
     def __init__(self, root):
-        self.theme = ModernTheme(root)
+        self.root = root
+        self.pref_path = Path(__file__).resolve().parent.parent.parent / 'config' / 'preferences.json'
+        mode = 'dark'
+        try:
+            if self.pref_path.exists():
+                with self.pref_path.open('r', encoding='utf-8') as f:
+                    prefs = json.load(f)
+                    mode = prefs.get('theme', 'dark')
+        except Exception:
+            mode = 'dark'
+
+        # Use the centralized ModernTheme from src.utils.styles
+        self.theme = ModernTheme(root, mode=mode)
         self.style = self.theme.style
         self.colors = self.theme.colors
+        # Apply background to root and existing canvases to keep tk widgets in sync
+        try:
+            self._apply_root_background()
+            self._update_canvas_backgrounds()
+        except Exception:
+            logger.debug('Failed to update canvas/background on init', exc_info=True)
+        # Start background monitor to ensure dynamically created non-ttk widgets
+        # (like Combobox popdown Listbox) get themed shortly after creation.
+        try:
+            # _start_non_ttk_monitor is defined on this class below
+            self._start_non_ttk_monitor()
+        except Exception:
+            logger.debug('Failed to start non-ttk monitor', exc_info=True)
 
-    def setup_colors(self):
-        # Configuration des couleurs modernes
-        self.colors = {
-            'bg': '#1e1e1e',  # Fond sombre
-            'fg': '#ffffff',   # Texte clair
-            'accent': '#2171cd',
-            'accent_light': '#4a90e2',
-            'error': '#dc3545',
-            'success': '#28a745',
-            'warning': '#ffc107',
-            'info': '#17a2b8',
-            'border': '#3e3e3e',  # Bordure plus subtile
-            'hover': '#2a2a2a',   # Effet hover plus subtil
-            'disabled': '#6c757d',
-            'label_fg': '#cccccc', # Labels légèrement plus clairs
-            'input_bg': '#2d2d2d', # Fond des champs de saisie
-            'input_border': '#3e3e3e',
-            'section_bg': '#252526', # Fond des sections
-            'section_header_bg': '#323233', # Fond des en-têtes de section
-            'section_header_fg': '#ffffff', # Texte des en-têtes de section
-            'input_fg': '#ffffff',
-            'button_bg': '#323233',
-            'button_fg': '#ffffff',
-            'entry_bg': '#2d2d2d',
-            'entry_fg': '#ffffff',
-            'section_border': '#3e3e3e' # Bordure des sections
-        }
+    def set_theme(self, mode: str):
+        if mode not in ('light', 'dark'):
+            return
+        # Recreate centralized theme
+        self.theme = ModernTheme(self.root, mode=mode)
+        self.style = self.theme.style
+        self.colors = self.theme.colors
+        # Persist
+        try:
+            prefs = {'theme': mode}
+            self.pref_path.parent.mkdir(parents=True, exist_ok=True)
+            with self.pref_path.open('w', encoding='utf-8') as f:
+                json.dump(prefs, f, ensure_ascii=False, indent=2)
+        except Exception:
+            logger.exception('Failed to persist theme preference')
+        # Update root and existing canvases so widgets created before theme change update
+        try:
+            self._apply_root_background()
+            self._update_canvas_backgrounds()
+            # Update non-ttk widget styles for existing widgets
+            self._apply_non_ttk_styles()
+        except Exception:
+            logger.debug('Failed to update canvas/background after set_theme', exc_info=True)
 
-    def apply_theme(self):
-        self.style.set_theme('black')  # Toujours utiliser le thème sombre
+    def toggle_theme(self):
+        new_mode = 'dark' if self.theme.mode == 'light' else 'light'
+        self.set_theme(new_mode)
 
-        # Style de base pour l'application
-        self.style.configure('.',
-            background=self.colors['bg'],
-            foreground=self.colors['fg'],
-            font=('Segoe UI', 10))
+    def _apply_root_background(self):
+        """Configure the top-level root background to the current theme bg color."""
+        try:
+            if hasattr(self.root, 'configure'):
+                # Some platforms expect 'background' or 'bg'
+                try:
+                    self.root.configure(background=self.colors['bg'])
+                except Exception:
+                    try:
+                        self.root.configure(bg=self.colors['bg'])
+                    except Exception:
+                        pass
+        except Exception:
+            logger.debug('Failed to apply root background', exc_info=True)
 
-        # Styles pour les widgets de base
-        self.setup_frame_styles()
-        self.setup_input_styles()
-        self.setup_button_styles()
-        self.setup_section_styles()
+    def _update_canvas_backgrounds(self):
+        """Recursively find tk.Canvas widgets under root and update their background.
 
-    def setup_frame_styles(self):
-        # Style de base pour les frames
-        self.style.configure('App.TFrame',
-            background=self.colors['bg'])
+        This ensures Canvas widgets (which are not ttk and do not follow ttk styles)
+        reflect the current theme background when the theme is changed at runtime.
+        """
+        try:
+            # recursive walk
+            def _walk(widget):
+                for child in widget.winfo_children():
+                    # tk.Canvas class is available as tk.Canvas
+                    if isinstance(child, tk.Canvas):
+                        try:
+                            child.configure(background=self.colors['bg'])
+                        except Exception:
+                            try:
+                                child.configure(bg=self.colors['bg'])
+                            except Exception:
+                                pass
+                    # recurse
+                    try:
+                        _walk(child)
+                    except Exception:
+                        pass
 
-        # Style pour les cartes
-        self.style.configure('Card.TFrame',
-            background=self.colors['bg'],
-            borderwidth=1,
-            relief='solid')
+            _walk(self.root)
+        except Exception:
+            logger.debug('Failed to update canvas backgrounds', exc_info=True)
 
-        # Style pour les séparateurs
-        self.style.configure('Separator.TFrame',
-            background=self.colors['accent'],
-            height=1)
+    def _apply_non_ttk_styles(self):
+        """Apply colors to non-ttk widgets (Listbox, Menu, Text) and update existing instances.
 
-    def setup_input_styles(self):
-        # Style commun pour les champs de saisie
-        input_style = {
-            'fieldbackground': self.colors['input_bg'],
-            'foreground': self.colors['input_fg'],
-            'borderwidth': 1,
-            'relief': 'solid',
-            'padding': 5
-        }
+        This uses root.option_add to set defaults for new widgets and walks the widget tree
+        to update already-created widgets so their selection colors match the theme.
+        """
+        try:
+            # Set global defaults for new widgets
+            try:
+                self.root.option_add('*Listbox.background', self.colors['bg'])
+                self.root.option_add('*Listbox.foreground', self.colors['fg'])
+                self.root.option_add('*Listbox.selectBackground', self.colors['accent'])
+                self.root.option_add('*Listbox.selectForeground', 'white')
 
-        # Entry
-        self.style.configure('App.TEntry',
-            **input_style,
-            font=('Segoe UI', 9))
+                self.root.option_add('*Text.background', self.colors['bg'])
+                self.root.option_add('*Text.foreground', self.colors['fg'])
+                self.root.option_add('*Text.insertBackground', self.colors['fg'])
 
-        # Combobox
-        self.style.configure('App.TCombobox',
-            **input_style,
-            font=('Segoe UI', 9),
-            arrowsize=12)
+                self.root.option_add('*Menu.background', self.colors['bg'])
+                self.root.option_add('*Menu.foreground', self.colors['fg'])
+                self.root.option_add('*Menu.activeBackground', self.colors['accent'])
+                self.root.option_add('*Menu.activeForeground', 'white')
+            except Exception:
+                pass
 
-        # Labels
-        self.style.configure('FieldLabel.TLabel',
-            background=self.colors['bg'],
-            foreground=self.colors['label_fg'],
-            font=('Segoe UI', 9),
-            padding=(5, 2))
+            # Walk existing widgets and update instances
+            def _walk_update(widget):
+                for child in widget.winfo_children():
+                    try:
+                        if isinstance(child, tk.Listbox):
+                            child.configure(background=self.colors['bg'], foreground=self.colors['fg'], selectbackground=self.colors['accent'], selectforeground='white')
+                        elif isinstance(child, tk.Text):
+                            child.configure(background=self.colors['bg'], foreground=self.colors['fg'], insertbackground=self.colors['fg'])
+                        elif isinstance(child, tk.Menu):
+                            try:
+                                child.configure(background=self.colors['bg'], foreground=self.colors['fg'], activebackground=self.colors['accent'], activeforeground='white')
+                            except Exception:
+                                pass
+                    except Exception:
+                        pass
+                    # Recurse
+                    try:
+                        _walk_update(child)
+                    except Exception:
+                        pass
 
-        # Style des labels de champs
-        self.style.configure('Field.TLabel',
-            background=self.colors['bg'],
-            foreground=self.colors['fg'],
-            font=('Segoe UI', 9),
-            padding=(0, 5))
+            _walk_update(self.root)
+        except Exception:
+            logger.debug('Failed to apply non-ttk styles', exc_info=True)
 
-        # Cases à cocher
-        self.style.configure('App.TCheckbutton',
-            background=self.colors['bg'],
-            foreground=self.colors['fg'],
-            padding=5)
+    def _start_non_ttk_monitor(self, interval_ms: int = 400):
+        """Start a periodic after() loop that reapplies non-ttk styles.
 
-        # Style pour les conteneurs de champs
-        self.style.configure('Field.TFrame',
-            background=self.colors['bg'],
-            padding=(5, 2))
+        This ensures popdown widgets created later (combobox lists) are themed.
+        """
+        try:
+            # cancel previous if any
+            if hasattr(self, '_monitor_id') and self._monitor_id:
+                try:
+                    self.root.after_cancel(self._monitor_id)
+                except Exception:
+                    pass
 
-    def setup_button_styles(self):
-        # Style commun pour tous les boutons
-        button_base = {
-            'padding': (15, 8),
-            'relief': 'groove',
-            'font': ('Segoe UI', 10, 'bold')
-        }
+            def _monitor():
+                try:
+                    self._apply_non_ttk_styles()
+                except Exception:
+                    pass
+                try:
+                    self._monitor_id = self.root.after(interval_ms, _monitor)
+                except Exception:
+                    pass
 
-        # Boutons de navigation
-        self.style.configure('Nav.TButton',
-            **button_base,
-            width=18,
-            background=self.colors['button_bg'])
-
-        # Boutons d'action
-        self.style.configure('Action.TButton',
-            **button_base,
-            width=22,
-            background=self.colors['accent'])
-
-        # Boutons secondaires
-        self.style.configure('Secondary.TButton',
-            **button_base,
-            width=16,
-            background=self.colors['bg'])
-
-        # Boutons de danger
-        self.style.configure('Danger.TButton',
-            **button_base,
-            background=self.colors['error'],
-            foreground=self.colors['fg'])
-
-        # Boutons de calendrier
-        self.style.configure('Calendar.TButton',
-            padding=2,
-            width=3)
-
-    def setup_section_styles(self):
-        # Style de base pour les sections
-        self.style.configure('Section.TLabelFrame',
-            background=self.colors['section_bg'],
-            foreground=self.colors['fg'],
-            borderwidth=1,
-            relief='solid',
-            bordercolor=self.colors['section_border'],
-            padding=15)
-
-        # Style pour les titres de section
-        self.style.configure('Section.TLabelFrame.Label',
-            font=('Segoe UI', 10, 'bold'),
-            foreground=self.colors['section_header_fg'],
-            background=self.colors['section_header_bg'],
-            padding=(10, 5))
-
-        # Style pour les sous-sections
-        self.style.configure('SubSection.TLabelFrame',
-            background=self.colors['section_bg'],
-            foreground=self.colors['fg'],
-            borderwidth=1,
-            relief='solid',
-            bordercolor=self.colors['section_border'],
-            padding=10)
-
-        # Style pour les titres de sous-sections
-        self.style.configure('SubSection.TLabelFrame.Label',
-            font=('Segoe UI', 9, 'bold'),
-            foreground=self.colors['section_header_fg'],
-            background=self.colors['section_bg'],
-            padding=(8, 4))
-
-        # Style spécial pour les sections d'information
-        self.style.configure('Info.TLabelFrame',
-            background=self.colors['section_bg'],
-            foreground=self.colors['fg'],
-            borderwidth=1,
-            relief='solid',
-            bordercolor=self.colors['info'],
-            padding=15)
-
-        # Style pour les titres des sections d'information
-        self.style.configure('Info.TLabelFrame.Label',
-            font=('Segoe UI', 10, 'bold'),
-            foreground=self.colors['info'],
-            background=self.colors['section_header_bg'],
-            padding=(10, 5))
+            # schedule first run
+            self._monitor_id = self.root.after(interval_ms, _monitor)
+        except Exception:
+            logger.debug('Failed to start monitor', exc_info=True)
 
     def apply_widget_styles(self, widget):
-        """Applique automatiquement le style approprié à un widget"""
-        if isinstance(widget, ttk.Entry):
-            widget.configure(style='App.TEntry')
-        elif isinstance(widget, ttk.Combobox):
-            widget.configure(style='App.TCombobox')
-        elif isinstance(widget, ttk.Label):
-            # Détermine le style approprié selon le contexte
-            parent_name = widget.winfo_parent().lower() if widget.winfo_parent() else ''
-            if 'field' in parent_name:
-                widget.configure(style='Field.TLabel')
-            elif 'info' in parent_name:
-                widget.configure(style='Info.TLabel')
-            else:
+        """Applique un style cohérent en utilisant les noms définis dans ModernTheme.
+
+        Cette méthode remplace les styles locaux et force l'utilisation du
+        fichier unique `src/utils/styles.py` comme source de vérité.
+        """
+        try:
+            if isinstance(widget, ttk.Entry):
+                widget.configure(style='TEntry')
+            elif isinstance(widget, ttk.Combobox):
+                widget.configure(style='TCombobox')
+            elif isinstance(widget, ttk.Label):
                 widget.configure(style='FieldLabel.TLabel')
-        elif isinstance(widget, ttk.LabelFrame):
-            # Détermine le style de section approprié
-            widget_name = widget.winfo_name().lower()
-            if 'info' in widget_name:
-                widget.configure(style='Info.TLabelFrame')
-            elif 'sub' in widget_name:
-                widget.configure(style='SubSection.TLabelFrame')
-            else:
-                widget.configure(style='Section.TLabelFrame')
-        elif isinstance(widget, ttk.Frame):
-            # Détermine le style de frame approprié
-            parent_name = widget.winfo_parent().lower() if widget.winfo_parent() else ''
-            if 'field' in parent_name:
-                widget.configure(style='Field.TFrame')
-            elif 'info' in parent_name:
-                widget.configure(style='Info.TFrame')
-            else:
-                widget.configure(style='App.TFrame')
-        elif isinstance(widget, ttk.Checkbutton):
-            widget.configure(style='App.TCheckbutton')
+            elif isinstance(widget, ttk.LabelFrame):
+                # Use Section frame style for labeled sections
+                widget.configure(style='Section.TFrame')
+            elif isinstance(widget, ttk.Frame):
+                widget.configure(style='TFrame')
+            elif isinstance(widget, ttk.Checkbutton):
+                # fall back to default checkbutton style
+                widget.configure(style='TCheckbutton')
+        except Exception:
+            # Defensive: ignore failures to avoid breaking UI creation
+            logger.debug('apply_widget_styles: failed to configure widget style', exc_info=True)
         return widget
 
 class WidgetFactory:
     @staticmethod
-    def create_button(parent, text, command, style='Nav.TButton', tooltip=None):
-        btn = ttk.Button(parent, text=text, command=command, style=style)
+    def create_button(parent, text, command, style='Secondary.TButton', tooltip=None):
+        btn = ttk.Button(parent, text=text, command=command, style=style, takefocus=False)
         if tooltip:
             WidgetFactory.create_tooltip(btn, tooltip)
         return btn
@@ -362,6 +351,33 @@ class WindowManager:
         # Configurer la touche Échap pour quitter le plein écran
         root.bind('<Escape>', lambda e: root.state('normal'))
 
+    @staticmethod
+    def center_window(win):
+        """Center a Toplevel or root window on the screen or on its parent."""
+        try:
+            win.update_idletasks()
+            # If window has a parent (transient), center on parent
+            parent = getattr(win, 'master', None)
+            if parent and parent.winfo_ismapped():
+                pw = parent.winfo_width()
+                ph = parent.winfo_height()
+                px = parent.winfo_rootx()
+                py = parent.winfo_rooty()
+                ww = win.winfo_width()
+                wh = win.winfo_height()
+                x = px + max(0, (pw - ww) // 2)
+                y = py + max(0, (ph - wh) // 2)
+            else:
+                screen_w = win.winfo_screenwidth()
+                screen_h = win.winfo_screenheight()
+                ww = win.winfo_width()
+                wh = win.winfo_height()
+                x = (screen_w - ww) // 2
+                y = (screen_h - wh) // 2
+            win.geometry(f"+{x}+{y}")
+        except Exception:
+            pass
+
 # Fonction utilitaire pour appliquer les styles
 def apply_style(widget, theme_manager):
     """
@@ -394,6 +410,290 @@ class PathManager:
         except Exception as e:
             ErrorHandler.handle_error(e, "Erreur lors de la création des répertoires")
 
+def ensure_excel_db(path, sheets: dict):
+    """Create an Excel workbook at `path` with given sheets dict (name -> columns).
+
+    Idempotent: if the file exists, ensure missing sheets are added with headers.
+    Also attempts to set basic date column formatting where column names contain 'date'.
+    """
+    try:
+        import openpyxl
+    except Exception:
+        raise RuntimeError('openpyxl is required for ensure_excel_db')
+
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    if not path.exists():
+        # create new workbook
+        with pd.ExcelWriter(path, engine='openpyxl') as writer:
+            for name, cols in sheets.items():
+                pd.DataFrame(columns=cols).to_excel(writer, sheet_name=name, index=False)
+        return
+
+    # If exists, open and add missing sheets
+    wb = openpyxl.load_workbook(path)
+    modified = False
+    for name, cols in sheets.items():
+        if name not in wb.sheetnames:
+            # create sheet with header row
+            ws = wb.create_sheet(title=name)
+            for c, col in enumerate(cols, start=1):
+                ws.cell(row=1, column=c, value=col)
+            modified = True
+    if modified:
+        wb.save(path)
+    return
+
+
+def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_vals: dict):
+    """Write the provided records into the Excel workbook at `path`.
+
+    This function is idempotent and will compute incremental integer IDs
+    for Societes/Associes/Contrats based on existing rows in the workbook.
+    Date-like fields are converted to datetime so Excel stores them as dates.
+    """
+    path = _Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    # import constants lazily to avoid circular imports
+    from . import constants as _const
+
+    # Helper to load existing sheet into DataFrame safely
+    def _load_sheet_df(sheet_name):
+        try:
+            return _pd.read_excel(path, sheet_name=sheet_name, dtype=str)
+        except Exception:
+            return _pd.DataFrame(columns=_const.excel_sheets.get(sheet_name, []))
+
+    # Helper next ID
+    def _next_id(sheet_name, id_col):
+        df = _load_sheet_df(sheet_name)
+        if id_col in df.columns and not df.empty:
+            try:
+                nums = _pd.to_numeric(df[id_col], errors='coerce').dropna()
+                if not nums.empty:
+                    return int(nums.max()) + 1
+            except Exception:
+                pass
+            return len(df) + 1
+        return 1
+
+    def _to_datetime(val):
+        # Return pandas.Timestamp or None
+        if val is None or (isinstance(val, str) and val.strip() == ''):
+            return None
+        try:
+            return _pd.to_datetime(val, dayfirst=True, errors='coerce')
+        except Exception:
+            return None
+
+    # Build rows aligned with headers
+    soc_df = _pd.DataFrame(columns=_const.societe_headers)
+    assoc_df = _pd.DataFrame(columns=_const.associe_headers)
+    contrat_df = _pd.DataFrame(columns=_const.contrat_headers)
+
+    # Societe
+    if societe_vals:
+        sid = _next_id('Societes', 'ID_SOCIETE')
+        # initialize with None so columns can hold datetimes or numbers
+        row: dict = {h: None for h in _const.societe_headers}
+        row['ID_SOCIETE'] = sid
+        # mapping from form keys to headers (best-effort)
+        mapping = {
+            'denomination': 'DEN_STE',
+            'forme_juridique': 'FORME_JUR',
+            'ice': 'ICE',
+            'date_ice': 'DATE_ICE',
+            'capital': 'CAPITAL',
+            'parts_social': 'PART_SOCIAL',
+            'adresse': 'STE_ADRESS',
+            'tribunal': 'TRIBUNAL'
+        }
+        for k, h in mapping.items():
+            if k in societe_vals:
+                v = societe_vals.get(k)
+                # try to parse dates into datetime
+                if h.upper().find('DATE') >= 0:
+                    dt = _to_datetime(v)
+                    row[h] = dt.to_pydatetime() if dt is not None else None
+                else:
+                    if v is None:
+                        row[h] = None
+                    elif isinstance(v, bool):
+                        row[h] = int(v)
+                    elif isinstance(v, (int, float)):
+                        row[h] = v
+                    else:
+                        row[h] = str(v)
+        soc_df = _pd.DataFrame([row])
+
+    # Associes
+    if associes_list:
+        aid = _next_id('Associes', 'ID_ASSOCIE')
+        assoc_rows = []
+        # Determine linked societe id
+        linked_sid = soc_df['ID_SOCIETE'].iloc[0] if not soc_df.empty else ''
+        for a in associes_list:
+            if not isinstance(a, dict):
+                continue
+            r: dict = {h: None for h in _const.associe_headers}
+            r['ID_ASSOCIE'] = aid
+            aid += 1
+            r['ID_SOCIETE'] = linked_sid
+            map_a = {
+                'civilite': 'CIVIL', 'prenom': 'PRENOM', 'nom': 'NOM',
+                'nationalite': 'NATIONALITY', 'num_piece': 'CIN_NUM',
+                'validite_piece': 'CIN_VALIDATY', 'date_naiss': 'DATE_NAISS',
+                'lieu_naiss': 'LIEU_NAISS', 'adresse': 'ADRESSE',
+                'telephone': 'PHONE', 'email': 'EMAIL', 'parts': 'PARTS',
+                'est_gerant': 'IS_GERANT', 'qualite': 'QUALITY'
+            }
+            for k, h in map_a.items():
+                if k in a:
+                    v = a.get(k)
+                    if h.upper().find('DATE') >= 0:
+                        dt = _to_datetime(v)
+                        r[h] = dt.to_pydatetime() if dt is not None else None
+                    else:
+                        if v is None:
+                            r[h] = None
+                        elif isinstance(v, bool):
+                            r[h] = int(v)
+                        elif isinstance(v, (int, float)):
+                            r[h] = v
+                        else:
+                            r[h] = str(v)
+            assoc_rows.append(r)
+        if assoc_rows:
+            assoc_df = _pd.DataFrame(assoc_rows)
+
+    # Contrat
+    if contrat_vals:
+        cid = _next_id('Contrats', 'ID_CONTRAT')
+        r: dict = {h: None for h in _const.contrat_headers}
+        r['ID_CONTRAT'] = cid
+        r['ID_SOCIETE'] = soc_df['ID_SOCIETE'].iloc[0] if not soc_df.empty else None
+        map_c = {'date_contrat': 'DATE_CONTRAT', 'period_domcil': 'PERIOD_DOMCIL',
+                 'prix_contrat': 'PRIX_CONTRAT', 'prix_intermediare': 'PRIX_INTERMEDIARE_CONTRAT',
+                 'dom_datedeb': 'DOM_DATEDEB', 'dom_datefin': 'DOM_DATEFIN'}
+        for k, h in map_c.items():
+            if k in contrat_vals:
+                v = contrat_vals.get(k)
+                if h.upper().find('DATE') >= 0:
+                    dt = _to_datetime(v)
+                    r[h] = dt.to_pydatetime() if dt is not None else None
+                else:
+                    if v is None:
+                        r[h] = None
+                    elif isinstance(v, (int, float)):
+                        r[h] = v
+                    else:
+                        r[h] = str(v)
+        contrat_df = _pd.DataFrame([r])
+
+    # Write into workbook
+    # If file exists, append; otherwise create fresh workbook
+    if not path.exists():
+        with _pd.ExcelWriter(path, engine='openpyxl') as writer:
+            if not soc_df.empty:
+                soc_df.to_excel(writer, sheet_name='Societes', index=False)
+            else:
+                # ensure header exists
+                _pd.DataFrame(columns=_const.societe_headers).to_excel(writer, sheet_name='Societes', index=False)
+            if not assoc_df.empty:
+                assoc_df.to_excel(writer, sheet_name='Associes', index=False)
+            else:
+                _pd.DataFrame(columns=_const.associe_headers).to_excel(writer, sheet_name='Associes', index=False)
+            if not contrat_df.empty:
+                contrat_df.to_excel(writer, sheet_name='Contrats', index=False)
+            else:
+                _pd.DataFrame(columns=_const.contrat_headers).to_excel(writer, sheet_name='Contrats', index=False)
+        return
+
+    # Append to existing workbook
+    with _pd.ExcelWriter(path, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+        if not soc_df.empty:
+            if 'Societes' in writer.book.sheetnames:
+                start = writer.book['Societes'].max_row
+                soc_df.to_excel(writer, sheet_name='Societes', index=False, header=False, startrow=start)
+            else:
+                soc_df.to_excel(writer, sheet_name='Societes', index=False)
+        if not assoc_df.empty:
+            if 'Associes' in writer.book.sheetnames:
+                start = writer.book['Associes'].max_row
+                assoc_df.to_excel(writer, sheet_name='Associes', index=False, header=False, startrow=start)
+            else:
+                assoc_df.to_excel(writer, sheet_name='Associes', index=False)
+        if not contrat_df.empty:
+            if 'Contrats' in writer.book.sheetnames:
+                start = writer.book['Contrats'].max_row
+                contrat_df.to_excel(writer, sheet_name='Contrats', index=False, header=False, startrow=start)
+            else:
+                contrat_df.to_excel(writer, sheet_name='Contrats', index=False)
+
+
+def migrate_excel_workbook(path):
+    """Detects sheets that look like canonical sheets but have different names
+    and merges their rows into the canonical sheet, then removes the old sheet.
+    """
+    path = _Path(path)
+    if not path.exists():
+        return
+    try:
+        # Create a timestamped backup before modifying the workbook
+        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        backup_name = f"{path.stem}_backup_{timestamp}{path.suffix}"
+        backup_path = path.parent / backup_name
+        shutil.copy2(path, backup_path)
+        logger.info(f"Created backup of workbook before migration: {backup_path}")
+    except Exception:
+        logger.exception('Failed to create backup before migration; continuing without backup')
+    from . import constants as _const
+    wb = load_workbook(path)
+    changed = False
+    # Build set of canonical header sets for quick matching
+    canonical = {name: set([h.upper() for h in cols]) for name, cols in _const.excel_sheets.items()}
+    to_remove = []
+    for sheet in list(wb.sheetnames):
+        if sheet in canonical:
+            continue
+        try:
+            df = _pd.read_excel(path, sheet_name=sheet, dtype=str)
+        except Exception:
+            continue
+        hdrs = set([c.upper() for c in df.columns])
+        # find best matching canonical sheet
+        for cname, cheaders in canonical.items():
+            # if overlap is large relative to the legacy sheet size, consider it a match
+            # this lets small legacy extracts (few columns) be merged
+            overlap = len(hdrs & cheaders)
+            if overlap >= max(1, int(len(hdrs) * 0.5)):
+                # append df to canonical sheet
+                try:
+                    existing = _pd.read_excel(path, sheet_name=cname, dtype=str)
+                except Exception:
+                    existing = _pd.DataFrame(columns=_const.excel_sheets.get(cname, []))
+                # Align legacy df to canonical headers to ensure correct column placement
+                canonical_cols = _const.excel_sheets.get(cname, [])
+                df_aligned = df.reindex(columns=canonical_cols, fill_value='')
+                # write back by appending
+                with _pd.ExcelWriter(path, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+                    startrow = writer.book[cname].max_row if cname in writer.book.sheetnames else 0
+                    df_aligned.to_excel(writer, sheet_name=cname, index=False, header=False, startrow=startrow)
+                to_remove.append(sheet)
+                changed = True
+                break
+    if to_remove:
+        # reload workbook to ensure any appended data is present before removing old sheets
+        wb = load_workbook(path)
+        for s in to_remove:
+            try:
+                std = wb[s]
+                wb.remove(std)
+            except Exception:
+                pass
+        wb.save(path)
     @classmethod
     def validate_file(cls, filepath: Path, file_type: str) -> bool:
         """

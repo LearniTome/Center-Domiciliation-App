@@ -1,11 +1,37 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from tkcalendar import DateEntry
+from typing import Optional
 from src.utils.utils import ThemeManager
 
 class AssocieForm(ttk.Frame):
-    def __init__(self, parent, theme_manager: ThemeManager):
+    def __init__(self, parent, theme_manager: Optional[ThemeManager] = None, values_dict=None):
+        """AssocieForm supports two calling conventions for backward compatibility:
+
+        - AssocieForm(parent, theme_manager)
+        - AssocieForm(parent, values_dict={})  # legacy dashboard usage
+
+        We detect the types and adapt accordingly.
+        """
         super().__init__(parent)
+
+        # Backwards-compatible handling: if the second positional arg is a dict or list,
+        # it's actually the legacy `values_dict`.
+        if isinstance(theme_manager, (dict, list)) and values_dict is None:
+            values_dict = theme_manager
+            theme_manager = None
+
+        # Ensure we have a ThemeManager instance
+        if theme_manager is None:
+            try:
+                theme_manager = ThemeManager(self.winfo_toplevel())
+            except Exception:
+                # Fallback: try constructing with self; if not available keep None
+                try:
+                    theme_manager = ThemeManager(self)
+                except Exception:
+                    theme_manager = None
+
         self.theme_manager = theme_manager
         self.associe_vars = []
 
@@ -18,34 +44,58 @@ class AssocieForm(ttk.Frame):
         self.main_container.grid(row=0, column=0, sticky="nsew")
         self.main_container.grid_columnconfigure(0, weight=1)
         self.main_container.grid_rowconfigure(0, weight=1)
-
         # Setup UI components
         self.setup_scrollable_container()
         self.setup_control_buttons()
-        self.add_first_associe()
+        # Note: do NOT auto-add an initial associé here. The parent MainForm
+        # will control how many associés are created initially to avoid
+        # duplications when embedded in different contexts.
 
         # Cleanup on destroy
         self.bind("<Destroy>", self._cleanup)
 
+        # If legacy values_dict was provided, populate fields
+        if values_dict is not None:
+            # If it's a list of associés, set them all
+            if isinstance(values_dict, list):
+                if len(values_dict) == 0:
+                    # create a single empty associe to allow data entry
+                    self.add_associe()
+                else:
+                    self.set_values(values_dict)
+            elif isinstance(values_dict, dict):
+                # create one associe and populate
+                self.add_associe()
+                if len(values_dict) > 0:
+                    self.set_values([values_dict])
+
     def create_associe_vars(self):
         """Crée et retourne les variables pour un nouvel associé"""
+        from ..utils.constants import Nationalite
+
+        # sensible defaults per request:
+        # - civilite default to 'M.'
+        # - est_gerant checked by default
+        # - qualite default to 'Associé Gérant'
+        # - num_parts default to '1000'
+        # - capital_detenu default to '100000'
         return {
-            'civilite': tk.StringVar(),
-            'nom': tk.StringVar(),
-            'prenom': tk.StringVar(),
-            'parts': tk.StringVar(),
-            'date_naiss': tk.StringVar(),
-            'lieu_naiss': tk.StringVar(),
-            'nationalite': tk.StringVar(),
-            'num_piece': tk.StringVar(),
-            'validite_piece': tk.StringVar(),
-            'adresse': tk.StringVar(),
-            'telephone': tk.StringVar(),
-            'email': tk.StringVar(),
-            'est_gerant': tk.BooleanVar(),
-            'qualite': tk.StringVar(),
-            'capital_detenu': tk.StringVar(),
-            'num_parts': tk.StringVar()
+            'civilite': tk.StringVar(value='M.'),
+            'nom': tk.StringVar(value=''),
+            'prenom': tk.StringVar(value=''),
+            'parts': tk.StringVar(value=''),
+            'date_naiss': tk.StringVar(value=''),
+            'lieu_naiss': tk.StringVar(value=''),
+            'nationalite': tk.StringVar(value=(Nationalite[0] if Nationalite else '')),
+            'num_piece': tk.StringVar(value=''),
+            'validite_piece': tk.StringVar(value=''),
+            'adresse': tk.StringVar(value=''),
+            'telephone': tk.StringVar(value=''),
+            'email': tk.StringVar(value=''),
+            'est_gerant': tk.BooleanVar(value=True),
+            'qualite': tk.StringVar(value='Associé Gérant'),
+            'capital_detenu': tk.StringVar(value='100000'),
+            'num_parts': tk.StringVar(value='1000')
         }
 
     def create_associe_fields(self, parent, index):
@@ -54,11 +104,11 @@ class AssocieForm(ttk.Frame):
 
         # Frame principal de l'associé
         frame = ttk.LabelFrame(parent, text=f"👤 Associé {index + 1}")
-        frame.pack(fill="x", padx=5, pady=5)
+        frame.pack(fill="x", padx=5, pady=5, expand=True)
 
         # Conteneur principal à deux colonnes
         main_grid = ttk.Frame(frame)
-        main_grid.pack(fill="x", padx=5, pady=5)
+        main_grid.pack(fill="x", padx=5, pady=5, expand=True)
         main_grid.columnconfigure(0, weight=1)
         main_grid.columnconfigure(1, weight=1)
 
@@ -68,7 +118,7 @@ class AssocieForm(ttk.Frame):
 
         # Section Informations de base
         self.create_basic_info_section(left_column, vars_dict)
-        
+
         # Section Naissance
         self.create_birth_section(left_column, vars_dict)
 
@@ -103,10 +153,10 @@ class AssocieForm(ttk.Frame):
     def create_basic_info_section(self, parent, vars_dict):
         """Crée la section Informations de base"""
         info_frame = ttk.LabelFrame(parent, text="📝 Informations de base")
-        info_frame.pack(fill="x", pady=5)
+        info_frame.pack(fill="x", pady=5, expand=True)
 
         grid = ttk.Frame(info_frame)
-        grid.pack(fill="x", padx=5, pady=5)
+        grid.pack(fill="x", padx=5, pady=5, expand=True)
         grid.columnconfigure(1, weight=1)
         grid.columnconfigure(3, weight=1)
 
@@ -119,26 +169,27 @@ class AssocieForm(ttk.Frame):
         ttk.Label(grid, text="Prénom:", anchor="e", width=12).grid(row=0, column=2, padx=(0, 5), pady=2)
         ttk.Entry(grid, textvariable=vars_dict['prenom']).grid(row=0, column=3, sticky="ew", pady=2)
 
-        # Ligne 2: Nom et Parts
+        # Ligne 2: Nom (Parts removed per request)
         ttk.Label(grid, text="Nom:", anchor="e", width=12).grid(row=1, column=0, padx=(0, 5), pady=2)
         ttk.Entry(grid, textvariable=vars_dict['nom']).grid(row=1, column=1, sticky="ew", padx=(0, 15), pady=2)
-
-        ttk.Label(grid, text="Parts (%):", anchor="e", width=12).grid(row=1, column=2, padx=(0, 5), pady=2)
-        ttk.Entry(grid, textvariable=vars_dict['parts']).grid(row=1, column=3, sticky="ew", pady=2)
 
     def create_birth_section(self, parent, vars_dict):
         """Crée la section Naissance"""
         birth_frame = ttk.LabelFrame(parent, text="👶 Naissance")
-        birth_frame.pack(fill="x", pady=5)
+        birth_frame.pack(fill="x", pady=5, expand=True)
 
         grid = ttk.Frame(birth_frame)
-        grid.pack(fill="x", padx=5, pady=5)
+        grid.pack(fill="x", padx=5, pady=5, expand=True)
         grid.columnconfigure(1, weight=1)
 
-        # Date de naissance
+        # Date de naissance (use DateEntry for convenience)
         ttk.Label(grid, text="Date de naissance:", anchor="e", width=15).grid(row=0, column=0, padx=(0, 5), pady=2)
-        DateEntry(grid, textvariable=vars_dict['date_naiss'],
-                date_pattern='dd/mm/yyyy', width=12).grid(row=0, column=1, sticky="w", pady=2)
+        DateEntry(grid, textvariable=vars_dict['date_naiss'], date_pattern='dd/mm/yyyy', width=12).grid(row=0, column=1, sticky="w", pady=2)
+        # Start with an empty date so the user must pick one explicitly
+        try:
+            vars_dict['date_naiss'].set('')
+        except Exception:
+            pass
 
         # Lieu de naissance
         ttk.Label(grid, text="Lieu de naissance:", anchor="e", width=15).grid(row=1, column=0, padx=(0, 5), pady=2)
@@ -147,53 +198,63 @@ class AssocieForm(ttk.Frame):
     def create_manager_section(self, parent, vars_dict):
         """Crée la section Statut de Gérant"""
         manager_frame = ttk.LabelFrame(parent, text="👔 Statut de Gérant")
-        manager_frame.pack(fill="x", pady=5)
+        manager_frame.pack(fill="x", pady=5, expand=True)
 
         grid = ttk.Frame(manager_frame)
-        grid.pack(fill="x", padx=5, pady=5)
+        grid.pack(fill="x", padx=5, pady=5, expand=True)
         grid.columnconfigure(1, weight=1)
 
         # Checkbox Est Gérant
         ttk.Checkbutton(grid, text="Est Gérant", variable=vars_dict['est_gerant']).grid(
             row=0, column=0, columnspan=2, sticky="w", pady=2)
 
-        # Qualité
+        # Qualité — use Combobox to present common roles while keeping the current default
         ttk.Label(grid, text="Qualité:", anchor="e", width=12).grid(row=1, column=0, padx=(0, 5), pady=2)
-        ttk.Entry(grid, textvariable=vars_dict['qualite']).grid(row=1, column=1, sticky="ew", pady=2)
+        try:
+            from ..utils import constants as _constants
+            qual_options = getattr(_constants, 'Qualites', ["Associé Gérant", "Associé"])
+        except Exception:
+            qual_options = ["Associé Gérant", "Associé"]
+        ttk.Combobox(grid, textvariable=vars_dict['qualite'], values=qual_options).grid(row=1, column=1, sticky="ew", pady=2)
 
     def create_identity_section(self, parent, vars_dict):
         """Crée la section Identité"""
         identity_frame = ttk.LabelFrame(parent, text="🆔 Identité")
-        identity_frame.pack(fill="x", pady=5)
+        identity_frame.pack(fill="x", pady=5, expand=True)
 
         grid = ttk.Frame(identity_frame)
-        grid.pack(fill="x", padx=5, pady=5)
+        grid.pack(fill="x", padx=5, pady=5, expand=True)
         grid.columnconfigure(1, weight=1)
 
-        # Nationalité
+        # Nationalité — prefer a Combobox with values from constants when available
         ttk.Label(grid, text="Nationalité:", anchor="e", width=12).grid(row=0, column=0, padx=(0, 5), pady=2)
-        ttk.Entry(grid, textvariable=vars_dict['nationalite']).grid(row=0, column=1, sticky="ew", pady=2)
+        try:
+            from ..utils.constants import Nationalite
+            nat_options = Nationalite
+        except Exception:
+            nat_options = []
+        ttk.Combobox(grid, textvariable=vars_dict['nationalite'], values=nat_options).grid(row=0, column=1, sticky="ew", pady=2)
 
         # N° CIN
         ttk.Label(grid, text="N° CIN:", anchor="e", width=12).grid(row=1, column=0, padx=(0, 5), pady=2)
         ttk.Entry(grid, textvariable=vars_dict['num_piece']).grid(row=1, column=1, sticky="ew", pady=2)
 
-        # Validité CIN
+        # Validité CIN (use DateEntry for convenience)
         ttk.Label(grid, text="Validité CIN:", anchor="e", width=12).grid(row=2, column=0, padx=(0, 5), pady=2)
-        date_container = ttk.Frame(grid)
-        date_container.grid(row=2, column=1, sticky="ew", pady=2)
-        date_container.columnconfigure(0, weight=1)
-        
-        DateEntry(date_container, textvariable=vars_dict['validite_piece'],
-                date_pattern='dd/mm/yyyy', width=12).grid(row=0, column=0, sticky="w")
+        DateEntry(grid, textvariable=vars_dict['validite_piece'], date_pattern='dd/mm/yyyy', width=12).grid(row=2, column=1, sticky="w", pady=2)
+        # Keep the validity date empty until the user selects it
+        try:
+            vars_dict['validite_piece'].set('')
+        except Exception:
+            pass
 
     def create_contact_section(self, parent, vars_dict):
         """Crée la section Contact"""
         contact_frame = ttk.LabelFrame(parent, text="📞 Contact")
-        contact_frame.pack(fill="x", pady=5)
+        contact_frame.pack(fill="x", pady=5, expand=True)
 
         grid = ttk.Frame(contact_frame)
-        grid.pack(fill="x", padx=5, pady=5)
+        grid.pack(fill="x", padx=5, pady=5, expand=True)
         grid.columnconfigure(1, weight=1)
 
         # Adresse
@@ -211,15 +272,15 @@ class AssocieForm(ttk.Frame):
     def create_capital_section(self, parent, vars_dict):
         """Crée la section Capital"""
         capital_frame = ttk.LabelFrame(parent, text="💰 Capital")
-        capital_frame.pack(fill="x", pady=5)
+        capital_frame.pack(fill="x", pady=5, expand=True)
 
         grid = ttk.Frame(capital_frame)
-        grid.pack(fill="x", padx=5, pady=5)
+        grid.pack(fill="x", padx=5, pady=5, expand=True)
         grid.columnconfigure(1, weight=1)
         grid.columnconfigure(3, weight=1)
 
-        # Capital détenu et Nombre de parts
-        ttk.Label(grid, text="Capital détenu (%):", anchor="e", width=15).grid(row=0, column=0, padx=(0, 5), pady=2)
+        # Capital détenu et Nombre de parts (capital en MAD)
+        ttk.Label(grid, text="Capital détenu (MAD):", anchor="e", width=15).grid(row=0, column=0, padx=(0, 5), pady=2)
         ttk.Entry(grid, textvariable=vars_dict['capital_detenu']).grid(row=0, column=1, sticky="ew", padx=(0, 15), pady=2)
 
         ttk.Label(grid, text="Nombre de parts:", anchor="e", width=15).grid(row=0, column=2, padx=(0, 5), pady=2)
@@ -227,40 +288,19 @@ class AssocieForm(ttk.Frame):
 
     def setup_scrollable_container(self):
         """Configure le conteneur scrollable pour les associés"""
+        # Use a simple frame inside the main container. The outer MainForm
+        # canvas (the page container) will handle scrolling for the whole page.
         canvas_frame = ttk.Frame(self.main_container)
         canvas_frame.grid(row=0, column=0, sticky="nsew")
         canvas_frame.grid_columnconfigure(0, weight=1)
         canvas_frame.grid_rowconfigure(0, weight=1)
 
-        self.canvas = tk.Canvas(canvas_frame, background=self.theme_manager.colors['bg'])
-        self.canvas.grid(row=0, column=0, sticky="nsew")
-
-        scrollbar = ttk.Scrollbar(canvas_frame, orient="vertical", command=self.canvas.yview)
-        scrollbar.grid(row=0, column=1, sticky="ns")
-
-        # Configure canvas
-        self.associes_frame = ttk.Frame(self.canvas)
+        # The associes_frame holds the individual associé LabelFrames.
+        # It is a plain Frame (no inner canvas/scrollbar) so the outer
+        # MainForm canvas controls scrolling for the whole page.
+        self.associes_frame = ttk.Frame(canvas_frame)
+        self.associes_frame.grid(row=0, column=0, sticky="nsew")
         self.associes_frame.grid_columnconfigure(0, weight=1)
-        self.canvas.configure(yscrollcommand=scrollbar.set)
-        self.canvas.configure(width=800)
-
-        # Create the canvas window
-        self.canvas_window = self.canvas.create_window((0, 0), window=self.associes_frame, anchor="nw")
-
-        # Configure canvas resizing
-        def on_configure(event):
-            self.canvas.configure(scrollregion=self.canvas.bbox("all"))
-            self.canvas.itemconfig(self.canvas_window, width=self.canvas.winfo_width())
-
-        self.associes_frame.bind("<Configure>", on_configure)
-        self.canvas.bind("<Configure>", lambda e: self.canvas.itemconfig(
-            self.canvas_window, width=e.width))
-
-        # Mouse wheel scrolling
-        def on_mousewheel(event):
-            self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
-
-        self.canvas.bind_all("<MouseWheel>", on_mousewheel)
 
     def setup_control_buttons(self):
         """Configure les boutons de contrôle"""
@@ -278,7 +318,8 @@ class AssocieForm(ttk.Frame):
 
     def add_first_associe(self):
         """Ajoute le premier associé"""
-        self.add_associe()
+        # kept for backward compatibility but left intentionally empty
+        return
 
     def add_associe(self):
         """Ajoute un nouvel associé"""
@@ -290,6 +331,48 @@ class AssocieForm(ttk.Frame):
             return
 
         self.create_associe_fields(self.associes_frame, len(self.associe_vars))
+
+    def get_values(self):
+        """Retourne la liste des associés sous forme de dictionnaires."""
+        results = []
+        for vars_dict in self.associe_vars:
+            item = {}
+            for k, v in vars_dict.items():
+                try:
+                    # BooleanVar -> bool
+                    if isinstance(v, tk.BooleanVar):
+                        item[k] = bool(v.get())
+                    else:
+                        item[k] = v.get()
+                except Exception:
+                    item[k] = None
+            results.append(item)
+        return results
+
+    def set_values(self, associes_list):
+        """Remplit le formulaire des associés avec une liste de dicts.
+
+        Each element of associes_list should be a dict mapping the field names
+        to values. This will clear existing entries and recreate them.
+        """
+        # Clear existing UI
+        for child in list(self.associes_frame.winfo_children()):
+            child.destroy()
+        self.associe_vars = []
+
+        for assoc in associes_list:
+            self.create_associe_fields(self.associes_frame, len(self.associe_vars))
+            # Populate the latest vars dict
+            vars_dict = self.associe_vars[-1]
+            for k, val in assoc.items():
+                if k in vars_dict:
+                    try:
+                        if isinstance(vars_dict[k], tk.BooleanVar):
+                            vars_dict[k].set(bool(val))
+                        else:
+                            vars_dict[k].set(val)
+                    except Exception:
+                        pass
 
     def remove_associe(self, frame, vars_dict):
         """Supprime un associé"""
@@ -307,4 +390,9 @@ class AssocieForm(ttk.Frame):
 
     def _cleanup(self, event):
         """Nettoyage lors de la destruction"""
-        self.canvas.unbind_all("<MouseWheel>")
+        try:
+            canvas = getattr(self, 'canvas', None)
+            if canvas is not None:
+                canvas.unbind_all("<MouseWheel>")
+        except Exception:
+            pass
