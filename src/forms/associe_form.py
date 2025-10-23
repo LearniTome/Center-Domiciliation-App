@@ -182,9 +182,9 @@ class AssocieForm(ttk.Frame):
         grid.pack(fill="x", padx=5, pady=5, expand=True)
         grid.columnconfigure(1, weight=1)
 
-        # Date de naissance (empty by default) - use Entry to allow empty value
+        # Date de naissance (use DateEntry for convenience)
         ttk.Label(grid, text="Date de naissance:", anchor="e", width=15).grid(row=0, column=0, padx=(0, 5), pady=2)
-        ttk.Entry(grid, textvariable=vars_dict['date_naiss']).grid(row=0, column=1, sticky="w", pady=2)
+        DateEntry(grid, textvariable=vars_dict['date_naiss'], date_pattern='dd/mm/yyyy', width=12).grid(row=0, column=1, sticky="w", pady=2)
 
         # Lieu de naissance
         ttk.Label(grid, text="Lieu de naissance:", anchor="e", width=15).grid(row=1, column=0, padx=(0, 5), pady=2)
@@ -224,9 +224,9 @@ class AssocieForm(ttk.Frame):
         ttk.Label(grid, text="N° CIN:", anchor="e", width=12).grid(row=1, column=0, padx=(0, 5), pady=2)
         ttk.Entry(grid, textvariable=vars_dict['num_piece']).grid(row=1, column=1, sticky="ew", pady=2)
 
-        # Validité CIN (empty by default) - use Entry to allow empty value
+        # Validité CIN (use DateEntry for convenience)
         ttk.Label(grid, text="Validité CIN:", anchor="e", width=12).grid(row=2, column=0, padx=(0, 5), pady=2)
-        ttk.Entry(grid, textvariable=vars_dict['validite_piece']).grid(row=2, column=1, sticky="w", pady=2)
+        DateEntry(grid, textvariable=vars_dict['validite_piece'], date_pattern='dd/mm/yyyy', width=12).grid(row=2, column=1, sticky="w", pady=2)
 
     def create_contact_section(self, parent, vars_dict):
         """Crée la section Contact"""
@@ -259,8 +259,8 @@ class AssocieForm(ttk.Frame):
         grid.columnconfigure(1, weight=1)
         grid.columnconfigure(3, weight=1)
 
-        # Capital détenu et Nombre de parts
-        ttk.Label(grid, text="Capital détenu (%):", anchor="e", width=15).grid(row=0, column=0, padx=(0, 5), pady=2)
+        # Capital détenu et Nombre de parts (capital en MAD)
+        ttk.Label(grid, text="Capital détenu (MAD):", anchor="e", width=15).grid(row=0, column=0, padx=(0, 5), pady=2)
         ttk.Entry(grid, textvariable=vars_dict['capital_detenu']).grid(row=0, column=1, sticky="ew", padx=(0, 15), pady=2)
 
         ttk.Label(grid, text="Nombre de parts:", anchor="e", width=15).grid(row=0, column=2, padx=(0, 5), pady=2)
