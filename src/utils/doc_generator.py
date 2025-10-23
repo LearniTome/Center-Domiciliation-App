@@ -81,6 +81,67 @@ def render_templates(
     out_dir = _Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    # Prepare generation prefix and per-generation folder using company name
+    try:
+        from datetime import date as _date
+    except Exception:
+        _date = None
+
+    gen_date = _date.today().strftime("%Y-%m-%d") if _date else time.strftime("%Y-%m-%d")
+
+    # Determine company name from values (try several common keys, search nested 'societe')
+    def _extract_company_name(vals: Dict) -> str:
+        if not isinstance(vals, dict):
+            return "UnknownCompany"
+
+        # prefer nested societe dict when available
+        candidates = []
+        soc = vals.get('societe')
+        if isinstance(soc, dict):
+            candidates.append(soc)
+        # also try top-level values dict
+        candidates.append(vals)
+
+        keys_priority = (
+            'denomination', 'denomination_sociale', 'den_ste', 'DenSte', 'DEN_STE',
+            'nom_societe', 'nom', 'societe', 'name'
+        )
+
+        for c in candidates:
+            for k in keys_priority:
+                try:
+                    v = c.get(k)
+                except Exception:
+                    v = None
+                if v:
+                    return str(v)
+
+        # last resort: try to find any reasonable string value in societe dict
+        if isinstance(soc, dict):
+            for k, v in soc.items():
+                if isinstance(v, str) and v.strip():
+                    return v.strip()
+
+        return "UnknownCompany"
+
+    def _sanitize_name(name: str) -> str:
+        # replace spaces with underscore, remove path-unfriendly chars
+        import re
+        s = name.strip()
+        s = s.replace(' ', '_')
+        # keep alnum, underscore and dash
+        s = re.sub(r"[^A-Za-z0-9_\-]", '', s)
+        # collapse multiple underscores
+        s = re.sub(r"__+", '_', s)
+        return s or 'UnknownCompany'
+
+    company_raw = _extract_company_name(values or {})
+    company_clean = _sanitize_name(company_raw)
+
+    generation_folder_name = f"{gen_date}_{company_clean}_Constitution"
+    out_subdir = out_dir / generation_folder_name
+    out_subdir.mkdir(parents=True, exist_ok=True)
+
     report = []
 
     if templates_list:
@@ -97,9 +158,18 @@ def render_templates(
     total_files = len(templates) * (1 + (1 if to_pdf else 0))
     processed_files = 0
 
+    # Use out_subdir for generated files and report
     for tpl in templates:
         try:
-            out_docx = out_dir / f"{tpl.stem}_filled.docx"
+            # Prefix filenames with date and sanitized company name
+            prefix = f"{gen_date}_{company_clean}_"
+            # Clean the template stem: remove leading 'My_' and trailing '_filled' if present
+            stem = tpl.stem
+            if stem.startswith('My_'):
+                stem = stem[3:]
+            if stem.endswith('_filled'):
+                stem = stem[:-7]
+            out_docx = out_subdir / f"{prefix}{stem}.docx"
 
             # Skip if docx already exists
             if out_docx.exists():
@@ -135,7 +205,7 @@ def render_templates(
 
             # PDF conversion (optional)
             if to_pdf:
-                out_pdf = out_dir / f"{tpl.stem}_filled.pdf"
+                out_pdf = out_subdir / f"{prefix}{stem}.pdf"
                 # Skip if PDF exists
                 if out_pdf.exists():
                     entry['out_pdf'] = str(out_pdf)
@@ -162,9 +232,9 @@ def render_templates(
             logger.exception("Failed to render template %s: %s", tpl, e)
             report.append({'template': str(tpl.name), 'out_docx': None, 'status': 'error', 'error': str(e)})
 
-    # Save report
+    # Save report (ensure report_path is defined even on failure)
+    report_path = out_subdir / "generation_report.json"
     try:
-        report_path = out_dir / "generation_report.json"
         with report_path.open('w', encoding='utf-8') as f:
             json.dump(report, f, ensure_ascii=False, indent=2)
         logger.info("Saved generation report to %s", report_path)
