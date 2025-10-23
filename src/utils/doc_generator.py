@@ -144,6 +144,89 @@ def render_templates(
 
     report = []
 
+    def _build_context(vals: Dict) -> Dict:
+        """Build a flat context dict for docxtpl from nested values.
+
+        Keeps the original nested structure under keys 'societe', 'associes', 'contrat'
+        but also injects many alternative keys (uppercase canonical headers and
+        common form keys) to maximize chance of matching the variables used in
+        the .docx templates.
+        """
+        ctx: Dict = {}
+        if not isinstance(vals, dict):
+            return ctx
+
+        # keep nested
+        ctx['societe'] = vals.get('societe', {}) or {}
+        ctx['associes'] = vals.get('associes', []) or []
+        ctx['contrat'] = vals.get('contrat', {}) or {}
+
+        soc = ctx['societe']
+        # Societe mappings
+        soc_map = {
+            'denomination': 'DEN_STE', 'denomination_sociale': 'DEN_STE', 'den_ste': 'DEN_STE', 'name': 'DEN_STE',
+            'forme_juridique': 'FORME_JUR', 'ice': 'ICE', 'date_ice': 'DATE_ICE', 'capital': 'CAPITAL',
+            'parts_social': 'PART_SOCIAL', 'adresse': 'STE_ADRESS', 'tribunal': 'TRIBUNAL'
+        }
+        for fk, hk in soc_map.items():
+            v = None
+            try:
+                v = soc.get(fk)
+            except Exception:
+                v = None
+            if v:
+                ctx[hk] = v
+                # also lowercase friendly name
+                ctx[fk] = v
+
+        # If no DEN_STE found, try any string in soc
+        if 'DEN_STE' not in ctx:
+            for k, v in soc.items():
+                if isinstance(v, str) and v.strip():
+                    ctx['DEN_STE'] = v
+                    break
+
+        # Associe: prefer first associe for single-value templates
+        assoc_list = ctx['associes']
+        if assoc_list and isinstance(assoc_list, list) and len(assoc_list) > 0:
+            a = assoc_list[0] or {}
+            assoc_map = {
+                'civilite': 'CIVIL', 'prenom': 'PRENOM', 'nom': 'NOM', 'nationalite': 'NATIONALITY',
+                'num_piece': 'CIN_NUM', 'validite_piece': 'CIN_VALIDATY', 'date_naiss': 'DATE_NAISS',
+                'lieu_naiss': 'LIEU_NAISS', 'adresse': 'ADRESSE', 'telephone': 'PHONE', 'email': 'EMAIL',
+                'parts': 'PARTS', 'num_parts': 'PARTS', 'capital_detenu': 'CAPITAL_DETENU',
+                'est_gerant': 'IS_GERANT', 'qualite': 'QUALITY'
+            }
+            for fk, hk in assoc_map.items():
+                v = None
+                try:
+                    v = a.get(fk)
+                except Exception:
+                    v = None
+                if v is not None and v != '':
+                    ctx[hk] = v
+                    ctx[fk] = v
+
+        # Contrat mappings
+        c = ctx['contrat']
+        contrat_map = {
+            'date_contrat': 'DATE_CONTRAT', 'period': 'PERIOD_DOMCIL', 'period_domcil': 'PERIOD_DOMCIL',
+            'prix_mensuel': 'PRIX_CONTRAT', 'prix_inter': 'PRIX_INTERMEDIARE_CONTRAT',
+            'prix_contrat': 'PRIX_CONTRAT', 'prix_intermediare': 'PRIX_INTERMEDIARE_CONTRAT',
+            'date_debut': 'DOM_DATEDEB', 'date_fin': 'DOM_DATEFIN', 'dom_datedeb': 'DOM_DATEDEB', 'dom_datefin': 'DOM_DATEFIN'
+        }
+        for fk, hk in contrat_map.items():
+            v = None
+            try:
+                v = c.get(fk)
+            except Exception:
+                v = None
+            if v is not None and v != '':
+                ctx[hk] = v
+                ctx[fk] = v
+
+        return ctx
+
     if templates_list:
         templates = [_Path(p) for p in templates_list]
     else:
@@ -188,7 +271,11 @@ def render_templates(
                     progress_callback(processed_files, total_files, str(tpl.name), dict(entry))
             else:
                 start = time.time()
-                _render_docx_template(tpl, values, out_docx)
+                # Build a forgiving context for templates (flat + nested)
+                context = _build_context(values or {})
+                # Also keep the original values under 'values' key for templates that expect it
+                context['values'] = values or {}
+                _render_docx_template(tpl, context, out_docx)
                 duration = time.time() - start
                 size_bytes = out_docx.stat().st_size if out_docx.exists() else 0
                 entry = {
@@ -235,11 +322,55 @@ def render_templates(
     # Save report (ensure report_path is defined even on failure)
     report_path = out_subdir / "generation_report.json"
     try:
+        # Write JSON report for backwards compatibility
         with report_path.open('w', encoding='utf-8') as f:
             json.dump(report, f, ensure_ascii=False, indent=2)
-        logger.info("Saved generation report to %s", report_path)
+        logger.info("Saved generation report (JSON) to %s", report_path)
     except Exception:
-        logger.exception("Failed to write generation report")
+        logger.exception("Failed to write generation report (JSON)")
+
+    # Also write a human-friendly HTML report with the requested name format:
+    # yyyy-mm-dd_DenSte_Raport_Docs_generer.html
+    try:
+        html_name = f"{gen_date}_{company_clean}_Raport_Docs_generer.html"
+        html_path = out_subdir / html_name
+        # Build a simple HTML page: header + table of report entries + embedded JSON for tools
+        def _escape(s: str) -> str:
+            import html as _html
+            return _html.escape(str(s) if s is not None else '')
+
+        rows_html = []
+        for e in report:
+            rows_html.append('<tr>' +
+                             ''.join(f"<td>{_escape(e.get(k,''))}</td>" for k in ('template', 'out_docx', 'out_pdf', 'status', 'error', 'duration_seconds', 'out_docx_size', 'out_pdf_size')) +
+                             '</tr>')
+
+        table_header = ''.join(f"<th>{_escape(h)}</th>" for h in ('template', 'out_docx', 'out_pdf', 'status', 'error', 'duration_seconds', 'out_docx_size', 'out_pdf_size'))
+        html_content = f"""<!doctype html>
+<html lang=\"fr\">
+<head><meta charset=\"utf-8\"><title>Rapport de génération - {_escape(company_raw)} - {gen_date}</title>
+<style>body{{font-family:Segoe UI,Arial,Helvetica,sans-serif}}table{{border-collapse:collapse;width:100%}}th,td{{border:1px solid #ddd;padding:8px}}th{{background:#f2f2f2}}</style>
+</head>
+<body>
+<h1>Rapport de génération - {_escape(company_raw)}</h1>
+<p>Date: {gen_date}</p>
+<h2>Fichiers générés</h2>
+<table>
+<thead><tr>{table_header}</tr></thead>
+<tbody>
+{''.join(rows_html)}
+</tbody>
+</table>
+<h2>Données brutes (JSON)</h2>
+<pre id=\"genjson\">{_escape(json.dumps(report, ensure_ascii=False, indent=2))}</pre>
+</body>
+</html>"""
+
+        with html_path.open('w', encoding='utf-8') as hf:
+            hf.write(html_content)
+        logger.info("Saved generation report (HTML) to %s", html_path)
+    except Exception:
+        logger.exception("Failed to write generation report (HTML)")
 
     # Optionally remove generated files in out_dir after saving the report.
     # Keep the generation_report.json file but delete other files (docx/pdf) when cleanup_tmp is True.
