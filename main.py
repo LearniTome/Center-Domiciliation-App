@@ -152,6 +152,18 @@ class MainApp(tk.Tk):
         """Unified document generation flow: user chooses templates and formats (Word/PDF/Both)."""
         try:
             self.collect_values()
+            # Ensure data is saved before starting generation.
+            # If saving fails, abort generation to avoid generating from unsaved state.
+            try:
+                db_path = self.save_to_db()
+            except Exception as _err:
+                logger.exception('Erreur lors de la sauvegarde avant génération: %s', _err)
+                messagebox.showwarning('Sauvegarde échouée', "La sauvegarde a échoué. La génération a été annulée.")
+                return
+            if not db_path:
+                # save_to_db returns None on failure / cancel — stop the generation flow
+                messagebox.showwarning('Sauvegarde manquante', 'La sauvegarde a échoué ou a été annulée. La génération a été annulée.')
+                return
             # Choose templates
             templates = self.choose_templates_with_format()
             if templates is None:

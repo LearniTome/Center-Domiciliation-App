@@ -779,6 +779,38 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
     except Exception:
         logger.exception('Failed to apply date number formats after writing records')
 
+    # Try to autofit column widths for all sheets to improve readability
+    try:
+        wb = load_workbook(path)
+        for ws in wb.worksheets:
+            try:
+                # compute max length per column (include header row)
+                for idx, col_cells in enumerate(ws.columns, start=1):
+                    max_len = 0
+                    col_letter = get_column_letter(idx)
+                    for cell in col_cells:
+                        try:
+                            val = cell.value
+                            if val is None:
+                                l = 0
+                            else:
+                                l = len(str(val))
+                            if l > max_len:
+                                max_len = l
+                        except Exception:
+                            continue
+                    # set width with some padding; guard minimum width
+                    width = max(8, float(max_len) + 2)
+                    try:
+                        ws.column_dimensions[col_letter].width = width
+                    except Exception:
+                        pass
+            except Exception:
+                continue
+        wb.save(path)
+    except Exception:
+        logger.exception('Failed to autofit column widths after writing records')
+
 
 def migrate_excel_workbook(path):
     """Detects sheets that look like canonical sheets but have different names
@@ -836,10 +868,13 @@ def migrate_excel_workbook(path):
                 try:
                     import datetime as _dt
                     gen_date = _dt.date.today().isoformat()
+                    gen_time = _dt.datetime.now().strftime('%H-%M-%S')
                 except Exception:
                     gen_date = 'unknown_date'
+                    import time as _time
+                    gen_time = _time.strftime('%H-%M-%S')
                 company_clean = 'UnknownCompany'
-                gen_name = f"{gen_date}_{company_clean}_Raport_Docs_generer.json"
+                gen_name = f"{gen_date}_{company_clean}_Raport_Docs_generer_{gen_time}.json"
                 gen_report = tmp_out / gen_name
                 if gen_report.exists():
                     try:
@@ -926,6 +961,35 @@ def migrate_excel_workbook(path):
         wb.save(path)
     except Exception:
         logger.exception('Failed to apply date number formats after migration')
+    # Autofit columns for all sheets after migration adjustments
+    try:
+        wb = load_workbook(path)
+        for ws in wb.worksheets:
+            try:
+                for idx, col_cells in enumerate(ws.columns, start=1):
+                    max_len = 0
+                    col_letter = get_column_letter(idx)
+                    for cell in col_cells:
+                        try:
+                            val = cell.value
+                            if val is None:
+                                l = 0
+                            else:
+                                l = len(str(val))
+                            if l > max_len:
+                                max_len = l
+                        except Exception:
+                            continue
+                    width = max(8, float(max_len) + 2)
+                    try:
+                        ws.column_dimensions[col_letter].width = width
+                    except Exception:
+                        pass
+            except Exception:
+                continue
+        wb.save(path)
+    except Exception:
+        logger.exception('Failed to autofit column widths after migration')
     @classmethod
     def validate_file(cls, filepath: Path, file_type: str) -> bool:
         """
