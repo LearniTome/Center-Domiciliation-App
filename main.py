@@ -66,25 +66,25 @@ class MainApp(tk.Tk):
         buttons_frame = ttk.Frame(self)
         buttons_frame.pack(pady=15, side=tk.BOTTOM, fill=tk.X, padx=20)
 
-        # Espace flexible au milieu
-        buttons_frame.grid_columnconfigure(2, weight=1)
+        # Single horizontal row to host all main buttons so they remain on one line
+        row = ttk.Frame(buttons_frame)
+        row.pack(fill='x')
 
         # Single generation button (modern style)
-        # Use the unified configuration button style for all main buttons
         gen_btn = WidgetFactory.create_button(
-            buttons_frame,
+            row,
             text="Générer les documents",
             command=self.generate_documents,
             style='Secondary.TButton'
         )
-        gen_btn.grid(row=0, column=0, padx=5)
+        gen_btn.pack(side='left', padx=6)
 
-        # Dashboard button (left)
+        # Dashboard button
         WidgetFactory.create_button(
-            buttons_frame,
+            row,
             text="📊 Tableau de bord",
             command=self.main_form.show_dashboard
-        ).grid(row=0, column=2, padx=5)
+        ).pack(side='left', padx=6)
 
         # Theme toggle
         def _toggle_theme():
@@ -97,15 +97,16 @@ class MainApp(tk.Tk):
             except Exception:
                 pass
 
-        theme_btn = WidgetFactory.create_button(buttons_frame, text=('🌙' if self.theme_manager.theme.mode == 'dark' else '☀️'), command=_toggle_theme)
-        theme_btn.grid(row=0, column=6, padx=5)
+        theme_btn = WidgetFactory.create_button(row, text=('🌙' if self.theme_manager.theme.mode == 'dark' else '☀️'), command=_toggle_theme)
+        theme_btn.pack(side='left', padx=6)
 
-        # Boutons de contrôle (droite)
-        # Keep only non-redundant toolbar actions here. The main form already
-        # provides a Save button in its footer/navigation, so we avoid creating
-        # a duplicate "Sauvegarder" button in the global toolbar.
-        WidgetFactory.create_button(buttons_frame, text="🆕 Nouvelle", command=self.clear_form).grid(row=0, column=3, padx=5)
-        WidgetFactory.create_button(buttons_frame, text="❌ Quitter", command=self.quit).grid(row=0, column=5, padx=5)
+        # Flexible spacer to push the remaining controls to the right
+        spacer = ttk.Frame(row)
+        spacer.pack(side='left', expand=True, fill='x')
+
+        # Right-side control buttons
+        WidgetFactory.create_button(row, text="🆕 Nouvelle", command=self.clear_form).pack(side='right', padx=6)
+        WidgetFactory.create_button(row, text="❌ Quitter", command=self.quit).pack(side='right', padx=6)
 
     def collect_values(self):
         """Collecte toutes les valeurs des formulaires"""
