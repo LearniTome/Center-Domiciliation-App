@@ -835,36 +835,36 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
                             col_letter = get_column_letter(idx)
                             # numeric columns (integers)
                             if h in ('CAPITAL', 'CAPITAL_DETENU', 'PARTS'):
-                                for r in range(2, ws.max_row + 1):
+                                for row_idx in range(2, ws.max_row + 1):
                                     try:
-                                        c = ws[f"{col_letter}{r}"]
+                                        c = ws[f"{col_letter}{row_idx}"]
                                         c.number_format = '#,##0'
                                         c.alignment = Alignment(horizontal='right', vertical='top')
                                     except Exception:
                                         pass
                             # pricing / currency columns
                             if h in ('PRIX_CONTRAT', 'PRIX_INTERMEDIARE_CONTRAT'):
-                                for r in range(2, ws.max_row + 1):
+                                for row_idx in range(2, ws.max_row + 1):
                                     try:
-                                        c = ws[f"{col_letter}{r}"]
+                                        c = ws[f"{col_letter}{row_idx}"]
                                         c.number_format = '#,##0.00'
                                         c.alignment = Alignment(horizontal='right', vertical='top')
                                     except Exception:
                                         pass
                             # phone as text
                             if h in ('PHONE',):
-                                for r in range(2, ws.max_row + 1):
+                                for row_idx in range(2, ws.max_row + 1):
                                     try:
-                                        c = ws[f"{col_letter}{r}"]
+                                        c = ws[f"{col_letter}{row_idx}"]
                                         c.number_format = '@'
                                         c.alignment = Alignment(horizontal='left', vertical='top')
                                     except Exception:
                                         pass
                             # long text fields -> wrap
                             if h in ('ADRESSE', 'STE_ADRESS', 'LIEU_NAISS'):
-                                for r in range(2, ws.max_row + 1):
+                                for row_idx in range(2, ws.max_row + 1):
                                     try:
-                                        c = ws[f"{col_letter}{r}"]
+                                        c = ws[f"{col_letter}{row_idx}"]
                                         c.alignment = wrap_align
                                     except Exception:
                                         pass
