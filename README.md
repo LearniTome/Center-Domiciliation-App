@@ -109,9 +109,9 @@ Generation reports
 
   Example: `2025-10-23_ASTRAPIA_Raport_Docs_generer.html`.
 
-- For backward compatibility a `generation_report.json` file is still written in the same folder. The HTML report embeds the same JSON inside a `<pre id="genjson">` block so tooling can extract it easily.
+- The generator writes a JSON report using the same base name as the HTML report (for example `2025-10-23_ASTRAPIA_Raport_Docs_generer.json`). The HTML report embeds the same JSON inside a `<pre id="genjson">` block so tooling can extract it easily.
 
-- The included verification script `scripts/check_generation.py` prefers the HTML report (it will extract the embedded JSON) and falls back to `generation_report.json` when needed. To validate a generation and assert basic expectations run:
+- The included verification script `scripts/check_generation.py` prefers the HTML report (it will extract the embedded JSON), then looks for a named JSON that matches the HTML report naming convention, and finally falls back to `generation_report.json` only if necessary. To validate a generation and assert basic expectations run:
 
 ```powershell
 .\venv\Scripts\Activate.ps1

@@ -53,6 +53,17 @@ def load_generation_report():
         pass
 
     # Fallback: old JSON file
+    # Try named JSON files that match the HTML naming convention
+    try:
+        for p in TMP.glob('*_Raport_Docs_generer.json'):
+            try:
+                return json.loads(p.read_text(encoding='utf-8'))
+            except Exception:
+                continue
+    except Exception:
+        pass
+
+    # Fallback: old JSON file for backward compatibility
     rp = TMP / 'generation_report.json'
     if not rp.exists():
         return None

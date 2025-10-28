@@ -830,8 +830,17 @@ def migrate_excel_workbook(path):
                 updated = False
 
             if not updated:
-                # Fallback: write a simple generation_report.json in tmp_out
-                gen_report = tmp_out / 'generation_report.json'
+                # Fallback: write a named JSON report matching the HTML convention
+                # so external tooling can find it more reliably. Use a safe
+                # default company string if none is available.
+                try:
+                    import datetime as _dt
+                    gen_date = _dt.date.today().isoformat()
+                except Exception:
+                    gen_date = 'unknown_date'
+                company_clean = 'UnknownCompany'
+                gen_name = f"{gen_date}_{company_clean}_Raport_Docs_generer.json"
+                gen_report = tmp_out / gen_name
                 if gen_report.exists():
                     try:
                         with gen_report.open('r', encoding='utf-8') as gf:
