@@ -807,6 +807,80 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
                         pass
             except Exception:
                 continue
+        # Apply header style and column-specific formatting
+        try:
+            from openpyxl.styles import Font, Alignment, PatternFill
+            header_font = Font(bold=True)
+            header_fill = PatternFill(fill_type='solid', fgColor='DDDDDD')
+            header_align = Alignment(horizontal='center', vertical='center')
+            wrap_align = Alignment(wrap_text=True, vertical='top')
+
+            for ws in wb.worksheets:
+                try:
+                    # header row styling
+                    for cell in list(ws[1]):
+                        try:
+                            cell.font = header_font
+                            cell.fill = header_fill
+                            cell.alignment = header_align
+                        except Exception:
+                            pass
+                    # per-column formatting based on header name
+                    for idx in range(1, ws.max_column + 1):
+                        try:
+                            hdr = ws.cell(row=1, column=idx).value
+                            if not hdr:
+                                continue
+                            h = str(hdr).upper()
+                            col_letter = get_column_letter(idx)
+                            # numeric columns (integers)
+                            if h in ('CAPITAL', 'CAPITAL_DETENU', 'PARTS'):
+                                for r in range(2, ws.max_row + 1):
+                                    try:
+                                        c = ws[f"{col_letter}{r}"]
+                                        c.number_format = '#,##0'
+                                        c.alignment = Alignment(horizontal='right', vertical='top')
+                                    except Exception:
+                                        pass
+                            # pricing / currency columns
+                            if h in ('PRIX_CONTRAT', 'PRIX_INTERMEDIARE_CONTRAT'):
+                                for r in range(2, ws.max_row + 1):
+                                    try:
+                                        c = ws[f"{col_letter}{r}"]
+                                        c.number_format = '#,##0.00'
+                                        c.alignment = Alignment(horizontal='right', vertical='top')
+                                    except Exception:
+                                        pass
+                            # phone as text
+                            if h in ('PHONE',):
+                                for r in range(2, ws.max_row + 1):
+                                    try:
+                                        c = ws[f"{col_letter}{r}"]
+                                        c.number_format = '@'
+                                        c.alignment = Alignment(horizontal='left', vertical='top')
+                                    except Exception:
+                                        pass
+                            # long text fields -> wrap
+                            if h in ('ADRESSE', 'STE_ADRESS', 'LIEU_NAISS'):
+                                for r in range(2, ws.max_row + 1):
+                                    try:
+                                        c = ws[f"{col_letter}{r}"]
+                                        c.alignment = wrap_align
+                                    except Exception:
+                                        pass
+                        except Exception:
+                            # if anything fails for this header/column, continue with next
+                            continue
+                    # freeze header row for easier navigation
+                    try:
+                        ws.freeze_panes = ws['A2']
+                    except Exception:
+                        pass
+                except Exception:
+                    continue
+        except Exception:
+            logger.exception('Failed to apply header/column formatting')
+
         wb.save(path)
     except Exception:
         logger.exception('Failed to autofit column widths after writing records')
