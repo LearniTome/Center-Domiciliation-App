@@ -105,6 +105,25 @@ class MainApp(tk.Tk):
         spacer.pack(side='left', expand=True, fill='x')
 
         # Right-side control buttons
+        # Navigation buttons from MainForm (Prev/Next/Save/Finish) - attach them to main_form
+        try:
+            # Prev
+            self.main_form.prev_btn = WidgetFactory.create_button(row, text="◀ Précédent", command=self.main_form.prev_page)
+            self.main_form.prev_btn.pack(side='right', padx=6)
+            # Next
+            self.main_form.next_btn = WidgetFactory.create_button(row, text="Suivant ▶", command=self.main_form.next_page)
+            self.main_form.next_btn.pack(side='right', padx=6)
+            # Save
+            self.main_form.save_btn = WidgetFactory.create_button(row, text="💾 Sauvegarder", command=self.main_form.save_current)
+            self.main_form.save_btn.pack(side='right', padx=6)
+            # Finish
+            self.main_form.finish_btn = WidgetFactory.create_button(row, text="🏁 Terminer", command=self.main_form.finish)
+            self.main_form.finish_btn.pack(side='right', padx=6)
+        except Exception:
+            # If main_form isn't ready for some reason, ignore and continue
+            pass
+
+        # App-level actions
         WidgetFactory.create_button(row, text="🆕 Nouvelle", command=self.clear_form).pack(side='right', padx=6)
         WidgetFactory.create_button(row, text="❌ Quitter", command=self.quit).pack(side='right', padx=6)
 

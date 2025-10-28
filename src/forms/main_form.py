@@ -248,43 +248,27 @@ class MainForm(ttk.Frame):
         between created pages. Save stores the current page's values into
         `self.values`. Finish will save then emit an event `<<FormsFinished>>`.
         """
-        # Create the navigation bar in the fixed footer_inner so it stays on a
-        # single line and does not wrap when the window is resized.
-        nav_frame = ttk.Frame(self.footer_inner)
-        nav_frame.pack(fill="x")
-        # Reserve a flexible center column to push items to the sides
-        for i in range(0, 8):
-            nav_frame.grid_columnconfigure(i, weight=(1 if i == 2 else 0))
+        # Navigation buttons are created at the app-level toolbar (in main.py)
+        # to keep a single, unified control row. Here we only ensure nav button
+        # states are initialized and keyboard shortcuts are bound.
+        try:
+            # Ensure attributes exist so update_nav_buttons can safely introspect
+            if not hasattr(self, 'prev_btn'):
+                self.prev_btn = None
+            if not hasattr(self, 'next_btn'):
+                self.next_btn = None
+            if not hasattr(self, 'save_btn'):
+                self.save_btn = None
+            if not hasattr(self, 'finish_btn'):
+                self.finish_btn = None
+        except Exception:
+            pass
 
-        # Configuration (left)
-        self.config_btn = WidgetFactory.create_button(
-            nav_frame, text="⚙ Configuration", command=self.open_configuration, style='Secondary.TButton')
-        self.config_btn.grid(row=0, column=0, sticky="w", padx=5)
-
-        # Previous (left)
-        self.prev_btn = WidgetFactory.create_button(
-            nav_frame, text="◀ Précédent", command=self.prev_page)
-        self.prev_btn.grid(row=0, column=1, sticky="w", padx=5)
-
-        # Flexible spacer in column 2 keeps buttons on a single line
-        nav_frame.grid_columnconfigure(2, weight=1)
-
-        # Next (right cluster)
-        self.next_btn = WidgetFactory.create_button(
-            nav_frame, text="Suivant ▶", command=self.next_page)
-        self.next_btn.grid(row=0, column=3, sticky="e", padx=5)
-
-        # Save (right cluster)
-        self.save_btn = WidgetFactory.create_button(
-            nav_frame, text="💾 Sauvegarder", command=self.save_current)
-        self.save_btn.grid(row=0, column=4, sticky="e", padx=5)
-
-        # Finish (rightmost)
-        self.finish_btn = WidgetFactory.create_button(
-            nav_frame, text="🏁 Terminer", command=self.finish)
-        self.finish_btn.grid(row=0, column=5, sticky="e", padx=5)
-
-        self.update_nav_buttons()
+        # Initialize nav button states if possible
+        try:
+            self.update_nav_buttons()
+        except Exception:
+            pass
 
         # Keyboard shortcuts on the top-level window
         try:
