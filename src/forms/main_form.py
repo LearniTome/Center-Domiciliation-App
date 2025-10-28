@@ -440,9 +440,23 @@ class MainForm(ttk.Frame):
 
     def finish(self):
         """Save all pages and emit a finished event."""
-        # Save current and gather all values
-        self.save_current()
-        all_values = self.get_values()
+        # Gather all values from forms (do this silently to avoid per-section popups)
+        try:
+            # get_values calls each form.get_values() and updates self.values
+            all_values = self.get_values()
+        except Exception:
+            # Fallback: attempt to collect each form's values without showing dialogs
+            try:
+                values = {}
+                for key, _, form in self.pages:
+                    try:
+                        values[key] = form.get_values() if hasattr(form, 'get_values') else {}
+                    except Exception:
+                        values[key] = {}
+                self.values = values
+                all_values = values
+            except Exception:
+                all_values = self.values
         # Ensure the Excel database exists and has expected sheets
         # Build the DB path explicitly to avoid static-analysis warnings about
         # PathManager.get_database_path. Use the centralized DB filename from
