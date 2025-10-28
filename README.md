@@ -111,6 +111,24 @@ Generation reports
 
 - The generator writes a JSON report using the same base name as the HTML report (for example `2025-10-23_ASTRAPIA_Raport_Docs_generer.json`). The HTML report embeds the same JSON inside a `<pre id="genjson">` block so tooling can extract it easily.
 
+Important runtime behaviors (recent updates)
+
+- Automatic save before generation: when you click "Générer les documents" the application now automatically saves all form sections (Société, Associés, Contrat) to the Excel database before starting the document generation. If the save fails (for example the Excel file is locked by Excel), generation is cancelled and a warning is shown so you can correct the issue and retry.
+
+- Consolidated finish/save UX: the "Terminer" action collects and saves all sections silently (no per-section popups). You will see one consolidated success or error message after the complete save operation.
+
+- Autofit Excel columns: after saving or migrating the Excel workbook the app applies a simple "autofit" heuristic to column widths for every sheet so the resulting workbook is easier to read in Excel (width ~= max cell length + padding). This is applied programmatically via openpyxl when the workbook is written.
+
+- Time-stamped generation reports: report file names now include a time suffix (HH-MM-SS) to avoid name collisions for multiple generations on the same day. Pattern:
+
+  `YYYY-MM-DD_<CompanyName>_Raport_Docs_generer_HH-MM-SS.html`
+
+  and the matching JSON:
+
+  `YYYY-MM-DD_<CompanyName>_Raport_Docs_generer_HH-MM-SS.json`
+
+  The HTML still contains the same JSON embedded inside `<pre id="genjson">` for tooling convenience.
+
 - The included verification script `scripts/check_generation.py` prefers the HTML report (it will extract the embedded JSON), then looks for a named JSON that matches the HTML report naming convention, and finally falls back to `generation_report.json` only if necessary. To validate a generation and assert basic expectations run:
 
 ```powershell
@@ -189,6 +207,8 @@ git push --set-upstream origin chore/your-task
 Automated scripts
 
 - `scripts/auto_commit.py` can help with staged auto-commits; review its README in `scripts/`.
+
+If you'd like these behaviors changed (for example re-enable the legacy `generation_report.json` filename, or adjust the autofit padding), tell me which preference you prefer and I can update the code and tests accordingly.
 
 ## License
 
