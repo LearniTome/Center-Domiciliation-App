@@ -406,12 +406,14 @@ class MainApp(tk.Tk):
 
             # Delegate the heavy lifting to the utility that handles IDs and date conversion
             write_records_to_db(db_path, societe_vals, associes_list, contrat_vals)
-
-            messagebox.showinfo("Succès", "Données sauvegardées avec succès dans le fichier Excel.")
-            logger.info("Données sauvegardées avec succès")
+            # Do not show a modal message here — let the caller (finish or other
+            # UI action) present a single, consolidated message to the user.
+            logger.info("Données sauvegardées avec succès dans %s", db_path)
+            return db_path
 
         except Exception as e:
             ErrorHandler.handle_error(e, "Erreur lors de la sauvegarde des données.")
+            return None
 
     def clear_form(self):
         """Réinitialise tous les formulaires"""

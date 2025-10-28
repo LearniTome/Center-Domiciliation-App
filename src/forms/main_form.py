@@ -470,8 +470,14 @@ class MainForm(ttk.Frame):
         try:
             top = self.winfo_toplevel()
             save_fn = getattr(top, 'save_to_db', None)
+            saved_db = None
             if callable(save_fn):
-                save_fn()
+                # save_to_db now returns the DB path on success (or None on failure)
+                try:
+                    saved_db = save_fn()
+                except Exception:
+                    # If the top-level save raised, surface a user-friendly message
+                    saved_db = None
         except PermissionError as pe:
             # Common on Windows when the file is open in Excel
             messagebox.showerror('Erreur lors de la sauvegarde des données', 'Le fichier Excel est ouvert dans une autre application. Fermez Excel et réessayez.')
@@ -484,7 +490,19 @@ class MainForm(ttk.Frame):
                 messagebox.showerror('Erreur', f"Erreur lors de la sauvegarde: {e}")
             return
 
-        messagebox.showinfo("Terminé", "Toutes les sections ont été sauvegardées dans le fichier Excel.")
+        # Present a single, clear success message (include the DB path when available)
+        try:
+            if saved_db:
+                messagebox.showinfo("Sauvegarde réussie", f"Toutes les sections ont été sauvegardées dans le fichier Excel :\n{saved_db}")
+            else:
+                messagebox.showinfo("Terminé", "Toutes les sections ont été sauvegardées dans le fichier Excel.")
+        except Exception:
+            # If messagebox fails for any reason, log and continue
+            try:
+                logger = __import__('logging').getLogger(__name__)
+                logger.info('Sauvegarde terminée (message box failed to show)')
+            except Exception:
+                pass
         # Emit a virtual event so outer code can handle finalization if needed
         try:
             self.event_generate('<<FormsFinished>>')

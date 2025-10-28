@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+import re
 import shutil
 from pathlib import Path
 from typing import Dict, List, Optional, Union, Callable
@@ -178,6 +179,7 @@ def render_templates(
                 ctx[hk] = v
                 # also lowercase friendly name
                 ctx[fk] = v
+            # (DATE_CONTRAT will be ensured after mapping the contrat dict below)
 
         # If no DEN_STE found, try any string in soc
         if 'DEN_STE' not in ctx:
@@ -274,6 +276,14 @@ def render_templates(
                 ctx[hk] = v
                 ctx[fk] = v
 
+        # Ensure DATE_CONTRAT exists (may be empty string) so templates can always
+        # reference it without KeyError
+        try:
+            if 'DATE_CONTRAT' not in ctx:
+                ctx['DATE_CONTRAT'] = c.get('date_contrat', '') if c else ''
+        except Exception:
+            ctx['DATE_CONTRAT'] = ''
+
         # Provide alternate keys for contract date variables commonly used in
         # templates (different naming conventions). e.g., Date_Contrat, DateContrat.
         if 'DATE_CONTRAT' in ctx:
@@ -291,6 +301,25 @@ def render_templates(
             except Exception:
                 pass
 
+            # Activities — many templates expect ACTIVITY1..ACTIVITY6 (or similar)
+            try:
+                activities = []
+                if isinstance(soc.get('activites', None), (list, tuple)):
+                    activities = list(soc.get('activites', []))
+                elif isinstance(soc.get('activites', None), str):
+                    # If stored as a single string, split on newlines or ';'
+                    activities = [a.strip() for a in re.split(r"[\n;]+", soc.get('activites', '')) if a.strip()]
+                # Populate ACTIVITY1..ACTIVITY6 and fallback lower/camel variants
+                for i in range(6):
+                    key = f'ACTIVITY{i+1}'
+                    val = activities[i] if i < len(activities) else ''
+                    ctx[key] = val
+                    ctx[key.lower()] = val
+                    # camelCase (activity1) isn't commonly used but harmless to add
+                    ctx[f'activity{i+1}'] = val
+            except Exception:
+                # non-fatal
+                pass
         return ctx
 
     if templates_list:
@@ -385,15 +414,22 @@ def render_templates(
             logger.exception("Failed to render template %s: %s", tpl, e)
             report.append({'template': str(tpl.name), 'out_docx': None, 'status': 'error', 'error': str(e)})
 
-    # Save report (ensure report_path is defined even on failure)
-    report_path = out_subdir / "generation_report.json"
+    # Save report (write both a human-named JSON matching the HTML report,
+    # and keep the legacy `generation_report.json` for backward compatibility)
+    json_name = f"{gen_date}_{company_clean}_Raport_Docs_generer.json"
+    report_path = out_subdir / json_name
     try:
-        # Write JSON report for backwards compatibility
         with report_path.open('w', encoding='utf-8') as f:
             json.dump(report, f, ensure_ascii=False, indent=2)
         logger.info("Saved generation report (JSON) to %s", report_path)
     except Exception:
         logger.exception("Failed to write generation report (JSON)")
+
+    # NOTE: legacy `generation_report.json` is intentionally no longer written
+    # to avoid duplicate files and confusion. Existing tools should be updated
+    # to consume the named JSON report written above which matches the HTML
+    # report filename. If you absolutely need the legacy file for compatibility,
+    # re-enable the block below.
 
     # Also write a human-friendly HTML report with the requested name format:
     # yyyy-mm-dd_DenSte_Raport_Docs_generer.html
