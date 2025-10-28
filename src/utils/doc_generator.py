@@ -207,6 +207,22 @@ def render_templates(
                     ctx[hk] = v
                     ctx[fk] = v
 
+            # Provide additional alias keys for templates that expect associe-prefixed
+            # or suffixed variable names. This helps catch documents using patterns
+            # like {{ASSOCIE_ADRESSE}} or {{ADRESSE_ASSOCIE}} or camelCase variants.
+            for base in ('ADRESSE', 'PHONE', 'EMAIL', 'QUALITY', 'NOM', 'PRENOM'):
+                if base in ctx:
+                    try:
+                        ctx[f'ASSOCIE_{base}'] = ctx[base]
+                        ctx[f'{base}_ASSOCIE'] = ctx[base]
+                        # also provide lowercase/camel variants
+                        ctx[base.lower()] = ctx[base]
+                        # camelCase (e.g., adresseAssocie)
+                        camel = base[0].lower() + base[1:].lower()
+                        ctx[f'{camel}Associe'] = ctx[base]
+                    except Exception:
+                        pass
+
         # Contrat mappings
         c = ctx['contrat']
         contrat_map = {
@@ -224,6 +240,17 @@ def render_templates(
             if v is not None and v != '':
                 ctx[hk] = v
                 ctx[fk] = v
+
+        # Provide alternate keys for contract date variables commonly used in
+        # templates (different naming conventions). e.g., Date_Contrat, DateContrat.
+        if 'DATE_CONTRAT' in ctx:
+            try:
+                ctx['Date_Contrat'] = ctx['DATE_CONTRAT']
+                ctx['DateContrat'] = ctx['DATE_CONTRAT']
+                ctx['dateContrat'] = ctx['DATE_CONTRAT']
+                ctx['date_contrat'] = ctx['DATE_CONTRAT']
+            except Exception:
+                pass
 
         return ctx
 
