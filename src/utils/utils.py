@@ -1064,6 +1064,57 @@ def migrate_excel_workbook(path):
         wb.save(path)
     except Exception:
         logger.exception('Failed to autofit column widths after migration')
+
+
+def societe_exists(name: str, path: Optional[_Path] = None) -> bool:
+    """Check whether a société with the given name exists in the Excel database.
+
+    Args:
+        name: Company name to search for (case-insensitive, trimmed)
+        path: Optional path to the Excel workbook. If not provided, uses
+              the default databases path and filename from package constants.
+
+    Returns:
+        True if a matching company name is present in the 'Societes' sheet,
+        False otherwise.
+    """
+    try:
+        from . import constants as _const
+        # Default database path
+        if path is None:
+            db_path = Path(__file__).resolve().parent.parent.parent / 'databases' / _const.DB_FILENAME
+        else:
+            db_path = _Path(path)
+
+        if not db_path.exists():
+            return False
+
+        try:
+            df = _pd.read_excel(db_path, sheet_name='Societes', dtype=str)
+        except Exception:
+            return False
+
+        if 'DEN_STE' not in df.columns:
+            # fallback: try to detect any column that looks like a company name
+            candidates = [c for c in df.columns if 'DEN' in str(c).upper() or 'STE' in str(c).upper() or 'NAME' in str(c).upper()]
+            if not candidates:
+                return False
+            col = candidates[0]
+        else:
+            col = 'DEN_STE'
+
+        target = (str(name or '')).strip().lower()
+        if not target:
+            return False
+
+        # check for exact matches (case-insensitive) or trimmed contains
+        for val in df[col].fillna('').astype(str):
+            if val.strip().lower() == target:
+                return True
+        return False
+    except Exception:
+        logger.exception('societe_exists check failed')
+        return False
     @classmethod
     def validate_file(cls, filepath: Path, file_type: str) -> bool:
         """
