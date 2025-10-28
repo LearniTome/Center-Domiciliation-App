@@ -13,6 +13,15 @@ class MainForm(ttk.Frame):
         self.parent = parent
         self.values = values_dict or {}
 
+        # Initialize navigation button attributes so linters/type checkers
+        # know these exist. They are attached by the outer application
+        # toolbar (main.py) to keep a single unified control row.
+        self.prev_btn = None
+        self.next_btn = None
+        self.save_btn = None
+        self.finish_btn = None
+        self.config_btn = None
+
         # Allow this main frame to expand inside its parent
         try:
             self.pack(fill="both", expand=True)
