@@ -223,6 +223,39 @@ def render_templates(
                     except Exception:
                         pass
 
+            # If this associe is marked as the gérant, provide GERANT_* aliases
+            try:
+                is_gerant = a.get('est_gerant') or a.get('est_gerant') == True or ctx.get('IS_GERANT')
+            except Exception:
+                is_gerant = False
+            if is_gerant:
+                try:
+                    # prefer already-normalized keys (from above) then fallback to raw a dict
+                    ger_nom = ctx.get('NOM') or a.get('nom')
+                    ger_prenom = ctx.get('PRENOM') or a.get('prenom')
+                    ger_adress = ctx.get('ADRESSE') or a.get('adresse')
+                    ger_phone = ctx.get('PHONE') or a.get('telephone')
+                    ger_email = ctx.get('EMAIL') or a.get('email')
+                    ger_quality = ctx.get('QUALITY') or a.get('qualite')
+                    ger_cin = ctx.get('CIN_NUM') or a.get('num_piece')
+
+                    if ger_adress:
+                        ctx['GERANT_ADRESS'] = ger_adress
+                    if ger_quality:
+                        ctx['GERANT_QUALITY'] = ger_quality
+                    if ger_nom:
+                        ctx['GERANT_NOM'] = ger_nom
+                    if ger_prenom:
+                        ctx['GERANT_PRENOM'] = ger_prenom
+                    if ger_phone:
+                        ctx['GERANT_PHONE'] = ger_phone
+                    if ger_email:
+                        ctx['GERANT_EMAIL'] = ger_email
+                    if ger_cin:
+                        ctx['GERANT_CIN'] = ger_cin
+                except Exception:
+                    pass
+
         # Contrat mappings
         c = ctx['contrat']
         contrat_map = {
@@ -249,6 +282,12 @@ def render_templates(
                 ctx['DateContrat'] = ctx['DATE_CONTRAT']
                 ctx['dateContrat'] = ctx['DATE_CONTRAT']
                 ctx['date_contrat'] = ctx['DATE_CONTRAT']
+            except Exception:
+                pass
+        # Some templates contain a typo or alternate spelling: DTAE_CONTRAT
+        if 'DATE_CONTRAT' in ctx and 'DTAE_CONTRAT' not in ctx:
+            try:
+                ctx['DTAE_CONTRAT'] = ctx['DATE_CONTRAT']
             except Exception:
                 pass
 
