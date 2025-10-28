@@ -406,7 +406,7 @@ class MainApp(tk.Tk):
             db_path = PathManager.DATABASE_DIR / _const.DB_FILENAME
 
             # Ensure workbook and sheets exist
-            from src.utils.utils import ensure_excel_db, write_records_to_db, migrate_excel_workbook
+            from src.utils.utils import ensure_excel_db, write_records_to_db, migrate_excel_workbook, societe_exists
             ensure_excel_db(db_path, _const.excel_sheets)
 
             # Run migration to reconcile older/misnamed sheets into canonical ones
@@ -420,6 +420,17 @@ class MainApp(tk.Tk):
             societe_vals = self.values.get('societe', {}) or {}
             contrat_vals = self.values.get('contrat', {}) or {}
             associes_list = self.values.get('associes', []) or []
+
+            # If a company name is provided, check for duplicates in the DB and *forbid* saving
+            try:
+                name = societe_vals.get('denomination') or societe_vals.get('DEN_STE')
+                if name and societe_exists(name, db_path):
+                    # Do not allow duplicate société names in the DB
+                    messagebox.showerror('Société existante', f"La société '{name}' existe déjà dans la base. Enregistrement interdit pour éviter les doublons.")
+                    return None
+            except Exception:
+                # Defensive: on any failure of the check, log and continue with save
+                logger.exception('Failed to perform duplicate societe check')
 
             # Delegate the heavy lifting to the utility that handles IDs and date conversion
             write_records_to_db(db_path, societe_vals, associes_list, contrat_vals)

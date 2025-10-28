@@ -433,7 +433,22 @@ class MainForm(ttk.Frame):
         key, _frame, form = self.pages[self.current_page]
         if hasattr(form, 'get_values'):
             try:
-                self.values[key] = form.get_values()
+                vals = form.get_values()
+
+                # If we're saving the societe page, check for existing company name and forbid duplicates
+                if key == 'societe':
+                    try:
+                        from ..utils.utils import societe_exists
+                        name = vals.get('denomination') or vals.get('DEN_STE')
+                        if name and societe_exists(name):
+                            messagebox.showerror('Société existante', f"La société '{name}' existe déjà dans la base. Enregistrement interdit pour éviter les doublons.")
+                            return
+                    except Exception:
+                        # If the check fails, log but allow save to proceed (conservative)
+                        logger = __import__('logging').getLogger(__name__)
+                        logger.exception('Failed to run societe_exists check')
+
+                self.values[key] = vals
                 messagebox.showinfo("Sauvegarde", f"Section '{key}' sauvegardée.")
             except Exception as e:
                 messagebox.showerror("Erreur", f"Impossible de sauvegarder la section: {e}")
