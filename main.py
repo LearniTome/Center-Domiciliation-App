@@ -70,6 +70,23 @@ class MainApp(tk.Tk):
         row = ttk.Frame(buttons_frame)
         row.pack(fill='x')
 
+        # Left-side primary buttons (Configuration, Dashboard, Generate)
+        # Configuration button (opens MainForm configuration dialog)
+        try:
+            cfg_btn = WidgetFactory.create_button(row, text="⚙ Configuration", command=self.main_form.open_configuration)
+            cfg_btn.pack(side='left', padx=6)
+            # attach to main_form for state updates
+            self.main_form.config_btn = cfg_btn
+        except Exception:
+            pass
+
+        # Dashboard button
+        WidgetFactory.create_button(
+            row,
+            text="📊 Tableau de bord",
+            command=self.main_form.show_dashboard
+        ).pack(side='left', padx=6)
+
         # Single generation button (modern style)
         gen_btn = WidgetFactory.create_button(
             row,
@@ -79,53 +96,44 @@ class MainApp(tk.Tk):
         )
         gen_btn.pack(side='left', padx=6)
 
-        # Dashboard button
-        WidgetFactory.create_button(
-            row,
-            text="📊 Tableau de bord",
-            command=self.main_form.show_dashboard
-        ).pack(side='left', padx=6)
-
-        # Theme toggle
-        def _toggle_theme():
-            try:
-                current = self.theme_manager.theme.mode
-                self.theme_manager.toggle_theme()
-                new = self.theme_manager.theme.mode
-                # update button text to reflect new mode
-                theme_btn.configure(text=('🌙' if new == 'dark' else '☀️'))
-            except Exception:
-                pass
-
-        theme_btn = WidgetFactory.create_button(row, text=('🌙' if self.theme_manager.theme.mode == 'dark' else '☀️'), command=_toggle_theme)
-        theme_btn.pack(side='left', padx=6)
+        # (Theme toggle removed) — keep toolbar focused and simple. Theme is
+        # still managed programmatically via ThemeManager and the
+        # configuration dialog.
 
         # Flexible spacer to push the remaining controls to the right
         spacer = ttk.Frame(row)
         spacer.pack(side='left', expand=True, fill='x')
 
-        # Right-side control buttons
-        # Navigation buttons from MainForm (Prev/Next/Save/Finish) - attach them to main_form
+        # Right-side control buttons (packed in reverse so visual order is left->right)
         try:
-            # Prev
-            self.main_form.prev_btn = WidgetFactory.create_button(row, text="◀ Précédent", command=self.main_form.prev_page)
-            self.main_form.prev_btn.pack(side='right', padx=6)
-            # Next
-            self.main_form.next_btn = WidgetFactory.create_button(row, text="Suivant ▶", command=self.main_form.next_page)
-            self.main_form.next_btn.pack(side='right', padx=6)
-            # Save
-            self.main_form.save_btn = WidgetFactory.create_button(row, text="💾 Sauvegarder", command=self.main_form.save_current)
-            self.main_form.save_btn.pack(side='right', padx=6)
-            # Finish
-            self.main_form.finish_btn = WidgetFactory.create_button(row, text="🏁 Terminer", command=self.main_form.finish)
-            self.main_form.finish_btn.pack(side='right', padx=6)
+            # Pack Quitter first (will appear at the far right)
+            WidgetFactory.create_button(row, text="❌ Quitter", command=self.quit).pack(side='right', padx=6)
+
+            # Suivant
+            _btn = WidgetFactory.create_button(row, text="Suivant ▶", command=self.main_form.next_page)
+            _btn.pack(side='right', padx=6)
+            self.main_form.next_btn = _btn
+
+            # Précédent
+            _btn = WidgetFactory.create_button(row, text="◀ Précédent", command=self.main_form.prev_page)
+            _btn.pack(side='right', padx=6)
+            self.main_form.prev_btn = _btn
+
+            # Terminer
+            _btn = WidgetFactory.create_button(row, text="🏁 Terminer", command=self.main_form.finish)
+            _btn.pack(side='right', padx=6)
+            self.main_form.finish_btn = _btn
+
+            # Sauvegarder
+            _btn = WidgetFactory.create_button(row, text="💾 Sauvegarder", command=self.main_form.save_current)
+            _btn.pack(side='right', padx=6)
+            self.main_form.save_btn = _btn
+
+            # Nouvelle (will appear left-most among the right cluster)
+            WidgetFactory.create_button(row, text="🆕 Nouvelle", command=self.clear_form).pack(side='right', padx=6)
         except Exception:
             # If main_form isn't ready for some reason, ignore and continue
             pass
-
-        # App-level actions
-        WidgetFactory.create_button(row, text="🆕 Nouvelle", command=self.clear_form).pack(side='right', padx=6)
-        WidgetFactory.create_button(row, text="❌ Quitter", command=self.quit).pack(side='right', padx=6)
 
     def collect_values(self):
         """Collecte toutes les valeurs des formulaires"""

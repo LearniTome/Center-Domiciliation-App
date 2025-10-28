@@ -71,11 +71,11 @@ class ContratForm(ttk.Frame):
         date_frame = self.create_date_field_group(dates_group, "Date Contrat", self.date_contrat_var)
         date_frame.grid(row=0, column=0, padx=5, pady=5, sticky="ew")
 
-        period_frame = self.create_combo_field_group(dates_group, "Période de Contrat", self.period_var, Nbmois)
+        period_frame = self.create_combo_field_group(dates_group, "Période de Contrat", self.period_var, Nbmois, bind_update=True)
         period_frame.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
 
         # Date Début | Date Fin
-        date_debut_frame = self.create_date_field_group(dates_group, "Date Début", self.date_debut_var)
+        date_debut_frame = self.create_date_field_group(dates_group, "Date Début", self.date_debut_var, bind_update=True)
         date_debut_frame.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
 
         date_fin_frame = self.create_date_field_group(dates_group, "Date Fin", self.date_fin_var)
@@ -122,7 +122,7 @@ class ContratForm(ttk.Frame):
                                                     self.date_fin_var)
         date_fin_frame.grid(row=1, column=2, padx=5, pady=5, sticky="ew")
 
-    def create_date_field_group(self, parent, label_text, variable):
+    def create_date_field_group(self, parent, label_text, variable, bind_update: bool = False):
         """Crée un groupe de champs pour les dates.
 
         Use a plain frame with a label above the widget (no LabelFrame border) to avoid
@@ -132,7 +132,13 @@ class ContratForm(ttk.Frame):
 
         # Label on top, widget below (matches AssocieForm style)
         ttk.Label(frame, text=label_text + ':', anchor='w').grid(row=0, column=0, sticky='w')
-        DateEntry(frame, textvariable=variable, date_pattern='dd/mm/yyyy', width=12).grid(row=1, column=0, sticky='ew', pady=(2, 0))
+        date_widget = DateEntry(frame, textvariable=variable, date_pattern='dd/mm/yyyy', width=12)
+        date_widget.grid(row=1, column=0, sticky='ew', pady=(2, 0))
+        if bind_update:
+            try:
+                date_widget.bind('<<DateEntrySelected>>', lambda e: self._update_date_fin())
+            except Exception:
+                pass
         frame.grid_columnconfigure(0, weight=1)
 
         return frame
@@ -145,11 +151,17 @@ class ContratForm(ttk.Frame):
         frame.grid_columnconfigure(0, weight=1)
         return frame
 
-    def create_combo_field_group(self, parent, label_text, variable, values):
+    def create_combo_field_group(self, parent, label_text, variable, values, bind_update: bool = False):
         """Crée un groupe de champs pour les combobox (label + combobox)"""
         frame = ttk.Frame(parent)
         ttk.Label(frame, text=label_text + ':', anchor='w').grid(row=0, column=0, sticky='w')
-        ttk.Combobox(frame, textvariable=variable, values=values).grid(row=1, column=0, sticky='ew', pady=(2, 0))
+        cb = ttk.Combobox(frame, textvariable=variable, values=values)
+        cb.grid(row=1, column=0, sticky='ew', pady=(2, 0))
+        if bind_update:
+            try:
+                cb.bind('<<ComboboxSelected>>', lambda e: self._update_date_fin())
+            except Exception:
+                pass
         frame.grid_columnconfigure(0, weight=1)
         return frame
 

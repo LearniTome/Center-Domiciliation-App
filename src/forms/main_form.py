@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
+from typing import Optional
 from .societe_form import SocieteForm
 from .associe_form import AssocieForm
 from .contrat_form import ContratForm
@@ -13,14 +14,15 @@ class MainForm(ttk.Frame):
         self.parent = parent
         self.values = values_dict or {}
 
-        # Initialize navigation button attributes so linters/type checkers
-        # know these exist. They are attached by the outer application
-        # toolbar (main.py) to keep a single unified control row.
-        self.prev_btn = None
-        self.next_btn = None
-        self.save_btn = None
-        self.finish_btn = None
-        self.config_btn = None
+        # Initialize navigation button attributes with explicit types so
+        # linters/type checkers know these exist and accept Button assignments.
+        # They are attached by the outer application toolbar (main.py)
+        # to keep a single unified control row.
+        self.prev_btn: Optional[ttk.Button] = None
+        self.next_btn: Optional[ttk.Button] = None
+        self.save_btn: Optional[ttk.Button] = None
+        self.finish_btn: Optional[ttk.Button] = None
+        self.config_btn: Optional[ttk.Button] = None
 
         # Allow this main frame to expand inside its parent
         try:
@@ -397,6 +399,25 @@ class MainForm(ttk.Frame):
                 frame.grid()
             else:
                 frame.grid_remove()
+        # After showing the requested page, allow the page/form to perform
+        # any 'on-show' updates. This is useful for forms that need to
+        # recompute derived fields (for example, the Contrat form that
+        # recalculates 'Date Fin' from 'Date Début' + 'Période'). We look for
+        # a public hook `recalculate_date_fin` first, then fall back to the
+        # private `_update_date_fin` to preserve backward compatibility.
+        try:
+            key, frame, form = self.pages[index]
+            hook = getattr(form, 'recalculate_date_fin', None) or getattr(form, '_update_date_fin', None)
+            if callable(hook):
+                try:
+                    hook()
+                except Exception:
+                    # Non-fatal: ignore form-level errors to avoid breaking navigation
+                    pass
+        except Exception:
+            # Conservative: ignore any problems with calling the hook
+            pass
+
         self.update_nav_buttons()
 
     def next_page(self):
@@ -472,7 +493,12 @@ class MainForm(ttk.Frame):
 
     def update_nav_buttons(self):
         # Disable Prev on first page, Next on last
-        if hasattr(self, 'prev_btn'):
-            self.prev_btn.configure(state=('disabled' if self.current_page == 0 else 'normal'))
-        if hasattr(self, 'next_btn'):
-            self.next_btn.configure(state=('disabled' if self.current_page == len(self.pages) - 1 else 'normal'))
+        # Use explicit None checks so static analyzers (Pylance) know the
+        # attribute is not None before calling widget methods.
+        _prev = getattr(self, 'prev_btn', None)
+        if _prev is not None:
+            _prev.configure(state=('disabled' if self.current_page == 0 else 'normal'))
+
+        _next = getattr(self, 'next_btn', None)
+        if _next is not None:
+            _next.configure(state=('disabled' if self.current_page == len(self.pages) - 1 else 'normal'))

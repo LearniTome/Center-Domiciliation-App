@@ -103,7 +103,6 @@ Document generation
 
 Generation reports
 
-
 - After a generation run the app writes a human-friendly HTML report into the generation output folder. The file name uses this pattern:
 
   `yyyy-mm-dd_<CompanyName>_Raport_Docs_generer.html`
@@ -113,7 +112,6 @@ Generation reports
 - For backward compatibility a `generation_report.json` file is still written in the same folder. The HTML report embeds the same JSON inside a `<pre id="genjson">` block so tooling can extract it easily.
 
 - The included verification script `scripts/check_generation.py` prefers the HTML report (it will extract the embedded JSON) and falls back to `generation_report.json` when needed. To validate a generation and assert basic expectations run:
-
 
 ```powershell
 .\venv\Scripts\Activate.ps1
