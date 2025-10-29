@@ -152,18 +152,44 @@ class MainApp(tk.Tk):
         """Unified document generation flow: user chooses templates and formats (Word/PDF/Both)."""
         try:
             self.collect_values()
-            # Ensure data is saved before starting generation.
-            # If saving fails, abort generation to avoid generating from unsaved state.
+            # Ask the user whether they want to save before generating.
+            # Yes -> save then generate; No -> generate without saving; Cancel -> abort.
             try:
-                db_path = self.save_to_db()
-            except Exception as _err:
-                logger.exception('Erreur lors de la sauvegarde avant génération: %s', _err)
-                messagebox.showwarning('Sauvegarde échouée', "La sauvegarde a échoué. La génération a été annulée.")
+                choice = messagebox.askyesnocancel(
+                    'Sauvegarder avant génération',
+                    'Voulez-vous sauvegarder les données dans la base avant de générer les documents ?\n\nOui = sauvegarder puis générer\nNon = générer sans sauvegarder\nAnnuler = annuler la génération'
+                )
+            except Exception:
+                # If messagebox fails, default to saving to be safe
+                choice = True
+
+            if choice is None:
+                # user cancelled
                 return
-            if not db_path:
-                # save_to_db returns None on failure / cancel — stop the generation flow
-                messagebox.showwarning('Sauvegarde manquante', 'La sauvegarde a échoué ou a été annulée. La génération a été annulée.')
-                return
+
+            if choice:
+                # User chose to save before generation
+                try:
+                    db_path = self.save_to_db()
+                except Exception as _err:
+                    logger.exception('Erreur lors de la sauvegarde avant génération: %s', _err)
+                    messagebox.showwarning('Sauvegarde échouée', "La sauvegarde a échoué. La génération a été annulée.")
+                    return
+                if not db_path:
+                    # save_to_db returns None on failure / cancel — stop the generation flow
+                    messagebox.showwarning('Sauvegarde manquante', 'La sauvegarde a échoué ou a été annulée. La génération a été annulée.')
+                    return
+            else:
+                # User chose NOT to save; proceed without saving
+                try:
+                    proceed = messagebox.askyesno(
+                        'Générer sans sauvegarder',
+                        'Vous avez choisi de ne pas sauvegarder. Confirmez-vous la génération sans enregistrer les données ?'
+                    )
+                except Exception:
+                    proceed = True
+                if not proceed:
+                    return
             # Choose templates
             templates = self.choose_templates_with_format()
             if templates is None:
