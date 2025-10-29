@@ -519,12 +519,14 @@ class MainForm(ttk.Frame):
                 messagebox.showerror('Erreur', f"Erreur lors de la sauvegarde: {e}")
             return
 
+        # If save was aborted or failed (saved_db is None), do not show success message
+        if saved_db is None:
+            # save_to_db already reports errors to the user where appropriate
+            return
+
         # Present a single, clear success message (include the DB path when available)
         try:
-            if saved_db:
-                messagebox.showinfo("Sauvegarde réussie", f"Toutes les sections ont été sauvegardées dans le fichier Excel :\n{saved_db}")
-            else:
-                messagebox.showinfo("Terminé", "Toutes les sections ont été sauvegardées dans le fichier Excel.")
+            messagebox.showinfo("Sauvegarde réussie", f"Toutes les sections ont été sauvegardées dans le fichier Excel :\n{saved_db}")
         except Exception:
             # If messagebox fails for any reason, log and continue
             try:
@@ -532,6 +534,7 @@ class MainForm(ttk.Frame):
                 logger.info('Sauvegarde terminée (message box failed to show)')
             except Exception:
                 pass
+
         # Emit a virtual event so outer code can handle finalization if needed
         try:
             self.event_generate('<<FormsFinished>>')
