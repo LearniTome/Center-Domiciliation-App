@@ -592,3 +592,190 @@ class DashboardView(tk.Toplevel):
             self.unbind("<Destroy>")
         except Exception:
             pass  # Ignorer les erreurs de nettoyage
+
+
+class DashboardFrame(ttk.Frame):
+    """Embeddable dashboard frame for the main window.
+
+    Provides a header with today's date and a live clock and three
+    buttons to switch between embedded pages: Sociétés, Associés, Contrats.
+    This reuses the existing SocieteForm, AssocieForm and ContratForm classes
+    so their logic and fields remain unchanged.
+    """
+    def __init__(self, parent, values_dict=None):
+        super().__init__(parent)
+        self.parent = parent
+        self.values = values_dict or {}
+
+        # Theme manager / widgets
+        try:
+            self.theme_manager = ThemeManager(self.winfo_toplevel())
+            self.style = self.theme_manager.style
+        except Exception:
+            self.theme_manager = None
+            self.style = None
+
+        # Header with date and clock
+        header = ttk.Frame(self)
+        header.pack(fill='x', padx=8, pady=(8, 4))
+
+        self.date_label = ttk.Label(header, text='')
+        self.date_label.pack(side='left')
+
+        self.clock_label = ttk.Label(header, text='')
+        self.clock_label.pack(side='left', padx=(8, 0))
+
+        # Navigation buttons
+        nav_frame = ttk.Frame(header)
+        nav_frame.pack(side='right')
+
+        self.btn_societe = WidgetFactory.create_button(nav_frame, text='Sociétés', command=lambda: self.show_page('societe'), style='Dashboard.TButton')
+        self.btn_societe.pack(side='left', padx=6)
+
+        self.btn_associes = WidgetFactory.create_button(nav_frame, text='Associés', command=lambda: self.show_page('associes'), style='Dashboard.TButton')
+        self.btn_associes.pack(side='left', padx=6)
+
+        self.btn_contrat = WidgetFactory.create_button(nav_frame, text='Contrats', command=lambda: self.show_page('contrat'), style='Dashboard.TButton')
+        self.btn_contrat.pack(side='left', padx=6)
+
+        # Container for pages
+        self.pages_container = ttk.Frame(self)
+        self.pages_container.pack(fill='both', expand=True, padx=6, pady=6)
+
+        # Instantiate forms but keep only one visible
+        from .societe_form import SocieteForm
+        from .associe_form import AssocieForm
+        from .contrat_form import ContratForm
+
+        self.societe_form = SocieteForm(self.pages_container, self.values.get('societe', {}))
+        self.societe_form.pack(fill='both', expand=True)
+
+        self.associe_form = AssocieForm(self.pages_container, self.theme_manager)
+        self.associe_form.pack(fill='both', expand=True)
+
+        self.contrat_form = ContratForm(self.pages_container, self.values.get('contrat', {}))
+        self.contrat_form.pack(fill='both', expand=True)
+
+        self.page_map = {
+            'societe': self.societe_form,
+            'associes': self.associe_form,
+            'contrat': self.contrat_form,
+        }
+
+        # Show default page
+        self.show_page('societe')
+
+        # Start clock
+        self._update_date_clock()
+
+    def _update_date_clock(self):
+        import datetime
+        now = datetime.datetime.now()
+        self.date_label.config(text=now.strftime('%Y-%m-%d'))
+        self.clock_label.config(text=now.strftime('%H:%M:%S'))
+        # Schedule next update in 1 second
+        try:
+            self.after(1000, self._update_date_clock)
+        except Exception:
+            pass
+
+    def show_page(self, key: str):
+        """Show the requested embedded page and hide others."""
+        for k, widget in self.page_map.items():
+            if k == key:
+                try:
+                    widget.lift()
+                    widget.pack(fill='both', expand=True)
+                except Exception:
+                    pass
+            else:
+                try:
+                    widget.pack_forget()
+                except Exception:
+                    pass
+
+    # Provide a small compatibility surface so toolbar buttons can call these
+    def open_configuration(self):
+        # Show a minimal configuration panel similar to MainForm.open_configuration
+        try:
+            top = tk.Toplevel(self.winfo_toplevel())
+            top.transient(self.winfo_toplevel())
+            top.title('Configuration')
+            top.resizable(False, False)
+            try:
+                top.grab_set()
+            except Exception:
+                pass
+
+            inner = ttk.Frame(top, padding=12)
+            inner.pack(fill='both', expand=True)
+            ttk.Label(inner, text='Thème', style='Header.TLabel').pack(anchor='w', pady=(0, 6))
+            theme_var = tk.StringVar(value=getattr(self.theme_manager.theme, 'mode', 'dark') if self.theme_manager else 'dark')
+            rb_dark = ttk.Radiobutton(inner, text='Sombre', variable=theme_var, value='dark')
+            rb_light = ttk.Radiobutton(inner, text='Clair', variable=theme_var, value='light')
+            rb_dark.pack(anchor='w')
+            rb_light.pack(anchor='w')
+
+            def _save():
+                try:
+                    if self.theme_manager:
+                        self.theme_manager.set_theme(theme_var.get())
+                    try:
+                        top.destroy()
+                    except Exception:
+                        pass
+                except Exception as e:
+                    messagebox.showerror('Erreur', f"Impossible d'enregistrer: {e}")
+
+            actions = ttk.Frame(inner)
+            actions.pack(fill='x', pady=(12, 0))
+            WidgetFactory.create_button(actions, text='Enregistrer', command=_save, style='Action.TButton').pack(side='right', padx=4)
+            WidgetFactory.create_button(actions, text='Fermer', command=lambda: top.destroy()).pack(side='right')
+
+            try:
+                WindowManager.center_window(top)
+            except Exception:
+                pass
+        except Exception:
+            messagebox.showerror('Erreur', "Impossible d'ouvrir la configuration")
+
+    def get_values(self):
+        vals = {}
+        try:
+            vals['societe'] = self.societe_form.get_values() if hasattr(self.societe_form, 'get_values') else {}
+            vals['associes'] = self.associe_form.get_values() if hasattr(self.associe_form, 'get_values') else []
+            vals['contrat'] = self.contrat_form.get_values() if hasattr(self.contrat_form, 'get_values') else {}
+        except Exception:
+            pass
+        self.values = vals
+        return vals
+
+    def set_values(self, values):
+        self.values = values or {}
+        try:
+            if 'societe' in self.values and hasattr(self.societe_form, 'set_values'):
+                self.societe_form.set_values(self.values['societe'])
+            if 'associes' in self.values and hasattr(self.associe_form, 'set_values'):
+                self.associe_form.set_values(self.values['associes'])
+            if 'contrat' in self.values and hasattr(self.contrat_form, 'set_values'):
+                self.contrat_form.set_values(self.values['contrat'])
+        except Exception:
+            pass
+
+    def add_record(self):
+        """Open the existing add-record dialog by creating a modal DashboardView and delegating."""
+        try:
+            dlg = DashboardView(self.winfo_toplevel())
+            # DashboardView is modal and handles the add dialog itself in add_record,
+            # so call its add_record method to show a consistent flow.
+            try:
+                dlg.add_record()
+            except Exception:
+                # If the method fails for some reason, just destroy the temporary view
+                try:
+                    dlg.destroy()
+                except Exception:
+                    pass
+        except Exception:
+            messagebox.showerror('Erreur', "Impossible d'ouvrir la fenêtre d'ajout")
+
