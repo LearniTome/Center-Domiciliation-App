@@ -107,7 +107,7 @@ class MainApp(tk.Tk):
         # Right-side control buttons (packed in reverse so visual order is left->right)
         try:
             # Pack Quitter first (will appear at the far right)
-            WidgetFactory.create_button(row, text="❌ Quitter", command=self.quit).pack(side='right', padx=6)
+            WidgetFactory.create_button(row, text="❌ Quitter", command=self.confirm_quit).pack(side='right', padx=6)
 
             # Suivant
             _btn = WidgetFactory.create_button(row, text="Suivant ▶", command=self.main_form.next_page)
@@ -139,6 +139,19 @@ class MainApp(tk.Tk):
         """Collecte toutes les valeurs des formulaires"""
         # Get values from the main form
         self.values = self.main_form.get_values()
+
+    def confirm_quit(self):
+        """Ask user to confirm quitting the application."""
+        try:
+            ans = messagebox.askyesno('Quitter', 'Voulez-vous quitter l\'application ?')
+            if ans:
+                self.quit()
+        except Exception:
+            # fallback: quit without confirmation if dialog fails
+            try:
+                self.quit()
+            except Exception:
+                pass
 
     def generate_docs(self):
         # Deprecated: replaced by generate_documents

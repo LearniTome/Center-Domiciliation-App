@@ -455,6 +455,14 @@ class MainForm(ttk.Frame):
 
     def finish(self):
         """Save all pages and emit a finished event."""
+        # Confirm the user's intention to finish
+        try:
+            proceed = messagebox.askyesno('Terminer', "Voulez-vous terminer et sauvegarder les données ?")
+            if not proceed:
+                return
+        except Exception:
+            # If confirmation dialog fails, proceed conservatively
+            pass
         # Gather all values from forms (do this silently to avoid per-section popups)
         try:
             # get_values calls each form.get_values() and updates self.values
