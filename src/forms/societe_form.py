@@ -42,11 +42,11 @@ class SocieteForm(ttk.Frame):
         self.date_ice_var = tk.StringVar(value=today)
         self.capital_var = tk.StringVar(value=Capital[0] if Capital else "")
         self.parts_social_var = tk.StringVar(value=PartsSocial[0] if PartsSocial else "")
-        
+
         # Load reference data from database
         self.ste_adresses = get_reference_data('SteAdresses')
         self.tribunaux = get_reference_data('Tribunaux')
-        
+
         self.ste_adress_var = tk.StringVar(value=self.ste_adresses[0] if self.ste_adresses else "")
         self.tribunal_var = tk.StringVar(value=self.tribunaux[0] if self.tribunaux else "")
 
@@ -172,7 +172,7 @@ class SocieteForm(ttk.Frame):
     def create_activities_section(self, parent):
         """Crée la section des activités"""
         from ..utils.utils import get_reference_data
-        
+
         frame = ttk.LabelFrame(parent, text="Activités", padding=(10, 5))
         frame.grid(row=2, column=0, columnspan=2, padx=5, pady=5, sticky="ew")
 
@@ -190,7 +190,7 @@ class SocieteForm(ttk.Frame):
         # Container pour les activités
         self.activities_container = ttk.Frame(content_frame)
         self.activities_container.pack(fill="x", expand=True)
-        
+
         # Load activities from reference sheet
         self.activities_list = get_reference_data('Activites')
 

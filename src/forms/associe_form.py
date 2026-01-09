@@ -84,7 +84,7 @@ class AssocieForm(ttk.Frame):
         # - capital_detenu default to '100000'
         default_nationalite = self.nationalites[0] if self.nationalites else ''
         default_lieu = self.lieux_naissance[0] if self.lieux_naissance else ''
-        
+
         return {
             'civilite': tk.StringVar(value='M.'),
             'nom': tk.StringVar(value=''),

@@ -67,7 +67,7 @@ initialize_reference_sheets(db_path)
 - **Loading reference data**:
   - `initialize_variables()`: Loads Adresse and Tribunal data via `get_reference_data()`
   - `create_activities_section()`: Loads Activites via `get_reference_data()`
-  
+
 - **Using reference data**:
   - `create_address_section()`: Combobox values set to `self.ste_adresses` and `self.tribunaux`
   - `add_activity()`: Combobox values set to `self.activities_list`
@@ -105,12 +105,12 @@ initialize_reference_sheets(db_path)
 
 ## Features
 
-✅ Dynamic reference data loading from Excel sheets  
-✅ Graceful fallback to constants if sheets missing/empty  
-✅ Automatic reference sheet creation and population on first save  
-✅ Idempotent reference sheet initialization (won't overwrite existing data)  
-✅ All forms updated to use reference data  
-✅ Combobox (readonly) for all reference fields to ensure data consistency  
+✅ Dynamic reference data loading from Excel sheets
+✅ Graceful fallback to constants if sheets missing/empty
+✅ Automatic reference sheet creation and population on first save
+✅ Idempotent reference sheet initialization (won't overwrite existing data)
+✅ All forms updated to use reference data
+✅ Combobox (readonly) for all reference fields to ensure data consistency
 
 ## Future Enhancements
 

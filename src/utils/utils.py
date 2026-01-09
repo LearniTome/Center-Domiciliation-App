@@ -484,27 +484,27 @@ def ensure_excel_db(path, sheets: dict):
 
 def get_reference_data(sheet_name: str, path: Optional[_Path] = None) -> list:
     """Load reference data from a reference sheet (SteAdresses, Tribunaux, Activites, Nationalites, LieuxNaissance).
-    
+
     Returns a list of values from the reference sheet. If the sheet doesn't exist or is empty,
     returns a fallback list from constants.
-    
+
     Args:
         sheet_name: Name of the reference sheet (e.g., 'SteAdresses', 'Tribunaux', etc.)
         path: Path to the Excel workbook. If not provided, uses default DB path.
-    
+
     Returns:
         List of values from the sheet or from constants as fallback.
     """
     try:
         from . import constants as _const
         import pandas as _pd
-        
+
         # Determine the DB path
         if path is None:
             db_path = Path(__file__).resolve().parent.parent.parent / 'databases' / _const.DB_FILENAME
         else:
             db_path = _Path(path)
-        
+
         if not db_path.exists():
             # Fallback to constants if DB doesn't exist
             fallback_map = {
@@ -515,7 +515,7 @@ def get_reference_data(sheet_name: str, path: Optional[_Path] = None) -> list:
                 'LieuxNaissance': ["Casablanca", "Rabat", "Fes", "Marrakech", "Agadir"]
             }
             return fallback_map.get(sheet_name, [])
-        
+
         try:
             df = _pd.read_excel(db_path, sheet_name=sheet_name, dtype=str)
         except Exception:
@@ -528,7 +528,7 @@ def get_reference_data(sheet_name: str, path: Optional[_Path] = None) -> list:
                 'LieuxNaissance': ["Casablanca", "Rabat", "Fes", "Marrakech", "Agadir"]
             }
             return fallback_map.get(sheet_name, [])
-        
+
         if df.empty:
             # Sheet is empty, use fallback
             fallback_map = {
@@ -539,12 +539,12 @@ def get_reference_data(sheet_name: str, path: Optional[_Path] = None) -> list:
                 'LieuxNaissance': ["Casablanca", "Rabat", "Fes", "Marrakech", "Agadir"]
             }
             return fallback_map.get(sheet_name, [])
-        
+
         # Get the column name (first column)
         col_name = df.columns[0]
         # Return list of values, filtering out empty/NaN values
         return [str(val).strip() for val in df[col_name].fillna('') if str(val).strip()]
-    
+
     except Exception as e:
         logger.exception('Failed to get reference data for %s: %s', sheet_name, e)
         # Final fallback to constants
@@ -565,17 +565,17 @@ def get_reference_data(sheet_name: str, path: Optional[_Path] = None) -> list:
 def initialize_reference_sheets(path):
     """Initialize the reference sheets (SteAdresses, Tribunaux, Activites, Nationalites, LieuxNaissance)
     with default data from constants if they are empty.
-    
+
     This is called after ensure_excel_db to populate lookup tables.
     """
     try:
         from . import constants as _const
         import pandas as _pd
-        
+
         path = Path(path)
         if not path.exists():
             return
-        
+
         # Mapping of sheet names to data lists from constants
         ref_data = {
             'SteAdresses': _const.SteAdresse,
@@ -584,11 +584,11 @@ def initialize_reference_sheets(path):
             'Nationalites': _const.Nationalite,
             'LieuxNaissance': []  # Will be populated from default list below
         }
-        
+
         # Default lieu de naissance for initial setup
         default_lieux = ["Casablanca", "Rabat", "Fes", "Marrakech", "Agadir"]
         ref_data['LieuxNaissance'] = default_lieux
-        
+
         # For each reference sheet, check if empty and populate
         for sheet_name, data_list in ref_data.items():
             try:
@@ -606,10 +606,10 @@ def initialize_reference_sheets(path):
                         col_name = 'NATIONALITE'
                     else:  # LieuxNaissance
                         col_name = 'LIEU_NAISSANCE'
-                    
+
                     # Create DataFrame from data list
                     df = _pd.DataFrame({col_name: data_list})
-                    
+
                     # Write to sheet (replace mode)
                     try:
                         with _pd.ExcelWriter(path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
