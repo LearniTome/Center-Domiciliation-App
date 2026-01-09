@@ -190,7 +190,7 @@ class DashboardView(tk.Toplevel):
     def _show_page(self, page_key: str):
         """Show a specific page and load corresponding data"""
         self._current_page = page_key
-        
+
         # Switch to the appropriate DataFrame based on page
         if page_key == 'societe':
             self._df = self._societes_df
@@ -198,7 +198,7 @@ class DashboardView(tk.Toplevel):
             self._df = self._associes_df
         elif page_key == 'contrat':
             self._df = self._contrats_df
-        
+
         # Show/hide pages
         for key, page in self.pages.items():
             if key == page_key:
@@ -230,12 +230,84 @@ class DashboardView(tk.Toplevel):
         self.status_label.config(text=f'Total: {len(self._df)} enregistrements')
 
     def _action(self, action: str):
-        """Handle action buttons"""
-        if action == 'refresh':
-            self._load_data()
-            messagebox.showinfo('Info', 'Données actualisées')
-        elif action in ('add', 'edit', 'delete'):
-            messagebox.showinfo('Info', f'Action: {action}')
+        """Handle action buttons and send to parent MainForm"""
+        try:
+            if action == 'refresh':
+                self._load_data()
+                messagebox.showinfo('Info', 'Données actualisées')
+            elif action == 'add':
+                # Add new record - pass empty payload to MainForm
+                if hasattr(self.parent, 'handle_dashboard_action'):
+                    self.parent.handle_dashboard_action('add', None)
+                else:
+                    messagebox.showwarning('Ajouter', 'Parent window does not support this action')
+            elif action == 'edit':
+                # Edit selected record
+                tree = self.trees.get(self._current_page)
+                if tree is None:
+                    messagebox.showwarning('Modifier', 'Aucune page sélectionnée')
+                    return
+                
+                # Get selected row
+                selection = tree.selection()
+                if not selection:
+                    messagebox.showwarning('Modifier', 'Veuillez sélectionner un enregistrement')
+                    return
+                
+                # Build payload from selected row and current DataFrame
+                if self._df is None or self._df.empty:
+                    messagebox.showwarning('Modifier', 'Aucune donnée disponible')
+                    return
+                
+                df = self._df  # Narrow type for type checker
+                selected_idx = tree.index(selection[0])
+                if selected_idx >= len(df):
+                    messagebox.showerror('Modifier', 'Index de ligne invalide')
+                    return
+                
+                row = df.iloc[selected_idx]
+                payload = row.to_dict()
+                
+                # Send to parent
+                if hasattr(self.parent, 'handle_dashboard_action'):
+                    self.parent.handle_dashboard_action('edit', payload)
+                else:
+                    messagebox.showwarning('Modifier', 'Parent window does not support this action')
+            elif action == 'delete':
+                # Delete selected record
+                tree = self.trees.get(self._current_page)
+                if tree is None:
+                    messagebox.showwarning('Supprimer', 'Aucune page sélectionnée')
+                    return
+                
+                # Get selected row
+                selection = tree.selection()
+                if not selection:
+                    messagebox.showwarning('Supprimer', 'Veuillez sélectionner un enregistrement')
+                    return
+                
+                # Build payload from selected row
+                if self._df is None or self._df.empty:
+                    messagebox.showwarning('Supprimer', 'Aucune donnée disponible')
+                    return
+                
+                df = self._df  # Narrow type for type checker
+                selected_idx = tree.index(selection[0])
+                if selected_idx >= len(df):
+                    messagebox.showerror('Supprimer', 'Index de ligne invalide')
+                    return
+                
+                row = df.iloc[selected_idx]
+                payload = row.to_dict()
+                
+                # Send to parent
+                if hasattr(self.parent, 'handle_dashboard_action'):
+                    self.parent.handle_dashboard_action('delete', payload)
+                else:
+                    messagebox.showwarning('Supprimer', 'Parent window does not support this action')
+        except Exception as e:
+            logger.error(f"Error in _action('{action}'): {e}")
+            messagebox.showerror('Erreur', f'Erreur lors de l\'action: {e}')
 
     def _update_clock(self):
         """Update date and clock"""
