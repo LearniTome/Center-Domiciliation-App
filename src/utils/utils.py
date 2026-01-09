@@ -1073,7 +1073,7 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
 
 def cleanup_old_backups(db_path, max_backups=5):
     """Keep only the most recent N backups, delete older ones.
-    
+
     Args:
         db_path: Path to the main database file
         max_backups: Maximum number of backups to keep (default: 5)
@@ -1082,12 +1082,12 @@ def cleanup_old_backups(db_path, max_backups=5):
         db_path = _Path(db_path)
         if not db_path.exists():
             return
-        
+
         # Find all backup files for this database
         backup_pattern = f"{db_path.stem}_backup_*.xlsx"
         backup_dir = db_path.parent
         backups = sorted(backup_dir.glob(backup_pattern), reverse=True)
-        
+
         # Delete backups beyond the limit
         if len(backups) > max_backups:
             for backup in backups[max_backups:]:

@@ -38,7 +38,7 @@ The application saves data through several buttons:
 
 **Save Flow:**
 ```
-User clicks "Générer" 
+User clicks "Générer"
     ↓
 Collect values from all forms (Societe, Associes, Contrat)
     ↓
