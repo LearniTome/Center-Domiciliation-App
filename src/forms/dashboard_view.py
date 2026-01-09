@@ -154,27 +154,52 @@ class DashboardView(tk.Toplevel):
         self.status_label.pack(fill='x', side='bottom')
 
     def _load_data(self):
-        """Load data from database"""
+        """Load data from database (all three sheets)"""
         try:
             PathManager.ensure_directories()
             excel_path = PathManager.get_database_path('DataBase_domiciliation.xlsx')
 
             if excel_path.exists():
                 try:
-                    self._df = pd.read_excel(excel_path, sheet_name='Societes', dtype=str).fillna('')
-                except Exception:
-                    self._df = pd.DataFrame()
+                    # Load all three main sheets
+                    self._societes_df = pd.read_excel(excel_path, sheet_name='Societes', dtype=str).fillna('')
+                    self._associes_df = pd.read_excel(excel_path, sheet_name='Associes', dtype=str).fillna('')
+                    self._contrats_df = pd.read_excel(excel_path, sheet_name='Contrats', dtype=str).fillna('')
+                    # Initialize with societes data
+                    self._df = self._societes_df
+                except Exception as e:
+                    logger.warning(f"Error loading sheets: {e}")
+                    self._societes_df = pd.DataFrame(columns=_const.societe_headers)
+                    self._associes_df = pd.DataFrame(columns=_const.associe_headers)
+                    self._contrats_df = pd.DataFrame(columns=_const.contrat_headers)
+                    self._df = self._societes_df
             else:
-                self._df = pd.DataFrame()
+                self._societes_df = pd.DataFrame(columns=_const.societe_headers)
+                self._associes_df = pd.DataFrame(columns=_const.associe_headers)
+                self._contrats_df = pd.DataFrame(columns=_const.contrat_headers)
+                self._df = self._societes_df
 
             self._refresh_display()
         except Exception as e:
             logger.error(f"Error loading data: {e}")
+            self._societes_df = pd.DataFrame()
+            self._associes_df = pd.DataFrame()
+            self._contrats_df = pd.DataFrame()
             self._df = pd.DataFrame()
 
     def _show_page(self, page_key: str):
-        """Show a specific page"""
+        """Show a specific page and load corresponding data"""
         self._current_page = page_key
+        
+        # Switch to the appropriate DataFrame based on page
+        if page_key == 'societe':
+            self._df = self._societes_df
+        elif page_key == 'associe':
+            self._df = self._associes_df
+        elif page_key == 'contrat':
+            self._df = self._contrats_df
+        
+        # Show/hide pages
         for key, page in self.pages.items():
             if key == page_key:
                 page.pack(fill='both', expand=True)
