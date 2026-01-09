@@ -1071,6 +1071,35 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
         logger.exception('Failed to autofit column widths after writing records')
 
 
+def cleanup_old_backups(db_path, max_backups=5):
+    """Keep only the most recent N backups, delete older ones.
+    
+    Args:
+        db_path: Path to the main database file
+        max_backups: Maximum number of backups to keep (default: 5)
+    """
+    try:
+        db_path = _Path(db_path)
+        if not db_path.exists():
+            return
+        
+        # Find all backup files for this database
+        backup_pattern = f"{db_path.stem}_backup_*.xlsx"
+        backup_dir = db_path.parent
+        backups = sorted(backup_dir.glob(backup_pattern), reverse=True)
+        
+        # Delete backups beyond the limit
+        if len(backups) > max_backups:
+            for backup in backups[max_backups:]:
+                try:
+                    backup.unlink()
+                    logger.info(f"Deleted old backup: {backup.name}")
+                except Exception as e:
+                    logger.warning(f"Failed to delete old backup {backup.name}: {e}")
+    except Exception as e:
+        logger.warning(f"Error during backup cleanup: {e}")
+
+
 def migrate_excel_workbook(path):
     """Detects sheets that look like canonical sheets but have different names
     and merges their rows into the canonical sheet, then removes the old sheet.
@@ -1085,6 +1114,8 @@ def migrate_excel_workbook(path):
         backup_path = path.parent / backup_name
         shutil.copy2(path, backup_path)
         logger.info(f"Created backup of workbook before migration: {backup_path}")
+        # Clean up old backups (keep only the 5 most recent)
+        cleanup_old_backups(path, max_backups=5)
         # Also add the backup path to the generation report (if present)
         try:
             tmp_out = Path(__file__).resolve().parent.parent.parent / 'tmp_out'
