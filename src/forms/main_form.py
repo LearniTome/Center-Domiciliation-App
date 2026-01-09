@@ -455,14 +455,6 @@ class MainForm(ttk.Frame):
 
     def finish(self):
         """Save all pages and emit a finished event."""
-        # Confirm the user's intention to finish
-        try:
-            proceed = messagebox.askyesno('Terminer', "Voulez-vous terminer et sauvegarder les données ?")
-            if not proceed:
-                return
-        except Exception:
-            # If confirmation dialog fails, proceed conservatively
-            pass
         # Gather all values from forms (do this silently to avoid per-section popups)
         try:
             # get_values calls each form.get_values() and updates self.values
@@ -492,6 +484,9 @@ class MainForm(ttk.Frame):
         try:
             # Create the Excel DB using centralized headers from constants; ensure idempotent creation
             ensure_excel_db(db_path, _const.excel_sheets)
+            # Initialize reference sheets with default data from constants
+            from ..utils.utils import initialize_reference_sheets
+            initialize_reference_sheets(db_path)
         except Exception as e:
             # non-fatal: log and show an error to the user
             try:
@@ -560,3 +555,209 @@ class MainForm(ttk.Frame):
         _next = getattr(self, 'next_btn', None)
         if _next is not None:
             _next.configure(state=('disabled' if self.current_page == len(self.pages) - 1 else 'normal'))
+
+    def handle_dashboard_action(self, action: str, payload: dict | None):
+        """Handle actions coming from the DashboardView.
+
+        Supported actions:
+        - 'add'    : clear forms and show the societe page for a new entry
+        - 'edit'   : prefill forms with the provided payload (company row dict) and show the societe page
+        - 'delete' : remove the company (and related rows) from the Excel DB after confirmation
+        - other    : ignored
+        """
+        try:
+            # Bring main window to front
+            top = self.winfo_toplevel()
+            try:
+                top.deiconify()
+                top.lift()
+                top.focus_force()
+            except Exception:
+                pass
+
+            if action == 'add':
+                # Reset forms to default/new state and show first page
+                self.reset()
+                self.show_page(0)
+                return
+
+            if action == 'edit':
+                if not payload:
+                    messagebox.showwarning('Modifier', 'Aucune donnée fournie pour modification.')
+                    return
+
+                # Map canonical DB fields back to form keys (reverse of write_records_to_db mapping)
+                soc_map = {
+                    'DEN_STE': 'denomination', 'FORME_JUR': 'forme_juridique', 'ICE': 'ice',
+                    'DATE_ICE': 'date_ice', 'CAPITAL': 'capital', 'PART_SOCIAL': 'parts_social',
+                    'STE_ADRESS': 'adresse', 'TRIBUNAL': 'tribunal'
+                }
+                soc_vals = {}
+                for k, v in (payload.items() if isinstance(payload, dict) else []):
+                    if k in soc_map:
+                        soc_vals[soc_map[k]] = v
+
+                # Attempt to also load associes and contrats from the workbook if possible
+                associes_list = []
+                contrat_vals = {}
+                try:
+                    import pandas as _pd
+                    db_path = Path(PathManager.DATABASE_DIR) / _const.DB_FILENAME
+                    if db_path.exists():
+                        try:
+                            assoc_df = _pd.read_excel(db_path, sheet_name='Associes', dtype=str).fillna('')
+                        except Exception:
+                            assoc_df = _pd.DataFrame()
+                        try:
+                            contrat_df = _pd.read_excel(db_path, sheet_name='Contrats', dtype=str).fillna('')
+                        except Exception:
+                            contrat_df = _pd.DataFrame()
+
+                        # Prefer matching by ID_SOCIETE when available
+                        sid = None
+                        if isinstance(payload, dict):
+                            sid = payload.get('ID_SOCIETE') or payload.get('ID_SOCIETE')
+                        if sid and not assoc_df.empty and 'ID_SOCIETE' in assoc_df.columns:
+                            matches = assoc_df[assoc_df['ID_SOCIETE'].astype(str).str.strip() == str(sid).strip()]
+                        else:
+                            den = (payload.get('DEN_STE') or '').strip() if isinstance(payload, dict) else ''
+                            if not assoc_df.empty and 'DEN_STE' in assoc_df.columns:
+                                matches = assoc_df[assoc_df['DEN_STE'].astype(str).str.strip().str.lower() == den.lower()]
+                            else:
+                                matches = _pd.DataFrame()
+
+                        if not matches.empty:
+                            # inverse mapping from canonical DB headers to AssocieForm keys
+                            inverse_assoc_map = {
+                                'CIVIL': 'civilite', 'PRENOM': 'prenom', 'NOM': 'nom',
+                                'PARTS': 'num_parts', 'DATE_NAISS': 'date_naiss', 'LIEU_NAISS': 'lieu_naiss',
+                                'NATIONALITY': 'nationalite', 'CIN_NUM': 'num_piece', 'CIN_VALIDATY': 'validite_piece',
+                                'ADRESSE': 'adresse', 'PHONE': 'telephone', 'EMAIL': 'email',
+                                'IS_GERANT': 'est_gerant', 'QUALITY': 'qualite', 'CAPITAL_DETENU': 'capital_detenu'
+                            }
+                            for _, ar in matches.iterrows():
+                                ad = {}
+                                for col in ar.index:
+                                    if col in inverse_assoc_map:
+                                        ad[inverse_assoc_map[col]] = ar.get(col)
+                                associes_list.append(ad)
+
+                        # take first contrat row if present
+                        if not contrat_df.empty:
+                            if sid and 'ID_SOCIETE' in contrat_df.columns:
+                                cands = contrat_df[contrat_df['ID_SOCIETE'].astype(str).str.strip() == str(sid).strip()]
+                            else:
+                                den = (payload.get('DEN_STE') or '').strip() if isinstance(payload, dict) else ''
+                                if not contrat_df.empty and 'DEN_STE' in contrat_df.columns:
+                                    cands = contrat_df[contrat_df['DEN_STE'].astype(str).str.strip().str.lower() == den.lower()]
+                                else:
+                                    cands = _pd.DataFrame()
+                            if not cands.empty:
+                                crow = cands.iloc[0]
+                                inverse_contrat_map = {
+                                    'DATE_CONTRAT': 'date_contrat', 'PERIOD_DOMCIL': 'period',
+                                    'PRIX_CONTRAT': 'prix_mensuel', 'PRIX_INTERMEDIARE_CONTRAT': 'prix_inter',
+                                    'DOM_DATEDEB': 'date_debut', 'DOM_DATEFIN': 'date_fin'
+                                }
+                                for col in crow.index:
+                                    if col in inverse_contrat_map:
+                                        contrat_vals[inverse_contrat_map[col]] = crow.get(col)
+                except Exception:
+                    # ignore data load errors; fallback to partial prefill
+                    pass
+
+                # Apply values to forms and show societe page for editing
+                values = {'societe': soc_vals or {}, 'associes': associes_list, 'contrat': contrat_vals}
+                self.set_values(values)
+                self.show_page(0)
+                return
+
+            if action == 'delete':
+                if not payload:
+                    messagebox.showwarning('Supprimer', 'Aucune société sélectionnée pour suppression.')
+                    return
+                den = payload.get('DEN_STE') or ''
+                sid = payload.get('ID_SOCIETE') if isinstance(payload, dict) else None
+                if not messagebox.askyesno('Confirmation', f"Voulez-vous vraiment supprimer la société '{den}' ?"):
+                    return
+
+                # Remove rows from the Excel workbook
+                try:
+                    import pandas as _pd
+                    db_path = Path(PathManager.DATABASE_DIR) / _const.DB_FILENAME
+                    if not db_path.exists():
+                        messagebox.showerror('Erreur', 'Fichier de base de données introuvable.')
+                        return
+
+                    # Read canonical sheets
+                    try:
+                        soc_df = _pd.read_excel(db_path, sheet_name='Societes', dtype=str).fillna('')
+                    except Exception:
+                        soc_df = _pd.DataFrame()
+                    try:
+                        assoc_df = _pd.read_excel(db_path, sheet_name='Associes', dtype=str).fillna('')
+                    except Exception:
+                        assoc_df = _pd.DataFrame()
+                    try:
+                        contrat_df = _pd.read_excel(db_path, sheet_name='Contrats', dtype=str).fillna('')
+                    except Exception:
+                        contrat_df = _pd.DataFrame()
+
+                    if sid:
+                        if not soc_df.empty and 'ID_SOCIETE' in soc_df.columns:
+                            soc_df = soc_df[~(soc_df['ID_SOCIETE'].astype(str).str.strip() == str(sid).strip())]
+                        if not assoc_df.empty and 'ID_SOCIETE' in assoc_df.columns:
+                            assoc_df = assoc_df[~(assoc_df['ID_SOCIETE'].astype(str).str.strip() == str(sid).strip())]
+                        if not contrat_df.empty and 'ID_SOCIETE' in contrat_df.columns:
+                            contrat_df = contrat_df[~(contrat_df['ID_SOCIETE'].astype(str).str.strip() == str(sid).strip())]
+                    else:
+                        # fallback to DEN_STE match
+                        if not soc_df.empty and 'DEN_STE' in soc_df.columns:
+                            soc_df = soc_df[~(soc_df['DEN_STE'].astype(str).str.strip().str.lower() == den.strip().lower())]
+                        if not assoc_df.empty and 'DEN_STE' in assoc_df.columns:
+                            assoc_df = assoc_df[~(assoc_df['DEN_STE'].astype(str).str.strip().str.lower() == den.strip().lower())]
+                        if not contrat_df.empty and 'DEN_STE' in contrat_df.columns:
+                            contrat_df = contrat_df[~(contrat_df['DEN_STE'].astype(str).str.strip().str.lower() == den.strip().lower())]
+
+                    # Write back sheets replacing them
+                    try:
+                        with _pd.ExcelWriter(db_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+                            soc_df.to_excel(writer, sheet_name='Societes', index=False)
+                            assoc_df.to_excel(writer, sheet_name='Associes', index=False)
+                            contrat_df.to_excel(writer, sheet_name='Contrats', index=False)
+                    except TypeError:
+                        # pandas older version fallback
+                        from openpyxl import load_workbook
+                        wb = load_workbook(db_path)
+                        for sname, df in (('Societes', soc_df), ('Associes', assoc_df), ('Contrats', contrat_df)):
+                            if sname in wb.sheetnames:
+                                try:
+                                    std = wb[sname]
+                                    wb.remove(std)
+                                except Exception:
+                                    pass
+                        wb.save(db_path)
+                        with _pd.ExcelWriter(db_path, engine='openpyxl', mode='a') as writer:
+                            soc_df.to_excel(writer, sheet_name='Societes', index=False)
+                            assoc_df.to_excel(writer, sheet_name='Associes', index=False)
+                            contrat_df.to_excel(writer, sheet_name='Contrats', index=False)
+
+                    messagebox.showinfo('Succès', f"Société '{den}' supprimée avec succès.")
+                    return
+                except PermissionError:
+                    messagebox.showerror('Erreur', 'Le fichier Excel est ouvert dans une autre application. Fermez Excel et réessayez.')
+                    return
+                except Exception as e:
+                    try:
+                        from ..utils.utils import ErrorHandler
+                        ErrorHandler.handle_error(e, 'Erreur lors de la suppression')
+                    except Exception:
+                        messagebox.showerror('Erreur', f'Impossible de supprimer: {e}')
+                    return
+
+        except Exception as e:
+            try:
+                logger = __import__('logging').getLogger(__name__)
+                logger.exception('handle_dashboard_action failed: %s', e)
+            except Exception:
+                pass

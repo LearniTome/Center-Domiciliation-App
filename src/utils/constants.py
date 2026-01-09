@@ -63,11 +63,23 @@ contrat_headers = [
     "DOM_DATEFIN"
 ]
 
-# Dictionary for Excel sheets
+# Reference sheets for dropdown lists and lookups
+ste_adresses_headers = ["STE_ADRESSE"]
+tribunaux_headers = ["TRIBUNAL"]
+activites_headers = ["ACTIVITE"]
+nationalites_headers = ["NATIONALITE"]
+lieux_naissance_headers = ["LIEU_NAISSANCE"]
+
+# Dictionary for Excel sheets (includes both data sheets and reference sheets)
 excel_sheets = {
     "Societes": societe_headers,
     "Associes": associe_headers,
-    "Contrats": contrat_headers
+    "Contrats": contrat_headers,
+    "SteAdresses": ste_adresses_headers,
+    "Tribunaux": tribunaux_headers,
+    "Activites": activites_headers,
+    "Nationalites": nationalites_headers,
+    "LieuxNaissance": lieux_naissance_headers
 }
 
 # Default database filename used across the app

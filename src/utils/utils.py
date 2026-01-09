@@ -410,6 +410,42 @@ class PathManager:
         except Exception as e:
             ErrorHandler.handle_error(e, "Erreur lors de la création des répertoires")
 
+    @classmethod
+    def validate_file(cls, filepath: Path, file_type: str) -> bool:
+        """
+        Valide un fichier selon son type
+        Args:
+            filepath: Chemin du fichier
+            file_type: Type de fichier ('models', 'database', 'config')
+        Returns:
+            bool: True si le fichier est valide
+        """
+        if not filepath.exists():
+            logger.warning(f"Fichier non trouvé: {filepath}")
+            return False
+
+        if not filepath.suffix.lower() in cls.ALLOWED_EXTENSIONS.get(file_type, []):
+            logger.warning(f"Extension non autorisée: {filepath}")
+            return False
+
+        return True
+
+    @classmethod
+    def get_model_path(cls, filename: str) -> Path:
+        """Retourne le chemin d'un fichier modèle"""
+        path = cls.MODELS_DIR / filename
+        if not cls.validate_file(path, 'models'):
+            raise FileNotFoundError(f"Modèle invalide ou non trouvé: {filename}")
+        return path
+
+    @classmethod
+    def get_database_path(cls, filename: str) -> Path:
+        """Retourne le chemin d'un fichier de base de données"""
+        path = cls.DATABASE_DIR / filename
+        if not cls.validate_file(path, 'database'):
+            raise FileNotFoundError(f"Base de données invalide ou non trouvée: {filename}")
+        return path
+
 def ensure_excel_db(path, sheets: dict):
     """Create an Excel workbook at `path` with given sheets dict (name -> columns).
 
@@ -444,6 +480,155 @@ def ensure_excel_db(path, sheets: dict):
     if modified:
         wb.save(path)
     return
+
+
+def get_reference_data(sheet_name: str, path: Optional[_Path] = None) -> list:
+    """Load reference data from a reference sheet (SteAdresses, Tribunaux, Activites, Nationalites, LieuxNaissance).
+    
+    Returns a list of values from the reference sheet. If the sheet doesn't exist or is empty,
+    returns a fallback list from constants.
+    
+    Args:
+        sheet_name: Name of the reference sheet (e.g., 'SteAdresses', 'Tribunaux', etc.)
+        path: Path to the Excel workbook. If not provided, uses default DB path.
+    
+    Returns:
+        List of values from the sheet or from constants as fallback.
+    """
+    try:
+        from . import constants as _const
+        import pandas as _pd
+        
+        # Determine the DB path
+        if path is None:
+            db_path = Path(__file__).resolve().parent.parent.parent / 'databases' / _const.DB_FILENAME
+        else:
+            db_path = _Path(path)
+        
+        if not db_path.exists():
+            # Fallback to constants if DB doesn't exist
+            fallback_map = {
+                'SteAdresses': _const.SteAdresse,
+                'Tribunaux': _const.Tribunnaux,
+                'Activites': _const.Activities,
+                'Nationalites': _const.Nationalite,
+                'LieuxNaissance': ["Casablanca", "Rabat", "Fes", "Marrakech", "Agadir"]
+            }
+            return fallback_map.get(sheet_name, [])
+        
+        try:
+            df = _pd.read_excel(db_path, sheet_name=sheet_name, dtype=str)
+        except Exception:
+            # Sheet doesn't exist, use fallback
+            fallback_map = {
+                'SteAdresses': _const.SteAdresse,
+                'Tribunaux': _const.Tribunnaux,
+                'Activites': _const.Activities,
+                'Nationalites': _const.Nationalite,
+                'LieuxNaissance': ["Casablanca", "Rabat", "Fes", "Marrakech", "Agadir"]
+            }
+            return fallback_map.get(sheet_name, [])
+        
+        if df.empty:
+            # Sheet is empty, use fallback
+            fallback_map = {
+                'SteAdresses': _const.SteAdresse,
+                'Tribunaux': _const.Tribunnaux,
+                'Activites': _const.Activities,
+                'Nationalites': _const.Nationalite,
+                'LieuxNaissance': ["Casablanca", "Rabat", "Fes", "Marrakech", "Agadir"]
+            }
+            return fallback_map.get(sheet_name, [])
+        
+        # Get the column name (first column)
+        col_name = df.columns[0]
+        # Return list of values, filtering out empty/NaN values
+        return [str(val).strip() for val in df[col_name].fillna('') if str(val).strip()]
+    
+    except Exception as e:
+        logger.exception('Failed to get reference data for %s: %s', sheet_name, e)
+        # Final fallback to constants
+        try:
+            from . import constants as _const
+            fallback_map = {
+                'SteAdresses': _const.SteAdresse,
+                'Tribunaux': _const.Tribunnaux,
+                'Activites': _const.Activities,
+                'Nationalites': _const.Nationalite,
+                'LieuxNaissance': ["Casablanca", "Rabat", "Fes", "Marrakech", "Agadir"]
+            }
+            return fallback_map.get(sheet_name, [])
+        except Exception:
+            return []
+
+
+def initialize_reference_sheets(path):
+    """Initialize the reference sheets (SteAdresses, Tribunaux, Activites, Nationalites, LieuxNaissance)
+    with default data from constants if they are empty.
+    
+    This is called after ensure_excel_db to populate lookup tables.
+    """
+    try:
+        from . import constants as _const
+        import pandas as _pd
+        
+        path = Path(path)
+        if not path.exists():
+            return
+        
+        # Mapping of sheet names to data lists from constants
+        ref_data = {
+            'SteAdresses': _const.SteAdresse,
+            'Tribunaux': _const.Tribunnaux,
+            'Activites': _const.Activities,
+            'Nationalites': _const.Nationalite,
+            'LieuxNaissance': []  # Will be populated from default list below
+        }
+        
+        # Default lieu de naissance for initial setup
+        default_lieux = ["Casablanca", "Rabat", "Fes", "Marrakech", "Agadir"]
+        ref_data['LieuxNaissance'] = default_lieux
+        
+        # For each reference sheet, check if empty and populate
+        for sheet_name, data_list in ref_data.items():
+            try:
+                existing = _pd.read_excel(path, sheet_name=sheet_name, dtype=str)
+                # If sheet has only header row (no data rows), populate it
+                if existing.empty:
+                    # Get the header name for this sheet
+                    if sheet_name == 'SteAdresses':
+                        col_name = 'STE_ADRESSE'
+                    elif sheet_name == 'Tribunaux':
+                        col_name = 'TRIBUNAL'
+                    elif sheet_name == 'Activites':
+                        col_name = 'ACTIVITE'
+                    elif sheet_name == 'Nationalites':
+                        col_name = 'NATIONALITE'
+                    else:  # LieuxNaissance
+                        col_name = 'LIEU_NAISSANCE'
+                    
+                    # Create DataFrame from data list
+                    df = _pd.DataFrame({col_name: data_list})
+                    
+                    # Write to sheet (replace mode)
+                    try:
+                        with _pd.ExcelWriter(path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+                            df.to_excel(writer, sheet_name=sheet_name, index=False)
+                    except TypeError:
+                        # Fallback for older pandas versions
+                        from openpyxl import load_workbook
+                        wb = load_workbook(path)
+                        if sheet_name in wb.sheetnames:
+                            std = wb[sheet_name]
+                            wb.remove(std)
+                            wb.save(path)
+                        with _pd.ExcelWriter(path, engine='openpyxl', mode='a') as writer:
+                            df.to_excel(writer, sheet_name=sheet_name, index=False)
+            except Exception:
+                # If sheet doesn't exist or has errors, skip (it was just created by ensure_excel_db)
+                pass
+    except Exception as e:
+        logger.exception('Failed to initialize reference sheets: %s', e)
 
 
 def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_vals: dict):
@@ -1115,38 +1300,4 @@ def societe_exists(name: str, path: Optional[_Path] = None) -> bool:
     except Exception:
         logger.exception('societe_exists check failed')
         return False
-    @classmethod
-    def validate_file(cls, filepath: Path, file_type: str) -> bool:
-        """
-        Valide un fichier selon son type
-        Args:
-            filepath: Chemin du fichier
-            file_type: Type de fichier ('models', 'database', 'config')
-        Returns:
-            bool: True si le fichier est valide
-        """
-        if not filepath.exists():
-            logger.warning(f"Fichier non trouvé: {filepath}")
-            return False
 
-        if not filepath.suffix.lower() in cls.ALLOWED_EXTENSIONS.get(file_type, []):
-            logger.warning(f"Extension non autorisée: {filepath}")
-            return False
-
-        return True
-
-    @classmethod
-    def get_model_path(cls, filename: str) -> Path:
-        """Retourne le chemin d'un fichier modèle"""
-        path = cls.MODELS_DIR / filename
-        if not cls.validate_file(path, 'models'):
-            raise FileNotFoundError(f"Modèle invalide ou non trouvé: {filename}")
-        return path
-
-    @classmethod
-    def get_database_path(cls, filename: str) -> Path:
-        """Retourne le chemin d'un fichier de base de données"""
-        path = cls.DATABASE_DIR / filename
-        if not cls.validate_file(path, 'database'):
-            raise FileNotFoundError(f"Base de données invalide ou non trouvée: {filename}")
-        return path

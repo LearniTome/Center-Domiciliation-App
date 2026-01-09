@@ -10,7 +10,7 @@ warnings.filterwarnings(
     category=SyntaxWarning,
     module=r"tkcalendar\..*",
 )
-from src.forms.dashboard_view import DashboardFrame
+from src.forms.main_form import MainForm
 from src.utils import WindowManager, ThemeManager, PathManager, ErrorHandler
 from src.utils.utils import WidgetFactory
 import pandas as pd
@@ -54,9 +54,9 @@ class MainApp(tk.Tk):
         self.main_container = ttk.Frame(self)
         self.main_container.pack(fill='both', expand=True)
 
-        # Create the dashboard embedded frame (replaces the previous main form)
-        self.dashboard = DashboardFrame(self.main_container, self.values)
-        self.dashboard.pack(fill='both', expand=True, padx=10, pady=10)
+        # Create the main form
+        self.main_form = MainForm(self.main_container, self.values)
+        self.main_form.pack(fill='both', expand=True, padx=10, pady=10)
 
         # Create control buttons
         self.setup_buttons()
@@ -70,21 +70,22 @@ class MainApp(tk.Tk):
         row = ttk.Frame(buttons_frame)
         row.pack(fill='x')
 
-        # Left-side primary buttons (Configuration, New, Generate)
-        # Configuration button (opens dashboard configuration dialog)
+        # Left-side primary buttons (Configuration, Dashboard, Generate)
+        # Configuration button (opens MainForm configuration dialog)
         try:
-            cfg_btn = WidgetFactory.create_button(row, text="⚙ Configuration", command=self.dashboard.open_configuration)
+            cfg_btn = WidgetFactory.create_button(row, text="⚙ Configuration", command=self.main_form.open_configuration)
             cfg_btn.pack(side='left', padx=6)
-            # attach to dashboard for state updates
-            self.dashboard.config_btn = cfg_btn
+            # attach to main_form for state updates
+            self.main_form.config_btn = cfg_btn
         except Exception:
             pass
 
-        # New record (opens an add dialog implemented in dashboard)
-        try:
-            WidgetFactory.create_button(row, text="🆕 Nouvelle", command=self.dashboard.add_record).pack(side='left', padx=6)
-        except Exception:
-            pass
+        # Dashboard button
+        WidgetFactory.create_button(
+            row,
+            text="📊 Tableau de bord",
+            command=self.main_form.show_dashboard
+        ).pack(side='left', padx=6)
 
         # Single generation button (modern style)
         gen_btn = WidgetFactory.create_button(
@@ -106,38 +107,38 @@ class MainApp(tk.Tk):
         # Right-side control buttons (packed in reverse so visual order is left->right)
         try:
             # Pack Quitter first (will appear at the far right)
-            WidgetFactory.create_button(row, text="❌ Quitter", command=self.confirm_quit).pack(side='right', padx=6)
+            WidgetFactory.create_button(row, text="❌ Quitter", command=self.quit).pack(side='right', padx=6)
 
-            # Clear form data
-            WidgetFactory.create_button(row, text="🧹 Réinitialiser", command=self.clear_form).pack(side='right', padx=6)
+            # Suivant
+            _btn = WidgetFactory.create_button(row, text="Suivant ▶", command=self.main_form.next_page)
+            _btn.pack(side='right', padx=6)
+            self.main_form.next_btn = _btn
+
+            # Précédent
+            _btn = WidgetFactory.create_button(row, text="◀ Précédent", command=self.main_form.prev_page)
+            _btn.pack(side='right', padx=6)
+            self.main_form.prev_btn = _btn
+
+            # Terminer
+            _btn = WidgetFactory.create_button(row, text="🏁 Terminer", command=self.main_form.finish)
+            _btn.pack(side='right', padx=6)
+            self.main_form.finish_btn = _btn
+
+            # Sauvegarder
+            _btn = WidgetFactory.create_button(row, text="💾 Sauvegarder", command=self.main_form.save_current)
+            _btn.pack(side='right', padx=6)
+            self.main_form.save_btn = _btn
+
+            # Nouvelle (will appear left-most among the right cluster)
+            WidgetFactory.create_button(row, text="🆕 Nouvelle", command=self.clear_form).pack(side='right', padx=6)
         except Exception:
+            # If main_form isn't ready for some reason, ignore and continue
             pass
 
     def collect_values(self):
         """Collecte toutes les valeurs des formulaires"""
         # Get values from the main form
-        # If dashboard exists use it, otherwise fallback to main_form
-        if getattr(self, 'dashboard', None) is not None:
-            try:
-                self.values = self.dashboard.get_values()
-                return
-            except Exception:
-                pass
-        if getattr(self, 'main_form', None) is not None:
-            self.values = self.main_form.get_values()
-
-    def confirm_quit(self):
-        """Ask user to confirm quitting the application."""
-        try:
-            ans = messagebox.askyesno('Quitter', 'Voulez-vous quitter l\'application ?')
-            if ans:
-                self.quit()
-        except Exception:
-            # fallback: quit without confirmation if dialog fails
-            try:
-                self.quit()
-            except Exception:
-                pass
+        self.values = self.main_form.get_values()
 
     def generate_docs(self):
         # Deprecated: replaced by generate_documents
@@ -472,14 +473,7 @@ class MainApp(tk.Tk):
         """Réinitialise tous les formulaires"""
         try:
             self.values.clear()
-            # Reset embedded dashboard forms if present
-            if getattr(self, 'dashboard', None) is not None:
-                try:
-                    self.dashboard.set_values({})
-                except Exception:
-                    pass
-            elif getattr(self, 'main_form', None) is not None:
-                self.main_form.reset()
+            self.main_form.reset()
             logger.info("Formulaires réinitialisés")
             messagebox.showinfo("Formulaire vidé", "Tous les champs ont été réinitialisés.")
         except Exception as e:

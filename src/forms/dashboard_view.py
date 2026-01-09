@@ -1,8 +1,404 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
+from datetime import datetime
+from pathlib import Path
+import logging
+from typing import Optional
+
+try:
+    import pandas as pd
+except Exception:
+    pd = None
+
+from ..utils.utils import ThemeManager, WidgetFactory, PathManager, ErrorHandler
+from ..utils import constants as _const
+
+logger = logging.getLogger(__name__)
+
+
+class DashboardView(tk.Toplevel):
+    """A compact, elegant dashboard modal.
+
+    Features:
+    - Modal Toplevel (transient + grab_set)
+    - Header with app title, current date and live clock
+    - Left navigation (Sociétés / Associés / Contrats)
+    - Three pages with Treeviews sourced from the Excel sheets
+    - Action buttons that close the dashboard and call
+      `main_form.handle_dashboard_action(action, payload)` on the parent if available.
+    """
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.parent = parent
+        self.title("Tableau de Bord — Centre de Domiciliation")
+        self.geometry("1100x700")
+        self.minsize(800, 520)
+
+        # Make modal
+        try:
+            self.transient(parent)
+            self.grab_set()
+        except Exception:
+            pass
+
+        # Track whether we disabled or withdrew parent so we can restore it
+        self._parent_disabled = False
+        self._parent_withdrawn = False
+        try:
+            try:
+                parent.attributes('-disabled', True)
+                self._parent_disabled = True
+            except Exception:
+                try:
+                    parent.withdraw()
+                    self._parent_withdrawn = True
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+        # Theme
+        self.theme = ThemeManager(self.winfo_toplevel())
+        self.style = self.theme.style
+
+        # Layout
+        self._build_header()
+        self._build_body()
+        self._build_status()
+
+        # Load data
+        self._df = None
+        self._load_data()
+
+        # Start clock
+        self._update_clock()
+
+        # When closed, clean up and restore parent
+        self.protocol('WM_DELETE_WINDOW', self._on_close)
+
+    # --- UI builders ---
+    def _build_header(self):
+        header = ttk.Frame(self, padding=(12, 8), style='Card.TFrame')
+        header.pack(fill='x')
+
+        title = ttk.Label(header, text='Centre de Domiciliation — Tableau de Bord', font=('Segoe UI', 12, 'bold'))
+        title.pack(side='left')
+
+        right = ttk.Frame(header)
+        right.pack(side='right')
+
+        self.date_label = ttk.Label(right, text='', font=('Segoe UI', 10))
+        self.date_label.pack(anchor='e')
+
+        self.clock_label = ttk.Label(right, text='', font=('Segoe UI', 13, 'bold'))
+        self.clock_label.pack(anchor='e')
+
+    def _build_body(self):
+        body = ttk.Frame(self)
+        body.pack(fill='both', expand=True)
+
+        # Left nav
+        nav = ttk.Frame(body, width=200, padding=(8, 8))
+        nav.pack(side='left', fill='y')
+
+        # Buttons
+        btn_cfg = dict(style='Accent.TButton')
+        WidgetFactory.create_button(nav, text='🏢 Sociétés', command=lambda: self.show_page('societe'), **btn_cfg).pack(fill='x', pady=6)
+        WidgetFactory.create_button(nav, text='👥 Associés', command=lambda: self.show_page('associe'), **btn_cfg).pack(fill='x', pady=6)
+        WidgetFactory.create_button(nav, text='📄 Contrats', command=lambda: self.show_page('contrat'), **btn_cfg).pack(fill='x', pady=6)
+
+        # Action buttons
+        act_frame = ttk.Frame(nav, padding=(0, 12))
+        act_frame.pack(side='bottom', fill='x')
+        WidgetFactory.create_button(act_frame, text='➕ Ajouter', command=lambda: self._on_action('add'), **btn_cfg).pack(fill='x', pady=3)
+        WidgetFactory.create_button(act_frame, text='✏️ Modifier', command=lambda: self._on_action('edit'), **btn_cfg).pack(fill='x', pady=3)
+        WidgetFactory.create_button(act_frame, text='🗑️ Supprimer', command=lambda: self._on_action('delete'), **btn_cfg).pack(fill='x', pady=3)
+        WidgetFactory.create_button(act_frame, text='🔄 Actualiser', command=lambda: self._on_action('refresh'), **btn_cfg).pack(fill='x', pady=3)
+
+        # Content area
+        self.content = ttk.Frame(body, padding=8)
+        self.content.pack(side='left', fill='both', expand=True)
+
+        # Pages
+        self.pages = {}
+        self.current_page = None
+
+        self.pages['societe'] = self._create_table_page('Sociétés', self._societe_columns())
+        self.pages['associe'] = self._create_table_page('Associés', self._associe_columns())
+        self.pages['contrat'] = self._create_table_page('Contrats', self._contrat_columns())
+
+        self.show_page('societe')
+
+    def _build_status(self):
+        self.status = ttk.Label(self, text='Prêt', relief='sunken', anchor='w')
+        self.status.pack(side='bottom', fill='x')
+
+    # --- Pages / tables ---
+    def _create_table_page(self, title, columns):
+        frame = ttk.Frame(self.content)
+        hdr = ttk.Label(frame, text=title, font=('Segoe UI', 10, 'bold'))
+        hdr.pack(anchor='w')
+
+        tree = ttk.Treeview(frame, columns=columns, show='headings')
+        for c in columns:
+            tree.heading(c, text=c)
+            tree.column(c, width=120, minwidth=60)
+
+        vsb = ttk.Scrollbar(frame, orient='vertical', command=tree.yview)
+        hsb = ttk.Scrollbar(frame, orient='horizontal', command=tree.xview)
+        tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+        vsb.pack(side='right', fill='y')
+        hsb.pack(side='bottom', fill='x')
+        tree.pack(fill='both', expand=True)
+
+        # keep reference
+        frame._tree = tree
+        return frame
+
+    def _societe_columns(self):
+        return [c for c in _const.societe_headers if not c.startswith('ID_')]
+
+    def _associe_columns(self):
+        cols = ['DEN_STE']
+        cols.extend([c for c in _const.associe_headers if not c.startswith('ID_')][2:])
+        return cols
+
+    def _contrat_columns(self):
+        cols = ['DEN_STE']
+        cols.extend([c for c in _const.contrat_headers if not c.startswith('ID_')][2:])
+        return cols
+
+    # --- Data loading ---
+    def _load_data(self):
+        self.status.config(text='Chargement des données...')
+        excel_path = PathManager.get_database_path(_const.DB_FILENAME)
+        if pd is None:
+            # pandas missing: show placeholder
+            self._df = None
+            self.status.config(text='pandas non disponible — données non chargées')
+            return
+
+        try:
+            if not excel_path.exists():
+                self._df = pd.DataFrame(columns=self._societe_columns())
+                self.status.config(text='Aucune base de données trouvée — vide')
+                return
+
+            # Try reading the three sheets
+            xls = pd.ExcelFile(excel_path)
+            sheets = [str(s).lower() for s in xls.sheet_names]
+
+            soc_df = pd.read_excel(excel_path, sheet_name='Societes', dtype=str).fillna('') if 'societes' in sheets else pd.DataFrame(columns=_const.societe_headers)
+            assoc_df = pd.read_excel(excel_path, sheet_name='Associes', dtype=str).fillna('') if 'associes' in sheets else pd.DataFrame(columns=_const.associe_headers)
+            contrat_df = pd.read_excel(excel_path, sheet_name='Contrats', dtype=str).fillna('') if 'contrats' in sheets else pd.DataFrame(columns=_const.contrat_headers)
+
+            # Build combined df for easy lookups: keep societes rows and join associes/contrats where possible
+            # For display we will populate each tree separately
+            self._soc_df = soc_df
+            self._assoc_df = assoc_df
+            self._contrat_df = contrat_df
+            self.status.config(text=f'Données chargées: societes={len(soc_df)}, associes={len(assoc_df)}, contrats={len(contrat_df)}')
+            self._refresh_tables()
+        except Exception as e:
+            ErrorHandler.handle_error(e, 'Erreur lors du chargement des données', show_dialog=False)
+            self.status.config(text='Erreur lors du chargement des données')
+
+    # --- Table population ---
+    def _refresh_tables(self):
+        # Societes
+        try:
+            tree = self.pages['societe']._tree
+            tree.delete(*tree.get_children())
+            if getattr(self, '_soc_df', None) is not None:
+                for _, r in self._soc_df.iterrows():
+                    vals = [r.get(c, '') for c in self._societe_columns()]
+                    tree.insert('', 'end', values=vals)
+        except Exception:
+            pass
+
+        # Associes (grouped by DEN_STE)
+        try:
+            tree = self.pages['associe']._tree
+            tree.delete(*tree.get_children())
+            if getattr(self, '_assoc_df', None) is not None and not self._assoc_df.empty:
+                # Build parents per company (DEN_STE) by linking ID_SOCIETE to soc_df
+                parents = {}
+                for _, r in self._assoc_df.iterrows():
+                    # try to find company name
+                    den = None
+                    try:
+                        sid = r.get('ID_SOCIETE', '')
+                        if sid and getattr(self, '_soc_df', None) is not None and 'ID_SOCIETE' in self._soc_df.columns:
+                            match = self._soc_df[self._soc_df['ID_SOCIETE'].astype(str).str.strip() == str(sid).strip()]
+                            if not match.empty:
+                                den = match.iloc[0].get('DEN_STE', '')
+                    except Exception:
+                        den = None
+                    if not den:
+                        den = r.get('DEN_STE', '') or 'Sans société'
+
+                    if den not in parents:
+                        parents[den] = tree.insert('', 'end', values=[den] + ['']*(len(self._associe_columns())-1))
+
+                    values = [den]
+                    for c in self._associe_columns()[1:]:
+                        try:
+                            values.append(r.get(c, ''))
+                        except Exception:
+                            values.append('')
+                    tree.insert(parents[den], 'end', values=values)
+        except Exception:
+            pass
+
+        # Contrats
+        try:
+            tree = self.pages['contrat']._tree
+            tree.delete(*tree.get_children())
+            if getattr(self, '_contrat_df', None) is not None and not self._contrat_df.empty:
+                parents = {}
+                for _, r in self._contrat_df.iterrows():
+                    den = None
+                    try:
+                        sid = r.get('ID_SOCIETE', '')
+                        if sid and getattr(self, '_soc_df', None) is not None and 'ID_SOCIETE' in self._soc_df.columns:
+                            match = self._soc_df[self._soc_df['ID_SOCIETE'].astype(str).str.strip() == str(sid).strip()]
+                            if not match.empty:
+                                den = match.iloc[0].get('DEN_STE', '')
+                    except Exception:
+                        den = None
+                    if not den:
+                        den = r.get('DEN_STE', '') or 'Sans société'
+
+                    if den not in parents:
+                        parents[den] = tree.insert('', 'end', values=[den] + ['']*(len(self._contrat_columns())-1))
+
+                    values = [den]
+                    for c in self._contrat_columns()[1:]:
+                        try:
+                            values.append(r.get(c, ''))
+                        except Exception:
+                            values.append('')
+                    tree.insert(parents[den], 'end', values=values)
+        except Exception:
+            pass
+
+    # --- Actions ---
+    def _on_action(self, action: str):
+        # Build payload where applicable
+        payload = None
+        if action in ('edit', 'delete'):
+            # Look at current visible page's tree selection
+            page = self.current_page or 'societe'
+            frame = self.pages.get(page)
+            tree = getattr(frame, '_tree', None) if frame is not None else None
+            if tree is None:
+                messagebox.showwarning('Aucune sélection', 'Aucune donnée disponible à sélectionner.')
+                return
+            sel = tree.selection()
+            if not sel:
+                messagebox.showwarning('Sélection requise', 'Veuillez sélectionner un élément.')
+                return
+            try:
+                item = tree.item(sel[0])
+                den = item.get('values', [''])[0]
+                if den and getattr(self, '_soc_df', None) is not None:
+                    m = self._soc_df[self._soc_df['DEN_STE'].astype(str).str.strip().str.lower() == str(den).strip().lower()]
+                    if not m.empty:
+                        payload = m.iloc[0].to_dict()
+                    else:
+                        payload = {'DEN_STE': den}
+            except Exception:
+                payload = None
+
+        if action == 'refresh':
+            self._load_data()
+
+        # Close and hand control to main form if available
+        try:
+            # Restore parent before handing control
+            self._on_close(call_parent=False)
+        except Exception:
+            pass
+
+        top = getattr(self.parent, 'main_form', None)
+        if top is not None and hasattr(top, 'handle_dashboard_action'):
+            try:
+                top.handle_dashboard_action(action, payload)
+            except Exception:
+                pass
+
+    # --- UI helpers ---
+    def show_page(self, key: str):
+        # hide all
+        for k, frame in self.pages.items():
+            frame.pack_forget()
+        # show requested
+        frame = self.pages.get(key)
+        if frame is not None:
+            frame.pack(fill='both', expand=True)
+            self.current_page = key
+            # refresh visible data
+            self._refresh_tables()
+
+    def _update_clock(self):
+        try:
+            now = datetime.now()
+            self.date_label.config(text=now.strftime('%A %d %B %Y'))
+            self.clock_label.config(text=now.strftime('%H:%M:%S'))
+        except Exception:
+            pass
+        try:
+            self.after(1000, self._update_clock)
+        except Exception:
+            pass
+
+    def _on_close(self, call_parent=True):
+        # Restore parent state
+        try:
+            if getattr(self, '_parent_disabled', False):
+                try:
+                    self.parent.attributes('-disabled', False)
+                except Exception:
+                    pass
+            elif getattr(self, '_parent_withdrawn', False):
+                try:
+                    self.parent.deiconify()
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+        # Release modal grab
+        try:
+            self.grab_release()
+        except Exception:
+            pass
+
+        # Destroy window
+        try:
+            self.destroy()
+        except Exception:
+            try:
+                self.withdraw()
+            except Exception:
+                pass
+
+        # Optional callback on parent
+        if call_parent:
+            cb = getattr(self.parent, 'on_dashboard_closed', None)
+            if callable(cb):
+                try:
+                    cb()
+                except Exception:
+                    pass
+import tkinter as tk
+from tkinter import ttk, messagebox
+from typing import Optional, Any
 import pandas as pd
 from pathlib import Path
 import logging
+from datetime import datetime
 from ..utils.constants import (
     societe_headers, associe_headers, contrat_headers,
     DenSte, Civility, Formjur, Capital, PartsSocial
@@ -23,6 +419,27 @@ class DashboardView(tk.Toplevel):
         # Make window modal
         self.transient(parent)
         self.grab_set()
+
+        # Try to visually disable or hide the parent window so it appears
+        # "on hold" while the dashboard is open. On Windows, attributes
+        # ('-disabled', True) will grey out the parent. Fall back to withdraw
+        # if disabling isn't supported. Track which operation we performed so
+        # we can restore the parent on close.
+        self._parent_was_disabled = False
+        self._parent_was_withdrawn = False
+        try:
+            try:
+                parent.attributes('-disabled', True)
+                self._parent_was_disabled = True
+            except Exception:
+                try:
+                    parent.withdraw()
+                    self._parent_was_withdrawn = True
+                except Exception:
+                    # If we can't hide or disable, continue without failing
+                    pass
+        except Exception:
+            pass
 
         # Nettoyage lors de la destruction
         self.bind("<Destroy>", self._cleanup)
@@ -56,52 +473,53 @@ class DashboardView(tk.Toplevel):
 
     def setup_styles(self):
         """Configure les styles pour le dashboard"""
+        # Dark mode friendly colors (fall back to sensible defaults)
+        bg = self.theme_manager.colors.get('bg', '#2b2b2b')
+        fg = self.theme_manager.colors.get('fg', '#eaeaea')
+        accent = '#4a90e2'
+        accent_active = '#2171cd'
+
+        # Set window background
+        try:
+            self.configure(bg=bg)
+        except Exception:
+            pass
+
+        # Style des frames
+        self.style.configure('Dashboard.TFrame', background=bg, foreground=fg, padding=10)
+
+        # Style des labels
+        self.style.configure('Dashboard.TLabel', background=bg, foreground=fg)
+
         # Style des tableaux
-        self.style.configure(
-            'Dashboard.Treeview',
-            rowheight=25,
-            fieldbackground=self.theme_manager.colors['bg']
-        )
-        self.style.configure(
-            'Dashboard.Treeview.Heading',
-            background="#4a90e2",
-            foreground="white",
-            relief="flat",
-            font=('Segoe UI', 9, 'bold')
-        )
-        self.style.map(
-            'Dashboard.Treeview.Heading',
-            background=[("active", "#2171cd")]
-        )
+        self.style.configure('Dashboard.Treeview', rowheight=25, fieldbackground=bg, background=bg, foreground=fg)
+        self.style.configure('Dashboard.Treeview.Heading', background=accent, foreground='white', relief='flat', font=('Segoe UI', 9, 'bold'))
+        self.style.map('Dashboard.Treeview.Heading', background=[('active', accent_active)])
 
-        # Style des contrôles
-        self.style.configure(
-            'Dashboard.TButton',
-            padding=6,
-            relief="flat",
-            background="#4a90e2",
-            foreground="white"
-        )
+        # Style des contrôles (boutons)
+        self.style.configure('Dashboard.TButton', padding=6, relief='flat', background=accent, foreground='white')
 
-        # Style des filtres
-        self.style.configure(
-            'Dashboard.TFrame',
-            padding=10
-        )
+        # Optional: style for notebook / tabs if used elsewhere
+        self.style.configure('Dashboard.TNotebook', background=bg)
 
     def setup_layout(self):
         """Configure la disposition des éléments"""
-        # Barre d'outils
-        self.create_toolbar()
+        # En-tête avec date et horloge
+        self.create_header()
 
-        # Zone principale avec les tableaux
-        self.create_main_view()
+        # Zone principale avec navigation et contenu (3 pages)
+        self.create_nav_and_content()
 
         # Barre de statut
         self.create_status_bar()
 
     def create_toolbar(self):
-        """Crée la barre d'outils avec recherche et filtres"""
+        """Crée la barre d'outils avec recherche et filtres
+
+        NOTE: kept for backward compatibility but the main layout now
+        uses a left navigation and pages. This toolbar is still available
+        if needed (placed under the header).
+        """
         toolbar = ttk.Frame(self, style='Dashboard.TFrame')
         toolbar.pack(fill="x", padx=10, pady=5)
 
@@ -141,86 +559,194 @@ class DashboardView(tk.Toplevel):
     def create_action_buttons(self, parent):
         """Crée les boutons d'action"""
         buttons = [
-            ("➕ Ajouter", self.add_record, "Ajouter un nouvel enregistrement"),
-            ("✏️ Modifier", self.edit_record, "Modifier l'enregistrement sélectionné"),
-            ("🗑️ Supprimer", self.delete_record, "Supprimer l'enregistrement sélectionné"),
-            ("🔄 Actualiser", self.refresh_data, "Actualiser les données")
+            ("➕ Ajouter", 'add', "Ajouter un nouvel enregistrement"),
+            ("✏️ Modifier", 'edit', "Modifier l'enregistrement sélectionné"),
+            ("🗑️ Supprimer", 'delete', "Supprimer l'enregistrement sélectionné"),
+            ("🔄 Actualiser", 'refresh', "Actualiser les données")
         ]
 
-        for text, command, tooltip in buttons:
+        for text, action_key, tooltip in buttons:
+            # Create a command that will inspect the current selection (if any),
+            # build a payload and then close the dashboard and hand control to
+            # the main generator.
+            def _make_cmd(a):
+                return lambda: self._action_button_clicked(a)
+
             WidgetFactory.create_button(
                 parent,
                 text=text,
-                command=command,
+                command=_make_cmd(action_key),
                 style='Dashboard.TButton',
                 tooltip=tooltip
             ).pack(side="left", padx=5)
 
-    def create_main_view(self):
-        """Crée la vue principale avec les tableaux"""
-        # Frame principal avec scrollbar
-        main_frame = ttk.Frame(self)
-        main_frame.pack(fill="both", expand=True, padx=10, pady=5)
+    def _action_button_clicked(self, action_key: str):
+        """Handle clicks from Ajouter/Modifier/Supprimer/Actualiser buttons.
 
-        # Canvas pour le scrolling
-        canvas = tk.Canvas(main_frame)
-        scrollbar = ttk.Scrollbar(main_frame, orient="vertical",
-                                command=canvas.yview)
-        scrollable_frame = ttk.Frame(canvas)
+        This will attempt to collect the selected record (if applicable)
+        from the currently visible page and pass it as a payload to the
+        main form when reopening the generator.
+        """
+        payload = None
 
-        scrollable_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
+        # Determine which page is currently visible
+        current = getattr(self, 'current_page_key', 'societe')
+        tree = None
+        try:
+            tree = getattr(self, f"{current}_tree", None)
+        except Exception:
+            tree = None
 
-        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-
-        # Gestion du défilement avec la molette
-        def _on_mousewheel(event):
+        if action_key in ('edit', 'delete'):
+            # Need a selected item to act on
+            if tree is None:
+                messagebox.showwarning('Sélection requise', 'Aucun élément sélectionnable sur cette page.')
+                return
+            sel = tree.selection()
+            if not sel:
+                messagebox.showwarning('Sélection requise', 'Veuillez sélectionner un élément.')
+                return
+            # Get DEN_STE from first column and look up the full row in self.df
             try:
-                canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-            except Exception as e:
+                item = tree.item(sel[0])
+                den = item.get('values', [None])[0]
+                if den:
+                    # find first matching row
+                    try:
+                        row = self.df[self.df['DEN_STE'].astype(str).str.strip().str.lower() == str(den).strip().lower()]
+                        if not row.empty:
+                            payload = row.iloc[0].to_dict()
+                    except Exception:
+                        # best-effort: build minimal payload
+                        payload = {'DEN_STE': den}
+            except Exception:
+                messagebox.showerror('Erreur', 'Impossible de lire la sélection.')
+                return
+
+        if action_key == 'refresh':
+            # perform refresh first so generator sees up-to-date data
+            try:
+                self.refresh_data()
+            except Exception:
                 pass
 
-        # Lier l'événement de la molette
-        canvas.bind_all("<MouseWheel>", _on_mousewheel)
+        # Now close dashboard and open generator, handing over the action and payload
+        self._open_generator_and_focus(action_key, payload)
 
-        # Gestion du redimensionnement
-        def _on_canvas_configure(event):
-            canvas.itemconfig(
-                canvas.find_withtag("all")[0],
-                width=event.width
-            )
-        canvas.bind("<Configure>", _on_canvas_configure)
+    def create_main_view(self):
+        """Legacy main view kept for compatibility.
 
-        # Tableaux
-        self.create_data_tables(scrollable_frame)
-
-        # Placement des éléments
-        scrollbar.pack(side="right", fill="y")
-        canvas.pack(side="left", fill="both", expand=True)
+        The new dashboard layout uses `create_nav_and_content` which
+        builds three separate pages (Sociétés, Associés, Contrats).
+        """
+        # Keep a simple placeholder in case other code expects this method
+        placeholder = ttk.Frame(self)
+        placeholder.pack(fill="both", expand=True)
 
     def create_data_tables(self, parent):
         """Crée les tableaux de données"""
-        # Table des sociétés
+        # NOTE: this helper is now rarely used; prefer create_nav_and_content
+        # which creates dedicated pages. We'll still provide the three tables
+        # inside the given parent if called.
         self.societe_tree = self.create_table_section(
             parent, "Sociétés", self.get_societe_columns()
         )
 
-        # Table des associés
         self.associe_tree = self.create_table_section(
             parent, "Associés", self.get_associe_columns()
         )
 
-        # Table des contrats
         self.contrat_tree = self.create_table_section(
             parent, "Contrats", self.get_contrat_columns()
         )
 
+        return (self.societe_tree, self.associe_tree, self.contrat_tree)
+
+    def create_header(self):
+        """Crée l'en-tête contenant la date et une horloge en temps réel"""
+        header = ttk.Frame(self, style='Dashboard.TFrame')
+        header.pack(fill='x', padx=10, pady=(10, 5))
+
+        # Left: App title
+        title = ttk.Label(header, text="Tableau de Bord — Centre de Domiciliation",
+                          font=('Segoe UI', 12, 'bold'))
+        title.pack(side='left')
+
+        # Right: date and clock
+        right = ttk.Frame(header, style='Dashboard.TFrame')
+        right.pack(side='right')
+
+        self.date_label = ttk.Label(right, text="", font=('Segoe UI', 10))
+        self.date_label.pack(side='top', anchor='e')
+
+        # Use a tk.Label for the clock so we can easily style it bold and larger
+        self.clock_label = tk.Label(right, text="", font=('Segoe UI', 14, 'bold'))
+        self.clock_label.pack(side='top', anchor='e')
+
+        # Initialize clock update loop
+        self._update_clock()
+
+    def create_nav_and_content(self):
+        """Crée la zone de navigation (gauche) et le contenu (droite) avec 3 pages"""
+        container = ttk.Frame(self)
+        container.pack(fill='both', expand=True, padx=10, pady=5)
+
+        # Left navigation
+        nav = ttk.Frame(container, width=180, style='Dashboard.TFrame')
+        nav.pack(side='left', fill='y', padx=(0,10))
+
+        btn_soc = WidgetFactory.create_button(
+            nav, text="🏢 Sociétés", command=lambda: self.show_page('societe'),
+            style='Dashboard.TButton', tooltip='Afficher les sociétés')
+        btn_soc.pack(fill='x', pady=5)
+
+        btn_assoc = WidgetFactory.create_button(
+            nav, text="👥 Associés", command=lambda: self.show_page('associe'),
+            style='Dashboard.TButton', tooltip='Afficher les associés')
+        btn_assoc.pack(fill='x', pady=5)
+
+        btn_contrat = WidgetFactory.create_button(
+            nav, text="📄 Contrats", command=lambda: self.show_page('contrat'),
+            style='Dashboard.TButton', tooltip='Afficher les contrats')
+        btn_contrat.pack(fill='x', pady=5)
+
+        # Optional toolbar under nav
+        self.create_toolbar()
+
+        # Content area (pages)
+        self.content = ttk.Frame(container)
+        self.content.pack(side='left', fill='both', expand=True)
+
+        # Create pages
+        self.pages = {}
+
+        # Societe page
+        soc_page = ttk.Frame(self.content)
+        soc_page.pack(fill='both', expand=True)
+        self.societe_tree = self.create_table_section(soc_page, "Sociétés", self.get_societe_columns())
+        self.pages['societe'] = soc_page
+
+        # Associe page
+        assoc_page = ttk.Frame(self.content)
+        assoc_page.pack_forget()
+        self.associe_tree = self.create_table_section(assoc_page, "Associés", self.get_associe_columns())
+        self.pages['associe'] = assoc_page
+
+        # Contrat page
+        contrat_page = ttk.Frame(self.content)
+        contrat_page.pack_forget()
+        self.contrat_tree = self.create_table_section(contrat_page, "Contrats", self.get_contrat_columns())
+        self.pages['contrat'] = contrat_page
+
+        # Start with societes page
+        self.show_page('societe')
+
     def create_table_section(self, parent, title, columns):
         """Crée une section de tableau avec titre"""
-        frame = ttk.LabelFrame(parent, text=title)
+        # Use a plain Frame with Label for better dark theme control
+        frame = ttk.Frame(parent, style='Dashboard.TFrame')
+        title_label = ttk.Label(frame, text=title, font=('Segoe UI', 10, 'bold'))
+        title_label.pack(anchor='w', padx=5, pady=(0,5))
         frame.pack(fill="x", padx=5, pady=5)
 
         # Création du tableau
@@ -241,13 +767,47 @@ class DashboardView(tk.Toplevel):
         y_scroll = ttk.Scrollbar(frame, orient="vertical", command=tree.yview)
         x_scroll = ttk.Scrollbar(frame, orient="horizontal", command=tree.xview)
         tree.configure(yscrollcommand=y_scroll.set, xscrollcommand=x_scroll.set)
-
         # Placement des éléments
         y_scroll.pack(side="right", fill="y")
         x_scroll.pack(side="bottom", fill="x")
         tree.pack(fill="both", expand=True)
 
+        frame.pack(fill='both', expand=True, padx=5, pady=5)
+
         return tree
+
+    def show_page(self, key: str):
+        """Affiche la page demandée et cache les autres"""
+        # remember which page is visible so action buttons know where to look
+        self.current_page_key = key
+        for k, page in self.pages.items():
+            if k == key:
+                page.pack(fill='both', expand=True)
+            else:
+                page.pack_forget()
+
+        # Refresh to ensure the visible page shows current data
+        try:
+            self.refresh_display()
+        except Exception:
+            pass
+
+    def _update_clock(self):
+        """Met à jour la date et l'horloge toutes les secondes"""
+        try:
+            now = datetime.now()
+            # Example: 'Wednesday 29 October 2025' (locale independent)
+            self.date_label.config(text=now.strftime("%A %d %B %Y"))
+            self.clock_label.config(text=now.strftime("%H:%M:%S"))
+        except Exception:
+            # ignore update errors
+            pass
+        finally:
+            # schedule next update
+            try:
+                self.after(1000, self._update_clock)
+            except Exception:
+                pass
 
     def create_status_bar(self):
         """Crée la barre de statut"""
@@ -258,6 +818,70 @@ class DashboardView(tk.Toplevel):
             anchor=tk.W
         )
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+
+    def _open_generator_and_focus(self, action: Optional[str] = None, payload: Optional[dict] = None):
+        """Close the dashboard and return focus to the main application.
+
+        action can be 'add', 'edit', 'delete', or 'refresh' to hint the
+        main form what the user wants to do. We perform safe checks so this
+        works even if the parent doesn't expose the expected attributes.
+        """
+        # Release modal grab if set
+        try:
+            self.grab_release()
+        except Exception:
+            pass
+
+        # Close/destroy the dashboard
+        try:
+            self.destroy()
+        except Exception:
+            try:
+                self.withdraw()
+            except Exception:
+                pass
+
+        # Bring parent (main app) back to front and give it focus
+        top = getattr(self, 'parent', None)
+        if top is not None:
+            # Restore parent state if we disabled or withdrew it
+            try:
+                if getattr(self, '_parent_was_disabled', False):
+                    try:
+                        top.attributes('-disabled', False)
+                    except Exception:
+                        pass
+                elif getattr(self, '_parent_was_withdrawn', False):
+                    try:
+                        top.deiconify()
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+            try:
+                top.deiconify()
+            except Exception:
+                pass
+            try:
+                top.lift()
+            except Exception:
+                pass
+            try:
+                top.focus_force()
+            except Exception:
+                pass
+
+            # If the main app exposes its MainForm, prepare it according to the action
+            mf = getattr(top, 'main_form', None)
+            if mf is not None:
+                try:
+                    if action == 'add':
+                        mf.reset()
+                        mf.show_page(0)
+                    elif action in ('edit', 'delete', 'refresh'):
+                        mf.show_page(0)
+                except Exception:
+                    pass
 
     def get_societe_columns(self):
         """Retourne les colonnes pour le tableau des sociétés"""
@@ -284,15 +908,143 @@ class DashboardView(tk.Toplevel):
             # Chemin du fichier de base de données
             excel_path = PathManager.get_database_path('DataBase_domiciliation.xlsx')
 
+            # If file doesn't exist, create an empty DataBaseDom sheet with canonical headers
             if not excel_path.exists():
                 self.df = pd.DataFrame(columns=self.excel_headers)
-                self.save_data(excel_path)
+                # create the file with a DataBaseDom sheet so future reads succeed
+                try:
+                    with pd.ExcelWriter(excel_path, engine='openpyxl') as writer:
+                        self.df.to_excel(writer, sheet_name='DataBaseDom', index=False)
+                except Exception:
+                    # fallback to save_data method
+                    self.save_data(excel_path)
                 logger.info("Nouvelle base de données créée")
                 return
 
-            # Charger les données
-            self.df = pd.read_excel(excel_path, sheet_name="DataBaseDom")
-            logger.info(f"Données chargées: {len(self.df)} enregistrements")
+            # Try to load the canonical aggregated sheet first. If it's missing,
+            # attempt to build a DataFrame from 'Societes' (and leave other fields empty).
+            try:
+                self.df = pd.read_excel(excel_path, sheet_name="DataBaseDom")
+                logger.info(f"Données chargées (DataBaseDom): {len(self.df)} enregistrements")
+            except ValueError as e:
+                # Sheet not found — fallback
+                logger.debug(f"DataBaseDom sheet not found: {e}")
+                try:
+                    xls = pd.ExcelFile(excel_path)
+                    sheets = [str(s).lower() for s in xls.sheet_names]
+                except Exception:
+                    sheets = []
+
+                if 'societes' in sheets:
+                    try:
+                        soc_df = pd.read_excel(excel_path, sheet_name='Societes', dtype=str).fillna('')
+                    except Exception:
+                        soc_df = pd.DataFrame()
+
+                    # Read associes and contrats if present
+                    try:
+                        assoc_df = pd.read_excel(excel_path, sheet_name='Associes', dtype=str).fillna('')
+                    except Exception:
+                        assoc_df = pd.DataFrame(columns=[c for c in associe_headers])
+                    try:
+                        contrat_df = pd.read_excel(excel_path, sheet_name='Contrats', dtype=str).fillna('')
+                    except Exception:
+                        contrat_df = pd.DataFrame(columns=[c for c in contrat_headers])
+
+                    # Helper to get societe row by ID or DEN_STE
+                    def find_societe_by_id(sid):
+                        if 'ID_SOCIETE' in soc_df.columns:
+                            m = soc_df[soc_df['ID_SOCIETE'].astype(str) == str(sid)]
+                            if not m.empty:
+                                return m.iloc[0].to_dict()
+                        return None
+
+                    def find_societe_by_name(name):
+                        if 'DEN_STE' in soc_df.columns:
+                            m = soc_df[soc_df['DEN_STE'].astype(str).str.strip().str.lower() == str(name).strip().lower()]
+                            if not m.empty:
+                                return m.iloc[0].to_dict()
+                        return None
+
+                    rows = []
+
+                    # For each associe, create a combined row (societe + associe)
+                    if not assoc_df.empty:
+                        for _, arow in assoc_df.iterrows():
+                            soc = None
+                            if 'ID_SOCIETE' in arow and str(arow.get('ID_SOCIETE', '')).strip():
+                                soc = find_societe_by_id(arow.get('ID_SOCIETE'))
+                            if soc is None and 'DEN_STE' in arow and str(arow.get('DEN_STE', '')).strip():
+                                soc = find_societe_by_name(arow.get('DEN_STE'))
+                            combined = {h: '' for h in self.excel_headers}
+                            # fill societe fields
+                            if soc:
+                                for sh in soc_df.columns:
+                                    if sh in combined:
+                                        combined[sh] = soc.get(sh, '')
+                            # fill associe fields
+                            for col in associe_headers:
+                                if col in ('ID_ASSOCIE', 'ID_SOCIETE'):
+                                    continue
+                                combined[col] = arow.get(col, '') if col in arow.index else ''
+                            rows.append(combined)
+
+                    # For each contrat, create a combined row (societe + contrat)
+                    if not contrat_df.empty:
+                        for _, crow in contrat_df.iterrows():
+                            soc = None
+                            if 'ID_SOCIETE' in crow and str(crow.get('ID_SOCIETE', '')).strip():
+                                soc = find_societe_by_id(crow.get('ID_SOCIETE'))
+                            if soc is None and 'DEN_STE' in crow and str(crow.get('DEN_STE', '')).strip():
+                                soc = find_societe_by_name(crow.get('DEN_STE'))
+                            combined = {h: '' for h in self.excel_headers}
+                            # fill societe fields
+                            if soc:
+                                for sh in soc_df.columns:
+                                    if sh in combined:
+                                        combined[sh] = soc.get(sh, '')
+                            # fill contrat fields
+                            for col in contrat_headers:
+                                if col in ('ID_CONTRAT', 'ID_SOCIETE'):
+                                    continue
+                                combined[col] = crow.get(col, '') if col in crow.index else ''
+                            rows.append(combined)
+
+                    # Add societe-only rows for any societes not represented yet
+                    represented = set()
+                    for r in rows:
+                        den = (r.get('DEN_STE') or '').strip()
+                        if den:
+                            represented.add(den.lower())
+                    for _, srow in soc_df.iterrows():
+                        den = str(srow.get('DEN_STE', '')).strip()
+                        if den and den.lower() in represented:
+                            continue
+                        combined = {h: '' for h in self.excel_headers}
+                        for sh in soc_df.columns:
+                            if sh in combined:
+                                combined[sh] = srow.get(sh, '')
+                        rows.append(combined)
+
+                    self.df = pd.DataFrame(rows, columns=self.excel_headers)
+                    logger.info(f"Données construites à partir des feuilles: societes={len(soc_df)}, associes={len(assoc_df)}, contrats={len(contrat_df)} -> total rows {len(self.df)}")
+                    # Persist a DataBaseDom sheet optionally for compatibility (non-destructive)
+                    try:
+                        with pd.ExcelWriter(excel_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+                            self.df.to_excel(writer, sheet_name='DataBaseDom', index=False)
+                    except Exception:
+                        logger.debug('Failed to persist DataBaseDom sheet after building from separate sheets')
+                else:
+                    # No suitable sheets found — create empty df and persist DataBaseDom
+                    self.df = pd.DataFrame(columns=self.excel_headers)
+                    try:
+                        with pd.ExcelWriter(excel_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+                            self.df.to_excel(writer, sheet_name='DataBaseDom', index=False)
+                    except Exception:
+                        try:
+                            self.save_data(excel_path)
+                        except Exception:
+                            pass
 
             # Mettre à jour l'affichage
             self.refresh_display()
@@ -587,195 +1339,43 @@ class DashboardView(tk.Toplevel):
 
     def _cleanup(self, event=None):
         """Nettoie les événements lors de la destruction du widget"""
+        # Remove any global bindings we may have added
         try:
             self.unbind_all("<MouseWheel>")
+        except Exception:
+            pass
+
+        try:
             self.unbind("<Destroy>")
         except Exception:
-            pass  # Ignorer les erreurs de nettoyage
+            pass
 
-
-class DashboardFrame(ttk.Frame):
-    """Embeddable dashboard frame for the main window.
-
-    Provides a header with today's date and a live clock and three
-    buttons to switch between embedded pages: Sociétés, Associés, Contrats.
-    This reuses the existing SocieteForm, AssocieForm and ContratForm classes
-    so their logic and fields remain unchanged.
-    """
-    def __init__(self, parent, values_dict=None):
-        super().__init__(parent)
-        self.parent = parent
-        self.values = values_dict or {}
-
-        # Theme manager / widgets
+        # Release modal grab if still set
         try:
-            self.theme_manager = ThemeManager(self.winfo_toplevel())
-            self.style = self.theme_manager.style
-        except Exception:
-            self.theme_manager = None
-            self.style = None
-
-        # Header with date and clock
-        header = ttk.Frame(self)
-        header.pack(fill='x', padx=8, pady=(8, 4))
-
-        self.date_label = ttk.Label(header, text='')
-        self.date_label.pack(side='left')
-
-        self.clock_label = ttk.Label(header, text='')
-        self.clock_label.pack(side='left', padx=(8, 0))
-
-        # Navigation buttons
-        nav_frame = ttk.Frame(header)
-        nav_frame.pack(side='right')
-
-        self.btn_societe = WidgetFactory.create_button(nav_frame, text='Sociétés', command=lambda: self.show_page('societe'), style='Dashboard.TButton')
-        self.btn_societe.pack(side='left', padx=6)
-
-        self.btn_associes = WidgetFactory.create_button(nav_frame, text='Associés', command=lambda: self.show_page('associes'), style='Dashboard.TButton')
-        self.btn_associes.pack(side='left', padx=6)
-
-        self.btn_contrat = WidgetFactory.create_button(nav_frame, text='Contrats', command=lambda: self.show_page('contrat'), style='Dashboard.TButton')
-        self.btn_contrat.pack(side='left', padx=6)
-
-        # Container for pages
-        self.pages_container = ttk.Frame(self)
-        self.pages_container.pack(fill='both', expand=True, padx=6, pady=6)
-
-        # Instantiate forms but keep only one visible
-        from .societe_form import SocieteForm
-        from .associe_form import AssocieForm
-        from .contrat_form import ContratForm
-
-        self.societe_form = SocieteForm(self.pages_container, self.values.get('societe', {}))
-        self.societe_form.pack(fill='both', expand=True)
-
-        self.associe_form = AssocieForm(self.pages_container, self.theme_manager)
-        self.associe_form.pack(fill='both', expand=True)
-
-        self.contrat_form = ContratForm(self.pages_container, self.values.get('contrat', {}))
-        self.contrat_form.pack(fill='both', expand=True)
-
-        self.page_map = {
-            'societe': self.societe_form,
-            'associes': self.associe_form,
-            'contrat': self.contrat_form,
-        }
-
-        # Show default page
-        self.show_page('societe')
-
-        # Start clock
-        self._update_date_clock()
-
-    def _update_date_clock(self):
-        import datetime
-        now = datetime.datetime.now()
-        self.date_label.config(text=now.strftime('%Y-%m-%d'))
-        self.clock_label.config(text=now.strftime('%H:%M:%S'))
-        # Schedule next update in 1 second
-        try:
-            self.after(1000, self._update_date_clock)
+            self.grab_release()
         except Exception:
             pass
 
-    def show_page(self, key: str):
-        """Show the requested embedded page and hide others."""
-        for k, widget in self.page_map.items():
-            if k == key:
-                try:
-                    widget.lift()
-                    widget.pack(fill='both', expand=True)
-                except Exception:
-                    pass
-            else:
-                try:
-                    widget.pack_forget()
-                except Exception:
-                    pass
-
-    # Provide a small compatibility surface so toolbar buttons can call these
-    def open_configuration(self):
-        # Show a minimal configuration panel similar to MainForm.open_configuration
-        try:
-            top = tk.Toplevel(self.winfo_toplevel())
-            top.transient(self.winfo_toplevel())
-            top.title('Configuration')
-            top.resizable(False, False)
+        # Try to restore and focus the parent (main application)
+        top = getattr(self, 'parent', None)
+        if top is not None:
             try:
-                top.grab_set()
+                top.deiconify()
+            except Exception:
+                pass
+            try:
+                top.lift()
+            except Exception:
+                pass
+            try:
+                top.focus_force()
             except Exception:
                 pass
 
-            inner = ttk.Frame(top, padding=12)
-            inner.pack(fill='both', expand=True)
-            ttk.Label(inner, text='Thème', style='Header.TLabel').pack(anchor='w', pady=(0, 6))
-            theme_var = tk.StringVar(value=getattr(self.theme_manager.theme, 'mode', 'dark') if self.theme_manager else 'dark')
-            rb_dark = ttk.Radiobutton(inner, text='Sombre', variable=theme_var, value='dark')
-            rb_light = ttk.Radiobutton(inner, text='Clair', variable=theme_var, value='light')
-            rb_dark.pack(anchor='w')
-            rb_light.pack(anchor='w')
-
-            def _save():
+            # If parent exposes a callback for dashboard close, call it
+            cb = getattr(top, 'on_dashboard_closed', None)
+            if callable(cb):
                 try:
-                    if self.theme_manager:
-                        self.theme_manager.set_theme(theme_var.get())
-                    try:
-                        top.destroy()
-                    except Exception:
-                        pass
-                except Exception as e:
-                    messagebox.showerror('Erreur', f"Impossible d'enregistrer: {e}")
-
-            actions = ttk.Frame(inner)
-            actions.pack(fill='x', pady=(12, 0))
-            WidgetFactory.create_button(actions, text='Enregistrer', command=_save, style='Action.TButton').pack(side='right', padx=4)
-            WidgetFactory.create_button(actions, text='Fermer', command=lambda: top.destroy()).pack(side='right')
-
-            try:
-                WindowManager.center_window(top)
-            except Exception:
-                pass
-        except Exception:
-            messagebox.showerror('Erreur', "Impossible d'ouvrir la configuration")
-
-    def get_values(self):
-        vals = {}
-        try:
-            vals['societe'] = self.societe_form.get_values() if hasattr(self.societe_form, 'get_values') else {}
-            vals['associes'] = self.associe_form.get_values() if hasattr(self.associe_form, 'get_values') else []
-            vals['contrat'] = self.contrat_form.get_values() if hasattr(self.contrat_form, 'get_values') else {}
-        except Exception:
-            pass
-        self.values = vals
-        return vals
-
-    def set_values(self, values):
-        self.values = values or {}
-        try:
-            if 'societe' in self.values and hasattr(self.societe_form, 'set_values'):
-                self.societe_form.set_values(self.values['societe'])
-            if 'associes' in self.values and hasattr(self.associe_form, 'set_values'):
-                self.associe_form.set_values(self.values['associes'])
-            if 'contrat' in self.values and hasattr(self.contrat_form, 'set_values'):
-                self.contrat_form.set_values(self.values['contrat'])
-        except Exception:
-            pass
-
-    def add_record(self):
-        """Open the existing add-record dialog by creating a modal DashboardView and delegating."""
-        try:
-            dlg = DashboardView(self.winfo_toplevel())
-            # DashboardView is modal and handles the add dialog itself in add_record,
-            # so call its add_record method to show a consistent flow.
-            try:
-                dlg.add_record()
-            except Exception:
-                # If the method fails for some reason, just destroy the temporary view
-                try:
-                    dlg.destroy()
+                    cb()
                 except Exception:
                     pass
-        except Exception:
-            messagebox.showerror('Erreur', "Impossible d'ouvrir la fenêtre d'ajout")
-
