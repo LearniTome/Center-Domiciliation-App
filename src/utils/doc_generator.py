@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+import re
 import shutil
 from pathlib import Path
 from typing import Dict, List, Optional, Union, Callable
@@ -88,6 +89,12 @@ def render_templates(
         _date = None
 
     gen_date = _date.today().strftime("%Y-%m-%d") if _date else time.strftime("%Y-%m-%d")
+    # capture per-generation time so filenames can include precise timestamp
+    try:
+        from datetime import datetime as _datetime
+        gen_time = _datetime.now().strftime("%H-%M-%S")
+    except Exception:
+        gen_time = time.strftime("%H-%M-%S")
 
     # Determine company name from values (try several common keys, search nested 'societe')
     def _extract_company_name(vals: Dict) -> str:
@@ -144,6 +151,183 @@ def render_templates(
 
     report = []
 
+    def _build_context(vals: Dict) -> Dict:
+        """Build a flat context dict for docxtpl from nested values.
+
+        Keeps the original nested structure under keys 'societe', 'associes', 'contrat'
+        but also injects many alternative keys (uppercase canonical headers and
+        common form keys) to maximize chance of matching the variables used in
+        the .docx templates.
+        """
+        ctx: Dict = {}
+        if not isinstance(vals, dict):
+            return ctx
+
+        # keep nested
+        ctx['societe'] = vals.get('societe', {}) or {}
+        ctx['associes'] = vals.get('associes', []) or []
+        ctx['contrat'] = vals.get('contrat', {}) or {}
+
+        soc = ctx['societe']
+        # Societe mappings
+        soc_map = {
+            'denomination': 'DEN_STE', 'denomination_sociale': 'DEN_STE', 'den_ste': 'DEN_STE', 'name': 'DEN_STE',
+            'forme_juridique': 'FORME_JUR', 'ice': 'ICE', 'date_ice': 'DATE_ICE', 'capital': 'CAPITAL',
+            'parts_social': 'PART_SOCIAL', 'adresse': 'STE_ADRESS', 'tribunal': 'TRIBUNAL'
+        }
+        for fk, hk in soc_map.items():
+            v = None
+            try:
+                v = soc.get(fk)
+            except Exception:
+                v = None
+            if v:
+                ctx[hk] = v
+                # also lowercase friendly name
+                ctx[fk] = v
+            # (DATE_CONTRAT will be ensured after mapping the contrat dict below)
+
+        # If no DEN_STE found, try any string in soc
+        if 'DEN_STE' not in ctx:
+            for k, v in soc.items():
+                if isinstance(v, str) and v.strip():
+                    ctx['DEN_STE'] = v
+                    break
+
+        # Associe: prefer first associe for single-value templates
+        assoc_list = ctx['associes']
+        if assoc_list and isinstance(assoc_list, list) and len(assoc_list) > 0:
+            a = assoc_list[0] or {}
+            assoc_map = {
+                'civilite': 'CIVIL', 'prenom': 'PRENOM', 'nom': 'NOM', 'nationalite': 'NATIONALITY',
+                'num_piece': 'CIN_NUM', 'validite_piece': 'CIN_VALIDATY', 'date_naiss': 'DATE_NAISS',
+                'lieu_naiss': 'LIEU_NAISS', 'adresse': 'ADRESSE', 'telephone': 'PHONE', 'email': 'EMAIL',
+                'parts': 'PARTS', 'num_parts': 'PARTS', 'capital_detenu': 'CAPITAL_DETENU',
+                'est_gerant': 'IS_GERANT', 'qualite': 'QUALITY'
+            }
+            for fk, hk in assoc_map.items():
+                v = None
+                try:
+                    v = a.get(fk)
+                except Exception:
+                    v = None
+                if v is not None and v != '':
+                    ctx[hk] = v
+                    ctx[fk] = v
+
+            # Provide additional alias keys for templates that expect associe-prefixed
+            # or suffixed variable names. This helps catch documents using patterns
+            # like {{ASSOCIE_ADRESSE}} or {{ADRESSE_ASSOCIE}} or camelCase variants.
+            for base in ('ADRESSE', 'PHONE', 'EMAIL', 'QUALITY', 'NOM', 'PRENOM'):
+                if base in ctx:
+                    try:
+                        ctx[f'ASSOCIE_{base}'] = ctx[base]
+                        ctx[f'{base}_ASSOCIE'] = ctx[base]
+                        # also provide lowercase/camel variants
+                        ctx[base.lower()] = ctx[base]
+                        # camelCase (e.g., adresseAssocie)
+                        camel = base[0].lower() + base[1:].lower()
+                        ctx[f'{camel}Associe'] = ctx[base]
+                    except Exception:
+                        pass
+
+            # If this associe is marked as the gérant, provide GERANT_* aliases
+            try:
+                is_gerant = a.get('est_gerant') or a.get('est_gerant') == True or ctx.get('IS_GERANT')
+            except Exception:
+                is_gerant = False
+            if is_gerant:
+                try:
+                    # prefer already-normalized keys (from above) then fallback to raw a dict
+                    ger_nom = ctx.get('NOM') or a.get('nom')
+                    ger_prenom = ctx.get('PRENOM') or a.get('prenom')
+                    ger_adress = ctx.get('ADRESSE') or a.get('adresse')
+                    ger_phone = ctx.get('PHONE') or a.get('telephone')
+                    ger_email = ctx.get('EMAIL') or a.get('email')
+                    ger_quality = ctx.get('QUALITY') or a.get('qualite')
+                    ger_cin = ctx.get('CIN_NUM') or a.get('num_piece')
+
+                    if ger_adress:
+                        ctx['GERANT_ADRESS'] = ger_adress
+                    if ger_quality:
+                        ctx['GERANT_QUALITY'] = ger_quality
+                    if ger_nom:
+                        ctx['GERANT_NOM'] = ger_nom
+                    if ger_prenom:
+                        ctx['GERANT_PRENOM'] = ger_prenom
+                    if ger_phone:
+                        ctx['GERANT_PHONE'] = ger_phone
+                    if ger_email:
+                        ctx['GERANT_EMAIL'] = ger_email
+                    if ger_cin:
+                        ctx['GERANT_CIN'] = ger_cin
+                except Exception:
+                    pass
+
+        # Contrat mappings
+        c = ctx['contrat']
+        contrat_map = {
+            'date_contrat': 'DATE_CONTRAT', 'period': 'PERIOD_DOMCIL', 'period_domcil': 'PERIOD_DOMCIL',
+            'prix_mensuel': 'PRIX_CONTRAT', 'prix_inter': 'PRIX_INTERMEDIARE_CONTRAT',
+            'prix_contrat': 'PRIX_CONTRAT', 'prix_intermediare': 'PRIX_INTERMEDIARE_CONTRAT',
+            'date_debut': 'DOM_DATEDEB', 'date_fin': 'DOM_DATEFIN', 'dom_datedeb': 'DOM_DATEDEB', 'dom_datefin': 'DOM_DATEFIN'
+        }
+        for fk, hk in contrat_map.items():
+            v = None
+            try:
+                v = c.get(fk)
+            except Exception:
+                v = None
+            if v is not None and v != '':
+                ctx[hk] = v
+                ctx[fk] = v
+
+        # Ensure DATE_CONTRAT exists (may be empty string) so templates can always
+        # reference it without KeyError
+        try:
+            if 'DATE_CONTRAT' not in ctx:
+                ctx['DATE_CONTRAT'] = c.get('date_contrat', '') if c else ''
+        except Exception:
+            ctx['DATE_CONTRAT'] = ''
+
+        # Provide alternate keys for contract date variables commonly used in
+        # templates (different naming conventions). e.g., Date_Contrat, DateContrat.
+        if 'DATE_CONTRAT' in ctx:
+            try:
+                ctx['Date_Contrat'] = ctx['DATE_CONTRAT']
+                ctx['DateContrat'] = ctx['DATE_CONTRAT']
+                ctx['dateContrat'] = ctx['DATE_CONTRAT']
+                ctx['date_contrat'] = ctx['DATE_CONTRAT']
+            except Exception:
+                pass
+        # Some templates contain a typo or alternate spelling: DTAE_CONTRAT
+        if 'DATE_CONTRAT' in ctx and 'DTAE_CONTRAT' not in ctx:
+            try:
+                ctx['DTAE_CONTRAT'] = ctx['DATE_CONTRAT']
+            except Exception:
+                pass
+
+            # Activities — many templates expect ACTIVITY1..ACTIVITY6 (or similar)
+            try:
+                activities = []
+                if isinstance(soc.get('activites', None), (list, tuple)):
+                    activities = list(soc.get('activites', []))
+                elif isinstance(soc.get('activites', None), str):
+                    # If stored as a single string, split on newlines or ';'
+                    activities = [a.strip() for a in re.split(r"[\n;]+", soc.get('activites', '')) if a.strip()]
+                # Populate ACTIVITY1..ACTIVITY6 and fallback lower/camel variants
+                for i in range(6):
+                    key = f'ACTIVITY{i+1}'
+                    val = activities[i] if i < len(activities) else ''
+                    ctx[key] = val
+                    ctx[key.lower()] = val
+                    # camelCase (activity1) isn't commonly used but harmless to add
+                    ctx[f'activity{i+1}'] = val
+            except Exception:
+                # non-fatal
+                pass
+        return ctx
+
     if templates_list:
         templates = [_Path(p) for p in templates_list]
     else:
@@ -188,7 +372,11 @@ def render_templates(
                     progress_callback(processed_files, total_files, str(tpl.name), dict(entry))
             else:
                 start = time.time()
-                _render_docx_template(tpl, values, out_docx)
+                # Build a forgiving context for templates (flat + nested)
+                context = _build_context(values or {})
+                # Also keep the original values under 'values' key for templates that expect it
+                context['values'] = values or {}
+                _render_docx_template(tpl, context, out_docx)
                 duration = time.time() - start
                 size_bytes = out_docx.stat().st_size if out_docx.exists() else 0
                 entry = {
@@ -232,14 +420,110 @@ def render_templates(
             logger.exception("Failed to render template %s: %s", tpl, e)
             report.append({'template': str(tpl.name), 'out_docx': None, 'status': 'error', 'error': str(e)})
 
-    # Save report (ensure report_path is defined even on failure)
-    report_path = out_subdir / "generation_report.json"
+    # Save report (write both a human-named JSON matching the HTML report,
+    # and keep the legacy `generation_report.json` for backward compatibility)
+    json_name = f"{gen_date}_{company_clean}_Raport_Docs_generer_{gen_time}.json"
+    report_path = out_subdir / json_name
     try:
         with report_path.open('w', encoding='utf-8') as f:
             json.dump(report, f, ensure_ascii=False, indent=2)
-        logger.info("Saved generation report to %s", report_path)
+        logger.info("Saved generation report (JSON) to %s", report_path)
     except Exception:
-        logger.exception("Failed to write generation report")
+        logger.exception("Failed to write generation report (JSON)")
+
+    # NOTE: legacy `generation_report.json` is intentionally no longer written
+    # to avoid duplicate files and confusion. Existing tools should be updated
+    # to consume the named JSON report written above which matches the HTML
+    # report filename. If you absolutely need the legacy file for compatibility,
+    # re-enable the block below.
+
+    # Also write a human-friendly HTML report with the requested name format:
+    # yyyy-mm-dd_DenSte_Raport_Docs_generer.html
+    try:
+        html_name = f"{gen_date}_{company_clean}_Raport_Docs_generer_{gen_time}.html"
+        html_path = out_subdir / html_name
+        # Build a simple HTML page: header + table of report entries + embedded JSON for tools
+        def _escape(s: str) -> str:
+            import html as _html
+            return _html.escape(str(s) if s is not None else '')
+
+        # compute summary stats
+        total = len(report)
+        counts = {'ok': 0, 'skipped': 0, 'partial': 0, 'error': 0}
+        total_duration = 0.0
+        for e in report:
+            st = (e.get('status') or 'unknown')
+            if st in counts:
+                counts[st] += 1
+            try:
+                total_duration += float(e.get('duration_seconds') or 0.0)
+            except Exception:
+                pass
+
+        rows_html = []
+        for e in report:
+            rows_html.append('<tr>' +
+                             ''.join(f"<td>{_escape(e.get(k,''))}</td>" for k in ('template', 'out_docx', 'out_pdf', 'status', 'error', 'duration_seconds', 'out_docx_size', 'out_pdf_size')) +
+                             '</tr>')
+
+        table_header = ''.join(f"<th>{_escape(h)}</th>" for h in ('template', 'out_docx', 'out_pdf', 'status', 'error', 'duration_seconds', 'out_docx_size', 'out_pdf_size'))
+
+        # Enhanced HTML with summary and links
+        html_content = f"""<!doctype html>
+<html lang=\"fr\">
+<head>
+  <meta charset=\"utf-8\">
+  <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">
+  <title>Rapport de génération - {_escape(company_raw)} - {gen_date} {gen_time}</title>
+  <style>
+    body{{font-family:Segoe UI,Arial,Helvetica,sans-serif;margin:18px}}
+    header{{display:flex;align-items:center;justify-content:space-between}}
+    h1{{margin:0;font-size:20px}}
+    .meta{{color:#555}}
+    .summary{{display:flex;gap:12px;margin-top:12px}}
+    .card{{background:#f8f9fb;padding:10px;border-radius:6px;border:1px solid #e6e9ef}}
+    table{{border-collapse:collapse;width:100%;margin-top:12px}}
+    th,td{{border:1px solid #ddd;padding:8px;text-align:left}}
+    th{{background:#f2f2f2}}
+    pre#genjson{{background:#1e1e1e;color:#e6e6e6;padding:12px;overflow:auto;max-height:420px}}
+    a.filelink{{color:#1a73e8;text-decoration:none}}
+  </style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Rapport de génération — {_escape(company_raw)}</h1>
+    <div class=\"meta\">Généré le: {gen_date} {gen_time}</div>
+  </div>
+  <div class=\"meta\">Total modèles: {total}</div>
+</header>
+
+<section class=\"summary\">
+  <div class=\"card\"><strong>Succès</strong><div>{counts['ok']}</div></div>
+  <div class=\"card\"><strong>Sautés</strong><div>{counts['skipped']}</div></div>
+  <div class=\"card\"><strong>Partiels</strong><div>{counts['partial']}</div></div>
+  <div class=\"card\"><strong>Erreurs</strong><div>{counts['error']}</div></div>
+  <div class=\"card\"><strong>Durée totale (s)</strong><div>{round(total_duration,3)}</div></div>
+</section>
+
+<h2>Fichiers générés</h2>
+<table>
+<thead><tr>{table_header}</tr></thead>
+<tbody>
+{''.join(rows_html)}
+</tbody>
+</table>
+
+<h2>Données brutes (JSON)</h2>
+<pre id=\"genjson\">{_escape(json.dumps(report, ensure_ascii=False, indent=2))}</pre>
+</body>
+</html>"""
+
+        with html_path.open('w', encoding='utf-8') as hf:
+            hf.write(html_content)
+        logger.info("Saved generation report (HTML) to %s", html_path)
+    except Exception:
+        logger.exception("Failed to write generation report (HTML)")
 
     # Optionally remove generated files in out_dir after saving the report.
     # Keep the generation_report.json file but delete other files (docx/pdf) when cleanup_tmp is True.

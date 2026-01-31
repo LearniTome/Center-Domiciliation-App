@@ -1,0 +1,27 @@
+[project]
+name = "center-domiciliation-app"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "babel==2.14.0",
+    "docxtpl==0.20.1",
+    "et-xmlfile==2.0.0",
+    "jinja2==3.1.6",
+    "lxml==6.0.0",
+    "numpy==2.3.2",
+    "openpyxl==3.1.5",
+    "pandas==2.3.1",
+    "pysimplegui>=5.0.8.3",
+    "python-dateutil==2.9.0.post0",
+    "python-docx==1.2.0",
+    "pytz==2025.2",
+    "setuptools<81.0.0",
+    "six==1.17.0",
+    "tkcalendar>=1.6.1",
+    "tqdm==4.67.1",
+    "ttkthemes>=3.3.0",
+    "typing-extensions==4.14.1",
+    "tzdata==2025.2",
+]

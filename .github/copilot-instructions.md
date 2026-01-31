@@ -43,7 +43,7 @@ Tests and quick checks:
 
 - `tests/smoke_test.py` verifies main imports and basic instantiation.
 - `tests/test_doc_generator_folder_naming.py` asserts output folder naming — keep `render_templates()` behavior when changing naming.
-- When adding features that touch generation or file paths, run pytest locally and verify `tmp_out/generation_report.json` content shape.
+- When adding features that touch generation or file paths, run pytest locally and verify the named JSON report (e.g. `tmp_out/YYYY-MM-DD_<Company>_Raport_Docs_generer.json`) or the HTML report (which embeds the JSON) contains the expected report shape.
 
 Notes for agents (do not assume external network or secrets):
 
@@ -54,7 +54,7 @@ Notes for agents (do not assume external network or secrets):
 Quick reference (files to inspect when making changes):
 
 - `main.py` — app flow and user-triggered generation
-- `src/utils/doc_generator.py` — generation, sanitization, PDF flow, and `generation_report.json`
+- `src/utils/doc_generator.py` — generation, sanitization, PDF flow, and the generation report (HTML + named JSON)
 - `src/utils/utils.py` — PathManager, ThemeManager, ErrorHandler, WidgetFactory
 - `src/forms/*.py` — UI fields, defaults, and `get_values()` implementations
 - `models/` and `databases/` directories (repo root) — templates and sample DB

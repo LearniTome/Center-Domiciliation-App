@@ -35,6 +35,11 @@ class AssocieForm(ttk.Frame):
         self.theme_manager = theme_manager
         self.associe_vars = []
 
+        # Load reference data from database
+        from ..utils.utils import get_reference_data
+        self.nationalites = get_reference_data('Nationalites')
+        self.lieux_naissance = get_reference_data('LieuxNaissance')
+
         # Configure weights to expand properly
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
@@ -71,22 +76,23 @@ class AssocieForm(ttk.Frame):
 
     def create_associe_vars(self):
         """Crée et retourne les variables pour un nouvel associé"""
-        from ..utils.constants import Nationalite
-
         # sensible defaults per request:
         # - civilite default to 'M.'
         # - est_gerant checked by default
         # - qualite default to 'Associé Gérant'
         # - num_parts default to '1000'
         # - capital_detenu default to '100000'
+        default_nationalite = self.nationalites[0] if self.nationalites else ''
+        default_lieu = self.lieux_naissance[0] if self.lieux_naissance else ''
+
         return {
             'civilite': tk.StringVar(value='M.'),
             'nom': tk.StringVar(value=''),
             'prenom': tk.StringVar(value=''),
             'parts': tk.StringVar(value=''),
             'date_naiss': tk.StringVar(value=''),
-            'lieu_naiss': tk.StringVar(value=''),
-            'nationalite': tk.StringVar(value=(Nationalite[0] if Nationalite else '')),
+            'lieu_naiss': tk.StringVar(value=default_lieu),
+            'nationalite': tk.StringVar(value=default_nationalite),
             'num_piece': tk.StringVar(value=''),
             'validite_piece': tk.StringVar(value=''),
             'adresse': tk.StringVar(value=''),
@@ -193,7 +199,7 @@ class AssocieForm(ttk.Frame):
 
         # Lieu de naissance
         ttk.Label(grid, text="Lieu de naissance:", anchor="e", width=15).grid(row=1, column=0, padx=(0, 5), pady=2)
-        ttk.Entry(grid, textvariable=vars_dict['lieu_naiss']).grid(row=1, column=1, sticky="ew", pady=2)
+        ttk.Combobox(grid, textvariable=vars_dict['lieu_naiss'], values=self.lieux_naissance, state="readonly").grid(row=1, column=1, sticky="ew", pady=2)
 
     def create_manager_section(self, parent, vars_dict):
         """Crée la section Statut de Gérant"""
@@ -226,14 +232,9 @@ class AssocieForm(ttk.Frame):
         grid.pack(fill="x", padx=5, pady=5, expand=True)
         grid.columnconfigure(1, weight=1)
 
-        # Nationalité — prefer a Combobox with values from constants when available
+        # Nationalité — use data loaded from reference sheet
         ttk.Label(grid, text="Nationalité:", anchor="e", width=12).grid(row=0, column=0, padx=(0, 5), pady=2)
-        try:
-            from ..utils.constants import Nationalite
-            nat_options = Nationalite
-        except Exception:
-            nat_options = []
-        ttk.Combobox(grid, textvariable=vars_dict['nationalite'], values=nat_options).grid(row=0, column=1, sticky="ew", pady=2)
+        ttk.Combobox(grid, textvariable=vars_dict['nationalite'], values=self.nationalites).grid(row=0, column=1, sticky="ew", pady=2)
 
         # N° CIN
         ttk.Label(grid, text="N° CIN:", anchor="e", width=12).grid(row=1, column=0, padx=(0, 5), pady=2)

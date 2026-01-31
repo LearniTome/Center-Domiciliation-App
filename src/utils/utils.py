@@ -410,6 +410,42 @@ class PathManager:
         except Exception as e:
             ErrorHandler.handle_error(e, "Erreur lors de la création des répertoires")
 
+    @classmethod
+    def validate_file(cls, filepath: Path, file_type: str) -> bool:
+        """
+        Valide un fichier selon son type
+        Args:
+            filepath: Chemin du fichier
+            file_type: Type de fichier ('models', 'database', 'config')
+        Returns:
+            bool: True si le fichier est valide
+        """
+        if not filepath.exists():
+            logger.warning(f"Fichier non trouvé: {filepath}")
+            return False
+
+        if not filepath.suffix.lower() in cls.ALLOWED_EXTENSIONS.get(file_type, []):
+            logger.warning(f"Extension non autorisée: {filepath}")
+            return False
+
+        return True
+
+    @classmethod
+    def get_model_path(cls, filename: str) -> Path:
+        """Retourne le chemin d'un fichier modèle"""
+        path = cls.MODELS_DIR / filename
+        if not cls.validate_file(path, 'models'):
+            raise FileNotFoundError(f"Modèle invalide ou non trouvé: {filename}")
+        return path
+
+    @classmethod
+    def get_database_path(cls, filename: str) -> Path:
+        """Retourne le chemin d'un fichier de base de données"""
+        path = cls.DATABASE_DIR / filename
+        if not cls.validate_file(path, 'database'):
+            raise FileNotFoundError(f"Base de données invalide ou non trouvée: {filename}")
+        return path
+
 def ensure_excel_db(path, sheets: dict):
     """Create an Excel workbook at `path` with given sheets dict (name -> columns).
 
@@ -444,6 +480,155 @@ def ensure_excel_db(path, sheets: dict):
     if modified:
         wb.save(path)
     return
+
+
+def get_reference_data(sheet_name: str, path: Optional[_Path] = None) -> list:
+    """Load reference data from a reference sheet (SteAdresses, Tribunaux, Activites, Nationalites, LieuxNaissance).
+
+    Returns a list of values from the reference sheet. If the sheet doesn't exist or is empty,
+    returns a fallback list from constants.
+
+    Args:
+        sheet_name: Name of the reference sheet (e.g., 'SteAdresses', 'Tribunaux', etc.)
+        path: Path to the Excel workbook. If not provided, uses default DB path.
+
+    Returns:
+        List of values from the sheet or from constants as fallback.
+    """
+    try:
+        from . import constants as _const
+        import pandas as _pd
+
+        # Determine the DB path
+        if path is None:
+            db_path = Path(__file__).resolve().parent.parent.parent / 'databases' / _const.DB_FILENAME
+        else:
+            db_path = _Path(path)
+
+        if not db_path.exists():
+            # Fallback to constants if DB doesn't exist
+            fallback_map = {
+                'SteAdresses': _const.SteAdresse,
+                'Tribunaux': _const.Tribunnaux,
+                'Activites': _const.Activities,
+                'Nationalites': _const.Nationalite,
+                'LieuxNaissance': ["Casablanca", "Rabat", "Fes", "Marrakech", "Agadir"]
+            }
+            return fallback_map.get(sheet_name, [])
+
+        try:
+            df = _pd.read_excel(db_path, sheet_name=sheet_name, dtype=str)
+        except Exception:
+            # Sheet doesn't exist, use fallback
+            fallback_map = {
+                'SteAdresses': _const.SteAdresse,
+                'Tribunaux': _const.Tribunnaux,
+                'Activites': _const.Activities,
+                'Nationalites': _const.Nationalite,
+                'LieuxNaissance': ["Casablanca", "Rabat", "Fes", "Marrakech", "Agadir"]
+            }
+            return fallback_map.get(sheet_name, [])
+
+        if df.empty:
+            # Sheet is empty, use fallback
+            fallback_map = {
+                'SteAdresses': _const.SteAdresse,
+                'Tribunaux': _const.Tribunnaux,
+                'Activites': _const.Activities,
+                'Nationalites': _const.Nationalite,
+                'LieuxNaissance': ["Casablanca", "Rabat", "Fes", "Marrakech", "Agadir"]
+            }
+            return fallback_map.get(sheet_name, [])
+
+        # Get the column name (first column)
+        col_name = df.columns[0]
+        # Return list of values, filtering out empty/NaN values
+        return [str(val).strip() for val in df[col_name].fillna('') if str(val).strip()]
+
+    except Exception as e:
+        logger.exception('Failed to get reference data for %s: %s', sheet_name, e)
+        # Final fallback to constants
+        try:
+            from . import constants as _const
+            fallback_map = {
+                'SteAdresses': _const.SteAdresse,
+                'Tribunaux': _const.Tribunnaux,
+                'Activites': _const.Activities,
+                'Nationalites': _const.Nationalite,
+                'LieuxNaissance': ["Casablanca", "Rabat", "Fes", "Marrakech", "Agadir"]
+            }
+            return fallback_map.get(sheet_name, [])
+        except Exception:
+            return []
+
+
+def initialize_reference_sheets(path):
+    """Initialize the reference sheets (SteAdresses, Tribunaux, Activites, Nationalites, LieuxNaissance)
+    with default data from constants if they are empty.
+
+    This is called after ensure_excel_db to populate lookup tables.
+    """
+    try:
+        from . import constants as _const
+        import pandas as _pd
+
+        path = Path(path)
+        if not path.exists():
+            return
+
+        # Mapping of sheet names to data lists from constants
+        ref_data = {
+            'SteAdresses': _const.SteAdresse,
+            'Tribunaux': _const.Tribunnaux,
+            'Activites': _const.Activities,
+            'Nationalites': _const.Nationalite,
+            'LieuxNaissance': []  # Will be populated from default list below
+        }
+
+        # Default lieu de naissance for initial setup
+        default_lieux = ["Casablanca", "Rabat", "Fes", "Marrakech", "Agadir"]
+        ref_data['LieuxNaissance'] = default_lieux
+
+        # For each reference sheet, check if empty and populate
+        for sheet_name, data_list in ref_data.items():
+            try:
+                existing = _pd.read_excel(path, sheet_name=sheet_name, dtype=str)
+                # If sheet has only header row (no data rows), populate it
+                if existing.empty:
+                    # Get the header name for this sheet
+                    if sheet_name == 'SteAdresses':
+                        col_name = 'STE_ADRESSE'
+                    elif sheet_name == 'Tribunaux':
+                        col_name = 'TRIBUNAL'
+                    elif sheet_name == 'Activites':
+                        col_name = 'ACTIVITE'
+                    elif sheet_name == 'Nationalites':
+                        col_name = 'NATIONALITE'
+                    else:  # LieuxNaissance
+                        col_name = 'LIEU_NAISSANCE'
+
+                    # Create DataFrame from data list
+                    df = _pd.DataFrame({col_name: data_list})
+
+                    # Write to sheet (replace mode)
+                    try:
+                        with _pd.ExcelWriter(path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+                            df.to_excel(writer, sheet_name=sheet_name, index=False)
+                    except TypeError:
+                        # Fallback for older pandas versions
+                        from openpyxl import load_workbook
+                        wb = load_workbook(path)
+                        if sheet_name in wb.sheetnames:
+                            std = wb[sheet_name]
+                            wb.remove(std)
+                            wb.save(path)
+                        with _pd.ExcelWriter(path, engine='openpyxl', mode='a') as writer:
+                            df.to_excel(writer, sheet_name=sheet_name, index=False)
+            except Exception:
+                # If sheet doesn't exist or has errors, skip (it was just created by ensure_excel_db)
+                pass
+    except Exception as e:
+        logger.exception('Failed to initialize reference sheets: %s', e)
 
 
 def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_vals: dict):
@@ -546,7 +731,11 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
                 'nationalite': 'NATIONALITY', 'num_piece': 'CIN_NUM',
                 'validite_piece': 'CIN_VALIDATY', 'date_naiss': 'DATE_NAISS',
                 'lieu_naiss': 'LIEU_NAISS', 'adresse': 'ADRESSE',
-                'telephone': 'PHONE', 'email': 'EMAIL', 'parts': 'PARTS',
+                'telephone': 'PHONE', 'email': 'EMAIL',
+                # forms historically used either 'parts' or 'num_parts'
+                'parts': 'PARTS', 'num_parts': 'PARTS',
+                # form uses 'capital_detenu' variable, store it in CAPITAL_DETENU
+                'capital_detenu': 'CAPITAL_DETENU',
                 'est_gerant': 'IS_GERANT', 'qualite': 'QUALITY'
             }
             for k, h in map_a.items():
@@ -563,7 +752,20 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
                         elif isinstance(v, (int, float)):
                             r[h] = v
                         else:
-                            r[h] = str(v)
+                            s = str(v).strip()
+                            # Try numeric conversion for parts / capital
+                            if h in ('PARTS', 'CAPITAL_DETENU'):
+                                try:
+                                    # remove spaces and parse comma/point
+                                    ns = s.replace(' ', '').replace(',', '.')
+                                    if '.' in ns:
+                                        r[h] = float(ns)
+                                    else:
+                                        r[h] = int(ns)
+                                except Exception:
+                                    r[h] = s
+                            else:
+                                r[h] = s
             assoc_rows.append(r)
         if assoc_rows:
             assoc_df = _pd.DataFrame(assoc_rows)
@@ -574,9 +776,15 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
         r: dict = {h: None for h in _const.contrat_headers}
         r['ID_CONTRAT'] = cid
         r['ID_SOCIETE'] = soc_df['ID_SOCIETE'].iloc[0] if not soc_df.empty else None
-        map_c = {'date_contrat': 'DATE_CONTRAT', 'period_domcil': 'PERIOD_DOMCIL',
-                 'prix_contrat': 'PRIX_CONTRAT', 'prix_intermediare': 'PRIX_INTERMEDIARE_CONTRAT',
-                 'dom_datedeb': 'DOM_DATEDEB', 'dom_datefin': 'DOM_DATEFIN'}
+        # Map keys used by ContratForm -> canonical headers
+        map_c = {
+            'date_contrat': 'DATE_CONTRAT',
+            # ContratForm uses 'period'
+            'period': 'PERIOD_DOMCIL',
+            # ContratForm uses 'prix_mensuel' and 'prix_inter'
+            'prix_mensuel': 'PRIX_CONTRAT', 'prix_inter': 'PRIX_INTERMEDIARE_CONTRAT',
+            'date_debut': 'DOM_DATEDEB', 'date_fin': 'DOM_DATEFIN'
+        }
         for k, h in map_c.items():
             if k in contrat_vals:
                 v = contrat_vals.get(k)
@@ -589,7 +797,19 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
                     elif isinstance(v, (int, float)):
                         r[h] = v
                     else:
-                        r[h] = str(v)
+                        s = str(v).strip()
+                        # Try to parse prices/numeric fields into numbers
+                        if h in ('PRIX_CONTRAT', 'PRIX_INTERMEDIARE_CONTRAT'):
+                            try:
+                                ns = s.replace(' ', '').replace(',', '.')
+                                if '.' in ns:
+                                    r[h] = float(ns)
+                                else:
+                                    r[h] = int(ns)
+                            except Exception:
+                                r[h] = s
+                        else:
+                            r[h] = s
         contrat_df = _pd.DataFrame([r])
 
     # Write into workbook
@@ -611,26 +831,273 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
                 _pd.DataFrame(columns=_const.contrat_headers).to_excel(writer, sheet_name='Contrats', index=False)
         return
 
-    # Append to existing workbook
-    with _pd.ExcelWriter(path, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
-        if not soc_df.empty:
-            if 'Societes' in writer.book.sheetnames:
-                start = writer.book['Societes'].max_row
-                soc_df.to_excel(writer, sheet_name='Societes', index=False, header=False, startrow=start)
+    # Append to existing workbook — safer approach:
+    # For each canonical sheet, read existing data, align columns to canonical headers,
+    # concat the new rows, then write back replacing the sheet. This avoids column
+    # shifts when the existing workbook has a different header layout.
+    try:
+        from . import constants as _const
+        sheets_to_write = [
+            ("Societes", soc_df, _const.societe_headers),
+            ("Associes", assoc_df, _const.associe_headers),
+            ("Contrats", contrat_df, _const.contrat_headers),
+        ]
+
+        for sheet_name, new_df, headers in sheets_to_write:
+            if new_df.empty:
+                # still ensure the sheet exists with correct headers
+                try:
+                    existing = _pd.read_excel(path, sheet_name=sheet_name, dtype=str)
+                except Exception:
+                    existing = _pd.DataFrame(columns=headers)
+                if set(existing.columns) != set(headers):
+                    # rewrite sheet with canonical headers but keep existing rows aligned if possible
+                    existing_aligned = existing.reindex(columns=headers, fill_value='')
+                    try:
+                        with _pd.ExcelWriter(path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+                            existing_aligned.to_excel(writer, sheet_name=sheet_name, index=False)
+                    except TypeError:
+                        # pandas older versions may not support if_sheet_exists; fallback
+                        wb = load_workbook(path)
+                        if sheet_name in wb.sheetnames:
+                            std = wb[sheet_name]
+                            wb.remove(std)
+                            wb.save(path)
+                        with _pd.ExcelWriter(path, engine='openpyxl', mode='a') as writer:
+                            existing_aligned.to_excel(writer, sheet_name=sheet_name, index=False)
+                continue
+
+            # Read existing sheet if present
+            try:
+                existing = _pd.read_excel(path, sheet_name=sheet_name, dtype=str)
+            except Exception:
+                existing = _pd.DataFrame(columns=headers)
+
+            # Reindex both to canonical headers to avoid column shifts
+            existing_aligned = existing.reindex(columns=headers, fill_value='')
+            new_aligned = new_df.reindex(columns=headers, fill_value='')
+
+            # Avoid concatenating empty or all-NA frames to prevent pandas FutureWarning
+            parts = []
+            try:
+                if not existing_aligned.dropna(how='all').empty:
+                    parts.append(existing_aligned)
+            except Exception:
+                # if dropna fails for any reason, fall back to using the raw frame
+                if not existing_aligned.empty:
+                    parts.append(existing_aligned)
+            try:
+                if not new_aligned.dropna(how='all').empty:
+                    parts.append(new_aligned)
+            except Exception:
+                if not new_aligned.empty:
+                    parts.append(new_aligned)
+
+            if parts:
+                combined = _pd.concat(parts, ignore_index=True)
             else:
-                soc_df.to_excel(writer, sheet_name='Societes', index=False)
-        if not assoc_df.empty:
-            if 'Associes' in writer.book.sheetnames:
-                start = writer.book['Associes'].max_row
-                assoc_df.to_excel(writer, sheet_name='Associes', index=False, header=False, startrow=start)
-            else:
-                assoc_df.to_excel(writer, sheet_name='Associes', index=False)
-        if not contrat_df.empty:
-            if 'Contrats' in writer.book.sheetnames:
-                start = writer.book['Contrats'].max_row
-                contrat_df.to_excel(writer, sheet_name='Contrats', index=False, header=False, startrow=start)
-            else:
-                contrat_df.to_excel(writer, sheet_name='Contrats', index=False)
+                # both frames empty/all-NA -> produce an empty canonical DataFrame
+                combined = _pd.DataFrame(columns=headers)
+
+            # Write back replacing the sheet — use if_sheet_exists='replace' when available
+            try:
+                with _pd.ExcelWriter(path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+                    combined.to_excel(writer, sheet_name=sheet_name, index=False)
+            except TypeError:
+                # Fallback: remove sheet via openpyxl then append
+                wb = load_workbook(path)
+                if sheet_name in wb.sheetnames:
+                    try:
+                        std = wb[sheet_name]
+                        wb.remove(std)
+                        wb.save(path)
+                    except Exception:
+                        pass
+                with _pd.ExcelWriter(path, engine='openpyxl', mode='a') as writer:
+                    combined.to_excel(writer, sheet_name=sheet_name, index=False)
+    except Exception:
+        # In case of any failure fall back to the previous overlay append method
+        try:
+            with _pd.ExcelWriter(path, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+                if not soc_df.empty:
+                    if 'Societes' in writer.book.sheetnames:
+                        start = writer.book['Societes'].max_row
+                        soc_df.to_excel(writer, sheet_name='Societes', index=False, header=False, startrow=start)
+                    else:
+                        soc_df.to_excel(writer, sheet_name='Societes', index=False)
+                if not assoc_df.empty:
+                    if 'Associes' in writer.book.sheetnames:
+                        start = writer.book['Associes'].max_row
+                        assoc_df.to_excel(writer, sheet_name='Associes', index=False, header=False, startrow=start)
+                    else:
+                        assoc_df.to_excel(writer, sheet_name='Associes', index=False)
+                if not contrat_df.empty:
+                    if 'Contrats' in writer.book.sheetnames:
+                        start = writer.book['Contrats'].max_row
+                        contrat_df.to_excel(writer, sheet_name='Contrats', index=False, header=False, startrow=start)
+                    else:
+                        contrat_df.to_excel(writer, sheet_name='Contrats', index=False)
+        except Exception:
+            logger.exception('Failed to append records to workbook')
+
+    # After writing/appending, ensure date columns have a proper Excel number format
+    try:
+        from . import constants as _const
+        wb = load_workbook(path)
+        # iterate canonical sheets and apply format to columns whose header contains 'DATE'
+        for sheet_name, headers in [('Societes', _const.societe_headers), ('Associes', _const.associe_headers), ('Contrats', _const.contrat_headers)]:
+            if sheet_name not in wb.sheetnames:
+                continue
+            ws = wb[sheet_name]
+            for idx, hdr in enumerate(headers, start=1):
+                if not hdr:
+                    continue
+                if 'DATE' in hdr.upper():
+                    col_letter = get_column_letter(idx)
+                    for r_i in range(2, ws.max_row + 1):
+                        try:
+                            cell = ws[f"{col_letter}{r_i}"]
+                            cell.number_format = 'DD/MM/YYYY'
+                        except Exception:
+                            pass
+        wb.save(path)
+    except Exception:
+        logger.exception('Failed to apply date number formats after writing records')
+
+    # Try to autofit column widths for all sheets to improve readability
+    try:
+        wb = load_workbook(path)
+        for ws in wb.worksheets:
+            try:
+                # compute max length per column (include header row)
+                for idx, col_cells in enumerate(ws.columns, start=1):
+                    max_len = 0
+                    col_letter = get_column_letter(idx)
+                    for cell in col_cells:
+                        try:
+                            val = cell.value
+                            if val is None:
+                                l = 0
+                            else:
+                                l = len(str(val))
+                            if l > max_len:
+                                max_len = l
+                        except Exception:
+                            continue
+                    # set width with some padding; guard minimum width
+                    width = max(8, float(max_len) + 2)
+                    try:
+                        ws.column_dimensions[col_letter].width = width
+                    except Exception:
+                        pass
+            except Exception:
+                continue
+        # Apply header style and column-specific formatting
+        try:
+            from openpyxl.styles import Font, Alignment, PatternFill
+            header_font = Font(bold=True)
+            header_fill = PatternFill(fill_type='solid', fgColor='DDDDDD')
+            header_align = Alignment(horizontal='center', vertical='center')
+            wrap_align = Alignment(wrap_text=True, vertical='top')
+
+            for ws in wb.worksheets:
+                try:
+                    # header row styling
+                    for cell in list(ws[1]):
+                        try:
+                            cell.font = header_font
+                            cell.fill = header_fill
+                            cell.alignment = header_align
+                        except Exception:
+                            pass
+                    # per-column formatting based on header name
+                    for idx in range(1, ws.max_column + 1):
+                        try:
+                            hdr = ws.cell(row=1, column=idx).value
+                            if not hdr:
+                                continue
+                            h = str(hdr).upper()
+                            col_letter = get_column_letter(idx)
+                            # numeric columns (integers)
+                            if h in ('CAPITAL', 'CAPITAL_DETENU', 'PARTS'):
+                                for row_idx in range(2, ws.max_row + 1):
+                                    try:
+                                        c = ws[f"{col_letter}{row_idx}"]
+                                        c.number_format = '#,##0'
+                                        c.alignment = Alignment(horizontal='right', vertical='top')
+                                    except Exception:
+                                        pass
+                            # pricing / currency columns
+                            if h in ('PRIX_CONTRAT', 'PRIX_INTERMEDIARE_CONTRAT'):
+                                for row_idx in range(2, ws.max_row + 1):
+                                    try:
+                                        c = ws[f"{col_letter}{row_idx}"]
+                                        c.number_format = '#,##0.00'
+                                        c.alignment = Alignment(horizontal='right', vertical='top')
+                                    except Exception:
+                                        pass
+                            # phone as text
+                            if h in ('PHONE',):
+                                for row_idx in range(2, ws.max_row + 1):
+                                    try:
+                                        c = ws[f"{col_letter}{row_idx}"]
+                                        c.number_format = '@'
+                                        c.alignment = Alignment(horizontal='left', vertical='top')
+                                    except Exception:
+                                        pass
+                            # long text fields -> wrap
+                            if h in ('ADRESSE', 'STE_ADRESS', 'LIEU_NAISS'):
+                                for row_idx in range(2, ws.max_row + 1):
+                                    try:
+                                        c = ws[f"{col_letter}{row_idx}"]
+                                        c.alignment = wrap_align
+                                    except Exception:
+                                        pass
+                        except Exception:
+                            # if anything fails for this header/column, continue with next
+                            continue
+                    # freeze header row for easier navigation
+                    try:
+                        ws.freeze_panes = ws['A2']
+                    except Exception:
+                        pass
+                except Exception:
+                    continue
+        except Exception:
+            logger.exception('Failed to apply header/column formatting')
+
+        wb.save(path)
+    except Exception:
+        logger.exception('Failed to autofit column widths after writing records')
+
+
+def cleanup_old_backups(db_path, max_backups=5):
+    """Keep only the most recent N backups, delete older ones.
+
+    Args:
+        db_path: Path to the main database file
+        max_backups: Maximum number of backups to keep (default: 5)
+    """
+    try:
+        db_path = _Path(db_path)
+        if not db_path.exists():
+            return
+
+        # Find all backup files for this database
+        backup_pattern = f"{db_path.stem}_backup_*.xlsx"
+        backup_dir = db_path.parent
+        backups = sorted(backup_dir.glob(backup_pattern), reverse=True)
+
+        # Delete backups beyond the limit
+        if len(backups) > max_backups:
+            for backup in backups[max_backups:]:
+                try:
+                    backup.unlink()
+                    logger.info(f"Deleted old backup: {backup.name}")
+                except Exception as e:
+                    logger.warning(f"Failed to delete old backup {backup.name}: {e}")
+    except Exception as e:
+        logger.warning(f"Error during backup cleanup: {e}")
 
 
 def migrate_excel_workbook(path):
@@ -647,6 +1114,71 @@ def migrate_excel_workbook(path):
         backup_path = path.parent / backup_name
         shutil.copy2(path, backup_path)
         logger.info(f"Created backup of workbook before migration: {backup_path}")
+        # Clean up old backups (keep only the 5 most recent)
+        cleanup_old_backups(path, max_backups=5)
+        # Also add the backup path to the generation report (if present)
+        try:
+            tmp_out = Path(__file__).resolve().parent.parent.parent / 'tmp_out'
+            tmp_out.mkdir(parents=True, exist_ok=True)
+
+            # Try to find an HTML generation report and update its embedded JSON
+            updated = False
+            try:
+                for html in tmp_out.glob('*_Raport_Docs_generer.html'):
+                    try:
+                        text = html.read_text(encoding='utf-8')
+                        start_tag = '<pre id="genjson">'
+                        end_tag = '</pre>'
+                        sidx = text.find(start_tag)
+                        if sidx != -1:
+                            sidx += len(start_tag)
+                            eidx = text.find(end_tag, sidx)
+                            if eidx != -1:
+                                raw = text[sidx:eidx]
+                                try:
+                                    rep = json.loads(raw)
+                                except Exception:
+                                    rep = {}
+                                rep['migration_backup'] = str(backup_path)
+                                # replace the JSON block
+                                new_raw = json.dumps(rep, ensure_ascii=False, indent=2)
+                                new_text = text[:sidx] + new_raw + text[eidx:]
+                                html.write_text(new_text, encoding='utf-8')
+                                updated = True
+                                break
+                    except Exception:
+                        continue
+            except Exception:
+                updated = False
+
+            if not updated:
+                # Fallback: write a named JSON report matching the HTML convention
+                # so external tooling can find it more reliably. Use a safe
+                # default company string if none is available.
+                try:
+                    import datetime as _dt
+                    gen_date = _dt.date.today().isoformat()
+                    gen_time = _dt.datetime.now().strftime('%H-%M-%S')
+                except Exception:
+                    gen_date = 'unknown_date'
+                    import time as _time
+                    gen_time = _time.strftime('%H-%M-%S')
+                company_clean = 'UnknownCompany'
+                gen_name = f"{gen_date}_{company_clean}_Raport_Docs_generer_{gen_time}.json"
+                gen_report = tmp_out / gen_name
+                if gen_report.exists():
+                    try:
+                        with gen_report.open('r', encoding='utf-8') as gf:
+                            rep = json.load(gf)
+                    except Exception:
+                        rep = {}
+                else:
+                    rep = {}
+                rep['migration_backup'] = str(backup_path)
+                with gen_report.open('w', encoding='utf-8') as gf:
+                    json.dump(rep, gf, ensure_ascii=False, indent=2)
+        except Exception:
+            logger.exception('Failed to update generation report with migration backup')
     except Exception:
         logger.exception('Failed to create backup before migration; continuing without backup')
     from . import constants as _const
@@ -694,38 +1226,109 @@ def migrate_excel_workbook(path):
             except Exception:
                 pass
         wb.save(path)
-    @classmethod
-    def validate_file(cls, filepath: Path, file_type: str) -> bool:
-        """
-        Valide un fichier selon son type
-        Args:
-            filepath: Chemin du fichier
-            file_type: Type de fichier ('models', 'database', 'config')
-        Returns:
-            bool: True si le fichier est valide
-        """
-        if not filepath.exists():
-            logger.warning(f"Fichier non trouvé: {filepath}")
+    # Ensure Excel date columns use a readable date number format
+    try:
+        # Reload constants to get canonical headers
+        from . import constants as _const
+        wb = load_workbook(path)
+        for cname, cols in _const.excel_sheets.items():
+            if cname not in wb.sheetnames:
+                continue
+            ws = wb[cname]
+            for idx, col_name in enumerate(cols, start=1):
+                if not col_name:
+                    continue
+                if 'DATE' in col_name.upper():
+                    col_letter = get_column_letter(idx)
+                    # Apply number_format to all data cells in this column
+                    for row in range(2, ws.max_row + 1):
+                        try:
+                            cell = ws[f"{col_letter}{row}"]
+                            # set format regardless; Excel/openpyxl will ignore non-dates
+                            cell.number_format = 'DD/MM/YYYY'
+                        except Exception:
+                            pass
+        wb.save(path)
+    except Exception:
+        logger.exception('Failed to apply date number formats after migration')
+    # Autofit columns for all sheets after migration adjustments
+    try:
+        wb = load_workbook(path)
+        for ws in wb.worksheets:
+            try:
+                for idx, col_cells in enumerate(ws.columns, start=1):
+                    max_len = 0
+                    col_letter = get_column_letter(idx)
+                    for cell in col_cells:
+                        try:
+                            val = cell.value
+                            if val is None:
+                                l = 0
+                            else:
+                                l = len(str(val))
+                            if l > max_len:
+                                max_len = l
+                        except Exception:
+                            continue
+                    width = max(8, float(max_len) + 2)
+                    try:
+                        ws.column_dimensions[col_letter].width = width
+                    except Exception:
+                        pass
+            except Exception:
+                continue
+        wb.save(path)
+    except Exception:
+        logger.exception('Failed to autofit column widths after migration')
+
+
+def societe_exists(name: str, path: Optional[_Path] = None) -> bool:
+    """Check whether a société with the given name exists in the Excel database.
+
+    Args:
+        name: Company name to search for (case-insensitive, trimmed)
+        path: Optional path to the Excel workbook. If not provided, uses
+              the default databases path and filename from package constants.
+
+    Returns:
+        True if a matching company name is present in the 'Societes' sheet,
+        False otherwise.
+    """
+    try:
+        from . import constants as _const
+        # Default database path
+        if path is None:
+            db_path = Path(__file__).resolve().parent.parent.parent / 'databases' / _const.DB_FILENAME
+        else:
+            db_path = _Path(path)
+
+        if not db_path.exists():
             return False
 
-        if not filepath.suffix.lower() in cls.ALLOWED_EXTENSIONS.get(file_type, []):
-            logger.warning(f"Extension non autorisée: {filepath}")
+        try:
+            df = _pd.read_excel(db_path, sheet_name='Societes', dtype=str)
+        except Exception:
             return False
 
-        return True
+        if 'DEN_STE' not in df.columns:
+            # fallback: try to detect any column that looks like a company name
+            candidates = [c for c in df.columns if 'DEN' in str(c).upper() or 'STE' in str(c).upper() or 'NAME' in str(c).upper()]
+            if not candidates:
+                return False
+            col = candidates[0]
+        else:
+            col = 'DEN_STE'
 
-    @classmethod
-    def get_model_path(cls, filename: str) -> Path:
-        """Retourne le chemin d'un fichier modèle"""
-        path = cls.MODELS_DIR / filename
-        if not cls.validate_file(path, 'models'):
-            raise FileNotFoundError(f"Modèle invalide ou non trouvé: {filename}")
-        return path
+        target = (str(name or '')).strip().lower()
+        if not target:
+            return False
 
-    @classmethod
-    def get_database_path(cls, filename: str) -> Path:
-        """Retourne le chemin d'un fichier de base de données"""
-        path = cls.DATABASE_DIR / filename
-        if not cls.validate_file(path, 'database'):
-            raise FileNotFoundError(f"Base de données invalide ou non trouvée: {filename}")
-        return path
+        # check for exact matches (case-insensitive) or trimmed contains
+        for val in df[col].fillna('').astype(str):
+            if val.strip().lower() == target:
+                return True
+        return False
+    except Exception:
+        logger.exception('societe_exists check failed')
+        return False
+

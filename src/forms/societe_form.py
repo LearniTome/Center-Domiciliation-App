@@ -30,7 +30,8 @@ class SocieteForm(ttk.Frame):
     def initialize_variables(self):
         """Initialise toutes les variables du formulaire avec des valeurs par défaut raisonnables"""
         # Variables pour les champs de texte — valeurs par défaut prises depuis les constantes
-        from ..utils.constants import DenSte, Formjur, Capital, PartsSocial, SteAdresse, Tribunnaux
+        from ..utils.constants import DenSte, Formjur, Capital, PartsSocial
+        from ..utils.utils import get_reference_data
 
         self.den_ste_var = tk.StringVar(value=DenSte[0] if DenSte else "")
         self.forme_jur_var = tk.StringVar(value=Formjur[0] if Formjur else "")
@@ -41,8 +42,13 @@ class SocieteForm(ttk.Frame):
         self.date_ice_var = tk.StringVar(value=today)
         self.capital_var = tk.StringVar(value=Capital[0] if Capital else "")
         self.parts_social_var = tk.StringVar(value=PartsSocial[0] if PartsSocial else "")
-        self.ste_adress_var = tk.StringVar(value=SteAdresse[0] if SteAdresse else "")
-        self.tribunal_var = tk.StringVar(value=Tribunnaux[0] if Tribunnaux else "")
+
+        # Load reference data from database
+        self.ste_adresses = get_reference_data('SteAdresses')
+        self.tribunaux = get_reference_data('Tribunaux')
+
+        self.ste_adress_var = tk.StringVar(value=self.ste_adresses[0] if self.ste_adresses else "")
+        self.tribunal_var = tk.StringVar(value=self.tribunaux[0] if self.tribunaux else "")
 
         # Liste pour stocker les variables des activités
         self.activites_vars = []
@@ -147,24 +153,26 @@ class SocieteForm(ttk.Frame):
         grid.pack(fill="x", padx=5, pady=5)
         grid.columnconfigure(1, weight=1)
 
-        # Adresse
+        # Adresse — use data loaded from database
         ttk.Label(grid, text="Adresse:", anchor="e", width=15).grid(
             row=0, column=0, padx=(0, 5), pady=2)
         combo = ttk.Combobox(grid, textvariable=self.ste_adress_var,
-                           values=SteAdresse, width=50)
+                           values=self.ste_adresses, width=50)
         combo.grid(row=0, column=1, sticky="ew", pady=2)
         self.combos.append(combo)
 
-        # Tribunal
+        # Tribunal — use data loaded from database
         ttk.Label(grid, text="Tribunal:", anchor="e", width=15).grid(
             row=1, column=0, padx=(0, 5), pady=2)
         combo = ttk.Combobox(grid, textvariable=self.tribunal_var,
-                           values=Tribunnaux, width=50)
+                           values=self.tribunaux, width=50)
         combo.grid(row=1, column=1, sticky="ew", pady=2)
         self.combos.append(combo)
 
     def create_activities_section(self, parent):
         """Crée la section des activités"""
+        from ..utils.utils import get_reference_data
+
         frame = ttk.LabelFrame(parent, text="Activités", padding=(10, 5))
         frame.grid(row=2, column=0, columnspan=2, padx=5, pady=5, sticky="ew")
 
@@ -182,6 +190,9 @@ class SocieteForm(ttk.Frame):
         # Container pour les activités
         self.activities_container = ttk.Frame(content_frame)
         self.activities_container.pack(fill="x", expand=True)
+
+        # Load activities from reference sheet
+        self.activities_list = get_reference_data('Activites')
 
         # Bouton d'ajout
         add_btn = WidgetFactory.create_button(content_frame,
@@ -205,10 +216,10 @@ class SocieteForm(ttk.Frame):
         activity_frame.pack(fill="x", pady=2)
         activity_frame.columnconfigure(0, weight=1)
 
-        # Combobox pour l'activité
+        # Combobox pour l'activité — use data loaded from reference sheet
         combo = ttk.Combobox(activity_frame,
                            textvariable=var,
-                           values=Activities)
+                           values=self.activities_list)
         combo.pack(side="left", fill="x", expand=True, padx=(0, 5))
 
         # Bouton de suppression

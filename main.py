@@ -66,46 +66,74 @@ class MainApp(tk.Tk):
         buttons_frame = ttk.Frame(self)
         buttons_frame.pack(pady=15, side=tk.BOTTOM, fill=tk.X, padx=20)
 
-        # Espace flexible au milieu
-        buttons_frame.grid_columnconfigure(2, weight=1)
+        # Single horizontal row to host all main buttons so they remain on one line
+        row = ttk.Frame(buttons_frame)
+        row.pack(fill='x')
+
+        # Left-side primary buttons (Configuration, Dashboard, Generate)
+        # Configuration button (opens MainForm configuration dialog)
+        try:
+            cfg_btn = WidgetFactory.create_button(row, text="⚙ Configuration", command=self.main_form.open_configuration)
+            cfg_btn.pack(side='left', padx=6)
+            # attach to main_form for state updates
+            self.main_form.config_btn = cfg_btn
+        except Exception:
+            pass
+
+        # Dashboard button
+        WidgetFactory.create_button(
+            row,
+            text="📊 Tableau de bord",
+            command=self.main_form.show_dashboard
+        ).pack(side='left', padx=6)
 
         # Single generation button (modern style)
-        # Use the unified configuration button style for all main buttons
         gen_btn = WidgetFactory.create_button(
-            buttons_frame,
+            row,
             text="Générer les documents",
             command=self.generate_documents,
             style='Secondary.TButton'
         )
-        gen_btn.grid(row=0, column=0, padx=5)
+        gen_btn.pack(side='left', padx=6)
 
-        # Dashboard button (left)
-        WidgetFactory.create_button(
-            buttons_frame,
-            text="📊 Tableau de bord",
-            command=self.main_form.show_dashboard
-        ).grid(row=0, column=2, padx=5)
+        # (Theme toggle removed) — keep toolbar focused and simple. Theme is
+        # still managed programmatically via ThemeManager and the
+        # configuration dialog.
 
-        # Theme toggle
-        def _toggle_theme():
-            try:
-                current = self.theme_manager.theme.mode
-                self.theme_manager.toggle_theme()
-                new = self.theme_manager.theme.mode
-                # update button text to reflect new mode
-                theme_btn.configure(text=('🌙' if new == 'dark' else '☀️'))
-            except Exception:
-                pass
+        # Flexible spacer to push the remaining controls to the right
+        spacer = ttk.Frame(row)
+        spacer.pack(side='left', expand=True, fill='x')
 
-        theme_btn = WidgetFactory.create_button(buttons_frame, text=('🌙' if self.theme_manager.theme.mode == 'dark' else '☀️'), command=_toggle_theme)
-        theme_btn.grid(row=0, column=6, padx=5)
+        # Right-side control buttons (packed in reverse so visual order is left->right)
+        try:
+            # Pack Quitter first (will appear at the far right)
+            WidgetFactory.create_button(row, text="❌ Quitter", command=self.quit).pack(side='right', padx=6)
 
-        # Boutons de contrôle (droite)
-        # Keep only non-redundant toolbar actions here. The main form already
-        # provides a Save button in its footer/navigation, so we avoid creating
-        # a duplicate "Sauvegarder" button in the global toolbar.
-        WidgetFactory.create_button(buttons_frame, text="🆕 Nouvelle", command=self.clear_form).grid(row=0, column=3, padx=5)
-        WidgetFactory.create_button(buttons_frame, text="❌ Quitter", command=self.quit).grid(row=0, column=5, padx=5)
+            # Suivant
+            _btn = WidgetFactory.create_button(row, text="Suivant ▶", command=self.main_form.next_page)
+            _btn.pack(side='right', padx=6)
+            self.main_form.next_btn = _btn
+
+            # Précédent
+            _btn = WidgetFactory.create_button(row, text="◀ Précédent", command=self.main_form.prev_page)
+            _btn.pack(side='right', padx=6)
+            self.main_form.prev_btn = _btn
+
+            # Terminer
+            _btn = WidgetFactory.create_button(row, text="🏁 Terminer", command=self.main_form.finish)
+            _btn.pack(side='right', padx=6)
+            self.main_form.finish_btn = _btn
+
+            # Sauvegarder
+            _btn = WidgetFactory.create_button(row, text="💾 Sauvegarder", command=self.main_form.save_current)
+            _btn.pack(side='right', padx=6)
+            self.main_form.save_btn = _btn
+
+            # Nouvelle (will appear left-most among the right cluster)
+            WidgetFactory.create_button(row, text="🆕 Nouvelle", command=self.clear_form).pack(side='right', padx=6)
+        except Exception:
+            # If main_form isn't ready for some reason, ignore and continue
+            pass
 
     def collect_values(self):
         """Collecte toutes les valeurs des formulaires"""
@@ -124,6 +152,44 @@ class MainApp(tk.Tk):
         """Unified document generation flow: user chooses templates and formats (Word/PDF/Both)."""
         try:
             self.collect_values()
+            # Ask the user whether they want to save before generating.
+            # Yes -> save then generate; No -> generate without saving; Cancel -> abort.
+            try:
+                choice = messagebox.askyesnocancel(
+                    'Sauvegarder avant génération',
+                    'Voulez-vous sauvegarder les données dans la base avant de générer les documents ?\n\nOui = sauvegarder puis générer\nNon = générer sans sauvegarder\nAnnuler = annuler la génération'
+                )
+            except Exception:
+                # If messagebox fails, default to saving to be safe
+                choice = True
+
+            if choice is None:
+                # user cancelled
+                return
+
+            if choice:
+                # User chose to save before generation
+                try:
+                    db_path = self.save_to_db()
+                except Exception as _err:
+                    logger.exception('Erreur lors de la sauvegarde avant génération: %s', _err)
+                    messagebox.showwarning('Sauvegarde échouée', "La sauvegarde a échoué. La génération a été annulée.")
+                    return
+                if not db_path:
+                    # save_to_db returns None on failure / cancel — stop the generation flow
+                    messagebox.showwarning('Sauvegarde manquante', 'La sauvegarde a échoué ou a été annulée. La génération a été annulée.')
+                    return
+            else:
+                # User chose NOT to save; proceed without saving
+                try:
+                    proceed = messagebox.askyesno(
+                        'Générer sans sauvegarder',
+                        'Vous avez choisi de ne pas sauvegarder. Confirmez-vous la génération sans enregistrer les données ?'
+                    )
+                except Exception:
+                    proceed = True
+                if not proceed:
+                    return
             # Choose templates
             templates = self.choose_templates_with_format()
             if templates is None:
@@ -171,31 +237,36 @@ class MainApp(tk.Tk):
 
             def worker():
                 try:
-                    report = render_templates(self.values, str(PathManager.MODELS_DIR), out_dir, to_pdf=to_pdf, templates_list=tpl_paths, progress_callback=progress_cb)
-                    self.after(10, lambda: messagebox.showinfo('Génération terminée', f"Génération terminée. {len(report)} modèles traités. Fichiers enregistrés dans {out_dir}"))
+                    report = render_templates(
+                        self.values,
+                        str(PathManager.MODELS_DIR),
+                        out_dir,
+                        to_pdf=to_pdf,
+                        templates_list=tpl_paths,
+                        progress_callback=progress_cb,
+                    )
+
+                    def _show_done(rep):
+                        # Try to determine the actual generated folder from report entries
+                        try:
+                            import os
+                            from pathlib import Path as _P
+                            paths = [str(_P(e.get('out_docx')).parent) for e in rep if e.get('out_docx')]
+                            folder = os.path.commonpath(paths) if paths else out_dir
+                        except Exception:
+                            folder = out_dir
+                        self.after(10, lambda: messagebox.showinfo('Génération terminée', f"Génération terminée. {len(rep)} modèles traités. Fichiers enregistrés dans {folder}"))
+
+                    self.after(10, lambda r=report: _show_done(r))
+
                 except Exception as e:
                     logging.exception('Generation failed: %s', e)
                     self.after(10, lambda: ErrorHandler.handle_error(e, 'Erreur pendant la génération'))
+
                 finally:
                     self.after(10, lambda: (progress_win.grab_release(), progress_win.destroy()))
 
-            def worker_wrapper():
-                # detect if user selected the project's tmp_out directory and request cleanup
-                try:
-                    cleanup_tmp_flag = Path(out_dir).name == 'tmp_out'
-                except Exception:
-                    cleanup_tmp_flag = False
-                # run worker with cleanup flag captured via closure
-                try:
-                    report = render_templates(self.values, str(PathManager.MODELS_DIR), out_dir, to_pdf=to_pdf, templates_list=tpl_paths, progress_callback=progress_cb, cleanup_tmp=cleanup_tmp_flag)
-                    self.after(10, lambda: messagebox.showinfo('Génération terminée', f"Génération terminée. {len(report)} modèles traités. Fichiers enregistrés dans {out_dir}"))
-                except Exception as e:
-                    logging.exception('Generation failed: %s', e)
-                    self.after(10, lambda: ErrorHandler.handle_error(e, 'Erreur pendant la génération'))
-                finally:
-                    self.after(10, lambda: (progress_win.grab_release(), progress_win.destroy()))
-
-            t = threading.Thread(target=worker_wrapper, daemon=True)
+            t = threading.Thread(target=worker, daemon=True)
             t.start()
 
         except Exception as e:
@@ -361,7 +432,7 @@ class MainApp(tk.Tk):
             db_path = PathManager.DATABASE_DIR / _const.DB_FILENAME
 
             # Ensure workbook and sheets exist
-            from src.utils.utils import ensure_excel_db, write_records_to_db, migrate_excel_workbook
+            from src.utils.utils import ensure_excel_db, write_records_to_db, migrate_excel_workbook, societe_exists
             ensure_excel_db(db_path, _const.excel_sheets)
 
             # Run migration to reconcile older/misnamed sheets into canonical ones
@@ -376,14 +447,27 @@ class MainApp(tk.Tk):
             contrat_vals = self.values.get('contrat', {}) or {}
             associes_list = self.values.get('associes', []) or []
 
+            # If a company name is provided, check for duplicates in the DB and *forbid* saving
+            try:
+                name = societe_vals.get('denomination') or societe_vals.get('DEN_STE')
+                if name and societe_exists(name, db_path):
+                    # Do not allow duplicate société names in the DB
+                    messagebox.showerror('Société existante', f"La société '{name}' existe déjà dans la base. Enregistrement interdit pour éviter les doublons.")
+                    return None
+            except Exception:
+                # Defensive: on any failure of the check, log and continue with save
+                logger.exception('Failed to perform duplicate societe check')
+
             # Delegate the heavy lifting to the utility that handles IDs and date conversion
             write_records_to_db(db_path, societe_vals, associes_list, contrat_vals)
-
-            messagebox.showinfo("Succès", "Données sauvegardées avec succès dans le fichier Excel.")
-            logger.info("Données sauvegardées avec succès")
+            # Do not show a modal message here — let the caller (finish or other
+            # UI action) present a single, consolidated message to the user.
+            logger.info("Données sauvegardées avec succès dans %s", db_path)
+            return db_path
 
         except Exception as e:
             ErrorHandler.handle_error(e, "Erreur lors de la sauvegarde des données.")
+            return None
 
     def clear_form(self):
         """Réinitialise tous les formulaires"""
