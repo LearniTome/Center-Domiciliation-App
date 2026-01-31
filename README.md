@@ -13,6 +13,8 @@ This README focuses on a robust setup and usage guide, platform notes (Windows /
 
 ## 📦 Release notes (short)
 
+- **2026-01-31** — Major UI improvements: Dashboard is now non-modal with auto-refresh after modifications, all dates format as dd/mm/yyyy without time, dark theme applied to data tables ✨
+- **2026-01-31** — Package manager: Switched to **UV** for faster dependency management. `uv sync` and `uv run` are now the recommended setup method 🚀
 - 2025-10-29 — UX tweak: the final "Génération terminée" dialog now shows the actual generated folder (the common folder of generated files) so you can quickly open the output location. ✅
 
 ## Table of contents
@@ -32,9 +34,25 @@ Prerequisites
 
 - Python 3.10 or newer
 - Git (to clone)
+- **UV** - Fast Python package manager (https://docs.astral.sh/uv/)
 - Optional but recommended: Microsoft Office (for opening generated .docx/.pdf)
 
-On Windows (recommended workflow)
+### Installing UV
+
+**Windows:**
+```powershell
+# Using PowerShell (recommended)
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+Or download from: https://github.com/astral/uv/releases
+
+**macOS / Linux:**
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+### Setup with UV
 
 1. Clone the repository:
 
@@ -43,33 +61,47 @@ git clone https://github.com/LearniTome/Center-Domiciliation-App.git
 cd Center-Domiciliation-App
 ```
 
-1. Create and activate a virtual environment:
+2. Install dependencies using UV:
+
+```powershell
+uv sync
+```
+
+3. Run the application:
+
+```powershell
+uv run main.py
+```
+
+**Alternative (all in one):**
+```powershell
+uv run .\main.py
+```
+
+### Legacy setup (Python venv - not recommended)
+
+If you prefer traditional venv instead of UV:
 
 ```powershell
 python -m venv venv
 .\venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python main.py
 ```
 
-1. Install dependencies:
-
-```powershell
-pip install -r requirements-windows.txt
-```
-
-On macOS / Linux
-
+On macOS / Linux:
 ```bash
-git clone https://github.com/LearniTome/Center-Domiciliation-App.git
-cd Center-Domiciliation-App
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
+python main.py
 ```
 
 Notes
 
-- Use `requirements-windows.txt` on Windows to account for Windows-specific wheels if present.
-- If you get binary build errors for packages like `python-docx`, `docxtpl` or others, ensure you have a working build toolchain (on Windows: Build Tools for Visual Studio). Many packages used here are pure-Python.
+- UV is **significantly faster** than pip and provides better dependency resolution
+- `requirements.txt` contains all dependencies (no separate Windows version needed)
+- If you get binary build errors for packages like `python-docx`, `docxtpl`, ensure you have a working build toolchain (on Windows: Build Tools for Visual Studio)
 
 ## ⚙️ Configuration
 
@@ -82,16 +114,28 @@ Edit `config/preferences.json` or create a local copy if you want per-developer 
 
 ## ▶️ Running the application
 
-From the project root, with the venv activated:
+**With UV (recommended):**
 
 ```powershell
+uv run main.py
+```
+
+**With traditional venv:**
+
+```powershell
+# Windows
+.\venv\Scripts\Activate.ps1
+python main.py
+
+# macOS / Linux
+source venv/bin/activate
 python main.py
 ```
 
-Or (module mode):
+Or in module mode:
 
 ```powershell
-python -m main
+uv run -m main
 ```
 
 Primary screens
@@ -146,6 +190,12 @@ The script prints a JSON summary and exits with code 0 on success (or when no ex
 
 Run the provided smoke test to ensure basic imports and app instantiation work:
 
+**With UV:**
+```powershell
+uv run python tests/smoke_test.py
+```
+
+**With venv:**
 ```powershell
 .\venv\Scripts\Activate.ps1
 python tests/smoke_test.py
@@ -153,6 +203,12 @@ python tests/smoke_test.py
 
 Run the full test suite with pytest:
 
+**With UV:**
+```powershell
+uv run pytest -q
+```
+
+**With venv:**
 ```powershell
 .\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
@@ -182,10 +238,11 @@ Inside `src/`
 
 ## 🩺 Troubleshooting
 
-- App won't start / ImportError: verify venv is activated and `pip install -r requirements.txt` completed.
-- docxtpl or docx2pdf errors: ensure `python-docx`, `docxtpl`, and optional `docx2pdf` are installed; on Windows ensure Microsoft Word is installed if you rely on `docx2pdf`.
-- Excel write errors: close the Excel file if open (Windows locks the file); ensure `openpyxl` is installed.
-- GUI sizing issues: run on a larger display or change DPI scaling; minimal recommended resolution 1024x768.
+- App won't start / ImportError: verify dependencies are installed with `uv sync` (or `pip install -r requirements.txt` if using venv)
+- docxtpl or docx2pdf errors: ensure `python-docx`, `docxtpl`, and optional `docx2pdf` are installed; on Windows ensure Microsoft Word is installed if you rely on `docx2pdf`
+- Excel write errors: close the Excel file if open (Windows locks the file); ensure `openpyxl` is installed
+- GUI sizing issues: run on a larger display or change DPI scaling; minimal recommended resolution 1024x768
+- UV not found: ensure UV is installed from https://docs.astral.sh/uv/installation/
 
 If problems persist, run the smoke test and paste the traceback into an issue.
 
