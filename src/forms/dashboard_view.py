@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class DashboardView(tk.Toplevel):
-    """A compact, elegant dashboard modal for viewing and managing data."""
+    """A compact, elegant dashboard window for viewing and managing data (non-modal)."""
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -24,40 +24,33 @@ class DashboardView(tk.Toplevel):
         self.geometry("1100x700")
         self.minsize(800, 520)
 
-        # Make modal
+        # Make transient (floats above parent) but NOT modal (allows parent interaction)
         try:
             self.transient(parent)
-            self.grab_set()
         except Exception:
             pass
 
-        # Track parent state
+        # Track parent state (no longer needed with non-modal, but kept for compatibility)
         self._parent_disabled = False
         self._parent_withdrawn = False
-        try:
-            try:
-                parent.attributes('-disabled', True)
-                self._parent_disabled = True
-            except Exception:
-                try:
-                    parent.withdraw()
-                    self._parent_withdrawn = True
-                except Exception:
-                    pass
-        except Exception:
-            pass
 
         # Theme
         self.theme = ThemeManager(self.winfo_toplevel())
         self.style = self.theme.style
 
+        # Initialize data attributes first
+        self._df = None
+        self._societes_df = None
+        self._associes_df = None
+        self._contrats_df = None
+        self._current_page = 'societe'
+
         # Layout
         self._build_header()
-        self._build_body()
         self._build_status()
+        self._build_body()
 
         # Load data
-        self._df = None
         self._load_data()
 
         # Start clock
@@ -145,7 +138,7 @@ class DashboardView(tk.Toplevel):
 
             self.trees[page_key] = tree
 
-        self._current_page = 'societe'
+        # Now show the first page
         self._show_page('societe')
 
     def _build_status(self):
@@ -239,6 +232,8 @@ class DashboardView(tk.Toplevel):
                 # Add new record - pass empty payload to MainForm
                 if hasattr(self.parent, 'handle_dashboard_action'):
                     self.parent.handle_dashboard_action('add', None)
+                    # Close dashboard after action
+                    self._on_close(call_parent=False)
                 else:
                     messagebox.showwarning('Ajouter', 'Parent window does not support this action')
             elif action == 'edit':
@@ -271,6 +266,8 @@ class DashboardView(tk.Toplevel):
                 # Send to parent
                 if hasattr(self.parent, 'handle_dashboard_action'):
                     self.parent.handle_dashboard_action('edit', payload)
+                    # Close dashboard after action
+                    self._on_close(call_parent=False)
                 else:
                     messagebox.showwarning('Modifier', 'Parent window does not support this action')
             elif action == 'delete':
@@ -303,6 +300,8 @@ class DashboardView(tk.Toplevel):
                 # Send to parent
                 if hasattr(self.parent, 'handle_dashboard_action'):
                     self.parent.handle_dashboard_action('delete', payload)
+                    # Close dashboard after action
+                    self._on_close(call_parent=False)
                 else:
                     messagebox.showwarning('Supprimer', 'Parent window does not support this action')
         except Exception as e:
@@ -323,39 +322,17 @@ class DashboardView(tk.Toplevel):
             except Exception:
                 pass
 
+    def refresh_after_action(self):
+        """Refresh data after add/edit/delete actions (called by parent MainForm)"""
+        self._load_data()
+        messagebox.showinfo('Info', 'Données mises à jour')
+
     def _on_close(self, call_parent=True):
-        """Close dashboard and restore parent"""
-        try:
-            if self._parent_disabled:
-                try:
-                    self.parent.attributes('-disabled', False)
-                except Exception:
-                    pass
-            elif self._parent_withdrawn:
-                try:
-                    self.parent.deiconify()
-                except Exception:
-                    pass
-        except Exception:
-            pass
-
-        try:
-            self.grab_release()
-        except Exception:
-            pass
-
+        """Close dashboard cleanly (no parent restoration needed since non-modal)"""
         try:
             self.destroy()
         except Exception:
             try:
                 self.withdraw()
-            except Exception:
-                pass
-
-        if call_parent:
-            try:
-                self.parent.deiconify()
-                self.parent.lift()
-                self.parent.focus_force()
             except Exception:
                 pass

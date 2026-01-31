@@ -14,6 +14,9 @@ class MainForm(ttk.Frame):
         self.parent = parent
         self.values = values_dict or {}
 
+        # Reference to the dashboard window (for reopening after modifications)
+        self.dashboard = None
+
         # Initialize navigation button attributes with explicit types so
         # linters/type checkers know these exist and accept Button assignments.
         # They are attached by the outer application toolbar (main.py)
@@ -127,6 +130,12 @@ class MainForm(ttk.Frame):
 
         # Setup navigation controls
         self.setup_navigation()
+
+        # Listen for forms finished event to reopen dashboard if needed
+        try:
+            self.bind('<<FormsFinished>>', self._on_forms_finished)
+        except Exception:
+            pass
 
     def create_section_header(self, parent, text, icon, row, column, columnspan=1):
         """Crée un en-tête de section stylisé"""
@@ -293,7 +302,16 @@ class MainForm(ttk.Frame):
     def show_dashboard(self):
         """Switch to dashboard view"""
         from .dashboard_view import DashboardView
-        dashboard = DashboardView(self.winfo_toplevel())  # Window is now modal by default
+        # Keep a reference to the dashboard so we can refresh it later
+        self.dashboard = DashboardView(self)  # Pass self (MainForm) not winfo_toplevel()
+
+    def _on_forms_finished(self, event=None):
+        """Reopen dashboard after forms are finished and saved"""
+        try:
+            # Small delay to let the messagebox finish displaying
+            self.after(500, self.show_dashboard)
+        except Exception:
+            pass
 
     def open_configuration(self):
         """Open a simple configuration dialog to change theme and other prefs."""
@@ -382,8 +400,11 @@ class MainForm(ttk.Frame):
         self.values = {}
         # Réinitialiser chaque formulaire individuellement
         for key, _, form in self.pages:
-            if hasattr(form, 'set_values'):
-                # default empty structure
+            if hasattr(form, 'reset'):
+                # Appeler la méthode reset() si elle existe
+                form.reset()
+            elif hasattr(form, 'set_values'):
+                # Fallback à set_values si reset() n'existe pas
                 default = [] if key == 'associes' else {}
                 form.set_values(default)
 
@@ -743,6 +764,12 @@ class MainForm(ttk.Frame):
                             contrat_df.to_excel(writer, sheet_name='Contrats', index=False)
 
                     messagebox.showinfo('Succès', f"Société '{den}' supprimée avec succès.")
+                    # Refresh dashboard if it exists
+                    if self.dashboard and hasattr(self.dashboard, 'refresh_after_action'):
+                        try:
+                            self.dashboard.refresh_after_action()
+                        except Exception:
+                            pass
                     return
                 except PermissionError:
                     messagebox.showerror('Erreur', 'Le fichier Excel est ouvert dans une autre application. Fermez Excel et réessayez.')

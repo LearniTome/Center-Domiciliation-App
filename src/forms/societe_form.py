@@ -270,3 +270,27 @@ class SocieteForm(ttk.Frame):
             if len(self.activites_vars) < 6:  # Vérifier la limite
                 self.add_activity()
                 self.activites_vars[-1].set(activite)
+
+    def reset(self):
+        """Réinitialise tous les champs du formulaire à leurs valeurs par défaut"""
+        import datetime
+        from ..utils.constants import DenSte, Formjur, Capital, PartsSocial
+        
+        # Réinitialiser les champs de texte
+        self.den_ste_var.set(DenSte[0] if DenSte else "")
+        self.forme_jur_var.set(Formjur[0] if Formjur else "")
+        self.ice_var.set("")
+        today = datetime.date.today().strftime('%d/%m/%Y')
+        self.date_ice_var.set(today)
+        self.capital_var.set(Capital[0] if Capital else "")
+        self.parts_social_var.set(PartsSocial[0] if PartsSocial else "")
+        self.ste_adress_var.set(self.ste_adresses[0] if self.ste_adresses else "")
+        self.tribunal_var.set(self.tribunaux[0] if self.tribunaux else "")
+        
+        # Réinitialiser les activités
+        # Supprimer tous les champs d'activités sauf le premier
+        while len(self.activites_vars) > 1:
+            self.activites_vars.pop().set("")
+        # Réinitialiser le premier champ d'activité
+        if self.activites_vars:
+            self.activites_vars[0].set("")
