@@ -1,4 +1,4 @@
-﻿# 🏢 Centre de Domiciliation — Application de gestion (Desktop)
+# 🏢 Centre de Domiciliation — Application de gestion (Desktop)
 
 A desktop application to manage company domiciliation services (French/English). Built with Python and Tkinter. It stores data in Excel, uses Word templates for document generation, and provides a simple UI for sociétés, associés and contrats.
 
@@ -10,11 +10,12 @@ This README focuses on a robust setup and usage guide, platform notes (Windows /
 - UI: Tkinter (+ tkcalendar)
 - Data store: Excel files (pandas + openpyxl)
 - Templates: Word (.docx) using docxtpl
+- Package Manager: **UV** (fast, modern Python package manager)
 
 ## 📦 Release notes (short)
 
 - **2026-01-31** — Major UI improvements: Dashboard is now non-modal with auto-refresh after modifications, all dates format as dd/mm/yyyy without time, dark theme applied to data tables ✨
-- **2026-01-31** — Package manager: Switched to **UV** for faster dependency management. `uv sync` and `uv run` are now the recommended setup method 🚀
+- **2026-01-31** — Package manager: Switched to **UV** for faster dependency management. `uv sync` and `uv run` are now the only setup method 🚀
 - 2025-10-29 — UX tweak: the final "Génération terminée" dialog now shows the actual generated folder (the common folder of generated files) so you can quickly open the output location. ✅
 
 ## Table of contents
@@ -30,24 +31,26 @@ This README focuses on a robust setup and usage guide, platform notes (Windows /
 
 ## 🛠️ Installation
 
-Prerequisites
+### Prerequisites
 
 - Python 3.10 or newer
 - Git (to clone)
-- **UV** - Fast Python package manager (https://docs.astral.sh/uv/)
+- **UV** - Fast Python package manager ([https://docs.astral.sh/uv/](https://docs.astral.sh/uv/))
 - Optional but recommended: Microsoft Office (for opening generated .docx/.pdf)
 
 ### Installing UV
 
 **Windows:**
+
 ```powershell
 # Using PowerShell (recommended)
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
-Or download from: https://github.com/astral/uv/releases
+Or download from: [https://github.com/astral/uv/releases](https://github.com/astral/uv/releases)
 
 **macOS / Linux:**
+
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
@@ -73,36 +76,6 @@ uv sync
 uv run main.py
 ```
 
-**Alternative (all in one):**
-```powershell
-uv run .\main.py
-```
-
-### Legacy setup (Python venv - not recommended)
-
-If you prefer traditional venv instead of UV:
-
-```powershell
-python -m venv venv
-.\venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-python main.py
-```
-
-On macOS / Linux:
-```bash
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-python main.py
-```
-
-Notes
-
-- UV is **significantly faster** than pip and provides better dependency resolution
-- `requirements.txt` contains all dependencies (no separate Windows version needed)
-- If you get binary build errors for packages like `python-docx`, `docxtpl`, ensure you have a working build toolchain (on Windows: Build Tools for Visual Studio)
-
 ## ⚙️ Configuration
 
 Default preferences are stored in `config/preferences.json`. Common changes:
@@ -114,22 +87,8 @@ Edit `config/preferences.json` or create a local copy if you want per-developer 
 
 ## ▶️ Running the application
 
-**With UV (recommended):**
-
 ```powershell
 uv run main.py
-```
-
-**With traditional venv:**
-
-```powershell
-# Windows
-.\venv\Scripts\Activate.ps1
-python main.py
-
-# macOS / Linux
-source venv/bin/activate
-python main.py
 ```
 
 Or in module mode:
@@ -138,18 +97,18 @@ Or in module mode:
 uv run -m main
 ```
 
-Primary screens
+### Primary screens
 
 - Societies (Société): create and edit domiciled companies
 - Associates (Associés): manage partners/members
 - Contracts (Contrat): create or generate contract documents
 
-📄 Document generation
+### 📄 Document generation
 
 - Documents live in `Models/` as .docx templates. The app fills templates using `docxtpl` and writes output to `tmp_out/`.
 - PDF export uses `docx2pdf` when available (Windows with Word installed) or external converters.
 
-📝 Generation reports
+### 📝 Generation reports
 
 - After a generation run the app writes a human-friendly HTML report into the generation output folder. The file name uses this pattern:
 
@@ -159,7 +118,7 @@ Primary screens
 
 - The generator writes a JSON report using the same base name as the HTML report (for example `2025-10-23_ASTRAPIA_Raport_Docs_generer.json`). The HTML report embeds the same JSON inside a `<pre id="genjson">` block so tooling can extract it easily.
 
-Important runtime behaviors (recent updates)
+### Important runtime behaviors (recent updates)
 
 - Automatic save before generation: when you click "Générer les documents" the application now automatically saves all form sections (Société, Associés, Contrat) to the Excel database before starting the document generation. If the save fails (for example the Excel file is locked by Excel), generation is cancelled and a warning is shown so you can correct the issue and retry.
 
@@ -180,8 +139,7 @@ Important runtime behaviors (recent updates)
 - The included verification script `scripts/check_generation.py` prefers the HTML report (it will extract the embedded JSON), then looks for a named JSON that matches the HTML report naming convention, and finally falls back to `generation_report.json` only if necessary. To validate a generation and assert basic expectations run:
 
 ```powershell
-.\venv\Scripts\Activate.ps1
-python .\scripts\check_generation.py --expect-company ASTRAPIA --expect-associe "Abdeljalil"
+uv run python scripts/check_generation.py --expect-company ASTRAPIA --expect-associe "Abdeljalil"
 ```
 
 The script prints a JSON summary and exits with code 0 on success (or when no expectations were given) and non-zero if any expectation fails.
@@ -190,72 +148,58 @@ The script prints a JSON summary and exits with code 0 on success (or when no ex
 
 Run the provided smoke test to ensure basic imports and app instantiation work:
 
-**With UV:**
 ```powershell
 uv run python tests/smoke_test.py
 ```
 
-**With venv:**
-```powershell
-.\venv\Scripts\Activate.ps1
-python tests/smoke_test.py
-```
-
 Run the full test suite with pytest:
 
-**With UV:**
 ```powershell
 uv run pytest -q
 ```
 
-**With venv:**
-```powershell
-.\venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-pytest -q
-```
-
-Expected quick checks
+### Expected quick checks
 
 - `tests/smoke_test.py` should print: "Smoke test: MainApp instantiated successfully"
 
 ## 📁 Project layout
 
-Top-level files
+### Top-level files
 
 - `main.py` — application entrypoint
-- `requirements.txt`, `requirements-windows.txt` — dependencies
+- `requirements.txt` — dependencies
 - `config/` — preferences
 - `databases/` — Excel datastore(s)
 - `Models/` — Word templates used for document generation
 - `tmp_out/` — generated files output
 - `src/` — application source code
 
-Inside `src/`
+### Inside `src/`
 
 - `forms/` — UI forms (main_form.py, societe_form.py, associe_form.py, contrat_form.py)
 - `utils/` — utilities and small helpers (doc generation, styles, constants)
 
 ## 🩺 Troubleshooting
 
-- App won't start / ImportError: verify dependencies are installed with `uv sync` (or `pip install -r requirements.txt` if using venv)
-- docxtpl or docx2pdf errors: ensure `python-docx`, `docxtpl`, and optional `docx2pdf` are installed; on Windows ensure Microsoft Word is installed if you rely on `docx2pdf`
+- App won't start / ImportError: verify dependencies are installed with `uv sync`
+- docxtpl or docx2pdf errors: ensure `python-docx`, `docxtpl`, and optional `docx2pdf` are installed; on Windows ensure Microsoft Office is installed if you rely on `docx2pdf`
 - Excel write errors: close the Excel file if open (Windows locks the file); ensure `openpyxl` is installed
 - GUI sizing issues: run on a larger display or change DPI scaling; minimal recommended resolution 1024x768
-- UV not found: ensure UV is installed from https://docs.astral.sh/uv/installation/
+- UV not found: ensure UV is installed from [https://docs.astral.sh/uv/installation/](https://docs.astral.sh/uv/installation/)
+- Binary build errors: on Windows, install Build Tools for Visual Studio: https://visualstudio.microsoft.com/visual-cpp-build-tools/
 
 If problems persist, run the smoke test and paste the traceback into an issue.
 
 ## 🤝 Contributing
 
-Guidelines
+### Guidelines
 
 - Create a topic branch per feature or bugfix: `git checkout -b feat/your-feature`
 - Keep commits small and focused
 - Add/adjust tests for new logic
 - Open a Pull Request describing the change and which files to review
 
-Development workflow
+### Development workflow
 
 ```bash
 git checkout -b chore/your-task
@@ -265,7 +209,7 @@ git commit -m "chore: describe changes"
 git push --set-upstream origin chore/your-task
 ```
 
-Automated scripts
+### Automated scripts
 
 - `scripts/auto_commit.py` can help with staged auto-commits; review its README in `scripts/`.
 
@@ -276,8 +220,8 @@ If you'd like these behaviors changed (for example re-enable the legacy `generat
 This project is licensed under the MIT License. See `LICENSE` for details.
 
 ---
+
 If you'd like, I can also:
 
 - add a minimal CONTRIBUTING.md
 - add a checklist GitHub Action to run the smoke test on PRs
-- or create a small script to create the recommended venv and install deps automatically
