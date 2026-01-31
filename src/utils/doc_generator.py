@@ -28,9 +28,12 @@ def _convert_to_pdf(docx_path: Path, pdf_path: Path) -> None:
     try:
         from docx2pdf import convert
         convert(str(docx_path), str(pdf_path))
+        logger.info("PDF conversion successful using docx2pdf: %s", pdf_path)
         return
-    except Exception:
-        logger.debug("docx2pdf not available or failed; will try soffice fallback")
+    except ImportError:
+        logger.debug("docx2pdf not installed; will try soffice fallback")
+    except Exception as e:
+        logger.debug("docx2pdf conversion failed: %s; will try soffice fallback", e)
 
     # Fallback: try using LibreOffice (soffice) in headless mode if installed
     soffice = None
@@ -40,8 +43,12 @@ def _convert_to_pdf(docx_path: Path, pdf_path: Path) -> None:
             break
 
     if not soffice:
-        logger.warning("No PDF conversion tool available (docx2pdf or LibreOffice); skipping PDF conversion")
-        return
+        raise RuntimeError(
+            "No PDF conversion tool available. Install either:\n"
+            "  1. docx2pdf (Windows with MS Word): pip install docx2pdf\n"
+            "  2. LibreOffice (all platforms): Install from https://www.libreoffice.org/\n"
+            f"Cannot convert {docx_path} to PDF"
+        )
 
     # Use soffice to convert
     try:
@@ -51,9 +58,10 @@ def _convert_to_pdf(docx_path: Path, pdf_path: Path) -> None:
         subprocess.run([soffice, "--headless", "--convert-to", "pdf", "--outdir", outdir, str(docx_path)], check=True)
         # soffice names the output with the same stem + .pdf in outdir
         if not pdf_path.exists():
-            logger.debug("Post-conversion: expected PDF %s not found; checking for alternatives", pdf_path)
+            raise RuntimeError(f"PDF conversion with LibreOffice succeeded but output file not found: {pdf_path}")
+        logger.info("PDF conversion successful using LibreOffice: %s", pdf_path)
     except Exception as e:
-        logger.exception("LibreOffice PDF conversion failed: %s", e)
+        logger.exception("PDF conversion failed: %s", e)
         raise
 
 

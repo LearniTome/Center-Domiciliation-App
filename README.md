@@ -186,7 +186,7 @@ uv run pytest -q
 - Excel write errors: close the Excel file if open (Windows locks the file); ensure `openpyxl` is installed
 - GUI sizing issues: run on a larger display or change DPI scaling; minimal recommended resolution 1024x768
 - UV not found: ensure UV is installed from [https://docs.astral.sh/uv/installation/](https://docs.astral.sh/uv/installation/)
-- Binary build errors: on Windows, install Build Tools for Visual Studio: https://visualstudio.microsoft.com/visual-cpp-build-tools/
+- Binary build errors: on Windows, install Build Tools for Visual Studio: [https://visualstudio.microsoft.com/visual-cpp-build-tools/](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
 
 If problems persist, run the smoke test and paste the traceback into an issue.
 
