@@ -51,14 +51,23 @@ class DashboardView(tk.Toplevel):
         self.theme = ThemeManager(self.winfo_toplevel())
         self.style = self.theme.style
 
+        # Initialize data variables FIRST (before building body)
+        self._df = None
+        self._societes_df = None
+        self._associes_df = None
+        self._contrats_df = None
+        self._current_page = 'societe'
+
         # Layout
         self._build_header()
         self._build_body()
         self._build_status()
 
-        # Load data
-        self._df = None
+        # Load data (after all widgets are created)
         self._load_data()
+
+        # Show first page with data
+        self._show_page('societe')
 
         # Start clock
         self._update_clock()
@@ -145,9 +154,6 @@ class DashboardView(tk.Toplevel):
 
             self.trees[page_key] = tree
 
-        self._current_page = 'societe'
-        self._show_page('societe')
-
     def _build_status(self):
         """Build status bar"""
         self.status_label = ttk.Label(self, text='Prêt', relief=tk.SUNKEN)
@@ -222,9 +228,24 @@ class DashboardView(tk.Toplevel):
         # Populate current tree
         tree = self.trees.get(self._current_page)
         if tree is not None:
-            columns = [c for c in tree["columns"]]
-            for _, row in self._df.iterrows():
-                values = [str(row.get(col, '')) for col in columns]
+            # Get column names from tree (these are display columns without ID_*)
+            columns = list(tree["columns"])
+            logger.debug(f"Tree columns for '{self._current_page}': {columns}")
+            logger.debug(f"DataFrame columns: {list(self._df.columns)}")
+
+            # Populate tree with data
+            for idx, (_, row) in enumerate(self._df.iterrows()):
+                values = []
+                for col in columns:
+                    # Get value from row, handling missing columns gracefully
+                    if col in self._df.columns:
+                        val = row.get(col, '')
+                    else:
+                        logger.warning(f"Column '{col}' not found in DataFrame")
+                        val = ''
+                    values.append(str(val))
+
+                logger.debug(f"Row {idx} values: {values}")
                 tree.insert('', 'end', values=values)
 
         self.status_label.config(text=f'Total: {len(self._df)} enregistrements')
@@ -247,27 +268,27 @@ class DashboardView(tk.Toplevel):
                 if tree is None:
                     messagebox.showwarning('Modifier', 'Aucune page sélectionnée')
                     return
-                
+
                 # Get selected row
                 selection = tree.selection()
                 if not selection:
                     messagebox.showwarning('Modifier', 'Veuillez sélectionner un enregistrement')
                     return
-                
+
                 # Build payload from selected row and current DataFrame
                 if self._df is None or self._df.empty:
                     messagebox.showwarning('Modifier', 'Aucune donnée disponible')
                     return
-                
+
                 df = self._df  # Narrow type for type checker
                 selected_idx = tree.index(selection[0])
                 if selected_idx >= len(df):
                     messagebox.showerror('Modifier', 'Index de ligne invalide')
                     return
-                
+
                 row = df.iloc[selected_idx]
                 payload = row.to_dict()
-                
+
                 # Send to parent
                 if hasattr(self.parent, 'handle_dashboard_action'):
                     self.parent.handle_dashboard_action('edit', payload)
@@ -279,27 +300,27 @@ class DashboardView(tk.Toplevel):
                 if tree is None:
                     messagebox.showwarning('Supprimer', 'Aucune page sélectionnée')
                     return
-                
+
                 # Get selected row
                 selection = tree.selection()
                 if not selection:
                     messagebox.showwarning('Supprimer', 'Veuillez sélectionner un enregistrement')
                     return
-                
+
                 # Build payload from selected row
                 if self._df is None or self._df.empty:
                     messagebox.showwarning('Supprimer', 'Aucune donnée disponible')
                     return
-                
+
                 df = self._df  # Narrow type for type checker
                 selected_idx = tree.index(selection[0])
                 if selected_idx >= len(df):
                     messagebox.showerror('Supprimer', 'Index de ligne invalide')
                     return
-                
+
                 row = df.iloc[selected_idx]
                 payload = row.to_dict()
-                
+
                 # Send to parent
                 if hasattr(self.parent, 'handle_dashboard_action'):
                     self.parent.handle_dashboard_action('delete', payload)
