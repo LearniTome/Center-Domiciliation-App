@@ -203,17 +203,28 @@ class ModernTheme:
         self.style.configure('TCombobox',
             background=self.colors['input_bg'],
             fieldbackground=self.colors['input_bg'],
+            foreground=self.colors['fg'],
             selectbackground=self.colors['accent'],
-            selectforeground=self.colors['fg'],
+            selectforeground='white',
             borderwidth=1,
             arrowsize=12,
-            padding=(6, 4))
+            padding=(6, 4),
+            relief='solid')
+        
+        # Map for different states
+        self.style.map('TCombobox',
+            fieldbackground=[('readonly', self.colors['input_bg']),
+                           ('focus', self.colors['input_border'])],
+            background=[('readonly', self.colors['input_bg']),
+                       ('hover', self.colors['hover'])],
+            foreground=[('readonly', self.colors['fg'])],
+            arrowcolor=[('readonly', self.colors['fg'])])
 
     def _setup_treeview_styles(self):
         # Treeview rows slightly taller for readability and visible separators
         # Use section_bg for better contrast in dark mode
         treeview_bg = self.colors['section_bg'] if self.mode == 'dark' else self.colors['bg']
-        
+
         self.style.configure('Treeview',
             background=treeview_bg,
             fieldbackground=treeview_bg,
@@ -295,7 +306,7 @@ class ModernTheme:
         """Configure styles for Scrollbars"""
         scrollbar_trough = self.colors['section_bg']
         scrollbar_thumb = self.colors['accent']
-        
+
         self.style.configure('TScrollbar',
             background=scrollbar_trough,
             troughcolor=scrollbar_trough,

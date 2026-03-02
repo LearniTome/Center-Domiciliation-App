@@ -197,18 +197,24 @@ class ThemeManager:
         to update already-created widgets so their selection colors match the theme.
         """
         try:
+            # Use section_bg for Listbox in dark mode for better contrast
+            listbox_bg = self.colors.get('section_bg', self.colors['bg']) if self.theme.mode == 'dark' else self.colors['bg']
+            input_bg = self.colors.get('input_bg', self.colors['bg'])
+            
             # Set global defaults for new widgets
             try:
-                self.root.option_add('*Listbox.background', self.colors['bg'])
+                self.root.option_add('*Listbox.background', listbox_bg)
                 self.root.option_add('*Listbox.foreground', self.colors['fg'])
                 self.root.option_add('*Listbox.selectBackground', self.colors['accent'])
                 self.root.option_add('*Listbox.selectForeground', 'white')
+                self.root.option_add('*Listbox.relief', 'solid')
+                self.root.option_add('*Listbox.borderwidth', '1')
 
-                self.root.option_add('*Text.background', self.colors['bg'])
+                self.root.option_add('*Text.background', input_bg)
                 self.root.option_add('*Text.foreground', self.colors['fg'])
                 self.root.option_add('*Text.insertBackground', self.colors['fg'])
 
-                self.root.option_add('*Menu.background', self.colors['bg'])
+                self.root.option_add('*Menu.background', listbox_bg)
                 self.root.option_add('*Menu.foreground', self.colors['fg'])
                 self.root.option_add('*Menu.activeBackground', self.colors['accent'])
                 self.root.option_add('*Menu.activeForeground', 'white')
@@ -220,12 +226,12 @@ class ThemeManager:
                 for child in widget.winfo_children():
                     try:
                         if isinstance(child, tk.Listbox):
-                            child.configure(background=self.colors['bg'], foreground=self.colors['fg'], selectbackground=self.colors['accent'], selectforeground='white')
+                            child.configure(background=listbox_bg, foreground=self.colors['fg'], selectbackground=self.colors['accent'], selectforeground='white', relief='solid', borderwidth=1)
                         elif isinstance(child, tk.Text):
-                            child.configure(background=self.colors['bg'], foreground=self.colors['fg'], insertbackground=self.colors['fg'])
+                            child.configure(background=input_bg, foreground=self.colors['fg'], insertbackground=self.colors['fg'])
                         elif isinstance(child, tk.Menu):
                             try:
-                                child.configure(background=self.colors['bg'], foreground=self.colors['fg'], activebackground=self.colors['accent'], activeforeground='white')
+                                child.configure(background=listbox_bg, foreground=self.colors['fg'], activebackground=self.colors['accent'], activeforeground='white')
                             except Exception:
                                 pass
                     except Exception:
