@@ -75,6 +75,9 @@ class ModernTheme:
         self._setup_frame_styles()
         self._setup_label_styles()
         self._setup_section_styles()
+        self._setup_treeview_styles()
+        self._setup_notebook_styles()
+        self._setup_scrollbar_styles()
 
     def _setup_section_styles(self):
         """Configure les styles pour les sections de formulaire"""
@@ -208,21 +211,27 @@ class ModernTheme:
 
     def _setup_treeview_styles(self):
         # Treeview rows slightly taller for readability and visible separators
+        # Use section_bg for better contrast in dark mode
+        treeview_bg = self.colors['section_bg'] if self.mode == 'dark' else self.colors['bg']
+        
         self.style.configure('Treeview',
-            background=self.colors['bg'],
-            fieldbackground=self.colors['bg'],
+            background=treeview_bg,
+            fieldbackground=treeview_bg,
             foreground=self.colors['fg'],
             rowheight=28,
-            borderwidth=1)
+            borderwidth=1,
+            relief='solid')
 
         self.style.configure('Treeview.Heading',
             background=self.colors['accent'],
             foreground='white',
-            relief='flat',
+            relief='solid',
+            padding=(8, 4),
             font=('Segoe UI', 9, 'bold'))
 
         self.style.map('Treeview',
-            background=[('selected', self.colors['accent'])],
+            background=[('selected', self.colors['accent']),
+                       ('alternate', self.colors['bg'])],
             foreground=[('selected', 'white')])
 
     def _setup_notebook_styles(self):
@@ -281,3 +290,16 @@ class ModernTheme:
         except Exception:
             # Some themes may not support mapping these states; ignore safely
             pass
+
+    def _setup_scrollbar_styles(self):
+        """Configure styles for Scrollbars"""
+        scrollbar_trough = self.colors['section_bg']
+        scrollbar_thumb = self.colors['accent']
+        
+        self.style.configure('TScrollbar',
+            background=scrollbar_trough,
+            troughcolor=scrollbar_trough,
+            borderwidth=0,
+            arrowcolor=self.colors['fg'],
+            darkcolor=scrollbar_trough,
+            lightcolor=scrollbar_trough)
