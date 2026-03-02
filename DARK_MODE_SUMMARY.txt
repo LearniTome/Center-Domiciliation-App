@@ -1,0 +1,160 @@
+🌙 DARK MODE v2.2.0 - IMPLEMENTATION COMPLETE
+═════════════════════════════════════════════════════════════════
+
+✅ DARK THEME NOW ENABLED BY DEFAULT
+
+┌─────────────────────────────────────────────────────────────┐
+│                   COLOR PALETTE (Dark Mode)                 │
+├─────────────────────────────────────────────────────────────┤
+│ Background:         #1f1f1f (Almost black)                  │
+│ Text Color:         #f3f3f3 (Off-white)                     │
+│ Accent:             #4a90e2 (Blue)                          │
+│ Section BG:         #232323 (Treeview/Section)              │
+│ Input Background:   #262626 (Input fields)                  │
+│ Borders:            #3a3a3a (Subtle separators)             │
+│ Hover State:        #2b2b2b                                 │
+└─────────────────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════
+
+🎨 COMPONENTS UPDATED
+═════════════════════════════════════════════════════════════════
+
+✓ Dashboard Treeview
+  • Background: Dark (#232323)
+  • Text: Light (#f3f3f3)
+  • Headers: Blue accent (#4a90e2)
+  • Scrollbars: Styled to match dark theme
+  • Alternate rows: Enhanced visibility
+
+✓ Scrollbars
+  • Background: Dark gray (#232323)
+  • Arrows: Light gray (#f3f3f3)
+  • Visible and interactive
+
+✓ Notebooks & Tabs
+  • Styled for dark mode
+  • Accent color for active tabs
+
+✓ Input Fields
+  • Background: #262626 (slightly lighter than main bg)
+  • Borders: #4a4a4a (visible separator)
+
+✓ Labels & Text
+  • Color: #f3f3f3 (readable on dark backgrounds)
+
+═══════════════════════════════════════════════════════════════
+
+📊 BEFORE vs AFTER
+═════════════════════════════════════════════════════════════════
+
+BEFORE (v2.1.0):
+  ❌ Treeview not styled → invisible/unreadable
+  ❌ Scrollbars using defaults → hard to see
+  ❌ Headers missing style → poor visibility
+
+AFTER (v2.2.0):
+  ✅ Treeview: Dark bg with light text
+  ✅ Scrollbars: Styled to match theme
+  ✅ Headers: Blue accent, white text
+  ✅ Complete dark mode coverage
+
+═══════════════════════════════════════════════════════════════
+
+🔧 TECHNICAL CHANGES
+═════════════════════════════════════════════════════════════════
+
+File: src/utils/styles.py
+
+1. Added to apply_theme():
+   • _setup_treeview_styles()
+   • _setup_notebook_styles()
+   • _setup_scrollbar_styles()
+
+2. Enhanced _setup_treeview_styles():
+   • Uses section_bg for Treeview in dark mode
+   • Added relief='solid' for visibility
+   • Added alternate row color mapping
+
+3. New _setup_scrollbar_styles():
+   • Configures Scrollbar colors
+   • Matches dark theme palette
+
+═══════════════════════════════════════════════════════════════
+
+📝 FILES MODIFIED
+═════════════════════════════════════════════════════════════════
+
+✓ src/utils/styles.py (Lines: +21)
+  • Enhanced dark mode styling for all components
+
+✓ test_dark_mode.py (NEW)
+  • Test script for dark mode verification
+  • Run: uv run python test_dark_mode.py
+
+═══════════════════════════════════════════════════════════════
+
+🚀 HOW TO TEST
+═════════════════════════════════════════════════════════════════
+
+1. Run the application:
+   $ uv run python main.py
+
+2. Open the Dashboard:
+   • Click "Tableau de Bord" button
+   • Observe dark theme applied to all elements
+
+3. Check all pages:
+   • Switch between Sociétés, Associés, Contrats tabs
+   • Verify text is readable
+   • Check scrollbars are visible
+
+4. Run dark mode test:
+   $ uv run python test_dark_mode.py
+
+═══════════════════════════════════════════════════════════════
+
+📈 CONTRAST RATIOS
+═════════════════════════════════════════════════════════════════
+
+Text on Background:
+  #f3f3f3 on #1f1f1f = 15.1:1 ✅ (AA standard: 4.5:1)
+  #f3f3f3 on #232323 = 14.2:1 ✅ (AA standard: 4.5:1)
+
+This exceeds WCAG AA accessibility standards!
+
+═════════════════════════════════════════════════════════════════
+
+✨ FEATURES
+═════════════════════════════════════════════════════════════════
+
+✅ Dark theme enabled by default
+✅ High contrast for readability
+✅ All UI components properly styled
+✅ Consistent color palette
+✅ Settings persist in config/preferences.json
+✅ Can switch themes at runtime
+✅ Scrollbars visible and themed
+✅ Treeview rows clearly separated
+✅ No hardcoded colors in forms
+✅ Accessible color ratios (15:1)
+
+═════════════════════════════════════════════════════════════════
+
+🎯 BRANCH & COMMIT
+═════════════════════════════════════════════════════════════════
+
+Branch:  develop/v2.2.0
+Commit:  907c3f4
+Message: feat: Apply dark mode styling to all UI components
+
+git push: ✅ PUSHED
+
+═════════════════════════════════════════════════════════════════
+
+✨ STATUS: COMPLETE ✨
+
+Dark mode is now fully implemented and ready for use!
+All components have proper styling and high contrast.
+
+═════════════════════════════════════════════════════════════════
