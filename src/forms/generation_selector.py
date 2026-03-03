@@ -144,35 +144,35 @@ class GenerationSelectorDialog(tk.Toplevel):
             btn_frame,
             text="🔄 Actualiser les modèles",
             command=self._refresh_template_list,
-            style='Secondary.TButton'
+            style='Manage.TButton'
         ).pack(side='left', padx=5)
 
         WidgetFactory.create_button(
             btn_frame,
             text="📁 Consulter les modèles existants",
             command=self._view_templates,
-            style='Secondary.TButton'
+            style='Manage.TButton'
         ).pack(side='left', padx=5)
 
         WidgetFactory.create_button(
             btn_frame,
             text="⬆️ Uploader un nouveau modèle",
             command=self._upload_template,
-            style='Secondary.TButton'
+            style='Manage.TButton'
         ).pack(side='left', padx=5)
 
         # Template list with checkboxes for selection
         ttk.Label(template_frame, text="Modèles à générer:", font=('Segoe UI', 10, 'bold')).pack(anchor='w', pady=(0, 8))
 
-        # Create frame with scrollbar for template checkboxes - SMALLER HEIGHT
-        list_frame = ttk.Frame(template_frame, height=200)
+        # Create frame with scrollbar for template checkboxes - CONSTRAINED HEIGHT
+        list_frame = ttk.Frame(template_frame, height=180)
         list_frame.pack(fill='both', expand=False, pady=(0, 10))
 
         scrollbar = ttk.Scrollbar(list_frame)
         scrollbar.pack(side='right', fill='y')
 
         # Use Frame instead of Listbox to hold checkboxes
-        self.template_canvas = tk.Canvas(list_frame, height=200, bg='#2b2b2b')
+        self.template_canvas = tk.Canvas(list_frame, height=180, bg='#2b2b2b')
         self.template_canvas.pack(side='left', fill='both', expand=True)
         scrollbar.config(command=self.template_canvas.yview)
         self.template_canvas.config(yscrollcommand=scrollbar.set)

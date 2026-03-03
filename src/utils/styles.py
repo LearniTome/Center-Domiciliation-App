@@ -150,11 +150,12 @@ class ModernTheme:
 
         # Boutons secondaires (Configuration style) — bordered, neutral background
         self.style.configure('Secondary.TButton',
-            background=self.colors['bg'],
-            foreground=self.colors['fg'],
+            background='#404040' if self.mode == 'dark' else self.colors['bg'],
+            foreground='white' if self.mode == 'dark' else self.colors['fg'],
             relief='solid',
-            borderwidth=1,
-            padding=(10, 8))
+            borderwidth=2,
+            padding=(12, 8),
+            font=('Segoe UI', 10))
 
         # Make other logical button styles visually match Secondary by default
         try:
@@ -186,19 +187,46 @@ class ModernTheme:
 
         # Boutons de succès (vert - pour générer/confirmer)
         self.style.configure('Success.TButton',
-            background='#2ecc71',  # Vert vif
+            background='#27ae60',  # Vert plus foncé pour meilleure visibilité
             foreground='white',
             relief='solid',
-            borderwidth=1,
-            padding=(12, 8),
-            font=('Segoe UI', 10, 'bold'))
+            borderwidth=2,
+            padding=(14, 10),
+            font=('Segoe UI', 11, 'bold'))
 
         # Boutons d'annulation (rouge - pour cancel)
         self.style.configure('Cancel.TButton',
-            background='#e74c3c',  # Rouge vif
+            background='#c0392b',  # Rouge plus foncé pour meilleure visibilité
+            foreground='white',
+            relief='solid',
+            borderwidth=2,
+            padding=(14, 10),
+            font=('Segoe UI', 11, 'bold'))
+
+        # Boutons de gestion (bleu - pour refresh, upload, etc)
+        self.style.configure('Manage.TButton',
+            background='#3498db',  # Bleu visible
             foreground='white',
             relief='solid',
             borderwidth=1,
+            padding=(10, 8),
+            font=('Segoe UI', 9))
+
+        # Boutons de confirmation (bleu accent - pour OK)
+        self.style.configure('Confirm.TButton',
+            background='#4a90e2',  # Bleu accent
+            foreground='white',
+            relief='solid',
+            borderwidth=2,
+            padding=(12, 8),
+            font=('Segoe UI', 10, 'bold'))
+
+        # Boutons de fermeture (gris - pour Annuler)
+        self.style.configure('Close.TButton',
+            background='#555555',  # Gris foncé visible
+            foreground='white',
+            relief='solid',
+            borderwidth=2,
             padding=(12, 8),
             font=('Segoe UI', 10, 'bold'))
 
@@ -216,11 +244,23 @@ class ModernTheme:
                 foreground=[('disabled', self.colors['fg'])])
             # Success button states (vert plus clair au hover)
             self.style.map('Success.TButton',
-                background=[('active', '#27ae60'), ('disabled', self.colors['disabled']), ('pressed', '#229954')],
+                background=[('active', '#1e8449'), ('disabled', self.colors['disabled']), ('pressed', '#186a3b')],
                 foreground=[('disabled', '#cccccc')])
             # Cancel button states (rouge plus clair au hover)
             self.style.map('Cancel.TButton',
-                background=[('active', '#c0392b'), ('disabled', self.colors['disabled']), ('pressed', '#a93226')],
+                background=[('active', '#a93226'), ('disabled', self.colors['disabled']), ('pressed', '#922b21')],
+                foreground=[('disabled', '#cccccc')])
+            # Manage button states (bleu plus clair au hover)
+            self.style.map('Manage.TButton',
+                background=[('active', '#2980b9'), ('disabled', self.colors['disabled']), ('pressed', '#1f618d')],
+                foreground=[('disabled', '#cccccc')])
+            # Confirm button states (bleu plus clair au hover)
+            self.style.map('Confirm.TButton',
+                background=[('active', '#2171cd'), ('disabled', self.colors['disabled']), ('pressed', '#1c5aa0')],
+                foreground=[('disabled', '#cccccc')])
+            # Close button states (gris plus clair au hover)
+            self.style.map('Close.TButton',
+                background=[('active', '#444444'), ('disabled', self.colors['disabled']), ('pressed', '#333333')],
                 foreground=[('disabled', '#cccccc')])
         except Exception:
             pass

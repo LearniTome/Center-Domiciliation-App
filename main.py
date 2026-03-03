@@ -193,9 +193,9 @@ class MainApp(tk.Tk):
             dlg.grab_release()
             dlg.destroy()
 
-        WidgetFactory.create_button(btn_frame, text='Oui', command=on_yes, style='Secondary.TButton').pack(side='left', padx=5)
-        WidgetFactory.create_button(btn_frame, text='Non', command=on_no, style='Secondary.TButton').pack(side='left', padx=5)
-        WidgetFactory.create_button(btn_frame, text='Annuler', command=on_cancel, style='Secondary.TButton').pack(side='left', padx=5)
+        WidgetFactory.create_button(btn_frame, text='Oui', command=on_yes, style='Confirm.TButton').pack(side='left', padx=5)
+        WidgetFactory.create_button(btn_frame, text='Non', command=on_no, style='Close.TButton').pack(side='left', padx=5)
+        WidgetFactory.create_button(btn_frame, text='Annuler', command=on_cancel, style='Close.TButton').pack(side='left', padx=5)
 
         self.wait_window(dlg)
         return result
@@ -238,8 +238,8 @@ class MainApp(tk.Tk):
             dlg.grab_release()
             dlg.destroy()
 
-        WidgetFactory.create_button(btn_frame, text='Oui', command=on_yes, style='Secondary.TButton').pack(side='right', padx=5)
-        WidgetFactory.create_button(btn_frame, text='Non', command=on_no, style='Secondary.TButton').pack(side='right', padx=5)
+        WidgetFactory.create_button(btn_frame, text='Oui', command=on_yes, style='Confirm.TButton').pack(side='right', padx=5)
+        WidgetFactory.create_button(btn_frame, text='Non', command=on_no, style='Close.TButton').pack(side='right', padx=5)
 
         self.wait_window(dlg)
         return result
@@ -346,8 +346,8 @@ class MainApp(tk.Tk):
         ttk.Label(frame, text="Quel format voulez-vous générer ?", font=('Segoe UI', 12, 'bold')).pack(anchor='w', pady=(0, 15))
 
         fmt_var = tk.StringVar(value='word')
-        ttk.Radiobutton(frame, text='📄 Word uniquement', variable=fmt_var, value='word').pack(anchor='w', pady=6)
-        ttk.Radiobutton(frame, text='📊 Word & PDF', variable=fmt_var, value='both').pack(anchor='w', pady=6)
+        ttk.Radiobutton(frame, text='📄 Word uniquement', variable=fmt_var, value='word').pack(anchor='w', pady=8)
+        ttk.Radiobutton(frame, text='📊 Word & PDF', variable=fmt_var, value='both').pack(anchor='w', pady=8)
 
         result = None
 
@@ -366,8 +366,8 @@ class MainApp(tk.Tk):
         btn_frame = ttk.Frame(dlg)
         btn_frame.pack(fill='x', pady=(15, 0), padx=20)
 
-        WidgetFactory.create_button(btn_frame, text='OK', command=on_ok, style='Secondary.TButton').pack(side='right', padx=5)
-        WidgetFactory.create_button(btn_frame, text='Annuler', command=on_cancel, style='Secondary.TButton').pack(side='right')
+        WidgetFactory.create_button(btn_frame, text='OK', command=on_ok, style='Confirm.TButton').pack(side='right', padx=5)
+        WidgetFactory.create_button(btn_frame, text='Annuler', command=on_cancel, style='Close.TButton').pack(side='right')
 
         self.wait_window(dlg)
         return result
