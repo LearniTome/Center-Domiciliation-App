@@ -161,10 +161,10 @@ class MainApp(tk.Tk):
         dlg.grab_set()
         dlg.configure(bg='#2b2b2b')
         from src.utils.utils import WindowManager
-        
+
         # Set a reasonable initial size that will be adjusted
         dlg.geometry('450x100')
-        
+
         # Main content frame (for proper centering)
         content_frame = ttk.Frame(dlg)
         content_frame.pack(fill='both', expand=True, padx=20, pady=15)
@@ -207,15 +207,15 @@ class MainApp(tk.Tk):
 
         # Force widget update to calculate actual sizes
         dlg.update_idletasks()
-        
+
         # Calculate required width and height
         reqwidth = dlg.winfo_reqwidth()
         reqheight = dlg.winfo_reqheight()
-        
+
         # Add padding and ensure minimum sizes
         final_width = max(reqwidth + 40, 450)
         final_height = max(reqheight + 30, 200)
-        
+
         dlg.geometry(f'{final_width}x{final_height}')
         WindowManager.center_window(dlg)
 
@@ -232,7 +232,7 @@ class MainApp(tk.Tk):
         dlg.transient(self)
         dlg.grab_set()
         dlg.configure(bg='#2b2b2b')
-        
+
         # Set a reasonable initial size that will be adjusted
         dlg.geometry('400x100')
         from src.utils.utils import WindowManager
@@ -272,15 +272,15 @@ class MainApp(tk.Tk):
 
         # Force widget update to calculate actual sizes
         dlg.update_idletasks()
-        
+
         # Calculate required width and height
         reqwidth = dlg.winfo_reqwidth()
         reqheight = dlg.winfo_reqheight()
-        
+
         # Add padding and ensure minimum sizes
         final_width = max(reqwidth + 40, 400)
         final_height = max(reqheight + 30, 180)
-        
+
         dlg.geometry(f'{final_width}x{final_height}')
         WindowManager.center_window(dlg)
 
@@ -377,11 +377,11 @@ class MainApp(tk.Tk):
         dlg.title('Choisir le format de sortie')
         dlg.transient(self)
         dlg.grab_set()
-        
+
         # Set a reasonable initial size that will be adjusted
         dlg.geometry('420x100')
         from src.utils.utils import WindowManager
-        
+
         # Apply dark mode to dialog
         dlg.configure(bg='#2b2b2b')
 
@@ -424,15 +424,15 @@ class MainApp(tk.Tk):
 
         # Force widget update to calculate actual sizes
         dlg.update_idletasks()
-        
+
         # Calculate required width and height
         reqwidth = dlg.winfo_reqwidth()
         reqheight = dlg.winfo_reqheight()
-        
+
         # Add padding and ensure minimum sizes
         final_width = max(reqwidth + 40, 420)
         final_height = max(reqheight + 30, 200)
-        
+
         dlg.geometry(f'{final_width}x{final_height}')
         WindowManager.center_window(dlg)
 

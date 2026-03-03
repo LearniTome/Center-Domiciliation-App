@@ -125,7 +125,7 @@ class ModernTheme:
             background=self.colors['accent'],
             foreground='white',
             font=('Segoe UI', 10),
-            padding=(10, 8),
+            padding=(12, 10),
             relief='flat',
             borderwidth=0)
 
@@ -134,14 +134,14 @@ class ModernTheme:
             background=self.colors['accent'],
             foreground='white',
             font=('Segoe UI', 10),
-            padding=(10, 8),
+            padding=(12, 10),
             relief='flat',
             borderwidth=0)
 
         # Style pour les boutons d'action
         self.style.configure('Action.TButton',
             background=self.colors['accent_light'],
-            padding=(12, 8))
+            padding=(12, 10))
 
         self.style.map('TButton',
             background=[('active', self.colors['accent_light']),
@@ -154,7 +154,7 @@ class ModernTheme:
             foreground='white' if self.mode == 'dark' else self.colors['fg'],
             relief='solid',
             borderwidth=2,
-            padding=(12, 8),
+            padding=(12, 10),
             font=('Segoe UI', 10))
 
         # Make other logical button styles visually match Secondary by default
@@ -164,19 +164,19 @@ class ModernTheme:
                 foreground=self.colors['fg'],
                 relief='solid',
                 borderwidth=1,
-                padding=(10, 8))
+                padding=(12, 10))
             self.style.configure('Action.TButton',
                 background=self.colors['bg'],
                 foreground=self.colors['fg'],
                 relief='solid',
                 borderwidth=1,
-                padding=(10, 8))
+                padding=(12, 10))
             self.style.configure('Danger.TButton',
                 background=self.colors['bg'],
                 foreground=self.colors['fg'],
                 relief='solid',
                 borderwidth=1,
-                padding=(10, 8))
+                padding=(12, 10))
         except Exception:
             pass
 
@@ -191,7 +191,7 @@ class ModernTheme:
             foreground='white',
             relief='solid',
             borderwidth=2,
-            padding=(14, 10),
+            padding=(12, 10),
             font=('Segoe UI', 11, 'bold'))
 
         # Boutons d'annulation (rouge - pour cancel)
@@ -200,7 +200,7 @@ class ModernTheme:
             foreground='white',
             relief='solid',
             borderwidth=2,
-            padding=(14, 10),
+            padding=(12, 10),
             font=('Segoe UI', 11, 'bold'))
 
         # Boutons de gestion (bleu - pour refresh, upload, etc)
@@ -209,7 +209,7 @@ class ModernTheme:
             foreground='white',
             relief='solid',
             borderwidth=1,
-            padding=(10, 8),
+            padding=(12, 10),
             font=('Segoe UI', 9))
 
         # Boutons de confirmation (bleu accent - pour OK)
@@ -218,7 +218,7 @@ class ModernTheme:
             foreground='white',
             relief='solid',
             borderwidth=2,
-            padding=(12, 8),
+            padding=(12, 10),
             font=('Segoe UI', 10, 'bold'))
 
         # Boutons de fermeture (gris - pour Annuler)
@@ -227,7 +227,7 @@ class ModernTheme:
             foreground='white',
             relief='solid',
             borderwidth=2,
-            padding=(12, 8),
+            padding=(12, 10),
             font=('Segoe UI', 10, 'bold'))
 
         # Make sure focus/active mappings don't introduce a distinct blue ring
