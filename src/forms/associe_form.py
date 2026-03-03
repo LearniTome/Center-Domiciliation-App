@@ -148,7 +148,7 @@ class AssocieForm(ttk.Frame):
         remove_btn = ttk.Button(
             frame,
             text="❌ Supprimer",
-            style='Danger.TButton',
+            style='Cancel.TButton',
             command=lambda: self.remove_associe(frame, vars_dict)
         )
         remove_btn.pack(side="right", padx=5, pady=5)
@@ -312,7 +312,7 @@ class AssocieForm(ttk.Frame):
         add_button = ttk.Button(
             buttons_frame,
             text="➕ Ajouter un associé",
-            style='Action.TButton',
+            style='Success.TButton',
             command=self.add_associe
         )
         add_button.grid(row=0, column=1, sticky="e")

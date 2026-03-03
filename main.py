@@ -74,7 +74,7 @@ class MainApp(tk.Tk):
         # Left-side primary buttons (Configuration, Dashboard, Generate)
         # Configuration button (opens MainForm configuration dialog)
         try:
-            cfg_btn = WidgetFactory.create_button(row, text="⚙ Configuration", command=self.main_form.open_configuration)
+            cfg_btn = WidgetFactory.create_button(row, text="⚙ Configuration", command=self.main_form.open_configuration, style='Secondary.TButton')
             cfg_btn.pack(side='left', padx=6)
             # attach to main_form for state updates
             self.main_form.config_btn = cfg_btn
@@ -85,15 +85,16 @@ class MainApp(tk.Tk):
         WidgetFactory.create_button(
             row,
             text="📊 Tableau de bord",
-            command=self.main_form.show_dashboard
+            command=self.main_form.show_dashboard,
+            style='Secondary.TButton'
         ).pack(side='left', padx=6)
 
-        # Single generation button (modern style)
+        # Single generation button (modern style - SUCCESS GREEN)
         gen_btn = WidgetFactory.create_button(
             row,
             text="Générer les documents",
             command=self.generate_documents,
-            style='Secondary.TButton'
+            style='Success.TButton'
         )
         gen_btn.pack(side='left', padx=6)
 
@@ -107,31 +108,31 @@ class MainApp(tk.Tk):
 
         # Right-side control buttons (packed in reverse so visual order is left->right)
         try:
-            # Pack Quitter first (will appear at the far right)
-            WidgetFactory.create_button(row, text="❌ Quitter", command=self.quit).pack(side='right', padx=6)
+            # Pack Quitter first (will appear at the far right) - CANCEL RED
+            WidgetFactory.create_button(row, text="❌ Quitter", command=self.quit, style='Cancel.TButton').pack(side='right', padx=6)
 
             # Suivant
-            _btn = WidgetFactory.create_button(row, text="Suivant ▶", command=self.main_form.next_page)
+            _btn = WidgetFactory.create_button(row, text="Suivant ▶", command=self.main_form.next_page, style='Secondary.TButton')
             _btn.pack(side='right', padx=6)
             self.main_form.next_btn = _btn
 
             # Précédent
-            _btn = WidgetFactory.create_button(row, text="◀ Précédent", command=self.main_form.prev_page)
+            _btn = WidgetFactory.create_button(row, text="◀ Précédent", command=self.main_form.prev_page, style='Secondary.TButton')
             _btn.pack(side='right', padx=6)
             self.main_form.prev_btn = _btn
 
-            # Terminer
-            _btn = WidgetFactory.create_button(row, text="🏁 Terminer", command=self.main_form.finish)
+            # Terminer - SUCCESS GREEN
+            _btn = WidgetFactory.create_button(row, text="🏁 Terminer", command=self.main_form.finish, style='Success.TButton')
             _btn.pack(side='right', padx=6)
             self.main_form.finish_btn = _btn
 
-            # Sauvegarder
-            _btn = WidgetFactory.create_button(row, text="💾 Sauvegarder", command=self.main_form.save_current)
+            # Sauvegarder - SUCCESS GREEN
+            _btn = WidgetFactory.create_button(row, text="💾 Sauvegarder", command=self.main_form.save_current, style='Success.TButton')
             _btn.pack(side='right', padx=6)
             self.main_form.save_btn = _btn
 
-            # Nouvelle (will appear left-most among the right cluster)
-            WidgetFactory.create_button(row, text="🆕 Nouvelle", command=self.clear_form).pack(side='right', padx=6)
+            # Nouvelle (will appear left-most among the right cluster) - SECONDARY
+            WidgetFactory.create_button(row, text="🆕 Nouvelle", command=self.clear_form, style='Secondary.TButton').pack(side='right', padx=6)
         except Exception:
             # If main_form isn't ready for some reason, ignore and continue
             pass

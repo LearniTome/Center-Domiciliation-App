@@ -246,6 +246,7 @@ class MainForm(ttk.Frame):
             header,
             text="🔼",
             command=toggle_section,
+            style='Secondary.TButton',
             tooltip="Afficher/Masquer la section"
         )
         toggle_btn.pack(side="right")
@@ -336,10 +337,10 @@ class MainForm(ttk.Frame):
                 except Exception as e:
                     messagebox.showerror('Erreur', f"Impossible d'enregistrer: {e}")
 
-            save_btn = WidgetFactory.create_button(actions, text='Enregistrer', command=_save, style='Action.TButton')
+            save_btn = WidgetFactory.create_button(actions, text='Enregistrer', command=_save, style='Success.TButton')
             save_btn.pack(side='right', padx=4)
 
-            close_btn = WidgetFactory.create_button(actions, text='Fermer', command=lambda: top.destroy())
+            close_btn = WidgetFactory.create_button(actions, text='Fermer', command=lambda: top.destroy(), style='Close.TButton')
             close_btn.pack(side='right')
 
             # Center the dialog

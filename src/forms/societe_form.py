@@ -198,7 +198,7 @@ class SocieteForm(ttk.Frame):
         add_btn = WidgetFactory.create_button(content_frame,
                    text="➕ Ajouter une activité",
                    command=self.add_activity,
-                   style='Secondary.TButton')
+                   style='Success.TButton')
         add_btn.pack(pady=(5, 0))
 
     def add_activity(self):
@@ -226,7 +226,7 @@ class SocieteForm(ttk.Frame):
         remove_btn = WidgetFactory.create_button(activity_frame,
                       text="❌",
                       command=lambda f=activity_frame, v=var: self.remove_activity(f, v),
-                      style='Danger.TButton')
+                      style='Cancel.TButton')
         # keep small width via padding instead of width to keep uniform height
         remove_btn.pack(side="right")
 
