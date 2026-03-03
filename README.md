@@ -28,25 +28,27 @@ This README focuses on a robust setup and usage guide, platform notes (Windows /
 
 ## 🛠️ Installation
 
-Prerequisites
+### Prerequisites
 
-- Python 3.13+ (recommended; works with 3.10+)
-- Git (to clone)
-- `uv` — Fast Python package installer (recommended; alternatively use `pip`)
-- Optional but recommended: Microsoft Office (for opening generated .docx/.pdf)
+- **Python 3.13+** (recommended; works with 3.10+)
+- **Git** (to clone the repository)
+- **`uv`** — Fast Python package installer (https://astral.sh/uv/)
+- Optional: Microsoft Office (for opening generated .docx/.pdf files)
 
-**Quick install `uv`** (if not already installed):
+### Install `uv` (if not already installed)
 
+**Windows:**
 ```powershell
-# Windows (using pipx or direct download)
 pipx install uv
 # or download from https://astral.sh/uv/
+```
 
-# macOS / Linux
+**macOS / Linux:**
+```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-### Option 1: Using `uv` (recommended, faster)
+### Clone and Install
 
 1. Clone the repository:
 
@@ -55,54 +57,40 @@ git clone https://github.com/LearniTome/Center-Domiciliation-App.git
 cd Center-Domiciliation-App
 ```
 
-2. Install dependencies and activate environment with `uv`:
+2. Create virtual environment and install dependencies:
 
 ```powershell
-# Windows
 uv venv
-.\venv\Scripts\Activate.ps1
-uv pip install -r requirements.txt
-
-# macOS / Linux
-uv venv
-source venv/bin/activate
-uv pip install -r requirements.txt
 ```
 
-Or use `uv run` directly without manual activation:
+3. Run the application directly with `uv`:
 
 ```powershell
 uv run python main.py
 ```
 
-### Option 2: Traditional `venv` + `pip`
+**That's it!** No need to manually activate the virtual environment when using `uv run`.
 
-1. Clone the repository:
+### Optional: Manual venv activation (if preferred)
 
-```powershell
-git clone https://github.com/LearniTome/Center-Domiciliation-App.git
-cd Center-Domiciliation-App
-```
-
-2. Create and activate virtual environment:
+If you prefer to activate the virtual environment manually:
 
 ```powershell
 # Windows
-python -m venv venv
 .\venv\Scripts\Activate.ps1
-pip install -r requirements-windows.txt
 
 # macOS / Linux
-python3 -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt
+
+# Then run normally
+python main.py
 ```
 
 **Notes:**
-
-- **`uv` is faster** and handles Python version management automatically.
-- Use `requirements-windows.txt` on Windows for platform-specific wheels if `pip` has build issues.
-- If you get binary build errors for packages like `python-docx`, `docxtpl` or others, ensure you have a working build toolchain (on Windows: Build Tools for Visual Studio). Most packages are pure-Python and should install without issues.
+- `uv` automatically installs all dependencies from `requirements.txt` when creating the venv
+- `uv` handles Python version management and platform-specific wheels automatically
+- On Windows, `requirements-windows.txt` is available for additional platform-specific optimization
+- Most packages are pure-Python and install without build issues
 
 ## ⚙️ Configuration
 
@@ -115,29 +103,17 @@ Edit `config/preferences.json` or create a local copy if you want per-developer 
 
 ## ▶️ Running the Application
 
-### With `uv` (recommended)
-
-**Direct execution (no activation needed):**
+### Quickest way (recommended)
 
 ```powershell
 uv run python main.py
 ```
 
-**Or with activated environment:**
+This runs the app directly without needing to manually activate the virtual environment.
 
-```powershell
-# Windows
-.\venv\Scripts\Activate.ps1
-python main.py
+### Or with manual venv activation
 
-# macOS / Linux
-source venv/bin/activate
-python main.py
-```
-
-### With traditional `venv`
-
-1. Activate your environment:
+If you prefer to activate the virtual environment first:
 
 ```powershell
 # Windows
@@ -145,19 +121,23 @@ python main.py
 
 # macOS / Linux
 source venv/bin/activate
-```
 
-2. Run the app:
-
-```powershell
+# Then run
 python main.py
 ```
 
-### Primary Screens
+You can also run as a module:
 
-- Societies (Société): create and edit domiciled companies
-- Associates (Associés): manage partners/members
-- Contracts (Contrat): create or generate contract documents
+```powershell
+python -m main
+```
+
+### Application Features
+
+The app launches a Tkinter window where you can:
+- **Societies (Sociétés)**: Create and edit domiciled companies
+- **Associates (Associés)**: Manage partners/members
+- **Contracts (Contrat)**: Create or generate contract documents
 
 📄 Document generation
 
@@ -195,48 +175,31 @@ Important runtime behaviors (recent updates)
 - The included verification script `scripts/check_generation.py` prefers the HTML report (it will extract the embedded JSON), then looks for a named JSON that matches the HTML report naming convention, and finally falls back to `generation_report.json` only if necessary. To validate a generation and assert basic expectations run:
 
 ```powershell
-.\venv\Scripts\Activate.ps1
-python .\scripts\check_generation.py --expect-company ASTRAPIA --expect-associe "Abdeljalil"
+uv run python .\scripts\check_generation.py --expect-company ASTRAPIA --expect-associe "Abdeljalil"
 ```
 
 The script prints a JSON summary and exits with code 0 on success (or when no expectations were given) and non-zero if any expectation fails.
 
 ## ✅ Tests and Validation
 
-### With `uv` (recommended)
-
-Run the smoke test (verifies basic imports and app instantiation):
+### Run the smoke test
 
 ```powershell
 uv run python tests/smoke_test.py
 ```
 
-Run the full test suite with pytest:
+This ensures basic imports and app instantiation work.
+
+### Run the full test suite
 
 ```powershell
 uv run pytest -q
 ```
 
-### With traditional `venv`
+### Expected output
 
-Activate your environment first:
-
-```powershell
-# Windows
-.\venv\Scripts\Activate.ps1
-
-# macOS / Linux
-source venv/bin/activate
-```
-
-Then run tests:
-
-```powershell
-python tests/smoke_test.py
-pytest -q
-```
-
-Expected quick checks
+- `tests/smoke_test.py` should print: "Smoke test: MainApp instantiated successfully"
+- `pytest -q` should complete with passing test count
 
 - `tests/smoke_test.py` should print: "Smoke test: MainApp instantiated successfully"
 
@@ -259,12 +222,16 @@ Inside `src/`
 
 ## 🩺 Troubleshooting
 
-- App won't start / ImportError: verify venv is activated and `pip install -r requirements.txt` completed.
-- docxtpl or docx2pdf errors: ensure `python-docx`, `docxtpl`, and optional `docx2pdf` are installed; on Windows ensure Microsoft Word is installed if you rely on `docx2pdf`.
-- Excel write errors: close the Excel file if open (Windows locks the file); ensure `openpyxl` is installed.
-- GUI sizing issues: run on a larger display or change DPI scaling; minimal recommended resolution 1024x768.
+- **App won't start / ImportError**: Verify the virtual environment is set up correctly. Run `uv venv` to create it and `uv run python main.py` to test.
+- **docxtpl or docx2pdf errors**: Ensure `python-docx`, `docxtpl`, and optional `docx2pdf` are installed. On Windows, ensure Microsoft Word is installed if you rely on `docx2pdf`.
+- **Excel write errors**: Close the Excel file if open (Windows locks files). Ensure `openpyxl` is installed.
+- **GUI sizing issues**: Run on a larger display or change DPI scaling. Minimal recommended resolution: 1024x768.
 
-If problems persist, run the smoke test and paste the traceback into an issue.
+If problems persist, run the smoke test and paste the traceback into an issue:
+
+```powershell
+uv run python tests/smoke_test.py
+```
 
 ## 🤝 Contributing
 
@@ -277,49 +244,36 @@ If problems persist, run the smoke test and paste the traceback into an issue.
 
 ### Development Workflow
 
-#### Using `uv` (recommended)
-
 ```powershell
-# Create and switch to a feature branch
+# Create a feature branch
 git checkout -b feat/your-feature
 
-# Create virtual environment and install dependencies
+# Create virtual environment
 uv venv
-.\venv\Scripts\Activate.ps1
-uv pip install -r requirements.txt
 
-# Make changes and test
-uv run python main.py
+# Activate venv (optional - you can also use uv run directly)
+# Windows
+.\venv\Scripts\Activate.ps1
+# macOS / Linux
+source venv/bin/activate
+
+# Make your changes
+# ... edit files ...
+
+# Run tests
 uv run pytest -q
 
-# Stage, commit, and push
+# Stage and commit
 git add .
 git commit -m "feat: describe your changes"
+
+# Push to GitHub
 git push --set-upstream origin feat/your-feature
 ```
 
-#### Using traditional `venv` + `pip`
+### Helper Scripts
 
-```powershell
-# Create and switch to a feature branch
-git checkout -b feat/your-feature
-
-# Create and activate virtual environment
-python -m venv venv
-.\venv\Scripts\Activate.ps1
-
-# Install dependencies
-pip install -r requirements-windows.txt
-
-# Make changes and test
-python main.py
-pytest -q
-
-# Stage, commit, and push
-git add .
-git commit -m "feat: describe your changes"
-git push --set-upstream origin feat/your-feature
-```
+- `scripts/auto_commit.py` can help with staged auto-commits; review its README in `scripts/`.
 
 Automated scripts
 
