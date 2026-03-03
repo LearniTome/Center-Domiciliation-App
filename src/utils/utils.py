@@ -698,10 +698,11 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
         for k, h in mapping.items():
             if k in societe_vals:
                 v = societe_vals.get(k)
-                # try to parse dates into datetime
+                # try to parse dates into datetime and format as dd/mm/yyyy
                 if h.upper().find('DATE') >= 0:
                     dt = _to_datetime(v)
-                    row[h] = dt.to_pydatetime() if dt is not None else None
+                    # Format as dd/mm/yyyy string without time
+                    row[h] = dt.strftime('%d/%m/%Y') if dt is not None else None
                 else:
                     if v is None:
                         row[h] = None
@@ -743,7 +744,8 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
                     v = a.get(k)
                     if h.upper().find('DATE') >= 0:
                         dt = _to_datetime(v)
-                        r[h] = dt.to_pydatetime() if dt is not None else None
+                        # Format as dd/mm/yyyy string without time
+                        r[h] = dt.strftime('%d/%m/%Y') if dt is not None else None
                     else:
                         if v is None:
                             r[h] = None
@@ -790,7 +792,8 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
                 v = contrat_vals.get(k)
                 if h.upper().find('DATE') >= 0:
                     dt = _to_datetime(v)
-                    r[h] = dt.to_pydatetime() if dt is not None else None
+                    # Format as dd/mm/yyyy string without time
+                    r[h] = dt.strftime('%d/%m/%Y') if dt is not None else None
                 else:
                     if v is None:
                         r[h] = None

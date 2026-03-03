@@ -75,6 +75,8 @@ class ModernTheme:
         self._setup_frame_styles()
         self._setup_label_styles()
         self._setup_section_styles()
+        self._setup_treeview_styles()
+        self._setup_notebook_styles()
 
     def _setup_section_styles(self):
         """Configure les styles pour les sections de formulaire"""

@@ -375,6 +375,16 @@ class AssocieForm(ttk.Frame):
                     except Exception:
                         pass
 
+    def reset(self):
+        """Réinitialise le formulaire des associés avec un associé vierge par défaut"""
+        # Clear existing UI
+        for child in list(self.associes_frame.winfo_children()):
+            child.destroy()
+        self.associe_vars = []
+        
+        # Créer un seul champ associé vierge par défaut
+        self.add_associe()
+
     def remove_associe(self, frame, vars_dict):
         """Supprime un associé"""
         if messagebox.askyesno("Confirmation",
