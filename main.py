@@ -149,9 +149,104 @@ class MainApp(tk.Tk):
         # Deprecated: replaced by generate_documents
         return self.generate_documents()
 
+    def _ask_yes_no_cancel(self, title, message):
+        """Custom Yes/No/Cancel dialog with dark mode.
+        
+        Returns: True (Yes), False (No), None (Cancel)
+        """
+        dlg = tk.Toplevel(self)
+        dlg.title(title)
+        dlg.transient(self)
+        dlg.grab_set()
+        dlg.configure(bg='#2b2b2b')
+        from src.utils.utils import WindowManager
+        WindowManager.center_window(dlg)
+
+        # Title with icon
+        title_frame = ttk.Frame(dlg)
+        title_frame.pack(fill='x', padx=20, pady=(20, 10))
+        
+        ttk.Label(title_frame, text="❓").pack(side='left', padx=(0, 10))
+        ttk.Label(title_frame, text=message, font=('Segoe UI', 11), wraplength=350).pack(side='left', fill='both', expand=True)
+
+        # Buttons frame
+        btn_frame = ttk.Frame(dlg)
+        btn_frame.pack(fill='x', padx=20, pady=(10, 20))
+
+        result = None
+
+        def on_yes():
+            nonlocal result
+            result = True
+            dlg.grab_release()
+            dlg.destroy()
+
+        def on_no():
+            nonlocal result
+            result = False
+            dlg.grab_release()
+            dlg.destroy()
+
+        def on_cancel():
+            nonlocal result
+            result = None
+            dlg.grab_release()
+            dlg.destroy()
+
+        WidgetFactory.create_button(btn_frame, text='Oui', command=on_yes, style='Secondary.TButton').pack(side='left', padx=5)
+        WidgetFactory.create_button(btn_frame, text='Non', command=on_no, style='Secondary.TButton').pack(side='left', padx=5)
+        WidgetFactory.create_button(btn_frame, text='Annuler', command=on_cancel, style='Secondary.TButton').pack(side='left', padx=5)
+
+        self.wait_window(dlg)
+        return result
+
+    def _ask_yes_no(self, title, message):
+        """Custom Yes/No dialog with dark mode.
+        
+        Returns: True (Yes), False (No)
+        """
+        dlg = tk.Toplevel(self)
+        dlg.title(title)
+        dlg.transient(self)
+        dlg.grab_set()
+        dlg.configure(bg='#2b2b2b')
+        from src.utils.utils import WindowManager
+        WindowManager.center_window(dlg)
+
+        # Title with icon
+        title_frame = ttk.Frame(dlg)
+        title_frame.pack(fill='x', padx=20, pady=(20, 10))
+        
+        ttk.Label(title_frame, text="❓").pack(side='left', padx=(0, 10))
+        ttk.Label(title_frame, text=message, font=('Segoe UI', 11), wraplength=350).pack(side='left', fill='both', expand=True)
+
+        # Buttons frame
+        btn_frame = ttk.Frame(dlg)
+        btn_frame.pack(fill='x', padx=20, pady=(10, 20))
+
+        result = False
+
+        def on_yes():
+            nonlocal result
+            result = True
+            dlg.grab_release()
+            dlg.destroy()
+
+        def on_no():
+            nonlocal result
+            result = False
+            dlg.grab_release()
+            dlg.destroy()
+
+        WidgetFactory.create_button(btn_frame, text='Oui', command=on_yes, style='Secondary.TButton').pack(side='right', padx=5)
+        WidgetFactory.create_button(btn_frame, text='Non', command=on_no, style='Secondary.TButton').pack(side='right', padx=5)
+
+        self.wait_window(dlg)
+        return result
+
     def generate_documents(self):
         """Unified document generation flow: ask for format, save data, then show selector.
-
+        
         The selector will handle template selection, auto-selection, and generation directly.
         """
         try:
@@ -162,14 +257,11 @@ class MainApp(tk.Tk):
             if format_choice is None:
                 return  # User cancelled
 
-            # Ask the user whether they want to save before generating
-            try:
-                choice = messagebox.askyesnocancel(
-                    'Sauvegarder avant génération',
-                    'Voulez-vous sauvegarder les données dans la base avant de générer les documents ?\n\nOui = sauvegarder puis générer\nNon = générer sans sauvegarder\nAnnuler = annuler la génération'
-                )
-            except Exception:
-                choice = None
+            # Ask the user whether they want to save before generating - USE CUSTOM DARK MODE DIALOG
+            choice = self._ask_yes_no_cancel(
+                'Sauvegarder avant génération',
+                'Voulez-vous sauvegarder les données dans la base avant de générer les documents ?\n\nOui = sauvegarder puis générer\nNon = générer sans sauvegarder\nAnnuler = annuler la génération'
+            )
 
             if choice is None:
                 # User cancelled
@@ -187,14 +279,11 @@ class MainApp(tk.Tk):
                     messagebox.showwarning('Sauvegarde manquante', 'La sauvegarde a échoué ou a été annulée. La génération a été annulée.')
                     return
             else:
-                # User chose NOT to save; confirm they want to proceed
-                try:
-                    proceed = messagebox.askyesno(
-                        'Générer sans sauvegarder',
-                        'Vous avez choisi de ne pas sauvegarder. Confirmez-vous la génération sans enregistrer les données ?'
-                    )
-                except Exception:
-                    proceed = True
+                # User chose NOT to save; confirm they want to proceed - USE CUSTOM DARK MODE DIALOG
+                proceed = self._ask_yes_no(
+                    'Générer sans sauvegarder',
+                    'Vous avez choisi de ne pas sauvegarder. Confirmez-vous la génération sans enregistrer les données ?'
+                )
                 if not proceed:
                     return
 
@@ -237,9 +326,9 @@ class MainApp(tk.Tk):
         t.start()
 
     def _ask_output_format(self):
-        """Ask user whether to generate Word, PDF, or both.
+        """Ask user whether to generate Word or Word & PDF.
 
-        Returns: 'word', 'pdf', 'both', or None if cancelled.
+        Returns: 'word' or 'both', or None if cancelled.
         """
         dlg = tk.Toplevel(self)
         dlg.title('Choisir le format de sortie')
@@ -248,6 +337,9 @@ class MainApp(tk.Tk):
         from src.utils.utils import WindowManager
         WindowManager.center_window(dlg)
 
+        # Apply dark mode to dialog
+        dlg.configure(bg='#2b2b2b')
+
         frame = ttk.Frame(dlg, padding=20)
         frame.pack(fill='both', expand=True)
 
@@ -255,7 +347,6 @@ class MainApp(tk.Tk):
 
         fmt_var = tk.StringVar(value='word')
         ttk.Radiobutton(frame, text='📄 Word uniquement', variable=fmt_var, value='word').pack(anchor='w', pady=6)
-        ttk.Radiobutton(frame, text='📕 PDF uniquement', variable=fmt_var, value='pdf').pack(anchor='w', pady=6)
         ttk.Radiobutton(frame, text='📊 Word & PDF', variable=fmt_var, value='both').pack(anchor='w', pady=6)
 
         result = None
