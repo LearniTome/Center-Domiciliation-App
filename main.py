@@ -160,19 +160,24 @@ class MainApp(tk.Tk):
         dlg.transient(self)
         dlg.grab_set()
         dlg.configure(bg='#2b2b2b')
+        dlg.geometry('450x200')
         from src.utils.utils import WindowManager
         WindowManager.center_window(dlg)
 
-        # Title with icon
-        title_frame = ttk.Frame(dlg)
-        title_frame.pack(fill='x', padx=20, pady=(20, 10))
+        # Main content frame (for proper centering)
+        content_frame = ttk.Frame(dlg)
+        content_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
-        ttk.Label(title_frame, text="❓").pack(side='left', padx=(0, 10))
-        ttk.Label(title_frame, text=message, font=('Segoe UI', 11), wraplength=350).pack(side='left', fill='both', expand=True)
+        # Title with icon - CENTERED
+        title_frame = ttk.Frame(content_frame)
+        title_frame.pack(fill='both', expand=True, pady=(0, 15))
 
-        # Buttons frame
+        ttk.Label(title_frame, text="❓", font=('Segoe UI', 16)).pack(side='top', pady=(0, 8))
+        ttk.Label(title_frame, text=message, font=('Segoe UI', 11), wraplength=380, justify='center').pack(fill='both', expand=True)
+
+        # Buttons frame - CENTERED at bottom
         btn_frame = ttk.Frame(dlg)
-        btn_frame.pack(fill='x', padx=20, pady=(10, 20))
+        btn_frame.pack(fill='x', padx=20, pady=(0, 20))
 
         result = None
 
@@ -194,12 +199,11 @@ class MainApp(tk.Tk):
             dlg.grab_release()
             dlg.destroy()
 
-        WidgetFactory.create_button(btn_frame, text='Oui', command=on_yes, style='Confirm.TButton').pack(side='left', padx=5)
-        WidgetFactory.create_button(btn_frame, text='Non', command=on_no, style='Close.TButton').pack(side='left', padx=5)
-        WidgetFactory.create_button(btn_frame, text='Annuler', command=on_cancel, style='Close.TButton').pack(side='left', padx=5)
+        WidgetFactory.create_button(btn_frame, text='Oui', command=on_yes, style='Confirm.TButton').pack(side='left', padx=5, expand=True, fill='x')
+        WidgetFactory.create_button(btn_frame, text='Non', command=on_no, style='Close.TButton').pack(side='left', padx=5, expand=True, fill='x')
+        WidgetFactory.create_button(btn_frame, text='Annuler', command=on_cancel, style='Close.TButton').pack(side='left', padx=5, expand=True, fill='x')
 
         self.wait_window(dlg)
-        return result
 
     def _ask_yes_no(self, title, message):
         """Custom Yes/No dialog with dark mode.
@@ -211,19 +215,24 @@ class MainApp(tk.Tk):
         dlg.transient(self)
         dlg.grab_set()
         dlg.configure(bg='#2b2b2b')
+        dlg.geometry('400x180')
         from src.utils.utils import WindowManager
         WindowManager.center_window(dlg)
 
-        # Title with icon
-        title_frame = ttk.Frame(dlg)
-        title_frame.pack(fill='x', padx=20, pady=(20, 10))
+        # Main content frame (for proper centering)
+        content_frame = ttk.Frame(dlg)
+        content_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
-        ttk.Label(title_frame, text="❓").pack(side='left', padx=(0, 10))
-        ttk.Label(title_frame, text=message, font=('Segoe UI', 11), wraplength=350).pack(side='left', fill='both', expand=True)
+        # Title with icon - CENTERED
+        title_frame = ttk.Frame(content_frame)
+        title_frame.pack(fill='both', expand=True, pady=(0, 15))
 
-        # Buttons frame
+        ttk.Label(title_frame, text="❓", font=('Segoe UI', 16)).pack(side='top', pady=(0, 8))
+        ttk.Label(title_frame, text=message, font=('Segoe UI', 11), wraplength=350, justify='center').pack(fill='both', expand=True)
+
+        # Buttons frame - CENTERED at bottom
         btn_frame = ttk.Frame(dlg)
-        btn_frame.pack(fill='x', padx=20, pady=(10, 20))
+        btn_frame.pack(fill='x', padx=20, pady=(0, 20))
 
         result = False
 
@@ -239,8 +248,8 @@ class MainApp(tk.Tk):
             dlg.grab_release()
             dlg.destroy()
 
-        WidgetFactory.create_button(btn_frame, text='Oui', command=on_yes, style='Confirm.TButton').pack(side='right', padx=5)
-        WidgetFactory.create_button(btn_frame, text='Non', command=on_no, style='Close.TButton').pack(side='right', padx=5)
+        WidgetFactory.create_button(btn_frame, text='Non', command=on_no, style='Close.TButton').pack(side='left', padx=5, expand=True, fill='x')
+        WidgetFactory.create_button(btn_frame, text='Oui', command=on_yes, style='Confirm.TButton').pack(side='left', padx=5, expand=True, fill='x')
 
         self.wait_window(dlg)
         return result
@@ -335,20 +344,28 @@ class MainApp(tk.Tk):
         dlg.title('Choisir le format de sortie')
         dlg.transient(self)
         dlg.grab_set()
+        dlg.geometry('400x200')
         from src.utils.utils import WindowManager
         WindowManager.center_window(dlg)
 
         # Apply dark mode to dialog
         dlg.configure(bg='#2b2b2b')
 
-        frame = ttk.Frame(dlg, padding=20)
-        frame.pack(fill='both', expand=True)
+        # Main content frame (for proper centering)
+        content_frame = ttk.Frame(dlg)
+        content_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
-        ttk.Label(frame, text="Quel format voulez-vous générer ?", font=('Segoe UI', 12, 'bold')).pack(anchor='w', pady=(0, 15))
+        # Title - CENTERED
+        ttk.Label(content_frame, text="Quel format voulez-vous générer ?", font=('Segoe UI', 12, 'bold')).pack(anchor='center', pady=(0, 20))
 
         fmt_var = tk.StringVar(value='word')
-        ttk.Radiobutton(frame, text='📄 Word uniquement', variable=fmt_var, value='word').pack(anchor='w', pady=8)
-        ttk.Radiobutton(frame, text='📊 Word & PDF', variable=fmt_var, value='both').pack(anchor='w', pady=8)
+        
+        # Radio buttons frame
+        radio_frame = ttk.Frame(content_frame)
+        radio_frame.pack(fill='x', expand=True, pady=10)
+        
+        ttk.Radiobutton(radio_frame, text='📄 Word uniquement', variable=fmt_var, value='word').pack(anchor='w', pady=6)
+        ttk.Radiobutton(radio_frame, text='📊 Word & PDF', variable=fmt_var, value='both').pack(anchor='w', pady=6)
 
         result = None
 
@@ -364,11 +381,12 @@ class MainApp(tk.Tk):
             dlg.grab_release()
             dlg.destroy()
 
+        # Button frame at bottom
         btn_frame = ttk.Frame(dlg)
-        btn_frame.pack(fill='x', pady=(15, 0), padx=20)
+        btn_frame.pack(fill='x', padx=20, pady=(0, 20))
 
-        WidgetFactory.create_button(btn_frame, text='OK', command=on_ok, style='Confirm.TButton').pack(side='right', padx=5)
-        WidgetFactory.create_button(btn_frame, text='Annuler', command=on_cancel, style='Close.TButton').pack(side='right')
+        WidgetFactory.create_button(btn_frame, text='Annuler', command=on_cancel, style='Close.TButton').pack(side='left', padx=5, expand=True, fill='x')
+        WidgetFactory.create_button(btn_frame, text='OK', command=on_ok, style='Confirm.TButton').pack(side='left', padx=5, expand=True, fill='x')
 
         self.wait_window(dlg)
         return result
