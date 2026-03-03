@@ -145,21 +145,21 @@ class GenerationSelectorDialog(tk.Toplevel):
             text="🔄 Actualiser les modèles",
             command=self._refresh_template_list,
             style='Manage.TButton'
-        ).pack(side='left', padx=5)
+        ).pack(side='left', padx=5, ipady=2)
 
         WidgetFactory.create_button(
             btn_frame,
             text="📁 Consulter les modèles existants",
             command=self._view_templates,
             style='Manage.TButton'
-        ).pack(side='left', padx=5)
+        ).pack(side='left', padx=5, ipady=2)
 
         WidgetFactory.create_button(
             btn_frame,
             text="⬆️ Uploader un nouveau modèle",
             command=self._upload_template,
             style='Manage.TButton'
-        ).pack(side='left', padx=5)
+        ).pack(side='left', padx=5, ipady=2)
 
         # Template list with checkboxes for selection
         ttk.Label(template_frame, text="Modèles à générer:", font=('Segoe UI', 10, 'bold')).pack(anchor='w', pady=(0, 8))
@@ -199,14 +199,14 @@ class GenerationSelectorDialog(tk.Toplevel):
             text="✅ Procéder à la génération",
             command=self._confirm,
             style='Success.TButton'
-        ).pack(side='right', padx=5)
+        ).pack(side='right', padx=5, ipady=2)
 
         WidgetFactory.create_button(
             footer_frame,
             text="❌ Annuler",
             command=self._cancel,
             style='Cancel.TButton'
-        ).pack(side='right', padx=5)
+        ).pack(side='right', padx=5, ipady=2)
 
     def _on_frame_configure(self, event=None):
         """Update the scroll region of the canvas when frame is resized."""
