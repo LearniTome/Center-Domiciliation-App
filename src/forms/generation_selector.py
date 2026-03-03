@@ -1,6 +1,6 @@
 """
 Generation Selector Dialog - Choose document generation type (Creation vs Domiciliation)
-and upload custom templates.
+with automatic template selection and upload custom templates.
 """
 
 import tkinter as tk
@@ -13,6 +13,10 @@ import logging
 from ..utils.utils import ThemeManager, WidgetFactory, PathManager, ErrorHandler
 
 logger = logging.getLogger(__name__)
+
+# Template mappings for different document types
+CREATION_TEMPLATES_KEYWORDS = ['SARL', 'Statuts', 'Annonce', 'Decl', 'Dépot']
+DOMICILIATION_TEMPLATES = ['Attest', 'Contrat']
 
 
 class GenerationSelectorDialog(tk.Toplevel):
@@ -114,12 +118,18 @@ class GenerationSelectorDialog(tk.Toplevel):
         ttk.Separator(main_frame, orient='horizontal').pack(fill='x', pady=10)
 
         # Section 2: Template Management
-        template_frame = ttk.LabelFrame(main_frame, text="2️⃣ Gestion des modèles", padding=10)
+        template_frame = ttk.LabelFrame(main_frame, text="2️⃣ Sélection et gestion des modèles", padding=10)
         template_frame.pack(fill='both', expand=True, pady=10)
 
         # Buttons for template management
         btn_frame = ttk.Frame(template_frame)
         btn_frame.pack(fill='x', pady=(0, 10))
+
+        WidgetFactory.create_button(
+            btn_frame,
+            text="🔄 Actualiser les modèles",
+            command=self._refresh_template_list
+        ).pack(side='left', padx=5)
 
         WidgetFactory.create_button(
             btn_frame,
@@ -133,23 +143,31 @@ class GenerationSelectorDialog(tk.Toplevel):
             command=self._upload_template
         ).pack(side='left', padx=5)
 
-        # Template list
-        ttk.Label(template_frame, text="Modèles disponibles:", font=('Segoe UI', 10, 'bold')).pack(anchor='w', pady=(0, 8))
+        # Template list with checkboxes for selection
+        ttk.Label(template_frame, text="Modèles à générer:", font=('Segoe UI', 10, 'bold')).pack(anchor='w', pady=(0, 8))
 
-        # Create listbox with scrollbar
+        # Create frame with scrollbar for template checkboxes
         list_frame = ttk.Frame(template_frame)
         list_frame.pack(fill='both', expand=True, pady=(0, 10))
 
         scrollbar = ttk.Scrollbar(list_frame)
         scrollbar.pack(side='right', fill='y')
 
-        self.template_listbox = tk.Listbox(
-            list_frame,
-            height=8,
-            yscrollcommand=scrollbar.set
-        )
-        self.template_listbox.pack(side='left', fill='both', expand=True)
-        scrollbar.config(command=self.template_listbox.yview)
+        # Use Frame instead of Listbox to hold checkboxes
+        self.template_canvas = tk.Canvas(list_frame)
+        self.template_canvas.pack(side='left', fill='both', expand=True)
+        scrollbar.config(command=self.template_canvas.yview)
+        self.template_canvas.config(yscrollcommand=scrollbar.set)
+
+        # Inner frame for checkboxes
+        self.template_inner_frame = ttk.Frame(self.template_canvas)
+        self.template_canvas_window = self.template_canvas.create_window((0, 0), window=self.template_inner_frame, anchor='nw')
+
+        # Bind canvas resizing
+        self.template_inner_frame.bind('<Configure>', self._on_frame_configure)
+
+        # Dictionary to store template checkbox variables
+        self.template_vars = {}
 
         # Populate template list
         self._refresh_template_list()
@@ -170,33 +188,102 @@ class GenerationSelectorDialog(tk.Toplevel):
             command=self._cancel
         ).pack(side='right', padx=5)
 
+    def _on_frame_configure(self, event=None):
+        """Update the scroll region of the canvas when frame is resized."""
+        self.template_canvas.configure(scrollregion=self.template_canvas.bbox('all'))
+        # Adjust width
+        self.template_canvas.itemconfig(self.template_canvas_window, width=event.width if event else 0)
+
     def _on_generation_type_changed(self):
-        """Handle generation type radio button changes."""
+        """Handle generation type radio button changes and auto-select templates."""
+        gen_type = self.gen_type_var.get()
+        
         # Enable/disable creation sub-options based on selection
-        if self.gen_type_var.get() == 'creation':
+        if gen_type == 'creation':
             for widget in self.creation_options_frame.winfo_children():
                 widget.configure(state='normal')
+            # Auto-select all creation templates
+            self._auto_select_templates('creation')
         else:
             for widget in self.creation_options_frame.winfo_children():
                 widget.configure(state='disabled')
+        
+        # Auto-select templates for domiciliation
+        if gen_type == 'domiciliation':
+            self._auto_select_templates('domiciliation')
+
+    def _auto_select_templates(self, doc_type: str):
+        """Automatically select templates based on document type.
+        
+        Args:
+            doc_type: 'creation' or 'domiciliation'
+        """
+        # Uncheck all first
+        for var in self.template_vars.values():
+            var.set(False)
+        
+        # Select templates based on type
+        if doc_type == 'creation':
+            # Select all templates that are for creation (SARL, Statuts, Annonce, etc.)
+            for template_path, var in self.template_vars.items():
+                template_name = template_path.name
+                if any(keyword in template_name for keyword in CREATION_TEMPLATES_KEYWORDS):
+                    var.set(True)
+        
+        elif doc_type == 'domiciliation':
+            # Select only Attestation and Contrat for domiciliation
+            for template_path, var in self.template_vars.items():
+                template_name = template_path.name
+                if any(keyword in template_name for keyword in DOMICILIATION_TEMPLATES):
+                    var.set(True)
 
     def _refresh_template_list(self):
-        """Refresh the template listbox with available .docx files."""
-        self.template_listbox.delete(0, 'end')
+        """Refresh the template list with checkboxes for available .docx files."""
+        # Clear existing widgets
+        for widget in self.template_inner_frame.winfo_children():
+            widget.destroy()
+        self.template_vars.clear()
 
         try:
             models_dir = PathManager.MODELS_DIR
             if models_dir.exists():
                 templates = sorted([f for f in models_dir.glob('*.docx')])
-                for template in templates:
-                    # Display template name without .docx extension
-                    display_name = f"📄 {template.stem}"
-                    self.template_listbox.insert('end', display_name)
+                
+                if templates:
+                    for template in templates:
+                        # Create checkbox variable
+                        var = tk.BooleanVar(value=False)
+                        self.template_vars[template] = var
+                        
+                        # Create checkbox widget
+                        display_name = f"📄 {template.stem}"
+                        chk = ttk.Checkbutton(
+                            self.template_inner_frame,
+                            text=display_name,
+                            variable=var
+                        )
+                        chk.pack(anchor='w', pady=4)
+                else:
+                    ttk.Label(
+                        self.template_inner_frame,
+                        text="⚠️ Aucun modèle trouvé"
+                    ).pack(anchor='w', pady=10)
             else:
-                self.template_listbox.insert('end', "⚠️ Dossier Models non trouvé")
+                ttk.Label(
+                    self.template_inner_frame,
+                    text="⚠️ Dossier Models non trouvé"
+                ).pack(anchor='w', pady=10)
+            
+            # Update canvas scroll region
+            self.template_inner_frame.update_idletasks()
+            self.template_canvas.configure(scrollregion=self.template_canvas.bbox('all'))
+            
         except Exception as e:
             logger.exception(f"Erreur lors du chargement des modèles: {e}")
-            self.template_listbox.insert('end', f"❌ Erreur: {str(e)}")
+            ttk.Label(
+                self.template_inner_frame,
+                text=f"❌ Erreur: {str(e)}"
+            ).pack(anchor='w', pady=10)
 
     def _view_templates(self):
         """Open the Models folder to view existing templates."""
@@ -279,10 +366,24 @@ class GenerationSelectorDialog(tk.Toplevel):
         else:
             self.creation_type = None
 
+        # Get selected templates
+        selected_templates = [
+            template for template, var in self.template_vars.items() if var.get()
+        ]
+        
+        if not selected_templates:
+            messagebox.showwarning(
+                "Aucun modèle sélectionné",
+                "Veuillez sélectionner au moins un modèle à générer"
+            )
+            return
+
         self.generation_type = gen_type
+        self.selected_templates = selected_templates
         self.result = {
             'type': gen_type,
-            'creation_type': self.creation_type
+            'creation_type': self.creation_type,
+            'templates': [str(t.resolve()) for t in selected_templates]
         }
 
         self.destroy()

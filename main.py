@@ -162,6 +162,13 @@ class MainApp(tk.Tk):
 
             generation_type = selector_result.get('type')
             creation_type = selector_result.get('creation_type')  # 'SARL', 'SARL_AU', or None
+            selected_templates = selector_result.get('templates', [])  # List of template paths
+
+            # Ask for output format (Word/PDF/Both)
+            format_choice = self._ask_output_format()
+            if format_choice is None:
+                return
+            to_pdf = format_choice in ('pdf', 'both')
 
             # Ask the user whether they want to save before generating.
             # Yes -> save then generate; No -> generate without saving; Cancel -> abort.
@@ -202,11 +209,13 @@ class MainApp(tk.Tk):
                 if not proceed:
                     return
 
-            # Choose templates (filtered by generation type)
-            templates = self.choose_templates_with_format(generation_type, creation_type)
-            if templates is None:
+            # Choose output directory
+            out_dir = filedialog.askdirectory(title="Choisir le dossier de sortie")
+            if not out_dir:
                 return
-            tpl_paths, to_pdf = templates
+
+            # Use templates selected from the selector dialog
+            tpl_paths = selected_templates
             if not tpl_paths:
                 messagebox.showinfo("Aucun modèle", "Aucun modèle sélectionné. Annulation.")
                 return
@@ -314,6 +323,51 @@ class MainApp(tk.Tk):
 
         t = threading.Thread(target=worker, daemon=True)
         t.start()
+
+    def _ask_output_format(self):
+        """Ask user whether to generate Word, PDF, or both.
+        
+        Returns: 'word', 'pdf', 'both', or None if cancelled.
+        """
+        dlg = tk.Toplevel(self)
+        dlg.title('Choisir le format de sortie')
+        dlg.transient(self)
+        dlg.grab_set()
+        from src.utils.utils import WindowManager
+        WindowManager.center_window(dlg)
+
+        frame = ttk.Frame(dlg, padding=20)
+        frame.pack(fill='both', expand=True)
+
+        ttk.Label(frame, text="Quel format voulez-vous générer ?", font=('Segoe UI', 12, 'bold')).pack(anchor='w', pady=(0, 15))
+
+        fmt_var = tk.StringVar(value='word')
+        ttk.Radiobutton(frame, text='📄 Word uniquement', variable=fmt_var, value='word').pack(anchor='w', pady=6)
+        ttk.Radiobutton(frame, text='📕 PDF uniquement', variable=fmt_var, value='pdf').pack(anchor='w', pady=6)
+        ttk.Radiobutton(frame, text='📊 Word & PDF', variable=fmt_var, value='both').pack(anchor='w', pady=6)
+
+        result = None
+
+        def on_ok():
+            nonlocal result
+            result = fmt_var.get()
+            dlg.grab_release()
+            dlg.destroy()
+
+        def on_cancel():
+            nonlocal result
+            result = None
+            dlg.grab_release()
+            dlg.destroy()
+
+        btn_frame = ttk.Frame(dlg)
+        btn_frame.pack(fill='x', pady=(15, 0), padx=20)
+
+        WidgetFactory.create_button(btn_frame, text='OK', command=on_ok, style='Secondary.TButton').pack(side='right', padx=5)
+        WidgetFactory.create_button(btn_frame, text='Annuler', command=on_cancel, style='Secondary.TButton').pack(side='right')
+
+        self.wait_window(dlg)
+        return result
 
     def choose_templates(self):
         """Open a modal dialog to let the user pick which .docx templates in Models/ to generate.
