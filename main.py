@@ -22,6 +22,7 @@ import time
 from src.utils.doc_generator import render_templates
 from pathlib import Path
 from src.utils import constants as _const
+from src.forms.generation_selector import show_generation_selector
 
 # Configuration du logging
 logging.basicConfig(
@@ -149,9 +150,19 @@ class MainApp(tk.Tk):
         return self.generate_documents()
 
     def generate_documents(self):
-        """Unified document generation flow: user chooses templates and formats (Word/PDF/Both)."""
+        """Unified document generation flow: user chooses generation type, templates and formats (Word/PDF/Both)."""
         try:
             self.collect_values()
+
+            # Show generation selector to choose type (Creation vs Domiciliation)
+            selector_result = show_generation_selector(self)
+            if selector_result is None:
+                # User cancelled
+                return
+
+            generation_type = selector_result.get('type')
+            creation_type = selector_result.get('creation_type')  # 'SARL', 'SARL_AU', or None
+
             # Ask the user whether they want to save before generating.
             # Yes -> save then generate; No -> generate without saving; Cancel -> abort.
             try:
@@ -190,14 +201,16 @@ class MainApp(tk.Tk):
                     proceed = True
                 if not proceed:
                     return
-            # Choose templates
-            templates = self.choose_templates_with_format()
+
+            # Choose templates (filtered by generation type)
+            templates = self.choose_templates_with_format(generation_type, creation_type)
             if templates is None:
                 return
             tpl_paths, to_pdf = templates
             if not tpl_paths:
                 messagebox.showinfo("Aucun modèle", "Aucun modèle sélectionné. Annulation.")
                 return
+
             out_dir = filedialog.askdirectory(title="Choisir le dossier de sortie")
             if not out_dir:
                 return
@@ -358,13 +371,36 @@ class MainApp(tk.Tk):
         self.wait_window(dlg)
         return selected_value
 
-    def choose_templates_with_format(self):
+    def choose_templates_with_format(self, generation_type=None, creation_type=None):
         """Let the user pick templates and whether to generate Word, PDF, or both.
+
+        Args:
+            generation_type: 'creation' or 'domiciliation' to filter templates (optional)
+            creation_type: 'SARL' or 'SARL_AU' for creation documents (optional)
 
         Returns a tuple (list_of_paths, to_pdf_bool) or None if cancelled.
         """
         models_dir = Path(PathManager.MODELS_DIR)
-        templates = list(models_dir.glob('*.docx'))
+        all_templates = list(models_dir.glob('*.docx'))
+
+        # Filter templates based on generation type
+        if generation_type == 'creation':
+            # Filter for creation documents (SARL or SARL_AU)
+            if creation_type == 'SARL':
+                # Include templates with SARL in the name but not SARL_AU
+                templates = [t for t in all_templates if 'SARL' in t.name and 'SARL_AU' not in t.name]
+            elif creation_type == 'SARL_AU':
+                # Include templates with SARL_AU in the name
+                templates = [t for t in all_templates if 'SARL_AU' in t.name]
+            else:
+                # If creation_type not specified, include all SARL templates
+                templates = [t for t in all_templates if 'SARL' in t.name]
+        elif generation_type == 'domiciliation':
+            # Filter for domiciliation documents
+            templates = [t for t in all_templates if 'domiciliation' in t.name.lower() or 'domicil' in t.name.lower()]
+        else:
+            # No filter, show all templates
+            templates = all_templates
 
         dlg = tk.Toplevel(self)
         dlg.title('Sélection des modèles et du format')
@@ -379,7 +415,7 @@ class MainApp(tk.Tk):
         vars_map = {}
         row = 0
         if not templates:
-            ttk.Label(frame, text='Aucun modèle .docx trouvé dans le dossier Models/').grid(row=0, column=0)
+            ttk.Label(frame, text='Aucun modèle .docx trouvé correspondant au type sélectionné.').grid(row=0, column=0)
         else:
             for tpl in templates:
                 v = tk.BooleanVar(value=True)
