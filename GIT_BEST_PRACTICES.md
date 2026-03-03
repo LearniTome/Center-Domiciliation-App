@@ -326,10 +326,10 @@ Développer v2.2.0 avec 3 features:
 
 7. Quand toutes les features sont prêtes
    git checkout -b release/v2.2.0 develop
-   
+
 8. Faire les derniers tests et fixes
    git commit -m "fix: adjust search styling"
-   
+
 9. Merger release dans main
    git checkout main
    git merge --no-ff release/v2.2.0

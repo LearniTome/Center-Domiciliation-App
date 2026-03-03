@@ -200,7 +200,7 @@ class ThemeManager:
             # Use section_bg for Listbox in dark mode for better contrast
             listbox_bg = self.colors.get('section_bg', self.colors['bg']) if self.theme.mode == 'dark' else self.colors['bg']
             input_bg = self.colors.get('input_bg', self.colors['bg'])
-            
+
             # Set global defaults for new widgets
             try:
                 self.root.option_add('*Listbox.background', listbox_bg)

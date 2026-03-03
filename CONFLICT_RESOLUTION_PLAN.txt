@@ -1,0 +1,117 @@
+🔧 PLAN DE RÉSOLUTION DES CONFLITS
+═════════════════════════════════════════════════════════════════
+
+SITUATION ACTUELLE:
+─────────────────────────────────────────────────────────────────
+
+1. Branche courante: develop
+   • Changements non commitées (modifiés, supprimés)
+   • Upstream disparu: origin/develop/v2.2.0
+
+2. Branches:
+   • main (Production stable)
+   • release/v2.1.0 (Archive de v2.1.0)
+   • develop (Actuelle, avec changements)
+
+
+CHANGEMENTS NON COMMITÉES:
+─────────────────────────────────────────────────────────────────
+
+Fichiers modifiés:
+  • COMBOBOX_DARKMODE_FIX.txt
+  • GIT_BEST_PRACTICES.md
+  • Models/My_Attest_domiciliation.docx
+  • Models/My_Contrat_domiciliation.docx
+  • PROJECT_SUMMARY.md
+  • RELEASE_INFO.md
+  • databases/DataBase_domiciliation.xlsx
+  • src/utils/styles.py
+  • src/utils/utils.py
+  • test_dark_mode.py
+
+Fichiers supprimés:
+  • BACKUP_SYSTEM.md
+  • CHANGE_LIST.md
+  • DASHBOARD_TESTING_REPORT.md
+  • Models/My_Contrat_domiciliation v0.docx
+  • Models/My_Contrat_domiciliation_Misa.docx
+  • Models/PV POUVOIR SIGNATURE BANQUE Astrapia.doc
+  • README_inspect.txt
+  • REFERENCE_DATA_IMPLEMENTATION.md
+
+Fichiers non trackés:
+  • documentations/
+  • test_dashboard_final.py
+  • test_dashboard_headless.py
+  • tests/debug_dashboard_display.py
+  • tests/test_dashboard_actions.py
+  • tests/test_dashboard_actions_integration.py
+  • tests/test_dashboard_comprehensive.py
+  • tests/test_dashboard_data.py
+  • tests/test_dashboard_integration.py
+  • tests/test_treeview_display.py
+
+
+ÉTAPES DE RÉSOLUTION:
+─────────────────────────────────────────────────────────────────
+
+ÉTAPE 1: Fixer le tracking upstream de develop
+  git branch -u origin/develop develop
+
+ÉTAPE 2: Committer les changements sur develop
+  git add .
+  git commit -m "feat: v2.2.0 dark mode styling and combobox fixes"
+  git push origin develop
+
+ÉTAPE 3: Vérifier la relation entre release/v2.1.0 et main
+  git log main..release/v2.1.0
+  git diff main release/v2.1.0
+
+ÉTAPE 4: Résoudre les conflits (s'il y en a)
+  git checkout release/v2.1.0
+  git merge main
+  # Résoudre les conflits si nécessaire
+  git add .
+  git commit -m "merge: resolve conflicts with main"
+  git push origin release/v2.1.0
+
+ÉTAPE 5: Mettre à jour main si nécessaire
+  git checkout main
+  git merge release/v2.1.0
+  git push origin main
+
+
+POSSIBILITÉS DE CONFLITS:
+─────────────────────────────────────────────────────────────────
+
+Fichiers susceptibles de conflits:
+  • src/utils/styles.py (modifications dark mode)
+  • src/utils/utils.py (modifications dark mode)
+  • test_dark_mode.py (nouveau fichier, peu probable)
+  • RELEASE_INFO.md (métadonnées)
+  • PROJECT_SUMMARY.md (documentation)
+
+
+RÉSOLUTION DES CONFLITS (si nécessaire):
+─────────────────────────────────────────────────────────────────
+
+1. Identifier les conflits:
+   git status
+   # Chercher "both modified" ou "both added"
+
+2. Éditer les fichiers en conflit:
+   • Chercher <<<<<<, ======, >>>>>>
+   • Décider quelle version garder
+   • Supprimer les marqueurs
+
+3. Marquer comme résolus:
+   git add fichier_resolu
+
+4. Committer:
+   git commit -m "merge: resolve conflicts between release/v2.1.0 and main"
+
+5. Pousser:
+   git push origin release/v2.1.0
+
+
+═════════════════════════════════════════════════════════════════

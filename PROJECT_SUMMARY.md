@@ -263,6 +263,6 @@ This project is maintained by **LearniTome**.
 
 ---
 
-**Last Updated:** March 2, 2026  
-**Current Version:** 2.1.0  
+**Last Updated:** March 2, 2026
+**Current Version:** 2.1.0
 **Repository:** https://github.com/LearniTome/Center-Domiciliation-App

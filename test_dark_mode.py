@@ -86,15 +86,15 @@ def test_dark_mode_colors():
 
     tree_frame = ttk.Frame(tab_tree)
     tree_frame.pack(fill='both', expand=True, pady=5)
-    
+
     scrollbar_v = ttk.Scrollbar(tree_frame, orient='vertical', command=tree.yview)
     scrollbar_h = ttk.Scrollbar(tree_frame, orient='horizontal', command=tree.xview)
     tree.configure(yscrollcommand=scrollbar_v.set, xscrollcommand=scrollbar_h.set)
-    
+
     tree.grid(row=0, column=0, sticky='nsew')
     scrollbar_v.grid(row=0, column=1, sticky='ns')
     scrollbar_h.grid(row=1, column=0, sticky='ew')
-    
+
     tree_frame.grid_rowconfigure(0, weight=1)
     tree_frame.grid_columnconfigure(0, weight=1)
 
@@ -113,7 +113,7 @@ def test_dark_mode_colors():
 
     combo_values = [
         'Casablanca',
-        'Rabat', 
+        'Rabat',
         'Fès',
         'Marrakech',
         'Tangier',
@@ -121,13 +121,13 @@ def test_dark_mode_colors():
         'Meknes',
         'Oujda'
     ]
-    
+
     combo = ttk.Combobox(combo_frame, values=combo_values, state='readonly', width=30)
     combo.set('Casablanca')
     combo.pack(side='left', padx=5, fill='x', expand=True)
 
     # Add info label
-    info_label = ttk.Label(tab_combo, text='👇 Click the combobox above to test dropdown styling', 
+    info_label = ttk.Label(tab_combo, text='👇 Click the combobox above to test dropdown styling',
                           font=('Segoe UI', 9, 'italic'), foreground='#4a90e2')
     info_label.pack(anchor='w', pady=10)
 
@@ -164,7 +164,7 @@ def test_dark_mode_colors():
 
     var1 = tk.BooleanVar()
     ttk.Checkbutton(check_frame, text='Checkbox 1', variable=var1).pack(anchor='w', pady=5)
-    
+
     var2 = tk.BooleanVar()
     ttk.Checkbutton(check_frame, text='Checkbox 2', variable=var2).pack(anchor='w', pady=5)
 

@@ -2,9 +2,9 @@
 
 ## Release Details
 
-**Tag:** `v2.1.0`  
-**Release Date:** March 2, 2026  
-**Branch:** `chore/migration-backup`  
+**Tag:** `v2.1.0`
+**Release Date:** March 2, 2026
+**Branch:** `chore/migration-backup`
 **Commit:** 78e13b5
 
 ---

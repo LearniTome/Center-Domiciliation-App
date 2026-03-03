@@ -153,7 +153,7 @@ This means:
 
 ✓ src/utils/styles.py
   • Enhanced _setup_combobox_styles()
-  
+
 ✓ src/utils/utils.py
   • Enhanced _apply_non_ttk_styles()
   • Improved Listbox and Text widget styling

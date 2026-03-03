@@ -210,7 +210,7 @@ class ModernTheme:
             arrowsize=12,
             padding=(6, 4),
             relief='solid')
-        
+
         # Map for different states
         self.style.map('TCombobox',
             fieldbackground=[('readonly', self.colors['input_bg']),

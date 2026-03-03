@@ -53,7 +53,7 @@ def _show_page(self, page_key: str):
         self._df = self._associes_df
     elif page_key == 'contrat':
         self._df = self._contrats_df
-    
+
     self._refresh_display()  # Update Treeview with new data
 ```
 
@@ -154,19 +154,19 @@ def _action(self, action: str):
             # Check for empty trees
             if tree is None:
                 messagebox.showwarning('Action', 'No page selected')
-            
+
             # Check for empty selection
             if not selection:
                 messagebox.showwarning('Action', 'Please select a record')
-            
+
             # Check for empty data
             if self._df is None or self._df.empty:
                 messagebox.showwarning('Action', 'No data available')
-                
+
             # Check for invalid index
             if selected_idx >= len(df):
                 messagebox.showerror('Action', 'Invalid row index')
-                
+
     except Exception as e:
         logger.error(f"Error in _action: {e}")
         messagebox.showerror('Error', f'Error: {e}')
@@ -183,7 +183,7 @@ Validates that Dashboard can load all sheet data from database.
 ### 2. `test_dashboard_integration.py`
 Tests sheet loading and page switching simulation.
 - ✅ Societes: 1 row, 8 display columns
-- ✅ Associes: 1 row, 16 display columns  
+- ✅ Associes: 1 row, 16 display columns
 - ✅ Contrats: 1 row, 7 display columns
 - ✅ Page switching routes to correct DataFrame
 
