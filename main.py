@@ -151,7 +151,7 @@ class MainApp(tk.Tk):
         return self.generate_documents()
 
     def _ask_yes_no_cancel(self, title, message):
-        """Custom Yes/No/Cancel dialog with dark mode.
+        """Custom Yes/No/Cancel dialog with dark mode and automatic geometry.
 
         Returns: True (Yes), False (No), None (Cancel)
         """
@@ -160,10 +160,11 @@ class MainApp(tk.Tk):
         dlg.transient(self)
         dlg.grab_set()
         dlg.configure(bg='#2b2b2b')
-        dlg.geometry('450x250')
         from src.utils.utils import WindowManager
-        WindowManager.center_window(dlg)
-
+        
+        # Set a reasonable initial size that will be adjusted
+        dlg.geometry('450x100')
+        
         # Main content frame (for proper centering)
         content_frame = ttk.Frame(dlg)
         content_frame.pack(fill='both', expand=True, padx=20, pady=15)
@@ -173,7 +174,8 @@ class MainApp(tk.Tk):
         title_frame.pack(fill='x', expand=False, pady=(0, 10))
 
         ttk.Label(title_frame, text="❓", font=('Segoe UI', 16)).pack(side='top', pady=(0, 6))
-        ttk.Label(title_frame, text=message, font=('Segoe UI', 11), wraplength=380, justify='center').pack(fill='both', expand=False)
+        msg_label = ttk.Label(title_frame, text=message, font=('Segoe UI', 11), wraplength=380, justify='center')
+        msg_label.pack(fill='both', expand=False)
 
         # Buttons frame - CENTERED at bottom
         btn_frame = ttk.Frame(dlg)
@@ -203,11 +205,25 @@ class MainApp(tk.Tk):
         WidgetFactory.create_button(btn_frame, text='Non', command=on_no, style='Close.TButton').pack(side='left', padx=5, expand=True, fill='x')
         WidgetFactory.create_button(btn_frame, text='Annuler', command=on_cancel, style='Close.TButton').pack(side='left', padx=5, expand=True, fill='x')
 
+        # Force widget update to calculate actual sizes
+        dlg.update_idletasks()
+        
+        # Calculate required width and height
+        reqwidth = dlg.winfo_reqwidth()
+        reqheight = dlg.winfo_reqheight()
+        
+        # Add padding and ensure minimum sizes
+        final_width = max(reqwidth + 40, 450)
+        final_height = max(reqheight + 30, 200)
+        
+        dlg.geometry(f'{final_width}x{final_height}')
+        WindowManager.center_window(dlg)
+
         self.wait_window(dlg)
         return result
 
     def _ask_yes_no(self, title, message):
-        """Custom Yes/No dialog with dark mode.
+        """Custom Yes/No dialog with dark mode and automatic geometry.
 
         Returns: True (Yes), False (No)
         """
@@ -216,9 +232,10 @@ class MainApp(tk.Tk):
         dlg.transient(self)
         dlg.grab_set()
         dlg.configure(bg='#2b2b2b')
-        dlg.geometry('400x200')
+        
+        # Set a reasonable initial size that will be adjusted
+        dlg.geometry('400x100')
         from src.utils.utils import WindowManager
-        WindowManager.center_window(dlg)
 
         # Main content frame (for proper centering)
         content_frame = ttk.Frame(dlg)
@@ -229,7 +246,8 @@ class MainApp(tk.Tk):
         title_frame.pack(fill='x', expand=False, pady=(0, 10))
 
         ttk.Label(title_frame, text="❓", font=('Segoe UI', 16)).pack(side='top', pady=(0, 6))
-        ttk.Label(title_frame, text=message, font=('Segoe UI', 11), wraplength=350, justify='center').pack(fill='both', expand=False)
+        msg_label = ttk.Label(title_frame, text=message, font=('Segoe UI', 11), wraplength=350, justify='center')
+        msg_label.pack(fill='both', expand=False)
 
         # Buttons frame - CENTERED at bottom
         btn_frame = ttk.Frame(dlg)
@@ -251,6 +269,20 @@ class MainApp(tk.Tk):
 
         WidgetFactory.create_button(btn_frame, text='Non', command=on_no, style='Close.TButton').pack(side='left', padx=5, expand=True, fill='x')
         WidgetFactory.create_button(btn_frame, text='Oui', command=on_yes, style='Confirm.TButton').pack(side='left', padx=5, expand=True, fill='x')
+
+        # Force widget update to calculate actual sizes
+        dlg.update_idletasks()
+        
+        # Calculate required width and height
+        reqwidth = dlg.winfo_reqwidth()
+        reqheight = dlg.winfo_reqheight()
+        
+        # Add padding and ensure minimum sizes
+        final_width = max(reqwidth + 40, 400)
+        final_height = max(reqheight + 30, 180)
+        
+        dlg.geometry(f'{final_width}x{final_height}')
+        WindowManager.center_window(dlg)
 
         self.wait_window(dlg)
         return result
@@ -337,7 +369,7 @@ class MainApp(tk.Tk):
         t.start()
 
     def _ask_output_format(self):
-        """Ask user whether to generate Word or Word & PDF.
+        """Ask user whether to generate Word or Word & PDF with automatic geometry.
 
         Returns: 'word' or 'both', or None if cancelled.
         """
@@ -345,10 +377,11 @@ class MainApp(tk.Tk):
         dlg.title('Choisir le format de sortie')
         dlg.transient(self)
         dlg.grab_set()
-        dlg.geometry('420x240')
+        
+        # Set a reasonable initial size that will be adjusted
+        dlg.geometry('420x100')
         from src.utils.utils import WindowManager
-        WindowManager.center_window(dlg)
-
+        
         # Apply dark mode to dialog
         dlg.configure(bg='#2b2b2b')
 
@@ -388,6 +421,20 @@ class MainApp(tk.Tk):
 
         WidgetFactory.create_button(btn_frame, text='Annuler', command=on_cancel, style='Close.TButton').pack(side='left', padx=5, expand=True, fill='x')
         WidgetFactory.create_button(btn_frame, text='OK', command=on_ok, style='Confirm.TButton').pack(side='left', padx=5, expand=True, fill='x')
+
+        # Force widget update to calculate actual sizes
+        dlg.update_idletasks()
+        
+        # Calculate required width and height
+        reqwidth = dlg.winfo_reqwidth()
+        reqheight = dlg.winfo_reqheight()
+        
+        # Add padding and ensure minimum sizes
+        final_width = max(reqwidth + 40, 420)
+        final_height = max(reqheight + 30, 200)
+        
+        dlg.geometry(f'{final_width}x{final_height}')
+        WindowManager.center_window(dlg)
 
         self.wait_window(dlg)
         return result
