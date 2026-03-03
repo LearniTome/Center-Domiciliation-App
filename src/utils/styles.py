@@ -184,6 +184,24 @@ class ModernTheme:
             background=self.colors['error'],
             foreground='white')
 
+        # Boutons de succès (vert - pour générer/confirmer)
+        self.style.configure('Success.TButton',
+            background='#2ecc71',  # Vert vif
+            foreground='white',
+            relief='solid',
+            borderwidth=1,
+            padding=(12, 8),
+            font=('Segoe UI', 10, 'bold'))
+
+        # Boutons d'annulation (rouge - pour cancel)
+        self.style.configure('Cancel.TButton',
+            background='#e74c3c',  # Rouge vif
+            foreground='white',
+            relief='solid',
+            borderwidth=1,
+            padding=(12, 8),
+            font=('Segoe UI', 10, 'bold'))
+
         # Make sure focus/active mappings don't introduce a distinct blue ring
         try:
             # Keep background consistent on focus/pressed so OS focus rings are less prominent
@@ -196,6 +214,14 @@ class ModernTheme:
             self.style.map('Secondary.TButton',
                 background=[('active', self.colors['hover']), ('disabled', self.colors['disabled'])],
                 foreground=[('disabled', self.colors['fg'])])
+            # Success button states (vert plus clair au hover)
+            self.style.map('Success.TButton',
+                background=[('active', '#27ae60'), ('disabled', self.colors['disabled']), ('pressed', '#229954')],
+                foreground=[('disabled', '#cccccc')])
+            # Cancel button states (rouge plus clair au hover)
+            self.style.map('Cancel.TButton',
+                background=[('active', '#c0392b'), ('disabled', self.colors['disabled']), ('pressed', '#a93226')],
+                foreground=[('disabled', '#cccccc')])
         except Exception:
             pass
 

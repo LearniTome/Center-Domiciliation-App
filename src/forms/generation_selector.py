@@ -143,19 +143,22 @@ class GenerationSelectorDialog(tk.Toplevel):
         WidgetFactory.create_button(
             btn_frame,
             text="🔄 Actualiser les modèles",
-            command=self._refresh_template_list
+            command=self._refresh_template_list,
+            style='Secondary.TButton'
         ).pack(side='left', padx=5)
 
         WidgetFactory.create_button(
             btn_frame,
             text="📁 Consulter les modèles existants",
-            command=self._view_templates
+            command=self._view_templates,
+            style='Secondary.TButton'
         ).pack(side='left', padx=5)
 
         WidgetFactory.create_button(
             btn_frame,
             text="⬆️ Uploader un nouveau modèle",
-            command=self._upload_template
+            command=self._upload_template,
+            style='Secondary.TButton'
         ).pack(side='left', padx=5)
 
         # Template list with checkboxes for selection
@@ -194,13 +197,15 @@ class GenerationSelectorDialog(tk.Toplevel):
         WidgetFactory.create_button(
             footer_frame,
             text="✅ Procéder à la génération",
-            command=self._confirm
+            command=self._confirm,
+            style='Success.TButton'
         ).pack(side='right', padx=5)
 
         WidgetFactory.create_button(
             footer_frame,
             text="❌ Annuler",
-            command=self._cancel
+            command=self._cancel,
+            style='Cancel.TButton'
         ).pack(side='right', padx=5)
 
     def _on_frame_configure(self, event=None):
