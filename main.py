@@ -151,7 +151,7 @@ class MainApp(tk.Tk):
 
     def _ask_yes_no_cancel(self, title, message):
         """Custom Yes/No/Cancel dialog with dark mode.
-        
+
         Returns: True (Yes), False (No), None (Cancel)
         """
         dlg = tk.Toplevel(self)
@@ -165,7 +165,7 @@ class MainApp(tk.Tk):
         # Title with icon
         title_frame = ttk.Frame(dlg)
         title_frame.pack(fill='x', padx=20, pady=(20, 10))
-        
+
         ttk.Label(title_frame, text="❓").pack(side='left', padx=(0, 10))
         ttk.Label(title_frame, text=message, font=('Segoe UI', 11), wraplength=350).pack(side='left', fill='both', expand=True)
 
@@ -202,7 +202,7 @@ class MainApp(tk.Tk):
 
     def _ask_yes_no(self, title, message):
         """Custom Yes/No dialog with dark mode.
-        
+
         Returns: True (Yes), False (No)
         """
         dlg = tk.Toplevel(self)
@@ -216,7 +216,7 @@ class MainApp(tk.Tk):
         # Title with icon
         title_frame = ttk.Frame(dlg)
         title_frame.pack(fill='x', padx=20, pady=(20, 10))
-        
+
         ttk.Label(title_frame, text="❓").pack(side='left', padx=(0, 10))
         ttk.Label(title_frame, text=message, font=('Segoe UI', 11), wraplength=350).pack(side='left', fill='both', expand=True)
 
@@ -246,7 +246,7 @@ class MainApp(tk.Tk):
 
     def generate_documents(self):
         """Unified document generation flow: ask for format, save data, then show selector.
-        
+
         The selector will handle template selection, auto-selection, and generation directly.
         """
         try:

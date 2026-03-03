@@ -6,7 +6,7 @@ with automatic template selection and upload custom templates.
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from pathlib import Path
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, Union
 import shutil
 import logging
 import threading
@@ -24,7 +24,7 @@ DOMICILIATION_TEMPLATES = ['Attest', 'Contrat', 'domiciliation']
 class GenerationSelectorDialog(tk.Toplevel):
     """Modal dialog to select generation type and manage templates."""
 
-    def __init__(self, parent, values: dict = None, output_format: str = 'docx'):
+    def __init__(self, parent, values: Optional[dict] = None, output_format: str = 'docx'):
         super().__init__(parent)
         self.parent = parent
         self.values = values or {}
@@ -216,12 +216,14 @@ class GenerationSelectorDialog(tk.Toplevel):
         # Enable/disable creation sub-options based on selection
         if gen_type == 'creation':
             for widget in self.creation_options_frame.winfo_children():
-                widget.configure(state='normal')
+                if isinstance(widget, (tk.Checkbutton, tk.Radiobutton)):
+                    widget.configure(state='normal')
             # Auto-select all creation templates
             self._auto_select_templates('creation')
         else:
             for widget in self.creation_options_frame.winfo_children():
-                widget.configure(state='disabled')
+                if isinstance(widget, (tk.Checkbutton, tk.Radiobutton)):
+                    widget.configure(state='disabled')
 
         # Auto-select templates for domiciliation
         if gen_type == 'domiciliation':
@@ -474,11 +476,11 @@ class GenerationSelectorDialog(tk.Toplevel):
                     # Show completion message
                     try:
                         import os
-                        paths = [
-                            str(Path(e.get('out_docx')).parent)
-                            for e in report
-                            if e.get('out_docx')
-                        ]
+                        paths: List[str] = []
+                        for e in report:
+                            out_docx = e.get('out_docx')
+                            if out_docx and isinstance(out_docx, (str, Path)):
+                                paths.append(str(Path(out_docx).parent))
                         folder = os.path.commonpath(paths) if paths else out_dir
                     except Exception:
                         folder = out_dir
@@ -526,7 +528,7 @@ class GenerationSelectorDialog(tk.Toplevel):
         return self.result
 
 
-def show_generation_selector(parent, values: dict = None, output_format: str = 'docx') -> Optional[dict]:
+def show_generation_selector(parent, values: Optional[dict] = None, output_format: str = 'docx') -> Optional[dict]:
     """Show the generation selector dialog and return the result.
 
     Args:
