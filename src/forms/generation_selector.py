@@ -15,8 +15,8 @@ from ..utils.utils import ThemeManager, WidgetFactory, PathManager, ErrorHandler
 logger = logging.getLogger(__name__)
 
 # Template mappings for different document types
-CREATION_TEMPLATES_KEYWORDS = ['SARL', 'Statuts', 'Annonce', 'Decl', 'Dépot']
-DOMICILIATION_TEMPLATES = ['Attest', 'Contrat']
+CREATION_TEMPLATES_KEYWORDS = ['SARL', 'Statuts', 'Annonce', 'Décl', 'Dépot', 'AU', 'Decl']
+DOMICILIATION_TEMPLATES = ['Attest', 'Contrat', 'domiciliation']
 
 
 class GenerationSelectorDialog(tk.Toplevel):
@@ -197,7 +197,7 @@ class GenerationSelectorDialog(tk.Toplevel):
     def _on_generation_type_changed(self):
         """Handle generation type radio button changes and auto-select templates."""
         gen_type = self.gen_type_var.get()
-        
+
         # Enable/disable creation sub-options based on selection
         if gen_type == 'creation':
             for widget in self.creation_options_frame.winfo_children():
@@ -207,34 +207,34 @@ class GenerationSelectorDialog(tk.Toplevel):
         else:
             for widget in self.creation_options_frame.winfo_children():
                 widget.configure(state='disabled')
-        
+
         # Auto-select templates for domiciliation
         if gen_type == 'domiciliation':
             self._auto_select_templates('domiciliation')
 
     def _auto_select_templates(self, doc_type: str):
         """Automatically select templates based on document type.
-        
+
         Args:
             doc_type: 'creation' or 'domiciliation'
         """
         # Uncheck all first
         for var in self.template_vars.values():
             var.set(False)
-        
+
         # Select templates based on type
         if doc_type == 'creation':
             # Select all templates that are for creation (SARL, Statuts, Annonce, etc.)
             for template_path, var in self.template_vars.items():
-                template_name = template_path.name
-                if any(keyword in template_name for keyword in CREATION_TEMPLATES_KEYWORDS):
+                template_name = template_path.name.lower()  # Case-insensitive
+                if any(keyword.lower() in template_name for keyword in CREATION_TEMPLATES_KEYWORDS):
                     var.set(True)
-        
+
         elif doc_type == 'domiciliation':
             # Select only Attestation and Contrat for domiciliation
             for template_path, var in self.template_vars.items():
-                template_name = template_path.name
-                if any(keyword in template_name for keyword in DOMICILIATION_TEMPLATES):
+                template_name = template_path.name.lower()  # Case-insensitive
+                if any(keyword.lower() in template_name for keyword in DOMICILIATION_TEMPLATES):
                     var.set(True)
 
     def _refresh_template_list(self):
@@ -248,13 +248,13 @@ class GenerationSelectorDialog(tk.Toplevel):
             models_dir = PathManager.MODELS_DIR
             if models_dir.exists():
                 templates = sorted([f for f in models_dir.glob('*.docx')])
-                
+
                 if templates:
                     for template in templates:
                         # Create checkbox variable
                         var = tk.BooleanVar(value=False)
                         self.template_vars[template] = var
-                        
+
                         # Create checkbox widget
                         display_name = f"📄 {template.stem}"
                         chk = ttk.Checkbutton(
@@ -273,11 +273,11 @@ class GenerationSelectorDialog(tk.Toplevel):
                     self.template_inner_frame,
                     text="⚠️ Dossier Models non trouvé"
                 ).pack(anchor='w', pady=10)
-            
+
             # Update canvas scroll region
             self.template_inner_frame.update_idletasks()
             self.template_canvas.configure(scrollregion=self.template_canvas.bbox('all'))
-            
+
         except Exception as e:
             logger.exception(f"Erreur lors du chargement des modèles: {e}")
             ttk.Label(
@@ -370,7 +370,7 @@ class GenerationSelectorDialog(tk.Toplevel):
         selected_templates = [
             template for template, var in self.template_vars.items() if var.get()
         ]
-        
+
         if not selected_templates:
             messagebox.showwarning(
                 "Aucun modèle sélectionné",
