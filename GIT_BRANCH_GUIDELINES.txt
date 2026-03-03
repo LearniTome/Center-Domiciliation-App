@@ -1,0 +1,281 @@
+GIT BEST PRACTICES - GESTION DES BRANCHES
+═════════════════════════════════════════════════════════════════
+
+📊 VOTRE SITUATION ACTUELLE:
+═════════════════════════════════════════════════════════════════
+
+Branches:
+  1. ✅ main                    - Garder (Production)
+  2. ✅ develop/v2.2.0          - Renommer en 'develop'
+  3. ⚠️ chore/migration-backup   - Renommer en 'release/v2.1.0'
+  4. ❌ chore/cleanup            - SUPPRIMER
+  5. ❌ chore/auto               - SUPPRIMER
+
+
+🎯 RECOMMANDATIONS PRÉCISES:
+═════════════════════════════════════════════════════════════════
+
+GARDER CES BRANCHES:
+─────────────────────────────────────────────────────────────────
+
+1. main
+   • Raison: Branche de production principale
+   • Jamais la supprimer
+   • Seulement des merges depuis release/develop
+   • Toujours stable et testée
+
+2. develop/v2.2.0 → À RENOMMER en 'develop'
+   • Raison: Branche d'intégration continue
+   • Base pour les nouvelles features
+   • Où créer les feature branches
+   • Toujours prête pour une release
+
+3. chore/migration-backup → À RENOMMER en 'release/v2.1.0'
+   • Raison: Archive de la v2.1.0
+   • Utile pour les hotfixes sur v2.1.0
+   • Garder pour l'historique
+   • Peut créer d'autres release/* branches
+
+
+SUPPRIMER CES BRANCHES:
+─────────────────────────────────────────────────────────────────
+
+1. chore/cleanup
+   • Raison: Inactif et inutile
+   • Pas de travail important dessus
+   • Sûr de supprimer
+
+2. chore/auto
+   • Raison: Inactif et inutile
+   • Pas d'automations en cours
+   • Sûr de supprimer
+
+
+🔄 ÉTAPES POUR NETTOYER:
+═════════════════════════════════════════════════════════════════
+
+ÉTAPE 1: Supprimer les branches inutiles
+
+# Supprimer localement
+git branch -d chore/cleanup
+git branch -d chore/auto
+
+# Supprimer à distance (GitHub)
+git push origin --delete chore/cleanup
+git push origin --delete chore/auto
+
+
+ÉTAPE 2: Renommer develop/v2.2.0 en develop
+
+# Renommer localement
+git branch -m develop/v2.2.0 develop
+
+# Pousser la nouvelle branche
+git push origin develop
+
+# Supprimer l'ancienne branche distante
+git push origin --delete develop/v2.2.0
+
+# Mettre à jour le suivi
+git branch -u origin/develop develop
+
+
+ÉTAPE 3: Renommer chore/migration-backup en release/v2.1.0
+
+# Renommer localement
+git branch -m chore/migration-backup release/v2.1.0
+
+# Pousser la nouvelle branche
+git push origin release/v2.1.0
+
+# Supprimer l'ancienne branche distante
+git push origin --delete chore/migration-backup
+
+# Mettre à jour le suivi
+git branch -u origin/release/v2.1.0 release/v2.1.0
+
+
+ÉTAPE 4: Vérifier le résultat
+
+git branch -a
+# Résultat attendu:
+# * develop
+#   main
+#   release/v2.1.0
+#   remotes/origin/develop
+#   remotes/origin/main
+#   remotes/origin/release/v2.1.0
+
+
+📋 STRATÉGIE GIT FLOW EXPLIQUÉE:
+═════════════════════════════════════════════════════════════════
+
+Branches permanentes:
+  • main       - Production stable
+  • develop    - Intégration des features
+
+Branches temporaires:
+  • feature/*  - Nouvelles fonctionnalités
+  • bugfix/*   - Corrections bugs
+  • hotfix/*   - Corrections urgentes
+  • release/*  - Préparation de release
+
+
+Cycle de vie d'une feature:
+
+1. Créer feature depuis develop
+   git checkout -b feature/nom-feature develop
+
+2. Développer et committer
+   git commit -m "feat: description"
+   git push origin feature/nom-feature
+
+3. Code review (Pull Request)
+   - Vérifier le code
+   - Tests passants
+   - Approuver
+
+4. Merger dans develop
+   git checkout develop
+   git pull origin develop
+   git merge --no-ff feature/nom-feature
+   git push origin develop
+
+5. Supprimer feature branch
+   git branch -d feature/nom-feature
+   git push origin --delete feature/nom-feature
+
+
+Cycle de vie d'une release:
+
+1. Créer release branche depuis develop
+   git checkout -b release/v2.2.0 develop
+
+2. Faire les derniers fixes et tests
+   git commit -m "fix: minor adjustments"
+   git push origin release/v2.2.0
+
+3. Merger dans main (production)
+   git checkout main
+   git merge --no-ff release/v2.2.0
+   git tag -a v2.2.0 -m "Release v2.2.0"
+   git push origin main
+   git push origin v2.2.0
+
+4. Merger les fixes dans develop
+   git checkout develop
+   git merge --no-ff release/v2.2.0
+   git push origin develop
+
+5. Optionnel: Supprimer release branch
+   git branch -d release/v2.2.0
+   git push origin --delete release/v2.2.0
+
+
+🏗️ STRUCTURE FINALE RECOMMANDÉE:
+═════════════════════════════════════════════════════════════════
+
+Branches permanentes:
+  ✅ main              - Production
+  ✅ develop           - Development (renomme develop/v2.2.0)
+  ✅ release/v2.1.0    - v2.1.0 archive (renomme chore/migration-backup)
+
+Branches supprimées:
+  ❌ chore/cleanup     - Supprimé
+  ❌ chore/auto        - Supprimé
+  ❌ develop/v2.2.0    - Renommé en develop
+  ❌ chore/migration-backup - Renommé en release/v2.1.0
+
+
+💡 BONNES PRATIQUES ESSENTIELLES:
+═════════════════════════════════════════════════════════════════
+
+1. NOMMAGE CLAIR:
+   ✓ feature/search-filter
+   ✓ bugfix/dark-mode
+   ✓ hotfix/critical-bug
+   ✓ release/v2.2.0
+   ✗ feature_search (pas de tiret)
+   ✗ f/search (trop court)
+
+2. COMMITS LOGIQUES:
+   ✓ feat: add search functionality
+   ✓ fix: correct dark mode colors
+   ✓ docs: update README
+   ✓ refactor: clean up theme manager
+   ✗ changes
+   ✗ updated files
+
+3. PULL REQUESTS:
+   ✓ Toujours faire PR pour develop
+   ✓ Code review obligatoire
+   ✓ Tests passants avant merge
+   ✓ Une approuvation minimum
+
+4. TAGGING:
+   ✓ git tag -a v2.2.0 -m "Release v2.2.0"
+   ✓ Format: vMAJOR.MINOR.PATCH
+   ✓ Toujours pousser tags: git push origin v2.2.0
+
+5. NETTOYAGE:
+   ✓ Supprimer branches mergées
+   ✓ git branch -d feature/complete
+   ✓ git push origin --delete feature/complete
+
+6. WORKFLOW:
+   ✓ Toujours commencer depuis develop pour features
+   ✓ Utiliser --no-ff pour merges: git merge --no-ff
+   ✓ Tirer avant de pousser: git pull origin develop
+   ✓ Committer régulièrement
+
+
+🚀 COMMANDES UTILES:
+═════════════════════════════════════════════════════════════════
+
+# Lister toutes les branches
+git branch -a
+
+# Créer une feature
+git checkout -b feature/ma-feature develop
+git push origin feature/ma-feature
+
+# Merger avec historique
+git merge --no-ff feature/ma-feature
+
+# Supprimer branche localement
+git branch -d feature/ma-feature
+
+# Supprimer branche à distance
+git push origin --delete feature/ma-feature
+
+# Renommer branche
+git branch -m ancien-nom nouveau-nom
+git push origin nouveau-nom
+git push origin --delete ancien-nom
+
+# Voir derniers commits
+git log --oneline -10
+
+# Voir différences
+git diff develop
+git diff release/v2.1.0
+
+
+📊 VOS ACTIONS IMMÉDIATEMENT:
+═════════════════════════════════════════════════════════════════
+
+1. Supprimer chore/cleanup et chore/auto
+2. Renommer develop/v2.2.0 en develop
+3. Renommer chore/migration-backup en release/v2.1.0
+4. Vérifier: git branch -a
+5. Continuer le développement sur develop
+6. Créer feature/search-filter pour la prochaine feature
+
+
+═════════════════════════════════════════════════════════════════
+Résumé:
+  • Garder: main, develop, release/v2.1.0
+  • Supprimer: chore/cleanup, chore/auto
+  • Renommer: develop/v2.2.0 → develop
+  • Renommer: chore/migration-backup → release/v2.1.0
+═════════════════════════════════════════════════════════════════
