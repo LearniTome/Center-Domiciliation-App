@@ -9,8 +9,10 @@ from pathlib import Path
 from typing import Optional, Tuple, List
 import shutil
 import logging
+import threading
 
 from ..utils.utils import ThemeManager, WidgetFactory, PathManager, ErrorHandler
+from ..utils.doc_generator import render_templates
 
 logger = logging.getLogger(__name__)
 
@@ -22,12 +24,19 @@ DOMICILIATION_TEMPLATES = ['Attest', 'Contrat', 'domiciliation']
 class GenerationSelectorDialog(tk.Toplevel):
     """Modal dialog to select generation type and manage templates."""
 
-    def __init__(self, parent):
+    def __init__(self, parent, values: dict = None, output_format: str = 'docx'):
         super().__init__(parent)
         self.parent = parent
+        self.values = values or {}
+        self.output_format = output_format  # 'docx', 'pdf', or 'both'
+
         self.title("Sélectionner les documents à générer")
-        self.geometry("700x600")
+        self.geometry("900x750")
         self.resizable(False, False)
+
+        # Center window on screen
+        from ..utils.utils import WindowManager
+        WindowManager.center_window(self)
 
         # Make modal
         try:
@@ -36,11 +45,17 @@ class GenerationSelectorDialog(tk.Toplevel):
         except Exception:
             pass
 
-        # Theme
+        # Theme - Apply dark mode
         self.theme_manager = ThemeManager(self.winfo_toplevel())
         self.style = self.theme_manager.style
 
-        # Results
+        # Apply dark mode colors to this window
+        try:
+            bg_color = '#2b2b2b'  # Dark background
+            fg_color = '#ffffff'  # White text
+            self.configure(bg=bg_color)
+        except Exception:
+            pass        # Results
         self.generation_type: Optional[str] = None  # 'creation' or 'domiciliation'
         self.creation_type: Optional[str] = None     # 'SARL' or 'SARL_AU'
         self.selected_templates: List[Path] = []
@@ -117,9 +132,9 @@ class GenerationSelectorDialog(tk.Toplevel):
         # Separator
         ttk.Separator(main_frame, orient='horizontal').pack(fill='x', pady=10)
 
-        # Section 2: Template Management
+        # Section 2: Template Management - DON'T expand vertically!
         template_frame = ttk.LabelFrame(main_frame, text="2️⃣ Sélection et gestion des modèles", padding=10)
-        template_frame.pack(fill='both', expand=True, pady=10)
+        template_frame.pack(fill='both', expand=False, pady=10)
 
         # Buttons for template management
         btn_frame = ttk.Frame(template_frame)
@@ -146,15 +161,15 @@ class GenerationSelectorDialog(tk.Toplevel):
         # Template list with checkboxes for selection
         ttk.Label(template_frame, text="Modèles à générer:", font=('Segoe UI', 10, 'bold')).pack(anchor='w', pady=(0, 8))
 
-        # Create frame with scrollbar for template checkboxes
-        list_frame = ttk.Frame(template_frame)
-        list_frame.pack(fill='both', expand=True, pady=(0, 10))
+        # Create frame with scrollbar for template checkboxes - SMALLER HEIGHT
+        list_frame = ttk.Frame(template_frame, height=200)
+        list_frame.pack(fill='both', expand=False, pady=(0, 10))
 
         scrollbar = ttk.Scrollbar(list_frame)
         scrollbar.pack(side='right', fill='y')
 
         # Use Frame instead of Listbox to hold checkboxes
-        self.template_canvas = tk.Canvas(list_frame)
+        self.template_canvas = tk.Canvas(list_frame, height=200, bg='#2b2b2b')
         self.template_canvas.pack(side='left', fill='both', expand=True)
         scrollbar.config(command=self.template_canvas.yview)
         self.template_canvas.config(yscrollcommand=scrollbar.set)
@@ -172,7 +187,7 @@ class GenerationSelectorDialog(tk.Toplevel):
         # Populate template list
         self._refresh_template_list()
 
-        # Footer buttons
+        # Footer buttons - NOW THEY SHOULD BE VISIBLE!
         footer_frame = ttk.Frame(main_frame)
         footer_frame.pack(fill='x', pady=15)
 
@@ -348,8 +363,9 @@ class GenerationSelectorDialog(tk.Toplevel):
             logger.exception(f"Erreur lors de l'upload du modèle: {e}")
             ErrorHandler.handle_error(e, "Erreur lors de l'upload du modèle")
 
+
     def _confirm(self):
-        """Validate and confirm selection."""
+        """Validate, generate templates, and show progress."""
         # Validate generation type
         gen_type = self.gen_type_var.get()
         if not gen_type:
@@ -378,15 +394,127 @@ class GenerationSelectorDialog(tk.Toplevel):
             )
             return
 
+        # Ask for output directory
+        out_dir = filedialog.askdirectory(title="Sélectionner le dossier de sortie")
+        if not out_dir:
+            return  # User cancelled
+
         self.generation_type = gen_type
         self.selected_templates = selected_templates
-        self.result = {
-            'type': gen_type,
-            'creation_type': self.creation_type,
-            'templates': [str(t.resolve()) for t in selected_templates]
-        }
 
-        self.destroy()
+        # Disable dialog controls during generation
+        self.withdraw()  # Hide dialog temporarily
+
+        # Create progress window
+        progress_win = tk.Toplevel(self.parent)
+        progress_win.title("Génération en cours")
+        progress_win.geometry("600x400")
+        try:
+            progress_win.transient(self.parent)
+        except Exception:
+            pass
+
+        progress_frame = ttk.Frame(progress_win, padding=12)
+        progress_frame.pack(fill='both', expand=True)
+
+        ttk.Label(progress_frame, text="Génération des documents", font=('Segoe UI', 12, 'bold')).pack(anchor='w')
+        counts_label = ttk.Label(progress_frame, text="0 / 0")
+        counts_label.pack(anchor='w', pady=(6, 0))
+
+        pb = ttk.Progressbar(progress_frame, orient='horizontal', length=400, mode='determinate')
+        pb.pack(pady=(6, 6), fill='x')
+
+        status_text = tk.Text(progress_frame, height=15, width=80, state='disabled')
+        status_text.pack(fill='both', expand=True, pady=(6, 6))
+
+        scrollbar = ttk.Scrollbar(status_text)
+        scrollbar.pack(side='right', fill='y')
+        status_text.config(yscrollcommand=scrollbar.set)
+
+        def progress_cb(processed, total, template_name, entry):
+            """Update progress from worker thread"""
+            def _update():
+                counts_label.configure(text=f"{processed} / {total}")
+                pb['maximum'] = total
+                pb['value'] = processed
+                status_text.configure(state='normal')
+                status = entry.get('status', 'pending')
+                error = entry.get('error', '')
+                msg = f"[{status}] {template_name}"
+                if error:
+                    msg += f" - {error}"
+                status_text.insert('end', msg + "\n")
+                status_text.see('end')
+                status_text.configure(state='disabled')
+            try:
+                self.parent.after(1, _update)
+            except Exception:
+                pass
+
+        def worker():
+            """Run generation in background thread"""
+            try:
+                # Prepare template paths
+                tpl_paths = [str(t.resolve()) for t in selected_templates]
+
+                # Determine PDF conversion
+                to_pdf = self.output_format in ('pdf', 'both')
+
+                # Call render_templates
+                report = render_templates(
+                    self.values,
+                    templates_dir=str(PathManager.MODELS_DIR),
+                    out_dir=out_dir,
+                    to_pdf=to_pdf,
+                    templates_list=tpl_paths,
+                    progress_callback=progress_cb,
+                )
+
+                def _show_done():
+                    # Show completion message
+                    try:
+                        import os
+                        paths = [
+                            str(Path(e.get('out_docx')).parent)
+                            for e in report
+                            if e.get('out_docx')
+                        ]
+                        folder = os.path.commonpath(paths) if paths else out_dir
+                    except Exception:
+                        folder = out_dir
+
+                    messagebox.showinfo(
+                        '✅ Génération terminée',
+                        f"Génération réussie!\n\n{len(report)} document(s) générés.\n\nFichiers enregistrés dans:\n{folder}"
+                    )
+
+                self.parent.after(10, _show_done)
+
+            except Exception as e:
+                logger.exception(f"Erreur lors de la génération: {e}")
+
+                def _show_error():
+                    ErrorHandler.handle_error(e, "Erreur pendant la génération des documents")
+
+                self.parent.after(10, _show_error)
+
+            finally:
+                def _cleanup():
+                    try:
+                        progress_win.destroy()
+                    except Exception:
+                        pass
+                    try:
+                        self.destroy()
+                    except Exception:
+                        pass
+
+                self.parent.after(100, _cleanup)
+
+        # Start generation thread
+        t = threading.Thread(target=worker, daemon=True)
+        t.start()
+
 
     def _cancel(self):
         """Cancel and close the dialog."""
@@ -398,8 +526,17 @@ class GenerationSelectorDialog(tk.Toplevel):
         return self.result
 
 
-def show_generation_selector(parent) -> Optional[dict]:
-    """Show the generation selector dialog and return the result."""
-    dialog = GenerationSelectorDialog(parent)
+def show_generation_selector(parent, values: dict = None, output_format: str = 'docx') -> Optional[dict]:
+    """Show the generation selector dialog and return the result.
+
+    Args:
+        parent: Parent window
+        values: Dictionary of form values (societe, associes, contrat)
+        output_format: 'docx', 'pdf', or 'both'
+
+    Returns:
+        Dictionary with generation result, or None if cancelled
+    """
+    dialog = GenerationSelectorDialog(parent, values or {}, output_format)
     parent.wait_window(dialog)
     return dialog.get_result()

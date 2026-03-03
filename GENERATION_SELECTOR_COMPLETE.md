@@ -1,8 +1,8 @@
 # 📋 GENERATION SELECTOR FEATURE - IMPLEMENTATION COMPLETE ✅
 
 ## Session Summary
-**Date:** March 3, 2026  
-**Feature:** Document Generation Selection System with Template Management  
+**Date:** March 3, 2026
+**Feature:** Document Generation Selection System with Template Management
 **Status:** ✅ **COMPLETE AND TESTED**
 
 ---
@@ -13,7 +13,7 @@
    a. Button for "Création de Société" documents (Two choices: SARL vs SARL_AU)
    b. Button for "Domiciliation" documents
 
-2. Allow user to upload new document templates and refresh the list 
+2. Allow user to upload new document templates and refresh the list
    of documents to generate based on uploaded templates
 ```
 

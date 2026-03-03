@@ -18,7 +18,7 @@ Successfully integrated the **Document Generation Selection System** with three 
     1. Generation type selection (Creation vs Domiciliation)
     2. Creation subtype selection (SARL vs SARL_AU) - only enabled for Creation
     3. Template management panel
-  
+
 - **Key Methods:**
   - `__init__()` - Initialize modal with themed UI
   - `_setup_ui()` - Create radio buttons, listbox, and management buttons
@@ -43,7 +43,7 @@ from src.forms.generation_selector import show_generation_selector
 
 #### Updated: `generate_documents()` Method
 - **Before:** Asked for template selection directly
-- **After:** 
+- **After:**
   1. Calls `show_generation_selector(self)` first
   2. Checks result; returns if user cancels
   3. Stores `generation_type` and `creation_type` for filtering

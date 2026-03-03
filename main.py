@@ -150,39 +150,29 @@ class MainApp(tk.Tk):
         return self.generate_documents()
 
     def generate_documents(self):
-        """Unified document generation flow: user chooses generation type, templates and formats (Word/PDF/Both)."""
+        """Unified document generation flow: ask for format, save data, then show selector.
+
+        The selector will handle template selection, auto-selection, and generation directly.
+        """
         try:
             self.collect_values()
 
-            # Show generation selector to choose type (Creation vs Domiciliation)
-            selector_result = show_generation_selector(self)
-            if selector_result is None:
-                # User cancelled
-                return
-
-            generation_type = selector_result.get('type')
-            creation_type = selector_result.get('creation_type')  # 'SARL', 'SARL_AU', or None
-            selected_templates = selector_result.get('templates', [])  # List of template paths
-
-            # Ask for output format (Word/PDF/Both)
+            # Ask for output format FIRST (Word/PDF/Both)
             format_choice = self._ask_output_format()
             if format_choice is None:
-                return
-            to_pdf = format_choice in ('pdf', 'both')
+                return  # User cancelled
 
-            # Ask the user whether they want to save before generating.
-            # Yes -> save then generate; No -> generate without saving; Cancel -> abort.
+            # Ask the user whether they want to save before generating
             try:
                 choice = messagebox.askyesnocancel(
                     'Sauvegarder avant génération',
                     'Voulez-vous sauvegarder les données dans la base avant de générer les documents ?\n\nOui = sauvegarder puis générer\nNon = générer sans sauvegarder\nAnnuler = annuler la génération'
                 )
             except Exception:
-                # If messagebox fails, default to saving to be safe
-                choice = True
+                choice = None
 
             if choice is None:
-                # user cancelled
+                # User cancelled
                 return
 
             if choice:
@@ -194,11 +184,10 @@ class MainApp(tk.Tk):
                     messagebox.showwarning('Sauvegarde échouée', "La sauvegarde a échoué. La génération a été annulée.")
                     return
                 if not db_path:
-                    # save_to_db returns None on failure / cancel — stop the generation flow
                     messagebox.showwarning('Sauvegarde manquante', 'La sauvegarde a échoué ou a été annulée. La génération a été annulée.')
                     return
             else:
-                # User chose NOT to save; proceed without saving
+                # User chose NOT to save; confirm they want to proceed
                 try:
                     proceed = messagebox.askyesno(
                         'Générer sans sauvegarder',
@@ -209,90 +198,13 @@ class MainApp(tk.Tk):
                 if not proceed:
                     return
 
-            # Choose output directory
-            out_dir = filedialog.askdirectory(title="Choisir le dossier de sortie")
-            if not out_dir:
-                return
-
-            # Use templates selected from the selector dialog
-            tpl_paths = selected_templates
-            if not tpl_paths:
-                messagebox.showinfo("Aucun modèle", "Aucun modèle sélectionné. Annulation.")
-                return
-
-            out_dir = filedialog.askdirectory(title="Choisir le dossier de sortie")
-            if not out_dir:
-                return
-
-            # Create modal progress window with counts and lists
-            progress_win = tk.Toplevel(self)
-            progress_win.title("Génération en cours")
-            progress_win.transient(self)
-            progress_win.grab_set()
-            # center the progress window
-            from src.utils.utils import WindowManager
-            WindowManager.center_window(progress_win)
-            progress_frame = ttk.Frame(progress_win, padding=12)
-            progress_frame.pack(fill='both', expand=True)
-
-            ttk.Label(progress_frame, text="Génération des documents", font=('Segoe UI', 12, 'bold')).pack(anchor='w')
-            counts_label = ttk.Label(progress_frame, text="0 / 0")
-            counts_label.pack(anchor='w', pady=(6, 0))
-
-            pb = ttk.Progressbar(progress_frame, orient='horizontal', length=400, mode='determinate')
-            pb.pack(pady=(6, 6))
-
-            status_text = tk.Text(progress_frame, height=8, width=80, state='disabled')
-            status_text.pack(fill='both', expand=True)
-
-            # progress callback updates the UI from the worker thread via after()
-            def progress_cb(processed, total, template_name, entry):
-                def _update():
-                    counts_label.configure(text=f"{processed} / {total}")
-                    pb['maximum'] = total
-                    pb['value'] = processed
-                    status_text.configure(state='normal')
-                    status_text.insert('end', f"[{entry.get('status')}] {template_name} - {entry.get('error') or ''}\n")
-                    status_text.see('end')
-                    status_text.configure(state='disabled')
-                self.after(1, _update)
-
-            def worker():
-                try:
-                    report = render_templates(
-                        self.values,
-                        str(PathManager.MODELS_DIR),
-                        out_dir,
-                        to_pdf=to_pdf,
-                        templates_list=tpl_paths,
-                        progress_callback=progress_cb,
-                    )
-
-                    def _show_done(rep):
-                        # Try to determine the actual generated folder from report entries
-                        try:
-                            import os
-                            from pathlib import Path as _P
-                            paths = [str(_P(e.get('out_docx')).parent) for e in rep if e.get('out_docx')]
-                            folder = os.path.commonpath(paths) if paths else out_dir
-                        except Exception:
-                            folder = out_dir
-                        self.after(10, lambda: messagebox.showinfo('Génération terminée', f"Génération terminée. {len(rep)} modèles traités. Fichiers enregistrés dans {folder}"))
-
-                    self.after(10, lambda r=report: _show_done(r))
-
-                except Exception as e:
-                    logging.exception('Generation failed: %s', e)
-                    self.after(10, lambda: ErrorHandler.handle_error(e, 'Erreur pendant la génération'))
-
-                finally:
-                    self.after(10, lambda: (progress_win.grab_release(), progress_win.destroy()))
-
-            t = threading.Thread(target=worker, daemon=True)
-            t.start()
+            # Show generation selector - pass values and format for integrated generation
+            # The selector now handles template selection, auto-selection, and generation directly
+            selector_result = show_generation_selector(self, self.values, format_choice)
+            # The selector handles generation internally, no need to do anything here
 
         except Exception as e:
-            logger.exception('Erreur pendant la génération unifiée: %s', e)
+            logger.exception('Erreur pendant la génération: %s', e)
 
     def start_generation(self, out_dir: str, to_pdf: bool, templates_list: Optional[list] = None):
         """Start generation on a background thread and show modal progress."""
@@ -326,7 +238,7 @@ class MainApp(tk.Tk):
 
     def _ask_output_format(self):
         """Ask user whether to generate Word, PDF, or both.
-        
+
         Returns: 'word', 'pdf', 'both', or None if cancelled.
         """
         dlg = tk.Toplevel(self)

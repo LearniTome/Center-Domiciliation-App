@@ -2,8 +2,8 @@
 
 ## ✅ Tâche Complétée Avec Succès
 
-Date: 3 Mars 2026  
-Feature: Enhanced Document Generation Selector  
+Date: 3 Mars 2026
+Feature: Enhanced Document Generation Selector
 Status: **✅ COMPLET ET DÉPLOYÉ**
 
 ---
@@ -34,12 +34,12 @@ Après:
 ```python
 def _auto_select_templates(self, doc_type: str):
     """Sélectionne automatiquement les templates appropriés"""
-    
+
     # Si Création → Tous les docs SARL/SARL_AU
     # Si Domiciliation → Seulement Attestation + Contrat
 ```
 
-**Implémentation**: 
+**Implémentation**:
 - Appelée automatiquement quand l'utilisateur sélectionne le type
 - Coche/décoche les templates en fonction des keywords
 - L'utilisateur peut toujours modifier manuellement
@@ -79,7 +79,7 @@ Sélection: "Domiciliation"
 Automatiquement sélectionnés:
     ☑ My_Attest_domiciliation.docx
     ☑ My_Contrat_domiciliation.docx
-    
+
 Les autres templates sont désélectionnés automatiquement!
 ```
 
@@ -169,7 +169,7 @@ if Type == "Création de Société":
         ✓ Tous les docs SARL
     elif SubType == "SARL_AU":
         ✓ Tous les docs SARL.AU
-        
+
 elif Type == "Domiciliation":
     ✓ Attestation
     ✓ Contrat
@@ -347,7 +347,7 @@ Même avec auto-sélection:
 
 ```
 ✅ 1. Auto-sélection Création → TOUS les docs SARL/SARL_AU
-✅ 2. Auto-sélection Domiciliation → SEULEMENT Attestation + Contrat  
+✅ 2. Auto-sélection Domiciliation → SEULEMENT Attestation + Contrat
 ✅ 3. Bouton Actualiser templates → 🔄 Implementé
 ✅ 4. Fonction sélection templates → Checkboxes avec canvas
 ✅ 5. Gestion modèles (upload/refresh) → Complète

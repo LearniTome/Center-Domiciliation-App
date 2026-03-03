@@ -6,7 +6,7 @@
 
 #### 1. Template Keyword Matching (Case-Sensitive Bug) ✅
 
-**Problème**: 
+**Problème**:
 - Les keywords étaient case-sensitive
 - `'Décl'` ne matchait pas `'décl'` dans les noms de fichiers
 - Certains fichiers ne s'auto-sélectionnaient pas

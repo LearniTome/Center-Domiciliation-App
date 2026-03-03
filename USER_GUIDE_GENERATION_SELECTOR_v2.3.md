@@ -21,7 +21,7 @@ La fenêtre du sélecteur s'ouvre automatiquement.
     • ☑ SARL.AU (Société Unipersonnelle)
 ```
 
-### Étape 3: ✨ Magie! 
+### Étape 3: ✨ Magie!
 **Les documents appropriés sont automatiquement sélectionnés**:
 - Pour SARL: Tous les statuts, annonces, dépôts légaux pour SARL
 - Pour SARL.AU: Tous les documents pour SARL unipersonnelle
@@ -29,7 +29,7 @@ La fenêtre du sélecteur s'ouvre automatiquement.
 ### Étape 4: Format de sortie
 Choisissez comment générer:
 - 📄 **Word uniquement** - Fichiers .docx
-- 📕 **PDF uniquement** - Fichiers .pdf  
+- 📕 **PDF uniquement** - Fichiers .pdf
 - 📊 **Word & PDF** - Les deux formats
 
 ### Étape 5: Confirmation et génération

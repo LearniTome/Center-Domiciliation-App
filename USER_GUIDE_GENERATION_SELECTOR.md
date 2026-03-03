@@ -95,10 +95,10 @@ Below the type selection, you'll see a **Template List** showing all available d
 
 3. Generation Selector appears:
    ✓ Select: "Créations de Société" (Company Creation)
-   
+
 4. Subtype selection appears:
    ✓ Select: "SARL" (for standard SARL)
-   
+
 5. Template list shows ONLY SARL-related templates:
    ☑ My_Annonce_Journal.docx
    ☑ My_Dépot_Légal.docx
@@ -139,7 +139,7 @@ Below the type selection, you'll see a **Template List** showing all available d
    ├─ Select: "My_Custom_SARL_Template.docx" from your Downloads
    ├─ Confirm: "Yes, upload"
    └─ Template list updates immediately
-   
+
 4. Your custom template appears in the list:
    └─ ☑ My_Custom_SARL_Template.docx (newly added!)
 
@@ -263,12 +263,12 @@ After choosing templates, you'll select the output format:
 
 ### Common Questions
 
-**Q: Can I have multiple versions of the same template?**  
+**Q: Can I have multiple versions of the same template?**
 A: Yes! Upload templates with different names:
 - `My_Statuts_SARL_v1.docx`
 - `My_Statuts_SARL_v2.docx`
 
-**Q: Where are generated documents saved?**  
+**Q: Where are generated documents saved?**
 A: Wherever you choose in step 9 of generation process. They're organized in folders like:
 ```
 2026-03-03_Acme_SARL_Constitution/
@@ -277,10 +277,10 @@ A: Wherever you choose in step 9 of generation process. They're organized in fol
 └── My_Dépot_Légal_filled.docx
 ```
 
-**Q: Can I reuse templates I create?**  
+**Q: Can I reuse templates I create?**
 A: Yes! Use "⬆️ Upload Template" to add them. Once uploaded, they appear in every generation.
 
-**Q: What if I make a mistake during generation?**  
+**Q: What if I make a mistake during generation?**
 A: Just click "Generate" again. You can overwrite previous files or save to a different folder.
 
 ---
@@ -295,5 +295,5 @@ If you encounter issues not covered here:
 
 ---
 
-**Last Updated:** March 2026  
+**Last Updated:** March 2026
 **Version:** 1.0
