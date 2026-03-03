@@ -160,24 +160,24 @@ class MainApp(tk.Tk):
         dlg.transient(self)
         dlg.grab_set()
         dlg.configure(bg='#2b2b2b')
-        dlg.geometry('450x200')
+        dlg.geometry('450x250')
         from src.utils.utils import WindowManager
         WindowManager.center_window(dlg)
 
         # Main content frame (for proper centering)
         content_frame = ttk.Frame(dlg)
-        content_frame.pack(fill='both', expand=True, padx=20, pady=20)
+        content_frame.pack(fill='both', expand=True, padx=20, pady=15)
 
         # Title with icon - CENTERED
         title_frame = ttk.Frame(content_frame)
-        title_frame.pack(fill='both', expand=True, pady=(0, 15))
+        title_frame.pack(fill='x', expand=False, pady=(0, 10))
 
-        ttk.Label(title_frame, text="❓", font=('Segoe UI', 16)).pack(side='top', pady=(0, 8))
-        ttk.Label(title_frame, text=message, font=('Segoe UI', 11), wraplength=380, justify='center').pack(fill='both', expand=True)
+        ttk.Label(title_frame, text="❓", font=('Segoe UI', 16)).pack(side='top', pady=(0, 6))
+        ttk.Label(title_frame, text=message, font=('Segoe UI', 11), wraplength=380, justify='center').pack(fill='both', expand=False)
 
         # Buttons frame - CENTERED at bottom
         btn_frame = ttk.Frame(dlg)
-        btn_frame.pack(fill='x', padx=20, pady=(0, 20))
+        btn_frame.pack(fill='x', padx=20, pady=(10, 15))
 
         result = None
 
@@ -204,6 +204,7 @@ class MainApp(tk.Tk):
         WidgetFactory.create_button(btn_frame, text='Annuler', command=on_cancel, style='Close.TButton').pack(side='left', padx=5, expand=True, fill='x')
 
         self.wait_window(dlg)
+        return result
 
     def _ask_yes_no(self, title, message):
         """Custom Yes/No dialog with dark mode.
@@ -215,24 +216,24 @@ class MainApp(tk.Tk):
         dlg.transient(self)
         dlg.grab_set()
         dlg.configure(bg='#2b2b2b')
-        dlg.geometry('400x180')
+        dlg.geometry('400x200')
         from src.utils.utils import WindowManager
         WindowManager.center_window(dlg)
 
         # Main content frame (for proper centering)
         content_frame = ttk.Frame(dlg)
-        content_frame.pack(fill='both', expand=True, padx=20, pady=20)
+        content_frame.pack(fill='both', expand=True, padx=20, pady=15)
 
         # Title with icon - CENTERED
         title_frame = ttk.Frame(content_frame)
-        title_frame.pack(fill='both', expand=True, pady=(0, 15))
+        title_frame.pack(fill='x', expand=False, pady=(0, 10))
 
-        ttk.Label(title_frame, text="❓", font=('Segoe UI', 16)).pack(side='top', pady=(0, 8))
-        ttk.Label(title_frame, text=message, font=('Segoe UI', 11), wraplength=350, justify='center').pack(fill='both', expand=True)
+        ttk.Label(title_frame, text="❓", font=('Segoe UI', 16)).pack(side='top', pady=(0, 6))
+        ttk.Label(title_frame, text=message, font=('Segoe UI', 11), wraplength=350, justify='center').pack(fill='both', expand=False)
 
         # Buttons frame - CENTERED at bottom
         btn_frame = ttk.Frame(dlg)
-        btn_frame.pack(fill='x', padx=20, pady=(0, 20))
+        btn_frame.pack(fill='x', padx=20, pady=(10, 15))
 
         result = False
 
@@ -344,7 +345,7 @@ class MainApp(tk.Tk):
         dlg.title('Choisir le format de sortie')
         dlg.transient(self)
         dlg.grab_set()
-        dlg.geometry('400x200')
+        dlg.geometry('420x240')
         from src.utils.utils import WindowManager
         WindowManager.center_window(dlg)
 
@@ -353,19 +354,19 @@ class MainApp(tk.Tk):
 
         # Main content frame (for proper centering)
         content_frame = ttk.Frame(dlg)
-        content_frame.pack(fill='both', expand=True, padx=20, pady=20)
+        content_frame.pack(fill='both', expand=True, padx=20, pady=15)
 
         # Title - CENTERED
-        ttk.Label(content_frame, text="Quel format voulez-vous générer ?", font=('Segoe UI', 12, 'bold')).pack(anchor='center', pady=(0, 20))
+        ttk.Label(content_frame, text="Quel format voulez-vous générer ?", font=('Segoe UI', 12, 'bold')).pack(anchor='center', pady=(0, 15))
 
         fmt_var = tk.StringVar(value='word')
-        
+
         # Radio buttons frame
         radio_frame = ttk.Frame(content_frame)
-        radio_frame.pack(fill='x', expand=True, pady=10)
-        
-        ttk.Radiobutton(radio_frame, text='📄 Word uniquement', variable=fmt_var, value='word').pack(anchor='w', pady=6)
-        ttk.Radiobutton(radio_frame, text='📊 Word & PDF', variable=fmt_var, value='both').pack(anchor='w', pady=6)
+        radio_frame.pack(fill='x', expand=False, pady=8)
+
+        ttk.Radiobutton(radio_frame, text='📄 Word uniquement', variable=fmt_var, value='word').pack(anchor='w', pady=4)
+        ttk.Radiobutton(radio_frame, text='📊 Word & PDF', variable=fmt_var, value='both').pack(anchor='w', pady=4)
 
         result = None
 
@@ -383,7 +384,7 @@ class MainApp(tk.Tk):
 
         # Button frame at bottom
         btn_frame = ttk.Frame(dlg)
-        btn_frame.pack(fill='x', padx=20, pady=(0, 20))
+        btn_frame.pack(fill='x', padx=20, pady=(10, 15))
 
         WidgetFactory.create_button(btn_frame, text='Annuler', command=on_cancel, style='Close.TButton').pack(side='left', padx=5, expand=True, fill='x')
         WidgetFactory.create_button(btn_frame, text='OK', command=on_ok, style='Confirm.TButton').pack(side='left', padx=5, expand=True, fill='x')
