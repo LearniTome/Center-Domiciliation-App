@@ -30,11 +30,23 @@ This README focuses on a robust setup and usage guide, platform notes (Windows /
 
 Prerequisites
 
-- Python 3.10 or newer
+- Python 3.13+ (recommended; works with 3.10+)
 - Git (to clone)
+- `uv` — Fast Python package installer (recommended; alternatively use `pip`)
 - Optional but recommended: Microsoft Office (for opening generated .docx/.pdf)
 
-On Windows (recommended workflow)
+**Quick install `uv`** (if not already installed):
+
+```powershell
+# Windows (using pipx or direct download)
+pipx install uv
+# or download from https://astral.sh/uv/
+
+# macOS / Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+### Option 1: Using `uv` (recommended, faster)
 
 1. Clone the repository:
 
@@ -43,33 +55,54 @@ git clone https://github.com/LearniTome/Center-Domiciliation-App.git
 cd Center-Domiciliation-App
 ```
 
-1. Create and activate a virtual environment:
+2. Install dependencies and activate environment with `uv`:
 
 ```powershell
-python -m venv venv
+# Windows
+uv venv
 .\venv\Scripts\Activate.ps1
+uv pip install -r requirements.txt
+
+# macOS / Linux
+uv venv
+source venv/bin/activate
+uv pip install -r requirements.txt
 ```
 
-1. Install dependencies:
+Or use `uv run` directly without manual activation:
 
 ```powershell
-pip install -r requirements-windows.txt
+uv run python main.py
 ```
 
-On macOS / Linux
+### Option 2: Traditional `venv` + `pip`
 
-```bash
+1. Clone the repository:
+
+```powershell
 git clone https://github.com/LearniTome/Center-Domiciliation-App.git
 cd Center-Domiciliation-App
+```
+
+2. Create and activate virtual environment:
+
+```powershell
+# Windows
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+pip install -r requirements-windows.txt
+
+# macOS / Linux
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Notes
+**Notes:**
 
-- Use `requirements-windows.txt` on Windows to account for Windows-specific wheels if present.
-- If you get binary build errors for packages like `python-docx`, `docxtpl` or others, ensure you have a working build toolchain (on Windows: Build Tools for Visual Studio). Many packages used here are pure-Python.
+- **`uv` is faster** and handles Python version management automatically.
+- Use `requirements-windows.txt` on Windows for platform-specific wheels if `pip` has build issues.
+- If you get binary build errors for packages like `python-docx`, `docxtpl` or others, ensure you have a working build toolchain (on Windows: Build Tools for Visual Studio). Most packages are pure-Python and should install without issues.
 
 ## ⚙️ Configuration
 
@@ -82,9 +115,26 @@ Edit `config/preferences.json` or create a local copy if you want per-developer 
 
 ## ▶️ Running the application
 
-From the project root, with the venv activated:
+### With `uv` (recommended)
 
 ```powershell
+# Direct run without activation
+uv run python main.py
+
+# Or activate venv first, then run normally
+.\venv\Scripts\Activate.ps1
+python main.py
+```
+
+### With traditional `venv`
+
+```powershell
+# Windows
+.\venv\Scripts\Activate.ps1
+python main.py
+
+# macOS / Linux
+source venv/bin/activate
 python main.py
 ```
 
@@ -146,12 +196,28 @@ The script prints a JSON summary and exits with code 0 on success (or when no ex
 
 Run the provided smoke test to ensure basic imports and app instantiation work:
 
+### With `uv`:
+
+```powershell
+uv run python tests/smoke_test.py
+```
+
+### With traditional `venv`:
+
 ```powershell
 .\venv\Scripts\Activate.ps1
 python tests/smoke_test.py
 ```
 
 Run the full test suite with pytest:
+
+### With `uv`:
+
+```powershell
+uv run pytest -q
+```
+
+### With traditional `venv`:
 
 ```powershell
 .\venv\Scripts\Activate.ps1
@@ -201,8 +267,23 @@ Guidelines
 Development workflow
 
 ```bash
+# Using uv (recommended)
 git checkout -b chore/your-task
+uv venv
+source venv/bin/activate  # or .\venv\Scripts\Activate.ps1 on Windows
 # make changes
+uv run pytest -q  # run tests
+git add .
+git commit -m "chore: describe changes"
+git push --set-upstream origin chore/your-task
+
+# Or with traditional venv
+git checkout -b chore/your-task
+python -m venv venv
+source venv/bin/activate  # or .\venv\Scripts\Activate.ps1 on Windows
+pip install -r requirements.txt
+# make changes
+pytest -q  # run tests
 git add .
 git commit -m "chore: describe changes"
 git push --set-upstream origin chore/your-task
