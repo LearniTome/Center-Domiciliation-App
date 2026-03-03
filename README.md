@@ -30,11 +30,23 @@ This README focuses on a robust setup and usage guide, platform notes (Windows /
 
 Prerequisites
 
-- Python 3.10 or newer
+- Python 3.13+ (recommended; works with 3.10+)
 - Git (to clone)
+- `uv` — Fast Python package installer (recommended; alternatively use `pip`)
 - Optional but recommended: Microsoft Office (for opening generated .docx/.pdf)
 
-On Windows (recommended workflow)
+**Quick install `uv`** (if not already installed):
+
+```powershell
+# Windows (using pipx or direct download)
+pipx install uv
+# or download from https://astral.sh/uv/
+
+# macOS / Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+### Option 1: Using `uv` (recommended, faster)
 
 1. Clone the repository:
 
@@ -43,33 +55,54 @@ git clone https://github.com/LearniTome/Center-Domiciliation-App.git
 cd Center-Domiciliation-App
 ```
 
-1. Create and activate a virtual environment:
+2. Install dependencies and activate environment with `uv`:
 
 ```powershell
-python -m venv venv
+# Windows
+uv venv
 .\venv\Scripts\Activate.ps1
+uv pip install -r requirements.txt
+
+# macOS / Linux
+uv venv
+source venv/bin/activate
+uv pip install -r requirements.txt
 ```
 
-1. Install dependencies:
+Or use `uv run` directly without manual activation:
 
 ```powershell
-pip install -r requirements-windows.txt
+uv run python main.py
 ```
 
-On macOS / Linux
+### Option 2: Traditional `venv` + `pip`
 
-```bash
+1. Clone the repository:
+
+```powershell
 git clone https://github.com/LearniTome/Center-Domiciliation-App.git
 cd Center-Domiciliation-App
+```
+
+2. Create and activate virtual environment:
+
+```powershell
+# Windows
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+pip install -r requirements-windows.txt
+
+# macOS / Linux
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Notes
+**Notes:**
 
-- Use `requirements-windows.txt` on Windows to account for Windows-specific wheels if present.
-- If you get binary build errors for packages like `python-docx`, `docxtpl` or others, ensure you have a working build toolchain (on Windows: Build Tools for Visual Studio). Many packages used here are pure-Python.
+- **`uv` is faster** and handles Python version management automatically.
+- Use `requirements-windows.txt` on Windows for platform-specific wheels if `pip` has build issues.
+- If you get binary build errors for packages like `python-docx`, `docxtpl` or others, ensure you have a working build toolchain (on Windows: Build Tools for Visual Studio). Most packages are pure-Python and should install without issues.
 
 ## ⚙️ Configuration
 
@@ -80,21 +113,47 @@ Default preferences are stored in `config/preferences.json`. Common changes:
 
 Edit `config/preferences.json` or create a local copy if you want per-developer overrides.
 
-## ▶️ Running the application
+## ▶️ Running the Application
 
-From the project root, with the venv activated:
+### With `uv` (recommended)
+
+**Direct execution (no activation needed):**
+
+```powershell
+uv run python main.py
+```
+
+**Or with activated environment:**
+
+```powershell
+# Windows
+.\venv\Scripts\Activate.ps1
+python main.py
+
+# macOS / Linux
+source venv/bin/activate
+python main.py
+```
+
+### With traditional `venv`
+
+1. Activate your environment:
+
+```powershell
+# Windows
+.\venv\Scripts\Activate.ps1
+
+# macOS / Linux
+source venv/bin/activate
+```
+
+2. Run the app:
 
 ```powershell
 python main.py
 ```
 
-Or (module mode):
-
-```powershell
-python -m main
-```
-
-Primary screens
+### Primary Screens
 
 - Societies (Société): create and edit domiciled companies
 - Associates (Associés): manage partners/members
@@ -142,20 +201,38 @@ python .\scripts\check_generation.py --expect-company ASTRAPIA --expect-associe 
 
 The script prints a JSON summary and exits with code 0 on success (or when no expectations were given) and non-zero if any expectation fails.
 
-## ✅ Tests and validation
+## ✅ Tests and Validation
 
-Run the provided smoke test to ensure basic imports and app instantiation work:
+### With `uv` (recommended)
+
+Run the smoke test (verifies basic imports and app instantiation):
 
 ```powershell
-.\venv\Scripts\Activate.ps1
-python tests/smoke_test.py
+uv run python tests/smoke_test.py
 ```
 
 Run the full test suite with pytest:
 
 ```powershell
+uv run pytest -q
+```
+
+### With traditional `venv`
+
+Activate your environment first:
+
+```powershell
+# Windows
 .\venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+
+# macOS / Linux
+source venv/bin/activate
+```
+
+Then run tests:
+
+```powershell
+python tests/smoke_test.py
 pytest -q
 ```
 
@@ -191,21 +268,57 @@ If problems persist, run the smoke test and paste the traceback into an issue.
 
 ## 🤝 Contributing
 
-Guidelines
+### Guidelines
 
 - Create a topic branch per feature or bugfix: `git checkout -b feat/your-feature`
 - Keep commits small and focused
 - Add/adjust tests for new logic
 - Open a Pull Request describing the change and which files to review
 
-Development workflow
+### Development Workflow
 
-```bash
-git checkout -b chore/your-task
-# make changes
+#### Using `uv` (recommended)
+
+```powershell
+# Create and switch to a feature branch
+git checkout -b feat/your-feature
+
+# Create virtual environment and install dependencies
+uv venv
+.\venv\Scripts\Activate.ps1
+uv pip install -r requirements.txt
+
+# Make changes and test
+uv run python main.py
+uv run pytest -q
+
+# Stage, commit, and push
 git add .
-git commit -m "chore: describe changes"
-git push --set-upstream origin chore/your-task
+git commit -m "feat: describe your changes"
+git push --set-upstream origin feat/your-feature
+```
+
+#### Using traditional `venv` + `pip`
+
+```powershell
+# Create and switch to a feature branch
+git checkout -b feat/your-feature
+
+# Create and activate virtual environment
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+
+# Install dependencies
+pip install -r requirements-windows.txt
+
+# Make changes and test
+python main.py
+pytest -q
+
+# Stage, commit, and push
+git add .
+git commit -m "feat: describe your changes"
+git push --set-upstream origin feat/your-feature
 ```
 
 Automated scripts
