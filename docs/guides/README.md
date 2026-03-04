@@ -6,12 +6,17 @@ Ce dossier contient les guides pour les utilisateurs et développeurs du projet 
 
 - **[USER_GUIDE.md](USER_GUIDE.md)** - Guide complet d'utilisation de l'application
 - **[DEFAULTS_MANAGEMENT.md](DEFAULTS_MANAGEMENT.md)** - Gestion des valeurs par défaut
+- **[USER_GUIDE_GENERATION_SELECTOR.md](USER_GUIDE_GENERATION_SELECTOR.md)** - Guide du sélecteur de génération
 
 ## 👨‍💻 Guides Développeur
 
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - Comment contribuer
 - **[GIT_BEST_PRACTICES.md](GIT_BEST_PRACTICES.md)** - Bonnes pratiques avec Git
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Débogage et résolution de problèmes
+
+## 📚 Guides Archivés (Anciennes Versions)
+
+- **[USER_GUIDE_GENERATION_SELECTOR_v2.3.md](USER_GUIDE_GENERATION_SELECTOR_v2.3.md)** - Version 2.3 (archivée)
 
 ## 📖 Contenu des Guides
 
