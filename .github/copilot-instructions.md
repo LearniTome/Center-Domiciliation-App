@@ -4,6 +4,10 @@
 
 **Purpose:** Help an AI agent be productive in this Tkinter desktop app that remplits Word templates, manages Excel records, and provides a dashboard for document generation and data visualization.
 
+**Python Version:** 3.9+ (tested on 3.10, 3.11, 3.12)
+
+**Package Manager:** Use `uv` (fast, modern Python package manager) for installing dependencies. If `pip` needed, use `pip` as fallback.
+
 ## Architecture Overview
 
 ```
@@ -53,6 +57,34 @@ DashboardView (modal)
   └─ Save changes back to Excel
 ```
 
+## Project Structure
+
+```
+center-domiciliation-app/
+├─ main.py                          # Application entry point (MainApp)
+├─ src/
+│  ├─ forms/                        # UI forms and dialogs
+│  │  ├─ main_form.py              # Multi-page form container
+│  │  ├─ societe_form.py           # Company info form
+│  │  ├─ associe_form.py           # Partners/associates form
+│  │  ├─ contrat_form.py           # Contract info form
+│  │  ├─ generation_selector.py    # Document generation dialog
+│  │  └─ dashboard_view.py         # Excel data viewer/editor
+│  └─ utils/                        # Utilities and helpers
+│     ├─ doc_generator.py          # Template rendering engine
+│     ├─ utils.py                  # Core utilities (Theme, Widgets, Paths, etc.)
+│     ├─ constants.py              # Constants, headers, dropdowns
+│     └─ styles.py                 # Theme definitions
+├─ Models/                          # Word templates (.docx files)
+├─ databases/                       # Excel database storage
+├─ tests/                           # Unit and integration tests
+├─ tmp_out/                         # Generated reports (JSON)
+├─ config/                          # User preferences
+├─ requirements.txt                 # Dependencies (pip format)
+├─ pyproject.toml                   # Project metadata
+└─ pytest.ini                       # Pytest configuration
+```
+
 ## Core Files & Their Roles
 
 | File | Purpose |
@@ -82,6 +114,39 @@ MainForm.get_values() → {
 ```
 
 Pass this directly to `render_templates(values, ...)`.
+
+## Key Dependencies
+
+**Core packages:**
+- `tkinter` — GUI framework (built-in Python)
+- `docxtpl` — Jinja2-based Word template rendering
+- `openpyxl` — Excel spreadsheet manipulation
+- `pandas` — Data analysis and Excel I/O
+
+**Optional (for PDF conversion):**
+- `docx2pdf` — Windows/MS Word-based conversion (preferred on Windows)
+- LibreOffice CLI (`soffice`) — Cross-platform fallback
+
+**Development:**
+- `pytest` — Test framework
+- `black`, `pylint` — Code formatting/linting (optional)
+
+**Installation with UV:**
+```bash
+# Install all dependencies
+uv pip install -r requirements.txt
+
+# Install specific package
+uv pip install docxtpl
+
+# Add to requirements.txt and lock
+uv pip install --upgrade -r requirements.txt
+```
+
+**Installation with pip (fallback):**
+```bash
+pip install -r requirements.txt
+```
 
 ## Document Generation API
 
@@ -119,6 +184,43 @@ out_dir/
 - Reference sheets: `SteAdresses`, `Tribunaux`, `Activites`, `Nationalites`, `LieuxNaissance`
 
 **Key Helper:** `ensure_excel_db()` in `src/utils/utils.py` — idempotently creates/validates database schema.
+
+## Template Rendering with Jinja2
+
+Templates use **Jinja2 syntax** via `docxtpl`. Keys match form `get_values()` results:
+
+```jinja2
+{# Simple variable substitution #}
+Company: {{ societe.DenSte }}
+Legal Form: {{ societe.FormJur }}
+
+{# Conditional blocks #}
+{% if societe.FormJur == 'SARL AU' %}
+Unique manager company
+{% else %}
+Multiple partners
+{% endif %}
+
+{# Loops for associates #}
+{% for associate in associes %}
+  Partner: {{ associate.Prenom }} {{ associate.Nom }}
+  CIN: {{ associate.CIN_NUM }}
+  is_manager: {{ associate.IS_GERANT }}
+{% endfor %}
+
+{# Date formatting #}
+Contract Date: {{ contrat.DateContrat | strftime('%d/%m/%Y') }}
+
+{# Table rendering (inside table cells) #}
+{# docxtpl handles table rows automatically with loops #}
+```
+
+**Key points:**
+- Templates are `.docx` files created in MS Word/LibreOffice
+- Variables wrapped in `{{ }}` are replaced with form values
+- Use `|` filters for formatting (e.g., `strftime`, `upper`, `lower`)
+- Loops must be inside table rows for proper formatting
+- Test template variables with `python -c "from src.forms.main_form import MainForm; print(MainForm(...).get_values())"`
 
 ## UI Patterns & Utilities
 
@@ -161,11 +263,12 @@ WindowManager.center_window(window)      # centers on screen
 
 ## Code Patterns to Follow
 
-1. **Always use centralized helpers:**
+1. **Always use centralized helpers and error handling:**
    - UI: `WidgetFactory.create_*()`, `ThemeManager` for colors
    - Paths: `PathManager.MODELS_DIR`, `PathManager.DATABASE_DIR`
-   - Errors: `ErrorHandler.handle_error()`
+   - Errors: `ErrorHandler.handle_error()` — logs AND shows user dialog
    - Excel: `ensure_excel_db()`, `constants.excel_sheets`
+   - **Example:** Prefer `ErrorHandler.handle_error(e, "Operation failed")` over try/except + passing
 
 2. **Form Updates:**
    - Modify field names in `get_values()` → update templates (`.docx` variables)
@@ -180,6 +283,22 @@ WindowManager.center_window(window)      # centers on screen
 4. **Threading for Long Operations:**
    - Document generation runs in optional background thread (see `GenerationSelectorDialog._threaded_generate()`)
    - Use `progress_callback` to update UI during generation
+   - **Never block UI thread** — use `threading.Thread()` for file I/O or PDF conversion
+
+5. **Error Handling Pattern:**
+   ```python
+   try:
+       result = risky_operation()
+   except Exception as e:
+       ErrorHandler.handle_error(e, "Operation failed, please check logs", show_dialog=True)
+       return None  # or appropriate fallback
+   ```
+
+6. **Performance Optimization:**
+   - Cache `ThemeManager`, `PathManager` instances — don't recreate per widget
+   - Use `lazy_load` for large Excel files (split into sheets)
+   - Batch Excel writes (don't write after every row edit — batch at window close)
+   - Use `progress_callback` for long document generation (shows user progress)
 
 ## Testing
 
@@ -191,22 +310,94 @@ WindowManager.center_window(window)      # centers on screen
 - `tests/test_dashboard_actions.py` — tests Dashboard edit/add/delete
 - `tests/test_ids_increment.py` — verifies ID auto-increment logic
 
-**Commands (Windows with venv active):**
+**Commands (Windows with uv/venv active):**
 ```bash
+# With UV (recommended)
+uv run python main.py                              # Run app
+uv run python -m pytest -q                        # Run tests
+uv run python -m pytest -v                        # Verbose
+uv run python -m pytest tests/test_doc_*.py -v   # Run doc generator tests
+
+# With venv (fallback)
 python main.py                # Run app
 python -m pytest -q           # Run tests
 python -m pytest -v           # Verbose
-python -m pytest tests/test_doc_generator_folder_naming.py -v
 ```
+
+**Test coverage:**
+```bash
+uv run python -m pytest --cov=src --cov=main tests/
+```
+
+## Debugging Guide
+
+### 1. **Template Rendering Errors**
+- **Problem:** `KeyError: 'societe.DenSte'`
+- **Cause:** Form doesn't include this field or key is misnamed
+- **Fix:** Check `get_values()` output matches template variables exactly
+```python
+# In Python REPL:
+from main import MainApp
+app = MainApp()
+app.collect_values()
+print(app.values)  # Verify all keys match template {{ }} placeholders
+```
+
+### 2. **PDF Conversion Fails**
+- **Problem:** `.docx` generated but no `.pdf`
+- **Cause:** `docx2pdf` or LibreOffice not available
+- **Fix:** Check log `app.log` for detailed error; install LibreOffice or `docx2pdf` package
+```bash
+# Windows: Install docx2pdf (requires MS Word)
+uv pip install docx2pdf
+
+# Cross-platform: Install LibreOffice
+# Then verify soffice is in PATH
+where soffice  # Windows
+which soffice  # Linux/Mac
+```
+
+### 3. **Dashboard Won't Load**
+- **Problem:** `DashboardView` shows no data or crashes
+- **Cause:** Excel file locked or schema mismatch
+- **Fix:** 
+  - Close Excel completely (check Task Manager)
+  - Delete `databases/DataBase_domiciliation.xlsx` — app will recreate it
+  - Run `python main.py` to reinitialize
+
+### 4. **Form Fields Not Saving**
+- **Problem:** Values collect but don't appear in generated docs
+- **Cause:** Form's `get_values()` doesn't include the field
+- **Fix:** 
+  - Add the field to form UI
+  - Update `get_values()` dict with the key
+  - Restart app and verify with `print(app.values)`
+
+### 5. **Dark Mode Not Applying**
+- **Problem:** UI colors wrong or unreadable
+- **Cause:** Theme not initialized or `config/preferences.json` corrupted
+- **Fix:** Delete `config/preferences.json` and restart app
+
+**Logging:**
+All issues are logged to `app.log` in project root with full tracebacks. Always check this file first.
 
 ## Common Tasks for Agents
 
 ### Add New Form Field
 1. Add field to appropriate form class (`src/forms/societe_form.py`, etc.)
+   ```python
+   self.new_field = WidgetFactory.create_entry(parent, placeholder="...")
+   ```
 2. Update `get_values()` to include new field key
+   ```python
+   values_dict['societe']['new_field'] = self.new_field.get()
+   ```
 3. Add Excel header to `constants.py` if persistence needed
-4. Update `.docx` template with new variable name
-5. Test with `python main.py`
+   ```python
+   societe_headers.append('NEW_FIELD')
+   ```
+4. Update `.docx` template with new variable name: `{{ societe.new_field }}`
+5. Test with `python main.py` and verify in generated docs
 
 ### Modify Excel Schema
 1. Edit `src/utils/constants.py` → update `excel_sheets` dict
@@ -223,6 +414,10 @@ python -m pytest tests/test_doc_generator_folder_naming.py -v
 1. Open `tmp_out/YYYY-MM-DD_<Company>_Raport_*_HH-MM-SS.json`
 2. Check `status` field for each template: `'ok'` vs `'error'`
 3. If error: check `error` field for details (missing vars, conversion failure, etc.)
+4. Look for patterns:
+   - Missing variables → check template has correct `{{ key }}` syntax
+   - PDF conversion error → verify LibreOffice/docx2pdf installed
+   - File not found → verify template path in `Models/` folder
 
 ## Important Notes
 
@@ -231,6 +426,57 @@ python -m pytest tests/test_doc_generator_folder_naming.py -v
 - **Company Name Sanitization:** `render_templates()` auto-sanitizes folder names (spaces→underscore, remove special chars).
 - **Preferences:** Dark mode & UI state saved to `config/preferences.json` via `ThemeManager.save_preferences()`.
 - **Logging:** `app.log` in project root captures all app activity.
+- **External Dependencies:** Ensure LibreOffice or MS Word installed if PDF conversion required.
+- **Jinja2 Filters:** docxtpl supports standard Jinja2 filters; custom filters can be added in `render_templates()` context.
+- **venv Setup:** Project includes venv; activate with `venv\Scripts\Activate.ps1` (Windows PowerShell).
+
+## Setup & Environment
+
+### Initial Setup (Windows)
+
+**Option 1: With UV (recommended)**
+```bash
+# Install UV
+pip install uv
+
+# Create virtual environment
+uv venv
+
+# Activate
+.\\venv\\Scripts\\Activate.ps1
+
+# Install dependencies
+uv pip install -r requirements.txt
+
+# Run app
+python main.py
+```
+
+**Option 2: Traditional venv**
+```bash
+# Create virtual environment
+python -m venv venv
+
+# Activate
+.\\venv\\Scripts\\Activate.ps1
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run app
+python main.py
+```
+
+### Running in CI/CD or Containers
+
+```dockerfile
+FROM python:3.11-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+COPY . .
+CMD ["python", "main.py"]
+```
 
 ## Git Workflow for Agents
 
