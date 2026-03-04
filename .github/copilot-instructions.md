@@ -73,16 +73,46 @@ center-domiciliation-app/
 │  └─ utils/                        # Utilities and helpers
 │     ├─ doc_generator.py          # Template rendering engine
 │     ├─ utils.py                  # Core utilities (Theme, Widgets, Paths, etc.)
+│     ├─ defaults_manager.py       # Default values persistence
 │     ├─ constants.py              # Constants, headers, dropdowns
 │     └─ styles.py                 # Theme definitions
 ├─ Models/                          # Word templates (.docx files)
 ├─ databases/                       # Excel database storage
 ├─ tests/                           # Unit and integration tests
+│  └─ test_*.py                    # Test files (13 tests built-in)
+├─ docs/                            # 📚 DOCUMENTATION (ORGANIZED)
+│  ├─ README.md                    # Documentation index
+│  ├─ guides/                      # User & developer guides
+│  │  ├─ USER_GUIDE.md            # Complete user guide
+│  │  ├─ DEFAULTS_MANAGEMENT.md   # Default values guide
+│  │  ├─ CONTRIBUTING.md          # Contribution guidelines
+│  │  ├─ TROUBLESHOOTING.md       # Troubleshooting guide
+│  │  ├─ GIT_BEST_PRACTICES.md    # Git workflow guide
+│  │  └─ USER_GUIDE_GENERATION_SELECTOR*.md  # Feature guides
+│  ├─ architecture/                # Technical documentation
+│  │  ├─ ARCHITECTURE.md          # System architecture overview
+│  │  ├─ REFERENCE_DATA_IMPLEMENTATION.md
+│  │  ├─ BACKUP_SYSTEM.md         # Backup system docs
+│  │  ├─ database/                # Database docs
+│  │  └─ testing/                 # Testing docs
+│  ├─ setup/                       # Installation & configuration
+│  │  ├─ SETUP.md                 # Installation guide
+│  │  ├─ QUICKSTART.md            # 3-minute quick start
+│  │  └─ README.md                # Setup section index
+│  └─ archive/                     # Historical documentation
+│     ├─ features/                # Feature versions (dark mode, etc.)
+│     ├─ releases/                # Release notes (v2.1.0, etc.)
+│     ├─ sessions/                # Session summaries
+│     └─ [30+ archived docs]       # Old/versioned files
+├─ scripts/                         # Utility scripts (.py)
 ├─ tmp_out/                         # Generated reports (JSON)
-├─ config/                          # User preferences
+├─ config/                          # User preferences & defaults
+│  ├─ preferences.json            # UI state, theme, window size
+│  └─ defaults.json               # Application default values
 ├─ requirements.txt                 # Dependencies (pip format)
 ├─ pyproject.toml                   # Project metadata
-└─ pytest.ini                       # Pytest configuration
+├─ pytest.ini                       # Pytest configuration
+└─ DOCUMENTATION_ORGANIZATION.md   # File organization tracking
 ```
 
 ## Core Files & Their Roles
@@ -100,6 +130,48 @@ center-domiciliation-app/
 | `src/utils/utils.py` | ThemeManager, WidgetFactory, PathManager, WindowManager, ErrorHandler, ensure_excel_db |
 | `src/utils/constants.py` | excel_sheets, headers, dropdowns (DenSte, Civility, Formjur, etc.) |
 | `src/utils/styles.py` | ModernTheme: dark mode colors & ttk style definitions |
+| `src/utils/defaults_manager.py` | DefaultsManager: persistent default values storage (JSON) |
+
+## 📚 Documentation Organization
+
+The documentation is well organized in the `docs/` directory:
+
+### Navigation by Purpose
+
+| Purpose | Location | Files |
+|---------|----------|-------|
+| **New to project** | `docs/setup/` | QUICKSTART.md, SETUP.md |
+| **Using the app** | `docs/guides/` | USER_GUIDE.md, DEFAULTS_MANAGEMENT.md |
+| **Contributing code** | `docs/guides/` | CONTRIBUTING.md, GIT_BEST_PRACTICES.md |
+| **Troubleshooting** | `docs/guides/` | TROUBLESHOOTING.md |
+| **Understanding code** | `docs/architecture/` | ARCHITECTURE.md, API.md |
+| **Technical details** | `docs/architecture/` | DATABASE.md, BACKUP_SYSTEM.md, REFERENCE_DATA_IMPLEMENTATION.md |
+| **Old/historical info** | `docs/archive/` | features/, releases/, sessions/ subdirectories |
+
+### Key Documentation Files
+
+- **[docs/README.md](../docs/README.md)** - Main documentation index with full table of contents
+- **[docs/setup/QUICKSTART.md](../docs/setup/QUICKSTART.md)** - 3-minute quick start guide
+- **[docs/guides/CONTRIBUTING.md](../docs/guides/CONTRIBUTING.md)** - How to contribute, conventions, Git workflow
+- **[docs/guides/DEFAULTS_MANAGEMENT.md](../docs/guides/DEFAULTS_MANAGEMENT.md)** - Managing default values
+- **[docs/guides/TROUBLESHOOTING.md](../docs/guides/TROUBLESHOOTING.md)** - Common issues and solutions
+- **[docs/architecture/ARCHITECTURE.md](../docs/architecture/ARCHITECTURE.md)** - System architecture overview with diagrams
+
+### File Organization
+
+The project root is clean with only 3 markdown files:
+- `README.md` - Project overview (links to docs/)
+- `CHANGELOG.md` - Version history
+- `DOCUMENTATION_ORGANIZATION.md` - File organization tracking
+
+All other documentation is organized in `docs/`:
+- `docs/guides/` - 8 files (user guides, contribution, troubleshooting, best practices)
+- `docs/architecture/` - 5+ files (architecture, database, backup, testing docs)
+- `docs/setup/` - 3 files (installation, quickstart, environment)
+- `docs/archive/` - 30+ files in subdirectories:
+  - `features/` - Feature documentation versions (dark mode, generation selector)
+  - `releases/` - Release notes and version information
+  - `sessions/` - Session summaries and work logs
 
 ## Forms API
 
@@ -421,10 +493,12 @@ All issues are logged to `app.log` in project root with full tracebacks. Always 
 
 ## Important Notes
 
+- **Documentation:** All documentation is organized in `docs/` directory. Root contains only README.md, CHANGELOG.md, and DOCUMENTATION_ORGANIZATION.md. See [📚 Documentation Organization](#-documentation-organization) section above.
 - **Excel Lock:** Close Excel before running tests that write to database (Windows may lock file).
 - **PDF Conversion:** Prefer `docx2pdf` (requires MS Word + Python package). Fallback: LibreOffice CLI (`soffice`).
 - **Company Name Sanitization:** `render_templates()` auto-sanitizes folder names (spaces→underscore, remove special chars).
 - **Preferences:** Dark mode & UI state saved to `config/preferences.json` via `ThemeManager.save_preferences()`.
+- **Defaults:** Application defaults saved to `config/defaults.json` via `DefaultsManager` singleton.
 - **Logging:** `app.log` in project root captures all app activity.
 - **External Dependencies:** Ensure LibreOffice or MS Word installed if PDF conversion required.
 - **Jinja2 Filters:** docxtpl supports standard Jinja2 filters; custom filters can be added in `render_templates()` context.
@@ -486,3 +560,48 @@ git add --all
 git commit -m "chore|feat|fix: <description>"
 git push origin current_branch
 ```
+
+## File Organization (Updated March 2026)
+
+The project has been professionally reorganized for better maintainability:
+
+### Tests Directory
+- All `test_*.py` files are now in `tests/` directory
+- Original test files moved from root: test_dark_mode.py, test_dashboard_final.py, test_dashboard_headless.py, test_generation_selector.py, test_keywords.py, test_selector_simple.py
+- 19 total test files (13 core tests + 6 migration tests)
+
+### Documentation Structure (docs/)
+- **docs/guides/** - User and developer guides (8 files)
+  - USER_GUIDE.md, DEFAULTS_MANAGEMENT.md, CONTRIBUTING.md, TROUBLESHOOTING.md, GIT_BEST_PRACTICES.md
+- **docs/architecture/** - Technical documentation (5+ files)
+  - ARCHITECTURE.md, REFERENCE_DATA_IMPLEMENTATION.md, BACKUP_SYSTEM.md, database/, testing/ subdirectories
+- **docs/setup/** - Installation and configuration (3 files)
+  - SETUP.md, QUICKSTART.md (3-minute guide), ENVIRONMENT.md
+- **docs/archive/** - Historical documentation (30+ files)
+  - features/ (dark mode, generation selector versions)
+  - releases/ (release notes)
+  - sessions/ (session summaries)
+  - Other archived files (.txt, .md versions)
+
+### Cleaned Root Directory
+The project root is now clean and professional:
+- Only 3 markdown files: README.md, CHANGELOG.md, DOCUMENTATION_ORGANIZATION.md
+- Empty directories (documentations/, refrences/) removed
+- All `.md` files organized into docs/ structure
+- All utility `.py` test files organized into tests/
+
+### Migration Details
+- **Total files migrated:** 45
+- **Files moved to tests/:** 6 (.py files)
+- **Files moved to docs/guides/:** 3 (.md files)
+- **Files moved to docs/architecture/:** 3 (.md files)
+- **Files moved to docs/archive/:** 30+ (.md and .txt files)
+- **Subdirectories created:** 8 (features/, releases/, sessions/, database/, testing/)
+
+### For New Agents or Contributors
+- **First time?** Start with [docs/setup/QUICKSTART.md](../docs/setup/QUICKSTART.md)
+- **Want to contribute?** Read [docs/guides/CONTRIBUTING.md](../docs/guides/CONTRIBUTING.md)
+- **Have a problem?** Check [docs/guides/TROUBLESHOOTING.md](../docs/guides/TROUBLESHOOTING.md)
+- **Understand architecture?** Read [docs/architecture/ARCHITECTURE.md](../docs/architecture/ARCHITECTURE.md)
+- **Looking for old docs?** Browse [docs/archive/](../docs/archive/)
+
