@@ -1,12 +1,15 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Optional
+import logging
 from .societe_form import SocieteForm
 from .associe_form import AssocieForm
 from .contrat_form import ContratForm
 from ..utils.utils import ThemeManager, WidgetFactory, WindowManager, PathManager, ensure_excel_db
 from ..utils import constants as _const
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 class MainForm(ttk.Frame):
     def __init__(self, parent, values_dict=None):
@@ -297,39 +300,125 @@ class MainForm(ttk.Frame):
         dashboard = DashboardView(self.winfo_toplevel())  # Window is now modal by default
 
     def open_configuration(self):
-        """Open a simple configuration dialog to change theme and other prefs."""
+        """Open configuration dialog to manage default values for the entire application."""
         try:
+            from ..utils.defaults_manager import get_defaults_manager
+            
             top = tk.Toplevel(self.winfo_toplevel())
             top.transient(self.winfo_toplevel())
-            top.title('Configuration')
-            top.resizable(False, False)
-            # modal
+            top.title('Configuration - Valeurs par défaut')
+            top.geometry('600x500')
+            top.resizable(True, True)
+            
+            # Make modal
             try:
                 top.grab_set()
             except Exception:
                 pass
 
-            inner = ttk.Frame(top, padding=12)
-            inner.pack(fill='both', expand=True)
+            # Get defaults manager
+            defaults_mgr = get_defaults_manager()
+            current_defaults = defaults_mgr.get_all_defaults()
 
-            # Theme selection
-            ttk.Label(inner, text='Thème', style='Header.TLabel').pack(anchor='w', pady=(0, 6))
-            theme_var = tk.StringVar(value=getattr(self.theme_manager.theme, 'mode', 'dark'))
+            # Main container with notebook (tabs)
+            main_frame = ttk.Frame(top, padding=10)
+            main_frame.pack(fill='both', expand=True)
 
-            rb_dark = ttk.Radiobutton(inner, text='Sombre', variable=theme_var, value='dark')
-            rb_light = ttk.Radiobutton(inner, text='Clair', variable=theme_var, value='light')
-            rb_dark.pack(anchor='w')
-            rb_light.pack(anchor='w')
+            # Title
+            title_label = ttk.Label(main_frame, text='⚙ Gestion des valeurs par défaut', 
+                                   font=('Segoe UI', 12, 'bold'))
+            title_label.pack(anchor='w', pady=(0, 10))
 
-            # Actions
-            actions = ttk.Frame(inner)
-            actions.pack(fill='x', pady=(12, 0))
+            # Create notebook for tabs
+            notebook = ttk.Notebook(main_frame)
+            notebook.pack(fill='both', expand=True, pady=(0, 10))
+
+            # Dictionary to hold all entry widgets for saving
+            entry_vars = {}
+
+            # Create a tab for each section (societe, associe, contrat)
+            sections_config = {
+                'societe': {
+                    'label': '🏢 Entreprise',
+                    'fields': [
+                        ('DenSte', 'Dénomination sociale'),
+                        ('FormJur', 'Forme juridique'),
+                        ('Capital', 'Capital'),
+                        ('PartsSocial', 'Parts sociales'),
+                    ]
+                },
+                'associe': {
+                    'label': '👤 Associé',
+                    'fields': [
+                        ('Civility', 'Civilité'),
+                        ('Nationality', 'Nationalité'),
+                    ]
+                },
+                'contrat': {
+                    'label': '📋 Contrat',
+                    'fields': [
+                        ('NbMois', 'Période (mois)'),
+                    ]
+                }
+            }
+
+            for section_key, section_info in sections_config.items():
+                # Create frame for this tab
+                tab_frame = ttk.Frame(notebook, padding=10)
+                notebook.add(tab_frame, text=section_info['label'])
+
+                # Create scrollable area
+                canvas = tk.Canvas(tab_frame, highlightthickness=0)
+                scrollbar = ttk.Scrollbar(tab_frame, orient='vertical', command=canvas.yview)
+                scrollable_frame = ttk.Frame(canvas)
+
+                scrollable_frame.bind(
+                    "<Configure>",
+                    lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+                )
+
+                canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+                canvas.configure(yscrollcommand=scrollbar.set)
+
+                canvas.pack(side='left', fill='both', expand=True)
+                scrollbar.pack(side='right', fill='y')
+
+                # Add fields for this section
+                entry_vars[section_key] = {}
+                
+                for field_key, field_label in section_info['fields']:
+                    field_frame = ttk.Frame(scrollable_frame)
+                    field_frame.pack(fill='x', pady=8, padx=5)
+
+                    ttk.Label(field_frame, text=f'{field_label}:', width=20, anchor='w').pack(side='left', padx=(0, 10))
+                    
+                    # Get current value
+                    current_value = current_defaults.get(section_key, {}).get(field_key, '')
+                    
+                    # Create StringVar for this field
+                    var = tk.StringVar(value=str(current_value))
+                    entry_vars[section_key][field_key] = var
+                    
+                    # Create entry widget
+                    entry = ttk.Entry(field_frame, textvariable=var, width=40)
+                    entry.pack(side='left', fill='x', expand=True)
+
+            # Button frame at bottom
+            button_frame = ttk.Frame(main_frame)
+            button_frame.pack(fill='x', pady=(10, 0))
 
             def _save():
                 try:
-                    chosen = theme_var.get()
-                    self.theme_manager.set_theme(chosen)
-                    messagebox.showinfo('Configuration', 'Préférences enregistrées.')
+                    # Collect all values from tabs
+                    new_defaults = {}
+                    for section_key, fields in entry_vars.items():
+                        new_defaults[section_key] = {}
+                        for field_key, var in fields.items():
+                            new_defaults[section_key][field_key] = var.get()
+                    
+                    # Save to defaults manager
+                    defaults_mgr.set_all_defaults(new_defaults)
+                    messagebox.showinfo('Configuration', 'Valeurs par défaut enregistrées avec succès.')
                     try:
                         top.destroy()
                     except Exception:
@@ -337,19 +426,43 @@ class MainForm(ttk.Frame):
                 except Exception as e:
                     messagebox.showerror('Erreur', f"Impossible d'enregistrer: {e}")
 
-            save_btn = WidgetFactory.create_button(actions, text='Enregistrer', command=_save, style='Success.TButton')
+            def _reset():
+                """Reset to initial defaults."""
+                if messagebox.askyesno('Confirmation', 'Réinitialiser tous les défauts?\n\nCette action ne peut pas être annulée.'):
+                    try:
+                        defaults_mgr.reset_to_initial()
+                        # Reload values
+                        current_defaults = defaults_mgr.get_all_defaults()
+                        for section_key, fields in entry_vars.items():
+                            for field_key, var in fields.items():
+                                new_val = current_defaults.get(section_key, {}).get(field_key, '')
+                                var.set(str(new_val))
+                        messagebox.showinfo('Configuration', 'Défauts réinitialisés aux valeurs initiales.')
+                    except Exception as e:
+                        messagebox.showerror('Erreur', f"Impossible de réinitialiser: {e}")
+
+            # Buttons
+            save_btn = WidgetFactory.create_button(button_frame, text='💾 Enregistrer', 
+                                                 command=_save, style='Success.TButton')
             save_btn.pack(side='right', padx=4)
 
-            close_btn = WidgetFactory.create_button(actions, text='Fermer', command=lambda: top.destroy(), style='Close.TButton')
-            close_btn.pack(side='right')
+            reset_btn = WidgetFactory.create_button(button_frame, text='🔄 Réinitialiser', 
+                                                   command=_reset, style='Secondary.TButton')
+            reset_btn.pack(side='right', padx=4)
+
+            close_btn = WidgetFactory.create_button(button_frame, text='❌ Fermer', 
+                                                  command=lambda: top.destroy(), style='Close.TButton')
+            close_btn.pack(side='right', padx=4)
 
             # Center the dialog
             try:
+                from ..utils.utils import WindowManager
                 WindowManager.center_window(top)
             except Exception:
                 pass
-        except Exception:
-            messagebox.showerror('Erreur', "Impossible d'ouvrir la configuration")
+        except Exception as e:
+            logger.exception('Erreur lors de l\'ouverture de la configuration')
+            messagebox.showerror('Erreur', f"Impossible d'ouvrir la configuration: {e}")
 
     def get_values(self):
         """Get values from all forms"""

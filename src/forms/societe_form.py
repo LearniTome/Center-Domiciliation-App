@@ -32,16 +32,26 @@ class SocieteForm(ttk.Frame):
         # Variables pour les champs de texte — valeurs par défaut prises depuis les constantes
         from ..utils.constants import DenSte, Formjur, Capital, PartsSocial
         from ..utils.utils import get_reference_data
+        from ..utils.defaults_manager import get_defaults_manager
 
-        self.den_ste_var = tk.StringVar(value=DenSte[0] if DenSte else "")
-        self.forme_jur_var = tk.StringVar(value=Formjur[0] if Formjur else "")
+        # Get defaults manager
+        defaults_mgr = get_defaults_manager()
+        
+        # Get custom defaults or fall back to constants
+        default_den_ste = defaults_mgr.get_default('societe', 'DenSte') or (DenSte[0] if DenSte else "")
+        default_form_jur = defaults_mgr.get_default('societe', 'FormJur') or (Formjur[0] if Formjur else "")
+        default_capital = defaults_mgr.get_default('societe', 'Capital') or (Capital[0] if Capital else "")
+        default_parts_social = defaults_mgr.get_default('societe', 'PartsSocial') or (PartsSocial[0] if PartsSocial else "")
+
+        self.den_ste_var = tk.StringVar(value=default_den_ste)
+        self.forme_jur_var = tk.StringVar(value=default_form_jur)
         self.ice_var = tk.StringVar(value="")
         # default date to today's date in dd/mm/yyyy
         import datetime
         today = datetime.date.today().strftime('%d/%m/%Y')
         self.date_ice_var = tk.StringVar(value=today)
-        self.capital_var = tk.StringVar(value=Capital[0] if Capital else "")
-        self.parts_social_var = tk.StringVar(value=PartsSocial[0] if PartsSocial else "")
+        self.capital_var = tk.StringVar(value=default_capital)
+        self.parts_social_var = tk.StringVar(value=default_parts_social)
 
         # Load reference data from database
         self.ste_adresses = get_reference_data('SteAdresses')

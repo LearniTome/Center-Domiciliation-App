@@ -76,17 +76,25 @@ class AssocieForm(ttk.Frame):
 
     def create_associe_vars(self):
         """Crée et retourne les variables pour un nouvel associé"""
+        # Get custom defaults or use sensible defaults
+        from ..utils.defaults_manager import get_defaults_manager
+        from ..utils.constants import Civility
+        
+        defaults_mgr = get_defaults_manager()
+        
         # sensible defaults per request:
-        # - civilite default to 'M.'
+        # - civilite default to 'M.' or custom
         # - est_gerant checked by default
         # - qualite default to 'Associé Gérant'
         # - num_parts default to '1000'
         # - capital_detenu default to '100000'
+        
+        default_civility = defaults_mgr.get_default('associe', 'Civility') or (Civility[0] if Civility else 'M.')
         default_nationalite = self.nationalites[0] if self.nationalites else ''
         default_lieu = self.lieux_naissance[0] if self.lieux_naissance else ''
 
         return {
-            'civilite': tk.StringVar(value='M.'),
+            'civilite': tk.StringVar(value=default_civility),
             'nom': tk.StringVar(value=''),
             'prenom': tk.StringVar(value=''),
             'parts': tk.StringVar(value=''),

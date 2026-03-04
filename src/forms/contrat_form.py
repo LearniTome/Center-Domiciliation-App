@@ -27,12 +27,17 @@ class ContratForm(ttk.Frame):
         """Initialise les variables du formulaire"""
         import datetime
         from ..utils.constants import Nbmois
+        from ..utils.defaults_manager import get_defaults_manager
 
         today = datetime.date.today().strftime('%d/%m/%Y')
+        
+        # Get custom defaults
+        defaults_mgr = get_defaults_manager()
+        default_period = defaults_mgr.get_default('contrat', 'NbMois') or (Nbmois[1] if len(Nbmois) > 1 else (Nbmois[0] if Nbmois else ''))
 
-        # Defaults: today's date for contract and start, default period to 12 months if available
+        # Defaults: today's date for contract and start, default period from config
         self.date_contrat_var = tk.StringVar(value=today)
-        self.period_var = tk.StringVar(value=(Nbmois[1] if len(Nbmois) > 1 else (Nbmois[0] if Nbmois else '')))
+        self.period_var = tk.StringVar(value=default_period)
         self.prix_mensuel_var = tk.StringVar(value='')
         self.prix_inter_var = tk.StringVar(value='')
         self.date_debut_var = tk.StringVar(value=today)
