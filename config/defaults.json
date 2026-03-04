@@ -1,0 +1,18 @@
+{
+  "societe": {
+    "DenSte": "NOUVELLE STE",
+    "FormJur": "SARL AU",
+    "Capital": "100 000",
+    "PartsSocial": "1000",
+    "SteAdresse": "HAY MOULAY ABDELLAH RUE 300 N 152 ETG 2 AIN CHOCK, CASABLANCA",
+    "Tribunal": "Casablanca"
+  },
+  "associe": {
+    "Civility": "Monsieur",
+    "Nationality": "Marocaine",
+    "Quality": "Associé Gérant"
+  },
+  "contrat": {
+    "NbMois": "12"
+  }
+}
