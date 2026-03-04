@@ -2,6 +2,28 @@
 
 All notable changes to the Center-Domiciliation App are documented in this file.
 
+## [2.2.0] - 2026-03-04
+
+### 🎯 Dashboard UX Improvements
+- Added instant search and advanced column filter (`column + value`) on all dashboard pages.
+- Added sortable table headers with ascending/descending indicators.
+- Added pagination controls (`10/25/50/100` rows per page, previous/next navigation).
+- Added contextual empty-state messages for no data / no filter match.
+- Added non-blocking toast feedback for refresh/add/edit/delete flows.
+- Added CSV export of the active filtered+sorted dashboard view.
+
+### 🔧 Technical Changes
+#### src/forms/dashboard_view.py
+- Introduced per-page sorting state and pagination state.
+- Fixed edit/delete payload mapping to use the currently displayed row after filters/sort/page.
+- Added export helper for filtered/sorted dataset to CSV.
+- Improved status bar messaging with displayed vs total counts.
+
+### ✅ Validation
+- `uv run python -m py_compile src/forms/dashboard_view.py`
+- `uv run python tests/test_dashboard_headless.py`
+- `uv run python tests/test_dashboard_final.py`
+
 ## [2.1.0] - 2026-03-02
 
 ### 🎯 Major Features
