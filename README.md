@@ -21,7 +21,23 @@ uv run python main.py
 Done! 🎉
 
 ---
+## 📚 Documentation
 
+**New to the project?** Start here:
+
+| Purpose | Link |
+|---------|------|
+| **I want to get started** | 👉 [Quick Start Guide](docs/setup/QUICKSTART.md) |
+| **I want to install & configure** | 👉 [Setup Guide](docs/setup/SETUP.md) |
+| **I want to use the app** | 👉 [User Guide](docs/guides/USER_GUIDE.md) |
+| **I want to contribute** | 👉 [Contributing Guide](docs/guides/CONTRIBUTING.md) |
+| **I have a problem** | 👉 [Troubleshooting Guide](docs/guides/TROUBLESHOOTING.md) |
+| **I want to understand the code** | 👉 [Architecture Guide](docs/architecture/ARCHITECTURE.md) |
+| **I want to configure defaults** | 👉 [Defaults Management](docs/guides/DEFAULTS_MANAGEMENT.md) |
+
+👁️ **Full Documentation Index:** [docs/README.md](docs/README.md)
+
+---
 ## � Requirements
 
 | Requirement | Details |
