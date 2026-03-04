@@ -78,18 +78,19 @@ class AssocieForm(ttk.Frame):
         """Crée et retourne les variables pour un nouvel associé"""
         # Get custom defaults or use sensible defaults
         from ..utils.defaults_manager import get_defaults_manager
-        from ..utils.constants import Civility
+        from ..utils.constants import Civility, QualityGerant
         
         defaults_mgr = get_defaults_manager()
         
         # sensible defaults per request:
         # - civilite default to 'M.' or custom
         # - est_gerant checked by default
-        # - qualite default to 'Associé Gérant'
+        # - qualite default to 'Associé Gérant' or custom
         # - num_parts default to '1000'
         # - capital_detenu default to '100000'
         
         default_civility = defaults_mgr.get_default('associe', 'Civility') or (Civility[0] if Civility else 'M.')
+        default_quality = defaults_mgr.get_default('associe', 'Quality') or (QualityGerant[0] if QualityGerant else 'Associé Gérant')
         default_nationalite = self.nationalites[0] if self.nationalites else ''
         default_lieu = self.lieux_naissance[0] if self.lieux_naissance else ''
 
@@ -107,7 +108,7 @@ class AssocieForm(ttk.Frame):
             'telephone': tk.StringVar(value=''),
             'email': tk.StringVar(value=''),
             'est_gerant': tk.BooleanVar(value=True),
-            'qualite': tk.StringVar(value='Associé Gérant'),
+            'qualite': tk.StringVar(value=default_quality),
             'capital_detenu': tk.StringVar(value='100000'),
             'num_parts': tk.StringVar(value='1000')
         }

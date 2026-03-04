@@ -43,13 +43,16 @@ class DefaultsManager:
                 'FormJur': constants.Formjur[0] if constants.Formjur else '',
                 'Capital': constants.Capital[0] if constants.Capital else '',
                 'PartsSocial': constants.PartsSocial[0] if constants.PartsSocial else '',
+                'SteAdresse': constants.SteAdresse[0] if constants.SteAdresse else '',
+                'Tribunal': constants.Tribunnaux[0] if constants.Tribunnaux else '',
             },
             'associe': {
                 'Civility': constants.Civility[0] if constants.Civility else '',
                 'Nationality': constants.Nationalite[0] if constants.Nationalite else '',
+                'Quality': constants.QualityGerant[0] if constants.QualityGerant else '',
             },
             'contrat': {
-                'NbMois': constants.Nbmois[0] if constants.Nbmois else '',
+                'NbMois': constants.Nbmois[1] if len(constants.Nbmois) > 1 else (constants.Nbmois[0] if constants.Nbmois else ''),
             }
         }
 

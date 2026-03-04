@@ -303,12 +303,19 @@ class MainForm(ttk.Frame):
         """Open configuration dialog to manage default values for the entire application."""
         try:
             from ..utils.defaults_manager import get_defaults_manager
+            from ..utils import constants
             
             top = tk.Toplevel(self.winfo_toplevel())
             top.transient(self.winfo_toplevel())
             top.title('Configuration - Valeurs par défaut')
-            top.geometry('600x500')
+            top.geometry('700x550')
             top.resizable(True, True)
+            
+            # Apply theme to the dialog window
+            theme_manager = self.theme_manager
+            bg_color = theme_manager.colors.get('bg', '#2b2b2b')
+            fg_color = theme_manager.colors.get('fg', '#ffffff')
+            top.configure(bg=bg_color)
             
             # Make modal
             try:
@@ -321,8 +328,8 @@ class MainForm(ttk.Frame):
             current_defaults = defaults_mgr.get_all_defaults()
 
             # Main container with notebook (tabs)
-            main_frame = ttk.Frame(top, padding=10)
-            main_frame.pack(fill='both', expand=True)
+            main_frame = ttk.Frame(top)
+            main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
             # Title
             title_label = ttk.Label(main_frame, text='⚙ Gestion des valeurs par défaut', 
@@ -341,34 +348,37 @@ class MainForm(ttk.Frame):
                 'societe': {
                     'label': '🏢 Entreprise',
                     'fields': [
-                        ('DenSte', 'Dénomination sociale'),
-                        ('FormJur', 'Forme juridique'),
-                        ('Capital', 'Capital'),
-                        ('PartsSocial', 'Parts sociales'),
+                        ('DenSte', 'Dénomination sociale', constants.DenSte),
+                        ('FormJur', 'Forme juridique', constants.Formjur),
+                        ('Capital', 'Capital', constants.Capital),
+                        ('PartsSocial', 'Parts sociales', constants.PartsSocial),
+                        ('SteAdresse', 'Adresse', constants.SteAdresse),
+                        ('Tribunal', 'Tribunal', constants.Tribunnaux),
                     ]
                 },
                 'associe': {
                     'label': '👤 Associé',
                     'fields': [
-                        ('Civility', 'Civilité'),
-                        ('Nationality', 'Nationalité'),
+                        ('Civility', 'Civilité', constants.Civility),
+                        ('Nationality', 'Nationalité', constants.Nationalite),
+                        ('Quality', 'Qualité', constants.QualityGerant),
                     ]
                 },
                 'contrat': {
                     'label': '📋 Contrat',
                     'fields': [
-                        ('NbMois', 'Période (mois)'),
+                        ('NbMois', 'Période (mois)', constants.Nbmois),
                     ]
                 }
             }
 
             for section_key, section_info in sections_config.items():
                 # Create frame for this tab
-                tab_frame = ttk.Frame(notebook, padding=10)
+                tab_frame = ttk.Frame(notebook)
                 notebook.add(tab_frame, text=section_info['label'])
 
                 # Create scrollable area
-                canvas = tk.Canvas(tab_frame, highlightthickness=0)
+                canvas = tk.Canvas(tab_frame, highlightthickness=0, bg=bg_color)
                 scrollbar = ttk.Scrollbar(tab_frame, orient='vertical', command=canvas.yview)
                 scrollable_frame = ttk.Frame(canvas)
 
@@ -386,7 +396,7 @@ class MainForm(ttk.Frame):
                 # Add fields for this section
                 entry_vars[section_key] = {}
                 
-                for field_key, field_label in section_info['fields']:
+                for field_key, field_label, field_options in section_info['fields']:
                     field_frame = ttk.Frame(scrollable_frame)
                     field_frame.pack(fill='x', pady=8, padx=5)
 
@@ -399,9 +409,15 @@ class MainForm(ttk.Frame):
                     var = tk.StringVar(value=str(current_value))
                     entry_vars[section_key][field_key] = var
                     
-                    # Create entry widget
-                    entry = ttk.Entry(field_frame, textvariable=var, width=40)
-                    entry.pack(side='left', fill='x', expand=True)
+                    # Create combobox with options (if available) or entry widget
+                    if field_options and len(field_options) > 0:
+                        combo = ttk.Combobox(field_frame, textvariable=var, values=field_options, 
+                                           width=45, state='readonly')
+                        combo.pack(side='left', fill='x', expand=True)
+                    else:
+                        # Fallback to entry if no options
+                        entry = ttk.Entry(field_frame, textvariable=var, width=45)
+                        entry.pack(side='left', fill='x', expand=True)
 
             # Button frame at bottom
             button_frame = ttk.Frame(main_frame)
@@ -418,6 +434,11 @@ class MainForm(ttk.Frame):
                     
                     # Save to defaults manager
                     defaults_mgr.set_all_defaults(new_defaults)
+                    
+                    # Notify parent window if callback exists
+                    if hasattr(self.parent, '_on_defaults_changed'):
+                        self.parent._on_defaults_changed()
+                    
                     messagebox.showinfo('Configuration', 'Valeurs par défaut enregistrées avec succès.')
                     try:
                         top.destroy()
@@ -437,6 +458,11 @@ class MainForm(ttk.Frame):
                             for field_key, var in fields.items():
                                 new_val = current_defaults.get(section_key, {}).get(field_key, '')
                                 var.set(str(new_val))
+                        
+                        # Notify parent
+                        if hasattr(self.parent, '_on_defaults_changed'):
+                            self.parent._on_defaults_changed()
+                        
                         messagebox.showinfo('Configuration', 'Défauts réinitialisés aux valeurs initiales.')
                     except Exception as e:
                         messagebox.showerror('Erreur', f"Impossible de réinitialiser: {e}")
@@ -463,6 +489,25 @@ class MainForm(ttk.Frame):
         except Exception as e:
             logger.exception('Erreur lors de l\'ouverture de la configuration')
             messagebox.showerror('Erreur', f"Impossible d'ouvrir la configuration: {e}")
+
+    def _on_defaults_changed(self):
+        """Recharger les formulaires quand les défauts changent."""
+        try:
+            # Recharger les valeurs par défaut dans les formulaires existants
+            if hasattr(self, 'societe_form') and self.societe_form:
+                self.societe_form.initialize_variables()
+            
+            if hasattr(self, 'associe_form') and self.associe_form:
+                # Pour AssocieForm, on réinitialise les vars pour les nouveaux associés
+                # Les associés existants gardent leurs valeurs
+                pass
+            
+            if hasattr(self, 'contrat_form') and self.contrat_form:
+                self.contrat_form.initialize_variables()
+            
+            logger.info("Formulaires rechargés avec les nouvelles valeurs par défaut")
+        except Exception as e:
+            logger.exception('Erreur lors du rechargement des formulaires après changement de défauts')
 
     def get_values(self):
         """Get values from all forms"""

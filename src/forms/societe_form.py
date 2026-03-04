@@ -30,7 +30,7 @@ class SocieteForm(ttk.Frame):
     def initialize_variables(self):
         """Initialise toutes les variables du formulaire avec des valeurs par défaut raisonnables"""
         # Variables pour les champs de texte — valeurs par défaut prises depuis les constantes
-        from ..utils.constants import DenSte, Formjur, Capital, PartsSocial
+        from ..utils.constants import DenSte, Formjur, Capital, PartsSocial, SteAdresse, Tribunnaux
         from ..utils.utils import get_reference_data
         from ..utils.defaults_manager import get_defaults_manager
 
@@ -42,6 +42,8 @@ class SocieteForm(ttk.Frame):
         default_form_jur = defaults_mgr.get_default('societe', 'FormJur') or (Formjur[0] if Formjur else "")
         default_capital = defaults_mgr.get_default('societe', 'Capital') or (Capital[0] if Capital else "")
         default_parts_social = defaults_mgr.get_default('societe', 'PartsSocial') or (PartsSocial[0] if PartsSocial else "")
+        default_ste_adresse = defaults_mgr.get_default('societe', 'SteAdresse') or (SteAdresse[0] if SteAdresse else "")
+        default_tribunal = defaults_mgr.get_default('societe', 'Tribunal') or (Tribunnaux[0] if Tribunnaux else "")
 
         self.den_ste_var = tk.StringVar(value=default_den_ste)
         self.forme_jur_var = tk.StringVar(value=default_form_jur)
@@ -57,8 +59,8 @@ class SocieteForm(ttk.Frame):
         self.ste_adresses = get_reference_data('SteAdresses')
         self.tribunaux = get_reference_data('Tribunaux')
 
-        self.ste_adress_var = tk.StringVar(value=self.ste_adresses[0] if self.ste_adresses else "")
-        self.tribunal_var = tk.StringVar(value=self.tribunaux[0] if self.tribunaux else "")
+        self.ste_adress_var = tk.StringVar(value=default_ste_adresse)
+        self.tribunal_var = tk.StringVar(value=default_tribunal)
 
         # Liste pour stocker les variables des activités
         self.activites_vars = []
