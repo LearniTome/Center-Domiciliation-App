@@ -65,6 +65,8 @@ def render_templates(
     templates_list: Optional[List[str]] = None,
     progress_callback: Optional[Callable[[int, int, str, Dict], None]] = None,
     cleanup_tmp: bool = False,
+    generation_type: Optional[str] = None,
+    legal_form: Optional[str] = None,
 ) -> List[Dict]:
     """Render .docx templates.
 
@@ -142,10 +144,79 @@ def render_templates(
         s = re.sub(r"__+", '_', s)
         return s or 'UnknownCompany'
 
+    def _extract_legal_form(vals: Dict, provided: Optional[str]) -> str:
+        if provided and str(provided).strip():
+            return str(provided).strip()
+        if not isinstance(vals, dict):
+            return "UNKNOWN"
+        soc = vals.get('societe', {}) if isinstance(vals.get('societe'), dict) else {}
+        for key in ('forme_juridique', 'FormJur', 'FORME_JUR', 'legal_form'):
+            v = soc.get(key) if isinstance(soc, dict) else None
+            if v:
+                return str(v).strip()
+            v2 = vals.get(key)
+            if v2:
+                return str(v2).strip()
+        return "UNKNOWN"
+
+    def _normalize_legal_form_token(raw_form: str) -> str:
+        norm = (raw_form or "").strip().upper()
+        compact = re.sub(r"[\s_\-]+", "", norm)
+        if compact in ("SARLAU",):
+            return "SARLAU"
+        if compact in ("SARL",):
+            return "SARL"
+        if compact in ("PP", "PERSONNEPHYSIQUE", "PERSONNEPHYSIQUES"):
+            return "PP"
+        if compact in ("SA",):
+            return "SA"
+        return compact or "UNKNOWN"
+
+    def _normalize_generation_folder_token(raw_type: Optional[str], templates: Optional[List[Path]]) -> str:
+        t = (raw_type or "").strip().lower()
+        if t in ("creation", "création", "create"):
+            return "DosCré"
+        if t in ("domiciliation", "domicile", "dom"):
+            return "DosDom"
+        # Fallback by template names when generation_type isn't provided.
+        for tpl in (templates or []):
+            n = tpl.name.lower()
+            if any(k in n for k in ("domiciliation", "contrat", "attest")):
+                return "DosDom"
+        return "DosCré"
+
+    def _derive_doc_label(template_stem: str) -> str:
+        stem = template_stem
+        if stem.startswith('My_'):
+            stem = stem[3:]
+        stem = re.sub(r"^\d{4}_Mod[èe]le_[^_]+_", "", stem, flags=re.IGNORECASE)
+        s_lower = stem.lower()
+        if "statut" in s_lower:
+            return "Statuts"
+        if "contrat" in s_lower:
+            return "Contrat"
+        if "attest" in s_lower:
+            return "Attestation"
+        if "annonce" in s_lower:
+            return "Annonce"
+        if "décl" in s_lower or "decl" in s_lower:
+            return "Declaration"
+        if "dépot" in s_lower or "depot" in s_lower:
+            return "Depot"
+        # Generic fallback from stem
+        generic = re.sub(r"[^A-Za-z0-9]+", "_", stem).strip("_")
+        generic = re.sub(r"__+", "_", generic)
+        return generic or "Document"
+
     company_raw = _extract_company_name(values or {})
     company_clean = _sanitize_name(company_raw)
+    legal_form_token = _normalize_legal_form_token(_extract_legal_form(values or {}, legal_form))
 
-    generation_folder_name = f"{gen_date}_{company_clean}_Constitution"
+    # Resolve template list early to infer generation type when needed.
+    pre_templates: Optional[List[_Path]] = [_Path(p) for p in templates_list] if templates_list else None
+    folder_kind_token = _normalize_generation_folder_token(generation_type, pre_templates)
+
+    generation_folder_name = f"{gen_date}_{folder_kind_token}_{legal_form_token}_{company_clean}"
     out_subdir = out_dir / generation_folder_name
     out_subdir.mkdir(parents=True, exist_ok=True)
 
@@ -334,26 +405,39 @@ def render_templates(
         if templates_dir is None:
             raise ValueError("Either templates_dir or templates_list must be provided")
         templates_dir = _Path(templates_dir)
+        
+        # Scan root Models folder for templates
         templates = list(templates_dir.glob("*.docx"))
+        
+        # Also scan subdirectories organized by legal form
+        # (SARL AU, SARL, Personne Physique, SA, etc.)
+        for subdir in templates_dir.iterdir():
+            if subdir.is_dir() and not subdir.name.startswith('_'):
+                templates.extend(subdir.glob("*.docx"))
+        
+        templates = sorted(templates)  # Ensure consistent order
         if not templates:
-            logger.warning("No .docx templates found in %s", templates_dir)
+            logger.warning("No .docx templates found in %s or subdirectories", templates_dir)
 
     # compute total files to generate (docx + optional pdf per template)
     total_files = len(templates) * (1 + (1 if to_pdf else 0))
     processed_files = 0
 
     # Use out_subdir for generated files and report
+    used_file_stems = set()
     for tpl in templates:
         try:
-            # Prefix filenames with date and sanitized company name
-            prefix = f"{gen_date}_{company_clean}_"
-            # Clean the template stem: remove leading 'My_' and trailing '_filled' if present
-            stem = tpl.stem
-            if stem.startswith('My_'):
-                stem = stem[3:]
-            if stem.endswith('_filled'):
-                stem = stem[:-7]
-            out_docx = out_subdir / f"{prefix}{stem}.docx"
+            doc_label = _derive_doc_label(tpl.stem)
+            file_stem = f"{gen_date}_{legal_form_token}_{doc_label}_{company_clean}"
+            if file_stem in used_file_stems:
+                idx = 2
+                candidate = f"{file_stem}_{idx}"
+                while candidate in used_file_stems:
+                    idx += 1
+                    candidate = f"{file_stem}_{idx}"
+                file_stem = candidate
+            used_file_stems.add(file_stem)
+            out_docx = out_subdir / f"{file_stem}.docx"
 
             # Skip if docx already exists
             if out_docx.exists():
@@ -393,7 +477,7 @@ def render_templates(
 
             # PDF conversion (optional)
             if to_pdf:
-                out_pdf = out_subdir / f"{prefix}{stem}.pdf"
+                out_pdf = out_subdir / f"{file_stem}.pdf"
                 # Skip if PDF exists
                 if out_pdf.exists():
                     entry['out_pdf'] = str(out_pdf)

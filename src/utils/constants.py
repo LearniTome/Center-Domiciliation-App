@@ -7,7 +7,7 @@ DenSte = ["ASTRAPIA", "SAOUZ", "F 4", "OLA MOVING", "LOHACOM", "SKY NEST", "SKY 
 Civility = ["Monsieur", "Madame"]
 
 # Company legal forms
-Formjur = ["SARL AU", "SARL", "SA"]
+Formjur = ["SARL AU", "SARL", "Personne Physique", "SA"]
 
 # Contract durations in months
 Nbmois = ["06", "12", "15", "24"]
