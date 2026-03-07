@@ -211,7 +211,7 @@ class SocieteForm(ttk.Frame):
                    text="➕ Ajouter une activité",
                    command=self.add_activity,
                    style='Success.TButton')
-        add_btn.pack(pady=3, ipady=2)
+        add_btn.pack(pady=3)
 
     def add_activity(self):
         """Ajoute une nouvelle activité"""
@@ -240,7 +240,7 @@ class SocieteForm(ttk.Frame):
                       command=lambda f=activity_frame, v=var: self.remove_activity(f, v),
                       style='Cancel.TButton')
         # keep small width via padding instead of width to keep uniform height
-        remove_btn.pack(side="right", pady=3, ipady=2)
+        remove_btn.pack(side="right", pady=3)
 
     def remove_activity(self, frame, var):
         """Supprime une activité"""

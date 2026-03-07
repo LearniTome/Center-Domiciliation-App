@@ -21,6 +21,37 @@ CREATION_TEMPLATES_KEYWORDS = ['SARL', 'Statuts', 'Annonce', 'Décl', 'Dépot', 
 DOMICILIATION_TEMPLATES = ['Attest', 'Contrat', 'domiciliation']
 
 
+def compute_selection_feedback(legal_form: str, generation_type: str, selected_count: int) -> dict:
+    """Compute summary text and readiness state for generation selection."""
+    form_label = (legal_form or '').strip() or '—'
+    generation_map = {
+        'creation': 'Création',
+        'domiciliation': 'Domiciliation',
+    }
+    type_label = generation_map.get((generation_type or '').strip().lower(), '—')
+    count = max(0, int(selected_count or 0))
+
+    missing = []
+    if form_label == '—':
+        missing.append('sélectionner une forme juridique')
+    if type_label == '—':
+        missing.append('choisir un type de génération')
+    if count <= 0:
+        missing.append('cocher au moins un modèle')
+
+    summary = f"Résumé sélection  |  Forme: {form_label}  |  Type: {type_label}  |  Nb modèles: {count}"
+    if missing:
+        tooltip = "Pour continuer: " + ", ".join(missing) + "."
+    else:
+        tooltip = "Prêt à générer."
+
+    return {
+        'summary': summary,
+        'is_ready': len(missing) == 0,
+        'tooltip': tooltip,
+    }
+
+
 class GenerationSelectorDialog(tk.Toplevel):
     """Modal dialog to select generation type and manage templates."""
 
@@ -29,6 +60,11 @@ class GenerationSelectorDialog(tk.Toplevel):
         self.parent = parent
         self.values = values or {}
         self.output_format = output_format  # 'docx', 'pdf', or 'both'
+        self._initial_center_done = False
+        self._one_shot_recenter_done = False
+        self._proceed_tooltip_window = None
+        self._proceed_tooltip_text = ""
+        self._last_uploaded_template_name: Optional[str] = None
 
         self.title("📄 Sélectionner les documents à générer")
         # Taille réduite et optimisée
@@ -38,7 +74,6 @@ class GenerationSelectorDialog(tk.Toplevel):
 
         # Apply the SAME theme as the parent window (not a new one)
         # This ensures the dialog inherits the parent's style configuration
-        from ..utils.utils import WindowManager
         if isinstance(parent, tk.Tk):
             # Parent is the main window - use its theme
             self.theme_manager = parent.theme_manager if hasattr(parent, 'theme_manager') else ThemeManager(self)
@@ -60,10 +95,6 @@ class GenerationSelectorDialog(tk.Toplevel):
         except Exception:
             pass
 
-        # Center window on screen using deferred callback
-        # This ensures the window is fully rendered before calculating position
-        self.after(100, self._center_window_on_screen)
-
         # Results
         self.generation_type: Optional[str] = None
         self.creation_type: Optional[str] = None
@@ -72,28 +103,99 @@ class GenerationSelectorDialog(tk.Toplevel):
 
         # Setup UI
         self._setup_ui()
+        # First center pass after widgets are laid out (uses final requested size).
+        self.after_idle(self._center_initial_position)
+        # One-shot recenter at first mapping/configure to absorb DPI/window chrome offset.
+        self.bind("<Map>", self._one_shot_recenter_on_first_show, add="+")
+        self.bind("<Configure>", self._one_shot_recenter_on_first_show, add="+")
 
-    def _center_window_on_screen(self):
-        """Center the window on screen after it's fully rendered."""
+    def _center_initial_position(self):
+        """Center once after UI construction to get stable initial placement."""
+        if self._initial_center_done:
+            return
+        self._initial_center_done = True
+        try:
+            self._center_on_screen("initial")
+            self.focus_set()
+        except Exception:
+            pass
+
+    def _one_shot_recenter_on_first_show(self, _event=None):
+        """Recenter once on first show/configure; never recenters continuously."""
+        if self._one_shot_recenter_done:
+            return
+        self._one_shot_recenter_done = True
+        # Two-pass centering to absorb late window-manager size adjustments.
+        self.after_idle(self._safe_recenter)
+        self.after(140, self._safe_recenter)
+
+    def _safe_recenter(self):
+        """Shared recenter helper used by first-show one-shot recenter."""
+        try:
+            self._center_on_screen("one_shot")
+        except Exception:
+            pass
+
+    def _center_on_screen(self, source: str = "unknown"):
+        """Center horizontally on screen and align vertically with parent window."""
         self.update_idletasks()
-        
-        # Get window and screen dimensions
         window_width = self.winfo_width()
         window_height = self.winfo_height()
+        screen_x = 0
+        screen_y = 0
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
-        
-        # Calculate center position
-        x = (screen_width - window_width) // 2
-        y = (screen_height - window_height) // 2
-        
-        # Ensure window stays on screen (with margin)
-        x = max(0, min(x, screen_width - window_width))
-        y = max(0, min(y, screen_height - window_height))
-        
-        # Apply geometry with position
+
+        # On Windows, center on the monitor nearest to the parent window.
+        try:
+            import platform
+            if platform.system() == "Windows":
+                import ctypes
+
+                class _RECT(ctypes.Structure):
+                    _fields_ = [
+                        ("left", ctypes.c_long),
+                        ("top", ctypes.c_long),
+                        ("right", ctypes.c_long),
+                        ("bottom", ctypes.c_long),
+                    ]
+
+                class _MONITORINFO(ctypes.Structure):
+                    _fields_ = [
+                        ("cbSize", ctypes.c_ulong),
+                        ("rcMonitor", _RECT),
+                        ("rcWork", _RECT),
+                        ("dwFlags", ctypes.c_ulong),
+                    ]
+
+                monitor_default_to_nearest = 2
+                hwnd = int(self.parent.winfo_id()) if getattr(self, "parent", None) else int(self.winfo_id())
+                monitor = ctypes.windll.user32.MonitorFromWindow(hwnd, monitor_default_to_nearest)
+                mi = _MONITORINFO()
+                mi.cbSize = ctypes.sizeof(_MONITORINFO)
+                ok = ctypes.windll.user32.GetMonitorInfoW(monitor, ctypes.byref(mi))
+                if ok:
+                    # Use full monitor rectangle for true screen center.
+                    screen_x = int(mi.rcMonitor.left)
+                    screen_y = int(mi.rcMonitor.top)
+                    screen_width = int(mi.rcMonitor.right - mi.rcMonitor.left)
+                    screen_height = int(mi.rcMonitor.bottom - mi.rcMonitor.top)
+        except Exception:
+            pass
+
+        x = screen_x + (screen_width - window_width) // 2
+        # Keep popup at the same vertical level as the main app window.
+        y = screen_y + (screen_height - window_height) // 2
+        try:
+            if getattr(self, "parent", None):
+                y = int(self.parent.winfo_rooty())
+        except Exception:
+            pass
+
+        x = max(screen_x, min(x, screen_x + screen_width - window_width))
+        y = max(screen_y, min(y, screen_y + screen_height - window_height))
+
         self.geometry(f"{window_width}x{window_height}+{x}+{y}")
-        self.focus_set()
 
     def _setup_ui(self):
         """Setup the dialog UI with improved design and layout.
@@ -112,34 +214,57 @@ class GenerationSelectorDialog(tk.Toplevel):
         main_frame = ttk.Frame(self, padding=20)
         main_frame.pack(fill='both', expand=True)
 
-        # Title with buttons on the right
+        # Bottom fixed area: selection summary + action buttons
+        footer = ttk.Frame(main_frame)
+        footer.pack(side='bottom', fill='x')
+        ttk.Separator(footer, orient='horizontal').pack(fill='x', pady=(10, 8))
+
+        summary_row = ttk.Frame(footer)
+        summary_row.pack(fill='x', pady=(0, 8))
+        self.summary_var = tk.StringVar(value="Résumé sélection  |  Forme: —  |  Type: —  |  Nb modèles: 0")
+        self.summary_label = ttk.Label(
+            summary_row,
+            textvariable=self.summary_var,
+            style='Subheader.TLabel',
+        )
+        self.summary_label.pack(side='left', anchor='w')
+
+        bottom_actions = ttk.Frame(footer)
+        bottom_actions.pack(fill='x')
+
+        self.cancel_btn = WidgetFactory.create_button(
+            bottom_actions,
+            text="❌ Annuler",
+            command=self._cancel,
+            style='Cancel.TButton'
+        )
+        self.cancel_btn.pack(side='right', padx=5)
+
+        proceed_wrap = ttk.Frame(bottom_actions)
+        proceed_wrap.pack(side='right')
+
+        self.proceed_btn = WidgetFactory.create_button(
+            proceed_wrap,
+            text="✅ Procéder à la génération",
+            command=self._confirm,
+            style='Success.TButton'
+        )
+        self.proceed_btn.pack(side='right', padx=5)
+        proceed_wrap.bind('<Enter>', self._show_proceed_tooltip_if_disabled)
+        proceed_wrap.bind('<Leave>', self._hide_proceed_tooltip)
+        self.proceed_btn.bind('<Enter>', self._show_proceed_tooltip_if_disabled)
+        self.proceed_btn.bind('<Leave>', self._hide_proceed_tooltip)
+
+        # Title
         top_frame = ttk.Frame(main_frame)
         top_frame.pack(fill='x', pady=(0, 20))
 
         title_label = ttk.Label(
             top_frame,
             text="📄 Sélectionner les documents à générer",
-            font=('Segoe UI', 16, 'bold')
+            style='Title.TLabel'
         )
         title_label.pack(side='left', anchor='w')
-
-        # Buttons on the right of title
-        button_frame = ttk.Frame(top_frame)
-        button_frame.pack(side='right', anchor='e')
-
-        WidgetFactory.create_button(
-            button_frame,
-            text="✅ Procéder à la génération",
-            command=self._confirm,
-            style='Success.TButton'
-        ).pack(side='left', padx=5, ipady=8)
-
-        WidgetFactory.create_button(
-            button_frame,
-            text="❌ Annuler",
-            command=self._cancel,
-            style='Cancel.TButton'
-        ).pack(side='left', padx=5, ipady=8)
 
         # Separator
         ttk.Separator(main_frame, orient='horizontal').pack(fill='x', pady=(0, 20))
@@ -214,21 +339,21 @@ class GenerationSelectorDialog(tk.Toplevel):
             text="🔄 Actualiser",
             command=self._refresh_template_list,
             style='Manage.TButton'
-        ).pack(side='left', padx=3, ipady=5)
+        ).pack(side='left', padx=3)
 
         WidgetFactory.create_button(
             btn_frame,
             text="📁 Consulter",
             command=self._view_templates,
             style='Manage.TButton'
-        ).pack(side='left', padx=3, ipady=5)
+        ).pack(side='left', padx=3)
 
         WidgetFactory.create_button(
             btn_frame,
             text="⬆️ Uploader",
             command=self._upload_template,
             style='Manage.TButton'
-        ).pack(side='left', padx=3, ipady=5)
+        ).pack(side='left', padx=3)
 
         # Template list with checkboxes - avec plus d'espace
         ttk.Label(template_frame, text="Sélectionner les modèles:", font=('Segoe UI', 11, 'bold')).pack(anchor='w', pady=(0, 12))
@@ -247,7 +372,7 @@ class GenerationSelectorDialog(tk.Toplevel):
             highlightthickness=1, 
             highlightbackground='#555555',
             relief='solid',
-            height=200  # Hauteur adaptée à la fenêtre réduite
+            height=180  # Keep footer buttons visible on medium-height screens
         )
         self.template_canvas.pack(side='left', fill='both', expand=True)
         scrollbar.config(command=self.template_canvas.yview)
@@ -256,6 +381,7 @@ class GenerationSelectorDialog(tk.Toplevel):
         # Inner frame for checkboxes
         self.template_inner_frame = ttk.Frame(self.template_canvas)
         self.template_canvas_window = self.template_canvas.create_window((0, 0), window=self.template_inner_frame, anchor='nw')
+        self.template_inner_frame.columnconfigure(0, weight=1)
 
         # Bind canvas resizing to update layout
         self.template_inner_frame.bind('<Configure>', self._on_frame_configure)
@@ -266,6 +392,8 @@ class GenerationSelectorDialog(tk.Toplevel):
 
         # Populate template list
         self._refresh_template_list()
+        self._update_selection_feedback()
+
 
     def _on_frame_configure(self, event=None):
         """Update the scroll region of the canvas when frame is resized."""
@@ -275,10 +403,12 @@ class GenerationSelectorDialog(tk.Toplevel):
     def _on_canvas_configure(self, event=None):
         """Resize the inner frame to match canvas width when canvas is resized."""
         # Make the inner frame match the canvas width for proper layout
-        canvas_width = self.template_canvas.winfo_width()
+        canvas_width = (event.width if event is not None else self.template_canvas.winfo_width())
         if canvas_width > 1:
-            # Configure the frame itself to have the same width as canvas
-            self.template_inner_frame.configure(width=canvas_width)
+            try:
+                self.template_canvas.itemconfigure(self.template_canvas_window, width=canvas_width)
+            except Exception:
+                self.template_inner_frame.configure(width=canvas_width)
 
     def _on_legal_form_changed(self):
         """Handle legal form radio button changes and refresh template list."""
@@ -288,6 +418,7 @@ class GenerationSelectorDialog(tk.Toplevel):
         gen_type = self.gen_type_var.get()
         if gen_type:
             self._auto_select_templates(gen_type)
+        self._update_selection_feedback()
 
     def _on_generation_type_changed(self):
         """Handle generation type radio button changes and auto-select templates."""
@@ -300,6 +431,63 @@ class GenerationSelectorDialog(tk.Toplevel):
         else:
             for var in self.template_vars.values():
                 var.set(False)
+        self._update_selection_feedback()
+
+    def _on_template_selection_changed(self):
+        """Handle checkbox updates in template selection list."""
+        self._update_selection_feedback()
+
+    def _selected_templates_count(self) -> int:
+        return sum(1 for var in self.template_vars.values() if var.get())
+
+    def _update_selection_feedback(self):
+        """Refresh summary row and proceed button state."""
+        feedback = compute_selection_feedback(
+            self.legal_form_var.get() if hasattr(self, 'legal_form_var') else '',
+            self.gen_type_var.get() if hasattr(self, 'gen_type_var') else '',
+            self._selected_templates_count(),
+        )
+        if hasattr(self, 'summary_var'):
+            self.summary_var.set(feedback['summary'])
+
+        self._proceed_tooltip_text = feedback['tooltip']
+        if hasattr(self, 'proceed_btn'):
+            if feedback['is_ready']:
+                self.proceed_btn.state(['!disabled'])
+                self._hide_proceed_tooltip()
+            else:
+                self.proceed_btn.state(['disabled'])
+
+    def _show_proceed_tooltip_if_disabled(self, event=None):
+        if not hasattr(self, 'proceed_btn'):
+            return
+        if 'disabled' not in self.proceed_btn.state():
+            return
+        if self._proceed_tooltip_window is not None:
+            return
+        try:
+            x = self.proceed_btn.winfo_rootx() + 10
+            y = self.proceed_btn.winfo_rooty() - 30
+            tooltip = tk.Toplevel(self.proceed_btn)
+            tooltip.wm_overrideredirect(True)
+            tooltip.wm_geometry(f"+{x}+{y}")
+            ttk.Label(
+                tooltip,
+                text=self._proceed_tooltip_text or "Sélection incomplète.",
+                justify='left',
+                style='FieldLabel.TLabel',
+            ).pack(ipadx=8, ipady=4)
+            self._proceed_tooltip_window = tooltip
+        except Exception:
+            self._proceed_tooltip_window = None
+
+    def _hide_proceed_tooltip(self, event=None):
+        if self._proceed_tooltip_window is not None:
+            try:
+                self._proceed_tooltip_window.destroy()
+            except Exception:
+                pass
+            self._proceed_tooltip_window = None
 
     def _auto_select_templates(self, doc_type: str):
         """Automatically select templates based on document type and legal form.
@@ -386,6 +574,9 @@ class GenerationSelectorDialog(tk.Toplevel):
         Shows ONLY templates for the selected legal form, no shared templates.
         If no legal form is selected, shows a message.
         """
+        # Preserve currently selected templates when refreshing the list.
+        previously_selected = {p.name for p, v in self.template_vars.items() if v.get()}
+
         # Clear existing widgets
         for widget in self.template_inner_frame.winfo_children():
             widget.destroy()
@@ -395,6 +586,7 @@ class GenerationSelectorDialog(tk.Toplevel):
             models_dir = PathManager.MODELS_DIR
             if not models_dir.exists():
                 self._show_template_message("⚠️ Dossier Models non trouvé")
+                self._update_selection_feedback()
                 return
 
             # Get selected legal form
@@ -403,18 +595,19 @@ class GenerationSelectorDialog(tk.Toplevel):
             if not selected_legal_form:
                 # No legal form selected - show message with padding
                 msg_frame = ttk.Frame(self.template_inner_frame)
-                msg_frame.pack(fill='both', expand=True, padx=20, pady=40)
+                msg_frame.pack(fill='x', expand=True, padx=20, pady=40)
                 
                 ttk.Label(
                     msg_frame,
                     text="⬆️ Veuillez sélectionner une forme juridique",
                     font=('Segoe UI', 11, 'italic'),
                     foreground='#888888'
-                ).pack(anchor='center', expand=True)
+                ).pack(anchor='center', fill='x', expand=True)
                 
                 self.template_inner_frame.update_idletasks()
                 self.template_canvas.configure(scrollregion=self.template_canvas.bbox('all'))
                 self.after(100, self._on_canvas_configure)
+                self._update_selection_feedback()
                 return
 
             # Get templates ONLY from the selected legal form folder
@@ -425,9 +618,10 @@ class GenerationSelectorDialog(tk.Toplevel):
                 all_templates = sorted([f for f in form_path.glob('*.docx')])
             
             if all_templates:
-                for template in all_templates:
+                for idx, template in enumerate(all_templates):
                     # Create checkbox variable
-                    var = tk.BooleanVar(value=False)
+                    var = tk.BooleanVar(value=(template.name in previously_selected))
+                    var.trace_add('write', lambda *_args: self._on_template_selection_changed())
                     self.template_vars[template] = var
 
                     # Create checkbox widget with nice display name
@@ -439,24 +633,32 @@ class GenerationSelectorDialog(tk.Toplevel):
                             break
                     
                     display_name = f"📄 {clean_name}"
-                    
-                    # Create checkbutton - let it expand naturally with fill='x'
+                    if self._last_uploaded_template_name and template.name == self._last_uploaded_template_name:
+                        display_name += "  [Nouveau]"
+
+                    # Create row with a cleaner line layout for template items.
+                    row = ttk.Frame(self.template_inner_frame)
+                    row.pack(fill='x', padx=10, pady=1)
+
                     chk = ttk.Checkbutton(
-                        self.template_inner_frame,
+                        row,
                         text=display_name,
                         variable=var
                     )
-                    chk.pack(anchor='w', pady=7, padx=15, fill='x')
+                    chk.pack(anchor='w', fill='x', padx=8, pady=4, ipady=2)
+
+                    if idx < len(all_templates) - 1:
+                        ttk.Separator(self.template_inner_frame, orient='horizontal').pack(fill='x', padx=12, pady=(0, 1))
             else:
                 msg_frame = ttk.Frame(self.template_inner_frame)
-                msg_frame.pack(fill='both', expand=True, padx=20, pady=40)
+                msg_frame.pack(fill='x', expand=True, padx=20, pady=40)
                 
                 ttk.Label(
                     msg_frame,
                     text=f"⚠️ Aucun modèle trouvé pour {selected_legal_form}",
                     font=('Segoe UI', 11, 'italic'),
                     foreground='#888888'
-                ).pack(anchor='center', expand=True)
+                ).pack(anchor='center', fill='x', expand=True)
                 
                 self.template_inner_frame.update_idletasks()
                 self.template_canvas.configure(scrollregion=self.template_canvas.bbox('all'))
@@ -468,36 +670,57 @@ class GenerationSelectorDialog(tk.Toplevel):
             
             # Force canvas width update
             self.after(100, self._on_canvas_configure)
+            self._last_uploaded_template_name = None
+            self._update_selection_feedback()
 
         except Exception as e:
             logger.exception(f"Erreur lors du chargement des modèles: {e}")
             msg_frame = ttk.Frame(self.template_inner_frame)
-            msg_frame.pack(fill='both', expand=True, padx=20, pady=40)
+            msg_frame.pack(fill='x', expand=True, padx=20, pady=40)
             
             ttk.Label(
                 msg_frame,
                 text=f"❌ Erreur: {str(e)}",
                 font=('Segoe UI', 10),
                 foreground='#ff6666'
-            ).pack(anchor='center', expand=True)
+            ).pack(anchor='center', fill='x', expand=True)
             
             self.template_inner_frame.update_idletasks()
             self.template_canvas.configure(scrollregion=self.template_canvas.bbox('all'))
             self.after(100, self._on_canvas_configure)
+            self._update_selection_feedback()
+
+    def _show_template_message(self, message: str):
+        """Display a centered informational message in template list area."""
+        msg_frame = ttk.Frame(self.template_inner_frame)
+        msg_frame.pack(fill='x', expand=True, padx=20, pady=40)
+        ttk.Label(
+            msg_frame,
+            text=message,
+            font=('Segoe UI', 11, 'italic'),
+            foreground='#888888',
+        ).pack(anchor='center', fill='x', expand=True)
 
     def _view_templates(self):
         """Open the Models folder to view existing templates."""
         try:
             models_dir = PathManager.MODELS_DIR
-            if models_dir.exists():
+            target_dir = models_dir
+            selected_form = (self.legal_form_var.get() if hasattr(self, 'legal_form_var') else '').strip()
+            if selected_form:
+                form_dir = models_dir / selected_form
+                if form_dir.exists() and form_dir.is_dir():
+                    target_dir = form_dir
+
+            if target_dir.exists():
                 import os
                 import platform
                 if platform.system() == 'Windows':
-                    os.startfile(str(models_dir))
+                    os.startfile(str(target_dir))
                 elif platform.system() == 'Darwin':  # macOS
-                    os.system(f'open "{models_dir}"')
+                    os.system(f'open "{target_dir}"')
                 else:  # Linux
-                    os.system(f'xdg-open "{models_dir}"')
+                    os.system(f'xdg-open "{target_dir}"')
             else:
                 messagebox.showwarning("Dossier introuvable", f"Le dossier Models n'existe pas: {models_dir}")
         except Exception as e:
@@ -563,6 +786,7 @@ class GenerationSelectorDialog(tk.Toplevel):
             )
 
             # Refresh list
+            self._last_uploaded_template_name = file_path.name
             self._refresh_template_list()
 
         except Exception as e:

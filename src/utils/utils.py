@@ -301,9 +301,103 @@ class ThemeManager:
         return widget
 
 class WidgetFactory:
+    _ICON_REGISTRY = {
+        'settings': 'settings.png',
+        'dashboard': 'dashboard.png',
+        'close': 'close.png',
+        'next': 'next.png',
+        'prev': 'prev.png',
+        'finish': 'finish.png',
+        'save': 'save.png',
+        'new': 'new.png',
+        'add': 'add.png',
+        'edit': 'edit.png',
+        'delete': 'delete.png',
+        'refresh': 'refresh.png',
+        'folder': 'folder.png',
+        'upload': 'upload.png',
+        'confirm': 'confirm.png',
+        'document': 'document.png',
+        'company': 'company.png',
+        'contract': 'contract.png',
+        'person': 'person.png',
+        'view': 'view.png',
+    }
+    _EMOJI_ICON_KEY = {
+        '⚙': 'settings',
+        '📊': 'dashboard',
+        '❌': 'close',
+        '▶': 'next',
+        '◀': 'prev',
+        '🏁': 'finish',
+        '💾': 'save',
+        '🆕': 'new',
+        '➕': 'add',
+        '✏️': 'edit',
+        '✏': 'edit',
+        '🗑️': 'delete',
+        '🗑': 'delete',
+        '🔄': 'refresh',
+        '📁': 'folder',
+        '⬆️': 'upload',
+        '⬆': 'upload',
+        '✅': 'confirm',
+        '📄': 'document',
+        '🏢': 'company',
+        '👤': 'person',
+        '👁': 'view',
+    }
+    _ICON_CACHE = {}
+
+    @classmethod
+    def get_icon_registry(cls):
+        return dict(cls._ICON_REGISTRY)
+
+    @classmethod
+    def _extract_icon_key_and_clean_text(cls, text: str, icon_key: Optional[str]):
+        raw_text = str(text or '')
+        chosen_key = icon_key
+        if chosen_key is None:
+            for emoji, key in cls._EMOJI_ICON_KEY.items():
+                if emoji in raw_text:
+                    chosen_key = key
+                    raw_text = raw_text.replace(emoji, ' ')
+        clean_text = ' '.join(raw_text.split())
+        return chosen_key, clean_text
+
+    @classmethod
+    def _load_icon(cls, widget, icon_key: str):
+        try:
+            icon_filename = cls._ICON_REGISTRY.get(icon_key)
+            if not icon_filename:
+                return None
+            icon_path = PathManager.ICONS_DIR / icon_filename
+            if not icon_path.exists():
+                return None
+
+            cache_key = (str(icon_path.resolve()), str(widget.winfo_toplevel()))
+            if cache_key in cls._ICON_CACHE:
+                return cls._ICON_CACHE[cache_key]
+
+            image = tk.PhotoImage(file=str(icon_path))
+            cls._ICON_CACHE[cache_key] = image
+            return image
+        except Exception:
+            logger.debug("Failed to load icon '%s'", icon_key, exc_info=True)
+            return None
+
     @staticmethod
-    def create_button(parent, text, command, style='Secondary.TButton', tooltip=None):
-        btn = ttk.Button(parent, text=text, command=command, style=style, takefocus=False)
+    def create_button(parent, text, command, style='Secondary.TButton', tooltip=None, icon_key: Optional[str] = None, compound: str = 'left'):
+        detected_icon_key, clean_text = WidgetFactory._extract_icon_key_and_clean_text(text, icon_key)
+        btn = ttk.Button(parent, text=clean_text, command=command, style=style, takefocus=False, compound=compound)
+
+        if detected_icon_key:
+            icon_image = WidgetFactory._load_icon(parent, detected_icon_key)
+            if icon_image is not None:
+                btn.configure(image=icon_image)
+                # Keep an instance reference to avoid Tk image GC.
+                btn._icon_image = icon_image
+
         if tooltip:
             WidgetFactory.create_tooltip(btn, tooltip)
         return btn
@@ -398,6 +492,8 @@ def apply_style(widget, theme_manager):
 class PathManager:
     """Gestionnaire centralisé des chemins de fichiers de l'application"""
     BASE_DIR = Path(__file__).resolve().parent.parent.parent
+    ASSETS_DIR = BASE_DIR / "assets"
+    ICONS_DIR = ASSETS_DIR / "icons"
     MODELS_DIR = BASE_DIR / "Models"
     DATABASE_DIR = BASE_DIR / "databases"
     CONFIG_DIR = BASE_DIR / "config"
@@ -411,7 +507,7 @@ class PathManager:
     def ensure_directories(cls) -> None:
         """Crée les répertoires nécessaires s'ils n'existent pas"""
         try:
-            for dir_path in [cls.MODELS_DIR, cls.DATABASE_DIR, cls.CONFIG_DIR]:
+            for dir_path in [cls.MODELS_DIR, cls.DATABASE_DIR, cls.CONFIG_DIR, cls.ASSETS_DIR, cls.ICONS_DIR]:
                 dir_path.mkdir(parents=True, exist_ok=True)
         except Exception as e:
             ErrorHandler.handle_error(e, "Erreur lors de la création des répertoires")

@@ -115,23 +115,23 @@ class DashboardView(tk.Toplevel):
         self._nav_buttons['societe'] = WidgetFactory.create_button(
             nav, text="🏢 Sociétés", command=lambda: self._show_page('societe'), style='Secondary.TButton'
         )
-        self._nav_buttons['societe'].pack(fill='x', pady=3, ipady=2)
+        self._nav_buttons['societe'].pack(fill='x', pady=3)
         self._nav_buttons['associe'] = WidgetFactory.create_button(
             nav, text="👥 Associés", command=lambda: self._show_page('associe'), style='Secondary.TButton'
         )
-        self._nav_buttons['associe'].pack(fill='x', pady=3, ipady=2)
+        self._nav_buttons['associe'].pack(fill='x', pady=3)
         self._nav_buttons['contrat'] = WidgetFactory.create_button(
             nav, text="📄 Contrats", command=lambda: self._show_page('contrat'), style='Secondary.TButton'
         )
-        self._nav_buttons['contrat'].pack(fill='x', pady=3, ipady=2)
+        self._nav_buttons['contrat'].pack(fill='x', pady=3)
 
         # Action buttons
         action_frame = ttk.Frame(nav)
         action_frame.pack(fill='x', pady=10)
-        WidgetFactory.create_button(action_frame, text="➕ Ajouter", command=lambda: self._action('add'), style='Success.TButton').pack(fill='x', pady=3, ipady=2)
-        WidgetFactory.create_button(action_frame, text="✏️ Modifier", command=lambda: self._action('edit'), style='Manage.TButton').pack(fill='x', pady=3, ipady=2)
-        WidgetFactory.create_button(action_frame, text="🗑️ Supprimer", command=lambda: self._action('delete'), style='Cancel.TButton').pack(fill='x', pady=3, ipady=2)
-        WidgetFactory.create_button(action_frame, text="🔄 Actualiser", command=lambda: self._action('refresh'), style='Manage.TButton').pack(fill='x', pady=3, ipady=2)
+        WidgetFactory.create_button(action_frame, text="➕ Ajouter", command=lambda: self._action('add'), style='Success.TButton').pack(fill='x', pady=3)
+        WidgetFactory.create_button(action_frame, text="✏️ Modifier", command=lambda: self._action('edit'), style='Manage.TButton').pack(fill='x', pady=3)
+        WidgetFactory.create_button(action_frame, text="🗑️ Supprimer", command=lambda: self._action('delete'), style='Cancel.TButton').pack(fill='x', pady=3)
+        WidgetFactory.create_button(action_frame, text="🔄 Actualiser", command=lambda: self._action('refresh'), style='Manage.TButton').pack(fill='x', pady=3)
 
         # Content area
         self.content = ttk.Frame(body)

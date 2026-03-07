@@ -160,7 +160,7 @@ class AssocieForm(ttk.Frame):
             style='Cancel.TButton',
             command=lambda: self.remove_associe(frame, vars_dict)
         )
-        remove_btn.pack(side="right", padx=5, pady=3, ipady=2)
+        remove_btn.pack(side="right", padx=5, pady=3)
 
         self.associe_vars.append(vars_dict)
         return frame

@@ -119,29 +119,38 @@ class ModernTheme:
             background=[('focus', self.colors['input_bg'])])
 
     def _setup_button_styles(self):
+        # Palette douce et compacte pour tous les boutons de l'application.
+        secondary_bg = '#4a4a4a' if self.mode == 'dark' else '#f2f4f7'
+        secondary_fg = '#f3f3f3' if self.mode == 'dark' else '#2f3742'
+        success_bg = '#4E9D78'
+        cancel_bg = '#B95F53'
+        manage_bg = '#5A8FB8'
+        confirm_bg = '#6F95BF'
+        close_bg = '#6A7077'
+        compact_pad = (10, 6)
+
         # Style principal pour les boutons
-        # Buttons: keep consistent padding and ensure foreground on dark themes
         self.style.configure('TButton',
             background=self.colors['accent'],
             foreground='white',
             font=('Segoe UI', 10),
-            padding=(12, 10),
+            padding=compact_pad,
             relief='flat',
-            borderwidth=0)
+            borderwidth=1)
 
         # Navigation / primary buttons used throughout the app
         self.style.configure('Nav.TButton',
             background=self.colors['accent'],
             foreground='white',
             font=('Segoe UI', 10),
-            padding=(12, 10),
+            padding=compact_pad,
             relief='flat',
-            borderwidth=0)
+            borderwidth=1)
 
         # Style pour les boutons d'action
         self.style.configure('Action.TButton',
             background=self.colors['accent_light'],
-            padding=(12, 10))
+            padding=compact_pad)
 
         self.style.map('TButton',
             background=[('active', self.colors['accent_light']),
@@ -150,84 +159,84 @@ class ModernTheme:
 
         # Boutons secondaires (Configuration style) — bordered, neutral background
         self.style.configure('Secondary.TButton',
-            background='#404040' if self.mode == 'dark' else self.colors['bg'],
-            foreground='white' if self.mode == 'dark' else self.colors['fg'],
+            background=secondary_bg,
+            foreground=secondary_fg,
             relief='solid',
-            borderwidth=2,
-            padding=(12, 10),
+            borderwidth=1,
+            padding=compact_pad,
             font=('Segoe UI', 10))
 
         # Make other logical button styles visually match Secondary by default
         try:
             self.style.configure('Nav.TButton',
-                background=self.colors['bg'],
-                foreground=self.colors['fg'],
+                background=secondary_bg,
+                foreground=secondary_fg,
                 relief='solid',
                 borderwidth=1,
-                padding=(12, 10))
+                padding=compact_pad)
             self.style.configure('Action.TButton',
-                background=self.colors['bg'],
-                foreground=self.colors['fg'],
+                background=secondary_bg,
+                foreground=secondary_fg,
                 relief='solid',
                 borderwidth=1,
-                padding=(12, 10))
+                padding=compact_pad)
             self.style.configure('Danger.TButton',
-                background=self.colors['bg'],
-                foreground=self.colors['fg'],
+                background=secondary_bg,
+                foreground=secondary_fg,
                 relief='solid',
                 borderwidth=1,
-                padding=(12, 10))
+                padding=compact_pad)
         except Exception:
             pass
 
         # Boutons de danger
         self.style.configure('Danger.TButton',
-            background=self.colors['error'],
+            background=cancel_bg,
             foreground='white')
 
-        # Boutons de succès (vert - pour générer/confirmer)
+        # Boutons de succès (vert doux)
         self.style.configure('Success.TButton',
-            background='#27ae60',  # Vert plus foncé pour meilleure visibilité
-            foreground='white',
-            relief='solid',
-            borderwidth=2,
-            padding=(12, 10),
-            font=('Segoe UI', 11, 'bold'))
-
-        # Boutons d'annulation (rouge - pour cancel)
-        self.style.configure('Cancel.TButton',
-            background='#c0392b',  # Rouge plus foncé pour meilleure visibilité
-            foreground='white',
-            relief='solid',
-            borderwidth=2,
-            padding=(12, 10),
-            font=('Segoe UI', 11, 'bold'))
-
-        # Boutons de gestion (bleu - pour refresh, upload, etc)
-        self.style.configure('Manage.TButton',
-            background='#3498db',  # Bleu visible
+            background=success_bg,
             foreground='white',
             relief='solid',
             borderwidth=1,
-            padding=(12, 10),
-            font=('Segoe UI', 9))
-
-        # Boutons de confirmation (bleu accent - pour OK)
-        self.style.configure('Confirm.TButton',
-            background='#4a90e2',  # Bleu accent
-            foreground='white',
-            relief='solid',
-            borderwidth=2,
-            padding=(12, 10),
+            padding=(12, 7),
             font=('Segoe UI', 10, 'bold'))
 
-        # Boutons de fermeture (gris - pour Annuler)
-        self.style.configure('Close.TButton',
-            background='#555555',  # Gris foncé visible
+        # Boutons d'annulation (rouge doux)
+        self.style.configure('Cancel.TButton',
+            background=cancel_bg,
             foreground='white',
             relief='solid',
-            borderwidth=2,
-            padding=(12, 10),
+            borderwidth=1,
+            padding=(12, 7),
+            font=('Segoe UI', 10, 'bold'))
+
+        # Boutons de gestion (bleu doux)
+        self.style.configure('Manage.TButton',
+            background=manage_bg,
+            foreground='white',
+            relief='solid',
+            borderwidth=1,
+            padding=compact_pad,
+            font=('Segoe UI', 9))
+
+        # Boutons de confirmation (bleu doux)
+        self.style.configure('Confirm.TButton',
+            background=confirm_bg,
+            foreground='white',
+            relief='solid',
+            borderwidth=1,
+            padding=compact_pad,
+            font=('Segoe UI', 10, 'bold'))
+
+        # Boutons de fermeture (gris doux)
+        self.style.configure('Close.TButton',
+            background=close_bg,
+            foreground='white',
+            relief='solid',
+            borderwidth=1,
+            padding=compact_pad,
             font=('Segoe UI', 10, 'bold'))
 
         # Make sure focus/active mappings don't introduce a distinct blue ring
@@ -240,27 +249,27 @@ class ModernTheme:
                 background=[('active', self.colors['accent_light']), ('disabled', self.colors['disabled']), ('pressed', self.colors['accent_light'])],
                 foreground=[('disabled', '#ffffff')])
             self.style.map('Secondary.TButton',
-                background=[('active', self.colors['hover']), ('disabled', self.colors['disabled'])],
+                background=[('active', '#5b5b5b' if self.mode == 'dark' else '#e7ebf0'), ('disabled', self.colors['disabled'])],
                 foreground=[('disabled', self.colors['fg'])])
-            # Success button states (vert plus clair au hover)
+            # Success button states
             self.style.map('Success.TButton',
-                background=[('active', '#1e8449'), ('disabled', self.colors['disabled']), ('pressed', '#186a3b')],
+                background=[('active', '#5EAE88'), ('disabled', self.colors['disabled']), ('pressed', '#3F8767')],
                 foreground=[('disabled', '#cccccc')])
-            # Cancel button states (rouge plus clair au hover)
+            # Cancel button states
             self.style.map('Cancel.TButton',
-                background=[('active', '#a93226'), ('disabled', self.colors['disabled']), ('pressed', '#922b21')],
+                background=[('active', '#C86F62'), ('disabled', self.colors['disabled']), ('pressed', '#A35147')],
                 foreground=[('disabled', '#cccccc')])
-            # Manage button states (bleu plus clair au hover)
+            # Manage button states
             self.style.map('Manage.TButton',
-                background=[('active', '#2980b9'), ('disabled', self.colors['disabled']), ('pressed', '#1f618d')],
+                background=[('active', '#6CA1C9'), ('disabled', self.colors['disabled']), ('pressed', '#4C7EA6')],
                 foreground=[('disabled', '#cccccc')])
-            # Confirm button states (bleu plus clair au hover)
+            # Confirm button states
             self.style.map('Confirm.TButton',
-                background=[('active', '#2171cd'), ('disabled', self.colors['disabled']), ('pressed', '#1c5aa0')],
+                background=[('active', '#7FA7D2'), ('disabled', self.colors['disabled']), ('pressed', '#5D84AE')],
                 foreground=[('disabled', '#cccccc')])
-            # Close button states (gris plus clair au hover)
+            # Close button states
             self.style.map('Close.TButton',
-                background=[('active', '#444444'), ('disabled', self.colors['disabled']), ('pressed', '#333333')],
+                background=[('active', '#7A8189'), ('disabled', self.colors['disabled']), ('pressed', '#565E66')],
                 foreground=[('disabled', '#cccccc')])
         except Exception:
             pass
@@ -341,6 +350,23 @@ class ModernTheme:
             background=self.colors['bg'],
             foreground=self.colors['fg'],
             font=('Segoe UI', 10))
+
+        # Global title tokens used across dialogs and sections.
+        self.style.configure('Title.TLabel',
+            background=self.colors['bg'],
+            foreground=self.colors['fg'],
+            font=('Segoe UI', 16, 'bold'))
+
+        self.style.configure('SectionTitle.TLabel',
+            background=self.colors['bg'],
+            foreground=self.colors['label_fg'],
+            font=('Segoe UI', 12, 'bold'))
+
+        # Make all LabelFrame captions bold by default.
+        self.style.configure('TLabelframe.Label',
+            background=self.colors['bg'],
+            foreground=self.colors['label_fg'],
+            font=('Segoe UI', 11, 'bold'))
 
         self.style.configure('Header.TLabel',
             font=('Segoe UI', 14, 'bold'),
