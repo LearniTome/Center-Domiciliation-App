@@ -60,7 +60,7 @@ Activities = [
 # Excel sheet headers
 societe_headers = [
     "ID_SOCIETE", "DEN_STE", "FORME_JUR", "ICE", "DATE_ICE", "CAPITAL",
-    "PART_SOCIAL", "STE_ADRESS", "TRIBUNAL"
+    "PART_SOCIAL", "VALEUR_NOMINALE", "DATE_EXP_CERT_NEG", "STE_ADRESS", "TRIBUNAL"
 ]
 
 associe_headers = [

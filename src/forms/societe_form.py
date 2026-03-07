@@ -1,17 +1,23 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from tkcalendar import Calendar, DateEntry
-from ..utils.constants import DenSte, Formjur, Capital, PartsSocial, SteAdresse, Tribunnaux, Activities
-from ..utils.utils import ThemeManager, WidgetFactory, ToolTip
+from tkcalendar import DateEntry
+from typing import Optional
+from ..utils.constants import DenSte, Formjur, Capital, PartsSocial, SteAdresse, Tribunnaux
+from ..utils.utils import ThemeManager, WidgetFactory
 
 class SocieteForm(ttk.Frame):
-    def __init__(self, parent, values_dict=None):
+    def __init__(self, parent, theme_manager: Optional[ThemeManager] = None, values_dict=None):
         super().__init__(parent)
         self.parent = parent
         self.values = {}
 
+        # Backward compatibility: SocieteForm(parent, values_dict)
+        if isinstance(theme_manager, dict) and values_dict is None:
+            values_dict = theme_manager
+            theme_manager = None
+
         # Initialiser le gestionnaire de thème
-        self.theme_manager = ThemeManager(self.winfo_toplevel())
+        self.theme_manager = theme_manager or ThemeManager(self.winfo_toplevel())
         self.style = self.theme_manager.style
 
         # Liste pour stocker les références aux combobox
@@ -42,6 +48,7 @@ class SocieteForm(ttk.Frame):
         default_form_jur = defaults_mgr.get_default('societe', 'FormJur') or (Formjur[0] if Formjur else "")
         default_capital = defaults_mgr.get_default('societe', 'Capital') or (Capital[0] if Capital else "")
         default_parts_social = defaults_mgr.get_default('societe', 'PartsSocial') or (PartsSocial[0] if PartsSocial else "")
+        default_valeur_nominale = defaults_mgr.get_default('societe', 'ValeurNominale') or "100"
         default_ste_adresse = defaults_mgr.get_default('societe', 'SteAdresse') or (SteAdresse[0] if SteAdresse else "")
         default_tribunal = defaults_mgr.get_default('societe', 'Tribunal') or (Tribunnaux[0] if Tribunnaux else "")
 
@@ -52,8 +59,10 @@ class SocieteForm(ttk.Frame):
         import datetime
         today = datetime.date.today().strftime('%d/%m/%Y')
         self.date_ice_var = tk.StringVar(value=today)
+        self.date_expiration_certificat_negatif_var = tk.StringVar(value='')
         self.capital_var = tk.StringVar(value=default_capital)
         self.parts_social_var = tk.StringVar(value=default_parts_social)
+        self.valeur_nominale_var = tk.StringVar(value=default_valeur_nominale)
 
         # Load reference data from database
         self.ste_adresses = get_reference_data('SteAdresses')
@@ -66,152 +75,107 @@ class SocieteForm(ttk.Frame):
         self.activites_vars = []
 
     def setup_gui(self):
-        """Configure l'interface utilisateur principale"""
+        """Configure une mise en page compacte sans sous-blocs internes."""
         main_frame = ttk.Frame(self, padding=(10, 5))
         main_frame.pack(fill="both", expand=True)
 
-        # Configuration de la grille (2 colonnes)
-        main_frame.grid_columnconfigure(0, weight=1, uniform="col")
-        main_frame.grid_columnconfigure(1, weight=1, uniform="col")
+        fields = ttk.Frame(main_frame)
+        fields.pack(fill="x", padx=5, pady=(2, 4))
+        for col in range(6):
+            fields.columnconfigure(col, weight=1, uniform="societe_cols")
 
-        # Création des sections
-        self.create_identification_section(main_frame)
-        self.create_legal_section(main_frame)
-        self.create_address_section(main_frame)
+        def _cell(row: int, col: int, label_text: str, span: int = 1, pad: int = 8) -> ttk.Frame:
+            cell = ttk.Frame(fields)
+            cell.grid(
+                row=row,
+                column=col,
+                columnspan=span,
+                sticky="ew",
+                padx=(0, pad) if (col + span - 1) < 5 else (0, 0),
+                pady=(0, 4),
+            )
+            cell.columnconfigure(0, weight=1)
+            ttk.Label(cell, text=label_text, anchor="w").grid(row=0, column=0, sticky="w", pady=(0, 1))
+            return cell
+
+        # Ligne 1: 6 colonnes (Tribunal juste après Forme Juridique)
+        den_cell = _cell(0, 0, "Dénomination:")
+        den_combo = ttk.Combobox(den_cell, textvariable=self.den_ste_var, values=DenSte)
+        den_combo.grid(row=1, column=0, sticky="ew")
+        self.combos.append(den_combo)
+
+        form_cell = _cell(0, 1, "Forme Juridique:")
+        form_combo = ttk.Combobox(form_cell, textvariable=self.forme_jur_var, values=Formjur)
+        form_combo.grid(row=1, column=0, sticky="ew")
+        self.combos.append(form_combo)
+
+        tribunal_cell = _cell(0, 2, "Tribunal:")
+        tribunal_combo = ttk.Combobox(tribunal_cell, textvariable=self.tribunal_var, values=self.tribunaux)
+        tribunal_combo.grid(row=1, column=0, sticky="ew")
+        self.combos.append(tribunal_combo)
+
+        ice_cell = _cell(0, 3, "ICE:")
+        ttk.Entry(ice_cell, textvariable=self.ice_var).grid(row=1, column=0, sticky="ew")
+
+        date_cell = _cell(0, 4, "Date certificat négatif:")
+        DateEntry(
+            date_cell,
+            textvariable=self.date_ice_var,
+            date_pattern='dd/mm/yyyy',
+            width=12,
+        ).grid(row=1, column=0, sticky="ew")
+
+        date_exp_cell = _cell(0, 5, "Date expiration certificat négatif:")
+        DateEntry(
+            date_exp_cell,
+            textvariable=self.date_expiration_certificat_negatif_var,
+            date_pattern='dd/mm/yyyy',
+            width=12,
+        ).grid(row=1, column=0, sticky="ew")
+
+        # Ligne 2: Adresse en dernier (2 colonnes)
+        capital_cell = _cell(1, 0, "Capital:")
+        ttk.Entry(capital_cell, textvariable=self.capital_var).grid(row=1, column=0, sticky="ew")
+
+        parts_cell = _cell(1, 1, "Parts:")
+        ttk.Entry(parts_cell, textvariable=self.parts_social_var).grid(row=1, column=0, sticky="ew")
+
+        valeur_nominale_cell = _cell(1, 2, "Valeur nominale (DH):")
+        ttk.Entry(valeur_nominale_cell, textvariable=self.valeur_nominale_var).grid(row=1, column=0, sticky="ew")
+
+        adresse_cell = _cell(1, 3, "Adresse:", span=2)
+        adresse_combo = ttk.Combobox(adresse_cell, textvariable=self.ste_adress_var, values=self.ste_adresses)
+        adresse_combo.grid(row=1, column=0, sticky="ew")
+        self.combos.append(adresse_combo)
+
+        # Ligne 3+: activités
         self.create_activities_section(main_frame)
 
-    def create_identification_section(self, parent):
-        """Crée la section d'identification"""
-        frame = ttk.LabelFrame(parent, text="Identification", padding=(10, 5))
-        frame.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
-
-        # Container principal avec grid
-        grid = ttk.Frame(frame)
-        grid.pack(fill="x", padx=5, pady=5)
-        grid.columnconfigure(1, weight=1)
-
-        # Dénomination
-        ttk.Label(grid, text="Dénomination:", anchor="e", width=15).grid(
-            row=0, column=0, padx=(0, 5), pady=2)
-        combo = ttk.Combobox(grid, textvariable=self.den_ste_var,
-                           values=DenSte, width=30)
-        combo.grid(row=0, column=1, sticky="ew", pady=2)
-        self.combos.append(combo)
-
-        # Sous-frame pour ICE et Date
-        ice_frame = ttk.Frame(grid)
-        ice_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=2)
-        ice_frame.columnconfigure(1, weight=1)
-        ice_frame.columnconfigure(3, weight=1)
-
-        # ICE
-        ttk.Label(ice_frame, text="ICE:", anchor="e", width=12).grid(
-            row=0, column=0, padx=(0, 5))
-        ttk.Entry(ice_frame, textvariable=self.ice_var).grid(
-            row=0, column=1, sticky="ew", padx=(0, 15))
-
-        # Date ICE
-        ttk.Label(ice_frame, text="Date:", anchor="e", width=8).grid(
-            row=0, column=2, padx=(0, 5))
-        date_container = ttk.Frame(ice_frame)
-        date_container.grid(row=0, column=3, sticky="ew")
-
-        DateEntry(date_container, textvariable=self.date_ice_var,
-                 date_pattern='dd/mm/yyyy', width=12).pack(side="left", fill="x", expand=True)
-
-    def create_legal_section(self, parent):
-        """Crée la section légale"""
-        frame = ttk.LabelFrame(parent, text="Informations Légales", padding=(10, 5))
-        frame.grid(row=0, column=1, padx=5, pady=5, sticky="nsew")
-
-        # Container principal avec grid
-        grid = ttk.Frame(frame)
-        grid.pack(fill="x", padx=5, pady=5)
-        grid.columnconfigure(1, weight=1)
-
-        # Forme Juridique
-        ttk.Label(grid, text="Forme Juridique:", anchor="e", width=15).grid(
-            row=0, column=0, padx=(0, 5), pady=2)
-        combo = ttk.Combobox(grid, textvariable=self.forme_jur_var,
-                           values=Formjur, width=30)
-        combo.grid(row=0, column=1, sticky="ew", pady=2)
-        self.combos.append(combo)
-
-        # Sous-frame pour Capital et Parts
-        capital_frame = ttk.Frame(grid)
-        capital_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=2)
-        capital_frame.columnconfigure(1, weight=1)
-        capital_frame.columnconfigure(3, weight=1)
-
-        # Capital
-        ttk.Label(capital_frame, text="Capital:", anchor="e", width=12).grid(
-            row=0, column=0, padx=(0, 5))
-        ttk.Entry(capital_frame, textvariable=self.capital_var).grid(
-            row=0, column=1, sticky="ew", padx=(0, 15))
-
-        # Parts
-        ttk.Label(capital_frame, text="Parts:", anchor="e", width=8).grid(
-            row=0, column=2, padx=(0, 5))
-        ttk.Entry(capital_frame, textvariable=self.parts_social_var).grid(
-            row=0, column=3, sticky="ew")
-
-    def create_address_section(self, parent):
-        """Crée la section adresse"""
-        frame = ttk.LabelFrame(parent, text="Localisation", padding=(10, 5))
-        frame.grid(row=1, column=0, columnspan=2, padx=5, pady=5, sticky="ew")
-
-        # Container principal avec grid
-        grid = ttk.Frame(frame)
-        grid.pack(fill="x", padx=5, pady=5)
-        grid.columnconfigure(1, weight=1)
-
-        # Adresse — use data loaded from database
-        ttk.Label(grid, text="Adresse:", anchor="e", width=15).grid(
-            row=0, column=0, padx=(0, 5), pady=2)
-        combo = ttk.Combobox(grid, textvariable=self.ste_adress_var,
-                           values=self.ste_adresses, width=50)
-        combo.grid(row=0, column=1, sticky="ew", pady=2)
-        self.combos.append(combo)
-
-        # Tribunal — use data loaded from database
-        ttk.Label(grid, text="Tribunal:", anchor="e", width=15).grid(
-            row=1, column=0, padx=(0, 5), pady=2)
-        combo = ttk.Combobox(grid, textvariable=self.tribunal_var,
-                           values=self.tribunaux, width=50)
-        combo.grid(row=1, column=1, sticky="ew", pady=2)
-        self.combos.append(combo)
-
     def create_activities_section(self, parent):
-        """Crée la section des activités"""
+        """Crée une section activités compacte sans bloc interne."""
         from ..utils.utils import get_reference_data
 
-        frame = ttk.LabelFrame(parent, text="Activités", padding=(10, 5))
-        frame.grid(row=2, column=0, columnspan=2, padx=5, pady=5, sticky="ew")
+        section = ttk.Frame(parent)
+        section.pack(fill="x", padx=5, pady=(6, 2))
 
-        # Container pour les activités
-        content_frame = ttk.Frame(frame)
-        content_frame.pack(fill="x", padx=5, pady=5)
-        content_frame.columnconfigure(0, weight=1)
-
-        # Label d'information
-        info_label = ttk.Label(content_frame,
-                             text="Ajoutez jusqu'à 6 activités principales",
-                             anchor="center")
-        info_label.pack(pady=(0, 5))
-
-        # Container pour les activités
-        self.activities_container = ttk.Frame(content_frame)
-        self.activities_container.pack(fill="x", expand=True)
+        header = ttk.Frame(section)
+        header.pack(fill="x", pady=(0, 4))
+        ttk.Label(header, text="Activités:", anchor="w").pack(side="left")
+        ttk.Label(header, text="Ajoutez jusqu'à 6 activités principales", anchor="w").pack(side="left", padx=(10, 0))
 
         # Load activities from reference sheet
         self.activities_list = get_reference_data('Activites')
 
         # Bouton d'ajout
-        add_btn = WidgetFactory.create_button(content_frame,
+        add_btn = WidgetFactory.create_button(header,
                    text="➕ Ajouter une activité",
                    command=self.add_activity,
                    style='Success.TButton')
-        add_btn.pack(pady=3)
+        add_btn.pack(side="right")
+
+        # Container pour les activités
+        self.activities_container = ttk.Frame(section)
+        self.activities_container.pack(fill="x", expand=True, pady=(2, 0))
 
     def add_activity(self):
         """Ajoute une nouvelle activité"""
@@ -254,8 +218,11 @@ class SocieteForm(ttk.Frame):
             'forme_juridique': self.forme_jur_var.get(),
             'ice': self.ice_var.get(),
             'date_ice': self.date_ice_var.get(),
+            'date_certificat_negatif': self.date_ice_var.get(),
+            'date_expiration_certificat_negatif': self.date_expiration_certificat_negatif_var.get(),
             'capital': self.capital_var.get(),
             'parts_social': self.parts_social_var.get(),
+            'valeur_nominale': self.valeur_nominale_var.get(),
             'adresse': self.ste_adress_var.get(),
             'tribunal': self.tribunal_var.get(),
             'activites': [var.get() for var in self.activites_vars]
@@ -270,9 +237,13 @@ class SocieteForm(ttk.Frame):
         self.den_ste_var.set(values_dict.get('denomination', ''))
         self.forme_jur_var.set(values_dict.get('forme_juridique', ''))
         self.ice_var.set(values_dict.get('ice', ''))
-        self.date_ice_var.set(values_dict.get('date_ice', ''))
+        self.date_ice_var.set(values_dict.get('date_ice', values_dict.get('date_certificat_negatif', '')))
+        self.date_expiration_certificat_negatif_var.set(
+            values_dict.get('date_expiration_certificat_negatif', values_dict.get('date_exp_certificat_negatif', ''))
+        )
         self.capital_var.set(values_dict.get('capital', ''))
         self.parts_social_var.set(values_dict.get('parts_social', ''))
+        self.valeur_nominale_var.set(values_dict.get('valeur_nominale', values_dict.get('valeur_nominal', '')))
         self.ste_adress_var.set(values_dict.get('adresse', ''))
         self.tribunal_var.set(values_dict.get('tribunal', ''))
 

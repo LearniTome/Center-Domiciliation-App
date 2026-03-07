@@ -29,6 +29,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Process-local cache for reference sheets loaded from the Excel database.
+# Keyed by resolved DB path and invalidated when file mtime changes.
+_REFERENCE_DATA_CACHE = {}
+
 class ErrorHandler:
     """Gestionnaire d'erreurs centralisé pour l'application"""
     @staticmethod
@@ -649,7 +653,8 @@ class WidgetFactory:
         compound: str = 'left',
         icon_gap: int = 1,
     ):
-        WidgetFactory.ensure_icon_assets(download_missing=True)
+        # Keep startup fast: don't perform network downloads while creating UI buttons.
+        WidgetFactory.ensure_icon_assets(download_missing=False)
         original_text = str(text or '')
         detected_icon_key, clean_text = WidgetFactory._extract_icon_key_and_clean_text(text, icon_key)
         btn = ttk.Button(parent, text=clean_text, command=command, style=style, takefocus=False, compound=compound)
@@ -862,82 +867,89 @@ def ensure_excel_db(path, sheets: dict):
     return
 
 
-def get_reference_data(sheet_name: str, path: Optional[_Path] = None) -> list:
-    """Load reference data from a reference sheet (SteAdresses, Tribunaux, Activites, Nationalites, LieuxNaissance).
+def _reference_fallback_map() -> dict:
+    from . import constants as _const
+    return {
+        'SteAdresses': list(_const.SteAdresse),
+        'Tribunaux': list(_const.Tribunnaux),
+        'Activites': list(_const.Activities),
+        'Nationalites': list(_const.Nationalite),
+        'LieuxNaissance': ["Casablanca", "Rabat", "Fes", "Marrakech", "Agadir"],
+    }
 
-    Returns a list of values from the reference sheet. If the sheet doesn't exist or is empty,
-    returns a fallback list from constants.
 
-    Args:
-        sheet_name: Name of the reference sheet (e.g., 'SteAdresses', 'Tribunaux', etc.)
-        path: Path to the Excel workbook. If not provided, uses default DB path.
+def _normalize_reference_values(values) -> list:
+    normalized = []
+    for val in values:
+        text = str(val or '').strip()
+        if text:
+            normalized.append(text)
+    return normalized
 
-    Returns:
-        List of values from the sheet or from constants as fallback.
-    """
+
+def _load_reference_sheets_cached(db_path: _Path) -> dict:
+    fallback = _reference_fallback_map()
     try:
-        from . import constants as _const
-        import pandas as _pd
+        path_obj = _Path(db_path).resolve()
+    except Exception:
+        path_obj = _Path(db_path)
 
-        # Determine the DB path
+    cache_key = str(path_obj)
+    try:
+        mtime_ns = path_obj.stat().st_mtime_ns if path_obj.exists() else None
+    except Exception:
+        mtime_ns = None
+
+    cached = _REFERENCE_DATA_CACHE.get(cache_key)
+    if cached and cached.get('mtime_ns') == mtime_ns:
+        return dict(cached.get('sheets', {}))
+
+    sheets_data = {}
+    if path_obj.exists():
+        try:
+            excel_file = _pd.ExcelFile(path_obj)
+            for sheet_name in fallback.keys():
+                try:
+                    df = excel_file.parse(sheet_name=sheet_name, dtype=str)
+                    if df.empty or len(df.columns) == 0:
+                        sheets_data[sheet_name] = list(fallback[sheet_name])
+                    else:
+                        col_name = df.columns[0]
+                        values = _normalize_reference_values(df[col_name].fillna('').tolist())
+                        sheets_data[sheet_name] = values if values else list(fallback[sheet_name])
+                except Exception:
+                    sheets_data[sheet_name] = list(fallback[sheet_name])
+        except Exception:
+            logger.exception('Failed to load reference workbook cache from %s', path_obj)
+
+    for sheet_name, default_values in fallback.items():
+        sheets_data.setdefault(sheet_name, list(default_values))
+
+    _REFERENCE_DATA_CACHE[cache_key] = {
+        'mtime_ns': mtime_ns,
+        'sheets': dict(sheets_data),
+    }
+    return sheets_data
+
+
+def get_reference_data(sheet_name: str, path: Optional[_Path] = None) -> list:
+    """Load reference values from cache (invalidated by workbook mtime)."""
+    try:
         if path is None:
+            from . import constants as _const
             db_path = Path(__file__).resolve().parent.parent.parent / 'databases' / _const.DB_FILENAME
         else:
             db_path = _Path(path)
 
-        if not db_path.exists():
-            # Fallback to constants if DB doesn't exist
-            fallback_map = {
-                'SteAdresses': _const.SteAdresse,
-                'Tribunaux': _const.Tribunnaux,
-                'Activites': _const.Activities,
-                'Nationalites': _const.Nationalite,
-                'LieuxNaissance': ["Casablanca", "Rabat", "Fes", "Marrakech", "Agadir"]
-            }
-            return fallback_map.get(sheet_name, [])
+        sheet_data = _load_reference_sheets_cached(db_path)
+        if sheet_name in sheet_data:
+            return list(sheet_data[sheet_name])
 
-        try:
-            df = _pd.read_excel(db_path, sheet_name=sheet_name, dtype=str)
-        except Exception:
-            # Sheet doesn't exist, use fallback
-            fallback_map = {
-                'SteAdresses': _const.SteAdresse,
-                'Tribunaux': _const.Tribunnaux,
-                'Activites': _const.Activities,
-                'Nationalites': _const.Nationalite,
-                'LieuxNaissance': ["Casablanca", "Rabat", "Fes", "Marrakech", "Agadir"]
-            }
-            return fallback_map.get(sheet_name, [])
-
-        if df.empty:
-            # Sheet is empty, use fallback
-            fallback_map = {
-                'SteAdresses': _const.SteAdresse,
-                'Tribunaux': _const.Tribunnaux,
-                'Activites': _const.Activities,
-                'Nationalites': _const.Nationalite,
-                'LieuxNaissance': ["Casablanca", "Rabat", "Fes", "Marrakech", "Agadir"]
-            }
-            return fallback_map.get(sheet_name, [])
-
-        # Get the column name (first column)
-        col_name = df.columns[0]
-        # Return list of values, filtering out empty/NaN values
-        return [str(val).strip() for val in df[col_name].fillna('') if str(val).strip()]
-
+        return list(_reference_fallback_map().get(sheet_name, []))
     except Exception as e:
         logger.exception('Failed to get reference data for %s: %s', sheet_name, e)
-        # Final fallback to constants
         try:
-            from . import constants as _const
-            fallback_map = {
-                'SteAdresses': _const.SteAdresse,
-                'Tribunaux': _const.Tribunnaux,
-                'Activites': _const.Activities,
-                'Nationalites': _const.Nationalite,
-                'LieuxNaissance': ["Casablanca", "Rabat", "Fes", "Marrakech", "Agadir"]
-            }
-            return fallback_map.get(sheet_name, [])
+            return list(_reference_fallback_map().get(sheet_name, []))
         except Exception:
             return []
 
@@ -1095,8 +1107,11 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
             'forme_juridique': 'FORME_JUR',
             'ice': 'ICE',
             'date_ice': 'DATE_ICE',
+            'date_certificat_negatif': 'DATE_ICE',
+            'date_expiration_certificat_negatif': 'DATE_EXP_CERT_NEG',
             'capital': 'CAPITAL',
             'parts_social': 'PART_SOCIAL',
+            'valeur_nominale': 'VALEUR_NOMINALE',
             'adresse': 'STE_ADRESS',
             'tribunal': 'TRIBUNAL'
         }

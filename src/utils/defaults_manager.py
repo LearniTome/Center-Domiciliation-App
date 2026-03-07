@@ -43,6 +43,7 @@ class DefaultsManager:
                 'FormJur': constants.Formjur[0] if constants.Formjur else '',
                 'Capital': constants.Capital[0] if constants.Capital else '',
                 'PartsSocial': constants.PartsSocial[0] if constants.PartsSocial else '',
+                'ValeurNominale': '100',
                 'SteAdresse': constants.SteAdresse[0] if constants.SteAdresse else '',
                 'Tribunal': constants.Tribunnaux[0] if constants.Tribunnaux else '',
             },

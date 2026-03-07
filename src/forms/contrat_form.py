@@ -1,20 +1,27 @@
 import tkinter as tk
 from tkinter import ttk
 from tkcalendar import DateEntry
+from typing import Optional
 from ..utils.constants import Nbmois
-from ..utils.utils import ThemeManager, WidgetFactory
+from ..utils.utils import ThemeManager
 
 class ContratForm(ttk.Frame):
-    def __init__(self, parent, values_dict=None):
+    def __init__(self, parent, theme_manager: Optional[ThemeManager] = None, values_dict=None):
         super().__init__(parent)
         self.parent = parent
+        self.values = values_dict or {}
+
+        # Backward compatibility: ContratForm(parent, values_dict)
+        if isinstance(theme_manager, dict) and values_dict is None:
+            values_dict = theme_manager
+            theme_manager = None
         self.values = values_dict or {}
 
         # Nettoyage lors de la destruction
         self.bind("<Destroy>", self._cleanup)
 
         # Initialiser le gestionnaire de thème
-        self.theme_manager = ThemeManager(self.winfo_toplevel())
+        self.theme_manager = theme_manager or ThemeManager(self.winfo_toplevel())
         self.style = self.theme_manager.style
 
         # Initialisation des variables
@@ -55,7 +62,7 @@ class ContratForm(ttk.Frame):
         self.pack_demarrage_loyer_var = tk.StringVar(value='')
         
         # Renouvellement variables
-        self.type_renouvellement_var = tk.StringVar(value=TypeRenouvellement[0] if TypeRenouvellement else '')
+        self.type_renouvellement_var = tk.StringVar(value=self._default_renewal_period(TypeRenouvellement))
         self.tva_renouvellement_var = tk.StringVar(value='20')
         self.dh_ht_renouvellement_var = tk.StringVar(value='166.667')
         self.montant_ht_renouvellement_var = tk.StringVar(value='')
@@ -88,142 +95,56 @@ class ContratForm(ttk.Frame):
             self.dh_ht_renouvellement_var.trace('w', lambda *a: self._update_loyer_calculations())
 
     def setup_gui(self):
-        """Configure l'interface utilisateur principale"""
-        # Conteneur principal avec grille
+        """Configure une mise en page compacte sans sous-blocs internes."""
+        from ..utils.constants import TypeRenouvellement, TypeContratDomiciliation
+
         main_frame = ttk.Frame(self)
-        main_frame.pack(fill="both", expand=True, padx=5, pady=5)
+        main_frame.pack(fill="both", expand=True, padx=10, pady=6)
 
-        # Bloc 1: Informations contractuelles
-        dates_group = ttk.LabelFrame(main_frame, text="Infos Contrat", padding=(8, 6))
-        dates_group.pack(fill="x", padx=5, pady=(0, 8))
-        dates_group.grid_columnconfigure(0, weight=1)
-        dates_group.grid_columnconfigure(1, weight=1)
+        fields = ttk.Frame(main_frame)
+        fields.pack(fill="x")
+        for col in range(6):
+            fields.columnconfigure(col, weight=1, uniform="contrat_cols")
 
-        # Bloc 2: Conditions financières (2 colonnes)
-        finance_frame = ttk.Frame(main_frame)
-        finance_frame.pack(fill="x", padx=5, pady=(0, 8))
-        finance_frame.grid_columnconfigure(0, weight=1)
-        finance_frame.grid_columnconfigure(1, weight=1)
+        def _place(row: int, col: int, widget: ttk.Frame, span: int = 1, pad: int = 8):
+            widget.grid(
+                row=row,
+                column=col,
+                columnspan=span,
+                sticky="ew",
+                padx=(0, pad) if (col + span - 1) < 5 else (0, 0),
+                pady=(0, 5),
+            )
 
-        # Colonne gauche: période initiale
-        pack_group = ttk.LabelFrame(finance_frame, text="Initiale", padding=(8, 6))
-        pack_group.grid(row=0, column=0, padx=(0, 4), pady=0, sticky="nsew")
-        pack_group.grid_columnconfigure(0, weight=1)
-        pack_group.grid_columnconfigure(1, weight=1)
-
-        # Colonne droite: renouvellement
-        renewal_group = ttk.LabelFrame(finance_frame, text="Renouvellement", padding=(8, 6))
-        renewal_group.grid(row=0, column=1, padx=(4, 0), pady=0, sticky="nsew")
-        renewal_group.grid_columnconfigure(0, weight=1)
-        renewal_group.grid_columnconfigure(1, weight=1)
-
-        # Dates & Periods (2 columns)
-        # Date Contrat | Période
-        date_frame = self.create_date_field_group(dates_group, "Date Contrat", self.date_contrat_var)
-        date_frame.grid(row=0, column=0, padx=5, pady=5, sticky="ew")
-
-        period_frame = self.create_combo_field_group(dates_group, "Période de Contrat", self.period_var, Nbmois, bind_update=True)
-        period_frame.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
-
-        # Date Début | Date Fin
-        date_debut_frame = self.create_date_field_group(dates_group, "Date Début", self.date_debut_var, bind_update=True)
-        date_debut_frame.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
-
-        date_fin_frame = self.create_date_field_group(dates_group, "Date Fin", self.date_fin_var)
-        date_fin_frame.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
-
-        # Type de contrat de domiciliation
-        from ..utils.constants import TypeContratDomiciliation
-        type_contrat_frame = self.create_combo_field_group(
-            dates_group,
-            "Type de contrat de domiciliation",
+        # Ligne 1: infos contrat (6 colonnes)
+        _place(0, 0, self.create_date_field_group(fields, "Date Contrat", self.date_contrat_var))
+        _place(0, 1, self.create_combo_field_group(fields, "Période de Contrat", self.period_var, Nbmois, bind_update=True))
+        _place(0, 2, self.create_date_field_group(fields, "Date Début", self.date_debut_var, bind_update=True))
+        _place(0, 3, self.create_date_field_group(fields, "Date Fin", self.date_fin_var))
+        _place(0, 4, self.create_combo_field_group(
+            fields,
+            "Type contrat domiciliation",
             self.type_contrat_domiciliation_var,
             TypeContratDomiciliation
-        )
-        type_contrat_frame.grid(row=2, column=0, padx=5, pady=5, sticky="ew")
+        ))
+        _place(0, 5, self.create_entry_field_group(fields, "Autre (à préciser)", self.type_contrat_domiciliation_autre_var))
 
-        type_contrat_autre_frame = self.create_entry_field_group(
-            dates_group,
-            "Autre (à préciser)",
-            self.type_contrat_domiciliation_autre_var
-        )
-        type_contrat_autre_frame.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
+        # Ligne 2: période initiale (6 colonnes)
+        _place(1, 0, self.create_entry_field_group(fields, "Initial - Loyer Mensuel HT (DH)", self.dh_ht_var))
+        _place(1, 1, self.create_entry_field_group(fields, "Initial - Taux TVA (%)", self.tva_var))
+        _place(1, 2, self.create_entry_field_group(fields, "Initial - Loyer Mensuel TTC (DH)", self.prix_mensuel_var, readonly=True))
+        _place(1, 3, self.create_entry_field_group(fields, "Initial - Montant Loyer total HT", self.montant_ht_var, readonly=True))
+        _place(1, 4, self.create_entry_field_group(fields, "Initial - Montant Loyer total TTC", self.pack_demarrage_montant_var, readonly=True))
+        _place(1, 5, self.create_entry_field_group(fields, "Initial - Frais intermédiation", self.prix_inter_var))
 
-        # Période initiale: champs financiers principaux
-        dh_ht_frame = self.create_entry_field_group(pack_group, "Loyer mensuel HT (DH)", self.dh_ht_var)
-        dh_ht_frame.grid(row=0, column=0, padx=5, pady=5, sticky="ew")
-
-        tva_frame = self.create_entry_field_group(pack_group, "Taux TVA (%)", self.tva_var)
-        tva_frame.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
-
-        prix_frame = self.create_entry_field_group(pack_group, "Loyer mensuel TTC (DH)", self.prix_mensuel_var, readonly=True)
-        prix_frame.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
-
-        montant_ht_frame = self.create_entry_field_group(pack_group, "Montant total HT (période)", self.montant_ht_var, readonly=True)
-        montant_ht_frame.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
-
-        # Période initiale: total TTC + frais d'intermédiation
-        pack_montant_frame = self.create_entry_field_group(pack_group, "Montant total TTC (période) (DH)", self.pack_demarrage_montant_var, readonly=True)
-        pack_montant_frame.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
-
-        prix_inter_frame = self.create_entry_field_group(pack_group, "Frais d'intermédiation (DH)", self.prix_inter_var)
-        prix_inter_frame.grid(row=2, column=0, padx=5, pady=5, sticky="ew")
-
-        # Renouvellement: variables financières propres et calcul séparé
-        from ..utils.constants import TypeRenouvellement
-        renewal_ht_frame = self.create_entry_field_group(renewal_group, "Loyer mensuel HT (DH)", self.dh_ht_renouvellement_var)
-        renewal_ht_frame.grid(row=0, column=0, padx=5, pady=5, sticky="ew")
-
-        renewal_tva_frame = self.create_entry_field_group(renewal_group, "Taux TVA (%)", self.tva_renouvellement_var)
-        renewal_tva_frame.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
-
-        renewal_loyer_frame = self.create_entry_field_group(renewal_group, "Loyer mensuel TTC (DH)", self.loyer_renouvellement_mensuel_var, readonly=True)
-        renewal_loyer_frame.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
-
-        renewal_type_frame = self.create_combo_field_group(renewal_group, "Période de renouvellement", self.type_renouvellement_var, TypeRenouvellement)
-        renewal_type_frame.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
-
-        renewal_montant_ht_frame = self.create_entry_field_group(renewal_group, "Montant total HT (période)", self.montant_ht_renouvellement_var, readonly=True)
-        renewal_montant_ht_frame.grid(row=2, column=0, padx=5, pady=5, sticky="ew")
-
-        # Loyer annuel
-        renewal_annuel_frame = self.create_entry_field_group(renewal_group, "Loyer annuel (DH TTC)", self.loyer_renouvellement_annuel_var, readonly=True)
-        renewal_annuel_frame.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
+        # Ligne 3: renouvellement (6 colonnes)
+        _place(2, 0, self.create_entry_field_group(fields, "Renouv. - Loyer Mensuel HT (DH)", self.dh_ht_renouvellement_var))
+        _place(2, 1, self.create_entry_field_group(fields, "Renouv. - Taux TVA (%)", self.tva_renouvellement_var))
+        _place(2, 2, self.create_entry_field_group(fields, "Renouv. - Loyer Mensuel TTC (DH)", self.loyer_renouvellement_mensuel_var, readonly=True))
+        _place(2, 3, self.create_entry_field_group(fields, "Renouv. - Montant Loyer total HT", self.montant_ht_renouvellement_var, readonly=True))
+        _place(2, 4, self.create_entry_field_group(fields, "Renouv. - Montant Loyer total TTC", self.loyer_renouvellement_annuel_var, readonly=True))
+        _place(2, 5, self.create_combo_field_group(fields, "Renouv. - Période", self.type_renouvellement_var, TypeRenouvellement))
         self._update_loyer_calculations()
-
-    def create_fields_row1(self, parent):
-        """Crée la première ligne de champs"""
-        # Date Contrat
-        date_frame = self.create_date_field_group(parent, "Date Contrat",
-                                                self.date_contrat_var)
-        date_frame.grid(row=0, column=0, padx=5, pady=5, sticky="ew")
-
-        # Période de Contrat
-        period_frame = self.create_combo_field_group(parent, "Période de Contrat",
-                                                   self.period_var, Nbmois)
-        period_frame.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
-
-        # Prix mensuel
-        prix_frame = self.create_entry_field_group(parent, "Prix mensuel",
-                                                 self.prix_mensuel_var)
-        prix_frame.grid(row=0, column=2, padx=5, pady=5, sticky="ew")
-
-    def create_fields_row2(self, parent):
-        """Crée la deuxième ligne de champs"""
-        # Prix intermédiaire
-        prix_inter_frame = self.create_entry_field_group(parent, "Prix intermédiaire",
-                                                       self.prix_inter_var)
-        prix_inter_frame.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
-
-        # Date Début
-        date_debut_frame = self.create_date_field_group(parent, "Date Début",
-                                                      self.date_debut_var)
-        date_debut_frame.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
-
-        # Date Fin
-        date_fin_frame = self.create_date_field_group(parent, "Date Fin",
-                                                    self.date_fin_var)
-        date_fin_frame.grid(row=1, column=2, padx=5, pady=5, sticky="ew")
 
     def create_date_field_group(self, parent, label_text, variable, bind_update: bool = False):
         """Crée un groupe de champs pour les dates.
@@ -390,6 +311,17 @@ class ContratForm(ttk.Frame):
         except Exception:
             return None
 
+    @staticmethod
+    def _default_renewal_period(options) -> str:
+        """Return annual renewal label when available, else first option."""
+        if not options:
+            return ''
+        for option in options:
+            txt = str(option or '').strip().lower()
+            if 'annuel' in txt:
+                return str(option)
+        return str(options[0])
+
     def _update_loyer_calculations(self):
         # Calcul période initiale
         initial_dh_ht = self._parse_decimal(self.dh_ht_var.get())
@@ -451,7 +383,10 @@ class ContratForm(ttk.Frame):
             self.montant_ht_var.set(values.get('montant_ht', ''))
             self.pack_demarrage_montant_var.set(values.get('pack_demarrage_montant', ''))
             self.pack_demarrage_loyer_var.set(values.get('pack_demarrage_loyer', ''))
-            self.type_renouvellement_var.set(values.get('type_renouvellement', ''))
+            from ..utils.constants import TypeRenouvellement
+            self.type_renouvellement_var.set(
+                values.get('type_renouvellement', '') or self._default_renewal_period(TypeRenouvellement)
+            )
             self.tva_renouvellement_var.set(values.get('tva_renouvellement', values.get('tva', '20')))
             self.dh_ht_renouvellement_var.set(values.get('dh_ht_renouvellement', values.get('dh_ht', '')))
             self.montant_ht_renouvellement_var.set(values.get('montant_ht_renouvellement', ''))
@@ -480,7 +415,7 @@ class ContratForm(ttk.Frame):
         self.montant_ht_var.set('')
         self.pack_demarrage_montant_var.set('')
         self.pack_demarrage_loyer_var.set('')
-        self.type_renouvellement_var.set(TypeRenouvellement[0] if TypeRenouvellement else '')
+        self.type_renouvellement_var.set(self._default_renewal_period(TypeRenouvellement))
         self.tva_renouvellement_var.set('20')
         self.dh_ht_renouvellement_var.set('166.667')
         self.montant_ht_renouvellement_var.set('')

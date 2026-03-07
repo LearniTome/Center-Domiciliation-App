@@ -1,6 +1,7 @@
 import warnings
 import tkinter as tk
 from tkinter import ttk, messagebox
+from contextlib import nullcontext
 
 # Suppress known SyntaxWarning from tkcalendar about an invalid escape sequence in its font string
 # This is non-fatal; the package still works. We filter the specific message to avoid noisy output.
@@ -13,16 +14,15 @@ warnings.filterwarnings(
 from src.forms.main_form import MainForm
 from src.utils import WindowManager, ThemeManager, PathManager, ErrorHandler
 from src.utils.utils import WidgetFactory
-import pandas as pd
 import logging
 from tkinter import filedialog, simpledialog
 from typing import Optional
 import threading
-import time
 from src.utils.doc_generator import render_templates
 from pathlib import Path
 from src.utils import constants as _const
 from src.forms.generation_selector import show_generation_selector
+from src.utils.startup_profiler import StartupProfiler
 
 # Configuration du logging
 logging.basicConfig(
@@ -34,33 +34,71 @@ logger = logging.getLogger(__name__)
 
 class MainApp(tk.Tk):
     def __init__(self):
+        self.startup_profiler = StartupProfiler(enabled=True)
+        self._startup_profile_flushed = False
+
+        app_token = self.startup_profiler.start_span("MainApp.__init__")
+        tk_token = self.startup_profiler.start_span("tk.Tk.__init__")
         super().__init__()
+        self.startup_profiler.end_span(tk_token)
 
         # Configuration de la fenêtre principale
-        WindowManager.setup_window(self, "Genérateurs Docs Juridiques")
+        with self._startup_span("WindowManager.setup_window"):
+            WindowManager.setup_window(self, "Genérateurs Docs Juridiques")
 
         # Initialisation du thème
-        self.theme_manager = ThemeManager(self)
+        with self._startup_span("ThemeManager.__init__"):
+            self.theme_manager = ThemeManager(self)
         self.style = self.theme_manager.style
 
         # Dictionnaire pour stocker toutes les valeurs
         self.values = {}
 
         # Création de l'interface
-        self.setup_gui()
+        with self._startup_span("MainApp.setup_gui"):
+            self.setup_gui()
+        self.startup_profiler.end_span(app_token)
+        self.after_idle(self._finalize_startup_profile)
+
+    def _startup_span(self, name: str):
+        if not getattr(self, "startup_profiler", None):
+            return nullcontext()
+        try:
+            return self.startup_profiler.span(name)
+        except Exception:
+            return nullcontext()
+
+    def _finalize_startup_profile(self):
+        if self._startup_profile_flushed:
+            return
+        self._startup_profile_flushed = True
+        try:
+            self.startup_profiler.mark("MainApp.mainloop.first_idle")
+            out = self.startup_profiler.dump_json(Path("logs") / "startup_profile_last.json")
+            logger.info(self.startup_profiler.summary(top_n=20))
+            logger.info("Startup profile saved: %s", out)
+        except Exception:
+            logger.exception("Failed to write startup profile")
 
     def setup_gui(self):
         """Configure l'interface utilisateur principale"""
         # Create main container
-        self.main_container = ttk.Frame(self)
-        self.main_container.pack(fill='both', expand=True)
+        with self._startup_span("MainApp.setup_gui.main_container"):
+            self.main_container = ttk.Frame(self)
+            self.main_container.pack(fill='both', expand=True)
 
         # Create the main form
-        self.main_form = MainForm(self.main_container, self.values)
-        self.main_form.pack(fill='both', expand=True, padx=10, pady=10)
+        with self._startup_span("MainForm.__init__"):
+            self.main_form = MainForm(
+                self.main_container,
+                self.values,
+                startup_profiler=self.startup_profiler,
+            )
+            self.main_form.pack(fill='both', expand=True, padx=10, pady=10)
 
         # Create control buttons
-        self.setup_buttons()
+        with self._startup_span("MainApp.setup_buttons"):
+            self.setup_buttons()
 
     def setup_buttons(self):
         """Configure les boutons de contrôle"""
@@ -94,7 +132,7 @@ class MainApp(tk.Tk):
             row,
             text="Générer les documents",
             command=self.generate_documents,
-            style='Success.TButton'
+            style='Manage.TButton'
         )
         gen_btn.pack(side='left', padx=6, pady=3)
 
@@ -127,7 +165,7 @@ class MainApp(tk.Tk):
             self.main_form.finish_btn = _btn
 
             # Sauvegarder - SUCCESS GREEN
-            _btn = WidgetFactory.create_button(row, text="💾 Sauvegarder", command=self.main_form.save_current, style='Success.TButton')
+            _btn = WidgetFactory.create_button(row, text="💾 Sauvegarder", command=self.main_form.save_current, style='Secondary.TButton')
             _btn.pack(side='right', padx=6, pady=3)
             self.main_form.save_btn = _btn
 
@@ -290,6 +328,12 @@ class MainApp(tk.Tk):
     def generate_documents(self):
         """Open generation selector directly (all choices now live inside selector)."""
         try:
+            associe_form = getattr(getattr(self, 'main_form', None), 'associe_form', None)
+            if associe_form is not None and hasattr(associe_form, 'validate_for_submit'):
+                valid, _errors = associe_form.validate_for_submit(show_dialog=True)
+                if not valid:
+                    return
+
             self.collect_values()
 
             # Show generation selector - pass values and format for integrated generation
@@ -553,6 +597,12 @@ class MainApp(tk.Tk):
     def save_to_db(self):
         """Sauvegarde les données dans la base"""
         try:
+            associe_form = getattr(getattr(self, 'main_form', None), 'associe_form', None)
+            if associe_form is not None and hasattr(associe_form, 'validate_for_submit'):
+                valid, _errors = associe_form.validate_for_submit(show_dialog=True)
+                if not valid:
+                    return None
+
             self.collect_values()
 
             # Use centralized DB filename from constants

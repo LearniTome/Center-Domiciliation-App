@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Optional
 import logging
+from contextlib import nullcontext
 from .societe_form import SocieteForm
 from .associe_form import AssocieForm
 from .contrat_form import ContratForm
@@ -12,10 +13,11 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 class MainForm(ttk.Frame):
-    def __init__(self, parent, values_dict=None):
+    def __init__(self, parent, values_dict=None, startup_profiler=None):
         super().__init__(parent)
         self.parent = parent
         self.values = values_dict or {}
+        self.startup_profiler = startup_profiler
 
         # Initialize navigation button attributes with explicit types so
         # linters/type checkers know these exist and accept Button assignments.
@@ -38,10 +40,20 @@ class MainForm(ttk.Frame):
         self.style = self.theme_manager.style
 
         # Create scrollable container
-        self.setup_scrollable_container()
+        with self._profile_scope("MainForm.setup_scrollable_container"):
+            self.setup_scrollable_container()
 
         # Create forms
-        self.setup_forms()
+        with self._profile_scope("MainForm.setup_forms"):
+            self.setup_forms()
+
+    def _profile_scope(self, name: str):
+        if self.startup_profiler is None:
+            return nullcontext()
+        try:
+            return self.startup_profiler.span(name)
+        except Exception:
+            return nullcontext()
 
     def setup_scrollable_container(self):
         """Configure the scrollable container for all forms"""
@@ -121,15 +133,20 @@ class MainForm(ttk.Frame):
         self.current_page = 0
 
         # Create pages
-        self.create_societe_page()
-        self.create_associe_page()
-        self.create_contrat_page()
+        with self._profile_scope("MainForm.create_societe_page"):
+            self.create_societe_page()
+        with self._profile_scope("MainForm.create_associe_page"):
+            self.create_associe_page()
+        with self._profile_scope("MainForm.create_contrat_page"):
+            self.create_contrat_page()
 
         # Show first page
-        self.show_page(0)
+        with self._profile_scope("MainForm.show_page.initial"):
+            self.show_page(0)
 
         # Setup navigation controls
-        self.setup_navigation()
+        with self._profile_scope("MainForm.setup_navigation"):
+            self.setup_navigation()
 
     def create_section_header(self, parent, text, icon, row, column, columnspan=1):
         """Crée un en-tête de section stylisé"""
@@ -164,7 +181,8 @@ class MainForm(ttk.Frame):
         page.grid_rowconfigure(1, weight=1)
         page.grid_columnconfigure(0, weight=1)
         header = self.create_section_header(page, "Informations de la Société", "📝", 0, 0)
-        self.societe_form = SocieteForm(page, self.values.get('societe', {}))
+        with self._profile_scope("SocieteForm.__init__"):
+            self.societe_form = SocieteForm(page, self.theme_manager, self.values.get('societe', {}))
         self.societe_form.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
         self.pages.append(('societe', page, self.societe_form))
 
@@ -177,11 +195,12 @@ class MainForm(ttk.Frame):
         page.grid_columnconfigure(0, weight=1)
         header = self.create_section_header(page, "Informations des Associés", "👥", 0, 0)
         # AssocieForm expects a ThemeManager instance
-        self.associe_form = AssocieForm(
-            page,
-            self.theme_manager,
-            get_societe_totals=self._get_societe_totals_for_associes,
-        )
+        with self._profile_scope("AssocieForm.__init__"):
+            self.associe_form = AssocieForm(
+                page,
+                self.theme_manager,
+                get_societe_totals=self._get_societe_totals_for_associes,
+            )
         self.associe_form.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
         try:
             self.associe_form.bind_societe_totals_vars(
@@ -204,7 +223,8 @@ class MainForm(ttk.Frame):
         try:
             # add one initial associé if none exist yet
             if len(self.associe_form.associe_vars) == 0:
-                self.associe_form.add_associe()
+                with self._profile_scope("AssocieForm.add_initial_associe"):
+                    self.associe_form.add_associe()
         except Exception:
             # conservative: ignore errors here to avoid breaking startup
             pass
@@ -229,7 +249,8 @@ class MainForm(ttk.Frame):
         page.grid_rowconfigure(1, weight=1)
         page.grid_columnconfigure(0, weight=1)
         header = self.create_section_header(page, "Informations du Contrat", "📋", 0, 0)
-        self.contrat_form = ContratForm(page, self.values.get('contrat', {}))
+        with self._profile_scope("ContratForm.__init__"):
+            self.contrat_form = ContratForm(page, self.theme_manager, self.values.get('contrat', {}))
         self.contrat_form.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
         self.pages.append(('contrat', page, self.contrat_form))
 
@@ -322,6 +343,78 @@ class MainForm(ttk.Frame):
         dashboard = DashboardView(self.winfo_toplevel())  # Window is now modal by default
 
     def open_configuration(self):
+        """Open a lightweight configuration launcher with two actions."""
+        try:
+            top = tk.Toplevel(self.winfo_toplevel())
+            top.transient(self.winfo_toplevel())
+            top.title("Configuration")
+            top.geometry("420x220")
+            top.resizable(False, False)
+
+            try:
+                top.grab_set()
+            except Exception:
+                pass
+
+            main_frame = ttk.Frame(top, padding=14)
+            main_frame.pack(fill="both", expand=True)
+
+            ttk.Label(
+                main_frame,
+                text="⚙ Configuration",
+                font=("Segoe UI", 12, "bold"),
+            ).pack(anchor="w", pady=(0, 8))
+            ttk.Label(
+                main_frame,
+                text="Choisissez le module à ouvrir :",
+            ).pack(anchor="w", pady=(0, 10))
+
+            actions = ttk.Frame(main_frame)
+            actions.pack(fill="x", expand=True)
+
+            def _open_defaults():
+                try:
+                    top.destroy()
+                except Exception:
+                    pass
+                self._open_defaults_dialog()
+
+            def _open_analyzer():
+                try:
+                    top.destroy()
+                except Exception:
+                    pass
+                self._open_template_values_analyzer_dialog()
+
+            WidgetFactory.create_button(
+                actions,
+                text="⚙ Valeurs par défaut",
+                command=_open_defaults,
+                style="Success.TButton",
+            ).pack(fill="x", pady=(0, 8))
+
+            WidgetFactory.create_button(
+                actions,
+                text="📊 Analyse des valeurs templates",
+                command=_open_analyzer,
+                style="Refresh.TButton",
+            ).pack(fill="x", pady=(0, 8))
+
+            buttons = ttk.Frame(main_frame)
+            buttons.pack(fill="x")
+            WidgetFactory.create_button(
+                buttons,
+                text="❌ Fermer",
+                command=top.destroy,
+                style="Close.TButton",
+            ).pack(side="right")
+
+            WindowManager.center_window(top)
+        except Exception as e:
+            logger.exception("Erreur lors de l'ouverture de la configuration")
+            messagebox.showerror("Erreur", f"Impossible d'ouvrir la configuration: {e}")
+
+    def _open_defaults_dialog(self):
         """Open configuration dialog to manage default values for the entire application."""
         try:
             from ..utils.defaults_manager import get_defaults_manager
@@ -374,6 +467,7 @@ class MainForm(ttk.Frame):
                         ('FormJur', 'Forme juridique', constants.Formjur),
                         ('Capital', 'Capital', constants.Capital),
                         ('PartsSocial', 'Parts sociales', constants.PartsSocial),
+                        ('ValeurNominale', 'Valeur nominale', ['100']),
                         ('SteAdresse', 'Adresse', constants.SteAdresse),
                         ('Tribunal', 'Tribunal', constants.Tribunnaux),
                     ]
@@ -406,7 +500,7 @@ class MainForm(ttk.Frame):
 
                 scrollable_frame.bind(
                     "<Configure>",
-                    lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+                    lambda _event, c=canvas: c.configure(scrollregion=c.bbox("all"))
                 )
 
                 canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
@@ -457,7 +551,10 @@ class MainForm(ttk.Frame):
                     # Save to defaults manager
                     defaults_mgr.set_all_defaults(new_defaults)
                     
-                    # Notify parent window if callback exists
+                    try:
+                        self._on_defaults_changed()
+                    except Exception:
+                        pass
                     if hasattr(self.parent, '_on_defaults_changed'):
                         self.parent._on_defaults_changed()
                     
@@ -481,7 +578,10 @@ class MainForm(ttk.Frame):
                                 new_val = current_defaults.get(section_key, {}).get(field_key, '')
                                 var.set(str(new_val))
                         
-                        # Notify parent
+                        try:
+                            self._on_defaults_changed()
+                        except Exception:
+                            pass
                         if hasattr(self.parent, '_on_defaults_changed'):
                             self.parent._on_defaults_changed()
                         
@@ -511,6 +611,252 @@ class MainForm(ttk.Frame):
         except Exception as e:
             logger.exception('Erreur lors de l\'ouverture de la configuration')
             messagebox.showerror('Erreur', f"Impossible d'ouvrir la configuration: {e}")
+
+    def _open_template_values_analyzer_dialog(self):
+        """Open template variable analyzer with global and detailed views."""
+        try:
+            from ..utils.doc_generator import get_expected_context_keys
+            from ..utils.template_value_analyzer import analyze_templates, filter_analysis_rows
+
+            top = tk.Toplevel(self.winfo_toplevel())
+            top.transient(self.winfo_toplevel())
+            top.title("Configuration - Analyse des valeurs templates")
+            top.geometry("1200x760")
+            top.resizable(True, True)
+
+            try:
+                top.grab_set()
+            except Exception:
+                pass
+
+            main_frame = ttk.Frame(top, padding=10)
+            main_frame.pack(fill="both", expand=True)
+            main_frame.columnconfigure(0, weight=1)
+            main_frame.rowconfigure(3, weight=1)
+
+            ttk.Label(
+                main_frame,
+                text="📊 Analyse des valeurs templates",
+                font=("Segoe UI", 12, "bold"),
+            ).grid(row=0, column=0, sticky="w", pady=(0, 8))
+
+            filter_frame = ttk.Frame(main_frame)
+            filter_frame.grid(row=1, column=0, sticky="ew", pady=(0, 8))
+            for idx in range(8):
+                filter_frame.columnconfigure(idx, weight=1 if idx % 2 else 0)
+            filter_frame.columnconfigure(8, weight=0)
+
+            search_var = tk.StringVar()
+            template_var = tk.StringVar(value="Tous")
+            section_var = tk.StringVar(value="Tous")
+            coverage_var = tk.StringVar(value="Tous")
+            status_var = tk.StringVar(value="")
+            errors_var = tk.StringVar(value="")
+
+            ttk.Label(filter_frame, text="Recherche:").grid(row=0, column=0, sticky="w", padx=(0, 6))
+            search_entry = ttk.Entry(filter_frame, textvariable=search_var)
+            search_entry.grid(row=0, column=1, sticky="ew", padx=(0, 10))
+
+            ttk.Label(filter_frame, text="Template:").grid(row=0, column=2, sticky="w", padx=(0, 6))
+            template_combo = ttk.Combobox(filter_frame, textvariable=template_var, state="readonly", values=["Tous"])
+            template_combo.grid(row=0, column=3, sticky="ew", padx=(0, 10))
+
+            ttk.Label(filter_frame, text="Section:").grid(row=0, column=4, sticky="w", padx=(0, 6))
+            section_combo = ttk.Combobox(
+                filter_frame,
+                textvariable=section_var,
+                state="readonly",
+                values=["Tous", "societe", "associe", "contrat", "autre"],
+            )
+            section_combo.grid(row=0, column=5, sticky="ew", padx=(0, 10))
+
+            ttk.Label(filter_frame, text="Couverture:").grid(row=0, column=6, sticky="w", padx=(0, 6))
+            coverage_combo = ttk.Combobox(
+                filter_frame,
+                textvariable=coverage_var,
+                state="readonly",
+                values=["Tous", "couvert", "non couvert"],
+            )
+            coverage_combo.grid(row=0, column=7, sticky="ew", padx=(0, 10))
+
+            actions = ttk.Frame(filter_frame)
+            actions.grid(row=0, column=8, sticky="e")
+
+            notebook = ttk.Notebook(main_frame)
+            notebook.grid(row=3, column=0, sticky="nsew", pady=(0, 8))
+            global_tab = ttk.Frame(notebook)
+            detail_tab = ttk.Frame(notebook)
+            notebook.add(global_tab, text="Vue globale")
+            notebook.add(detail_tab, text="Vue détaillée")
+
+            for frame in (global_tab, detail_tab):
+                frame.columnconfigure(0, weight=1)
+                frame.rowconfigure(0, weight=1)
+
+            global_cols = ("variable", "occurrences", "templates_count", "section", "coverage")
+            detail_cols = ("template", "variable", "occurrences", "section", "coverage")
+
+            def _create_tree(parent, columns, headings):
+                container = ttk.Frame(parent)
+                container.grid(row=0, column=0, sticky="nsew")
+                container.columnconfigure(0, weight=1)
+                container.rowconfigure(0, weight=1)
+
+                tree = ttk.Treeview(container, columns=columns, show="headings")
+                y_scroll = ttk.Scrollbar(container, orient="vertical", command=tree.yview)
+                x_scroll = ttk.Scrollbar(container, orient="horizontal", command=tree.xview)
+                tree.configure(yscrollcommand=y_scroll.set, xscrollcommand=x_scroll.set)
+
+                tree.grid(row=0, column=0, sticky="nsew")
+                y_scroll.grid(row=0, column=1, sticky="ns")
+                x_scroll.grid(row=1, column=0, sticky="ew")
+
+                sort_state = {col: False for col in columns}
+
+                def _sort_by(col_name):
+                    reverse = sort_state.get(col_name, False)
+                    sort_state[col_name] = not reverse
+                    rows = [(tree.set(item_id, col_name), item_id) for item_id in tree.get_children("")]
+
+                    def _coerce(value):
+                        txt = str(value).replace(" ", "").replace(",", ".")
+                        try:
+                            return float(txt)
+                        except Exception:
+                            return str(value).lower()
+
+                    rows.sort(key=lambda item: _coerce(item[0]), reverse=reverse)
+                    for idx, (_, item_id) in enumerate(rows):
+                        tree.move(item_id, "", idx)
+
+                for col_name, heading in zip(columns, headings):
+                    tree.heading(col_name, text=heading, command=lambda c=col_name: _sort_by(c))
+                    tree.column(col_name, width=220 if col_name in ("variable", "template") else 130, anchor="w")
+                return tree
+
+            global_tree = _create_tree(
+                global_tab,
+                global_cols,
+                ("Variable", "Occurrences", "Nb templates", "Section", "Couverture"),
+            )
+            detail_tree = _create_tree(
+                detail_tab,
+                detail_cols,
+                ("Template", "Variable", "Occurrences", "Section", "Couverture"),
+            )
+
+            kpi_frame = ttk.Frame(main_frame)
+            kpi_frame.grid(row=2, column=0, sticky="ew", pady=(0, 8))
+            for idx in range(5):
+                kpi_frame.columnconfigure(idx, weight=1)
+
+            total_templates_var = tk.StringVar(value="Templates: 0")
+            total_occurrences_var = tk.StringVar(value="Occurrences: 0")
+            total_distinct_var = tk.StringVar(value="Variables distinctes: 0")
+            total_covered_var = tk.StringVar(value="Couvertes: 0")
+            total_uncovered_var = tk.StringVar(value="Non couvertes: 0")
+
+            ttk.Label(kpi_frame, textvariable=total_templates_var).grid(row=0, column=0, sticky="w")
+            ttk.Label(kpi_frame, textvariable=total_occurrences_var).grid(row=0, column=1, sticky="w")
+            ttk.Label(kpi_frame, textvariable=total_distinct_var).grid(row=0, column=2, sticky="w")
+            ttk.Label(kpi_frame, textvariable=total_covered_var).grid(row=0, column=3, sticky="w")
+            ttk.Label(kpi_frame, textvariable=total_uncovered_var).grid(row=0, column=4, sticky="w")
+
+            footer = ttk.Frame(main_frame)
+            footer.grid(row=4, column=0, sticky="ew")
+            footer.columnconfigure(0, weight=1)
+            ttk.Label(footer, textvariable=status_var).grid(row=0, column=0, sticky="w")
+            ttk.Label(footer, textvariable=errors_var, foreground="#c5865d").grid(row=1, column=0, sticky="w")
+
+            analysis_data = {"variables": [], "details": [], "summary": {}, "templates": [], "errors": []}
+
+            def _populate_tree(tree, rows, columns):
+                for item_id in tree.get_children(""):
+                    tree.delete(item_id)
+                for row in rows:
+                    tree.insert("", "end", values=[row.get(col, "") for col in columns])
+
+            def _apply_filters(_event=None):
+                global_rows = filter_analysis_rows(
+                    analysis_data.get("variables", []),
+                    search_text=search_var.get(),
+                    template_name=template_var.get(),
+                    section=section_var.get(),
+                    coverage=coverage_var.get(),
+                )
+                detail_rows = filter_analysis_rows(
+                    analysis_data.get("details", []),
+                    search_text=search_var.get(),
+                    template_name=template_var.get(),
+                    section=section_var.get(),
+                    coverage=coverage_var.get(),
+                )
+                _populate_tree(global_tree, global_rows, global_cols)
+                _populate_tree(detail_tree, detail_rows, detail_cols)
+                status_var.set(
+                    f"Global: {len(global_rows)} / {len(analysis_data.get('variables', []))} | "
+                    f"Détail: {len(detail_rows)} / {len(analysis_data.get('details', []))}"
+                )
+
+            def _refresh_analysis():
+                try:
+                    data = analyze_templates(
+                        PathManager.MODELS_DIR,
+                        context_keys=get_expected_context_keys(),
+                    )
+                    analysis_data.update(data)
+
+                    summary = data.get("summary", {})
+                    total_templates_var.set(f"Templates: {summary.get('total_templates', 0)}")
+                    total_occurrences_var.set(f"Occurrences: {summary.get('total_variable_occurrences', 0)}")
+                    total_distinct_var.set(f"Variables distinctes: {summary.get('total_distinct_variables', 0)}")
+                    total_covered_var.set(f"Couvertes: {summary.get('covered_variables', 0)}")
+                    total_uncovered_var.set(f"Non couvertes: {summary.get('uncovered_variables', 0)}")
+
+                    template_values = ["Tous"] + sorted(set(data.get("templates", [])))
+                    template_combo.configure(values=template_values)
+                    if template_var.get() not in template_values:
+                        template_var.set("Tous")
+
+                    if section_var.get() not in ("Tous", "societe", "associe", "contrat", "autre"):
+                        section_var.set("Tous")
+                    if coverage_var.get() not in ("Tous", "couvert", "non couvert"):
+                        coverage_var.set("Tous")
+
+                    error_count = len(data.get("errors", []))
+                    if error_count:
+                        errors_var.set(f"⚠ {error_count} template(s) non analysé(s). Voir logs.")
+                    else:
+                        errors_var.set("")
+
+                    _apply_filters()
+                except Exception as exc:
+                    logger.exception("Erreur lors de l'actualisation de l'analyse templates")
+                    messagebox.showerror("Erreur", f"Impossible d'analyser les templates: {exc}")
+
+            WidgetFactory.create_button(
+                actions,
+                text="🔄 Actualiser",
+                command=_refresh_analysis,
+                style="Refresh.TButton",
+            ).pack(side="left", padx=(0, 6))
+            WidgetFactory.create_button(
+                actions,
+                text="❌ Fermer",
+                command=top.destroy,
+                style="Close.TButton",
+            ).pack(side="left")
+
+            search_entry.bind("<KeyRelease>", _apply_filters)
+            template_var.trace_add("write", lambda *_args: _apply_filters())
+            section_var.trace_add("write", lambda *_args: _apply_filters())
+            coverage_var.trace_add("write", lambda *_args: _apply_filters())
+
+            _refresh_analysis()
+            WindowManager.center_window(top)
+        except Exception as e:
+            logger.exception("Erreur lors de l'ouverture de l'analyse des valeurs templates")
+            messagebox.showerror("Erreur", f"Impossible d'ouvrir l'analyse: {e}")
 
     def _on_defaults_changed(self):
         """Recharger les formulaires quand les défauts changent."""
@@ -615,6 +961,11 @@ class MainForm(ttk.Frame):
         if hasattr(form, 'get_values'):
             try:
                 vals = form.get_values()
+
+                if key == 'associes' and hasattr(form, 'validate_for_submit'):
+                    valid, _errors = form.validate_for_submit(show_dialog=True)
+                    if not valid:
+                        return
 
                 # If we're saving the societe page, check for existing company name and forbid duplicates
                 if key == 'societe':
@@ -770,7 +1121,8 @@ class MainForm(ttk.Frame):
                 # Map canonical DB fields back to form keys (reverse of write_records_to_db mapping)
                 soc_map = {
                     'DEN_STE': 'denomination', 'FORME_JUR': 'forme_juridique', 'ICE': 'ice',
-                    'DATE_ICE': 'date_ice', 'CAPITAL': 'capital', 'PART_SOCIAL': 'parts_social',
+                    'DATE_ICE': 'date_ice', 'DATE_EXP_CERT_NEG': 'date_expiration_certificat_negatif',
+                    'CAPITAL': 'capital', 'PART_SOCIAL': 'parts_social', 'VALEUR_NOMINALE': 'valeur_nominale',
                     'STE_ADRESS': 'adresse', 'TRIBUNAL': 'tribunal'
                 }
                 soc_vals = {}

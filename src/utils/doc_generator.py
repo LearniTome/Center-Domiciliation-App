@@ -55,6 +55,99 @@ RENAMED_CONTEXT_ALIASES = {
 }
 
 
+def _build_expected_context_key_sections() -> Dict[str, str]:
+    """Return supported template keys mapped to their logical section."""
+    section_map: Dict[str, str] = {}
+
+    def _add(section: str, *keys: str) -> None:
+        for key in keys:
+            if key:
+                section_map[str(key)] = section
+
+    # Nested roots available in rendering context.
+    _add("societe", "societe")
+    _add("associe", "associes", "associe")
+    _add("contrat", "contrat")
+    _add("autre", "values")
+
+    # Société-oriented keys
+    _add(
+        "societe",
+        "DEN_STE", "denomination", "denomination_sociale", "den_ste", "name",
+        "FORME_JUR", "forme_juridique",
+        "ICE", "ice",
+        "DATE_ICE", "date_ice", "date_certificat_negatif",
+        "DATE_EXP_CERT_NEG", "date_expiration_certificat_negatif",
+        "CAPITAL", "capital",
+        "PART_SOCIAL", "parts_social",
+        "VALEUR_NOMINALE", "valeur_nominale",
+        "STE_ADRESS", "adresse",
+        "TRIBUNAL", "tribunal",
+    )
+
+    # Associé/gérant-oriented keys
+    _add(
+        "associe",
+        "CIVIL", "civilite",
+        "PRENOM", "prenom",
+        "NOM", "nom",
+        "NATIONALITY", "nationalite",
+        "CIN_NUM", "num_piece",
+        "CIN_VALIDATY", "validite_piece",
+        "DATE_NAISS", "date_naiss",
+        "LIEU_NAISS", "lieu_naiss",
+        "ADRESSE", "PHONE", "EMAIL", "QUALITY",
+        "adresse", "telephone", "email", "qualite",
+        "PARTS", "parts", "num_parts",
+        "CAPITAL_DETENU", "capital_detenu",
+        "IS_GERANT", "est_gerant",
+        "GERANT_ADRESS", "GERANT_QUALITY", "GERANT_NOM", "GERANT_PRENOM",
+        "GERANT_PHONE", "GERANT_EMAIL", "GERANT_CIN",
+    )
+    for base in ("ADRESSE", "PHONE", "EMAIL", "QUALITY", "NOM", "PRENOM"):
+        _add("associe", f"ASSOCIE_{base}", f"{base}_ASSOCIE", base.lower())
+        camel = base[0].lower() + base[1:].lower()
+        _add("associe", f"{camel}Associe")
+
+    # Contrat-oriented keys
+    _add(
+        "contrat",
+        "DATE_CONTRAT", "date_contrat", "Date_Contrat", "DateContrat", "dateContrat", "DTAE_CONTRAT",
+        "PERIOD_DOMCIL", "period", "period_domcil",
+        "PRIX_CONTRAT", "prix_mensuel", "prix_contrat",
+        "PRIX_INTERMEDIARE_CONTRAT", "prix_inter", "prix_intermediare",
+        "DOM_DATEDEB", "date_debut", "dom_datedeb",
+        "DOM_DATEFIN", "date_fin", "dom_datefin",
+        "TYPE_CONTRAT_DOMICILIATION", "type_contrat_domiciliation",
+        "TYPE_CONTRAT_DOMICILIATION_AUTRE", "type_contrat_domiciliation_autre",
+        "CONTRAT_FORME_JURIDIQUE", "contrat_forme_juridique",
+    )
+
+    # Activity aliases
+    for idx in range(1, 7):
+        _add("societe", f"ACTIVITY{idx}", f"activity{idx}")
+
+    # Add aliases explicitly, preserving existing section inference if possible.
+    for old_key, new_key in RENAMED_CONTEXT_ALIASES.items():
+        inferred = section_map.get(old_key) or section_map.get(new_key) or "autre"
+        _add(inferred, old_key, new_key)
+
+    return section_map
+
+
+_EXPECTED_CONTEXT_KEY_SECTIONS = _build_expected_context_key_sections()
+
+
+def get_expected_context_key_sections() -> Dict[str, str]:
+    """Public API: keys the renderer can expose, grouped by section."""
+    return dict(_EXPECTED_CONTEXT_KEY_SECTIONS)
+
+
+def get_expected_context_keys() -> set[str]:
+    """Public API: keys potentially available in rendered template context."""
+    return set(_EXPECTED_CONTEXT_KEY_SECTIONS.keys())
+
+
 def _render_docx_template(template_path: Path, context: Dict, out_path: Path) -> None:
     """Render a docx template with docxtpl and save to out_path."""
     try:
@@ -288,8 +381,11 @@ def render_templates(
         # Societe mappings
         soc_map = {
             'denomination': 'DEN_STE', 'denomination_sociale': 'DEN_STE', 'den_ste': 'DEN_STE', 'name': 'DEN_STE',
-            'forme_juridique': 'FORME_JUR', 'ice': 'ICE', 'date_ice': 'DATE_ICE', 'capital': 'CAPITAL',
-            'parts_social': 'PART_SOCIAL', 'adresse': 'STE_ADRESS', 'tribunal': 'TRIBUNAL'
+            'forme_juridique': 'FORME_JUR', 'ice': 'ICE', 'date_ice': 'DATE_ICE',
+            'date_certificat_negatif': 'DATE_ICE',
+            'date_expiration_certificat_negatif': 'DATE_EXP_CERT_NEG',
+            'capital': 'CAPITAL', 'parts_social': 'PART_SOCIAL', 'valeur_nominale': 'VALEUR_NOMINALE',
+            'adresse': 'STE_ADRESS', 'tribunal': 'TRIBUNAL'
         }
         for fk, hk in soc_map.items():
             v = None
