@@ -246,6 +246,30 @@ class DashboardView(tk.Toplevel):
     def _load_data(self):
         """Load data from database (all three sheets)"""
         try:
+            def _normalize_contrats_df(df: pd.DataFrame) -> pd.DataFrame:
+                if df is None:
+                    return pd.DataFrame(columns=_const.contrat_headers)
+                out = df.copy()
+                aliases = getattr(_const, 'contrat_header_aliases', {}) or {}
+                for old_col, new_col in aliases.items():
+                    if old_col not in out.columns:
+                        continue
+                    if new_col not in out.columns:
+                        out[new_col] = out[old_col]
+                    else:
+                        try:
+                            old_vals = out[old_col].fillna('').astype(str).str.strip()
+                            new_vals = out[new_col].fillna('').astype(str).str.strip()
+                            mask = (new_vals == '') & (old_vals != '')
+                            out.loc[mask, new_col] = out.loc[mask, old_col]
+                        except Exception:
+                            pass
+                    try:
+                        out.drop(columns=[old_col], inplace=True)
+                    except Exception:
+                        pass
+                return out
+
             PathManager.ensure_directories()
             excel_path = PathManager.get_database_path('DataBase_domiciliation.xlsx')
 
@@ -255,6 +279,9 @@ class DashboardView(tk.Toplevel):
                     self._societes_df = pd.read_excel(excel_path, sheet_name='Societes', dtype=str).fillna('')
                     self._associes_df = pd.read_excel(excel_path, sheet_name='Associes', dtype=str).fillna('')
                     self._contrats_df = pd.read_excel(excel_path, sheet_name='Contrats', dtype=str).fillna('')
+                    self._contrats_df = _normalize_contrats_df(self._contrats_df).reindex(
+                        columns=_const.contrat_headers, fill_value=''
+                    )
                     # Initialize with societes data
                     self._df = self._societes_df
                 except Exception as e:

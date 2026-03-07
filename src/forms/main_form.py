@@ -814,9 +814,33 @@ class MainForm(ttk.Frame):
                             if not cands.empty:
                                 crow = cands.iloc[0]
                                 inverse_contrat_map = {
-                                    'DATE_CONTRAT': 'date_contrat', 'PERIOD_DOMCIL': 'period',
-                                    'PRIX_CONTRAT': 'prix_mensuel', 'PRIX_INTERMEDIARE_CONTRAT': 'prix_inter',
-                                    'DOM_DATEDEB': 'date_debut', 'DOM_DATEFIN': 'date_fin'
+                                    'DATE_CONTRAT': 'date_contrat',
+                                    'DUREE_CONTRAT_MOIS': 'period',
+                                    'LOYER_MENSUEL_TTC': 'prix_mensuel',
+                                    'FRAIS_INTERMEDIAIRE_CONTRAT': 'prix_inter',
+                                    'DATE_DEBUT_CONTRAT': 'date_debut',
+                                    'DATE_FIN_CONTRAT': 'date_fin',
+                                    'TAUX_TVA_POURCENT': 'tva',
+                                    'LOYER_MENSUEL_HT': 'dh_ht',
+                                    'MONTANT_TOTAL_HT_CONTRAT': 'montant_ht',
+                                    'MONTANT_PACK_DEMARRAGE_TTC': 'pack_demarrage_montant',
+                                    'LOYER_MENSUEL_PACK_DEMARRAGE_TTC': 'pack_demarrage_loyer',
+                                    'TYPE_RENOUVELLEMENT': 'type_renouvellement',
+                                    'TAUX_TVA_RENOUVELLEMENT_POURCENT': 'tva_renouvellement',
+                                    'LOYER_MENSUEL_HT_RENOUVELLEMENT': 'dh_ht_renouvellement',
+                                    'MONTANT_TOTAL_HT_RENOUVELLEMENT': 'montant_ht_renouvellement',
+                                    'LOYER_MENSUEL_RENOUVELLEMENT_TTC': 'loyer_renouvellement_mensuel',
+                                    'LOYER_ANNUEL_RENOUVELLEMENT_TTC': 'loyer_renouvellement_annuel',
+                                    # legacy columns fallback
+                                    'PERIOD_DOMCIL': 'period',
+                                    'PRIX_CONTRAT': 'prix_mensuel',
+                                    'PRIX_INTERMEDIARE_CONTRAT': 'prix_inter',
+                                    'DOM_DATEDEB': 'date_debut',
+                                    'DOM_DATEFIN': 'date_fin',
+                                    'PACK_DEMARRAGE_MONTANT_TTC': 'pack_demarrage_montant',
+                                    'PACK_DEMARRAGE_LOYER_MENSUEL_TTC': 'pack_demarrage_loyer',
+                                    'LOYER_RENOUVELLEMENT_MENSUEL_TTC': 'loyer_renouvellement_mensuel',
+                                    'LOYER_RENOUVELLEMENT_ANNUEL_TTC': 'loyer_renouvellement_annuel',
                                 }
                                 for col in crow.index:
                                     if col in inverse_contrat_map:

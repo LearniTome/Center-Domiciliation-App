@@ -650,6 +650,31 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
     # import constants lazily to avoid circular imports
     from . import constants as _const
 
+    def _normalize_contrat_columns(df):
+        """Rename legacy contract columns to the canonical names and merge values."""
+        if df is None or df.empty:
+            return df if df is not None else _pd.DataFrame(columns=_const.contrat_headers)
+        aliases = getattr(_const, 'contrat_header_aliases', {}) or {}
+        out = df.copy()
+        for old_col, new_col in aliases.items():
+            if old_col not in out.columns:
+                continue
+            if new_col not in out.columns:
+                out[new_col] = out[old_col]
+            else:
+                try:
+                    old_vals = out[old_col].fillna('').astype(str).str.strip()
+                    new_vals = out[new_col].fillna('').astype(str).str.strip()
+                    mask = (new_vals == '') & (old_vals != '')
+                    out.loc[mask, new_col] = out.loc[mask, old_col]
+                except Exception:
+                    pass
+            try:
+                out.drop(columns=[old_col], inplace=True)
+            except Exception:
+                pass
+        return out
+
     # Helper to load existing sheet into DataFrame safely
     def _load_sheet_df(sheet_name):
         try:
@@ -785,11 +810,30 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
         # Map keys used by ContratForm -> canonical headers
         map_c = {
             'date_contrat': 'DATE_CONTRAT',
-            # ContratForm uses 'period'
-            'period': 'PERIOD_DOMCIL',
-            # ContratForm uses 'prix_mensuel' and 'prix_inter'
-            'prix_mensuel': 'PRIX_CONTRAT', 'prix_inter': 'PRIX_INTERMEDIARE_CONTRAT',
-            'date_debut': 'DOM_DATEDEB', 'date_fin': 'DOM_DATEFIN'
+            'period': 'DUREE_CONTRAT_MOIS',
+            'prix_mensuel': 'LOYER_MENSUEL_TTC',
+            'prix_inter': 'FRAIS_INTERMEDIAIRE_CONTRAT',
+            'date_debut': 'DATE_DEBUT_CONTRAT',
+            'date_fin': 'DATE_FIN_CONTRAT',
+            'tva': 'TAUX_TVA_POURCENT',
+            'dh_ht': 'LOYER_MENSUEL_HT',
+            'montant_ht': 'MONTANT_TOTAL_HT_CONTRAT',
+            'pack_demarrage_montant': 'MONTANT_PACK_DEMARRAGE_TTC',
+            'pack_demarrage_loyer': 'LOYER_MENSUEL_PACK_DEMARRAGE_TTC',
+            'type_renouvellement': 'TYPE_RENOUVELLEMENT',
+            'tva_renouvellement': 'TAUX_TVA_RENOUVELLEMENT_POURCENT',
+            'dh_ht_renouvellement': 'LOYER_MENSUEL_HT_RENOUVELLEMENT',
+            'montant_ht_renouvellement': 'MONTANT_TOTAL_HT_RENOUVELLEMENT',
+            'loyer_renouvellement_mensuel': 'LOYER_MENSUEL_RENOUVELLEMENT_TTC',
+            'loyer_renouvellement_annuel': 'LOYER_ANNUEL_RENOUVELLEMENT_TTC',
+        }
+        numeric_contract_cols = {
+            'LOYER_MENSUEL_TTC', 'FRAIS_INTERMEDIAIRE_CONTRAT',
+            'TAUX_TVA_POURCENT', 'LOYER_MENSUEL_HT', 'MONTANT_TOTAL_HT_CONTRAT',
+            'MONTANT_PACK_DEMARRAGE_TTC', 'LOYER_MENSUEL_PACK_DEMARRAGE_TTC',
+            'TAUX_TVA_RENOUVELLEMENT_POURCENT', 'LOYER_MENSUEL_HT_RENOUVELLEMENT',
+            'MONTANT_TOTAL_HT_RENOUVELLEMENT', 'LOYER_MENSUEL_RENOUVELLEMENT_TTC',
+            'LOYER_ANNUEL_RENOUVELLEMENT_TTC',
         }
         for k, h in map_c.items():
             if k in contrat_vals:
@@ -805,7 +849,7 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
                     else:
                         s = str(v).strip()
                         # Try to parse prices/numeric fields into numbers
-                        if h in ('PRIX_CONTRAT', 'PRIX_INTERMEDIARE_CONTRAT'):
+                        if h in numeric_contract_cols:
                             try:
                                 ns = s.replace(' ', '').replace(',', '.')
                                 if '.' in ns:
@@ -856,6 +900,8 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
                     existing = _pd.read_excel(path, sheet_name=sheet_name, dtype=str)
                 except Exception:
                     existing = _pd.DataFrame(columns=headers)
+                if sheet_name == 'Contrats':
+                    existing = _normalize_contrat_columns(existing)
                 if set(existing.columns) != set(headers):
                     # rewrite sheet with canonical headers but keep existing rows aligned if possible
                     existing_aligned = existing.reindex(columns=headers, fill_value='')
@@ -878,6 +924,9 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
                 existing = _pd.read_excel(path, sheet_name=sheet_name, dtype=str)
             except Exception:
                 existing = _pd.DataFrame(columns=headers)
+            if sheet_name == 'Contrats':
+                existing = _normalize_contrat_columns(existing)
+                new_df = _normalize_contrat_columns(new_df)
 
             # Reindex both to canonical headers to avoid column shifts
             existing_aligned = existing.reindex(columns=headers, fill_value='')
@@ -1034,7 +1083,14 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
                                     except Exception:
                                         pass
                             # pricing / currency columns
-                            if h in ('PRIX_CONTRAT', 'PRIX_INTERMEDIARE_CONTRAT'):
+                            if h in (
+                                'PRIX_CONTRAT', 'PRIX_INTERMEDIARE_CONTRAT',
+                                'LOYER_MENSUEL_TTC', 'FRAIS_INTERMEDIAIRE_CONTRAT',
+                                'LOYER_MENSUEL_HT', 'MONTANT_TOTAL_HT_CONTRAT',
+                                'MONTANT_PACK_DEMARRAGE_TTC', 'LOYER_MENSUEL_PACK_DEMARRAGE_TTC',
+                                'LOYER_MENSUEL_HT_RENOUVELLEMENT', 'MONTANT_TOTAL_HT_RENOUVELLEMENT',
+                                'LOYER_MENSUEL_RENOUVELLEMENT_TTC', 'LOYER_ANNUEL_RENOUVELLEMENT_TTC'
+                            ):
                                 for row_idx in range(2, ws.max_row + 1):
                                     try:
                                         c = ws[f"{col_letter}{row_idx}"]
@@ -1212,6 +1268,42 @@ def migrate_excel_workbook(path):
                     existing = _pd.read_excel(path, sheet_name=cname, dtype=str)
                 except Exception:
                     existing = _pd.DataFrame(columns=_const.excel_sheets.get(cname, []))
+                if cname == 'Contrats':
+                    aliases = getattr(_const, 'contrat_header_aliases', {}) or {}
+                    for old_col, new_col in aliases.items():
+                        if old_col not in df.columns:
+                            continue
+                        if new_col not in df.columns:
+                            df[new_col] = df[old_col]
+                        else:
+                            try:
+                                old_vals = df[old_col].fillna('').astype(str).str.strip()
+                                new_vals = df[new_col].fillna('').astype(str).str.strip()
+                                mask = (new_vals == '') & (old_vals != '')
+                                df.loc[mask, new_col] = df.loc[mask, old_col]
+                            except Exception:
+                                pass
+                        try:
+                            df.drop(columns=[old_col], inplace=True)
+                        except Exception:
+                            pass
+                    for old_col, new_col in aliases.items():
+                        if old_col not in existing.columns:
+                            continue
+                        if new_col not in existing.columns:
+                            existing[new_col] = existing[old_col]
+                        else:
+                            try:
+                                old_vals = existing[old_col].fillna('').astype(str).str.strip()
+                                new_vals = existing[new_col].fillna('').astype(str).str.strip()
+                                mask = (new_vals == '') & (old_vals != '')
+                                existing.loc[mask, new_col] = existing.loc[mask, old_col]
+                            except Exception:
+                                pass
+                        try:
+                            existing.drop(columns=[old_col], inplace=True)
+                        except Exception:
+                            pass
                 # Align legacy df to canonical headers to ensure correct column placement
                 canonical_cols = _const.excel_sheets.get(cname, [])
                 df_aligned = df.reindex(columns=canonical_cols, fill_value='')

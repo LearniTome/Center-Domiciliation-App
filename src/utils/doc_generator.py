@@ -9,6 +9,51 @@ import time
 
 logger = logging.getLogger(__name__)
 
+RENAMED_CONTEXT_ALIASES = {
+    "DEN_STE": "DENOMINATION_SOCIALE",
+    "FORME_JUR": "FORME_JURIDIQUE",
+    "ICE": "NUMERO_ICE",
+    "DATE_ICE": "DATE_IMMATRICULATION_ICE",
+    "CAPITAL": "CAPITAL_SOCIAL",
+    "PART_SOCIAL": "NOMBRE_PARTS_SOCIALES",
+    "STE_ADRESS": "ADRESSE_SIEGE_SOCIAL",
+    "TRIBUNAL": "TRIBUNAL_COMPETENT",
+    "CIVIL": "CIVILITE_ASSOCIE",
+    "PRENOM": "PRENOM_ASSOCIE",
+    "NOM": "NOM_ASSOCIE",
+    "NATIONALITY": "NATIONALITE_ASSOCIE",
+    "CIN_NUM": "NUMERO_CIN_ASSOCIE",
+    "CIN_VALIDATY": "DATE_VALIDITE_CIN_ASSOCIE",
+    "DATE_NAISS": "DATE_NAISSANCE_ASSOCIE",
+    "LIEU_NAISS": "LIEU_NAISSANCE_ASSOCIE",
+    "ADRESSE": "ADRESSE_ASSOCIE",
+    "PHONE": "TELEPHONE_ASSOCIE",
+    "EMAIL": "EMAIL_ASSOCIE",
+    "PARTS": "NOMBRE_PARTS_ASSOCIE",
+    "CAPITAL_DETENU": "CAPITAL_DETENU_ASSOCIE",
+    "IS_GERANT": "EST_GERANT",
+    "QUALITY": "QUALITE_ASSOCIE",
+    "GERANT_ADRESS": "ADRESSE_GERANT",
+    "GERANT_QUALITY": "QUALITE_GERANT",
+    "GERANT_NOM": "NOM_GERANT",
+    "GERANT_PRENOM": "PRENOM_GERANT",
+    "GERANT_PHONE": "TELEPHONE_GERANT",
+    "GERANT_EMAIL": "EMAIL_GERANT",
+    "GERANT_CIN": "NUMERO_CIN_GERANT",
+    "PERIOD_DOMCIL": "DUREE_CONTRAT_MOIS",
+    "PRIX_CONTRAT": "LOYER_MENSUEL_TTC",
+    "PRIX_INTERMEDIARE_CONTRAT": "FRAIS_INTERMEDIAIRE_CONTRAT",
+    "DOM_DATEDEB": "DATE_DEBUT_CONTRAT",
+    "DOM_DATEFIN": "DATE_FIN_CONTRAT",
+    "PACK_DEMARRAGE_MONTANT_TTC": "MONTANT_PACK_DEMARRAGE_TTC",
+    "PACK_DEMARRAGE_LOYER_MENSUEL_TTC": "LOYER_MENSUEL_PACK_DEMARRAGE_TTC",
+    "LOYER_RENOUVELLEMENT_MENSUEL_TTC": "LOYER_MENSUEL_RENOUVELLEMENT_TTC",
+    "LOYER_RENOUVELLEMENT_ANNUEL_TTC": "LOYER_ANNUEL_RENOUVELLEMENT_TTC",
+    "TVA": "TAUX_TVA_POURCENT",
+    "DH_HT": "LOYER_MENSUEL_HT",
+    "MONTANT_HT": "MONTANT_TOTAL_HT_CONTRAT",
+}
+
 
 def _render_docx_template(template_path: Path, context: Dict, out_path: Path) -> None:
     """Render a docx template with docxtpl and save to out_path."""
@@ -397,6 +442,9 @@ def render_templates(
             except Exception:
                 # non-fatal
                 pass
+        for old_key, new_key in RENAMED_CONTEXT_ALIASES.items():
+            if old_key in ctx and ctx.get(new_key) in (None, ''):
+                ctx[new_key] = ctx.get(old_key)
         return ctx
 
     if templates_list:
