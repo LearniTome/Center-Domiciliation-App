@@ -15,6 +15,15 @@ Nbmois = ["06", "12", "15", "24"]
 # Renewal types
 TypeRenouvellement = ["Mensuel", "Trimestriel", "Annuel", "2 ans", "3 ans", "4 ans", "5 ans"]
 
+# Contract domiciliation types
+TypeContratDomiciliation = [
+    "Personne Morale",
+    "Personne Physique",
+    "Association",
+    "Fondation",
+    "Autres",
+]
+
 # Company capital options
 Capital = ["10 000", "50 000", "100 000"]
 
@@ -63,6 +72,7 @@ associe_headers = [
 
 contrat_headers = [
     "ID_CONTRAT", "ID_SOCIETE", "DATE_CONTRAT", "DUREE_CONTRAT_MOIS",
+    "TYPE_CONTRAT_DOMICILIATION", "TYPE_CONTRAT_DOMICILIATION_AUTRE",
     "LOYER_MENSUEL_TTC", "FRAIS_INTERMEDIAIRE_CONTRAT", "DATE_DEBUT_CONTRAT",
     "DATE_FIN_CONTRAT", "TAUX_TVA_POURCENT", "LOYER_MENSUEL_HT", "MONTANT_TOTAL_HT_CONTRAT",
     "MONTANT_PACK_DEMARRAGE_TTC", "LOYER_MENSUEL_PACK_DEMARRAGE_TTC",

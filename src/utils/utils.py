@@ -811,6 +811,8 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
         map_c = {
             'date_contrat': 'DATE_CONTRAT',
             'period': 'DUREE_CONTRAT_MOIS',
+            'type_contrat_domiciliation': 'TYPE_CONTRAT_DOMICILIATION',
+            'type_contrat_domiciliation_autre': 'TYPE_CONTRAT_DOMICILIATION_AUTRE',
             'prix_mensuel': 'LOYER_MENSUEL_TTC',
             'prix_inter': 'FRAIS_INTERMEDIAIRE_CONTRAT',
             'date_debut': 'DATE_DEBUT_CONTRAT',

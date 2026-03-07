@@ -386,7 +386,11 @@ def render_templates(
             'date_contrat': 'DATE_CONTRAT', 'period': 'PERIOD_DOMCIL', 'period_domcil': 'PERIOD_DOMCIL',
             'prix_mensuel': 'PRIX_CONTRAT', 'prix_inter': 'PRIX_INTERMEDIARE_CONTRAT',
             'prix_contrat': 'PRIX_CONTRAT', 'prix_intermediare': 'PRIX_INTERMEDIARE_CONTRAT',
-            'date_debut': 'DOM_DATEDEB', 'date_fin': 'DOM_DATEFIN', 'dom_datedeb': 'DOM_DATEDEB', 'dom_datefin': 'DOM_DATEFIN'
+            'date_debut': 'DOM_DATEDEB', 'date_fin': 'DOM_DATEFIN', 'dom_datedeb': 'DOM_DATEDEB', 'dom_datefin': 'DOM_DATEFIN',
+            'type_contrat_domiciliation': 'TYPE_CONTRAT_DOMICILIATION',
+            'type_contrat_domiciliation_autre': 'TYPE_CONTRAT_DOMICILIATION_AUTRE',
+            # Compatibility input key used in some older payloads/templates.
+            'contrat_forme_juridique': 'CONTRAT_FORME_JURIDIQUE',
         }
         for fk, hk in contrat_map.items():
             v = None
@@ -445,6 +449,9 @@ def render_templates(
         for old_key, new_key in RENAMED_CONTEXT_ALIASES.items():
             if old_key in ctx and ctx.get(new_key) in (None, ''):
                 ctx[new_key] = ctx.get(old_key)
+        # Backward compatibility for legacy templates still using this variable name.
+        if ctx.get('TYPE_CONTRAT_DOMICILIATION') and not ctx.get('CONTRAT_FORME_JURIDIQUE'):
+            ctx['CONTRAT_FORME_JURIDIQUE'] = ctx.get('TYPE_CONTRAT_DOMICILIATION')
         return ctx
 
     if templates_list:

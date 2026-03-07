@@ -816,6 +816,8 @@ class MainForm(ttk.Frame):
                                 inverse_contrat_map = {
                                     'DATE_CONTRAT': 'date_contrat',
                                     'DUREE_CONTRAT_MOIS': 'period',
+                                    'TYPE_CONTRAT_DOMICILIATION': 'type_contrat_domiciliation',
+                                    'TYPE_CONTRAT_DOMICILIATION_AUTRE': 'type_contrat_domiciliation_autre',
                                     'LOYER_MENSUEL_TTC': 'prix_mensuel',
                                     'FRAIS_INTERMEDIAIRE_CONTRAT': 'prix_inter',
                                     'DATE_DEBUT_CONTRAT': 'date_debut',

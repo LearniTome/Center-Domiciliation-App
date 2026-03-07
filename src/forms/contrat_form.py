@@ -26,7 +26,7 @@ class ContratForm(ttk.Frame):
     def initialize_variables(self):
         """Initialise les variables du formulaire"""
         import datetime
-        from ..utils.constants import Nbmois, TypeRenouvellement
+        from ..utils.constants import Nbmois, TypeRenouvellement, TypeContratDomiciliation
         from ..utils.defaults_manager import get_defaults_manager
 
         today = datetime.date.today().strftime('%d/%m/%Y')
@@ -38,6 +38,10 @@ class ContratForm(ttk.Frame):
         # Defaults: today's date for contract and start, default period from config
         self.date_contrat_var = tk.StringVar(value=today)
         self.period_var = tk.StringVar(value=default_period)
+        self.type_contrat_domiciliation_var = tk.StringVar(
+            value=TypeContratDomiciliation[0] if TypeContratDomiciliation else ''
+        )
+        self.type_contrat_domiciliation_autre_var = tk.StringVar(value='')
         self.prix_mensuel_var = tk.StringVar(value='')
         self.prix_inter_var = tk.StringVar(value='')
         self.date_debut_var = tk.StringVar(value=today)
@@ -127,6 +131,23 @@ class ContratForm(ttk.Frame):
 
         date_fin_frame = self.create_date_field_group(dates_group, "Date Fin", self.date_fin_var)
         date_fin_frame.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
+
+        # Type de contrat de domiciliation
+        from ..utils.constants import TypeContratDomiciliation
+        type_contrat_frame = self.create_combo_field_group(
+            dates_group,
+            "Type de contrat de domiciliation",
+            self.type_contrat_domiciliation_var,
+            TypeContratDomiciliation
+        )
+        type_contrat_frame.grid(row=2, column=0, padx=5, pady=5, sticky="ew")
+
+        type_contrat_autre_frame = self.create_entry_field_group(
+            dates_group,
+            "Autre (à préciser)",
+            self.type_contrat_domiciliation_autre_var
+        )
+        type_contrat_autre_frame.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
 
         # Période initiale: champs financiers principaux
         dh_ht_frame = self.create_entry_field_group(pack_group, "Loyer mensuel HT (DH)", self.dh_ht_var)
@@ -258,6 +279,8 @@ class ContratForm(ttk.Frame):
         return {
             'date_contrat': self.date_contrat_var.get(),
             'period': self.period_var.get(),
+            'type_contrat_domiciliation': self.type_contrat_domiciliation_var.get(),
+            'type_contrat_domiciliation_autre': self.type_contrat_domiciliation_autre_var.get(),
             'prix_mensuel': self.prix_mensuel_var.get(),
             'prix_inter': self.prix_inter_var.get(),
             'date_debut': self.date_debut_var.get(),
@@ -417,6 +440,8 @@ class ContratForm(ttk.Frame):
         if values:
             self.date_contrat_var.set(values.get('date_contrat', ''))
             self.period_var.set(values.get('period', ''))
+            self.type_contrat_domiciliation_var.set(values.get('type_contrat_domiciliation', ''))
+            self.type_contrat_domiciliation_autre_var.set(values.get('type_contrat_domiciliation_autre', ''))
             self.prix_mensuel_var.set(values.get('prix_mensuel', ''))
             self.prix_inter_var.set(values.get('prix_inter', ''))
             self.date_debut_var.set(values.get('date_debut', ''))
@@ -439,11 +464,13 @@ class ContratForm(ttk.Frame):
     def reset(self):
         """Réinitialise complètement le formulaire"""
         import datetime
-        from ..utils.constants import Nbmois, TypeRenouvellement
+        from ..utils.constants import Nbmois, TypeRenouvellement, TypeContratDomiciliation
         today = datetime.date.today().strftime('%d/%m/%Y')
 
         self.date_contrat_var.set(today)
         self.period_var.set((Nbmois[1] if len(Nbmois) > 1 else (Nbmois[0] if Nbmois else '')))
+        self.type_contrat_domiciliation_var.set(TypeContratDomiciliation[0] if TypeContratDomiciliation else '')
+        self.type_contrat_domiciliation_autre_var.set('')
         self.prix_mensuel_var.set('')
         self.prix_inter_var.set('')
         self.date_debut_var.set(today)
