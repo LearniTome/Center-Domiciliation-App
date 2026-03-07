@@ -738,7 +738,11 @@ class MainForm(ttk.Frame):
 
                 for col_name, heading in zip(columns, headings):
                     tree.heading(col_name, text=heading, command=lambda c=col_name: _sort_by(c))
-                    tree.column(col_name, width=220 if col_name in ("variable", "template") else 130, anchor="w")
+                    tree.column(
+                        col_name,
+                        width=220 if col_name in ("variable", "template") else 130,
+                        anchor="center",
+                    )
                 return tree
 
             global_tree = _create_tree(
