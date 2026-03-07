@@ -12,6 +12,9 @@ Formjur = ["SARL AU", "SARL", "Personne Physique", "SA"]
 # Contract durations in months
 Nbmois = ["06", "12", "15", "24"]
 
+# Renewal types
+TypeRenouvellement = ["Mensuel", "Trimestriel", "Annuel", "2 ans", "3 ans", "4 ans", "5 ans"]
+
 # Company capital options
 Capital = ["10 000", "50 000", "100 000"]
 
@@ -61,7 +64,8 @@ associe_headers = [
 contrat_headers = [
     "ID_CONTRAT", "ID_SOCIETE", "DATE_CONTRAT", "PERIOD_DOMCIL",
     "PRIX_CONTRAT", "PRIX_INTERMEDIARE_CONTRAT", "DOM_DATEDEB",
-    "DOM_DATEFIN"
+    "DOM_DATEFIN", "PACK_DEMARRAGE_MONTANT_TTC", "PACK_DEMARRAGE_LOYER_MENSUEL_TTC",
+    "TYPE_RENOUVELLEMENT", "LOYER_RENOUVELLEMENT_MENSUEL_TTC", "LOYER_RENOUVELLEMENT_ANNUEL_TTC"
 ]
 
 # Reference sheets for dropdown lists and lookups
