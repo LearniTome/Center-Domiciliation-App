@@ -74,7 +74,7 @@ class MainApp(tk.Tk):
         # Left-side primary buttons (Configuration, Dashboard, Generate)
         # Configuration button (opens MainForm configuration dialog)
         try:
-            cfg_btn = WidgetFactory.create_button(row, text="⚙ Configuration", command=self.main_form.open_configuration, style='Secondary.TButton')
+            cfg_btn = WidgetFactory.create_button(row, text="⚙ Configuration", command=self.main_form.open_configuration, style='Refresh.TButton')
             cfg_btn.pack(side='left', padx=6)
             # attach to main_form for state updates
             self.main_form.config_btn = cfg_btn
@@ -86,7 +86,7 @@ class MainApp(tk.Tk):
             row,
             text="📊 Tableau de bord",
             command=self.main_form.show_dashboard,
-            style='Secondary.TButton'
+            style='View.TButton'
         ).pack(side='left', padx=6)
 
         # Single generation button (modern style - SUCCESS GREEN)
@@ -132,7 +132,7 @@ class MainApp(tk.Tk):
             self.main_form.save_btn = _btn
 
             # Nouvelle (will appear left-most among the right cluster) - SECONDARY
-            WidgetFactory.create_button(row, text="🆕 Nouvelle", command=self.clear_form, style='Secondary.TButton').pack(side='right', padx=6, pady=3)
+            WidgetFactory.create_button(row, text="🆕 Nouvelle", command=self.clear_form, style='Copy.TButton').pack(side='right', padx=6, pady=3)
         except Exception:
             # If main_form isn't ready for some reason, ignore and continue
             pass
@@ -288,51 +288,18 @@ class MainApp(tk.Tk):
         return result
 
     def generate_documents(self):
-        """Unified document generation flow: ask for format, save data, then show selector.
-
-        The selector will handle template selection, auto-selection, and generation directly.
-        """
+        """Open generation selector directly (all choices now live inside selector)."""
         try:
             self.collect_values()
 
-            # Ask for output format FIRST (Word/PDF/Both)
-            format_choice = self._ask_output_format()
-            if format_choice is None:
-                return  # User cancelled
-
-            # Ask the user whether they want to save before generating - USE CUSTOM DARK MODE DIALOG
-            choice = self._ask_yes_no_cancel(
-                'Sauvegarder avant génération',
-                'Voulez-vous sauvegarder les données dans la base avant de générer les documents ?\n\nOui = sauvegarder puis générer\nNon = générer sans sauvegarder\nAnnuler = annuler la génération'
-            )
-
-            if choice is None:
-                # User cancelled
-                return
-
-            if choice:
-                # User chose to save before generation
-                try:
-                    db_path = self.save_to_db()
-                except Exception as _err:
-                    logger.exception('Erreur lors de la sauvegarde avant génération: %s', _err)
-                    messagebox.showwarning('Sauvegarde échouée', "La sauvegarde a échoué. La génération a été annulée.")
-                    return
-                if not db_path:
-                    messagebox.showwarning('Sauvegarde manquante', 'La sauvegarde a échoué ou a été annulée. La génération a été annulée.')
-                    return
-            else:
-                # User chose NOT to save; confirm they want to proceed - USE CUSTOM DARK MODE DIALOG
-                proceed = self._ask_yes_no(
-                    'Générer sans sauvegarder',
-                    'Vous avez choisi de ne pas sauvegarder. Confirmez-vous la génération sans enregistrer les données ?'
-                )
-                if not proceed:
-                    return
-
             # Show generation selector - pass values and format for integrated generation
-            # The selector now handles template selection, auto-selection, and generation directly
-            selector_result = show_generation_selector(self, self.values, format_choice)
+            # The selector now handles template selection, output format and optional save.
+            selector_result = show_generation_selector(
+                self,
+                self.values,
+                output_format='word',
+                save_callback=self.save_to_db,
+            )
             # The selector handles generation internally, no need to do anything here
 
         except Exception as e:

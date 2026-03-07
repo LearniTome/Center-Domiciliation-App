@@ -1,11 +1,17 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from tkcalendar import DateEntry
-from typing import Optional
+from typing import Optional, Callable, Tuple
 from src.utils.utils import ThemeManager
 
 class AssocieForm(ttk.Frame):
-    def __init__(self, parent, theme_manager: Optional[ThemeManager] = None, values_dict=None):
+    def __init__(
+        self,
+        parent,
+        theme_manager: Optional[ThemeManager] = None,
+        values_dict=None,
+        get_societe_totals: Optional[Callable[[], Tuple[float, float]]] = None,
+    ):
         """AssocieForm supports two calling conventions for backward compatibility:
 
         - AssocieForm(parent, theme_manager)
@@ -34,6 +40,10 @@ class AssocieForm(ttk.Frame):
 
         self.theme_manager = theme_manager
         self.associe_vars = []
+        self.get_societe_totals = get_societe_totals
+        self._societe_trace_refs = []
+        self._percentage_trace_refs = []
+        self._is_updating_distribution = False
 
         # Load reference data from database
         from ..utils.utils import get_reference_data
@@ -109,8 +119,9 @@ class AssocieForm(ttk.Frame):
             'email': tk.StringVar(value=''),
             'est_gerant': tk.BooleanVar(value=True),
             'qualite': tk.StringVar(value=default_quality),
-            'capital_detenu': tk.StringVar(value='100000'),
-            'num_parts': tk.StringVar(value='1000')
+            'percentage': tk.StringVar(value='100'),
+            'capital_detenu': tk.StringVar(value=''),
+            'num_parts': tk.StringVar(value='')
         }
 
     def create_associe_fields(self, parent, index):
@@ -163,6 +174,12 @@ class AssocieForm(ttk.Frame):
         remove_btn.pack(side="right", padx=5, pady=3)
 
         self.associe_vars.append(vars_dict)
+        try:
+            pct_var = vars_dict.get('percentage')
+            if pct_var is not None:
+                self._percentage_trace_refs.append((pct_var, pct_var.trace_add('write', self._on_percentage_changed)))
+        except Exception:
+            pass
         return frame
 
     def create_basic_info_section(self, parent, vars_dict):
@@ -288,13 +305,18 @@ class AssocieForm(ttk.Frame):
         grid.pack(fill="x", padx=5, pady=5, expand=True)
         grid.columnconfigure(1, weight=1)
         grid.columnconfigure(3, weight=1)
+        grid.columnconfigure(5, weight=1)
+
+        # Pourcentage de parts sociales
+        ttk.Label(grid, text="% des parts:", anchor="e", width=12).grid(row=0, column=0, padx=(0, 5), pady=2)
+        ttk.Entry(grid, textvariable=vars_dict['percentage']).grid(row=0, column=1, sticky="ew", padx=(0, 15), pady=2)
 
         # Capital détenu et Nombre de parts (capital en MAD)
-        ttk.Label(grid, text="Capital détenu (MAD):", anchor="e", width=15).grid(row=0, column=0, padx=(0, 5), pady=2)
-        ttk.Entry(grid, textvariable=vars_dict['capital_detenu']).grid(row=0, column=1, sticky="ew", padx=(0, 15), pady=2)
+        ttk.Label(grid, text="Capital détenu (MAD):", anchor="e", width=16).grid(row=0, column=2, padx=(0, 5), pady=2)
+        ttk.Entry(grid, textvariable=vars_dict['capital_detenu']).grid(row=0, column=3, sticky="ew", padx=(0, 15), pady=2)
 
-        ttk.Label(grid, text="Nombre de parts:", anchor="e", width=15).grid(row=0, column=2, padx=(0, 5), pady=2)
-        ttk.Entry(grid, textvariable=vars_dict['num_parts']).grid(row=0, column=3, sticky="ew", pady=2)
+        ttk.Label(grid, text="Nombre de parts:", anchor="e", width=15).grid(row=0, column=4, padx=(0, 5), pady=2)
+        ttk.Entry(grid, textvariable=vars_dict['num_parts']).grid(row=0, column=5, sticky="ew", pady=2)
 
     def setup_scrollable_container(self):
         """Configure le conteneur scrollable pour les associés"""
@@ -341,6 +363,7 @@ class AssocieForm(ttk.Frame):
             return
 
         self.create_associe_fields(self.associes_frame, len(self.associe_vars))
+        self._distribute_evenly_across_associes()
 
     def get_values(self):
         """Retourne la liste des associés sous forme de dictionnaires."""
@@ -366,23 +389,37 @@ class AssocieForm(ttk.Frame):
         to values. This will clear existing entries and recreate them.
         """
         # Clear existing UI
+        try:
+            for var, trace_id in self._percentage_trace_refs:
+                try:
+                    var.trace_remove('write', trace_id)
+                except Exception:
+                    pass
+            self._percentage_trace_refs = []
+        except Exception:
+            pass
         for child in list(self.associes_frame.winfo_children()):
             child.destroy()
         self.associe_vars = []
 
-        for assoc in associes_list:
-            self.create_associe_fields(self.associes_frame, len(self.associe_vars))
-            # Populate the latest vars dict
-            vars_dict = self.associe_vars[-1]
-            for k, val in assoc.items():
-                if k in vars_dict:
-                    try:
-                        if isinstance(vars_dict[k], tk.BooleanVar):
-                            vars_dict[k].set(bool(val))
-                        else:
-                            vars_dict[k].set(val)
-                    except Exception:
-                        pass
+        self._is_updating_distribution = True
+        try:
+            for assoc in associes_list:
+                self.create_associe_fields(self.associes_frame, len(self.associe_vars))
+                # Populate the latest vars dict
+                vars_dict = self.associe_vars[-1]
+                for k, val in assoc.items():
+                    if k in vars_dict:
+                        try:
+                            if isinstance(vars_dict[k], tk.BooleanVar):
+                                vars_dict[k].set(bool(val))
+                            else:
+                                vars_dict[k].set(val)
+                        except Exception:
+                            pass
+        finally:
+            self._is_updating_distribution = False
+        self._backfill_percentages_for_loaded_data()
 
     def remove_associe(self, frame, vars_dict):
         """Supprime un associé"""
@@ -391,6 +428,7 @@ class AssocieForm(ttk.Frame):
             self.associe_vars.remove(vars_dict)
             frame.destroy()
             self.update_associes_numbers()
+            self._distribute_evenly_across_associes()
 
     def update_associes_numbers(self):
         """Met à jour les numéros des associés après une suppression"""
@@ -398,11 +436,198 @@ class AssocieForm(ttk.Frame):
             if isinstance(frame, ttk.LabelFrame):
                 frame.configure(text=f"👤 Associé {i + 1}")
 
+    def bind_societe_totals_vars(self, capital_var, parts_var):
+        """Bind company total capital/parts vars to recalculate associates live."""
+        try:
+            if capital_var is not None:
+                self._societe_trace_refs.append((capital_var, capital_var.trace_add('write', self._on_societe_totals_changed)))
+            if parts_var is not None:
+                self._societe_trace_refs.append((parts_var, parts_var.trace_add('write', self._on_societe_totals_changed)))
+        except Exception:
+            pass
+
+    def _on_societe_totals_changed(self, *_args):
+        self._redistribute_by_percentages()
+
+    def _on_percentage_changed(self, *_args):
+        self._redistribute_by_percentages()
+
+    def _to_float(self, value) -> Optional[float]:
+        try:
+            s = str(value or '').strip()
+            if not s:
+                return None
+            s = s.replace(' ', '').replace(',', '.')
+            return float(s)
+        except Exception:
+            return None
+
+    def _to_int(self, value) -> Optional[int]:
+        v = self._to_float(value)
+        if v is None:
+            return None
+        try:
+            return int(round(v))
+        except Exception:
+            return None
+
+    def _format_number(self, value: Optional[float], decimals: int = 2) -> str:
+        if value is None:
+            return ''
+        if decimals <= 0:
+            return str(int(round(value)))
+        s = f"{float(value):.{decimals}f}"
+        if '.' in s:
+            s = s.rstrip('0').rstrip('.')
+        return s
+
+    def _get_societe_totals(self) -> Tuple[Optional[float], Optional[int]]:
+        """Return (capital_total, parts_total) from callback or top-level MainForm."""
+        if callable(self.get_societe_totals):
+            try:
+                cap, parts = self.get_societe_totals()
+                return self._to_float(cap), self._to_int(parts)
+            except Exception:
+                pass
+        try:
+            top = self.winfo_toplevel()
+            main_form = getattr(top, 'main_form', None)
+            societe_form = getattr(main_form, 'societe_form', None)
+            if societe_form is not None:
+                cap = societe_form.capital_var.get() if hasattr(societe_form, 'capital_var') else None
+                parts = societe_form.parts_social_var.get() if hasattr(societe_form, 'parts_social_var') else None
+                return self._to_float(cap), self._to_int(parts)
+        except Exception:
+            pass
+        return None, None
+
+    def _iter_percentages(self):
+        values = []
+        for vars_dict in self.associe_vars:
+            pct = self._to_float(vars_dict.get('percentage').get() if vars_dict.get('percentage') else '')
+            values.append(max(0.0, pct if pct is not None else 0.0))
+        return values
+
+    def _distribute_evenly_across_associes(self):
+        """Equal split after add/remove: percentage + capital + parts."""
+        if self._is_updating_distribution:
+            return
+        count = len(self.associe_vars)
+        if count <= 0:
+            return
+
+        self._is_updating_distribution = True
+        try:
+            equal_pct = 100.0 / count
+            for vars_dict in self.associe_vars:
+                vars_dict['percentage'].set(self._format_number(equal_pct, 4))
+        finally:
+            self._is_updating_distribution = False
+        self._redistribute_by_percentages()
+
+    def _redistribute_by_percentages(self):
+        """Recompute capital détenu + parts from current percentages and company totals."""
+        if self._is_updating_distribution:
+            return
+        count = len(self.associe_vars)
+        if count <= 0:
+            return
+
+        cap_total, parts_total = self._get_societe_totals()
+        percentages = self._iter_percentages()
+        sum_pct = sum(percentages)
+        if sum_pct <= 0:
+            percentages = [100.0 / count] * count
+            sum_pct = 100.0
+
+        normalized = [p / sum_pct for p in percentages]
+        self._is_updating_distribution = True
+        try:
+            # Capital détenu (DH)
+            if cap_total is not None:
+                for idx, vars_dict in enumerate(self.associe_vars):
+                    cap_val = cap_total * normalized[idx]
+                    vars_dict['capital_detenu'].set(self._format_number(cap_val, 2))
+
+            # Nombre de parts (entier) avec conservation du total.
+            if parts_total is not None:
+                raw_parts = [parts_total * n for n in normalized]
+                int_parts = [int(x) for x in raw_parts]
+                remaining = int(parts_total - sum(int_parts))
+                frac_idx = sorted(
+                    range(len(raw_parts)),
+                    key=lambda i: (raw_parts[i] - int_parts[i]),
+                    reverse=True
+                )
+                for i in range(max(0, remaining)):
+                    int_parts[frac_idx[i % len(frac_idx)]] += 1
+                for idx, vars_dict in enumerate(self.associe_vars):
+                    vars_dict['num_parts'].set(str(max(0, int_parts[idx])))
+        finally:
+            self._is_updating_distribution = False
+
+    def _backfill_percentages_for_loaded_data(self):
+        """When older records have no percentage, derive them (parts or equal split)."""
+        if not self.associe_vars:
+            return
+
+        has_explicit = False
+        for vars_dict in self.associe_vars:
+            if self._to_float(vars_dict['percentage'].get()) is not None:
+                has_explicit = True
+                break
+        if has_explicit:
+            return
+
+        _cap_total, parts_total = self._get_societe_totals()
+        derived = []
+        if parts_total and parts_total > 0:
+            ok = True
+            for vars_dict in self.associe_vars:
+                p = self._to_int(vars_dict['num_parts'].get())
+                if p is None:
+                    ok = False
+                    break
+                derived.append((p * 100.0) / float(parts_total))
+            if not ok:
+                derived = []
+
+        if not derived:
+            count = len(self.associe_vars)
+            derived = [100.0 / count] * count
+
+        self._is_updating_distribution = True
+        try:
+            for idx, vars_dict in enumerate(self.associe_vars):
+                vars_dict['percentage'].set(self._format_number(derived[idx], 4))
+        finally:
+            self._is_updating_distribution = False
+
     def _cleanup(self, event):
         """Nettoyage lors de la destruction"""
         try:
             canvas = getattr(self, 'canvas', None)
             if canvas is not None:
                 canvas.unbind_all("<MouseWheel>")
+        except Exception:
+            pass
+        # Remove traces bound to percentage vars.
+        try:
+            for var, trace_id in self._percentage_trace_refs:
+                try:
+                    var.trace_remove('write', trace_id)
+                except Exception:
+                    pass
+            self._percentage_trace_refs = []
+        except Exception:
+            pass
+        # Remove traces bound to company total vars.
+        try:
+            for var, trace_id in self._societe_trace_refs:
+                try:
+                    var.trace_remove('write', trace_id)
+                except Exception:
+                    pass
+            self._societe_trace_refs = []
         except Exception:
             pass

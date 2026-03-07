@@ -67,7 +67,7 @@ associe_headers = [
     "ID_ASSOCIE", "ID_SOCIETE", "CIVIL", "PRENOM", "NOM",
     "NATIONALITY", "CIN_NUM", "CIN_VALIDATY", "DATE_NAISS",
     "LIEU_NAISS", "ADRESSE", "PHONE", "EMAIL",
-    "PARTS", "CAPITAL_DETENU", "IS_GERANT", "QUALITY"
+    "PART_PERCENT", "PARTS", "CAPITAL_DETENU", "IS_GERANT", "QUALITY"
 ]
 
 contrat_headers = [

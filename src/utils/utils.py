@@ -9,6 +9,11 @@ import logging
 import traceback
 from typing import Optional, Callable, Any
 import datetime
+import re
+import unicodedata
+from fractions import Fraction
+from urllib import request as _urlrequest
+from urllib import error as _urlerror
 from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter
 from openpyxl import Workbook
@@ -348,10 +353,235 @@ class WidgetFactory:
         '👁': 'view',
     }
     _ICON_CACHE = {}
+    _ASSETS_ENSURED = False
+    _MIN_ICON_SIZE_BYTES = 900
+    _MATERIAL_ICON_NAME = {
+        'settings': 'settings',
+        'dashboard': 'dashboard',
+        'close': 'close',
+        'next': 'arrow_forward',
+        'prev': 'arrow_back',
+        'finish': 'flag',
+        'save': 'save',
+        'new': 'add_box',
+        'add': 'add',
+        'edit': 'edit',
+        'delete': 'delete',
+        'refresh': 'refresh',
+        'folder': 'folder',
+        'upload': 'upload',
+        'confirm': 'check_circle',
+        'document': 'description',
+        'company': 'business',
+        'contract': 'description',
+        'person': 'person',
+        'view': 'visibility',
+    }
+    _TEXT_ICON_HINTS = [
+        ('tableau de bord', 'dashboard'),
+        ('generer les documents', 'document'),
+        ('generation', 'document'),
+        ('configuration', 'settings'),
+        ('parametre', 'settings'),
+        ('parametres', 'settings'),
+        ('quitter', 'close'),
+        ('annuler', 'close'),
+        ('fermer', 'close'),
+        ('suivant', 'next'),
+        ('precedent', 'prev'),
+        ('terminer', 'finish'),
+        ('sauvegarder', 'save'),
+        ('enregistrer', 'save'),
+        ('nouvelle', 'new'),
+        ('ajouter', 'add'),
+        ('modifier', 'edit'),
+        ('supprimer', 'delete'),
+        ('actualiser', 'refresh'),
+        ('reinitialiser', 'refresh'),
+        ('consulter', 'view'),
+        ('uploader', 'upload'),
+        ('upload', 'upload'),
+        ('proceder', 'confirm'),
+        ('confirmer', 'confirm'),
+        ('societe', 'company'),
+        ('associe', 'person'),
+        ('contrat', 'contract'),
+    ]
+    _TEXT_ICON_WORDS = {
+        'oui': 'confirm',
+        'ok': 'confirm',
+        'non': 'close',
+    }
 
     @classmethod
     def get_icon_registry(cls):
         return dict(cls._ICON_REGISTRY)
+
+    @staticmethod
+    def _normalize_text(text: str) -> str:
+        normalized = unicodedata.normalize('NFKD', str(text or ''))
+        normalized = ''.join(ch for ch in normalized if not unicodedata.combining(ch))
+        normalized = normalized.lower()
+        normalized = re.sub(r'[^a-z0-9]+', ' ', normalized).strip()
+        return normalized
+
+    @classmethod
+    def _infer_icon_key_from_text(cls, text: str) -> Optional[str]:
+        norm = cls._normalize_text(text)
+        if not norm:
+            return None
+        words = set(norm.split())
+        for word, key in cls._TEXT_ICON_WORDS.items():
+            if word in words:
+                return key
+        for hint, key in cls._TEXT_ICON_HINTS:
+            if hint in norm:
+                return key
+        return None
+
+    @classmethod
+    def _download_icon_from_material(cls, icon_key: str, target_path: Path) -> bool:
+        """Attempt to download a modern icon PNG from a material CDN."""
+        icon_name = cls._MATERIAL_ICON_NAME.get(icon_key)
+        if not icon_name:
+            return False
+
+        urls = [
+            f"https://cdn.jsdelivr.net/npm/@material-symbols/png-400/outlined/{icon_name}.png",
+            f"https://cdn.jsdelivr.net/npm/@material-symbols/png-400/rounded/{icon_name}.png",
+        ]
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        for url in urls:
+            try:
+                with _urlrequest.urlopen(url, timeout=8) as response:
+                    data = response.read()
+                    if data and len(data) > 64:
+                        target_path.write_bytes(data)
+                        logger.info("Downloaded icon '%s' from %s", icon_key, url)
+                        return True
+            except _urlerror.URLError:
+                continue
+            except Exception:
+                continue
+        return False
+
+    @classmethod
+    def _is_low_quality_icon(cls, icon_path: Path) -> bool:
+        """Heuristic: tiny png files are usually placeholder glyphs."""
+        try:
+            return icon_path.exists() and icon_path.stat().st_size < cls._MIN_ICON_SIZE_BYTES
+        except Exception:
+            return False
+
+    @classmethod
+    def _create_fallback_icon_copy(cls, target_path: Path) -> bool:
+        """Fallback when download is unavailable: copy a local existing icon."""
+        fallback_candidates = [
+            PathManager.ICONS_DIR / 'document.png',
+            PathManager.ICONS_DIR / 'view.png',
+            PathManager.ICONS_DIR / 'close.png',
+        ]
+        for fallback in fallback_candidates:
+            if fallback.exists():
+                target_path.parent.mkdir(parents=True, exist_ok=True)
+                try:
+                    shutil.copy2(fallback, target_path)
+                    logger.warning("Fallback icon copy created: %s", target_path)
+                    return True
+                except Exception:
+                    continue
+        return False
+
+    @classmethod
+    def ensure_icon_assets(cls, download_missing: bool = True):
+        """Ensure icon files exist. Download missing modern icons when possible."""
+        if cls._ASSETS_ENSURED:
+            return
+        cls._ASSETS_ENSURED = True
+        try:
+            PathManager.ensure_directories()
+            for icon_key, filename in cls._ICON_REGISTRY.items():
+                # Prefer modern icons in assets/icons/material.
+                target_path = PathManager.MATERIAL_ICONS_DIR / filename
+                if target_path.exists() and not cls._is_low_quality_icon(target_path):
+                    continue
+                downloaded = False
+                if download_missing:
+                    downloaded = cls._download_icon_from_material(icon_key, target_path)
+                if not downloaded and not target_path.exists():
+                    cls._create_fallback_icon_copy(target_path)
+            # Invalidate cache after any ensure/refresh pass.
+            cls._ICON_CACHE = {}
+        except Exception:
+            logger.debug("Failed to ensure icon assets", exc_info=True)
+
+    @classmethod
+    def register_icon(cls, icon_key: str, filename: str):
+        """Register or override an icon mapping at runtime."""
+        if icon_key and filename:
+            cls._ICON_REGISTRY[str(icon_key).strip()] = str(filename).strip()
+
+    @classmethod
+    def _resolve_icon_path(cls, icon_key: str) -> Optional[Path]:
+        """Resolve icon path from registry, direct filename, or material namespace.
+
+        Supported formats:
+        - registry key: `settings`
+        - direct file in assets/icons: `my_icon.png` or `my_icon`
+        - material namespace: `mi:home` / `material:home` / `material/home`
+        """
+        key = str(icon_key or "").strip()
+        if not key:
+            return None
+
+        # Absolute path support
+        try:
+            direct_path = Path(key)
+            if direct_path.is_absolute() and direct_path.exists():
+                return direct_path
+        except Exception:
+            pass
+
+        candidates: list[Path] = []
+        # Prefer modern material icons over legacy icons.
+        roots = [PathManager.MATERIAL_ICONS_DIR, PathManager.ICONS_DIR]
+
+        # 1) Logical registry key
+        reg_filename = cls._ICON_REGISTRY.get(key)
+        if reg_filename:
+            for root in roots:
+                candidates.append(root / reg_filename)
+
+        # 2) Namespace for material icon folder
+        material_prefixes = ("mi:", "material:", "material/")
+        if key.startswith(material_prefixes):
+            if ":" in key:
+                material_name = key.split(":", 1)[1].strip()
+            else:
+                material_name = key.split("/", 1)[1].strip()
+            if material_name:
+                material_rel = Path(material_name)
+                if material_rel.suffix:
+                    candidates.append(PathManager.MATERIAL_ICONS_DIR / material_rel)
+                else:
+                    candidates.append(PathManager.MATERIAL_ICONS_DIR / f"{material_name}.png")
+        else:
+            # 3) Direct filename in icons folders
+            rel = Path(key)
+            if rel.suffix:
+                for root in roots:
+                    candidates.append(root / rel)
+            else:
+                for root in roots:
+                    candidates.append(root / f"{key}.png")
+
+        for candidate in candidates:
+            try:
+                if candidate.exists():
+                    return candidate
+            except Exception:
+                continue
+        return None
 
     @classmethod
     def _extract_icon_key_and_clean_text(cls, text: str, icon_key: Optional[str]):
@@ -363,16 +593,18 @@ class WidgetFactory:
                     chosen_key = key
                     raw_text = raw_text.replace(emoji, ' ')
         clean_text = ' '.join(raw_text.split())
+        if chosen_key is None:
+            chosen_key = cls._infer_icon_key_from_text(clean_text)
         return chosen_key, clean_text
 
     @classmethod
     def _load_icon(cls, widget, icon_key: str):
         try:
-            icon_filename = cls._ICON_REGISTRY.get(icon_key)
-            if not icon_filename:
+            icon_path = cls._resolve_icon_path(icon_key)
+            if not icon_path:
                 return None
-            icon_path = PathManager.ICONS_DIR / icon_filename
-            if not icon_path.exists():
+            if cls._is_low_quality_icon(icon_path):
+                # Skip placeholder icons; caller will fallback to text/emoji.
                 return None
 
             cache_key = (str(icon_path.resolve()), str(widget.winfo_toplevel()))
@@ -380,23 +612,61 @@ class WidgetFactory:
                 return cls._ICON_CACHE[cache_key]
 
             image = tk.PhotoImage(file=str(icon_path))
+            image = cls._normalize_icon_image(image, target_px=16)
             cls._ICON_CACHE[cache_key] = image
             return image
         except Exception:
             logger.debug("Failed to load icon '%s'", icon_key, exc_info=True)
             return None
 
+    @classmethod
+    def _normalize_icon_image(cls, image, target_px: int = 16):
+        """Normalize icon size for more consistent rendering across buttons."""
+        try:
+            w = max(1, int(image.width()))
+            h = max(1, int(image.height()))
+            max_side = max(w, h)
+            if max_side == target_px:
+                return image
+
+            scale = float(target_px) / float(max_side)
+            scale = max(0.25, min(2.0, scale))
+            frac = Fraction(scale).limit_denominator(8)
+            if frac.numerator == frac.denominator:
+                return image
+            return image.zoom(frac.numerator, frac.numerator).subsample(frac.denominator, frac.denominator)
+        except Exception:
+            return image
+
     @staticmethod
-    def create_button(parent, text, command, style='Secondary.TButton', tooltip=None, icon_key: Optional[str] = None, compound: str = 'left'):
+    def create_button(
+        parent,
+        text,
+        command,
+        style='Secondary.TButton',
+        tooltip=None,
+        icon_key: Optional[str] = None,
+        compound: str = 'left',
+        icon_gap: int = 1,
+    ):
+        WidgetFactory.ensure_icon_assets(download_missing=True)
+        original_text = str(text or '')
         detected_icon_key, clean_text = WidgetFactory._extract_icon_key_and_clean_text(text, icon_key)
         btn = ttk.Button(parent, text=clean_text, command=command, style=style, takefocus=False, compound=compound)
 
         if detected_icon_key:
             icon_image = WidgetFactory._load_icon(parent, detected_icon_key)
             if icon_image is not None:
+                if clean_text:
+                    clean_text = (" " * max(1, int(icon_gap))) + clean_text
                 btn.configure(image=icon_image)
+                btn.configure(text=clean_text)
                 # Keep an instance reference to avoid Tk image GC.
                 btn._icon_image = icon_image
+            else:
+                # Fallback when modern icon file is unavailable/unusable.
+                # Keep original text so emoji/icon prefix remains visible.
+                btn.configure(text=original_text)
 
         if tooltip:
             WidgetFactory.create_tooltip(btn, tooltip)
@@ -494,6 +764,7 @@ class PathManager:
     BASE_DIR = Path(__file__).resolve().parent.parent.parent
     ASSETS_DIR = BASE_DIR / "assets"
     ICONS_DIR = ASSETS_DIR / "icons"
+    MATERIAL_ICONS_DIR = ICONS_DIR / "material"
     MODELS_DIR = BASE_DIR / "Models"
     DATABASE_DIR = BASE_DIR / "databases"
     CONFIG_DIR = BASE_DIR / "config"
@@ -507,7 +778,14 @@ class PathManager:
     def ensure_directories(cls) -> None:
         """Crée les répertoires nécessaires s'ils n'existent pas"""
         try:
-            for dir_path in [cls.MODELS_DIR, cls.DATABASE_DIR, cls.CONFIG_DIR, cls.ASSETS_DIR, cls.ICONS_DIR]:
+            for dir_path in [
+                cls.MODELS_DIR,
+                cls.DATABASE_DIR,
+                cls.CONFIG_DIR,
+                cls.ASSETS_DIR,
+                cls.ICONS_DIR,
+                cls.MATERIAL_ICONS_DIR,
+            ]:
                 dir_path.mkdir(parents=True, exist_ok=True)
         except Exception as e:
             ErrorHandler.handle_error(e, "Erreur lors de la création des répertoires")
@@ -859,6 +1137,7 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
                 'validite_piece': 'CIN_VALIDATY', 'date_naiss': 'DATE_NAISS',
                 'lieu_naiss': 'LIEU_NAISS', 'adresse': 'ADRESSE',
                 'telephone': 'PHONE', 'email': 'EMAIL',
+                'percentage': 'PART_PERCENT', 'part_percentage': 'PART_PERCENT',
                 # forms historically used either 'parts' or 'num_parts'
                 'parts': 'PARTS', 'num_parts': 'PARTS',
                 # form uses 'capital_detenu' variable, store it in CAPITAL_DETENU
@@ -881,7 +1160,7 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
                         else:
                             s = str(v).strip()
                             # Try numeric conversion for parts / capital
-                            if h in ('PARTS', 'CAPITAL_DETENU'):
+                            if h in ('PART_PERCENT', 'PARTS', 'CAPITAL_DETENU'):
                                 try:
                                     # remove spaces and parse comma/point
                                     ns = s.replace(' ', '').replace(',', '.')

@@ -6,10 +6,11 @@ with automatic template selection and upload custom templates.
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from pathlib import Path
-from typing import Optional, Tuple, List, Union
+from typing import Optional, Tuple, List, Union, Callable
 import shutil
 import logging
 import threading
+import re
 
 from ..utils.utils import ThemeManager, WidgetFactory, PathManager, ErrorHandler
 from ..utils.doc_generator import render_templates
@@ -17,10 +18,25 @@ from ..utils.doc_generator import render_templates
 logger = logging.getLogger(__name__)
 
 # Template mappings for different document types
-CREATION_TEMPLATES_KEYWORDS = ['SARL', 'Statuts', 'Annonce', 'Décl', 'Dépot', 'AU', 'Decl']
-DOMICILIATION_TEMPLATES = ['Attest', 'Contrat', 'domiciliation']
-
-
+CREATION_TEMPLATES_KEYWORDS = ['statuts', 'annonce', 'décl', 'decl', 'depot', 'dépot']
+DOMICILIATION_TEMPLATES = ['attest', 'contrat', 'domiciliation']
+LEGAL_FORM_OPTIONS = ['SARL-AU', 'SARL', 'SA', 'Personne Physique', 'Association', 'Fondation']
+LEGAL_FORM_TO_FOLDER = {
+    'SARL-AU': 'SARL AU',
+    'SARL': 'SARL',
+    'SA': 'SA',
+    'Personne Physique': 'Personne Physique',
+    'Association': 'Association',
+    'Fondation': 'Fondation',
+}
+LEGAL_FORM_PREFIXES = {
+    'SARL AU': 'SARL-AU',
+    'SARL': 'SARL',
+    'SA': 'SA',
+    'Personne Physique': 'PP',
+    'Association': 'ASSO',
+    'Fondation': 'FOND',
+}
 def compute_selection_feedback(legal_form: str, generation_type: str, selected_count: int) -> dict:
     """Compute summary text and readiness state for generation selection."""
     form_label = (legal_form or '').strip() or '—'
@@ -55,22 +71,49 @@ def compute_selection_feedback(legal_form: str, generation_type: str, selected_c
 class GenerationSelectorDialog(tk.Toplevel):
     """Modal dialog to select generation type and manage templates."""
 
-    def __init__(self, parent, values: Optional[dict] = None, output_format: str = 'docx'):
+    def __init__(
+        self,
+        parent,
+        values: Optional[dict] = None,
+        output_format: str = 'word',
+        save_callback: Optional[Callable[[], Optional[Path]]] = None,
+    ):
         super().__init__(parent)
         self.parent = parent
         self.values = values or {}
-        self.output_format = output_format  # 'docx', 'pdf', or 'both'
+        self.output_format = output_format  # 'word', 'pdf', or 'both'
+        self.save_callback = save_callback
         self._initial_center_done = False
         self._one_shot_recenter_done = False
         self._proceed_tooltip_window = None
         self._proceed_tooltip_text = ""
         self._last_uploaded_template_name: Optional[str] = None
+        self.output_format_var = tk.StringVar(value='word')
+        self.save_before_var = tk.BooleanVar(value=True)
+
+        # Backward-compat normalization.
+        normalized = (self.output_format or '').strip().lower()
+        if normalized in ('docx', 'word'):
+            self.output_format_var.set('word')
+        elif normalized in ('pdf',):
+            self.output_format_var.set('pdf')
+        elif normalized in ('both',):
+            self.output_format_var.set('both')
+        else:
+            self.output_format_var.set('word')
 
         self.title("📄 Sélectionner les documents à générer")
-        # Taille réduite et optimisée
-        self.geometry("1100x700")
+        # Dynamic initial geometry: use available screen height, keep vertical expansion comfortable.
+        try:
+            sw = self.winfo_screenwidth()
+            sh = self.winfo_screenheight()
+            initial_w = min(1240, max(980, sw - 80))
+            initial_h = min(860, max(700, sh - 140))
+            self.geometry(f"{initial_w}x{initial_h}")
+        except Exception:
+            self.geometry("1240x820")
         self.resizable(True, True)
-        self.minsize(900, 600)  # Taille minimum raisonnable
+        self.minsize(980, 640)
 
         # Apply the SAME theme as the parent window (not a new one)
         # This ensures the dialog inherits the parent's style configuration
@@ -202,25 +245,23 @@ class GenerationSelectorDialog(tk.Toplevel):
         
         Layout:
         ┌─────────────────────────────────────┐
-        │ Titre                                │
-        ├─────────────────────────────────────┤
         │ [Forme juridique] | [Type génération]│
+        ├─────────────────────────────────────┤
+        │ [Options de génération]              │
         ├─────────────────────────────────────┤
         │ [Modèles disponibles - full width]  │
         ├─────────────────────────────────────┤
-        │ [Boutons: Confirmer | Annuler]      │
+        │ [Résumé + Boutons: Générer/Annuler] │
         └─────────────────────────────────────┘
         """
-        main_frame = ttk.Frame(self, padding=20)
+        main_frame = ttk.Frame(self, padding=14)
         main_frame.pack(fill='both', expand=True)
 
         # Bottom fixed area: selection summary + action buttons
         footer = ttk.Frame(main_frame)
         footer.pack(side='bottom', fill='x')
-        ttk.Separator(footer, orient='horizontal').pack(fill='x', pady=(10, 8))
-
         summary_row = ttk.Frame(footer)
-        summary_row.pack(fill='x', pady=(0, 8))
+        summary_row.pack(fill='x', pady=(2, 8))
         self.summary_var = tk.StringVar(value="Résumé sélection  |  Forme: —  |  Type: —  |  Nb modèles: 0")
         self.summary_label = ttk.Label(
             summary_row,
@@ -255,112 +296,97 @@ class GenerationSelectorDialog(tk.Toplevel):
         self.proceed_btn.bind('<Enter>', self._show_proceed_tooltip_if_disabled)
         self.proceed_btn.bind('<Leave>', self._hide_proceed_tooltip)
 
-        # Title
-        top_frame = ttk.Frame(main_frame)
-        top_frame.pack(fill='x', pady=(0, 20))
-
-        title_label = ttk.Label(
-            top_frame,
-            text="📄 Sélectionner les documents à générer",
-            style='Title.TLabel'
-        )
-        title_label.pack(side='left', anchor='w')
-
-        # Separator
-        ttk.Separator(main_frame, orient='horizontal').pack(fill='x', pady=(0, 20))
-
         # ===== SECTIONS 1 & 2: SIDE BY SIDE =====
         top_sections_frame = ttk.Frame(main_frame)
-        top_sections_frame.pack(fill='x', pady=(0, 20))
+        top_sections_frame.pack(fill='x', pady=(0, 14))
 
         # Configure columns: 50/50 split
         top_sections_frame.columnconfigure(0, weight=1)
         top_sections_frame.columnconfigure(1, weight=1)
 
-        # LEFT: LEGAL FORM SELECTION
+        # LEFT: LEGAL FORM SELECTION (Combobox)
         legal_form_frame = ttk.LabelFrame(top_sections_frame, text="📋 Forme juridique", padding=15)
         legal_form_frame.grid(row=0, column=0, padx=(0, 10), sticky='nsew')
 
-        self.legal_form_var = tk.StringVar(value='')
-        
-        legal_forms = [
-            ('🏢 SARL AU - Unipersonnelle', 'SARL AU'),
-            ('🏢 SARL - Société Limitée', 'SARL'),
-            ('👤 Personne Physique', 'Personne Physique'),
-            ('🏛️ SA - Anonyme', 'SA')
-        ]
-
-        for label, value in legal_forms:
-            ttk.Radiobutton(
-                legal_form_frame,
-                text=label,
-                variable=self.legal_form_var,
-                value=value,
-                command=self._on_legal_form_changed
-            ).pack(anchor='w', pady=5)
+        self.legal_form_var = tk.StringVar(value='SARL-AU')
+        self.legal_form_combo = ttk.Combobox(
+            legal_form_frame,
+            textvariable=self.legal_form_var,
+            values=LEGAL_FORM_OPTIONS,
+            state='readonly',
+            width=34,
+        )
+        self.legal_form_combo.pack(fill='x', pady=(6, 0))
+        self.legal_form_combo.bind('<<ComboboxSelected>>', lambda _e: self._on_legal_form_changed())
 
         # RIGHT: GENERATION TYPE SELECTION
         type_frame = ttk.LabelFrame(top_sections_frame, text="📊 Type de génération", padding=15)
         type_frame.grid(row=0, column=1, padx=(10, 0), sticky='nsew')
 
-        self.gen_type_var = tk.StringVar(value='')
+        self.gen_type_var = tk.StringVar(value='creation')
+        type_frame.columnconfigure(0, weight=1)
+        type_frame.columnconfigure(1, weight=1)
 
-        # Option: Creation
         ttk.Radiobutton(
             type_frame,
-            text="📄 Création de Société",
+            text="📄 Création",
             variable=self.gen_type_var,
             value='creation',
             command=self._on_generation_type_changed
-        ).pack(anchor='w', pady=8)
+        ).grid(row=0, column=0, sticky='w', padx=(0, 14), pady=4)
 
-        # Option: Domiciliation
         ttk.Radiobutton(
             type_frame,
             text="🏢 Domiciliation",
             variable=self.gen_type_var,
             value='domiciliation',
             command=self._on_generation_type_changed
-        ).pack(anchor='w', pady=8)
+        ).grid(row=0, column=1, sticky='w', pady=4)
 
-        # Separator
-        ttk.Separator(main_frame, orient='horizontal').pack(fill='x', pady=(0, 20))
+        # OPTIONS (imported from old popup flow)
+        options_frame = ttk.LabelFrame(main_frame, text="⚙️Options de génération", padding=12)
+        options_frame.pack(fill='x', pady=(0, 14))
+        options_frame.columnconfigure(0, weight=1)
+        options_frame.columnconfigure(1, weight=1)
+        options_frame.columnconfigure(2, weight=1)
+
+        ttk.Radiobutton(
+            options_frame,
+            text="📄 Word uniquement",
+            variable=self.output_format_var,
+            value='word',
+        ).grid(row=0, column=0, sticky='w', padx=(0, 12))
+
+        ttk.Radiobutton(
+            options_frame,
+            text="📑 PDF uniquement",
+            variable=self.output_format_var,
+            value='pdf',
+        ).grid(row=0, column=1, sticky='w', padx=(0, 12))
+
+        ttk.Radiobutton(
+            options_frame,
+            text="📄+📑 Word & PDF",
+            variable=self.output_format_var,
+            value='both',
+        ).grid(row=0, column=2, sticky='w')
+
+        ttk.Checkbutton(
+            options_frame,
+            text="💾 Sauvegarder dans la base avant génération",
+            variable=self.save_before_var,
+        ).grid(row=1, column=0, columnspan=3, sticky='w', pady=(8, 0))
 
         # ===== SECTION 3: TEMPLATE MANAGEMENT & SELECTION (FULL WIDTH) =====
-        template_frame = ttk.LabelFrame(main_frame, text="🗂️  Modèles disponibles", padding=15)
-        template_frame.pack(fill='both', expand=True, pady=(0, 20))
-
-        # Buttons for template management
-        btn_frame = ttk.Frame(template_frame)
-        btn_frame.pack(fill='x', pady=(0, 15))
-
-        WidgetFactory.create_button(
-            btn_frame,
-            text="🔄 Actualiser",
-            command=self._refresh_template_list,
-            style='Manage.TButton'
-        ).pack(side='left', padx=3)
-
-        WidgetFactory.create_button(
-            btn_frame,
-            text="📁 Consulter",
-            command=self._view_templates,
-            style='Manage.TButton'
-        ).pack(side='left', padx=3)
-
-        WidgetFactory.create_button(
-            btn_frame,
-            text="⬆️ Uploader",
-            command=self._upload_template,
-            style='Manage.TButton'
-        ).pack(side='left', padx=3)
+        template_frame = ttk.LabelFrame(main_frame, text="Modèles disponibles", padding=15)
+        template_frame.pack(fill='both', expand=True, pady=(0, 12))
 
         # Template list with checkboxes - avec plus d'espace
         ttk.Label(template_frame, text="Sélectionner les modèles:", font=('Segoe UI', 11, 'bold')).pack(anchor='w', pady=(0, 12))
 
         # Create frame with scrollbar for template checkboxes - PLUS GRAND
         list_frame = ttk.Frame(template_frame)
-        list_frame.pack(fill='both', expand=True, pady=(0, 0))
+        list_frame.pack(fill='both', expand=True, pady=(0, 8))
 
         scrollbar = ttk.Scrollbar(list_frame)
         scrollbar.pack(side='right', fill='y')
@@ -372,7 +398,7 @@ class GenerationSelectorDialog(tk.Toplevel):
             highlightthickness=1, 
             highlightbackground='#555555',
             relief='solid',
-            height=180  # Keep footer buttons visible on medium-height screens
+            height=1  # Let pack(expand=True) drive vertical growth with window resizing
         )
         self.template_canvas.pack(side='left', fill='both', expand=True)
         scrollbar.config(command=self.template_canvas.yview)
@@ -390,8 +416,44 @@ class GenerationSelectorDialog(tk.Toplevel):
         # Dictionary to store template checkbox variables
         self.template_vars = {}
 
+        # Bottom actions for template area (single action bar).
+        bottom_template_actions = ttk.Frame(template_frame)
+        bottom_template_actions.pack(fill='x', pady=(4, 0))
+
+        WidgetFactory.create_button(
+            bottom_template_actions,
+            text="🔄 Actualiser",
+            command=self._refresh_template_list,
+            style='Refresh.TButton'
+        ).pack(side='left', padx=(0, 6))
+
+        WidgetFactory.create_button(
+            bottom_template_actions,
+            text="📁 Consulter",
+            command=self._view_templates,
+            style='View.TButton'
+        ).pack(side='left', padx=(0, 6))
+
+        WidgetFactory.create_button(
+            bottom_template_actions,
+            text="⬆️ Uploader",
+            command=self._upload_template,
+            style='Upload.TButton',
+            icon_gap=2,
+        ).pack(side='left', padx=(0, 6))
+
+        WidgetFactory.create_button(
+            bottom_template_actions,
+            text="📄 Copier modèles",
+            command=self._copy_root_templates_to_legal_folders,
+            style='Copy.TButton',
+            icon_gap=2,
+        ).pack(side='left')
+
         # Populate template list
         self._refresh_template_list()
+        if self.gen_type_var.get():
+            self._auto_select_templates(self.gen_type_var.get())
         self._update_selection_feedback()
 
 
@@ -439,6 +501,10 @@ class GenerationSelectorDialog(tk.Toplevel):
 
     def _selected_templates_count(self) -> int:
         return sum(1 for var in self.template_vars.values() if var.get())
+
+    def _selected_legal_form_folder(self) -> str:
+        selected = (self.legal_form_var.get() or '').strip()
+        return LEGAL_FORM_TO_FOLDER.get(selected, selected)
 
     def _update_selection_feedback(self):
         """Refresh summary row and proceed button state."""
@@ -500,24 +566,17 @@ class GenerationSelectorDialog(tk.Toplevel):
             var.set(False)
 
         # Get the selected legal form
-        legal_form = self.legal_form_var.get()
+        legal_form = (self.legal_form_var.get() or '').strip()
         if not legal_form:
             return  # No legal form selected, don't auto-select anything
 
         # Select templates based on type
         if doc_type == 'creation':
-            # Select creation templates that match the legal form
+            # Requested behavior: in "Création", select all available templates
+            # for the selected legal form.
             for template_path, var in self.template_vars.items():
-                template_name = template_path.name.lower()
-                
-                # Check if it's a creation template
-                is_creation = any(keyword.lower() in template_name for keyword in CREATION_TEMPLATES_KEYWORDS)
-                
-                # Check if it matches the legal form
                 form_match = self._template_matches_legal_form(template_path, legal_form)
-                
-                if is_creation and form_match:
-                    var.set(True)
+                var.set(bool(form_match))
 
         elif doc_type == 'domiciliation':
             # Select domiciliation templates for all legal forms
@@ -550,18 +609,7 @@ class GenerationSelectorDialog(tk.Toplevel):
             return parent_folder == 'Models'
         
         # Map legal form to folder names
-        form_to_folder = {
-            'SARL AU': 'SARL AU',
-            'SARL_AU': 'SARL AU',
-            'SARL': 'SARL',
-            'Personne Physique': 'Personne Physique',
-            'Personne_Physique': 'Personne Physique',
-            'SA': 'SA',
-        }
-        
-        # Normalize legal form
-        normalized_form = legal_form.strip()
-        expected_folder = form_to_folder.get(normalized_form, normalized_form)
+        expected_folder = LEGAL_FORM_TO_FOLDER.get(legal_form.strip(), legal_form.strip())
         
         # Template matches if:
         # 1. It's in the appropriate legal form folder, OR
@@ -590,7 +638,7 @@ class GenerationSelectorDialog(tk.Toplevel):
                 return
 
             # Get selected legal form
-            selected_legal_form = self.legal_form_var.get()
+            selected_legal_form = (self.legal_form_var.get() or '').strip()
             
             if not selected_legal_form:
                 # No legal form selected - show message with padding
@@ -612,7 +660,7 @@ class GenerationSelectorDialog(tk.Toplevel):
 
             # Get templates ONLY from the selected legal form folder
             all_templates = []
-            form_path = models_dir / selected_legal_form
+            form_path = models_dir / self._selected_legal_form_folder()
             
             if form_path.exists() and form_path.is_dir():
                 all_templates = sorted([f for f in form_path.glob('*.docx')])
@@ -708,7 +756,7 @@ class GenerationSelectorDialog(tk.Toplevel):
             target_dir = models_dir
             selected_form = (self.legal_form_var.get() if hasattr(self, 'legal_form_var') else '').strip()
             if selected_form:
-                form_dir = models_dir / selected_form
+                form_dir = models_dir / LEGAL_FORM_TO_FOLDER.get(selected_form, selected_form)
                 if form_dir.exists() and form_dir.is_dir():
                     target_dir = form_dir
 
@@ -727,6 +775,76 @@ class GenerationSelectorDialog(tk.Toplevel):
             logger.exception(f"Erreur lors de l'ouverture du dossier: {e}")
             ErrorHandler.handle_error(e, "Erreur lors de l'ouverture du dossier")
 
+    def _get_root_templates_for_distribution(self) -> List[Path]:
+        """Return root Models templates matching naming charter pattern."""
+        models_dir = PathManager.MODELS_DIR
+        if not models_dir.exists():
+            return []
+        templates = []
+        for file_path in models_dir.glob("*.docx"):
+            name = file_path.name
+            # Keep only charter-compliant root templates (exclude utility docs).
+            if re.match(r"^\d{4}-\d{2}_.+_Template\.docx$", name):
+                templates.append(file_path)
+        return sorted(templates)
+
+    def _build_prefixed_template_name(self, source_name: str, legal_prefix: str) -> str:
+        """Build target name: PREFIX_YYYY-MM_<Document>_Template.docx"""
+        return f"{legal_prefix}_{source_name}"
+
+    def _copy_root_templates_to_legal_folders(self):
+        """Copy root templates into each legal-form folder with prefixed naming."""
+        try:
+            models_dir = PathManager.MODELS_DIR
+            if not models_dir.exists():
+                messagebox.showwarning("Dossier introuvable", f"Le dossier Models n'existe pas: {models_dir}")
+                return
+
+            root_templates = self._get_root_templates_for_distribution()
+            if not root_templates:
+                messagebox.showwarning(
+                    "Aucun template conforme",
+                    "Aucun template racine conforme à la charte n'a été trouvé.\n"
+                    "Format attendu: YYYY-MM_Nom-Document_Template.docx"
+                )
+                return
+
+            copied = 0
+            skipped = 0
+            created_dirs = 0
+
+            for folder_name, prefix in LEGAL_FORM_PREFIXES.items():
+                target_dir = models_dir / folder_name
+                if not target_dir.exists():
+                    target_dir.mkdir(parents=True, exist_ok=True)
+                    created_dirs += 1
+
+                for src in root_templates:
+                    target_name = self._build_prefixed_template_name(src.name, prefix)
+                    target_path = target_dir / target_name
+
+                    if target_path.exists():
+                        skipped += 1
+                        continue
+
+                    shutil.copy2(src, target_path)
+                    copied += 1
+
+            messagebox.showinfo(
+                "Copie terminée",
+                f"Distribution des templates terminée.\n\n"
+                f"Templates source: {len(root_templates)}\n"
+                f"Dossiers créés: {created_dirs}\n"
+                f"Fichiers copiés: {copied}\n"
+                f"Fichiers déjà existants (ignorés): {skipped}"
+            )
+
+            self._refresh_template_list()
+
+        except Exception as e:
+            logger.exception("Erreur lors de la copie des templates: %s", e)
+            ErrorHandler.handle_error(e, "Erreur lors de la copie des templates")
+
     def _upload_template(self):
         """Upload a new template file to the appropriate folder with improved UX.
         
@@ -738,7 +856,7 @@ class GenerationSelectorDialog(tk.Toplevel):
         """
         try:
             # Get selected legal form first
-            selected_form = self.legal_form_var.get()
+            selected_form = (self.legal_form_var.get() or '').strip()
             
             if not selected_form:
                 messagebox.showwarning("Sélection requise", "Veuillez d'abord sélectionner une forme juridique")
@@ -764,7 +882,7 @@ class GenerationSelectorDialog(tk.Toplevel):
             models_dir = PathManager.MODELS_DIR
             models_dir.mkdir(parents=True, exist_ok=True)
             
-            dest_dir = models_dir / selected_form
+            dest_dir = models_dir / LEGAL_FORM_TO_FOLDER.get(selected_form, selected_form)
             dest_dir.mkdir(parents=True, exist_ok=True)
 
             dest_path = dest_dir / file_path.name
@@ -830,6 +948,30 @@ class GenerationSelectorDialog(tk.Toplevel):
             )
             return
 
+        # Optional save to DB (choice now lives in this selector)
+        if self.save_before_var.get():
+            if not self.save_callback:
+                messagebox.showwarning(
+                    "Sauvegarde indisponible",
+                    "La sauvegarde avant génération n'est pas disponible dans ce contexte."
+                )
+                return
+            try:
+                db_path = self.save_callback()
+            except Exception as _err:
+                logger.exception("Erreur lors de la sauvegarde avant génération: %s", _err)
+                messagebox.showwarning(
+                    "Sauvegarde échouée",
+                    "La sauvegarde a échoué. La génération a été annulée."
+                )
+                return
+            if not db_path:
+                messagebox.showwarning(
+                    "Sauvegarde manquante",
+                    "La sauvegarde a échoué ou a été annulée. La génération a été annulée."
+                )
+                return
+
         # Ask for output directory
         out_dir = filedialog.askdirectory(title="Sélectionner le dossier de sortie")
         if not out_dir:
@@ -893,7 +1035,7 @@ class GenerationSelectorDialog(tk.Toplevel):
                 tpl_paths = [str(t.resolve()) for t in selected_templates]
 
                 # Determine PDF conversion
-                to_pdf = self.output_format in ('pdf', 'both')
+                to_pdf = self.output_format_var.get() in ('pdf', 'both')
 
                 # Call render_templates with generation type and legal form info
                 report = render_templates(
@@ -963,17 +1105,23 @@ class GenerationSelectorDialog(tk.Toplevel):
         return self.result
 
 
-def show_generation_selector(parent, values: Optional[dict] = None, output_format: str = 'docx') -> Optional[dict]:
+def show_generation_selector(
+    parent,
+    values: Optional[dict] = None,
+    output_format: str = 'word',
+    save_callback: Optional[Callable[[], Optional[Path]]] = None,
+) -> Optional[dict]:
     """Show the generation selector dialog and return the result.
 
     Args:
         parent: Parent window
         values: Dictionary of form values (societe, associes, contrat)
-        output_format: 'docx', 'pdf', or 'both'
+        output_format: 'word', 'pdf', or 'both'
+        save_callback: optional callback to persist values before generation
 
     Returns:
         Dictionary with generation result, or None if cancelled
     """
-    dialog = GenerationSelectorDialog(parent, values or {}, output_format)
+    dialog = GenerationSelectorDialog(parent, values or {}, output_format, save_callback=save_callback)
     parent.wait_window(dialog)
     return dialog.get_result()

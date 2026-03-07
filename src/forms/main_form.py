@@ -177,8 +177,19 @@ class MainForm(ttk.Frame):
         page.grid_columnconfigure(0, weight=1)
         header = self.create_section_header(page, "Informations des Associés", "👥", 0, 0)
         # AssocieForm expects a ThemeManager instance
-        self.associe_form = AssocieForm(page, self.theme_manager)
+        self.associe_form = AssocieForm(
+            page,
+            self.theme_manager,
+            get_societe_totals=self._get_societe_totals_for_associes,
+        )
         self.associe_form.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
+        try:
+            self.associe_form.bind_societe_totals_vars(
+                getattr(self.societe_form, 'capital_var', None),
+                getattr(self.societe_form, 'parts_social_var', None),
+            )
+        except Exception:
+            pass
         # Defensive: remove any accidental scrollbar widgets that might have been
         # created inside the page by older code or third-party widgets. We want
         # a single scrollbar (the one on the main form canvas) to control
@@ -198,6 +209,17 @@ class MainForm(ttk.Frame):
             # conservative: ignore errors here to avoid breaking startup
             pass
         self.pages.append(('associes', page, self.associe_form))
+
+    def _get_societe_totals_for_associes(self):
+        """Return company capital/parts totals for associate distribution."""
+        try:
+            if hasattr(self, 'societe_form') and self.societe_form is not None:
+                cap = self.societe_form.capital_var.get() if hasattr(self.societe_form, 'capital_var') else ''
+                parts = self.societe_form.parts_social_var.get() if hasattr(self.societe_form, 'parts_social_var') else ''
+                return cap, parts
+        except Exception:
+            pass
+        return '', ''
 
     def create_contrat_page(self):
         page = ttk.Frame(self.forms_container)
@@ -792,7 +814,8 @@ class MainForm(ttk.Frame):
                                 'PARTS': 'num_parts', 'DATE_NAISS': 'date_naiss', 'LIEU_NAISS': 'lieu_naiss',
                                 'NATIONALITY': 'nationalite', 'CIN_NUM': 'num_piece', 'CIN_VALIDATY': 'validite_piece',
                                 'ADRESSE': 'adresse', 'PHONE': 'telephone', 'EMAIL': 'email',
-                                'IS_GERANT': 'est_gerant', 'QUALITY': 'qualite', 'CAPITAL_DETENU': 'capital_detenu'
+                                'IS_GERANT': 'est_gerant', 'QUALITY': 'qualite', 'CAPITAL_DETENU': 'capital_detenu',
+                                'PART_PERCENT': 'percentage'
                             }
                             for _, ar in matches.iterrows():
                                 ad = {}

@@ -14,8 +14,8 @@ class ModernTheme:
         PALETTE_LIGHT = {
             'bg': '#ffffff',
             'fg': '#333333',
-            'accent': '#2171cd',
-            'accent_light': '#4a90e2',
+            'accent': '#6f7a86',
+            'accent_light': '#8a95a1',
             'error': '#dc3545',
             'success': '#28a745',
             'warning': '#ffc107',
@@ -35,8 +35,8 @@ class ModernTheme:
             'bg': '#1f1f1f',
             # Ensure high contrast text on dark backgrounds
             'fg': '#f3f3f3',
-            'accent': '#4a90e2',
-            'accent_light': '#6fb3ff',
+            'accent': '#6c7783',
+            'accent_light': '#828d99',
             'error': '#ff6b6b',
             'success': '#28a745',
             'warning': '#ffc107',
@@ -124,9 +124,13 @@ class ModernTheme:
         secondary_fg = '#f3f3f3' if self.mode == 'dark' else '#2f3742'
         success_bg = '#4E9D78'
         cancel_bg = '#B95F53'
-        manage_bg = '#5A8FB8'
-        confirm_bg = '#6F95BF'
+        manage_bg = '#6f7b87'
+        confirm_bg = '#77828d'
         close_bg = '#6A7077'
+        refresh_bg = '#6E7F90'
+        view_bg = '#7D748A'
+        upload_bg = '#5F8577'
+        copy_bg = '#8A7A66'
         compact_pad = (10, 6)
 
         # Style principal pour les boutons
@@ -221,6 +225,36 @@ class ModernTheme:
             padding=compact_pad,
             font=('Segoe UI', 9))
 
+        # Quatre styles dédiés pour les actions de modèles (couleurs différenciées)
+        self.style.configure('Refresh.TButton',
+            background=refresh_bg,
+            foreground='white',
+            relief='solid',
+            borderwidth=1,
+            padding=compact_pad,
+            font=('Segoe UI', 9))
+        self.style.configure('View.TButton',
+            background=view_bg,
+            foreground='white',
+            relief='solid',
+            borderwidth=1,
+            padding=compact_pad,
+            font=('Segoe UI', 9))
+        self.style.configure('Upload.TButton',
+            background=upload_bg,
+            foreground='white',
+            relief='solid',
+            borderwidth=1,
+            padding=compact_pad,
+            font=('Segoe UI', 9))
+        self.style.configure('Copy.TButton',
+            background=copy_bg,
+            foreground='white',
+            relief='solid',
+            borderwidth=1,
+            padding=compact_pad,
+            font=('Segoe UI', 9))
+
         # Boutons de confirmation (bleu doux)
         self.style.configure('Confirm.TButton',
             background=confirm_bg,
@@ -261,15 +295,28 @@ class ModernTheme:
                 foreground=[('disabled', '#cccccc')])
             # Manage button states
             self.style.map('Manage.TButton',
-                background=[('active', '#6CA1C9'), ('disabled', self.colors['disabled']), ('pressed', '#4C7EA6')],
+                background=[('active', '#7e8b97'), ('disabled', self.colors['disabled']), ('pressed', '#5f6b76')],
                 foreground=[('disabled', '#cccccc')])
             # Confirm button states
             self.style.map('Confirm.TButton',
-                background=[('active', '#7FA7D2'), ('disabled', self.colors['disabled']), ('pressed', '#5D84AE')],
+                background=[('active', '#87929d'), ('disabled', self.colors['disabled']), ('pressed', '#66717c')],
                 foreground=[('disabled', '#cccccc')])
             # Close button states
             self.style.map('Close.TButton',
                 background=[('active', '#7A8189'), ('disabled', self.colors['disabled']), ('pressed', '#565E66')],
+                foreground=[('disabled', '#cccccc')])
+            # Dedicated template action button states
+            self.style.map('Refresh.TButton',
+                background=[('active', '#7C8FA2'), ('disabled', self.colors['disabled']), ('pressed', '#596B7C')],
+                foreground=[('disabled', '#cccccc')])
+            self.style.map('View.TButton',
+                background=[('active', '#8C829A'), ('disabled', self.colors['disabled']), ('pressed', '#695F76')],
+                foreground=[('disabled', '#cccccc')])
+            self.style.map('Upload.TButton',
+                background=[('active', '#6E9688'), ('disabled', self.colors['disabled']), ('pressed', '#4C7164')],
+                foreground=[('disabled', '#cccccc')])
+            self.style.map('Copy.TButton',
+                background=[('active', '#9A8A76'), ('disabled', self.colors['disabled']), ('pressed', '#786854')],
                 foreground=[('disabled', '#cccccc')])
         except Exception:
             pass
@@ -377,18 +424,19 @@ class ModernTheme:
             foreground=self.colors['label_fg'])
         # Ensure checkbuttons and radiobuttons have visible selection color
         try:
+            selected_bg = '#5f6974' if self.mode == 'dark' else '#c0c9d2'
             self.style.configure('TCheckbutton',
                 background=self.colors['bg'],
                 foreground=self.colors['fg'])
             self.style.map('TCheckbutton',
-                background=[('active', self.colors['hover']), ('selected', self.colors['accent'])],
+                background=[('active', self.colors['hover']), ('selected', selected_bg)],
                 foreground=[('selected', 'white')])
 
             self.style.configure('TRadiobutton',
                 background=self.colors['bg'],
                 foreground=self.colors['fg'])
             self.style.map('TRadiobutton',
-                background=[('active', self.colors['hover']), ('selected', self.colors['accent'])],
+                background=[('active', self.colors['hover']), ('selected', selected_bg)],
                 foreground=[('selected', 'white')])
         except Exception:
             # Some themes may not support mapping these states; ignore safely
