@@ -1,7 +1,10 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 from typing import Optional
 import logging
+import os
+import subprocess
+import sys
 from contextlib import nullcontext
 from .societe_form import SocieteForm
 from .associe_form import AssocieForm
@@ -616,7 +619,11 @@ class MainForm(ttk.Frame):
         """Open template variable analyzer with global and detailed views."""
         try:
             from ..utils.doc_generator import get_expected_context_keys
-            from ..utils.template_value_analyzer import analyze_templates, filter_analysis_rows
+            from ..utils.template_value_analyzer import (
+                analyze_templates,
+                export_analysis_rows,
+                filter_analysis_rows,
+            )
 
             top = tk.Toplevel(self.winfo_toplevel())
             top.transient(self.winfo_toplevel())
@@ -769,14 +776,22 @@ class MainForm(ttk.Frame):
             ttk.Label(footer, textvariable=errors_var, foreground="#c5865d").grid(row=1, column=0, sticky="w")
 
             analysis_data = {"variables": [], "details": [], "summary": {}, "templates": [], "errors": []}
+            current_global_rows = []
+            current_detail_rows = []
+            detail_item_map = {}
 
-            def _populate_tree(tree, rows, columns):
+            def _populate_tree(tree, rows, columns, item_map=None):
                 for item_id in tree.get_children(""):
                     tree.delete(item_id)
+                if item_map is not None:
+                    item_map.clear()
                 for row in rows:
-                    tree.insert("", "end", values=[row.get(col, "") for col in columns])
+                    item_id = tree.insert("", "end", values=[row.get(col, "") for col in columns])
+                    if item_map is not None:
+                        item_map[item_id] = row
 
             def _apply_filters(_event=None):
+                nonlocal current_global_rows, current_detail_rows
                 global_rows = filter_analysis_rows(
                     analysis_data.get("variables", []),
                     search_text=search_var.get(),
@@ -791,12 +806,87 @@ class MainForm(ttk.Frame):
                     section=section_var.get(),
                     coverage=coverage_var.get(),
                 )
-                _populate_tree(global_tree, global_rows, global_cols)
-                _populate_tree(detail_tree, detail_rows, detail_cols)
+                current_global_rows = global_rows
+                current_detail_rows = detail_rows
+                _populate_tree(global_tree, current_global_rows, global_cols)
+                _populate_tree(detail_tree, current_detail_rows, detail_cols, item_map=detail_item_map)
                 status_var.set(
                     f"Global: {len(global_rows)} / {len(analysis_data.get('variables', []))} | "
                     f"Détail: {len(detail_rows)} / {len(analysis_data.get('details', []))}"
                 )
+
+            def _export_current_view(default_ext: str):
+                if notebook.index(notebook.select()) == 0:
+                    rows = current_global_rows
+                    title = "vue_globale"
+                    export_columns = (
+                        "variable",
+                        "occurrences",
+                        "templates_count",
+                        "section",
+                        "coverage",
+                        "templates",
+                    )
+                else:
+                    rows = current_detail_rows
+                    title = "vue_detaillee"
+                    export_columns = (
+                        "template",
+                        "template_path",
+                        "variable",
+                        "occurrences",
+                        "section",
+                        "coverage",
+                    )
+
+                if not rows:
+                    messagebox.showwarning("Export", "Aucune ligne à exporter pour la vue courante.")
+                    return
+
+                filename = filedialog.asksaveasfilename(
+                    title="Exporter l'analyse",
+                    defaultextension=default_ext,
+                    filetypes=[
+                        ("Fichier Excel", "*.xlsx"),
+                        ("Fichier CSV", "*.csv"),
+                    ],
+                    initialfile=f"analyse_templates_{title}{default_ext}",
+                )
+                if not filename:
+                    return
+                try:
+                    export_analysis_rows(rows, filename, columns=export_columns)
+                    messagebox.showinfo("Export", f"Export terminé:\n{filename}")
+                except Exception as exc:
+                    logger.exception("Erreur lors de l'export de l'analyse templates")
+                    messagebox.showerror("Erreur", f"Impossible d'exporter: {exc}")
+
+            def _open_selected_template():
+                selected = detail_tree.selection()
+                if not selected:
+                    messagebox.showwarning("Ouvrir template", "Sélectionnez d'abord une ligne dans la vue détaillée.")
+                    return
+                row = detail_item_map.get(selected[0]) or {}
+                template_path_value = row.get("template_path")
+                template_name = row.get("template")
+
+                candidate = Path(template_path_value) if template_path_value else None
+                if not candidate or not candidate.exists():
+                    if template_name:
+                        matches = sorted(PathManager.MODELS_DIR.rglob(str(template_name)))
+                        if not matches:
+                            messagebox.showerror(
+                                "Ouvrir template",
+                                f"Template introuvable pour '{template_name}'.",
+                            )
+                            return
+                        candidate = matches[0]
+
+                try:
+                    self._open_path_in_system(candidate)
+                except Exception as exc:
+                    logger.exception("Erreur lors de l'ouverture du template")
+                    messagebox.showerror("Erreur", f"Impossible d'ouvrir le template: {exc}")
 
             def _refresh_analysis():
                 try:
@@ -842,6 +932,24 @@ class MainForm(ttk.Frame):
             ).pack(side="left", padx=(0, 6))
             WidgetFactory.create_button(
                 actions,
+                text="📤 Export CSV",
+                command=lambda: _export_current_view(".csv"),
+                style="Secondary.TButton",
+            ).pack(side="left", padx=(0, 6))
+            WidgetFactory.create_button(
+                actions,
+                text="📗 Export Excel",
+                command=lambda: _export_current_view(".xlsx"),
+                style="Secondary.TButton",
+            ).pack(side="left", padx=(0, 6))
+            WidgetFactory.create_button(
+                actions,
+                text="📂 Ouvrir template",
+                command=_open_selected_template,
+                style="View.TButton",
+            ).pack(side="left", padx=(0, 6))
+            WidgetFactory.create_button(
+                actions,
                 text="❌ Fermer",
                 command=top.destroy,
                 style="Close.TButton",
@@ -857,6 +965,21 @@ class MainForm(ttk.Frame):
         except Exception as e:
             logger.exception("Erreur lors de l'ouverture de l'analyse des valeurs templates")
             messagebox.showerror("Erreur", f"Impossible d'ouvrir l'analyse: {e}")
+
+    @staticmethod
+    def _open_path_in_system(path: Path):
+        """Open a file/folder with the system default application."""
+        p = Path(path)
+        if not p.exists():
+            raise FileNotFoundError(f"Chemin introuvable: {p}")
+
+        if os.name == "nt":
+            os.startfile(str(p))  # type: ignore[attr-defined]
+            return
+        if sys.platform == "darwin":
+            subprocess.run(["open", str(p)], check=False)
+            return
+        subprocess.run(["xdg-open", str(p)], check=False)
 
     def _on_defaults_changed(self):
         """Recharger les formulaires quand les défauts changent."""

@@ -4,6 +4,7 @@ import unittest
 
 from src.utils.template_value_analyzer import (
     analyze_templates,
+    export_analysis_rows,
     extract_template_variables,
     filter_analysis_rows,
 )
@@ -91,6 +92,40 @@ class TestTemplateValueAnalyzer(unittest.TestCase):
         filtered = filter_analysis_rows(rows, coverage="non couvert")
         self.assertEqual(1, len(filtered))
         self.assertEqual("non couvert", filtered[0]["coverage"])
+
+    def test_export_analysis_rows_to_csv_and_xlsx(self):
+        import tempfile
+        rows = [
+            {
+                "template": "tpl_a.docx",
+                "template_path": "C:/tmp/Models/tpl_a.docx",
+                "variable": "DEN_STE",
+                "occurrences": 2,
+                "section": "societe",
+                "coverage": "couvert",
+                "templates": ["tpl_a.docx"],
+            }
+        ]
+
+        with tempfile.TemporaryDirectory() as tmp:
+            out_csv = Path(tmp) / "export.csv"
+            out_xlsx = Path(tmp) / "export.xlsx"
+
+            export_analysis_rows(rows, out_csv, columns=("template", "variable", "occurrences", "templates"))
+            self.assertTrue(out_csv.exists())
+            csv_text = out_csv.read_text(encoding="utf-8-sig")
+            self.assertIn("template,variable,occurrences,templates", csv_text)
+            self.assertIn("tpl_a.docx,DEN_STE,2,tpl_a.docx", csv_text)
+
+            export_analysis_rows(rows, out_xlsx, columns=("template", "variable", "occurrences"))
+            self.assertTrue(out_xlsx.exists())
+
+            from openpyxl import load_workbook
+
+            wb = load_workbook(out_xlsx)
+            ws = wb.active
+            self.assertEqual("template", ws["A1"].value)
+            self.assertEqual("DEN_STE", ws["B2"].value)
 
 
 if __name__ == "__main__":

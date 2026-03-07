@@ -1,0 +1,163 @@
+{
+  "generated_at_ms": 4713.878,
+  "events": [
+    {
+      "type": "span",
+      "name": "tk.Tk.__init__",
+      "start_ms": 0.008,
+      "end_ms": 107.573,
+      "duration_ms": 107.564,
+      "meta": {}
+    },
+    {
+      "type": "span",
+      "name": "WindowManager.setup_window",
+      "start_ms": 107.608,
+      "end_ms": 274.572,
+      "duration_ms": 166.963,
+      "meta": {}
+    },
+    {
+      "type": "span",
+      "name": "ThemeManager.__init__",
+      "start_ms": 274.605,
+      "end_ms": 2006.246,
+      "duration_ms": 1731.64,
+      "meta": {}
+    },
+    {
+      "type": "span",
+      "name": "MainApp.setup_gui.main_container",
+      "start_ms": 2006.275,
+      "end_ms": 2008.389,
+      "duration_ms": 2.114,
+      "meta": {}
+    },
+    {
+      "type": "span",
+      "name": "MainForm.setup_scrollable_container",
+      "start_ms": 2015.553,
+      "end_ms": 2019.431,
+      "duration_ms": 3.878,
+      "meta": {}
+    },
+    {
+      "type": "span",
+      "name": "SocieteForm.__init__",
+      "start_ms": 2511.239,
+      "end_ms": 2907.171,
+      "duration_ms": 395.932,
+      "meta": {}
+    },
+    {
+      "type": "span",
+      "name": "MainForm.create_societe_page",
+      "start_ms": 2019.46,
+      "end_ms": 2907.217,
+      "duration_ms": 887.758,
+      "meta": {}
+    },
+    {
+      "type": "span",
+      "name": "AssocieForm.__init__",
+      "start_ms": 2937.935,
+      "end_ms": 2985.239,
+      "duration_ms": 47.303,
+      "meta": {}
+    },
+    {
+      "type": "span",
+      "name": "AssocieForm.add_initial_associe",
+      "start_ms": 2985.373,
+      "end_ms": 3515.849,
+      "duration_ms": 530.476,
+      "meta": {}
+    },
+    {
+      "type": "span",
+      "name": "MainForm.create_associe_page",
+      "start_ms": 2907.234,
+      "end_ms": 3515.876,
+      "duration_ms": 608.642,
+      "meta": {}
+    },
+    {
+      "type": "span",
+      "name": "ContratForm.__init__",
+      "start_ms": 3540.731,
+      "end_ms": 4511.588,
+      "duration_ms": 970.857,
+      "meta": {}
+    },
+    {
+      "type": "span",
+      "name": "MainForm.create_contrat_page",
+      "start_ms": 3515.894,
+      "end_ms": 4511.642,
+      "duration_ms": 995.747,
+      "meta": {}
+    },
+    {
+      "type": "span",
+      "name": "MainForm.show_page.initial",
+      "start_ms": 4511.659,
+      "end_ms": 4512.555,
+      "duration_ms": 0.896,
+      "meta": {}
+    },
+    {
+      "type": "span",
+      "name": "MainForm.setup_navigation",
+      "start_ms": 4512.577,
+      "end_ms": 4512.647,
+      "duration_ms": 0.07,
+      "meta": {}
+    },
+    {
+      "type": "span",
+      "name": "MainForm.setup_forms",
+      "start_ms": 2019.453,
+      "end_ms": 4512.655,
+      "duration_ms": 2493.202,
+      "meta": {}
+    },
+    {
+      "type": "span",
+      "name": "MainForm.__init__",
+      "start_ms": 2008.41,
+      "end_ms": 4512.685,
+      "duration_ms": 2504.274,
+      "meta": {}
+    },
+    {
+      "type": "span",
+      "name": "MainApp.setup_buttons",
+      "start_ms": 4512.704,
+      "end_ms": 4667.451,
+      "duration_ms": 154.747,
+      "meta": {}
+    },
+    {
+      "type": "span",
+      "name": "MainApp.setup_gui",
+      "start_ms": 2006.271,
+      "end_ms": 4667.475,
+      "duration_ms": 2661.204,
+      "meta": {}
+    },
+    {
+      "type": "span",
+      "name": "MainApp.__init__",
+      "start_ms": 0.005,
+      "end_ms": 4667.483,
+      "duration_ms": 4667.479,
+      "meta": {}
+    },
+    {
+      "type": "mark",
+      "name": "MainApp.mainloop.first_idle",
+      "at_ms": 4713.428,
+      "meta": {}
+    }
+  ]
+}

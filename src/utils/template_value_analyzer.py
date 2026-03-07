@@ -1,5 +1,6 @@
 import logging
 import re
+import csv
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Set, Union
@@ -118,18 +119,19 @@ def analyze_templates(
 ) -> Dict:
     """Analyze all .docx templates and return global and detailed stats."""
     root = Path(templates_dir)
-    template_paths = sorted(p for p in root.rglob("*.docx") if p.is_file())
+    template_files = sorted(p for p in root.rglob("*.docx") if p.is_file())
 
     key_sections = get_expected_context_key_sections()
     expected_keys = set(context_keys or key_sections.keys())
 
     global_counts: Counter = Counter()
     variable_templates: Dict[str, Set[str]] = defaultdict(set)
+    variable_template_paths: Dict[str, Set[str]] = defaultdict(set)
     details: List[Dict] = []
     errors: List[Dict] = []
     templates_with_variables = 0
 
-    for template_path in template_paths:
+    for template_path in template_files:
         try:
             counts = extract_template_variables(template_path)
         except Exception as exc:
@@ -143,9 +145,11 @@ def analyze_templates(
         for variable_name, occurrence_count in counts.items():
             global_counts[variable_name] += int(occurrence_count)
             variable_templates[variable_name].add(template_path.name)
+            variable_template_paths[variable_name].add(str(template_path))
             details.append(
                 {
                     "template": template_path.name,
+                    "template_path": str(template_path),
                     "variable": variable_name,
                     "occurrences": int(occurrence_count),
                     "section": _infer_section(variable_name, key_sections),
@@ -156,12 +160,14 @@ def analyze_templates(
     variable_rows: List[Dict] = []
     for variable_name, occurrence_count in global_counts.items():
         templates = sorted(variable_templates.get(variable_name, set()))
+        paths_for_variable = sorted(variable_template_paths.get(variable_name, set()))
         variable_rows.append(
             {
                 "variable": variable_name,
                 "occurrences": int(occurrence_count),
-                "templates_count": len(templates),
+                "templates_count": len(paths_for_variable),
                 "templates": templates,
+                "template_paths": paths_for_variable,
                 "section": _infer_section(variable_name, key_sections),
                 "coverage": "couvert" if variable_name in expected_keys else "non couvert",
             }
@@ -175,7 +181,7 @@ def analyze_templates(
 
     return {
         "summary": {
-            "total_templates": len(template_paths),
+            "total_templates": len(template_files),
             "templates_with_variables": templates_with_variables,
             "total_variable_occurrences": int(sum(global_counts.values())),
             "total_distinct_variables": len(variable_rows),
@@ -184,7 +190,52 @@ def analyze_templates(
         },
         "variables": variable_rows,
         "details": details,
-        "templates": [p.name for p in template_paths],
+        "templates": [p.name for p in template_files],
         "errors": errors,
     }
 
+
+def export_analysis_rows(rows: Iterable[Dict], out_path: Union[str, Path], columns: Optional[Iterable[str]] = None) -> Path:
+    """Export analysis rows to CSV or XLSX."""
+    path = Path(out_path)
+    row_list = list(rows)
+
+    if columns is None:
+        if row_list:
+            columns = list(row_list[0].keys())
+        else:
+            columns = []
+    columns = list(columns)
+
+    def _serialize(value):
+        if isinstance(value, (list, tuple, set)):
+            return "; ".join(str(v) for v in value)
+        return value
+
+    suffix = path.suffix.lower()
+    if suffix == ".csv":
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("w", encoding="utf-8-sig", newline="") as fh:
+            writer = csv.DictWriter(fh, fieldnames=columns, extrasaction="ignore")
+            writer.writeheader()
+            for row in row_list:
+                writer.writerow({col: _serialize(row.get(col, "")) for col in columns})
+        return path
+
+    if suffix == ".xlsx":
+        try:
+            from openpyxl import Workbook
+        except Exception as exc:
+            raise RuntimeError("openpyxl est requis pour exporter en Excel") from exc
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Analyse"
+        ws.append(columns)
+        for row in row_list:
+            ws.append([_serialize(row.get(col, "")) for col in columns])
+        path.parent.mkdir(parents=True, exist_ok=True)
+        wb.save(path)
+        return path
+
+    raise ValueError("Format non supporté. Utilisez .csv ou .xlsx")

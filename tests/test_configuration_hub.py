@@ -26,6 +26,18 @@ def _find_button_by_text(root, expected_text):
     return None
 
 
+def _find_tree_by_first_column(root, first_column):
+    for widget in _walk_widgets(root):
+        try:
+            if str(widget.winfo_class()) == "Treeview":
+                columns = tuple(widget["columns"])
+                if columns and columns[0] == first_column:
+                    return widget
+        except Exception:
+            continue
+    return None
+
+
 def _find_toplevel_by_title(root, expected_title):
     for child in root.winfo_children():
         if isinstance(child, tk.Toplevel):
@@ -115,6 +127,7 @@ class TestConfigurationHub(unittest.TestCase):
             "details": [
                 {
                     "template": "tpl.docx",
+                    "template_path": "C:/tmp/Models/tpl.docx",
                     "variable": "DEN_STE",
                     "occurrences": 1,
                     "section": "societe",
@@ -133,7 +146,13 @@ class TestConfigurationHub(unittest.TestCase):
             dialog = _find_toplevel_by_title(self.root, "Configuration - Analyse des valeurs templates")
             self.assertIsNotNone(dialog)
             refresh_btn = _find_button_by_text(dialog, "🔄 Actualiser")
+            export_csv_btn = _find_button_by_text(dialog, "📤 Export CSV")
+            export_excel_btn = _find_button_by_text(dialog, "📗 Export Excel")
+            open_template_btn = _find_button_by_text(dialog, "📂 Ouvrir template")
             self.assertIsNotNone(refresh_btn)
+            self.assertIsNotNone(export_csv_btn)
+            self.assertIsNotNone(export_excel_btn)
+            self.assertIsNotNone(open_template_btn)
 
             initial_calls = analyze_mock.call_count
             refresh_btn.invoke()
@@ -141,7 +160,64 @@ class TestConfigurationHub(unittest.TestCase):
             self.root.update_idletasks()
             self.assertGreaterEqual(analyze_mock.call_count, initial_calls + 1)
 
+    def test_template_analyzer_open_template_uses_system_opener(self):
+        fake_data = {
+            "summary": {
+                "total_templates": 1,
+                "templates_with_variables": 1,
+                "total_variable_occurrences": 1,
+                "total_distinct_variables": 1,
+                "covered_variables": 1,
+                "uncovered_variables": 0,
+            },
+            "variables": [
+                {
+                    "variable": "DEN_STE",
+                    "occurrences": 1,
+                    "templates_count": 1,
+                    "templates": ["tpl.docx"],
+                    "section": "societe",
+                    "coverage": "couvert",
+                }
+            ],
+            "details": [
+                {
+                    "template": "tpl.docx",
+                    "template_path": "C:/tmp/Models/tpl.docx",
+                    "variable": "DEN_STE",
+                    "occurrences": 1,
+                    "section": "societe",
+                    "coverage": "couvert",
+                }
+            ],
+            "templates": ["tpl.docx"],
+            "errors": [],
+        }
+
+        with patch("src.utils.template_value_analyzer.analyze_templates", return_value=fake_data), \
+             patch("pathlib.Path.exists", return_value=True), \
+             patch.object(MainForm, "_open_path_in_system") as open_mock:
+            self.form._open_template_values_analyzer_dialog()
+            self.root.update()
+            self.root.update_idletasks()
+
+            dialog = _find_toplevel_by_title(self.root, "Configuration - Analyse des valeurs templates")
+            self.assertIsNotNone(dialog)
+            detail_tree = _find_tree_by_first_column(dialog, "template")
+            self.assertIsNotNone(detail_tree)
+            rows = detail_tree.get_children("")
+            self.assertTrue(rows)
+            detail_tree.selection_set(rows[0])
+            detail_tree.focus(rows[0])
+
+            open_template_btn = _find_button_by_text(dialog, "📂 Ouvrir template")
+            self.assertIsNotNone(open_template_btn)
+            open_template_btn.invoke()
+            self.root.update()
+            self.root.update_idletasks()
+
+            open_mock.assert_called_once()
+
 
 if __name__ == "__main__":
     unittest.main()
-
