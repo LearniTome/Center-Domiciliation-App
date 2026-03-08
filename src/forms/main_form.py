@@ -101,7 +101,26 @@ class MainForm(ttk.Frame):
             if event.state & 0x4: # Check if Control key is pressed
                 # Zoom with Ctrl + Mouse wheel
                 return
-            self.canvas.yview_scroll(-1 * (event.delta // 120), "units")
+            # Ignore wheel events coming from modal/top-level dialogs.
+            try:
+                source_widget = event.widget
+                source_top = source_widget.winfo_toplevel() if source_widget is not None else None
+                main_top = self.winfo_toplevel()
+                if source_top is not None and source_top is not main_top:
+                    return
+            except Exception:
+                pass
+
+            try:
+                delta = int(getattr(event, "delta", 0))
+            except Exception:
+                delta = 0
+            if delta == 0:
+                return
+            steps = max(1, abs(delta) // 120)
+            direction = -1 if delta > 0 else 1
+            self.canvas.yview_scroll(direction * steps, "units")
+            return "break"
 
         self.canvas.bind_all("<MouseWheel>", _on_mousewheel)
 
@@ -426,7 +445,7 @@ class MainForm(ttk.Frame):
             top = tk.Toplevel(self.winfo_toplevel())
             top.transient(self.winfo_toplevel())
             top.title('Configuration - Valeurs par défaut')
-            top.geometry('700x550')
+            top.geometry('960x560')
             top.resizable(True, True)
             
             # Apply theme to the dialog window
@@ -468,6 +487,9 @@ class MainForm(ttk.Frame):
                     'fields': [
                         ('DenSte', 'Dénomination sociale', constants.DenSte),
                         ('FormJur', 'Forme juridique', constants.Formjur),
+                        ('Ice', 'ICE', []),
+                        ('DateIce', 'Date certificat négatif', []),
+                        ('DateExpCertNeg', 'Date expiration certificat négatif', []),
                         ('Capital', 'Capital', constants.Capital),
                         ('PartsSocial', 'Parts sociales', constants.PartsSocial),
                         ('ValeurNominale', 'Valeur nominale', ['100']),
@@ -479,7 +501,13 @@ class MainForm(ttk.Frame):
                     'label': '👤 Associé',
                     'fields': [
                         ('Civility', 'Civilité', constants.Civility),
+                        ('Nom', 'Nom', []),
+                        ('Prenom', 'Prénom', []),
                         ('Nationality', 'Nationalité', constants.Nationalite),
+                        ('NumPiece', 'N° CIN', []),
+                        ('Telephone', 'Téléphone', []),
+                        ('Email', 'Email', []),
+                        ('Adresse', 'Adresse', []),
                         ('Quality', 'Qualité', constants.QualityGerant),
                     ]
                 },
@@ -487,9 +515,20 @@ class MainForm(ttk.Frame):
                     'label': '📋 Contrat',
                     'fields': [
                         ('NbMois', 'Période (mois)', constants.Nbmois),
+                        ('TypeContratDomiciliation', 'Type contrat domiciliation', constants.TypeContratDomiciliation),
+                        ('TypeRenouvellement', 'Type renouvellement', constants.TypeRenouvellement),
+                        ('Tva', 'TVA initiale (%)', ['20']),
+                        ('DhHt', 'Loyer HT initial (DH)', ['83.3333']),
+                        ('TvaRenouvellement', 'TVA renouvellement (%)', ['20']),
+                        ('DhHtRenouvellement', 'Loyer HT renouvellement (DH)', ['166.667']),
                     ]
                 }
             }
+
+            def _is_full_width_field(field_key: str, field_label: str) -> bool:
+                if str(field_key or '').strip() in {'SteAdresse', 'Adresse'}:
+                    return True
+                return 'adresse' in str(field_label or '').strip().lower()
 
             for section_key, section_info in sections_config.items():
                 # Create frame for this tab
@@ -512,31 +551,97 @@ class MainForm(ttk.Frame):
                 canvas.pack(side='left', fill='both', expand=True)
                 scrollbar.pack(side='right', fill='y')
 
+                def _bind_canvas_mousewheel(target_canvas):
+                    def _on_wheel(event):
+                        try:
+                            delta = int(getattr(event, "delta", 0))
+                        except Exception:
+                            delta = 0
+                        if delta == 0:
+                            return "break"
+                        steps = max(1, abs(delta) // 120)
+                        direction = -1 if delta > 0 else 1
+                        target_canvas.yview_scroll(direction * steps, "units")
+                        return "break"
+
+                    # Linux compatibility
+                    def _on_wheel_up(_event):
+                        target_canvas.yview_scroll(-1, "units")
+                        return "break"
+
+                    def _on_wheel_down(_event):
+                        target_canvas.yview_scroll(1, "units")
+                        return "break"
+
+                    target_canvas.bind("<MouseWheel>", _on_wheel)
+                    target_canvas.bind("<Button-4>", _on_wheel_up)
+                    target_canvas.bind("<Button-5>", _on_wheel_down)
+
+                _bind_canvas_mousewheel(canvas)
+
                 # Add fields for this section
                 entry_vars[section_key] = {}
-                
-                for field_key, field_label, field_options in section_info['fields']:
-                    field_frame = ttk.Frame(scrollable_frame)
-                    field_frame.pack(fill='x', pady=8, padx=5)
+                fields_grid = ttk.Frame(scrollable_frame, padding=(8, 8, 8, 8))
+                fields_grid.pack(fill='both', expand=True)
+                fields_grid.columnconfigure(0, weight=1, uniform=f'{section_key}_defaults_cols')
+                fields_grid.columnconfigure(1, weight=1, uniform=f'{section_key}_defaults_cols')
+                fields_grid.columnconfigure(2, weight=1, uniform=f'{section_key}_defaults_cols')
 
-                    ttk.Label(field_frame, text=f'{field_label}:', width=20, anchor='w').pack(side='left', padx=(0, 10))
-                    
-                    # Get current value
+                grid_row = 0
+                grid_col = 0
+                for field_key, field_label, field_options in section_info['fields']:
+                    full_width = _is_full_width_field(field_key, field_label)
+                    col_span = 3 if full_width else 1
+
+                    if full_width and grid_col != 0:
+                        grid_row += 1
+                        grid_col = 0
+
+                    if full_width:
+                        cell_padx = (0, 0)
+                    elif grid_col == 0:
+                        cell_padx = (0, 6)
+                    elif grid_col == 1:
+                        cell_padx = (3, 3)
+                    else:
+                        cell_padx = (6, 0)
+
+                    field_frame = ttk.Frame(fields_grid)
+                    field_frame.grid(
+                        row=grid_row,
+                        column=0 if full_width else grid_col,
+                        columnspan=col_span,
+                        sticky='ew',
+                        padx=cell_padx,
+                        pady=5,
+                    )
+                    field_frame.columnconfigure(0, weight=1)
+
+                    ttk.Label(field_frame, text=f'{field_label}:', anchor='w').grid(
+                        row=0, column=0, sticky='w', pady=(0, 3)
+                    )
+
                     current_value = current_defaults.get(section_key, {}).get(field_key, '')
-                    
-                    # Create StringVar for this field
                     var = tk.StringVar(value=str(current_value))
                     entry_vars[section_key][field_key] = var
-                    
-                    # Create combobox with options (if available) or entry widget
+
                     if field_options and len(field_options) > 0:
-                        combo = ttk.Combobox(field_frame, textvariable=var, values=field_options, 
-                                           width=45, state='readonly')
-                        combo.pack(side='left', fill='x', expand=True)
+                        combo = ttk.Combobox(field_frame, textvariable=var, values=field_options, state='readonly')
+                        combo.grid(row=1, column=0, sticky='ew')
                     else:
-                        # Fallback to entry if no options
-                        entry = ttk.Entry(field_frame, textvariable=var, width=45)
-                        entry.pack(side='left', fill='x', expand=True)
+                        entry = ttk.Entry(field_frame, textvariable=var)
+                        entry.grid(row=1, column=0, sticky='ew')
+
+                    if full_width:
+                        grid_row += 1
+                        grid_col = 0
+                    elif grid_col == 0:
+                        grid_col = 1
+                    elif grid_col == 1:
+                        grid_col = 2
+                    else:
+                        grid_col = 0
+                        grid_row += 1
 
             # Button frame at bottom
             button_frame = ttk.Frame(main_frame)

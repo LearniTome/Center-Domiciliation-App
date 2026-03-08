@@ -164,22 +164,28 @@ class AssocieForm(ttk.Frame):
             defaults_mgr.get_default('associe', 'Civility') or (Civility[0] if Civility else self._CIVILITY_CANONICAL[0])
         )
         default_quality = defaults_mgr.get_default('associe', 'Quality') or (QualityGerant[0] if QualityGerant else 'Associé Gérant')
-        default_nationalite = self.nationalites[0] if self.nationalites else ''
+        default_nom = defaults_mgr.get_default('associe', 'Nom') or 'NOM'
+        default_prenom = defaults_mgr.get_default('associe', 'Prenom') or 'PRENOM'
+        default_nationalite = defaults_mgr.get_default('associe', 'Nationality') or (self.nationalites[0] if self.nationalites else '')
         default_lieu = self.lieux_naissance[0] if self.lieux_naissance else ''
+        default_num_piece = defaults_mgr.get_default('associe', 'NumPiece') or ''
+        default_adresse = defaults_mgr.get_default('associe', 'Adresse') or ''
+        default_telephone = defaults_mgr.get_default('associe', 'Telephone') or ''
+        default_email = defaults_mgr.get_default('associe', 'Email') or ''
 
         return {
             'civilite': tk.StringVar(value=default_civility),
-            'nom': tk.StringVar(value=''),
-            'prenom': tk.StringVar(value=''),
+            'nom': tk.StringVar(value=default_nom),
+            'prenom': tk.StringVar(value=default_prenom),
             'parts': tk.StringVar(value=''),
             'date_naiss': tk.StringVar(value=''),
             'lieu_naiss': tk.StringVar(value=default_lieu),
             'nationalite': tk.StringVar(value=default_nationalite),
-            'num_piece': tk.StringVar(value=''),
+            'num_piece': tk.StringVar(value=default_num_piece),
             'validite_piece': tk.StringVar(value=''),
-            'adresse': tk.StringVar(value=''),
-            'telephone': tk.StringVar(value=''),
-            'email': tk.StringVar(value=''),
+            'adresse': tk.StringVar(value=default_adresse),
+            'telephone': tk.StringVar(value=default_telephone),
+            'email': tk.StringVar(value=default_email),
             'est_gerant': tk.BooleanVar(value=True),
             'qualite': tk.StringVar(value=default_quality),
             'percentage': tk.StringVar(value='100'),

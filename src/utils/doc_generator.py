@@ -124,8 +124,27 @@ def _build_expected_context_key_sections() -> Dict[str, str]:
     )
 
     # Activity aliases
-    for idx in range(1, 7):
+    for idx in range(1, 21):
         _add("societe", f"ACTIVITY{idx}", f"activity{idx}")
+    _add(
+        "societe",
+        "ACTIVITIES",
+        "ACTIVITES",
+        "ACTIVITIES_LIST",
+        "ACTIVITES_LIST",
+        "LISTE_ACTIVITES",
+        "ACTIVITIES_PLAIN",
+        "ACTIVITES_PLAIN",
+        "ACTIVITIES_BULLETS",
+        "ACTIVITES_PUCES",
+        "ACTIVITIES_CONTINUATION_BULLETS",
+        "ACTIVITES_CONTINUATION_PUCES",
+        "ACTIVITIES_INLINE",
+        "ACTIVITES_INLINE",
+        "ACTIVITY_COUNT",
+        "activities",
+        "activites",
+    )
 
     # Add aliases explicitly, preserving existing section inference if possible.
     for old_key, new_key in RENAMED_CONTEXT_ALIASES.items():
@@ -146,6 +165,16 @@ def get_expected_context_key_sections() -> Dict[str, str]:
 def get_expected_context_keys() -> set[str]:
     """Public API: keys potentially available in rendered template context."""
     return set(_EXPECTED_CONTEXT_KEY_SECTIONS.keys())
+
+
+def _extract_activities_list(raw_activities) -> List[str]:
+    """Normalize activities from list/string payloads into a clean list."""
+    activities: List[str] = []
+    if isinstance(raw_activities, (list, tuple)):
+        activities = [str(a).strip() for a in raw_activities if str(a).strip()]
+    elif isinstance(raw_activities, str):
+        activities = [a.strip() for a in re.split(r"[\n;]+", raw_activities) if a.strip()]
+    return activities
 
 
 def _render_docx_template(template_path: Path, context: Dict, out_path: Path) -> None:
@@ -523,25 +552,44 @@ def render_templates(
             except Exception:
                 pass
 
-            # Activities — many templates expect ACTIVITY1..ACTIVITY6 (or similar)
-            try:
-                activities = []
-                if isinstance(soc.get('activites', None), (list, tuple)):
-                    activities = list(soc.get('activites', []))
-                elif isinstance(soc.get('activites', None), str):
-                    # If stored as a single string, split on newlines or ';'
-                    activities = [a.strip() for a in re.split(r"[\n;]+", soc.get('activites', '')) if a.strip()]
-                # Populate ACTIVITY1..ACTIVITY6 and fallback lower/camel variants
-                for i in range(6):
-                    key = f'ACTIVITY{i+1}'
-                    val = activities[i] if i < len(activities) else ''
-                    ctx[key] = val
-                    ctx[key.lower()] = val
-                    # camelCase (activity1) isn't commonly used but harmless to add
-                    ctx[f'activity{i+1}'] = val
-            except Exception:
-                # non-fatal
-                pass
+        # Activities — keep backward compatibility (1..6) while supporting all provided entries.
+        try:
+            activities = _extract_activities_list(soc.get('activites', None))
+            max_slots = max(6, len(activities))
+            for i in range(max_slots):
+                key = f'ACTIVITY{i+1}'
+                val = activities[i] if i < len(activities) else ''
+                ctx[key] = val
+                ctx[key.lower()] = val
+                # camelCase (activity1) for template compatibility.
+                ctx[f'activity{i+1}'] = val
+
+            activities_multiline = "\n".join(activities)
+            activities_bullets = "\n".join(f"• {item}" for item in activities)
+            activities_continuation_bullets = activities_multiline
+            activities_inline = "; ".join(activities)
+            # Default aliases are plain multi-line (no bullets) so templates can reuse their own bullet style.
+            ctx['ACTIVITIES'] = activities_multiline
+            ctx['ACTIVITES'] = activities_multiline
+            ctx['ACTIVITIES_LIST'] = list(activities)
+            ctx['ACTIVITES_LIST'] = list(activities)
+            ctx['LISTE_ACTIVITES'] = activities_multiline
+            # Plain multiline aliases.
+            ctx['ACTIVITIES_PLAIN'] = activities_multiline
+            ctx['ACTIVITES_PLAIN'] = activities_multiline
+            # Optional explicit bullet aliases for templates that need generated bullets.
+            ctx['ACTIVITIES_BULLETS'] = activities_bullets
+            ctx['ACTIVITES_PUCES'] = activities_bullets
+            ctx['ACTIVITIES_CONTINUATION_BULLETS'] = activities_continuation_bullets
+            ctx['ACTIVITES_CONTINUATION_PUCES'] = activities_continuation_bullets
+            ctx['ACTIVITIES_INLINE'] = activities_inline
+            ctx['ACTIVITES_INLINE'] = activities_inline
+            ctx['ACTIVITY_COUNT'] = len(activities)
+            ctx['activities'] = activities_multiline
+            ctx['activites'] = activities_multiline
+        except Exception:
+            # non-fatal
+            pass
         for old_key, new_key in RENAMED_CONTEXT_ALIASES.items():
             if old_key in ctx and ctx.get(new_key) in (None, ''):
                 ctx[new_key] = ctx.get(old_key)

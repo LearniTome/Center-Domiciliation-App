@@ -23,15 +23,37 @@ class DefaultsManager:
 
     def _load_defaults(self) -> Dict[str, Any]:
         """Charge les valeurs par défaut depuis le fichier de configuration."""
+        initial_defaults = self._get_initial_defaults()
         try:
             if self.defaults_path.exists():
                 with self.defaults_path.open('r', encoding='utf-8') as f:
-                    return json.load(f)
+                    loaded_defaults = json.load(f)
+                    if isinstance(loaded_defaults, dict):
+                        return self._merge_with_initial_defaults(initial_defaults, loaded_defaults)
         except Exception as e:
             logger.warning(f"Impossible de charger les défauts: {e}")
         
-        # Retourner les défauts vides si le fichier n'existe pas
-        return self._get_initial_defaults()
+        # Retourner les défauts initiaux si le fichier n'existe pas
+        return initial_defaults
+
+    def _merge_with_initial_defaults(self, base_defaults: Dict[str, Any], loaded_defaults: Dict[str, Any]) -> Dict[str, Any]:
+        """Fusionne les défauts chargés avec les clés initiales pour gérer les nouvelles options."""
+        merged: Dict[str, Any] = {}
+
+        for section, section_values in base_defaults.items():
+            loaded_section = loaded_defaults.get(section, {})
+            if not isinstance(loaded_section, dict):
+                loaded_section = {}
+            merged_section = dict(section_values)
+            merged_section.update(loaded_section)
+            merged[section] = merged_section
+
+        # Conserver les sections additionnelles non prévues.
+        for section, section_values in loaded_defaults.items():
+            if section not in merged and isinstance(section_values, dict):
+                merged[section] = dict(section_values)
+
+        return merged
 
     def _get_initial_defaults(self) -> Dict[str, Any]:
         """Retourne les défauts initiaux basés sur les constantes."""
@@ -41,6 +63,9 @@ class DefaultsManager:
             'societe': {
                 'DenSte': constants.DenSte[0] if constants.DenSte else '',
                 'FormJur': constants.Formjur[0] if constants.Formjur else '',
+                'Ice': '',
+                'DateIce': '',
+                'DateExpCertNeg': '',
                 'Capital': constants.Capital[0] if constants.Capital else '',
                 'PartsSocial': constants.PartsSocial[0] if constants.PartsSocial else '',
                 'ValeurNominale': '100',
@@ -49,11 +74,23 @@ class DefaultsManager:
             },
             'associe': {
                 'Civility': constants.Civility[0] if constants.Civility else '',
+                'Nom': 'NOM',
+                'Prenom': 'PRENOM',
                 'Nationality': constants.Nationalite[0] if constants.Nationalite else '',
+                'NumPiece': '',
+                'Adresse': '',
+                'Telephone': '',
+                'Email': '',
                 'Quality': constants.QualityGerant[0] if constants.QualityGerant else '',
             },
             'contrat': {
                 'NbMois': constants.Nbmois[1] if len(constants.Nbmois) > 1 else (constants.Nbmois[0] if constants.Nbmois else ''),
+                'TypeContratDomiciliation': constants.TypeContratDomiciliation[0] if constants.TypeContratDomiciliation else '',
+                'TypeRenouvellement': constants.TypeRenouvellement[0] if constants.TypeRenouvellement else '',
+                'Tva': '20',
+                'DhHt': '83.3333',
+                'TvaRenouvellement': '20',
+                'DhHtRenouvellement': '166.667',
             }
         }
 

@@ -62,6 +62,215 @@ class ErrorHandler:
             except Exception as e:
                 logger.error(f"Erreur dans le callback: {str(e)}")
 
+
+class ThemedMessageBox:
+    """Dark-mode replacements for tkinter.messagebox."""
+
+    _installed = False
+    _originals = {}
+
+    @classmethod
+    def install(cls):
+        if cls._installed:
+            return
+        cls._originals = {
+            'showinfo': messagebox.showinfo,
+            'showwarning': messagebox.showwarning,
+            'showerror': messagebox.showerror,
+            'askyesno': messagebox.askyesno,
+        }
+        messagebox.showinfo = cls.showinfo
+        messagebox.showwarning = cls.showwarning
+        messagebox.showerror = cls.showerror
+        messagebox.askyesno = cls.askyesno
+        cls._installed = True
+
+    @classmethod
+    def _coerce_message(cls, message=None, detail=None) -> str:
+        main = "" if message is None else str(message)
+        extra = "" if detail is None else str(detail)
+        if main and extra:
+            return f"{main}\n\n{extra}"
+        return main or extra
+
+    @classmethod
+    def _resolve_parent(cls, parent=None):
+        if parent is not None:
+            return parent
+        try:
+            return tk._default_root
+        except Exception:
+            return None
+
+    @classmethod
+    def _fallback(cls, kind: str, title: str, message: str):
+        original = cls._originals.get('askyesno' if kind == 'question' else f"show{kind}")
+        if original is None:
+            return False if kind == 'question' else 'ok'
+        return original(title, message)
+
+    @classmethod
+    def _show_dialog(cls, kind: str, title: str, message: str, parent=None):
+        host = cls._resolve_parent(parent)
+        if host is None:
+            return cls._fallback(kind, title, message)
+
+        dialog = tk.Toplevel(host)
+        dialog.withdraw()
+        dialog.title(title or "")
+        dialog.resizable(False, False)
+
+        try:
+            dialog.transient(host)
+            dialog.grab_set()
+        except Exception:
+            pass
+
+        try:
+            theme_manager = ThemeManager(dialog)
+            colors = theme_manager.colors
+        except Exception:
+            colors = {
+                'bg': '#1f1f1f',
+                'fg': '#f3f3f3',
+                'label_fg': '#e6e6e6',
+                'info': '#17a2b8',
+                'warning': '#ffc107',
+                'error': '#ff6b6b',
+                'accent': '#6c7783',
+            }
+            try:
+                dialog.configure(bg=colors['bg'])
+            except Exception:
+                pass
+
+        icon_map = {
+            'info': ('i', colors.get('info', '#17a2b8')),
+            'warning': ('!', colors.get('warning', '#ffc107')),
+            'error': ('x', colors.get('error', '#ff6b6b')),
+            'question': ('?', colors.get('accent', '#6c7783')),
+        }
+        icon_text, icon_color = icon_map.get(kind, ('i', colors.get('info', '#17a2b8')))
+
+        outer = ttk.Frame(dialog, padding=16)
+        outer.pack(fill='both', expand=True)
+
+        body = ttk.Frame(outer)
+        body.pack(fill='both', expand=True)
+
+        icon_label = tk.Label(
+            body,
+            text=icon_text,
+            font=('Segoe UI', 22, 'bold'),
+            bg=colors.get('bg', '#1f1f1f'),
+            fg=icon_color,
+            width=3,
+        )
+        icon_label.pack(side='left', anchor='n', padx=(0, 12), pady=(4, 0))
+
+        ttk.Label(
+            body,
+            text=message,
+            justify='left',
+            style='FieldLabel.TLabel',
+            wraplength=500,
+        ).pack(side='left', fill='both', expand=True)
+
+        button_row = ttk.Frame(outer)
+        button_row.pack(fill='x', pady=(16, 0))
+
+        result = {'value': False if kind == 'question' else 'ok'}
+
+        def _finish(value):
+            result['value'] = value
+            try:
+                dialog.grab_release()
+            except Exception:
+                pass
+            dialog.destroy()
+
+        if kind == 'question':
+            ttk.Button(
+                button_row,
+                text="Non",
+                command=lambda: _finish(False),
+                style='Secondary.TButton',
+            ).pack(side='right')
+            ttk.Button(
+                button_row,
+                text="Oui",
+                command=lambda: _finish(True),
+                style='Success.TButton',
+            ).pack(side='right', padx=(0, 8))
+            dialog.bind('<Return>', lambda _e: _finish(True))
+            dialog.bind('<Escape>', lambda _e: _finish(False))
+        else:
+            ttk.Button(
+                button_row,
+                text="OK",
+                command=lambda: _finish('ok'),
+                style='Success.TButton',
+            ).pack(side='right')
+            dialog.bind('<Return>', lambda _e: _finish('ok'))
+            dialog.bind('<Escape>', lambda _e: _finish('ok'))
+
+        try:
+            dialog.update_idletasks()
+            req_w = max(420, min(640, dialog.winfo_reqwidth() + 20))
+            req_h = max(180, min(360, dialog.winfo_reqheight() + 20))
+            dialog.geometry(f"{req_w}x{req_h}")
+            dialog.update_idletasks()
+            WindowManager.center_window(dialog)
+        except Exception:
+            pass
+
+        dialog.deiconify()
+        try:
+            dialog.after_idle(lambda: WindowManager.center_window(dialog))
+        except Exception:
+            pass
+        dialog.focus_force()
+        dialog.wait_window()
+        return result['value']
+
+    @classmethod
+    def showinfo(cls, title=None, message=None, **kwargs):
+        return cls._show_dialog(
+            'info',
+            title or "Information",
+            cls._coerce_message(message, kwargs.get('detail')),
+            parent=kwargs.get('parent'),
+        )
+
+    @classmethod
+    def showwarning(cls, title=None, message=None, **kwargs):
+        return cls._show_dialog(
+            'warning',
+            title or "Attention",
+            cls._coerce_message(message, kwargs.get('detail')),
+            parent=kwargs.get('parent'),
+        )
+
+    @classmethod
+    def showerror(cls, title=None, message=None, **kwargs):
+        return cls._show_dialog(
+            'error',
+            title or "Erreur",
+            cls._coerce_message(message, kwargs.get('detail')),
+            parent=kwargs.get('parent'),
+        )
+
+    @classmethod
+    def askyesno(cls, title=None, message=None, **kwargs):
+        return bool(
+            cls._show_dialog(
+                'question',
+                title or "Confirmation",
+                cls._coerce_message(message, kwargs.get('detail')),
+                parent=kwargs.get('parent'),
+            )
+        )
+
 class ToolTip:
     def __init__(self, widget, text):
         self.widget = widget
@@ -113,6 +322,7 @@ class ThemeManager:
         self.theme = ModernTheme(root, mode=mode)
         self.style = self.theme.style
         self.colors = self.theme.colors
+        self.is_dark_mode = self.theme.mode == 'dark'
         # Apply background to root and existing canvases to keep tk widgets in sync
         try:
             self._apply_root_background()
@@ -126,6 +336,10 @@ class ThemeManager:
             self._start_non_ttk_monitor()
         except Exception:
             logger.debug('Failed to start non-ttk monitor', exc_info=True)
+        try:
+            ThemedMessageBox.install()
+        except Exception:
+            logger.debug('Failed to install themed message boxes', exc_info=True)
 
     def set_theme(self, mode: str):
         if mode not in ('light', 'dark'):
@@ -134,6 +348,7 @@ class ThemeManager:
         self.theme = ModernTheme(self.root, mode=mode)
         self.style = self.theme.style
         self.colors = self.theme.colors
+        self.is_dark_mode = self.theme.mode == 'dark'
         # Persist
         try:
             prefs = {'theme': mode}
@@ -727,13 +942,19 @@ class WindowManager:
         root.bind('<Escape>', lambda e: root.state('normal'))
 
     @staticmethod
-    def center_window(win):
-        """Center a Toplevel or root window on the screen or on its parent."""
+    def center_window(win, center_on_parent: bool = True):
+        """Center a Toplevel or root window on the parent or on the screen.
+
+        Args:
+            win: Window instance to center.
+            center_on_parent: When True, center on mapped parent if available.
+                When False, always center on the current screen.
+        """
         try:
             win.update_idletasks()
-            # If window has a parent (transient), center on parent
+            # If requested and window has a parent (transient), center on parent.
             parent = getattr(win, 'master', None)
-            if parent and parent.winfo_ismapped():
+            if center_on_parent and parent and parent.winfo_ismapped():
                 pw = parent.winfo_width()
                 ph = parent.winfo_height()
                 px = parent.winfo_rootx()

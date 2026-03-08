@@ -41,20 +41,26 @@ class ContratForm(ttk.Frame):
         # Get custom defaults
         defaults_mgr = get_defaults_manager()
         default_period = defaults_mgr.get_default('contrat', 'NbMois') or (Nbmois[1] if len(Nbmois) > 1 else (Nbmois[0] if Nbmois else ''))
+        default_type_contrat = defaults_mgr.get_default('contrat', 'TypeContratDomiciliation') or (
+            TypeContratDomiciliation[0] if TypeContratDomiciliation else ''
+        )
+        default_type_renouvellement = defaults_mgr.get_default('contrat', 'TypeRenouvellement') or self._default_renewal_period(TypeRenouvellement)
+        default_tva = defaults_mgr.get_default('contrat', 'Tva') or '20'
+        default_dh_ht = defaults_mgr.get_default('contrat', 'DhHt') or '83.3333'
+        default_tva_renouvellement = defaults_mgr.get_default('contrat', 'TvaRenouvellement') or '20'
+        default_dh_ht_renouvellement = defaults_mgr.get_default('contrat', 'DhHtRenouvellement') or '166.667'
 
         # Defaults: today's date for contract and start, default period from config
         self.date_contrat_var = tk.StringVar(value=today)
         self.period_var = tk.StringVar(value=default_period)
-        self.type_contrat_domiciliation_var = tk.StringVar(
-            value=TypeContratDomiciliation[0] if TypeContratDomiciliation else ''
-        )
+        self.type_contrat_domiciliation_var = tk.StringVar(value=default_type_contrat)
         self.type_contrat_domiciliation_autre_var = tk.StringVar(value='')
         self.prix_mensuel_var = tk.StringVar(value='')
         self.prix_inter_var = tk.StringVar(value='')
         self.date_debut_var = tk.StringVar(value=today)
         self.date_fin_var = tk.StringVar(value='')
-        self.tva_var = tk.StringVar(value='20')
-        self.dh_ht_var = tk.StringVar(value='83.3333')
+        self.tva_var = tk.StringVar(value=default_tva)
+        self.dh_ht_var = tk.StringVar(value=default_dh_ht)
         self.montant_ht_var = tk.StringVar(value='')
         
         # Pack de Démarrage variables
@@ -62,9 +68,9 @@ class ContratForm(ttk.Frame):
         self.pack_demarrage_loyer_var = tk.StringVar(value='')
         
         # Renouvellement variables
-        self.type_renouvellement_var = tk.StringVar(value=self._default_renewal_period(TypeRenouvellement))
-        self.tva_renouvellement_var = tk.StringVar(value='20')
-        self.dh_ht_renouvellement_var = tk.StringVar(value='166.667')
+        self.type_renouvellement_var = tk.StringVar(value=default_type_renouvellement)
+        self.tva_renouvellement_var = tk.StringVar(value=default_tva_renouvellement)
+        self.dh_ht_renouvellement_var = tk.StringVar(value=default_dh_ht_renouvellement)
         self.montant_ht_renouvellement_var = tk.StringVar(value='')
         self.loyer_renouvellement_mensuel_var = tk.StringVar(value='')
         self.loyer_renouvellement_annuel_var = tk.StringVar(value='')

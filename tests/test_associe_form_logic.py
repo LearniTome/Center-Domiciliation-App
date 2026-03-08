@@ -125,6 +125,34 @@ class TestAssocieFormLogic(unittest.TestCase):
         self.assertTrue(ok)
         self.assertEqual([], errors)
 
+    def test_create_associe_vars_uses_nom_prenom_defaults(self):
+        class _FakeDefaultsManager:
+            def get_default(self, section, key):
+                table = {
+                    "associe": {
+                        "Civility": "Monsieur",
+                        "Nom": "DUPONT",
+                        "Prenom": "Ali",
+                        "Nationality": "Marocaine",
+                        "NumPiece": "AB123456",
+                        "Adresse": "CASABLANCA",
+                        "Telephone": "0600000000",
+                        "Email": "ali.dupont@example.com",
+                        "Quality": "Associé Gérant",
+                    }
+                }
+                return table.get(section, {}).get(key)
+
+        with patch("src.utils.defaults_manager.get_defaults_manager", return_value=_FakeDefaultsManager()):
+            vars_dict = self.form.create_associe_vars()
+
+        self.assertEqual("DUPONT", vars_dict["nom"].get())
+        self.assertEqual("Ali", vars_dict["prenom"].get())
+        self.assertEqual("AB123456", vars_dict["num_piece"].get())
+        self.assertEqual("CASABLANCA", vars_dict["adresse"].get())
+        self.assertEqual("0600000000", vars_dict["telephone"].get())
+        self.assertEqual("ali.dupont@example.com", vars_dict["email"].get())
+
     def test_computed_fields_are_readonly(self):
         self.form.add_associe()
         vars_dict = self.form.associe_vars[0]
