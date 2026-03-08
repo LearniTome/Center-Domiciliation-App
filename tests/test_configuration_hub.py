@@ -218,6 +218,13 @@ class TestConfigurationHub(unittest.TestCase):
 
             open_mock.assert_called_once()
 
+    def test_reset_keeps_one_associe_visible(self):
+        # Ensure reset recreates at least one associate row for immediate data entry.
+        self.form.reset()
+        self.root.update()
+        self.root.update_idletasks()
+        self.assertGreaterEqual(len(self.form.associe_form.associe_vars), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -36,49 +36,68 @@ class SocieteForm(ttk.Frame):
     def initialize_variables(self):
         """Initialise toutes les variables du formulaire avec des valeurs par défaut raisonnables"""
         # Variables pour les champs de texte — valeurs par défaut prises depuis les constantes
-        from ..utils.constants import DenSte, Formjur, Capital, PartsSocial, SteAdresse, Tribunnaux
+        defaults = self._get_default_values()
         from ..utils.utils import get_reference_data
-        from ..utils.defaults_manager import get_defaults_manager
 
-        # Get defaults manager
-        defaults_mgr = get_defaults_manager()
-        
-        # Get custom defaults or fall back to constants
-        default_den_ste = defaults_mgr.get_default('societe', 'DenSte') or (DenSte[0] if DenSte else "")
-        default_form_jur = defaults_mgr.get_default('societe', 'FormJur') or (Formjur[0] if Formjur else "")
-        default_ice = defaults_mgr.get_default('societe', 'Ice') or ""
-        default_capital = defaults_mgr.get_default('societe', 'Capital') or (Capital[0] if Capital else "")
-        default_parts_social = defaults_mgr.get_default('societe', 'PartsSocial') or (PartsSocial[0] if PartsSocial else "")
-        default_valeur_nominale = defaults_mgr.get_default('societe', 'ValeurNominale') or "100"
-        default_ste_adresse = defaults_mgr.get_default('societe', 'SteAdresse') or (SteAdresse[0] if SteAdresse else "")
-        default_tribunal = defaults_mgr.get_default('societe', 'Tribunal') or (Tribunnaux[0] if Tribunnaux else "")
-        default_mode_signature = defaults_mgr.get_default('societe', 'ModeSignatureGerance') or "separee"
-
-        self.den_ste_var = tk.StringVar(value=default_den_ste)
-        self.forme_jur_var = tk.StringVar(value=default_form_jur)
-        self.ice_var = tk.StringVar(value=default_ice)
-        # default date to today's date in dd/mm/yyyy
-        import datetime
-        today = datetime.date.today().strftime('%d/%m/%Y')
-        default_date_ice = defaults_mgr.get_default('societe', 'DateIce') or today
-        default_date_expiration = defaults_mgr.get_default('societe', 'DateExpCertNeg') or ''
-        self.date_ice_var = tk.StringVar(value=default_date_ice)
-        self.date_expiration_certificat_negatif_var = tk.StringVar(value=default_date_expiration)
-        self.capital_var = tk.StringVar(value=default_capital)
-        self.parts_social_var = tk.StringVar(value=default_parts_social)
-        self.valeur_nominale_var = tk.StringVar(value=default_valeur_nominale)
-        self.mode_signature_gerance_var = tk.StringVar(value=default_mode_signature)
+        self.den_ste_var = tk.StringVar(value=defaults['denomination'])
+        self.forme_jur_var = tk.StringVar(value=defaults['forme_juridique'])
+        self.ice_var = tk.StringVar(value=defaults['ice'])
+        self.date_ice_var = tk.StringVar(value=defaults['date_ice'])
+        self.date_expiration_certificat_negatif_var = tk.StringVar(value=defaults['date_expiration_certificat_negatif'])
+        self.capital_var = tk.StringVar(value=defaults['capital'])
+        self.parts_social_var = tk.StringVar(value=defaults['parts_social'])
+        self.valeur_nominale_var = tk.StringVar(value=defaults['valeur_nominale'])
+        self.mode_signature_gerance_var = tk.StringVar(value=defaults['mode_signature_gerance'])
 
         # Load reference data from database
         self.ste_adresses = get_reference_data('SteAdresses')
         self.tribunaux = get_reference_data('Tribunaux')
 
-        self.ste_adress_var = tk.StringVar(value=default_ste_adresse)
-        self.tribunal_var = tk.StringVar(value=default_tribunal)
+        self.ste_adress_var = tk.StringVar(value=defaults['adresse'])
+        self.tribunal_var = tk.StringVar(value=defaults['tribunal'])
 
         # Liste pour stocker les variables des activités
         self.activites_vars = []
         self._activity_rows: List[dict] = []
+
+    def _get_default_values(self):
+        """Retourne les valeurs par défaut société (constants + defaults manager)."""
+        from ..utils.constants import DenSte, Formjur, Capital, PartsSocial, SteAdresse, Tribunnaux
+        from ..utils.defaults_manager import get_defaults_manager
+        import datetime
+
+        defaults_mgr = get_defaults_manager()
+        today = datetime.date.today().strftime('%d/%m/%Y')
+        return {
+            'denomination': defaults_mgr.get_default('societe', 'DenSte') or (DenSte[0] if DenSte else ""),
+            'forme_juridique': defaults_mgr.get_default('societe', 'FormJur') or (Formjur[0] if Formjur else ""),
+            'ice': defaults_mgr.get_default('societe', 'Ice') or "",
+            'date_ice': defaults_mgr.get_default('societe', 'DateIce') or today,
+            'date_expiration_certificat_negatif': defaults_mgr.get_default('societe', 'DateExpCertNeg') or '',
+            'capital': defaults_mgr.get_default('societe', 'Capital') or (Capital[0] if Capital else ""),
+            'parts_social': defaults_mgr.get_default('societe', 'PartsSocial') or (PartsSocial[0] if PartsSocial else ""),
+            'valeur_nominale': defaults_mgr.get_default('societe', 'ValeurNominale') or "100",
+            'adresse': defaults_mgr.get_default('societe', 'SteAdresse') or (SteAdresse[0] if SteAdresse else ""),
+            'tribunal': defaults_mgr.get_default('societe', 'Tribunal') or (Tribunnaux[0] if Tribunnaux else ""),
+            'mode_signature_gerance': defaults_mgr.get_default('societe', 'ModeSignatureGerance') or "separee",
+        }
+
+    def reset(self):
+        """Réinitialise le formulaire société aux valeurs par défaut."""
+        defaults = self._get_default_values()
+        self.den_ste_var.set(defaults['denomination'])
+        self.forme_jur_var.set(defaults['forme_juridique'])
+        self.ice_var.set(defaults['ice'])
+        self.date_ice_var.set(defaults['date_ice'])
+        self.date_expiration_certificat_negatif_var.set(defaults['date_expiration_certificat_negatif'])
+        self.capital_var.set(defaults['capital'])
+        self.parts_social_var.set(defaults['parts_social'])
+        self.valeur_nominale_var.set(defaults['valeur_nominale'])
+        self.ste_adress_var.set(defaults['adresse'])
+        self.tribunal_var.set(defaults['tribunal'])
+        self.mode_signature_gerance_var.set(defaults['mode_signature_gerance'])
+        self.clear_all_activities()
+        self._update_mode_signature_visibility()
 
     def setup_gui(self):
         """Configure une mise en page compacte sans sous-blocs internes."""
@@ -178,11 +197,6 @@ class SocieteForm(ttk.Frame):
         section = ttk.Frame(parent)
         section.pack(fill="both", expand=True, padx=5, pady=(6, 2))
 
-        header = ttk.Frame(section)
-        header.pack(fill="x", pady=(0, 4))
-        ttk.Label(header, text="Activités:", anchor="w").pack(side="left")
-        ttk.Label(header, text="Tableau des activités (modifiable)", anchor="w").pack(side="left", padx=(10, 0))
-
         # Load activities from reference sheet
         self.activities_list = get_reference_data('Activites')
         if not self.activities_list:
@@ -190,7 +204,7 @@ class SocieteForm(ttk.Frame):
         self.default_activities = list(Activities[:4])
 
         # Tableau activités
-        table = ttk.LabelFrame(section, text="Tableau des activités", padding=(8, 8))
+        table = ttk.LabelFrame(section, text="Activités", padding=(8, 8))
         table.pack(fill="both", expand=True, pady=(2, 8))
         table.columnconfigure(0, weight=1)
         table.rowconfigure(2, weight=1)
@@ -226,7 +240,7 @@ class SocieteForm(ttk.Frame):
 
         self.activities_container = ttk.Frame(self.activities_canvas)
         self.activities_canvas_window = self.activities_canvas.create_window((0, 0), window=self.activities_container, anchor="nw")
-        self.activities_container.columnconfigure(1, weight=1)
+        self.activities_container.columnconfigure(0, weight=1)
 
         self.activities_container.bind(
             "<Configure>",
@@ -253,11 +267,19 @@ class SocieteForm(ttk.Frame):
 
         clear_btn = WidgetFactory.create_button(
             actions_bottom,
-            text="🧹 Vider",
+            text="🔄 Réinitialiser (4 par défaut)",
             command=self._on_clear_activities_clicked,
             style='Secondary.TButton',
         )
         clear_btn.pack(side="left", padx=(6, 0))
+
+        clear_all_btn = WidgetFactory.create_button(
+            actions_bottom,
+            text="🗑️ Vider tout (0 activité)",
+            command=self._on_clear_all_activities_clicked,
+            style='Cancel.TButton',
+        )
+        clear_all_btn.pack(side="left", padx=(6, 0))
 
         self._load_default_activities()
 
@@ -364,6 +386,10 @@ class SocieteForm(ttk.Frame):
         """Supprime toutes les activités puis recharge les 4 par défaut."""
         self._clear_activities(load_defaults=True)
 
+    def clear_activities_completely(self):
+        """Supprime toutes les activités sans remettre les valeurs par défaut."""
+        self._clear_activities(load_defaults=False)
+
     def _clear_activities(self, load_defaults: bool = True):
         """Vide la table des activités."""
         for row_info in list(self._activity_rows):
@@ -386,6 +412,18 @@ class SocieteForm(ttk.Frame):
         )
         if confirmed:
             self.clear_all_activities()
+
+    def _on_clear_all_activities_clicked(self):
+        """Demande confirmation avant de vider complètement la table des activités."""
+        if not self.activites_vars:
+            self.clear_activities_completely()
+            return
+        confirmed = messagebox.askyesno(
+            "Vider toutes les activités",
+            "Voulez-vous supprimer toutes les activités ?\n\nCette action vide entièrement le tableau."
+        )
+        if confirmed:
+            self.clear_activities_completely()
 
     def move_activity(self, var, direction: int):
         """Déplace une activité vers le haut ou le bas."""
@@ -475,6 +513,7 @@ class SocieteForm(ttk.Frame):
     def set_values(self, values_dict):
         """Définit les valeurs du formulaire"""
         if not values_dict:
+            self.reset()
             return
 
         # Mise à jour des champs simples

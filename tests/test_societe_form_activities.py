@@ -37,6 +37,12 @@ class TestSocieteFormActivities(unittest.TestCase):
             self.form.add_activity()
         self.assertEqual(initial_count + 10, len(self.form.activites_vars))
 
+    def test_clear_activities_completely_empties_table(self):
+        self.assertGreater(len(self.form.activites_vars), 0)
+        self.form.clear_activities_completely()
+        values = self.form.get_values()
+        self.assertEqual([], values.get("activites", []))
+
 
 if __name__ == "__main__":
     unittest.main()

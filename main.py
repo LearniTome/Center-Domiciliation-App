@@ -113,14 +113,61 @@ class MainApp(tk.Tk):
         buttons_frame = ttk.Frame(self)
         buttons_frame.pack(pady=15, side=tk.BOTTOM, fill=tk.X, padx=20)
 
+        # Harmoniser les boutons de la barre principale (taille/gras/padding)
+        toolbar_secondary_style = 'Toolbar.Secondary.TButton'
+        toolbar_success_style = 'Toolbar.Success.TButton'
+        toolbar_cancel_style = 'Toolbar.Cancel.TButton'
+        toolbar_copy_style = 'Toolbar.Copy.TButton'
+        toolbar_font = ('Segoe UI', 10, 'bold')
+        toolbar_padding = (12, 7)
+
+        def _clone_toolbar_style(new_style: str, base_style: str):
+            cfg = {
+                'font': toolbar_font,
+                'padding': toolbar_padding,
+            }
+            for opt in ('background', 'foreground', 'relief', 'borderwidth'):
+                try:
+                    val = self.style.lookup(base_style, opt)
+                except Exception:
+                    val = None
+                if val not in (None, ''):
+                    cfg[opt] = val
+            self.style.configure(new_style, **cfg)
+
+            state_map = {}
+            for opt in ('background', 'foreground'):
+                try:
+                    mapped = self.style.map(base_style, query_opt=opt)
+                except Exception:
+                    mapped = []
+                if mapped:
+                    state_map[opt] = mapped
+            if state_map:
+                self.style.map(new_style, **state_map)
+
+        try:
+            _clone_toolbar_style(toolbar_secondary_style, 'Secondary.TButton')
+            _clone_toolbar_style(toolbar_success_style, 'Success.TButton')
+            _clone_toolbar_style(toolbar_cancel_style, 'Cancel.TButton')
+            _clone_toolbar_style(toolbar_copy_style, 'Copy.TButton')
+        except Exception:
+            pass
+
         # Single horizontal row to host all main buttons so they remain on one line
         row = ttk.Frame(buttons_frame)
         row.pack(fill='x')
 
-        # Left-side primary buttons (Configuration, Dashboard, Generate)
-        # Configuration button (opens MainForm configuration dialog)
+        # Left-side tool buttons (Outils, Dashboard)
+        # Outils button (opens MainForm tools dialog)
         try:
-            cfg_btn = WidgetFactory.create_button(row, text="⚙ Configuration", command=self.main_form.open_configuration, style='Refresh.TButton')
+            cfg_btn = WidgetFactory.create_button(
+                row,
+                text="🧰 Outils",
+                command=self.main_form.open_configuration,
+                style=toolbar_secondary_style
+            )
+            cfg_btn.configure(width=16)
             cfg_btn.pack(side='left', padx=6)
             # attach to main_form for state updates
             self.main_form.config_btn = cfg_btn
@@ -132,17 +179,8 @@ class MainApp(tk.Tk):
             row,
             text="📊 Tableau de bord",
             command=self.main_form.show_dashboard,
-            style='View.TButton'
+            style=toolbar_secondary_style
         ).pack(side='left', padx=6)
-
-        # Single generation button (modern style - SUCCESS GREEN)
-        gen_btn = WidgetFactory.create_button(
-            row,
-            text="Générer les documents",
-            command=self.generate_documents,
-            style='Manage.TButton'
-        )
-        gen_btn.pack(side='left', padx=6, pady=3)
 
         # (Theme toggle removed) — keep toolbar focused and simple. Theme is
         # still managed programmatically via ThemeManager and the
@@ -154,33 +192,64 @@ class MainApp(tk.Tk):
 
         # Right-side control buttons (packed in reverse so visual order is left->right)
         try:
-            # Pack Quitter first (will appear at the far right) - CANCEL RED
-            WidgetFactory.create_button(row, text="❌ Quitter", command=self.quit, style='Cancel.TButton').pack(side='right', padx=6, pady=3)
+            # Pack in reverse order so the visual order (left -> right) is:
+            # Nouvelle | Sauvegarder | Terminer | Précédent | Suivant | Quitter
+
+            # Quitter at far right (danger action) - packed first with side=right.
+            _btn = WidgetFactory.create_button(row, text="❌ Quitter", command=self.quit, style=toolbar_cancel_style)
+            _btn.configure(width=12)
+            _btn.pack(side='right', padx=6, pady=3)
+            self.main_form.quit_btn = _btn
 
             # Suivant
-            _btn = WidgetFactory.create_button(row, text="Suivant ▶", command=self.main_form.next_page, style='Secondary.TButton')
+            _btn = WidgetFactory.create_button(row, text="Suivant ▶", command=self.main_form.next_page, style=toolbar_secondary_style)
+            _btn.configure(width=12)
             _btn.pack(side='right', padx=6, pady=3)
             self.main_form.next_btn = _btn
+            self.main_form.next_default_style = toolbar_secondary_style
+            self.main_form.next_finish_style = toolbar_success_style
+            self.main_form.next_default_width = 12
+            self.main_form.next_finish_width = 20
 
             # Précédent
-            _btn = WidgetFactory.create_button(row, text="◀ Précédent", command=self.main_form.prev_page, style='Secondary.TButton')
+            _btn = WidgetFactory.create_button(row, text="◀ Précédent", command=self.main_form.prev_page, style=toolbar_secondary_style)
+            _btn.configure(width=12)
             _btn.pack(side='right', padx=6, pady=3)
             self.main_form.prev_btn = _btn
 
-            # Terminer - SUCCESS GREEN
-            _btn = WidgetFactory.create_button(row, text="🏁 Terminer", command=self.main_form.finish, style='Success.TButton')
+            # Terminer remains the primary highlighted action
+            _btn = WidgetFactory.create_button(row, text="🏁 Terminer", command=self.generate_documents, style=toolbar_success_style)
+            _btn.configure(width=12)
             _btn.pack(side='right', padx=6, pady=3)
             self.main_form.finish_btn = _btn
+            # Hidden by default; the "Suivant" button is switched to
+            # "Terminer" on the final step.
+            try:
+                _btn.pack_forget()
+            except Exception:
+                pass
+
+            # Generation is available from "Outils" dialog.
+            self.main_form.generate_btn = None
 
             # Sauvegarder - SUCCESS GREEN
-            _btn = WidgetFactory.create_button(row, text="💾 Sauvegarder", command=self.main_form.save_current, style='Secondary.TButton')
+            _btn = WidgetFactory.create_button(row, text="💾 Sauvegarder", command=self.main_form.save_current, style=toolbar_secondary_style)
+            _btn.configure(width=14)
             _btn.pack(side='right', padx=6, pady=3)
             self.main_form.save_btn = _btn
 
             # Nouvelle (will appear left-most among the right cluster) - SECONDARY
-            WidgetFactory.create_button(row, text="🆕 Nouvelle", command=self.clear_form, style='Copy.TButton').pack(side='right', padx=6, pady=3)
+            _btn = WidgetFactory.create_button(row, text="🆕 Nouvelle", command=self.clear_form, style=toolbar_copy_style)
+            _btn.configure(width=12)
+            _btn.pack(side='right', padx=6, pady=3)
         except Exception:
             # If main_form isn't ready for some reason, ignore and continue
+            pass
+
+        # Sync final visibility/state (ex: hide "Terminer" before the last step).
+        try:
+            self.main_form.update_nav_buttons()
+        except Exception:
             pass
 
     def collect_values(self):

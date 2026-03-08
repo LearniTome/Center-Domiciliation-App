@@ -30,7 +30,13 @@ class MainForm(ttk.Frame):
         self.next_btn: Optional[ttk.Button] = None
         self.save_btn: Optional[ttk.Button] = None
         self.finish_btn: Optional[ttk.Button] = None
+        self.generate_btn: Optional[ttk.Button] = None
         self.config_btn: Optional[ttk.Button] = None
+        self.quit_btn: Optional[ttk.Button] = None
+        self.next_default_style: str = 'Secondary.TButton'
+        self.next_finish_style: str = 'Success.TButton'
+        self.next_default_width: int = 12
+        self.next_finish_width: int = 20
 
         # Allow this main frame to expand inside its parent
         try:
@@ -386,6 +392,8 @@ class MainForm(ttk.Frame):
                 self.save_btn = None
             if not hasattr(self, 'finish_btn'):
                 self.finish_btn = None
+            if not hasattr(self, 'quit_btn'):
+                self.quit_btn = None
         except Exception:
             pass
 
@@ -410,12 +418,12 @@ class MainForm(ttk.Frame):
         dashboard = DashboardView(self.winfo_toplevel())  # Window is now modal by default
 
     def open_configuration(self):
-        """Open a lightweight configuration launcher with two actions."""
+        """Open a lightweight tools launcher."""
         try:
             top = tk.Toplevel(self.winfo_toplevel())
             top.transient(self.winfo_toplevel())
-            top.title("Configuration")
-            top.geometry("420x220")
+            top.title("Outils")
+            top.geometry("440x280")
             top.resizable(False, False)
 
             try:
@@ -428,7 +436,7 @@ class MainForm(ttk.Frame):
 
             ttk.Label(
                 main_frame,
-                text="⚙ Configuration",
+                text="🧰 Outils",
                 font=("Segoe UI", 12, "bold"),
             ).pack(anchor="w", pady=(0, 8))
             ttk.Label(
@@ -452,6 +460,26 @@ class MainForm(ttk.Frame):
                 except Exception:
                     pass
                 self._open_template_values_analyzer_dialog()
+
+            def _open_generator():
+                try:
+                    top.destroy()
+                except Exception:
+                    pass
+                try:
+                    top_level = self.winfo_toplevel()
+                    generate_fn = getattr(top_level, 'generate_documents', None)
+                    if callable(generate_fn):
+                        generate_fn()
+                except Exception:
+                    logger.exception("Erreur lors de l'ouverture du générateur de documents")
+
+            WidgetFactory.create_button(
+                actions,
+                text="🧾 Générateur de Documents",
+                command=_open_generator,
+                style="Manage.TButton",
+            ).pack(fill="x", pady=(0, 8))
 
             WidgetFactory.create_button(
                 actions,
@@ -1201,6 +1229,17 @@ class MainForm(ttk.Frame):
                 # default empty structure
                 default = [] if key == 'associes' else {}
                 form.set_values(default)
+        # Garantir au moins un associé visible après "Nouvelle".
+        try:
+            if hasattr(self, 'associe_form') and self.associe_form is not None:
+                if len(getattr(self.associe_form, 'associe_vars', [])) == 0:
+                    self.associe_form.add_associe()
+        except Exception:
+            pass
+        try:
+            self._sync_legal_form_dependents()
+        except Exception:
+            pass
 
     # --- Navigation helpers ---
     def show_page(self, index: int):
@@ -1272,6 +1311,18 @@ class MainForm(ttk.Frame):
                 messagebox.showinfo("Sauvegarde", f"Section '{key}' sauvegardée.")
             except Exception as e:
                 messagebox.showerror("Erreur", f"Impossible de sauvegarder la section: {e}")
+
+    def _trigger_generate_documents(self):
+        """Run the exact same generation flow as the main 'Generer' button."""
+        try:
+            top = self.winfo_toplevel()
+            generate_fn = getattr(top, 'generate_documents', None)
+            if callable(generate_fn):
+                return generate_fn()
+        except Exception:
+            logger.exception("Echec du declenchement de la generation depuis Terminer")
+        # Fallback to legacy finish behavior if top-level hook is unavailable.
+        return self.finish()
 
     def finish(self):
         """Save all pages and emit a finished event."""
@@ -1365,7 +1416,7 @@ class MainForm(ttk.Frame):
             pass
 
     def update_nav_buttons(self):
-        # Disable Prev on first page, Next on last
+        # Disable Prev on first page.
         # Use explicit None checks so static analyzers (Pylance) know the
         # attribute is not None before calling widget methods.
         _prev = getattr(self, 'prev_btn', None)
@@ -1373,8 +1424,37 @@ class MainForm(ttk.Frame):
             _prev.configure(state=('disabled' if self.current_page == 0 else 'normal'))
 
         _next = getattr(self, 'next_btn', None)
+        _finish = getattr(self, 'finish_btn', None)
+
+        is_last_page = self.current_page == len(self.pages) - 1
+
+        # Keep the dedicated finish button hidden; we reuse "Suivant" as the
+        # final action to preserve order and avoid layout shifts.
+        if _finish is not None:
+            try:
+                _finish.pack_forget()
+            except Exception:
+                pass
+
+        # Replace "Suivant" by "Terminer" on the last step, and restore when
+        # navigating back.
         if _next is not None:
-            _next.configure(state=('disabled' if self.current_page == len(self.pages) - 1 else 'normal'))
+            if is_last_page:
+                _next.configure(
+                    text='🏁 Terminer',
+                    style=getattr(self, 'next_finish_style', 'Success.TButton'),
+                    command=self._trigger_generate_documents,
+                    width=getattr(self, 'next_finish_width', 20),
+                    state='normal',
+                )
+            else:
+                _next.configure(
+                    text='Suivant ▶',
+                    style=getattr(self, 'next_default_style', 'Secondary.TButton'),
+                    command=self.next_page,
+                    width=getattr(self, 'next_default_width', 12),
+                    state='normal',
+                )
 
     def handle_dashboard_action(self, action: str, payload: dict | None):
         """Handle actions coming from the DashboardView.
