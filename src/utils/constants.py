@@ -24,6 +24,17 @@ TypeContratDomiciliation = [
     "Autres",
 ]
 
+# Collaborateurs (code + libelle) used for domiciliation folder naming
+Collaborateurs = [
+    "EXP -- Expert Comptable",
+    "AGR -- Comptable Agréé",
+    "IND -- Comptable Indépendant",
+    "COAG -- Coursier Comptable Agréé",
+    "COIND -- Coursier Indépendant",
+    "COEXP -- Coursier Expert Comptable",
+    "CLTD -- Client Direct",
+]
+
 # Company capital options
 Capital = ["10 000", "50 000", "100 000"]
 

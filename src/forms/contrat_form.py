@@ -33,7 +33,7 @@ class ContratForm(ttk.Frame):
     def initialize_variables(self):
         """Initialise les variables du formulaire"""
         import datetime
-        from ..utils.constants import Nbmois, TypeRenouvellement, TypeContratDomiciliation
+        from ..utils.constants import Nbmois, TypeRenouvellement, TypeContratDomiciliation, Collaborateurs
         from ..utils.defaults_manager import get_defaults_manager
 
         today = datetime.date.today().strftime('%d/%m/%Y')
@@ -44,6 +44,10 @@ class ContratForm(ttk.Frame):
         default_type_contrat = defaults_mgr.get_default('contrat', 'TypeContratDomiciliation') or (
             TypeContratDomiciliation[0] if TypeContratDomiciliation else ''
         )
+        self.collaborateurs = list(Collaborateurs or [])
+        default_collaborateur_code = defaults_mgr.get_default('contrat', 'CollaborateurCode') or 'CLTD'
+        default_collaborateur_nom = defaults_mgr.get_default('contrat', 'CollaborateurNom') or ''
+        default_collaborateur_selection = self._selection_from_collaborateur_code(default_collaborateur_code)
         default_type_renouvellement = defaults_mgr.get_default('contrat', 'TypeRenouvellement') or self._default_renewal_period(TypeRenouvellement)
         default_tva = defaults_mgr.get_default('contrat', 'Tva') or '20'
         default_dh_ht = defaults_mgr.get_default('contrat', 'DhHt') or '83.3333'
@@ -55,6 +59,8 @@ class ContratForm(ttk.Frame):
         self.period_var = tk.StringVar(value=default_period)
         self.type_contrat_domiciliation_var = tk.StringVar(value=default_type_contrat)
         self.type_contrat_domiciliation_autre_var = tk.StringVar(value='')
+        self.collaborateur_selection_var = tk.StringVar(value=default_collaborateur_selection)
+        self.collaborateur_nom_var = tk.StringVar(value=default_collaborateur_nom)
         self.prix_mensuel_var = tk.StringVar(value='')
         self.prix_inter_var = tk.StringVar(value='')
         self.date_debut_var = tk.StringVar(value=today)
@@ -150,7 +156,46 @@ class ContratForm(ttk.Frame):
         _place(2, 3, self.create_entry_field_group(fields, "Renouv. - Montant Loyer total HT", self.montant_ht_renouvellement_var, readonly=True))
         _place(2, 4, self.create_entry_field_group(fields, "Renouv. - Montant Loyer total TTC", self.loyer_renouvellement_annuel_var, readonly=True))
         _place(2, 5, self.create_combo_field_group(fields, "Renouv. - Période", self.type_renouvellement_var, TypeRenouvellement))
+
+        # Ligne 4: collaborateur (nomenclature dossier domiciliation)
+        _place(
+            3,
+            0,
+            self.create_combo_field_group(
+                fields,
+                "Collaborateur (code)",
+                self.collaborateur_selection_var,
+                self.collaborateurs,
+            ),
+        )
+        _place(3, 1, self.create_entry_field_group(fields, "Nom collaborateur", self.collaborateur_nom_var))
         self._update_loyer_calculations()
+
+    def _selection_from_collaborateur_code(self, code: str) -> str:
+        c = str(code or '').strip().upper()
+        if not c:
+            c = 'CLTD'
+        for option in getattr(self, 'collaborateurs', []):
+            if str(option).strip().upper().startswith(f"{c} "):
+                return option
+        # fallback for initialization before collaborators list exists
+        from ..utils.constants import Collaborateurs
+        for option in list(Collaborateurs or []):
+            if str(option).strip().upper().startswith(f"{c} "):
+                return option
+        return (list(Collaborateurs or ['CLTD -- Client Direct'])[0])
+
+    def _code_from_collaborateur_selection(self, selection: str) -> str:
+        raw = str(selection or '').strip().upper()
+        if not raw:
+            return 'CLTD'
+        import re
+        match = re.match(r'^([A-Z0-9]+)', raw)
+        if not match:
+            return 'CLTD'
+        code = match.group(1)
+        allowed = {'EXP', 'AGR', 'IND', 'COAG', 'COIND', 'COEXP', 'CLTD'}
+        return code if code in allowed else 'CLTD'
 
     def create_date_field_group(self, parent, label_text, variable, bind_update: bool = False):
         """Crée un groupe de champs pour les dates.
@@ -208,6 +253,9 @@ class ContratForm(ttk.Frame):
             'period': self.period_var.get(),
             'type_contrat_domiciliation': self.type_contrat_domiciliation_var.get(),
             'type_contrat_domiciliation_autre': self.type_contrat_domiciliation_autre_var.get(),
+            'collaborateur': self.collaborateur_selection_var.get(),
+            'collaborateur_code': self._code_from_collaborateur_selection(self.collaborateur_selection_var.get()),
+            'collaborateur_nom': self.collaborateur_nom_var.get().strip(),
             'prix_mensuel': self.prix_mensuel_var.get(),
             'prix_inter': self.prix_inter_var.get(),
             'date_debut': self.date_debut_var.get(),
@@ -380,6 +428,16 @@ class ContratForm(ttk.Frame):
             self.period_var.set(values.get('period', ''))
             self.type_contrat_domiciliation_var.set(values.get('type_contrat_domiciliation', ''))
             self.type_contrat_domiciliation_autre_var.set(values.get('type_contrat_domiciliation_autre', ''))
+            selected_collaborateur = values.get('collaborateur', values.get('collaborateur_selection', ''))
+            if selected_collaborateur:
+                self.collaborateur_selection_var.set(str(selected_collaborateur))
+            else:
+                self.collaborateur_selection_var.set(
+                    self._selection_from_collaborateur_code(
+                        values.get('collaborateur_code', values.get('CollaborateurCode', 'CLTD'))
+                    )
+                )
+            self.collaborateur_nom_var.set(values.get('collaborateur_nom', values.get('CollaborateurNom', '')))
             self.prix_mensuel_var.set(values.get('prix_mensuel', ''))
             self.prix_inter_var.set(values.get('prix_inter', ''))
             self.date_debut_var.set(values.get('date_debut', ''))
@@ -406,12 +464,18 @@ class ContratForm(ttk.Frame):
         """Réinitialise complètement le formulaire"""
         import datetime
         from ..utils.constants import Nbmois, TypeRenouvellement, TypeContratDomiciliation
+        from ..utils.defaults_manager import get_defaults_manager
         today = datetime.date.today().strftime('%d/%m/%Y')
+        defaults_mgr = get_defaults_manager()
 
         self.date_contrat_var.set(today)
         self.period_var.set((Nbmois[1] if len(Nbmois) > 1 else (Nbmois[0] if Nbmois else '')))
         self.type_contrat_domiciliation_var.set(TypeContratDomiciliation[0] if TypeContratDomiciliation else '')
         self.type_contrat_domiciliation_autre_var.set('')
+        self.collaborateur_selection_var.set(
+            self._selection_from_collaborateur_code(defaults_mgr.get_default('contrat', 'CollaborateurCode') or 'CLTD')
+        )
+        self.collaborateur_nom_var.set(defaults_mgr.get_default('contrat', 'CollaborateurNom') or '')
         self.prix_mensuel_var.set('')
         self.prix_inter_var.set('')
         self.date_debut_var.set(today)

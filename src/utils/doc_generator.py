@@ -122,6 +122,8 @@ def _build_expected_context_key_sections() -> Dict[str, str]:
         "TYPE_CONTRAT_DOMICILIATION", "type_contrat_domiciliation",
         "TYPE_CONTRAT_DOMICILIATION_AUTRE", "type_contrat_domiciliation_autre",
         "CONTRAT_FORME_JURIDIQUE", "contrat_forme_juridique",
+        "COLLABORATEUR_CODE", "collaborateur_code",
+        "COLLABORATEUR_NOM", "collaborateur_nom",
     )
 
     # Activity aliases
@@ -353,6 +355,97 @@ def render_templates(
                 return "DosDom"
         return "DosCré"
 
+    def _extract_collaborateur_code(vals: Dict) -> str:
+        allowed = {"EXP", "AGR", "IND", "COAG", "COIND", "COEXP", "CLTD"}
+        candidates = []
+        if isinstance(vals, dict):
+            contrat = vals.get("contrat", {})
+            societe = vals.get("societe", {})
+            if isinstance(contrat, dict):
+                candidates.extend(
+                    [
+                        contrat.get("collaborateur_code"),
+                        contrat.get("CollaborateurCode"),
+                        contrat.get("collaborateur"),
+                    ]
+                )
+            if isinstance(societe, dict):
+                candidates.extend(
+                    [
+                        societe.get("collaborateur_code"),
+                        societe.get("CollaborateurCode"),
+                    ]
+                )
+            candidates.extend(
+                [
+                    vals.get("collaborateur_code"),
+                    vals.get("CollaborateurCode"),
+                    vals.get("collaborateur"),
+                ]
+            )
+        for candidate in candidates:
+            raw = str(candidate or "").strip().upper()
+            if not raw:
+                continue
+            match = re.match(r"^([A-Z0-9]+)", raw)
+            if not match:
+                continue
+            code = match.group(1)
+            if code in allowed:
+                return code
+        return "CLTD"
+
+    def _extract_collaborateur_nom(vals: Dict) -> str:
+        candidates = []
+        if isinstance(vals, dict):
+            contrat = vals.get("contrat", {})
+            societe = vals.get("societe", {})
+            if isinstance(contrat, dict):
+                candidates.extend(
+                    [
+                        contrat.get("collaborateur_nom"),
+                        contrat.get("CollaborateurNom"),
+                    ]
+                )
+            if isinstance(societe, dict):
+                candidates.extend(
+                    [
+                        societe.get("collaborateur_nom"),
+                        societe.get("CollaborateurNom"),
+                    ]
+                )
+            candidates.extend(
+                [
+                    vals.get("collaborateur_nom"),
+                    vals.get("CollaborateurNom"),
+                ]
+            )
+        for candidate in candidates:
+            value = str(candidate or "").strip()
+            if value:
+                return value
+        return "COLLABORATEUR"
+
+    def _next_domiciliation_sequence(base_out_dir: Path, year_token: str) -> int:
+        pattern = re.compile(rf"^DOM-{re.escape(year_token)}-(\d{{4}})_")
+        max_seq = 0
+        try:
+            for existing in base_out_dir.iterdir():
+                if not existing.is_dir():
+                    continue
+                match = pattern.match(existing.name)
+                if not match:
+                    continue
+                try:
+                    seq = int(match.group(1))
+                except Exception:
+                    seq = 0
+                if seq > max_seq:
+                    max_seq = seq
+        except Exception:
+            pass
+        return max_seq + 1
+
     def _derive_doc_label(template_stem: str) -> str:
         stem = template_stem
         if stem.startswith('My_'):
@@ -384,8 +477,23 @@ def render_templates(
     pre_templates: Optional[List[_Path]] = [_Path(p) for p in templates_list] if templates_list else None
     folder_kind_token = _normalize_generation_folder_token(generation_type, pre_templates)
 
-    generation_folder_name = f"{gen_date}_{folder_kind_token}_{legal_form_token}_{company_clean}"
-    out_subdir = out_dir / generation_folder_name
+    if folder_kind_token == "DosDom":
+        year_token = gen_date[:4]
+        collaborator_code = _extract_collaborateur_code(values or {})
+        collaborator_name = _sanitize_name(_extract_collaborateur_nom(values or {})).upper() or "COLLABORATEUR"
+        client_name = company_clean.upper() or "UNKNOWNCOMPANY"
+        seq = _next_domiciliation_sequence(out_dir, year_token)
+        while True:
+            generation_folder_name = (
+                f"DOM-{year_token}-{seq:04d}_{collaborator_code}-{collaborator_name}_{client_name}"
+            )
+            out_subdir = out_dir / generation_folder_name
+            if not out_subdir.exists():
+                break
+            seq += 1
+    else:
+        generation_folder_name = f"{gen_date}_{folder_kind_token}_{legal_form_token}_{company_clean}"
+        out_subdir = out_dir / generation_folder_name
     out_subdir.mkdir(parents=True, exist_ok=True)
 
     report = []
@@ -518,6 +626,8 @@ def render_templates(
             'type_contrat_domiciliation_autre': 'TYPE_CONTRAT_DOMICILIATION_AUTRE',
             # Compatibility input key used in some older payloads/templates.
             'contrat_forme_juridique': 'CONTRAT_FORME_JURIDIQUE',
+            'collaborateur_code': 'COLLABORATEUR_CODE',
+            'collaborateur_nom': 'COLLABORATEUR_NOM',
         }
         for fk, hk in contrat_map.items():
             v = None

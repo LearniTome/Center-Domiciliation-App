@@ -87,6 +87,8 @@ class DefaultsManager:
             'contrat': {
                 'NbMois': constants.Nbmois[1] if len(constants.Nbmois) > 1 else (constants.Nbmois[0] if constants.Nbmois else ''),
                 'TypeContratDomiciliation': constants.TypeContratDomiciliation[0] if constants.TypeContratDomiciliation else '',
+                'CollaborateurCode': 'CLTD',
+                'CollaborateurNom': '',
                 'TypeRenouvellement': constants.TypeRenouvellement[0] if constants.TypeRenouvellement else '',
                 'Tva': '20',
                 'DhHt': '83.3333',

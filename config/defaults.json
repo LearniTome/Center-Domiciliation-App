@@ -26,6 +26,8 @@
   "contrat": {
     "NbMois": "12",
     "TypeContratDomiciliation": "Personne Morale",
+    "CollaborateurCode": "CLTD",
+    "CollaborateurNom": "",
     "TypeRenouvellement": "Mensuel",
     "Tva": "20",
     "DhHt": "83.3333",

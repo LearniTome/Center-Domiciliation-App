@@ -12,6 +12,8 @@ class TestDefaultsManager(unittest.TestCase):
         self.assertIn("Prenom", defaults["associe"])
         self.assertIn("Adresse", defaults["associe"])
         self.assertIn("TypeContratDomiciliation", defaults["contrat"])
+        self.assertIn("CollaborateurCode", defaults["contrat"])
+        self.assertIn("CollaborateurNom", defaults["contrat"])
         self.assertIn("DateIce", defaults["societe"])
         self.assertIn("ModeSignatureGerance", defaults["societe"])
 

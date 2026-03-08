@@ -562,6 +562,8 @@ class MainForm(ttk.Frame):
                     'fields': [
                         ('NbMois', 'Période (mois)', constants.Nbmois),
                         ('TypeContratDomiciliation', 'Type contrat domiciliation', constants.TypeContratDomiciliation),
+                        ('CollaborateurCode', 'Collaborateur (code)', constants.Collaborateurs),
+                        ('CollaborateurNom', 'Nom collaborateur', []),
                         ('TypeRenouvellement', 'Type renouvellement', constants.TypeRenouvellement),
                         ('Tva', 'TVA initiale (%)', ['20']),
                         ('DhHt', 'Loyer HT initial (DH)', ['83.3333']),
