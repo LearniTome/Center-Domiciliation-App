@@ -11,6 +11,14 @@ warnings.filterwarnings(
     category=SyntaxWarning,
     module=r"tkcalendar\..*",
 )
+# Suppress docxcompose deprecation warning about pkg_resources.
+# This warning is emitted by a third-party dependency and does not affect runtime behavior.
+warnings.filterwarnings(
+    "ignore",
+    message=r"pkg_resources is deprecated as an API\..*",
+    category=UserWarning,
+    module=r"docxcompose\.properties",
+)
 from src.forms.main_form import MainForm
 from src.utils import WindowManager, ThemeManager, PathManager, ErrorHandler
 from src.utils.utils import WidgetFactory

@@ -161,6 +161,7 @@ class MainForm(ttk.Frame):
             self.create_associe_page()
         with self._profile_scope("MainForm.create_contrat_page"):
             self.create_contrat_page()
+        self._bind_cross_form_synchronization()
 
         # Show first page
         with self._profile_scope("MainForm.show_page.initial"):
@@ -262,6 +263,50 @@ class MainForm(ttk.Frame):
         except Exception:
             pass
         return '', ''
+
+    def _map_contract_type_from_legal_form(self, legal_form: str) -> str:
+        form = str(legal_form or '').strip().lower()
+        if form == 'personne physique':
+            return 'Personne Physique'
+        if form == 'association':
+            return 'Association'
+        if form == 'fondation':
+            return 'Fondation'
+        return 'Personne Morale'
+
+    def _sync_legal_form_dependents(self):
+        """Synchronize legal-form dependent fields across sections."""
+        try:
+            legal_form = str(getattr(self.societe_form, 'forme_jur_var', None).get() or '').strip()
+        except Exception:
+            legal_form = ''
+        if not legal_form:
+            return
+
+        try:
+            if hasattr(self, 'contrat_form') and hasattr(self.contrat_form, 'type_contrat_domiciliation_var'):
+                self.contrat_form.type_contrat_domiciliation_var.set(
+                    self._map_contract_type_from_legal_form(legal_form)
+                )
+        except Exception:
+            pass
+
+    def _on_societe_legal_form_changed(self, *_args):
+        self._sync_legal_form_dependents()
+
+    def _bind_cross_form_synchronization(self):
+        """Bind one-way synchronization from Société legal form to other sections."""
+        try:
+            var = getattr(self.societe_form, 'forme_jur_var', None)
+            if var is None:
+                return
+            try:
+                self._societe_legal_form_trace_id = var.trace_add('write', self._on_societe_legal_form_changed)
+            except Exception:
+                var.trace('w', self._on_societe_legal_form_changed)
+            self._sync_legal_form_dependents()
+        except Exception:
+            pass
 
     def create_contrat_page(self):
         page = ttk.Frame(self.forms_container)
@@ -1119,6 +1164,13 @@ class MainForm(ttk.Frame):
             for key, _, form in self.pages:
                 if hasattr(form, 'get_values'):
                     values[key] = form.get_values()
+            societe_vals = values.get('societe', {}) if isinstance(values, dict) else {}
+            contrat_vals = values.get('contrat', {}) if isinstance(values, dict) else {}
+            legal_form = ''
+            if isinstance(societe_vals, dict):
+                legal_form = str(societe_vals.get('forme_juridique', '') or '').strip()
+            if legal_form and isinstance(contrat_vals, dict):
+                contrat_vals['contrat_forme_juridique'] = legal_form
             self.values = values
         except Exception:
             # fallback to existing structure if any form is missing
@@ -1136,6 +1188,7 @@ class MainForm(ttk.Frame):
             for key, _, form in self.pages:
                 if key in values and hasattr(form, 'set_values'):
                     form.set_values(values[key])
+            self._sync_legal_form_dependents()
 
     def reset(self):
         """Reset all forms to their default state"""

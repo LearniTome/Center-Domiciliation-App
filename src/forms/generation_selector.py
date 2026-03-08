@@ -36,6 +36,28 @@ LEGAL_FORM_PREFIXES = {
     'Association': 'ASSO',
     'Fondation': 'FOND',
 }
+
+
+def normalize_legal_form_selection(raw_value: Optional[str]) -> str:
+    """Normalize legal-form labels from forms/DB into selector options."""
+    raw = str(raw_value or "").strip()
+    if not raw:
+        return LEGAL_FORM_OPTIONS[0]
+
+    compact = re.sub(r"[\s\-_]+", " ", raw).strip().upper()
+    mapping = {
+        "SARL AU": "SARL-AU",
+        "SARLAU": "SARL-AU",
+        "SARL": "SARL",
+        "SA": "SA",
+        "PERSONNE PHYSIQUE": "Personne Physique",
+        "PP": "Personne Physique",
+        "ASSOCIATION": "Association",
+        "FONDATION": "Fondation",
+    }
+    return mapping.get(compact, LEGAL_FORM_OPTIONS[0])
+
+
 def compute_selection_feedback(
     legal_form: str,
     generation_type: str,
@@ -110,6 +132,7 @@ class GenerationSelectorDialog(tk.Toplevel):
         self._last_uploaded_template_name: Optional[str] = None
         self.output_format_var = tk.StringVar(value='word')
         self.save_before_var = tk.BooleanVar(value=True)
+        self.initial_legal_form = self._extract_initial_legal_form()
 
         # Backward-compat normalization.
         normalized = (self.output_format or '').strip().lower()
@@ -171,6 +194,31 @@ class GenerationSelectorDialog(tk.Toplevel):
         # One-shot recenter at first mapping/configure to absorb DPI/window chrome offset.
         self.bind("<Map>", self._one_shot_recenter_on_first_show, add="+")
         self.bind("<Configure>", self._one_shot_recenter_on_first_show, add="+")
+
+    def _extract_initial_legal_form(self) -> str:
+        """Infer initial legal form from collected values when available."""
+        societe = self.values.get("societe", {}) if isinstance(self.values, dict) else {}
+        candidates = []
+        if isinstance(societe, dict):
+            candidates.extend(
+                [
+                    societe.get("forme_juridique"),
+                    societe.get("FormJur"),
+                    societe.get("FORME_JUR"),
+                ]
+            )
+        if isinstance(self.values, dict):
+            candidates.extend(
+                [
+                    self.values.get("legal_form"),
+                    self.values.get("forme_juridique"),
+                    self.values.get("FormJur"),
+                ]
+            )
+        for value in candidates:
+            if str(value or "").strip():
+                return normalize_legal_form_selection(str(value))
+        return LEGAL_FORM_OPTIONS[0]
 
     def _center_initial_position(self):
         """Center once after UI construction to get stable initial placement."""
@@ -330,7 +378,7 @@ class GenerationSelectorDialog(tk.Toplevel):
         legal_form_frame = ttk.LabelFrame(top_sections_frame, text="📋 Forme juridique", padding=15)
         legal_form_frame.grid(row=0, column=0, padx=(0, 10), sticky='nsew')
 
-        self.legal_form_var = tk.StringVar(value='SARL-AU')
+        self.legal_form_var = tk.StringVar(value=self.initial_legal_form)
         self.legal_form_combo = ttk.Combobox(
             legal_form_frame,
             textvariable=self.legal_form_var,
