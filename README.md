@@ -2,6 +2,11 @@
 
 Application desktop (Python + Tkinter) pour gérer les sociétés, associés et contrats de domiciliation, avec génération de documents `.docx`/PDF.
 
+## Version
+
+- Version actuelle: `v.1`
+- Convention de version (à partir de maintenant): `v.1`, `v.2`, `v.3`, ...
+
 ## Démarrage rapide
 
 ```powershell
@@ -21,7 +26,9 @@ uv run python main.py
   - civilité normalisée (`Monsieur` / `Madame`)
   - validation minimale bloquante avant sauvegarde/génération
   - meilleure logique de répartition des parts
-- Nouveau hub `Configuration`:
+- Nouveau hub `Outils`:
+  - bouton `Générateur de Documents`
+  - bouton `Convertisseur Word -> PDF (lot)`
   - bouton `Valeurs par défaut`
   - bouton `Analyse des valeurs templates`
 - Nouvelle vue `Analyse des valeurs templates`:
@@ -31,6 +38,11 @@ uv run python main.py
   - bouton `Actualiser`
   - export `CSV` / `Excel`
   - ouverture directe du template sélectionné
+- Outil `Convertisseur Word -> PDF (lot)`:
+  - sélection d'un dossier source
+  - scan récursif des `.docx`
+  - conversion vers `.pdf` dans le même dossier
+  - rapport `HTML + JSON` dans `Outputs/Reports/`
 - Profiling de démarrage:
   - rapport écrit dans `logs/startup_profile_last.json`
 
@@ -41,7 +53,7 @@ Les captures sont référencées depuis `docs/images/ui/`.
 ![Layout Société](docs/images/ui/societe-layout.png)
 ![Layout Associé](docs/images/ui/associe-layout.png)
 ![Layout Contrat](docs/images/ui/contrat-layout.png)
-![Hub Configuration](docs/images/ui/configuration-hub.png)
+![Hub Outils](docs/images/ui/configuration-hub.png)
 ![Analyse des valeurs templates](docs/images/ui/configuration-template-analyzer.png)
 
 ## Documentation
@@ -60,14 +72,16 @@ Les captures sont référencées depuis `docs/images/ui/`.
 - Sauvegarde dans Excel (`databases/DataBase_domiciliation.xlsx`)
 - Génération de documents Word depuis `Models/`
 - Conversion PDF (si environnement compatible)
+- Conversion en lot Word -> PDF depuis `Outils`
 - Sélection de templates par type/forme juridique
 - Tableau de bord de consultation et actions rapides
 
 ## Configuration
 
 - Préférences générales: `config/preferences.json`
-- Valeurs par défaut métier: via `Configuration > Valeurs par défaut`
+- Valeurs par défaut métier: via `Outils > Valeurs par défaut`
 - Dossier de sortie génération: `tmp_out/`
+- Dossier de rapports conversion Word -> PDF: `Outputs/Reports/`
 
 ## Tests
 
@@ -98,4 +112,3 @@ docs/
 ## License
 
 MIT
-

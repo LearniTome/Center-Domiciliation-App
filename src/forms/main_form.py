@@ -5,6 +5,7 @@ import logging
 import os
 import subprocess
 import sys
+import threading
 from contextlib import nullcontext
 from .societe_form import SocieteForm
 from .associe_form import AssocieForm
@@ -423,7 +424,7 @@ class MainForm(ttk.Frame):
             top = tk.Toplevel(self.winfo_toplevel())
             top.transient(self.winfo_toplevel())
             top.title("Outils")
-            top.geometry("440x280")
+            top.geometry("470x340")
             top.resizable(False, False)
 
             try:
@@ -474,11 +475,25 @@ class MainForm(ttk.Frame):
                 except Exception:
                     logger.exception("Erreur lors de l'ouverture du générateur de documents")
 
+            def _open_word_pdf_batch():
+                try:
+                    top.destroy()
+                except Exception:
+                    pass
+                self._open_word_pdf_batch_dialog()
+
             WidgetFactory.create_button(
                 actions,
                 text="🧾 Générateur de Documents",
                 command=_open_generator,
                 style="Manage.TButton",
+            ).pack(fill="x", pady=(0, 8))
+
+            WidgetFactory.create_button(
+                actions,
+                text="📄 Convertisseur Word -> PDF (lot)",
+                command=_open_word_pdf_batch,
+                style="Upload.TButton",
             ).pack(fill="x", pady=(0, 8))
 
             WidgetFactory.create_button(
@@ -508,6 +523,276 @@ class MainForm(ttk.Frame):
         except Exception as e:
             logger.exception("Erreur lors de l'ouverture de la configuration")
             messagebox.showerror("Erreur", f"Impossible d'ouvrir la configuration: {e}")
+
+    def _open_word_pdf_batch_dialog(self):
+        """Open tool dialog to convert many DOCX files to PDF with report."""
+        try:
+            from ..utils.word_pdf_batch import convert_docx_batch
+        except Exception as e:
+            messagebox.showerror(
+                "Outil indisponible",
+                f"Impossible de charger le convertisseur Word -> PDF:\n{e}",
+            )
+            return
+
+        top = tk.Toplevel(self.winfo_toplevel())
+        top.transient(self.winfo_toplevel())
+        top.title("Outils - Conversion Word vers PDF")
+        top.geometry("840x520")
+        top.resizable(True, True)
+
+        try:
+            top.grab_set()
+        except Exception:
+            pass
+
+        container = ttk.Frame(top, padding=14)
+        container.pack(fill="both", expand=True)
+        container.columnconfigure(1, weight=1)
+        container.rowconfigure(5, weight=1)
+
+        ttk.Label(
+            container,
+            text="📄 Conversion Word -> PDF (lot)",
+            style="SectionHeader.TLabel",
+        ).grid(row=0, column=0, columnspan=3, sticky="ew", pady=(0, 12))
+
+        source_var = tk.StringVar()
+        recursive_var = tk.BooleanVar(value=True)
+        status_var = tk.StringVar(value="Sélectionnez un dossier source puis lancez la conversion.")
+        progress_var = tk.StringVar(value="0 / 0")
+        report_html = {"path": None}
+        pending_files = {"paths": []}
+
+        ttk.Label(container, text="Dossier source (.docx):").grid(row=1, column=0, sticky="w", padx=(0, 8))
+        source_entry = ttk.Entry(container, textvariable=source_var)
+        source_entry.grid(row=1, column=1, sticky="ew")
+
+        def _browse_source():
+            selected = filedialog.askdirectory(
+                title="Sélectionner le dossier contenant les fichiers Word (.docx)"
+            )
+            if selected:
+                source_var.set(selected)
+                _scan_source_folder()
+
+        browse_btn = WidgetFactory.create_button(
+            container,
+            text="📁 Parcourir",
+            command=_browse_source,
+            style="Secondary.TButton",
+        )
+        browse_btn.grid(row=1, column=2, sticky="e", padx=(8, 0))
+
+        recursive_chk = ttk.Checkbutton(
+            container,
+            text="Inclure sous-dossiers (V1, activé)",
+            variable=recursive_var,
+        )
+        recursive_chk.state(["selected", "disabled"])
+        recursive_chk.grid(row=2, column=0, columnspan=3, sticky="w", pady=(10, 8))
+
+        status_row = ttk.Frame(container)
+        status_row.grid(row=3, column=0, columnspan=3, sticky="ew", pady=(0, 8))
+        status_row.columnconfigure(0, weight=1)
+        ttk.Label(status_row, textvariable=status_var).grid(row=0, column=0, sticky="w")
+        ttk.Label(status_row, textvariable=progress_var).grid(row=0, column=1, sticky="e")
+
+        progress = ttk.Progressbar(container, mode="indeterminate")
+        progress.grid(row=4, column=0, columnspan=3, sticky="ew", pady=(0, 8))
+
+        log_text = tk.Text(container, height=14, state="disabled")
+        log_text.grid(row=5, column=0, columnspan=3, sticky="nsew")
+        log_scroll = ttk.Scrollbar(container, orient="vertical", command=log_text.yview)
+        log_scroll.grid(row=5, column=3, sticky="ns")
+        log_text.configure(yscrollcommand=log_scroll.set)
+
+        buttons = ttk.Frame(container)
+        buttons.grid(row=6, column=0, columnspan=3, sticky="ew", pady=(10, 0))
+
+        def _append_log(line: str):
+            log_text.configure(state="normal")
+            log_text.insert("end", line + "\n")
+            log_text.see("end")
+            log_text.configure(state="disabled")
+
+        def _clear_log():
+            log_text.configure(state="normal")
+            log_text.delete("1.0", "end")
+            log_text.configure(state="disabled")
+
+        def _scan_source_folder():
+            source_raw = source_var.get().strip()
+            report_html["path"] = None
+            open_report_btn.configure(state="disabled")
+            pending_files["paths"] = []
+
+            if not source_raw:
+                _clear_log()
+                status_var.set("Sélectionnez un dossier source puis lancez la conversion.")
+                progress_var.set("0 / 0")
+                launch_btn.configure(state="disabled")
+                return
+
+            source_dir = Path(source_raw).expanduser()
+            if not source_dir.exists() or not source_dir.is_dir():
+                _clear_log()
+                status_var.set("Dossier source invalide.")
+                progress_var.set("0 / 0")
+                launch_btn.configure(state="disabled")
+                return
+
+            paths = sorted(p for p in source_dir.rglob("*.docx") if p.is_file())
+            pending_files["paths"] = paths
+            total = len(paths)
+            progress_var.set(f"0 / {total}")
+
+            _clear_log()
+            if total == 0:
+                status_var.set("Aucun document .docx trouvé dans ce dossier.")
+                _append_log("[info] Aucun fichier .docx détecté.")
+                launch_btn.configure(state="disabled")
+                return
+
+            status_var.set(f"{total} document(s) .docx détecté(s), prêt(s) à convertir.")
+            _append_log(f"[info] Fichiers détectés ({total}):")
+            for docx_path in paths:
+                try:
+                    rel = docx_path.relative_to(source_dir)
+                    _append_log(f"[a convertir] {rel}")
+                except Exception:
+                    _append_log(f"[a convertir] {docx_path}")
+            launch_btn.configure(state="normal")
+
+        def _open_report():
+            raw_path = report_html.get("path")
+            if not raw_path:
+                return
+            try:
+                self._open_path_in_system(Path(raw_path))
+            except Exception as e:
+                messagebox.showerror("Ouverture rapport", f"Impossible d'ouvrir le rapport:\n{e}")
+
+        open_report_btn = WidgetFactory.create_button(
+            buttons,
+            text="📊 Ouvrir le rapport",
+            command=_open_report,
+            style="View.TButton",
+        )
+        open_report_btn.pack(side="left")
+        open_report_btn.configure(state="disabled")
+
+        def _set_running(is_running: bool):
+            run_state = "disabled" if is_running else "normal"
+            try:
+                source_entry.configure(state=run_state)
+            except Exception:
+                pass
+            browse_btn.configure(state=run_state)
+            launch_btn.configure(state=run_state)
+            close_btn.configure(state=run_state)
+            if is_running:
+                open_report_btn.configure(state="disabled")
+                progress.start(10)
+            else:
+                progress.stop()
+                report_path = report_html.get("path")
+                if report_path and Path(report_path).exists():
+                    open_report_btn.configure(state="normal")
+                else:
+                    open_report_btn.configure(state="disabled")
+
+        def _start_batch_conversion():
+            source_raw = source_var.get().strip()
+            if not source_raw:
+                messagebox.showwarning("Dossier source", "Veuillez sélectionner un dossier source.")
+                return
+
+            source_dir = Path(source_raw).expanduser()
+            if not source_dir.exists() or not source_dir.is_dir():
+                messagebox.showerror("Dossier source", f"Dossier invalide:\n{source_dir}")
+                return
+
+            if not pending_files["paths"]:
+                _scan_source_folder()
+            if not pending_files["paths"]:
+                messagebox.showwarning("Conversion Word -> PDF", "Aucun fichier .docx à convertir dans le dossier sélectionné.")
+                return
+
+            report_html["path"] = None
+            progress_var.set("0 / 0")
+            status_var.set("Conversion en cours...")
+            _clear_log()
+            _set_running(True)
+
+            def _progress_callback(processed: int, total: int, filename: str, entry: dict):
+                def _update_ui():
+                    progress_var.set(f"{processed} / {total}")
+                    _append_log(
+                        f"[{entry.get('status', 'pending')}] {filename}"
+                        + (f" - {entry.get('error')}" if entry.get("error") else "")
+                    )
+
+                try:
+                    top.after(1, _update_ui)
+                except Exception:
+                    pass
+
+            def _worker():
+                try:
+                    result = convert_docx_batch(
+                        source_dir=source_dir,
+                        recursive=True,
+                        progress_callback=_progress_callback,
+                    )
+
+                    def _done():
+                        report_html["path"] = result.get("report_html")
+                        _set_running(False)
+                        status_var.set("Conversion terminée.")
+                        summary = (
+                            f"Conversion terminée.\n\n"
+                            f"Total: {result.get('total_files', 0)}\n"
+                            f"Succès: {result.get('success_count', 0)}\n"
+                            f"Ignorés: {result.get('skipped_count', 0)}\n"
+                            f"Erreurs: {result.get('error_count', 0)}"
+                        )
+                        if result.get("global_error"):
+                            summary += f"\n\nErreur globale:\n{result.get('global_error')}"
+                        messagebox.showinfo("Conversion Word -> PDF", summary)
+
+                    top.after(1, _done)
+                except Exception as e:
+                    def _failed():
+                        _set_running(False)
+                        status_var.set("Échec de conversion.")
+                        messagebox.showerror("Conversion Word -> PDF", f"Erreur:\n{e}")
+
+                    top.after(1, _failed)
+
+            threading.Thread(target=_worker, daemon=True).start()
+
+        launch_btn = WidgetFactory.create_button(
+            buttons,
+            text="▶ Lancer la conversion",
+            command=_start_batch_conversion,
+            style="Success.TButton",
+        )
+        launch_btn.pack(side="left", padx=(8, 0))
+        launch_btn.configure(state="disabled")
+
+        source_entry.bind("<Return>", lambda _e: _scan_source_folder())
+        source_entry.bind("<FocusOut>", lambda _e: _scan_source_folder())
+
+        close_btn = WidgetFactory.create_button(
+            buttons,
+            text="❌ Fermer",
+            command=top.destroy,
+            style="Close.TButton",
+        )
+        close_btn.pack(side="right")
+
+        WindowManager.center_window(top)
 
     def _open_defaults_dialog(self):
         """Open configuration dialog to manage default values for the entire application."""

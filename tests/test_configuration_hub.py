@@ -71,24 +71,52 @@ class TestConfigurationHub(unittest.TestCase):
         except Exception:
             pass
 
-    def test_configuration_hub_has_two_actions_and_routes_to_handlers(self):
+    def test_tools_hub_routes_actions_to_handlers(self):
         mock_defaults = Mock()
         mock_analyzer = Mock()
+        mock_converter = Mock()
+        mock_generator = Mock()
         self.form._open_defaults_dialog = mock_defaults
         self.form._open_template_values_analyzer_dialog = mock_analyzer
+        self.form._open_word_pdf_batch_dialog = mock_converter
+        self.root.generate_documents = mock_generator
 
         self.form.open_configuration()
         self.root.update()
         self.root.update_idletasks()
 
-        hub = _find_toplevel_by_title(self.root, "Configuration")
+        hub = _find_toplevel_by_title(self.root, "Outils")
         self.assertIsNotNone(hub)
 
+        generator_btn = _find_button_by_text(hub, "🧾 Générateur de Documents")
+        converter_btn = _find_button_by_text(hub, "📄 Convertisseur Word -> PDF (lot)")
         defaults_btn = _find_button_by_text(hub, "⚙ Valeurs par défaut")
         analyzer_btn = _find_button_by_text(hub, "📊 Analyse des valeurs templates")
+        self.assertIsNotNone(generator_btn)
+        self.assertIsNotNone(converter_btn)
         self.assertIsNotNone(defaults_btn)
         self.assertIsNotNone(analyzer_btn)
 
+        generator_btn.invoke()
+        self.root.update()
+        self.root.update_idletasks()
+        mock_generator.assert_called_once()
+
+        self.form.open_configuration()
+        self.root.update()
+        self.root.update_idletasks()
+        hub = _find_toplevel_by_title(self.root, "Outils")
+        converter_btn = _find_button_by_text(hub, "📄 Convertisseur Word -> PDF (lot)")
+        converter_btn.invoke()
+        self.root.update()
+        self.root.update_idletasks()
+        mock_converter.assert_called_once()
+
+        self.form.open_configuration()
+        self.root.update()
+        self.root.update_idletasks()
+        hub = _find_toplevel_by_title(self.root, "Outils")
+        defaults_btn = _find_button_by_text(hub, "⚙ Valeurs par défaut")
         defaults_btn.invoke()
         self.root.update()
         self.root.update_idletasks()
@@ -97,7 +125,7 @@ class TestConfigurationHub(unittest.TestCase):
         self.form.open_configuration()
         self.root.update()
         self.root.update_idletasks()
-        hub = _find_toplevel_by_title(self.root, "Configuration")
+        hub = _find_toplevel_by_title(self.root, "Outils")
         analyzer_btn = _find_button_by_text(hub, "📊 Analyse des valeurs templates")
         analyzer_btn.invoke()
         self.root.update()
