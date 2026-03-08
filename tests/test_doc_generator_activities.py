@@ -30,6 +30,7 @@ class TestDocGeneratorActivities(unittest.TestCase):
                 "societe": {
                     "denomination": "NOUVELLE STE",
                     "forme_juridique": "SARL AU",
+                    "mode_signature_gerance": "separee",
                     "activites": activities,
                 },
                 "associes": [],
@@ -59,6 +60,7 @@ class TestDocGeneratorActivities(unittest.TestCase):
         self.assertIn("ACTIVITE_8", captured_context.get("ACTIVITES_PLAIN", ""))
         self.assertIn("• ACTIVITE_2", captured_context.get("ACTIVITES_PUCES", ""))
         self.assertEqual(len(activities), captured_context.get("ACTIVITY_COUNT"))
+        self.assertEqual("separee", captured_context.get("MODE_SIGNATURE_GERANCE"))
 
 
 if __name__ == "__main__":

@@ -83,6 +83,7 @@ def _build_expected_context_key_sections() -> Dict[str, str]:
         "VALEUR_NOMINALE", "valeur_nominale",
         "STE_ADRESS", "adresse",
         "TRIBUNAL", "tribunal",
+        "MODE_SIGNATURE_GERANCE", "mode_signature_gerance",
     )
 
     # Associé/gérant-oriented keys
@@ -414,7 +415,8 @@ def render_templates(
             'date_certificat_negatif': 'DATE_ICE',
             'date_expiration_certificat_negatif': 'DATE_EXP_CERT_NEG',
             'capital': 'CAPITAL', 'parts_social': 'PART_SOCIAL', 'valeur_nominale': 'VALEUR_NOMINALE',
-            'adresse': 'STE_ADRESS', 'tribunal': 'TRIBUNAL'
+            'adresse': 'STE_ADRESS', 'tribunal': 'TRIBUNAL',
+            'mode_signature_gerance': 'MODE_SIGNATURE_GERANCE',
         }
         for fk, hk in soc_map.items():
             v = None

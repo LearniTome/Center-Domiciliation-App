@@ -487,6 +487,7 @@ class MainForm(ttk.Frame):
                     'fields': [
                         ('DenSte', 'Dénomination sociale', constants.DenSte),
                         ('FormJur', 'Forme juridique', constants.Formjur),
+                        ('ModeSignatureGerance', 'Mode signature gérance (SARL)', ['separee', 'conjointe']),
                         ('Ice', 'ICE', []),
                         ('DateIce', 'Date certificat négatif', []),
                         ('DateExpCertNeg', 'Date expiration certificat négatif', []),

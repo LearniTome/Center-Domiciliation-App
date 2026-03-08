@@ -71,6 +71,7 @@ class DefaultsManager:
                 'ValeurNominale': '100',
                 'SteAdresse': constants.SteAdresse[0] if constants.SteAdresse else '',
                 'Tribunal': constants.Tribunnaux[0] if constants.Tribunnaux else '',
+                'ModeSignatureGerance': 'separee',
             },
             'associe': {
                 'Civility': constants.Civility[0] if constants.Civility else '',

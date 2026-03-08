@@ -13,6 +13,7 @@ class TestDefaultsManager(unittest.TestCase):
         self.assertIn("Adresse", defaults["associe"])
         self.assertIn("TypeContratDomiciliation", defaults["contrat"])
         self.assertIn("DateIce", defaults["societe"])
+        self.assertIn("ModeSignatureGerance", defaults["societe"])
 
     def test_merge_with_initial_defaults_backfills_missing_keys(self):
         manager = DefaultsManager()

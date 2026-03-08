@@ -2,6 +2,7 @@
   "societe": {
     "DenSte": "NOUVELLE STE",
     "FormJur": "SARL AU",
+    "ModeSignatureGerance": "separee",
     "Ice": "",
     "DateIce": "",
     "DateExpCertNeg": "",

@@ -52,6 +52,7 @@ class SocieteForm(ttk.Frame):
         default_valeur_nominale = defaults_mgr.get_default('societe', 'ValeurNominale') or "100"
         default_ste_adresse = defaults_mgr.get_default('societe', 'SteAdresse') or (SteAdresse[0] if SteAdresse else "")
         default_tribunal = defaults_mgr.get_default('societe', 'Tribunal') or (Tribunnaux[0] if Tribunnaux else "")
+        default_mode_signature = defaults_mgr.get_default('societe', 'ModeSignatureGerance') or "separee"
 
         self.den_ste_var = tk.StringVar(value=default_den_ste)
         self.forme_jur_var = tk.StringVar(value=default_form_jur)
@@ -66,6 +67,7 @@ class SocieteForm(ttk.Frame):
         self.capital_var = tk.StringVar(value=default_capital)
         self.parts_social_var = tk.StringVar(value=default_parts_social)
         self.valeur_nominale_var = tk.StringVar(value=default_valeur_nominale)
+        self.mode_signature_gerance_var = tk.StringVar(value=default_mode_signature)
 
         # Load reference data from database
         self.ste_adresses = get_reference_data('SteAdresses')
@@ -112,6 +114,7 @@ class SocieteForm(ttk.Frame):
         form_combo = ttk.Combobox(form_cell, textvariable=self.forme_jur_var, values=Formjur)
         form_combo.grid(row=1, column=0, sticky="ew")
         self.combos.append(form_combo)
+        form_combo.bind("<<ComboboxSelected>>", self._on_forme_juridique_changed)
 
         tribunal_cell = _cell(0, 2, "Tribunal:")
         tribunal_combo = ttk.Combobox(tribunal_cell, textvariable=self.tribunal_var, values=self.tribunaux)
@@ -151,6 +154,18 @@ class SocieteForm(ttk.Frame):
         adresse_combo = ttk.Combobox(adresse_cell, textvariable=self.ste_adress_var, values=self.ste_adresses)
         adresse_combo.grid(row=1, column=0, sticky="ew")
         self.combos.append(adresse_combo)
+
+        self.mode_signature_cell = _cell(1, 5, "Mode signature gérance:")
+        self.mode_signature_combo = ttk.Combobox(
+            self.mode_signature_cell,
+            textvariable=self.mode_signature_gerance_var,
+            values=["separee", "conjointe"],
+            state="readonly",
+        )
+        self.mode_signature_combo.grid(row=1, column=0, sticky="ew")
+        self.combos.append(self.mode_signature_combo)
+        self.forme_jur_var.trace_add("write", self._on_forme_juridique_var_changed)
+        self._update_mode_signature_visibility()
 
         # Ligne 3+: activités
         self.create_activities_section(main_frame)
@@ -422,9 +437,24 @@ class SocieteForm(ttk.Frame):
         self.activities_canvas.yview_scroll(1, "units")
         return "break"
 
+    def _is_sarl_form(self) -> bool:
+        return str(self.forme_jur_var.get() or "").strip().upper() == "SARL"
+
+    def _update_mode_signature_visibility(self):
+        if self._is_sarl_form():
+            self.mode_signature_cell.grid()
+        else:
+            self.mode_signature_cell.grid_remove()
+
+    def _on_forme_juridique_changed(self, _event=None):
+        self._update_mode_signature_visibility()
+
+    def _on_forme_juridique_var_changed(self, *_args):
+        self._update_mode_signature_visibility()
+
     def get_values(self):
         """Récupère toutes les valeurs du formulaire"""
-        return {
+        values = {
             'denomination': self.den_ste_var.get(),
             'forme_juridique': self.forme_jur_var.get(),
             'ice': self.ice_var.get(),
@@ -438,6 +468,9 @@ class SocieteForm(ttk.Frame):
             'tribunal': self.tribunal_var.get(),
             'activites': [var.get().strip() for var in self.activites_vars if var.get().strip()]
         }
+        if self._is_sarl_form():
+            values['mode_signature_gerance'] = self.mode_signature_gerance_var.get().strip()
+        return values
 
     def set_values(self, values_dict):
         """Définit les valeurs du formulaire"""
@@ -457,6 +490,10 @@ class SocieteForm(ttk.Frame):
         self.valeur_nominale_var.set(values_dict.get('valeur_nominale', values_dict.get('valeur_nominal', '')))
         self.ste_adress_var.set(values_dict.get('adresse', ''))
         self.tribunal_var.set(values_dict.get('tribunal', ''))
+        self.mode_signature_gerance_var.set(
+            values_dict.get('mode_signature_gerance', values_dict.get('mode_signature', self.mode_signature_gerance_var.get()))
+        )
+        self._update_mode_signature_visibility()
 
         # Mise à jour des activités
         self._clear_activities(load_defaults=False)
