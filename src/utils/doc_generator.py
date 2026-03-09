@@ -525,6 +525,12 @@ def render_templates(
             'capital': 'CAPITAL', 'parts_social': 'PART_SOCIAL', 'valeur_nominale': 'VALEUR_NOMINALE',
             'adresse': 'STE_ADRESS', 'tribunal': 'TRIBUNAL',
             'mode_signature_gerance': 'MODE_SIGNATURE_GERANCE',
+            'type_generation': 'TYPE_GENERATION',
+            'generation_type': 'TYPE_GENERATION',
+            'procedure_creation': 'PROCEDURE_CREATION',
+            'creation_procedure': 'PROCEDURE_CREATION',
+            'mode_depot_creation': 'MODE_DEPOT_CREATION',
+            'creation_depot_mode': 'MODE_DEPOT_CREATION',
         }
         for fk, hk in soc_map.items():
             v = None

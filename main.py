@@ -1,4 +1,5 @@
 import warnings
+import os
 import tkinter as tk
 from tkinter import ttk, messagebox
 from contextlib import nullcontext
@@ -44,15 +45,26 @@ class MainApp(tk.Tk):
     def __init__(self):
         self.startup_profiler = StartupProfiler(enabled=True)
         self._startup_profile_flushed = False
+        self._startup_dashboard_opened = False
+        self._startup_dashboard_mode = False
 
         app_token = self.startup_profiler.start_span("MainApp.__init__")
         tk_token = self.startup_profiler.start_span("tk.Tk.__init__")
         super().__init__()
         self.startup_profiler.end_span(tk_token)
 
+        self._startup_dashboard_mode = self._should_open_dashboard_on_startup()
+
         # Configuration de la fenêtre principale
         with self._startup_span("WindowManager.setup_window"):
             WindowManager.setup_window(self, "Genérateurs Docs Juridiques")
+
+        # Startup dashboard mode: keep the main generator window hidden initially.
+        if self._startup_dashboard_mode:
+            try:
+                self.withdraw()
+            except Exception:
+                pass
 
         # Initialisation du thème
         with self._startup_span("ThemeManager.__init__"):
@@ -65,8 +77,36 @@ class MainApp(tk.Tk):
         # Création de l'interface
         with self._startup_span("MainApp.setup_gui"):
             self.setup_gui()
+
+        if self._startup_dashboard_mode:
+            self.after_idle(self._open_dashboard_on_startup)
+
         self.startup_profiler.end_span(app_token)
         self.after_idle(self._finalize_startup_profile)
+
+    @staticmethod
+    def _should_open_dashboard_on_startup() -> bool:
+        raw = str(os.environ.get("APP_START_DASHBOARD", "1") or "").strip().lower()
+        if raw in ("0", "false", "no", "off"):
+            return False
+        # Avoid modal popup during automated tests.
+        if os.environ.get("PYTEST_CURRENT_TEST"):
+            return False
+        return True
+
+    def _open_dashboard_on_startup(self):
+        if self._startup_dashboard_opened:
+            return
+        self._startup_dashboard_opened = True
+        try:
+            try:
+                self.withdraw()
+            except Exception:
+                pass
+            if hasattr(self, "main_form") and self.main_form is not None:
+                self.main_form.show_dashboard(start_fullscreen=True)
+        except Exception:
+            logger.exception("Failed to open dashboard at startup")
 
     def _startup_span(self, name: str):
         if not getattr(self, "startup_profiler", None):
@@ -112,45 +152,8 @@ class MainApp(tk.Tk):
         """Configure les boutons de contrôle"""
         buttons_frame = ttk.Frame(self)
         buttons_frame.pack(pady=15, side=tk.BOTTOM, fill=tk.X, padx=20)
-
-        # Harmoniser les boutons de la barre principale (taille/gras/padding)
-        toolbar_secondary_style = 'Toolbar.Secondary.TButton'
-        toolbar_success_style = 'Toolbar.Success.TButton'
-        toolbar_cancel_style = 'Toolbar.Cancel.TButton'
-        toolbar_copy_style = 'Toolbar.Copy.TButton'
-        toolbar_font = ('Segoe UI', 10, 'bold')
-        toolbar_padding = (12, 7)
-
-        def _clone_toolbar_style(new_style: str, base_style: str):
-            cfg = {
-                'font': toolbar_font,
-                'padding': toolbar_padding,
-            }
-            for opt in ('background', 'foreground', 'relief', 'borderwidth'):
-                try:
-                    val = self.style.lookup(base_style, opt)
-                except Exception:
-                    val = None
-                if val not in (None, ''):
-                    cfg[opt] = val
-            self.style.configure(new_style, **cfg)
-
-            state_map = {}
-            for opt in ('background', 'foreground'):
-                try:
-                    mapped = self.style.map(base_style, query_opt=opt)
-                except Exception:
-                    mapped = []
-                if mapped:
-                    state_map[opt] = mapped
-            if state_map:
-                self.style.map(new_style, **state_map)
-
         try:
-            _clone_toolbar_style(toolbar_secondary_style, 'Secondary.TButton')
-            _clone_toolbar_style(toolbar_success_style, 'Success.TButton')
-            _clone_toolbar_style(toolbar_cancel_style, 'Cancel.TButton')
-            _clone_toolbar_style(toolbar_copy_style, 'Copy.TButton')
+            self.main_form.configure_main_toolbar_styles()
         except Exception:
             pass
 
@@ -158,90 +161,41 @@ class MainApp(tk.Tk):
         row = ttk.Frame(buttons_frame)
         row.pack(fill='x')
 
-        # Left-side tool buttons (Outils, Dashboard)
-        # Outils button (opens MainForm tools dialog)
-        try:
-            cfg_btn = WidgetFactory.create_button(
+        specs = self.main_form.get_main_toolbar_button_specs()
+        for spec in specs.get('left', []):
+            btn = WidgetFactory.create_button(
                 row,
-                text="🧰 Outils",
-                command=self.main_form.open_configuration,
-                style=toolbar_secondary_style
+                text=spec['text'],
+                command=spec['command'],
+                style=spec['style'],
             )
-            cfg_btn.configure(width=16)
-            cfg_btn.pack(side='left', padx=6)
-            # attach to main_form for state updates
-            self.main_form.config_btn = cfg_btn
-        except Exception:
-            pass
-
-        # Dashboard button
-        WidgetFactory.create_button(
-            row,
-            text="📊 Tableau de bord",
-            command=self.main_form.show_dashboard,
-            style=toolbar_secondary_style
-        ).pack(side='left', padx=6)
-
-        # (Theme toggle removed) — keep toolbar focused and simple. Theme is
-        # still managed programmatically via ThemeManager and the
-        # configuration dialog.
+            if spec.get('width') is not None:
+                btn.configure(width=spec['width'])
+            btn.pack(side='left', padx=6, pady=3)
+            self.main_form.register_main_toolbar_button(spec['key'], btn)
 
         # Flexible spacer to push the remaining controls to the right
         spacer = ttk.Frame(row)
         spacer.pack(side='left', expand=True, fill='x')
 
-        # Right-side control buttons (packed in reverse so visual order is left->right)
         try:
-            # Pack in reverse order so the visual order (left -> right) is:
-            # Nouvelle | Sauvegarder | Terminer | Précédent | Suivant | Quitter
-
-            # Quitter at far right (danger action) - packed first with side=right.
-            _btn = WidgetFactory.create_button(row, text="❌ Quitter", command=self.quit, style=toolbar_cancel_style)
-            _btn.configure(width=12)
-            _btn.pack(side='right', padx=6, pady=3)
-            self.main_form.quit_btn = _btn
-
-            # Suivant
-            _btn = WidgetFactory.create_button(row, text="Suivant ▶", command=self.main_form.next_page, style=toolbar_secondary_style)
-            _btn.configure(width=12)
-            _btn.pack(side='right', padx=6, pady=3)
-            self.main_form.next_btn = _btn
-            self.main_form.next_default_style = toolbar_secondary_style
-            self.main_form.next_finish_style = toolbar_success_style
-            self.main_form.next_default_width = 12
-            self.main_form.next_finish_width = 20
-
-            # Précédent
-            _btn = WidgetFactory.create_button(row, text="◀ Précédent", command=self.main_form.prev_page, style=toolbar_secondary_style)
-            _btn.configure(width=12)
-            _btn.pack(side='right', padx=6, pady=3)
-            self.main_form.prev_btn = _btn
-
-            # Terminer remains the primary highlighted action
-            _btn = WidgetFactory.create_button(row, text="🏁 Terminer", command=self.generate_documents, style=toolbar_success_style)
-            _btn.configure(width=12)
-            _btn.pack(side='right', padx=6, pady=3)
-            self.main_form.finish_btn = _btn
-            # Hidden by default; the "Suivant" button is switched to
-            # "Terminer" on the final step.
-            try:
-                _btn.pack_forget()
-            except Exception:
-                pass
-
-            # Generation is available from "Outils" dialog.
+            for spec in specs.get('right', []):
+                btn = WidgetFactory.create_button(
+                    row,
+                    text=spec['text'],
+                    command=spec['command'],
+                    style=spec['style'],
+                )
+                if spec.get('width') is not None:
+                    btn.configure(width=spec['width'])
+                btn.pack(side='right', padx=6, pady=3)
+                if spec.get('hidden'):
+                    try:
+                        btn.pack_forget()
+                    except Exception:
+                        pass
+                self.main_form.register_main_toolbar_button(spec['key'], btn)
             self.main_form.generate_btn = None
-
-            # Sauvegarder - SUCCESS GREEN
-            _btn = WidgetFactory.create_button(row, text="💾 Sauvegarder", command=self.main_form.save_current, style=toolbar_secondary_style)
-            _btn.configure(width=14)
-            _btn.pack(side='right', padx=6, pady=3)
-            self.main_form.save_btn = _btn
-
-            # Nouvelle (will appear left-most among the right cluster) - SECONDARY
-            _btn = WidgetFactory.create_button(row, text="🆕 Nouvelle", command=self.clear_form, style=toolbar_copy_style)
-            _btn.configure(width=12)
-            _btn.pack(side='right', padx=6, pady=3)
         except Exception:
             # If main_form isn't ready for some reason, ignore and continue
             pass
@@ -421,7 +375,20 @@ class MainApp(tk.Tk):
                 output_format='word',
                 save_callback=self.save_to_db,
             )
-            # The selector handles generation internally, no need to do anything here
+            # The selector handles generation internally. Keep the generator in front afterwards.
+            try:
+                self.deiconify()
+                self.state('zoomed')
+            except Exception:
+                try:
+                    self.attributes('-zoomed', True)
+                except Exception:
+                    pass
+            try:
+                self.lift()
+                self.focus_force()
+            except Exception:
+                pass
 
         except Exception as e:
             logger.exception('Erreur pendant la génération: %s', e)
@@ -686,7 +653,13 @@ class MainApp(tk.Tk):
             db_path = PathManager.DATABASE_DIR / _const.DB_FILENAME
 
             # Ensure workbook and sheets exist
-            from src.utils.utils import ensure_excel_db, write_records_to_db, migrate_excel_workbook, societe_exists
+            from src.utils.utils import (
+                ensure_excel_db,
+                write_records_to_db,
+                migrate_excel_workbook,
+                normalize_excel_storage,
+                societe_exists,
+            )
             ensure_excel_db(db_path, _const.excel_sheets)
 
             # Run migration to reconcile older/misnamed sheets into canonical ones
@@ -714,6 +687,7 @@ class MainApp(tk.Tk):
 
             # Delegate the heavy lifting to the utility that handles IDs and date conversion
             write_records_to_db(db_path, societe_vals, associes_list, contrat_vals)
+            normalize_excel_storage(db_path)
             # Do not show a modal message here — let the caller (finish or other
             # UI action) present a single, consolidated message to the user.
             logger.info("Données sauvegardées avec succès dans %s", db_path)

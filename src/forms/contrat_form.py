@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from tkcalendar import DateEntry
 from typing import Optional
+from decimal import Decimal, InvalidOperation
 from ..utils.constants import Nbmois
 from ..utils.utils import ThemeManager
 
@@ -23,12 +24,14 @@ class ContratForm(ttk.Frame):
         # Initialiser le gestionnaire de thème
         self.theme_manager = theme_manager or ThemeManager(self.winfo_toplevel())
         self.style = self.theme_manager.style
+        self._numeric_entry_bindings = []
 
         # Initialisation des variables
         self.initialize_variables()
 
         # Création du formulaire
         self.setup_gui()
+        self._apply_numeric_display_format()
 
     def initialize_variables(self):
         """Initialise les variables du formulaire"""
@@ -223,7 +226,11 @@ class ContratForm(ttk.Frame):
         frame = ttk.Frame(parent)
         ttk.Label(frame, text=label_text + ':', anchor='w').grid(row=0, column=0, sticky='w')
         state = 'readonly' if readonly else 'normal'
-        ttk.Entry(frame, textvariable=variable, state=state).grid(row=1, column=0, sticky='ew', pady=(2, 0))
+        entry = ttk.Entry(frame, textvariable=variable, state=state)
+        entry.grid(row=1, column=0, sticky='ew', pady=(2, 0))
+        decimals = self._get_numeric_decimals(variable)
+        if not readonly and decimals is not None:
+            self._bind_numeric_entry(entry, variable, decimals)
         frame.grid_columnconfigure(0, weight=1)
         return frame
 
@@ -248,6 +255,7 @@ class ContratForm(ttk.Frame):
 
     def get_values(self):
         """Récupère toutes les valeurs du formulaire"""
+        self._apply_numeric_display_format()
         return {
             'date_contrat': self.date_contrat_var.get(),
             'period': self.period_var.get(),
@@ -321,6 +329,62 @@ class ContratForm(ttk.Frame):
             return float(s)
         except Exception:
             return None
+
+    def _get_numeric_decimals(self, variable):
+        if variable is self.tva_var or variable is self.tva_renouvellement_var:
+            return 2
+        if (
+            variable is self.dh_ht_var
+            or variable is self.prix_inter_var
+            or variable is self.dh_ht_renouvellement_var
+        ):
+            return 4
+        return None
+
+    def _format_numeric_text(self, value, decimals: int = 4) -> str:
+        text = str(value or '').strip()
+        if not text:
+            return ''
+        normalized = text.replace('\xa0', ' ').replace(' ', '')
+        if ',' in normalized and '.' in normalized:
+            normalized = normalized.replace(',', '')
+        elif ',' in normalized:
+            normalized = normalized.replace(',', '.')
+        try:
+            number = Decimal(normalized)
+        except (InvalidOperation, ValueError):
+            return text
+
+        if decimals <= 0:
+            return f"{int(round(float(number))):,}".replace(',', ' ')
+
+        rendered = f"{float(number):,.{decimals}f}"
+        integer_part, fractional_part = rendered.split('.')
+        integer_part = integer_part.replace(',', ' ')
+        fractional_part = fractional_part.rstrip('0')
+        if not fractional_part:
+            return integer_part
+        return f"{integer_part},{fractional_part}"
+
+    def _bind_numeric_entry(self, entry: ttk.Entry, variable, decimals: int):
+        entry.bind(
+            '<FocusOut>',
+            lambda _event, var=variable, places=decimals: var.set(self._format_numeric_text(var.get(), places)),
+            add='+',
+        )
+        entry.bind(
+            '<Return>',
+            lambda _event, var=variable, places=decimals: var.set(self._format_numeric_text(var.get(), places)),
+            add='+',
+        )
+        self._numeric_entry_bindings.append((entry, variable, decimals))
+
+    def _apply_numeric_display_format(self):
+        for _entry, variable, decimals in self._numeric_entry_bindings:
+            try:
+                variable.set(self._format_numeric_text(variable.get(), decimals))
+            except Exception:
+                pass
 
     def _format_number(self, value):
         try:
@@ -457,6 +521,7 @@ class ContratForm(ttk.Frame):
             self.loyer_renouvellement_mensuel_var.set(values.get('loyer_renouvellement_mensuel', ''))
             self.loyer_renouvellement_annuel_var.set(values.get('loyer_renouvellement_annuel', ''))
             self._update_loyer_calculations()
+            self._apply_numeric_display_format()
         else:
             self.reset()
 
@@ -492,6 +557,7 @@ class ContratForm(ttk.Frame):
         self.loyer_renouvellement_mensuel_var.set('')
         self.loyer_renouvellement_annuel_var.set('')
         self._update_loyer_calculations()
+        self._apply_numeric_display_format()
         self.values = {}
 
     def _cleanup(self, event=None):

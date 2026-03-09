@@ -1,8 +1,10 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from datetime import datetime
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 import logging
+import inspect
 from typing import Optional
 
 import pandas as pd
@@ -13,39 +15,87 @@ from ..utils.constants import societe_headers, associe_headers, contrat_headers
 
 logger = logging.getLogger(__name__)
 
+DATE_COLUMNS = {
+    'DATE_ICE',
+    'DATE_EXP_CERT_NEG',
+    'CIN_VALIDATY',
+    'DATE_NAISS',
+    'DATE_CONTRAT',
+    'DATE_DEBUT_CONTRAT',
+    'DATE_FIN_CONTRAT',
+}
+
+BOOLEAN_COLUMNS = {
+    'IS_GERANT',
+}
+
+INTEGER_COLUMNS = {
+    'CAPITAL',
+    'PART_SOCIAL',
+    'VALEUR_NOMINALE',
+    'PART_PERCENT',
+    'PARTS',
+    'CAPITAL_DETENU',
+    'DUREE_CONTRAT_MOIS',
+    'TAUX_TVA_POURCENT',
+    'TAUX_TVA_RENOUVELLEMENT_POURCENT',
+}
+
+AMOUNT_COLUMNS = {
+    'LOYER_MENSUEL_TTC',
+    'FRAIS_INTERMEDIAIRE_CONTRAT',
+    'LOYER_MENSUEL_HT',
+    'MONTANT_TOTAL_HT_CONTRAT',
+    'MONTANT_PACK_DEMARRAGE_TTC',
+    'LOYER_MENSUEL_PACK_DEMARRAGE_TTC',
+    'LOYER_MENSUEL_HT_RENOUVELLEMENT',
+    'MONTANT_TOTAL_HT_RENOUVELLEMENT',
+    'LOYER_MENSUEL_RENOUVELLEMENT_TTC',
+    'LOYER_ANNUEL_RENOUVELLEMENT_TTC',
+}
+
 
 class DashboardView(tk.Toplevel):
     """A compact, elegant dashboard modal for viewing and managing data."""
 
-    def __init__(self, parent):
+    def __init__(self, parent, action_handler=None, start_fullscreen: bool = False):
         super().__init__(parent)
         self.parent = parent
+        self.action_handler = action_handler
         self.title("Tableau de Bord — Centre de Domiciliation")
         self.geometry("1100x700")
         self.minsize(800, 520)
+        self._is_fullscreen = False
+        self._use_modal_parent_lock = False
 
-        # Make modal
+        # Make modal only when parent window is actually visible.
         try:
-            self.transient(parent)
-            self.grab_set()
+            self._use_modal_parent_lock = bool(parent.winfo_viewable())
         except Exception:
-            pass
+            self._use_modal_parent_lock = False
+        if self._use_modal_parent_lock:
+            try:
+                self.transient(parent)
+                self.grab_set()
+            except Exception:
+                pass
 
         # Track parent state
         self._parent_disabled = False
         self._parent_withdrawn = False
-        try:
+        if self._use_modal_parent_lock:
             try:
-                parent.attributes('-disabled', True)
-                self._parent_disabled = True
-            except Exception:
                 try:
-                    parent.withdraw()
-                    self._parent_withdrawn = True
+                    parent.attributes('-disabled', True)
+                    self._parent_disabled = True
                 except Exception:
-                    pass
-        except Exception:
-            pass
+                    try:
+                        parent.withdraw()
+                        self._parent_withdrawn = True
+                    except Exception:
+                        pass
+            except Exception:
+                pass
 
         # Theme
         self.theme = ThemeManager(self.winfo_toplevel())
@@ -61,6 +111,7 @@ class DashboardView(tk.Toplevel):
         self._column_filter_var = tk.StringVar()
         self._column_filter_column_var = tk.StringVar(value='(Toutes)')
         self._nav_buttons = {}
+        self._action_buttons = {}
         self.empty_state_label: Optional[ttk.Label] = None
         self._sort_column_by_page = {'societe': None, 'associe': None, 'contrat': None}
         self._sort_desc_by_page = {'societe': False, 'associe': False, 'contrat': False}
@@ -80,19 +131,278 @@ class DashboardView(tk.Toplevel):
         # Show first page with data
         self._show_page('societe')
 
+        if start_fullscreen:
+            self._enter_fullscreen()
+        try:
+            self.lift()
+            self.focus_force()
+        except Exception:
+            pass
+
+        # Fullscreen shortcuts
+        self.bind('<F11>', self._toggle_fullscreen)
+        self.bind('<Escape>', self._exit_fullscreen)
+
         # Start clock
         self._update_clock()
 
         # Cleanup on close
         self.protocol('WM_DELETE_WINDOW', self._on_close)
 
+    def _enter_fullscreen(self):
+        """Maximize dashboard window."""
+        try:
+            self.state('zoomed')
+            self._is_fullscreen = True
+            return
+        except Exception:
+            pass
+        try:
+            self.attributes('-zoomed', True)
+            self._is_fullscreen = True
+        except Exception:
+            self._is_fullscreen = False
+
+    def _toggle_fullscreen(self, _event=None):
+        if self._is_fullscreen:
+            return self._exit_fullscreen()
+        self._enter_fullscreen()
+        return "break"
+
+    def _exit_fullscreen(self, _event=None):
+        try:
+            self.state('normal')
+        except Exception:
+            try:
+                self.attributes('-zoomed', False)
+            except Exception:
+                pass
+        self._is_fullscreen = False
+        return "break"
+
+    @staticmethod
+    def _column_label(column_name: str) -> str:
+        labels = {
+            'DEN_STE': 'Dénomination',
+            'FORME_JUR': 'Forme Juridique',
+            'ICE': 'ICE',
+            'DATE_ICE': 'Date Cert. Négatif',
+            'CAPITAL': 'Capital',
+            'PART_SOCIAL': 'Parts Sociales',
+            'VALEUR_NOMINALE': 'Valeur Nominale',
+            'DATE_EXP_CERT_NEG': 'Date Exp. Cert. Négatif',
+            'STE_ADRESS': 'Adresse',
+            'TRIBUNAL': 'Tribunal',
+            'TYPE_GENERATION': 'Type Génération',
+            'PROCEDURE_CREATION': 'Procédure Création',
+            'MODE_DEPOT_CREATION': 'Mode Dépôt Création',
+            'CIVIL': 'Civilité',
+            'PRENOM': 'Prénom',
+            'NOM': 'Nom',
+            'NATIONALITY': 'Nationalité',
+            'CIN_NUM': 'N° CIN',
+            'CIN_VALIDATY': 'Validité CIN',
+            'DATE_NAISS': 'Date Naiss.',
+            'LIEU_NAISS': 'Lieu Naiss.',
+            'ADRESSE': 'Adresse',
+            'PHONE': 'Téléphone',
+            'EMAIL': 'Email',
+            'PART_PERCENT': '% Parts',
+            'PARTS': 'Nb Parts',
+            'CAPITAL_DETENU': 'Capital Détenu',
+            'IS_GERANT': 'Gérant',
+            'QUALITY': 'Qualité',
+            'DATE_CONTRAT': 'Date Contrat',
+            'DUREE_CONTRAT_MOIS': 'Durée (mois)',
+            'TYPE_CONTRAT_DOMICILIATION': 'Type Contrat',
+            'TYPE_CONTRAT_DOMICILIATION_AUTRE': 'Type Autre',
+            'LOYER_MENSUEL_TTC': 'Loyer Mensuel TTC',
+            'FRAIS_INTERMEDIAIRE_CONTRAT': 'Frais Intermédiaire',
+            'DATE_DEBUT_CONTRAT': 'Date Début',
+            'DATE_FIN_CONTRAT': 'Date Fin',
+            'TAUX_TVA_POURCENT': 'TVA %',
+            'LOYER_MENSUEL_HT': 'Loyer Mensuel HT',
+            'MONTANT_TOTAL_HT_CONTRAT': 'Montant Total HT',
+            'MONTANT_PACK_DEMARRAGE_TTC': 'Pack Démarrage TTC',
+            'LOYER_MENSUEL_PACK_DEMARRAGE_TTC': 'Loyer Pack TTC',
+            'TYPE_RENOUVELLEMENT': 'Renouvellement',
+            'TAUX_TVA_RENOUVELLEMENT_POURCENT': 'TVA Renouv. %',
+            'LOYER_MENSUEL_HT_RENOUVELLEMENT': 'Loyer Renouv. HT',
+            'MONTANT_TOTAL_HT_RENOUVELLEMENT': 'Montant Renouv. HT',
+            'LOYER_MENSUEL_RENOUVELLEMENT_TTC': 'Loyer Renouv. TTC',
+            'LOYER_ANNUEL_RENOUVELLEMENT_TTC': 'Loyer Annuel Renouv.',
+        }
+        return labels.get(column_name, column_name)
+
+    @staticmethod
+    def _column_width(column_name: str) -> int:
+        widths = {
+            'DEN_STE': 190,
+            'FORME_JUR': 120,
+            'ICE': 120,
+            'DATE_ICE': 140,
+            'CAPITAL': 110,
+            'PART_SOCIAL': 110,
+            'VALEUR_NOMINALE': 120,
+            'DATE_EXP_CERT_NEG': 150,
+            'STE_ADRESS': 280,
+            'TRIBUNAL': 120,
+            'TYPE_GENERATION': 140,
+            'PROCEDURE_CREATION': 150,
+            'MODE_DEPOT_CREATION': 170,
+            'CIVIL': 100,
+            'PRENOM': 130,
+            'NOM': 140,
+            'NATIONALITY': 130,
+            'CIN_NUM': 130,
+            'CIN_VALIDATY': 130,
+            'DATE_NAISS': 130,
+            'LIEU_NAISS': 140,
+            'ADRESSE': 220,
+            'PHONE': 120,
+            'EMAIL': 200,
+            'PART_PERCENT': 100,
+            'PARTS': 90,
+            'CAPITAL_DETENU': 120,
+            'IS_GERANT': 90,
+            'QUALITY': 140,
+            'DATE_CONTRAT': 130,
+            'DUREE_CONTRAT_MOIS': 110,
+            'TYPE_CONTRAT_DOMICILIATION': 150,
+            'TYPE_CONTRAT_DOMICILIATION_AUTRE': 140,
+            'LOYER_MENSUEL_TTC': 140,
+            'FRAIS_INTERMEDIAIRE_CONTRAT': 150,
+            'DATE_DEBUT_CONTRAT': 130,
+            'DATE_FIN_CONTRAT': 130,
+            'TAUX_TVA_POURCENT': 90,
+            'LOYER_MENSUEL_HT': 140,
+            'MONTANT_TOTAL_HT_CONTRAT': 145,
+            'MONTANT_PACK_DEMARRAGE_TTC': 150,
+            'LOYER_MENSUEL_PACK_DEMARRAGE_TTC': 145,
+            'TYPE_RENOUVELLEMENT': 130,
+            'TAUX_TVA_RENOUVELLEMENT_POURCENT': 120,
+            'LOYER_MENSUEL_HT_RENOUVELLEMENT': 145,
+            'MONTANT_TOTAL_HT_RENOUVELLEMENT': 150,
+            'LOYER_MENSUEL_RENOUVELLEMENT_TTC': 150,
+            'LOYER_ANNUEL_RENOUVELLEMENT_TTC': 160,
+        }
+        return widths.get(column_name, 120)
+
+    @staticmethod
+    def _format_date_value(value) -> str:
+        if value in (None, ''):
+            return ''
+        text = str(value).strip()
+        if not text or text.lower() == 'nan':
+            return ''
+        if len(text) == 10 and text[2] == '/' and text[5] == '/':
+            return text
+
+        parsed = None
+        for fmt in ('%Y-%m-%d %H:%M:%S', '%Y-%m-%d', '%d/%m/%Y %H:%M:%S', '%d/%m/%Y'):
+            try:
+                parsed = datetime.strptime(text, fmt)
+                break
+            except Exception:
+                continue
+
+        if parsed is None:
+            parsed = pd.to_datetime(text, errors='coerce')
+        if pd.isna(parsed):
+            return text
+        return parsed.strftime('%d/%m/%Y')
+
+    @staticmethod
+    def _format_bool_value(value) -> str:
+        if value in (None, ''):
+            return ''
+        text = str(value).strip()
+        if not text:
+            return ''
+
+        lowered = text.lower()
+        if lowered in {'1', 'true', 'vrai', 'yes', 'oui'}:
+            return 'Oui'
+        if lowered in {'0', 'false', 'faux', 'no', 'non'}:
+            return 'Non'
+        return text
+
+    @staticmethod
+    def _format_number_value(value, min_decimals: int = 0) -> str:
+        if value in (None, ''):
+            return ''
+
+        text = str(value).strip()
+        if not text or text.lower() == 'nan':
+            return ''
+
+        normalized = text.replace(' ', '')
+        if ',' in normalized and '.' in normalized:
+            normalized = normalized.replace(',', '')
+        elif ',' in normalized:
+            normalized = normalized.replace(',', '.')
+
+        try:
+            number = Decimal(normalized)
+        except (InvalidOperation, ValueError):
+            return text
+
+        if min_decimals == 0 and number == number.to_integral():
+            integer_part = f"{int(number):,}".replace(',', ' ')
+            return integer_part
+
+        decimal_part = normalized.split('.', 1)[1] if '.' in normalized else ''
+        trimmed_places = len(decimal_part.rstrip('0'))
+        decimal_places = max(min_decimals, min(max(trimmed_places, min_decimals or 1), 4))
+        quantized = f"{number:,.{decimal_places}f}"
+        integer_part, fractional_part = quantized.split('.')
+        integer_part = integer_part.replace(',', ' ')
+        if decimal_places > min_decimals:
+            fractional_part = fractional_part.rstrip('0')
+        if not fractional_part:
+            return integer_part
+        return f"{integer_part},{fractional_part}"
+
+    def _format_display_value(self, column_name: str, value) -> str:
+        if column_name in DATE_COLUMNS:
+            return self._format_date_value(value)
+        if column_name in BOOLEAN_COLUMNS:
+            return self._format_bool_value(value)
+        if column_name in AMOUNT_COLUMNS:
+            return self._format_number_value(value, min_decimals=2)
+        if column_name in INTEGER_COLUMNS:
+            return self._format_number_value(value)
+        if value in (None, ''):
+            return ''
+        text = str(value).strip()
+        return '' if text.lower() == 'nan' else text
+
     def _build_header(self):
         """Build header with title, date and clock"""
-        header = ttk.Frame(self, padding=(12, 8))
+        header = ttk.Frame(self, padding=(12, 10))
         header.pack(fill='x')
 
-        title = ttk.Label(header, text='Centre de Domiciliation — Tableau de Bord', font=('Segoe UI', 12, 'bold'))
+        left = ttk.Frame(header)
+        left.pack(side='left', fill='x', expand=True)
+
+        title = ttk.Label(left, text='Centre de Domiciliation — Tableau de Bord', font=('Segoe UI', 12, 'bold'))
         title.pack(side='left')
+
+        nav_row = ttk.Frame(left)
+        nav_row.pack(side='left', padx=(18, 0))
+
+        self._nav_buttons['societe'] = WidgetFactory.create_button(
+            nav_row, text="🏢 Sociétés", command=lambda: self._show_page('societe'), style='DashboardTab.TButton'
+        )
+        self._nav_buttons['societe'].pack(side='left', padx=(0, 8))
+        self._nav_buttons['associe'] = WidgetFactory.create_button(
+            nav_row, text="👥 Associés", command=lambda: self._show_page('associe'), style='DashboardTab.TButton'
+        )
+        self._nav_buttons['associe'].pack(side='left', padx=(0, 8))
+        self._nav_buttons['contrat'] = WidgetFactory.create_button(
+            nav_row, text="📄 Contrats", command=lambda: self._show_page('contrat'), style='DashboardTab.TButton'
+        )
+        self._nav_buttons['contrat'].pack(side='left')
 
         right = ttk.Frame(header)
         right.pack(side='right')
@@ -106,72 +416,55 @@ class DashboardView(tk.Toplevel):
     def _build_body(self):
         """Build main body with navigation and content"""
         body = ttk.Frame(self)
-        body.pack(fill='both', expand=True, padx=10, pady=5)
+        body.pack(fill='both', expand=True, padx=10, pady=(2, 8))
 
-        # Left navigation
-        nav = ttk.Frame(body, width=180)
-        nav.pack(side='left', fill='y', padx=(0, 10))
-
-        self._nav_buttons['societe'] = WidgetFactory.create_button(
-            nav, text="🏢 Sociétés", command=lambda: self._show_page('societe'), style='Secondary.TButton'
-        )
-        self._nav_buttons['societe'].pack(fill='x', pady=3)
-        self._nav_buttons['associe'] = WidgetFactory.create_button(
-            nav, text="👥 Associés", command=lambda: self._show_page('associe'), style='Secondary.TButton'
-        )
-        self._nav_buttons['associe'].pack(fill='x', pady=3)
-        self._nav_buttons['contrat'] = WidgetFactory.create_button(
-            nav, text="📄 Contrats", command=lambda: self._show_page('contrat'), style='Secondary.TButton'
-        )
-        self._nav_buttons['contrat'].pack(fill='x', pady=3)
-
-        # Action buttons
-        action_frame = ttk.Frame(nav)
-        action_frame.pack(fill='x', pady=10)
-        WidgetFactory.create_button(action_frame, text="➕ Ajouter", command=lambda: self._action('add'), style='Success.TButton').pack(fill='x', pady=3)
-        WidgetFactory.create_button(action_frame, text="✏️ Modifier", command=lambda: self._action('edit'), style='Manage.TButton').pack(fill='x', pady=3)
-        WidgetFactory.create_button(action_frame, text="🗑️ Supprimer", command=lambda: self._action('delete'), style='Cancel.TButton').pack(fill='x', pady=3)
-        WidgetFactory.create_button(action_frame, text="🔄 Actualiser", command=lambda: self._action('refresh'), style='Manage.TButton').pack(fill='x', pady=3)
-
-        # Content area
         self.content = ttk.Frame(body)
-        self.content.pack(side='left', fill='both', expand=True)
+        self.content.pack(fill='both', expand=True)
 
         # Search bar (global to current page)
         search_frame = ttk.Frame(self.content)
-        search_frame.pack(fill='x', padx=5, pady=(0, 5))
-        ttk.Label(search_frame, text='Recherche:').pack(side='left', padx=(0, 8))
+        search_frame.pack(fill='x', padx=5, pady=(0, 10))
+        for col in range(8):
+            search_frame.grid_columnconfigure(col, weight=0)
+        search_frame.grid_columnconfigure(1, weight=1)
+
+        ttk.Label(search_frame, text='Recherche:').grid(row=0, column=0, sticky='w', padx=(0, 8))
         search_entry = ttk.Entry(search_frame, textvariable=self._search_var)
-        search_entry.pack(side='left', fill='x', expand=True, padx=(0, 8))
-        ttk.Label(search_frame, text='Colonne:').pack(side='left', padx=(0, 6))
+        search_entry.grid(row=0, column=1, sticky='ew', padx=(0, 10))
+        ttk.Label(search_frame, text='Colonne:').grid(row=0, column=2, sticky='w', padx=(0, 6))
         self.column_filter_combo = ttk.Combobox(
             search_frame,
             textvariable=self._column_filter_column_var,
             state='readonly',
             width=18
         )
-        self.column_filter_combo.pack(side='left', padx=(0, 6))
+        self.column_filter_combo.grid(row=0, column=3, sticky='w', padx=(0, 10))
         self.column_filter_combo.bind('<<ComboboxSelected>>', self._on_column_filter_column_changed)
-        ttk.Label(search_frame, text='Valeur:').pack(side='left', padx=(0, 6))
+        ttk.Label(search_frame, text='Valeur:').grid(row=0, column=4, sticky='w', padx=(0, 6))
         column_filter_entry = ttk.Entry(search_frame, textvariable=self._column_filter_var, width=24)
-        column_filter_entry.pack(side='left', padx=(0, 8))
+        column_filter_entry.grid(row=0, column=5, sticky='w', padx=(0, 10))
         WidgetFactory.create_button(
             search_frame,
             text='Effacer',
             command=self._clear_filters,
             style='Secondary.TButton'
-        ).pack(side='left', padx=(8, 0))
+        ).grid(row=0, column=6, sticky='e', padx=(0, 8))
         WidgetFactory.create_button(
             search_frame,
             text='Exporter CSV',
             command=self._export_current_view_csv,
             style='Manage.TButton'
-        ).pack(side='left', padx=(8, 0))
+        ).grid(row=0, column=7, sticky='e')
         self._search_var.trace_add('write', self._on_search_changed)
         self._column_filter_var.trace_add('write', self._on_column_filter_changed)
 
+        ttk.Separator(self.content, orient='horizontal').pack(fill='x', padx=5, pady=(0, 10))
+
+        self.page_container = ttk.Frame(self.content)
+        self.page_container.pack(fill='both', expand=True)
+
         self.empty_state_label = ttk.Label(
-            self.content,
+            self.page_container,
             text='Aucune donnée à afficher',
             font=('Segoe UI', 11, 'italic')
         )
@@ -185,27 +478,32 @@ class DashboardView(tk.Toplevel):
             ('associe', 'Associés', [c for c in associe_headers if not c.startswith('ID_')]),
             ('contrat', 'Contrats', [c for c in contrat_headers if not c.startswith('ID_')]),
         ]:
-            page = ttk.Frame(self.content)
+            page = ttk.Frame(self.page_container)
             page.pack_forget()
             self.pages[page_key] = page
 
             # Title
-            ttk.Label(page, text=page_title, font=('Segoe UI', 10, 'bold')).pack(anchor='w', padx=5, pady=(0, 5))
+            ttk.Label(page, text=page_title, font=('Segoe UI', 10, 'bold')).pack(anchor='w', padx=5, pady=(0, 8))
 
             # Table frame
             table_frame = ttk.Frame(page)
-            table_frame.pack(fill='both', expand=True, padx=5, pady=5)
+            table_frame.pack(fill='both', expand=True, padx=5, pady=(0, 6))
 
             # Create Treeview
             tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=15)
             for col in columns:
-                tree.heading(col, text=col, command=lambda c=col, p=page_key: self._on_sort_column(p, c))
-                tree.column(col, width=100, minwidth=50)
+                tree.heading(
+                    col,
+                    text=self._column_label(col),
+                    command=lambda c=col, p=page_key: self._on_sort_column(p, c),
+                )
+                tree.column(col, width=self._column_width(col), minwidth=70)
 
             # Scrollbars
             y_scroll = ttk.Scrollbar(table_frame, orient='vertical', command=tree.yview)
             x_scroll = ttk.Scrollbar(table_frame, orient='horizontal', command=tree.xview)
             tree.configure(yscrollcommand=y_scroll.set, xscrollcommand=x_scroll.set)
+            tree.bind('<<TreeviewSelect>>', self._on_tree_selection_changed)
 
             y_scroll.pack(side='right', fill='y')
             x_scroll.pack(side='bottom', fill='x')
@@ -216,11 +514,20 @@ class DashboardView(tk.Toplevel):
     def _build_status(self):
         """Build status bar"""
         pagination = ttk.Frame(self)
-        pagination.pack(fill='x', side='bottom')
+        pagination.pack(fill='x', side='bottom', pady=(6, 0))
 
-        ttk.Label(pagination, text='Lignes/page:').pack(side='left', padx=(8, 4))
+        left_controls = ttk.Frame(pagination)
+        left_controls.pack(side='left', padx=(8, 0), pady=(2, 4))
+
+        center_actions = ttk.Frame(pagination)
+        center_actions.pack(side='left', expand=True, pady=(2, 4))
+
+        right_nav = ttk.Frame(pagination)
+        right_nav.pack(side='right', padx=(0, 8), pady=(2, 4))
+
+        ttk.Label(left_controls, text='Lignes/page:').pack(side='left', padx=(0, 4))
         page_size = ttk.Combobox(
-            pagination,
+            left_controls,
             textvariable=self._page_size_var,
             values=(10, 25, 50, 100),
             state='readonly',
@@ -229,15 +536,33 @@ class DashboardView(tk.Toplevel):
         page_size.pack(side='left')
         page_size.bind('<<ComboboxSelected>>', self._on_page_size_changed)
 
+        ttk.Label(center_actions, text='Actions:').pack(side='left', padx=(0, 8))
+        self._action_buttons['add'] = WidgetFactory.create_button(
+            center_actions, text="➕ Ajouter", command=lambda: self._action('add'), style='Success.TButton'
+        )
+        self._action_buttons['add'].pack(side='left', padx=(0, 6), pady=2)
+        self._action_buttons['edit'] = WidgetFactory.create_button(
+            center_actions, text="✏️ Modifier", command=lambda: self._action('edit'), style='Manage.TButton'
+        )
+        self._action_buttons['edit'].pack(side='left', padx=(0, 6), pady=2)
+        self._action_buttons['delete'] = WidgetFactory.create_button(
+            center_actions, text="🗑️ Supprimer", command=lambda: self._action('delete'), style='Cancel.TButton'
+        )
+        self._action_buttons['delete'].pack(side='left', padx=(0, 6), pady=2)
+        self._action_buttons['refresh'] = WidgetFactory.create_button(
+            center_actions, text="🔄 Actualiser", command=lambda: self._action('refresh'), style='Manage.TButton'
+        )
+        self._action_buttons['refresh'].pack(side='left', pady=2)
+
         self.prev_page_btn = WidgetFactory.create_button(
-            pagination, text='◀ Précédent', command=self._go_prev_page, style='Secondary.TButton'
+            right_nav, text='◀ Précédent', command=self._go_prev_page, style='Secondary.TButton'
         )
-        self.prev_page_btn.pack(side='right', padx=(4, 8), pady=2)
+        self.prev_page_btn.pack(side='right', padx=(4, 0))
         self.next_page_btn = WidgetFactory.create_button(
-            pagination, text='Suivant ▶', command=self._go_next_page, style='Secondary.TButton'
+            right_nav, text='Suivant ▶', command=self._go_next_page, style='Secondary.TButton'
         )
-        self.next_page_btn.pack(side='right', padx=4, pady=2)
-        self.page_label = ttk.Label(pagination, text='Page 1/1')
+        self.next_page_btn.pack(side='right', padx=4)
+        self.page_label = ttk.Label(right_nav, text='Page 1/1')
         self.page_label.pack(side='right', padx=8)
 
         self.status_label = ttk.Label(self, text='Prêt', relief=tk.SUNKEN)
@@ -327,6 +652,7 @@ class DashboardView(tk.Toplevel):
         self._update_sort_headers()
         self._update_filter_controls()
         self._refresh_display()
+        self._update_action_buttons_state()
 
     def _refresh_display(self):
         """Refresh the displayed data"""
@@ -360,13 +686,14 @@ class DashboardView(tk.Toplevel):
                     else:
                         logger.warning(f"Column '{col}' not found in DataFrame")
                         val = ''
-                    values.append(str(val))
+                    values.append(self._format_display_value(col, val))
 
                 logger.debug(f"Row {idx} values: {values}")
                 tree.insert('', 'end', values=values)
 
         self._update_empty_state(base_df, sorted_df)
         self._update_pagination_controls(page_idx, total_pages)
+        self._update_action_buttons_state()
 
         if base_df.empty:
             self.status_label.config(text='Aucune donnée')
@@ -381,7 +708,7 @@ class DashboardView(tk.Toplevel):
         """Highlight currently selected section in left navigation."""
         for key, button in self._nav_buttons.items():
             try:
-                button.configure(style='Nav.TButton' if key == self._current_page else 'Secondary.TButton')
+                button.configure(style='DashboardTabActive.TButton' if key == self._current_page else 'DashboardTab.TButton')
             except Exception:
                 pass
 
@@ -507,9 +834,9 @@ class DashboardView(tk.Toplevel):
         active_col = self._sort_column_by_page.get(self._current_page)
         descending = self._sort_desc_by_page.get(self._current_page, False)
         for col in tree["columns"]:
-            header = col
+            header = self._column_label(col)
             if col == active_col:
-                header = f"{col} {'▼' if descending else '▲'}"
+                header = f"{header} {'▼' if descending else '▲'}"
             tree.heading(col, text=header, command=lambda c=col, p=self._current_page: self._on_sort_column(p, c))
 
     def _apply_pagination(self, df: pd.DataFrame):
@@ -632,6 +959,129 @@ class DashboardView(tk.Toplevel):
             # Toast is best-effort only; avoid blocking normal flows.
             pass
 
+    def _resolve_action_handler(self):
+        """Resolve callback used by dashboard action buttons."""
+        if callable(self.action_handler):
+            return self.action_handler
+        fn = getattr(self.parent, 'handle_dashboard_action', None)
+        if callable(fn):
+            return fn
+        main_form = getattr(self.parent, 'main_form', None)
+        fn = getattr(main_form, 'handle_dashboard_action', None)
+        if callable(fn):
+            return fn
+        return None
+
+    def _invoke_action_handler(self, action: str, payload: dict | None):
+        """Call action handler, passing current page when supported."""
+        action_handler = self._resolve_action_handler()
+        if not callable(action_handler):
+            return None
+
+        try:
+            signature = inspect.signature(action_handler)
+            params = list(signature.parameters.values())
+            accepts_page = any(p.kind == inspect.Parameter.VAR_POSITIONAL for p in params) or len(params) >= 3
+        except Exception:
+            accepts_page = True
+
+        if accepts_page:
+            return action_handler(action, payload, self._current_page)
+        return action_handler(action, payload)
+
+    def _get_selected_payload(self) -> Optional[dict]:
+        """Return selected row as a record dict from the current filtered page."""
+        tree = self.trees.get(self._current_page)
+        if tree is None:
+            return None
+
+        selection = tree.selection()
+        if not selection:
+            return None
+
+        df = self._current_view_df if self._current_view_df is not None else pd.DataFrame()
+        selected_idx = tree.index(selection[0])
+        if selected_idx >= len(df):
+            return None
+
+        row = df.iloc[selected_idx]
+        return row.to_dict()
+
+    def _on_tree_selection_changed(self, _event=None):
+        self._update_action_buttons_state()
+
+    def _update_action_buttons_state(self):
+        """Keep action buttons aligned with handler availability and selection state."""
+        action_handler = self._resolve_action_handler()
+        has_handler = callable(action_handler)
+        has_selection = self._get_selected_payload() is not None
+
+        try:
+            self._action_buttons['add'].configure(state='normal' if has_handler else 'disabled')
+            self._action_buttons['refresh'].configure(state='normal')
+            edit_delete_state = 'normal' if has_handler and has_selection else 'disabled'
+            self._action_buttons['edit'].configure(state=edit_delete_state)
+            self._action_buttons['delete'].configure(state=edit_delete_state)
+        except Exception:
+            pass
+
+    def _restore_parent_window(self, fullscreen_parent: bool = False):
+        """Restore and focus the parent window, optionally already maximized."""
+        try:
+            if self._parent_disabled:
+                try:
+                    self.parent.attributes('-disabled', False)
+                except Exception:
+                    pass
+            elif self._parent_withdrawn:
+                try:
+                    if fullscreen_parent:
+                        try:
+                            self.parent.state('zoomed')
+                        except Exception:
+                            try:
+                                self.parent.attributes('-zoomed', True)
+                            except Exception:
+                                pass
+                    self.parent.deiconify()
+                except Exception:
+                    pass
+            elif fullscreen_parent:
+                try:
+                    self.parent.state('zoomed')
+                except Exception:
+                    try:
+                        self.parent.attributes('-zoomed', True)
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+        try:
+            self.parent.deiconify()
+        except Exception:
+            pass
+
+        try:
+            self.parent.lift()
+            self.parent.focus_force()
+        except Exception:
+            pass
+
+    def _hide_for_parent_switch(self, fullscreen_parent: bool = False):
+        """Hide dashboard while keeping it reusable, then focus the generator."""
+        try:
+            self.grab_release()
+        except Exception:
+            pass
+
+        self._restore_parent_window(fullscreen_parent=fullscreen_parent)
+
+        try:
+            self.withdraw()
+        except Exception:
+            pass
+
     def _action(self, action: str):
         """Handle action buttons and send to parent MainForm"""
         try:
@@ -639,78 +1089,44 @@ class DashboardView(tk.Toplevel):
                 self._load_data()
                 self._show_toast('Données actualisées')
             elif action == 'add':
-                # Add new record - pass empty payload to MainForm
-                if hasattr(self.parent, 'handle_dashboard_action'):
-                    self.parent.handle_dashboard_action('add', None)
-                    self._show_toast('Passage au mode ajout')
-                else:
-                    messagebox.showwarning('Ajouter', 'Parent window does not support this action')
-            elif action == 'edit':
-                # Edit selected record
-                tree = self.trees.get(self._current_page)
-                if tree is None:
-                    messagebox.showwarning('Modifier', 'Aucune page sélectionnée')
+                if not callable(self._resolve_action_handler()):
+                    messagebox.showwarning('Ajouter', 'Action Ajouter indisponible (handler introuvable).')
                     return
-
-                # Get selected row
-                selection = tree.selection()
-                if not selection:
+                result = self._invoke_action_handler('add', None)
+                if not isinstance(result, dict) or result.get('status') != 'error':
+                    self._hide_for_parent_switch(fullscreen_parent=True)
+            elif action == 'edit':
+                payload = self._get_selected_payload()
+                if payload is None:
                     messagebox.showwarning('Modifier', 'Veuillez sélectionner un enregistrement')
                     return
-
-                # Build payload from selected row and current DataFrame
                 if self._df is None or self._df.empty:
                     messagebox.showwarning('Modifier', 'Aucune donnée disponible')
                     return
-
-                df = self._current_view_df if self._current_view_df is not None else pd.DataFrame()
-                selected_idx = tree.index(selection[0])
-                if selected_idx >= len(df):
-                    messagebox.showerror('Modifier', 'Index de ligne invalide')
+                if not callable(self._resolve_action_handler()):
+                    messagebox.showwarning('Modifier', 'Action Modifier indisponible (handler introuvable).')
                     return
-
-                row = df.iloc[selected_idx]
-                payload = row.to_dict()
-
-                # Send to parent
-                if hasattr(self.parent, 'handle_dashboard_action'):
-                    self.parent.handle_dashboard_action('edit', payload)
-                    self._show_toast('Édition ouverte')
-                else:
-                    messagebox.showwarning('Modifier', 'Parent window does not support this action')
+                result = self._invoke_action_handler('edit', payload)
+                if not isinstance(result, dict) or result.get('status') == 'opened':
+                    self._hide_for_parent_switch(fullscreen_parent=True)
             elif action == 'delete':
-                # Delete selected record
-                tree = self.trees.get(self._current_page)
-                if tree is None:
-                    messagebox.showwarning('Supprimer', 'Aucune page sélectionnée')
-                    return
-
-                # Get selected row
-                selection = tree.selection()
-                if not selection:
+                payload = self._get_selected_payload()
+                if payload is None:
                     messagebox.showwarning('Supprimer', 'Veuillez sélectionner un enregistrement')
                     return
-
-                # Build payload from selected row
                 if self._df is None or self._df.empty:
                     messagebox.showwarning('Supprimer', 'Aucune donnée disponible')
                     return
-
-                df = self._current_view_df if self._current_view_df is not None else pd.DataFrame()
-                selected_idx = tree.index(selection[0])
-                if selected_idx >= len(df):
-                    messagebox.showerror('Supprimer', 'Index de ligne invalide')
+                if not callable(self._resolve_action_handler()):
+                    messagebox.showwarning('Supprimer', 'Action Supprimer indisponible (handler introuvable).')
                     return
-
-                row = df.iloc[selected_idx]
-                payload = row.to_dict()
-
-                # Send to parent
-                if hasattr(self.parent, 'handle_dashboard_action'):
-                    self.parent.handle_dashboard_action('delete', payload)
-                    self._show_toast('Suppression demandée')
-                else:
-                    messagebox.showwarning('Supprimer', 'Parent window does not support this action')
+                result = self._invoke_action_handler('delete', payload)
+                status = result.get('status') if isinstance(result, dict) else None
+                if status == 'deleted':
+                    self._show_toast('Suppression effectuée')
+                    self._load_data()
+                elif status == 'cancelled':
+                    self._show_toast('Suppression annulée')
         except Exception as e:
             logger.error(f"Error in _action('{action}'): {e}")
             messagebox.showerror('Erreur', f'Erreur lors de l\'action: {e}')
@@ -729,19 +1145,12 @@ class DashboardView(tk.Toplevel):
             except Exception:
                 pass
 
-    def _on_close(self, call_parent=True):
+    def _on_close(self, call_parent=False, fullscreen_parent: bool = False):
         """Close dashboard and restore parent"""
         try:
-            if self._parent_disabled:
-                try:
-                    self.parent.attributes('-disabled', False)
-                except Exception:
-                    pass
-            elif self._parent_withdrawn:
-                try:
-                    self.parent.deiconify()
-                except Exception:
-                    pass
+            main_form = getattr(self.parent, 'main_form', None)
+            if getattr(main_form, '_dashboard_window', None) is self:
+                main_form._dashboard_window = None
         except Exception:
             pass
 
@@ -759,9 +1168,9 @@ class DashboardView(tk.Toplevel):
                 pass
 
         if call_parent:
+            self._restore_parent_window(fullscreen_parent=fullscreen_parent)
+        elif self._parent_withdrawn:
             try:
-                self.parent.deiconify()
-                self.parent.lift()
-                self.parent.focus_force()
+                self.parent.destroy()
             except Exception:
                 pass

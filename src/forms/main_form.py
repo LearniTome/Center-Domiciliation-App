@@ -34,10 +34,27 @@ class MainForm(ttk.Frame):
         self.generate_btn: Optional[ttk.Button] = None
         self.config_btn: Optional[ttk.Button] = None
         self.quit_btn: Optional[ttk.Button] = None
-        self.next_default_style: str = 'Secondary.TButton'
-        self.next_finish_style: str = 'Success.TButton'
-        self.next_default_width: int = 12
-        self.next_finish_width: int = 20
+        self._dashboard_window: Optional[tk.Toplevel] = None
+        self.toolbar_style_names = {
+            'secondary': 'Toolbar.Secondary.TButton',
+            'success': 'Toolbar.Success.TButton',
+            'cancel': 'Toolbar.Cancel.TButton',
+            'copy': 'Toolbar.Copy.TButton',
+        }
+        self.toolbar_button_widths = {
+            'tools': 16,
+            'dashboard': 16,
+            'new': 12,
+            'save': 14,
+            'finish': 12,
+            'prev': 12,
+            'next': 12,
+            'quit': 12,
+        }
+        self.next_default_style: str = self.toolbar_style_names['secondary']
+        self.next_finish_style: str = self.toolbar_style_names['success']
+        self.next_default_width: int = self.toolbar_button_widths['next']
+        self.next_finish_width: int = self.toolbar_button_widths['finish']
 
         # Allow this main frame to expand inside its parent
         try:
@@ -413,10 +430,168 @@ class MainForm(ttk.Frame):
         except Exception:
             pass
 
-    def show_dashboard(self):
-        """Switch to dashboard view"""
+    def show_dashboard(self, start_fullscreen: bool = False):
+        """Switch to dashboard view."""
         from .dashboard_view import DashboardView
-        dashboard = DashboardView(self.winfo_toplevel())  # Window is now modal by default
+        existing = getattr(self, '_dashboard_window', None)
+        try:
+            if existing is not None and existing.winfo_exists():
+                try:
+                    existing.deiconify()
+                except Exception:
+                    pass
+                existing.lift()
+                existing.focus_force()
+                if start_fullscreen:
+                    try:
+                        existing._enter_fullscreen()
+                    except Exception:
+                        pass
+                return existing
+        except Exception:
+            self._dashboard_window = None
+
+        dashboard = DashboardView(
+            self.winfo_toplevel(),
+            action_handler=self.handle_dashboard_action,
+            start_fullscreen=start_fullscreen,
+        )
+        self._dashboard_window = dashboard
+        return dashboard
+
+    def configure_main_toolbar_styles(self):
+        """Create main-toolbar style aliases once, based on the app theme."""
+        toolbar_font = ('Segoe UI', 10, 'bold')
+        toolbar_padding = (12, 7)
+
+        def _clone_style(new_style: str, base_style: str):
+            cfg = {'font': toolbar_font, 'padding': toolbar_padding}
+            for opt in ('background', 'foreground', 'relief', 'borderwidth'):
+                try:
+                    val = self.style.lookup(base_style, opt)
+                except Exception:
+                    val = None
+                if val not in (None, ''):
+                    cfg[opt] = val
+            self.style.configure(new_style, **cfg)
+
+            state_map = {}
+            for opt in ('background', 'foreground'):
+                try:
+                    mapped = self.style.map(base_style, query_opt=opt)
+                except Exception:
+                    mapped = []
+                if mapped:
+                    state_map[opt] = mapped
+            if state_map:
+                self.style.map(new_style, **state_map)
+
+        try:
+            _clone_style(self.toolbar_style_names['secondary'], 'Secondary.TButton')
+            _clone_style(self.toolbar_style_names['success'], 'Success.TButton')
+            _clone_style(self.toolbar_style_names['cancel'], 'Cancel.TButton')
+            _clone_style(self.toolbar_style_names['copy'], 'Copy.TButton')
+        except Exception:
+            pass
+
+    def _get_main_toolbar_clear_command(self):
+        top = self.winfo_toplevel()
+        clear_fn = getattr(top, 'clear_form', None)
+        if callable(clear_fn):
+            return clear_fn
+        return self.reset
+
+    def _get_main_toolbar_quit_command(self):
+        top = self.winfo_toplevel()
+        quit_fn = getattr(top, 'quit', None)
+        if callable(quit_fn):
+            return quit_fn
+        return self.winfo_toplevel().destroy
+
+    def get_main_toolbar_button_specs(self):
+        """Return button definitions for the main application toolbar."""
+        secondary = self.toolbar_style_names['secondary']
+        success = self.toolbar_style_names['success']
+        cancel = self.toolbar_style_names['cancel']
+        copy = self.toolbar_style_names['copy']
+        widths = self.toolbar_button_widths
+
+        left = [
+            {
+                'key': 'tools',
+                'text': '🧰 Outils',
+                'command': self.open_configuration,
+                'style': secondary,
+                'width': widths['tools'],
+            },
+            {
+                'key': 'dashboard',
+                'text': '📊 Tableau de bord',
+                'command': lambda: self.show_dashboard(start_fullscreen=True),
+                'style': secondary,
+                'width': widths['dashboard'],
+            },
+        ]
+        right = [
+            {
+                'key': 'quit',
+                'text': '❌ Quitter',
+                'command': self._get_main_toolbar_quit_command(),
+                'style': cancel,
+                'width': widths['quit'],
+            },
+            {
+                'key': 'next',
+                'text': 'Suivant ▶',
+                'command': self.next_page,
+                'style': self.next_default_style,
+                'width': self.next_default_width,
+            },
+            {
+                'key': 'prev',
+                'text': '◀ Précédent',
+                'command': self.prev_page,
+                'style': secondary,
+                'width': widths['prev'],
+            },
+            {
+                'key': 'finish',
+                'text': 'Terminer',
+                'command': self._trigger_generate_documents,
+                'style': self.next_finish_style,
+                'width': self.next_finish_width,
+                'hidden': True,
+            },
+            {
+                'key': 'save',
+                'text': '💾 Sauvegarder',
+                'command': self.save_current,
+                'style': secondary,
+                'width': widths['save'],
+            },
+            {
+                'key': 'new',
+                'text': '🆕 Nouvelle',
+                'command': self._get_main_toolbar_clear_command(),
+                'style': copy,
+                'width': widths['new'],
+            },
+        ]
+        return {'left': left, 'right': right}
+
+    def register_main_toolbar_button(self, key: str, button: ttk.Button):
+        """Attach main-toolbar widget references used by MainForm state updates."""
+        mapping = {
+            'tools': 'config_btn',
+            'prev': 'prev_btn',
+            'next': 'next_btn',
+            'save': 'save_btn',
+            'finish': 'finish_btn',
+            'quit': 'quit_btn',
+        }
+        attr_name = mapping.get(key)
+        if attr_name:
+            setattr(self, attr_name, button)
 
     def open_configuration(self):
         """Open a lightweight tools launcher."""
@@ -1726,7 +1901,7 @@ class MainForm(ttk.Frame):
         if _next is not None:
             if is_last_page:
                 _next.configure(
-                    text='🏁 Terminer',
+                    text='Terminer',
                     style=getattr(self, 'next_finish_style', 'Success.TButton'),
                     command=self._trigger_generate_documents,
                     width=getattr(self, 'next_finish_width', 20),
@@ -1741,16 +1916,190 @@ class MainForm(ttk.Frame):
                     state='normal',
                 )
 
-    def handle_dashboard_action(self, action: str, payload: dict | None):
+    @staticmethod
+    def _infer_dashboard_page_key(payload: dict | None, page_key: str | None) -> str:
+        """Infer dashboard page when older callers do not pass it explicitly."""
+        if page_key in {'societe', 'associe', 'contrat'}:
+            return page_key
+        if not isinstance(payload, dict):
+            return 'societe'
+        if 'ID_ASSOCIE' in payload:
+            return 'associe'
+        if 'ID_CONTRAT' in payload:
+            return 'contrat'
+        return 'societe'
+
+    @staticmethod
+    def _dashboard_page_index(page_key: str) -> int:
+        return {'societe': 0, 'associe': 1, 'contrat': 2}.get(page_key, 0)
+
+    @staticmethod
+    def _filter_dashboard_rows(df, sid: str, den: str):
+        """Filter a worksheet DataFrame to rows linked to the selected company."""
+        try:
+            if sid and not df.empty and 'ID_SOCIETE' in df.columns:
+                return df[df['ID_SOCIETE'].astype(str).str.strip() == sid]
+            if den and not df.empty and 'DEN_STE' in df.columns:
+                return df[df['DEN_STE'].astype(str).str.strip().str.lower() == den.lower()]
+        except Exception:
+            pass
+        try:
+            return df.iloc[0:0]
+        except Exception:
+            return df
+
+    def _load_dashboard_workbook_frames(self):
+        """Load dashboard workbook sheets once for edit/delete operations."""
+        import pandas as _pd
+
+        db_path = Path(PathManager.DATABASE_DIR) / _const.DB_FILENAME
+        if not db_path.exists():
+            raise FileNotFoundError('Fichier de base de données introuvable.')
+
+        try:
+            soc_df = _pd.read_excel(db_path, sheet_name='Societes', dtype=str).fillna('')
+        except Exception:
+            soc_df = _pd.DataFrame(columns=_const.societe_headers)
+        try:
+            assoc_df = _pd.read_excel(db_path, sheet_name='Associes', dtype=str).fillna('')
+        except Exception:
+            assoc_df = _pd.DataFrame(columns=_const.associe_headers)
+        try:
+            contrat_df = _pd.read_excel(db_path, sheet_name='Contrats', dtype=str).fillna('')
+        except Exception:
+            contrat_df = _pd.DataFrame(columns=_const.contrat_headers)
+
+        return db_path, soc_df, assoc_df, contrat_df
+
+    def _resolve_company_payload_from_dashboard(self, page_key: str, payload: dict | None, soc_df):
+        """Resolve the selected dashboard row to its company row."""
+        if not isinstance(payload, dict):
+            return None
+
+        sid = str(payload.get('ID_SOCIETE') or '').strip()
+        den = str(payload.get('DEN_STE') or '').strip()
+
+        if page_key == 'societe':
+            if sid and not soc_df.empty and 'ID_SOCIETE' in soc_df.columns:
+                matches = soc_df[soc_df['ID_SOCIETE'].astype(str).str.strip() == sid]
+                if not matches.empty:
+                    return matches.iloc[0].to_dict()
+            if den and not soc_df.empty and 'DEN_STE' in soc_df.columns:
+                matches = soc_df[soc_df['DEN_STE'].astype(str).str.strip().str.lower() == den.lower()]
+                if not matches.empty:
+                    return matches.iloc[0].to_dict()
+            return payload
+
+        matches = self._filter_dashboard_rows(soc_df, sid, den)
+        if matches is None or matches.empty:
+            return None
+        return matches.iloc[0].to_dict()
+
+    def _build_dashboard_edit_values(self, company_payload: dict, assoc_df, contrat_df):
+        """Build complete form values from the selected company and linked sheets."""
+        soc_map = {
+            'DEN_STE': 'denomination',
+            'FORME_JUR': 'forme_juridique',
+            'ICE': 'ice',
+            'DATE_ICE': 'date_ice',
+            'DATE_EXP_CERT_NEG': 'date_expiration_certificat_negatif',
+            'CAPITAL': 'capital',
+            'PART_SOCIAL': 'parts_social',
+            'VALEUR_NOMINALE': 'valeur_nominale',
+            'STE_ADRESS': 'adresse',
+            'TRIBUNAL': 'tribunal',
+            'TYPE_GENERATION': 'type_generation',
+            'PROCEDURE_CREATION': 'procedure_creation',
+            'MODE_DEPOT_CREATION': 'mode_depot_creation',
+        }
+        inverse_assoc_map = {
+            'CIVIL': 'civilite',
+            'PRENOM': 'prenom',
+            'NOM': 'nom',
+            'PARTS': 'num_parts',
+            'DATE_NAISS': 'date_naiss',
+            'LIEU_NAISS': 'lieu_naiss',
+            'NATIONALITY': 'nationalite',
+            'CIN_NUM': 'num_piece',
+            'CIN_VALIDATY': 'validite_piece',
+            'ADRESSE': 'adresse',
+            'PHONE': 'telephone',
+            'EMAIL': 'email',
+            'IS_GERANT': 'est_gerant',
+            'QUALITY': 'qualite',
+            'CAPITAL_DETENU': 'capital_detenu',
+            'PART_PERCENT': 'percentage',
+        }
+        inverse_contrat_map = {
+            'DATE_CONTRAT': 'date_contrat',
+            'DUREE_CONTRAT_MOIS': 'period',
+            'TYPE_CONTRAT_DOMICILIATION': 'type_contrat_domiciliation',
+            'TYPE_CONTRAT_DOMICILIATION_AUTRE': 'type_contrat_domiciliation_autre',
+            'LOYER_MENSUEL_TTC': 'prix_mensuel',
+            'FRAIS_INTERMEDIAIRE_CONTRAT': 'prix_inter',
+            'DATE_DEBUT_CONTRAT': 'date_debut',
+            'DATE_FIN_CONTRAT': 'date_fin',
+            'TAUX_TVA_POURCENT': 'tva',
+            'LOYER_MENSUEL_HT': 'dh_ht',
+            'MONTANT_TOTAL_HT_CONTRAT': 'montant_ht',
+            'MONTANT_PACK_DEMARRAGE_TTC': 'pack_demarrage_montant',
+            'LOYER_MENSUEL_PACK_DEMARRAGE_TTC': 'pack_demarrage_loyer',
+            'TYPE_RENOUVELLEMENT': 'type_renouvellement',
+            'TAUX_TVA_RENOUVELLEMENT_POURCENT': 'tva_renouvellement',
+            'LOYER_MENSUEL_HT_RENOUVELLEMENT': 'dh_ht_renouvellement',
+            'MONTANT_TOTAL_HT_RENOUVELLEMENT': 'montant_ht_renouvellement',
+            'LOYER_MENSUEL_RENOUVELLEMENT_TTC': 'loyer_renouvellement_mensuel',
+            'LOYER_ANNUEL_RENOUVELLEMENT_TTC': 'loyer_renouvellement_annuel',
+            'PERIOD_DOMCIL': 'period',
+            'PRIX_CONTRAT': 'prix_mensuel',
+            'PRIX_INTERMEDIARE_CONTRAT': 'prix_inter',
+            'DOM_DATEDEB': 'date_debut',
+            'DOM_DATEFIN': 'date_fin',
+            'PACK_DEMARRAGE_MONTANT_TTC': 'pack_demarrage_montant',
+            'PACK_DEMARRAGE_LOYER_MENSUEL_TTC': 'pack_demarrage_loyer',
+            'LOYER_RENOUVELLEMENT_MENSUEL_TTC': 'loyer_renouvellement_mensuel',
+            'LOYER_RENOUVELLEMENT_ANNUEL_TTC': 'loyer_renouvellement_annuel',
+        }
+
+        soc_vals = {}
+        for key, value in company_payload.items():
+            if key in soc_map:
+                soc_vals[soc_map[key]] = value
+
+        sid = str(company_payload.get('ID_SOCIETE') or '').strip()
+        den = str(company_payload.get('DEN_STE') or '').strip()
+        associes_list = []
+        contrat_vals = {}
+
+        assoc_matches = self._filter_dashboard_rows(assoc_df, sid, den)
+        if assoc_matches is not None and not assoc_matches.empty:
+            for _, assoc_row in assoc_matches.iterrows():
+                assoc_payload = {}
+                for column in assoc_row.index:
+                    if column in inverse_assoc_map:
+                        assoc_payload[inverse_assoc_map[column]] = assoc_row.get(column)
+                associes_list.append(assoc_payload)
+
+        contrat_matches = self._filter_dashboard_rows(contrat_df, sid, den)
+        if contrat_matches is not None and not contrat_matches.empty:
+            contrat_row = contrat_matches.iloc[0]
+            for column in contrat_row.index:
+                if column in inverse_contrat_map:
+                    contrat_vals[inverse_contrat_map[column]] = contrat_row.get(column)
+
+        return {'societe': soc_vals or {}, 'associes': associes_list, 'contrat': contrat_vals}
+
+    def handle_dashboard_action(self, action: str, payload: dict | None, page_key: str | None = None):
         """Handle actions coming from the DashboardView.
 
         Supported actions:
         - 'add'    : clear forms and show the societe page for a new entry
-        - 'edit'   : prefill forms with the provided payload (company row dict) and show the societe page
+        - 'edit'   : prefill forms with the selected company and show the relevant page
         - 'delete' : remove the company (and related rows) from the Excel DB after confirmation
         - other    : ignored
         """
         try:
+            page_key = self._infer_dashboard_page_key(payload, page_key)
             # Bring main window to front
             top = self.winfo_toplevel()
             try:
@@ -1764,165 +2113,71 @@ class MainForm(ttk.Frame):
                 # Reset forms to default/new state and show first page
                 self.reset()
                 self.show_page(0)
-                return
+                return {'status': 'opened', 'page': 'societe'}
 
             if action == 'edit':
                 if not payload:
                     messagebox.showwarning('Modifier', 'Aucune donnée fournie pour modification.')
-                    return
+                    return {'status': 'invalid'}
 
-                # Map canonical DB fields back to form keys (reverse of write_records_to_db mapping)
-                soc_map = {
-                    'DEN_STE': 'denomination', 'FORME_JUR': 'forme_juridique', 'ICE': 'ice',
-                    'DATE_ICE': 'date_ice', 'DATE_EXP_CERT_NEG': 'date_expiration_certificat_negatif',
-                    'CAPITAL': 'capital', 'PART_SOCIAL': 'parts_social', 'VALEUR_NOMINALE': 'valeur_nominale',
-                    'STE_ADRESS': 'adresse', 'TRIBUNAL': 'tribunal'
-                }
-                soc_vals = {}
-                for k, v in (payload.items() if isinstance(payload, dict) else []):
-                    if k in soc_map:
-                        soc_vals[soc_map[k]] = v
-
-                # Attempt to also load associes and contrats from the workbook if possible
-                associes_list = []
-                contrat_vals = {}
                 try:
-                    import pandas as _pd
-                    db_path = Path(PathManager.DATABASE_DIR) / _const.DB_FILENAME
-                    if db_path.exists():
-                        try:
-                            assoc_df = _pd.read_excel(db_path, sheet_name='Associes', dtype=str).fillna('')
-                        except Exception:
-                            assoc_df = _pd.DataFrame()
-                        try:
-                            contrat_df = _pd.read_excel(db_path, sheet_name='Contrats', dtype=str).fillna('')
-                        except Exception:
-                            contrat_df = _pd.DataFrame()
+                    _db_path, soc_df, assoc_df, contrat_df = self._load_dashboard_workbook_frames()
+                except FileNotFoundError:
+                    messagebox.showerror('Erreur', 'Fichier de base de données introuvable.')
+                    return {'status': 'error'}
+                except Exception as e:
+                    try:
+                        from ..utils.utils import ErrorHandler
+                        ErrorHandler.handle_error(e, 'Erreur lors du chargement des données')
+                    except Exception:
+                        messagebox.showerror('Erreur', f'Impossible de charger les données: {e}')
+                    return {'status': 'error'}
 
-                        # Prefer matching by ID_SOCIETE when available
-                        sid = None
-                        if isinstance(payload, dict):
-                            sid = payload.get('ID_SOCIETE') or payload.get('ID_SOCIETE')
-                        if sid and not assoc_df.empty and 'ID_SOCIETE' in assoc_df.columns:
-                            matches = assoc_df[assoc_df['ID_SOCIETE'].astype(str).str.strip() == str(sid).strip()]
-                        else:
-                            den = (payload.get('DEN_STE') or '').strip() if isinstance(payload, dict) else ''
-                            if not assoc_df.empty and 'DEN_STE' in assoc_df.columns:
-                                matches = assoc_df[assoc_df['DEN_STE'].astype(str).str.strip().str.lower() == den.lower()]
-                            else:
-                                matches = _pd.DataFrame()
+                company_payload = self._resolve_company_payload_from_dashboard(page_key, payload, soc_df)
+                if not company_payload:
+                    messagebox.showwarning(
+                        'Modifier',
+                        "Impossible de retrouver la société liée à l'enregistrement sélectionné."
+                    )
+                    return {'status': 'not_found'}
 
-                        if not matches.empty:
-                            # inverse mapping from canonical DB headers to AssocieForm keys
-                            inverse_assoc_map = {
-                                'CIVIL': 'civilite', 'PRENOM': 'prenom', 'NOM': 'nom',
-                                'PARTS': 'num_parts', 'DATE_NAISS': 'date_naiss', 'LIEU_NAISS': 'lieu_naiss',
-                                'NATIONALITY': 'nationalite', 'CIN_NUM': 'num_piece', 'CIN_VALIDATY': 'validite_piece',
-                                'ADRESSE': 'adresse', 'PHONE': 'telephone', 'EMAIL': 'email',
-                                'IS_GERANT': 'est_gerant', 'QUALITY': 'qualite', 'CAPITAL_DETENU': 'capital_detenu',
-                                'PART_PERCENT': 'percentage'
-                            }
-                            for _, ar in matches.iterrows():
-                                ad = {}
-                                for col in ar.index:
-                                    if col in inverse_assoc_map:
-                                        ad[inverse_assoc_map[col]] = ar.get(col)
-                                associes_list.append(ad)
-
-                        # take first contrat row if present
-                        if not contrat_df.empty:
-                            if sid and 'ID_SOCIETE' in contrat_df.columns:
-                                cands = contrat_df[contrat_df['ID_SOCIETE'].astype(str).str.strip() == str(sid).strip()]
-                            else:
-                                den = (payload.get('DEN_STE') or '').strip() if isinstance(payload, dict) else ''
-                                if not contrat_df.empty and 'DEN_STE' in contrat_df.columns:
-                                    cands = contrat_df[contrat_df['DEN_STE'].astype(str).str.strip().str.lower() == den.lower()]
-                                else:
-                                    cands = _pd.DataFrame()
-                            if not cands.empty:
-                                crow = cands.iloc[0]
-                                inverse_contrat_map = {
-                                    'DATE_CONTRAT': 'date_contrat',
-                                    'DUREE_CONTRAT_MOIS': 'period',
-                                    'TYPE_CONTRAT_DOMICILIATION': 'type_contrat_domiciliation',
-                                    'TYPE_CONTRAT_DOMICILIATION_AUTRE': 'type_contrat_domiciliation_autre',
-                                    'LOYER_MENSUEL_TTC': 'prix_mensuel',
-                                    'FRAIS_INTERMEDIAIRE_CONTRAT': 'prix_inter',
-                                    'DATE_DEBUT_CONTRAT': 'date_debut',
-                                    'DATE_FIN_CONTRAT': 'date_fin',
-                                    'TAUX_TVA_POURCENT': 'tva',
-                                    'LOYER_MENSUEL_HT': 'dh_ht',
-                                    'MONTANT_TOTAL_HT_CONTRAT': 'montant_ht',
-                                    'MONTANT_PACK_DEMARRAGE_TTC': 'pack_demarrage_montant',
-                                    'LOYER_MENSUEL_PACK_DEMARRAGE_TTC': 'pack_demarrage_loyer',
-                                    'TYPE_RENOUVELLEMENT': 'type_renouvellement',
-                                    'TAUX_TVA_RENOUVELLEMENT_POURCENT': 'tva_renouvellement',
-                                    'LOYER_MENSUEL_HT_RENOUVELLEMENT': 'dh_ht_renouvellement',
-                                    'MONTANT_TOTAL_HT_RENOUVELLEMENT': 'montant_ht_renouvellement',
-                                    'LOYER_MENSUEL_RENOUVELLEMENT_TTC': 'loyer_renouvellement_mensuel',
-                                    'LOYER_ANNUEL_RENOUVELLEMENT_TTC': 'loyer_renouvellement_annuel',
-                                    # legacy columns fallback
-                                    'PERIOD_DOMCIL': 'period',
-                                    'PRIX_CONTRAT': 'prix_mensuel',
-                                    'PRIX_INTERMEDIARE_CONTRAT': 'prix_inter',
-                                    'DOM_DATEDEB': 'date_debut',
-                                    'DOM_DATEFIN': 'date_fin',
-                                    'PACK_DEMARRAGE_MONTANT_TTC': 'pack_demarrage_montant',
-                                    'PACK_DEMARRAGE_LOYER_MENSUEL_TTC': 'pack_demarrage_loyer',
-                                    'LOYER_RENOUVELLEMENT_MENSUEL_TTC': 'loyer_renouvellement_mensuel',
-                                    'LOYER_RENOUVELLEMENT_ANNUEL_TTC': 'loyer_renouvellement_annuel',
-                                }
-                                for col in crow.index:
-                                    if col in inverse_contrat_map:
-                                        contrat_vals[inverse_contrat_map[col]] = crow.get(col)
-                except Exception:
-                    # ignore data load errors; fallback to partial prefill
-                    pass
-
-                # Apply values to forms and show societe page for editing
-                values = {'societe': soc_vals or {}, 'associes': associes_list, 'contrat': contrat_vals}
+                values = self._build_dashboard_edit_values(company_payload, assoc_df, contrat_df)
                 self.set_values(values)
-                self.show_page(0)
-                return
+                self.show_page(self._dashboard_page_index(page_key))
+                return {'status': 'opened', 'page': page_key}
 
             if action == 'delete':
                 if not payload:
                     messagebox.showwarning('Supprimer', 'Aucune société sélectionnée pour suppression.')
-                    return
-                den = payload.get('DEN_STE') or ''
-                sid = payload.get('ID_SOCIETE') if isinstance(payload, dict) else None
-                if not messagebox.askyesno('Confirmation', f"Voulez-vous vraiment supprimer la société '{den}' ?"):
-                    return
+                    return {'status': 'invalid'}
 
                 # Remove rows from the Excel workbook
                 try:
                     import pandas as _pd
-                    db_path = Path(PathManager.DATABASE_DIR) / _const.DB_FILENAME
-                    if not db_path.exists():
-                        messagebox.showerror('Erreur', 'Fichier de base de données introuvable.')
-                        return
+                    db_path, soc_df, assoc_df, contrat_df = self._load_dashboard_workbook_frames()
+                    company_payload = self._resolve_company_payload_from_dashboard(page_key, payload, soc_df)
+                    if not company_payload:
+                        messagebox.showwarning(
+                            'Supprimer',
+                            "Impossible de retrouver la société liée à l'enregistrement sélectionné."
+                        )
+                        return {'status': 'not_found'}
 
-                    # Read canonical sheets
-                    try:
-                        soc_df = _pd.read_excel(db_path, sheet_name='Societes', dtype=str).fillna('')
-                    except Exception:
-                        soc_df = _pd.DataFrame()
-                    try:
-                        assoc_df = _pd.read_excel(db_path, sheet_name='Associes', dtype=str).fillna('')
-                    except Exception:
-                        assoc_df = _pd.DataFrame()
-                    try:
-                        contrat_df = _pd.read_excel(db_path, sheet_name='Contrats', dtype=str).fillna('')
-                    except Exception:
-                        contrat_df = _pd.DataFrame()
+                    den = str(company_payload.get('DEN_STE') or '').strip()
+                    sid = str(company_payload.get('ID_SOCIETE') or '').strip()
+                    if not messagebox.askyesno(
+                        'Confirmation',
+                        f"Voulez-vous vraiment supprimer le dossier société '{den}' ?"
+                    ):
+                        return {'status': 'cancelled'}
 
                     if sid:
                         if not soc_df.empty and 'ID_SOCIETE' in soc_df.columns:
-                            soc_df = soc_df[~(soc_df['ID_SOCIETE'].astype(str).str.strip() == str(sid).strip())]
+                            soc_df = soc_df[~(soc_df['ID_SOCIETE'].astype(str).str.strip() == sid)]
                         if not assoc_df.empty and 'ID_SOCIETE' in assoc_df.columns:
-                            assoc_df = assoc_df[~(assoc_df['ID_SOCIETE'].astype(str).str.strip() == str(sid).strip())]
+                            assoc_df = assoc_df[~(assoc_df['ID_SOCIETE'].astype(str).str.strip() == sid)]
                         if not contrat_df.empty and 'ID_SOCIETE' in contrat_df.columns:
-                            contrat_df = contrat_df[~(contrat_df['ID_SOCIETE'].astype(str).str.strip() == str(sid).strip())]
+                            contrat_df = contrat_df[~(contrat_df['ID_SOCIETE'].astype(str).str.strip() == sid)]
                     else:
                         # fallback to DEN_STE match
                         if not soc_df.empty and 'DEN_STE' in soc_df.columns:
@@ -1934,6 +2189,12 @@ class MainForm(ttk.Frame):
 
                     # Write back sheets replacing them
                     try:
+                        from ..utils.utils import normalize_canonical_dataframe_for_storage, normalize_excel_storage
+
+                        soc_df = normalize_canonical_dataframe_for_storage(soc_df.reindex(columns=_const.societe_headers, fill_value=''))
+                        assoc_df = normalize_canonical_dataframe_for_storage(assoc_df.reindex(columns=_const.associe_headers, fill_value=''))
+                        contrat_df = normalize_canonical_dataframe_for_storage(contrat_df.reindex(columns=_const.contrat_headers, fill_value=''))
+
                         with _pd.ExcelWriter(db_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
                             soc_df.to_excel(writer, sheet_name='Societes', index=False)
                             assoc_df.to_excel(writer, sheet_name='Associes', index=False)
@@ -1955,18 +2216,23 @@ class MainForm(ttk.Frame):
                             assoc_df.to_excel(writer, sheet_name='Associes', index=False)
                             contrat_df.to_excel(writer, sheet_name='Contrats', index=False)
 
-                    messagebox.showinfo('Succès', f"Société '{den}' supprimée avec succès.")
-                    return
+                    try:
+                        normalize_excel_storage(db_path)
+                    except Exception:
+                        pass
+
+                    messagebox.showinfo('Succès', f"Dossier société '{den}' supprimé avec succès.")
+                    return {'status': 'deleted', 'company_name': den}
                 except PermissionError:
                     messagebox.showerror('Erreur', 'Le fichier Excel est ouvert dans une autre application. Fermez Excel et réessayez.')
-                    return
+                    return {'status': 'error'}
                 except Exception as e:
                     try:
                         from ..utils.utils import ErrorHandler
                         ErrorHandler.handle_error(e, 'Erreur lors de la suppression')
                     except Exception:
                         messagebox.showerror('Erreur', f'Impossible de supprimer: {e}')
-                    return
+                    return {'status': 'error'}
 
         except Exception as e:
             try:
@@ -1974,3 +2240,4 @@ class MainForm(ttk.Frame):
                 logger.exception('handle_dashboard_action failed: %s', e)
             except Exception:
                 pass
+            return {'status': 'error'}

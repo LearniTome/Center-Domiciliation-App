@@ -72,6 +72,9 @@ class DefaultsManager:
                 'SteAdresse': constants.SteAdresse[0] if constants.SteAdresse else '',
                 'Tribunal': constants.Tribunnaux[0] if constants.Tribunnaux else '',
                 'ModeSignatureGerance': 'separee',
+                'TypeGeneration': 'creation',
+                'ProcedureCreation': 'normal',
+                'ModeDepotCreation': 'depot_physique',
             },
             'associe': {
                 'Civility': constants.Civility[0] if constants.Civility else '',

@@ -37,6 +37,9 @@ LEGAL_FORM_PREFIXES = {
     'Fondation': 'FOND',
 }
 
+CREATION_PROCEDURE_OPTIONS = ['normal', 'acceleree']
+CREATION_DEPOT_OPTIONS = ['depot_physique', 'depot_en_ligne']
+
 
 def normalize_legal_form_selection(raw_value: Optional[str]) -> str:
     """Normalize legal-form labels from forms/DB into selector options."""
@@ -56,6 +59,44 @@ def normalize_legal_form_selection(raw_value: Optional[str]) -> str:
         "FONDATION": "Fondation",
     }
     return mapping.get(compact, LEGAL_FORM_OPTIONS[0])
+
+
+def normalize_generation_type_selection(raw_value: Optional[str]) -> str:
+    raw = str(raw_value or "").strip().lower()
+    mapping = {
+        "creation": "creation",
+        "création": "creation",
+        "domiciliation": "domiciliation",
+    }
+    return mapping.get(raw, "creation")
+
+
+def normalize_creation_procedure(raw_value: Optional[str]) -> str:
+    raw = str(raw_value or "").strip().lower()
+    mapping = {
+        "normal": "normal",
+        "acceleree": "acceleree",
+        "accelere": "acceleree",
+        "accélérée": "acceleree",
+        "accélérer": "acceleree",
+    }
+    return mapping.get(raw, CREATION_PROCEDURE_OPTIONS[0])
+
+
+def normalize_creation_depot_mode(raw_value: Optional[str]) -> str:
+    raw = str(raw_value or "").strip().lower()
+    mapping = {
+        "depot_physique": "depot_physique",
+        "dépôt physique": "depot_physique",
+        "depot physique": "depot_physique",
+        "physique": "depot_physique",
+        "depot_en_ligne": "depot_en_ligne",
+        "dépôt en ligne": "depot_en_ligne",
+        "depot en ligne": "depot_en_ligne",
+        "en_ligne": "depot_en_ligne",
+        "en ligne": "depot_en_ligne",
+    }
+    return mapping.get(raw, CREATION_DEPOT_OPTIONS[0])
 
 
 def compute_selection_feedback(
@@ -133,6 +174,7 @@ class GenerationSelectorDialog(tk.Toplevel):
         self.output_format_var = tk.StringVar(value='word')
         self.save_before_var = tk.BooleanVar(value=True)
         self.initial_legal_form = self._extract_initial_legal_form()
+        self.initial_generation_settings = self._extract_initial_generation_settings()
 
         # Backward-compat normalization.
         normalized = (self.output_format or '').strip().lower()
@@ -219,6 +261,66 @@ class GenerationSelectorDialog(tk.Toplevel):
             if str(value or "").strip():
                 return normalize_legal_form_selection(str(value))
         return LEGAL_FORM_OPTIONS[0]
+
+    def _extract_initial_generation_settings(self) -> dict:
+        """Infer generation settings from collected values when available."""
+        generation_type = "creation"
+        procedure_creation = CREATION_PROCEDURE_OPTIONS[0]
+        mode_depot_creation = CREATION_DEPOT_OPTIONS[0]
+
+        societe = self.values.get("societe", {}) if isinstance(self.values, dict) else {}
+        source = societe if isinstance(societe, dict) else {}
+
+        generation_candidates = [
+            source.get("type_generation"),
+            source.get("generation_type"),
+            source.get("TypeGeneration"),
+            source.get("TYPE_GENERATION"),
+        ]
+        procedure_candidates = [
+            source.get("procedure_creation"),
+            source.get("creation_procedure"),
+            source.get("ProcedureCreation"),
+            source.get("PROCEDURE_CREATION"),
+        ]
+        depot_candidates = [
+            source.get("mode_depot_creation"),
+            source.get("creation_depot_mode"),
+            source.get("ModeDepotCreation"),
+            source.get("MODE_DEPOT_CREATION"),
+        ]
+
+        if isinstance(self.values, dict):
+            generation_candidates.extend(
+                [self.values.get("type_generation"), self.values.get("generation_type")]
+            )
+            procedure_candidates.extend(
+                [self.values.get("procedure_creation"), self.values.get("creation_procedure")]
+            )
+            depot_candidates.extend(
+                [self.values.get("mode_depot_creation"), self.values.get("creation_depot_mode")]
+            )
+
+        for value in generation_candidates:
+            if str(value or "").strip():
+                generation_type = normalize_generation_type_selection(value)
+                break
+
+        for value in procedure_candidates:
+            if str(value or "").strip():
+                procedure_creation = normalize_creation_procedure(value)
+                break
+
+        for value in depot_candidates:
+            if str(value or "").strip():
+                mode_depot_creation = normalize_creation_depot_mode(value)
+                break
+
+        return {
+            "generation_type": generation_type,
+            "procedure_creation": procedure_creation,
+            "mode_depot_creation": mode_depot_creation,
+        }
 
     def _center_initial_position(self):
         """Center once after UI construction to get stable initial placement."""
@@ -393,7 +495,13 @@ class GenerationSelectorDialog(tk.Toplevel):
         type_frame = ttk.LabelFrame(top_sections_frame, text="📊 Type de génération", padding=15)
         type_frame.grid(row=0, column=1, padx=(10, 0), sticky='nsew')
 
-        self.gen_type_var = tk.StringVar(value='creation')
+        self.gen_type_var = tk.StringVar(value=self.initial_generation_settings.get("generation_type", "creation"))
+        self.creation_procedure_var = tk.StringVar(
+            value=self.initial_generation_settings.get("procedure_creation", CREATION_PROCEDURE_OPTIONS[0])
+        )
+        self.creation_depot_mode_var = tk.StringVar(
+            value=self.initial_generation_settings.get("mode_depot_creation", CREATION_DEPOT_OPTIONS[0])
+        )
         type_frame.columnconfigure(0, weight=1)
         type_frame.columnconfigure(1, weight=1)
 
@@ -412,6 +520,42 @@ class GenerationSelectorDialog(tk.Toplevel):
             value='domiciliation',
             command=self._on_generation_type_changed
         ).grid(row=0, column=1, sticky='w', pady=4)
+
+        self.creation_options_frame = ttk.Frame(type_frame)
+        self.creation_options_frame.grid(row=1, column=0, columnspan=2, sticky='w', pady=(8, 0))
+        ttk.Label(self.creation_options_frame, text="Procédure (Création):").pack(side='left', padx=(0, 8))
+        ttk.Radiobutton(
+            self.creation_options_frame,
+            text="Normal",
+            variable=self.creation_procedure_var,
+            value='normal',
+            command=self._on_creation_options_changed,
+        ).pack(side='left', padx=(0, 10))
+        ttk.Radiobutton(
+            self.creation_options_frame,
+            text="Accélérer",
+            variable=self.creation_procedure_var,
+            value='acceleree',
+            command=self._on_creation_options_changed,
+        ).pack(side='left')
+
+        self.accelerated_depot_frame = ttk.Frame(type_frame)
+        self.accelerated_depot_frame.grid(row=2, column=0, columnspan=2, sticky='w', pady=(6, 0))
+        ttk.Label(self.accelerated_depot_frame, text="Dépôt (Accélérer):").pack(side='left', padx=(0, 8))
+        ttk.Radiobutton(
+            self.accelerated_depot_frame,
+            text="Dépôt Physique",
+            variable=self.creation_depot_mode_var,
+            value='depot_physique',
+            command=self._on_creation_options_changed,
+        ).pack(side='left', padx=(0, 10))
+        ttk.Radiobutton(
+            self.accelerated_depot_frame,
+            text="Dépôt En Ligne",
+            variable=self.creation_depot_mode_var,
+            value='depot_en_ligne',
+            command=self._on_creation_options_changed,
+        ).pack(side='left')
 
         # OPTIONS (imported from old popup flow)
         options_frame = ttk.LabelFrame(main_frame, text="⚙️Options de génération", padding=12)
@@ -553,6 +697,8 @@ class GenerationSelectorDialog(tk.Toplevel):
         self._refresh_template_list()
         if self.gen_type_var.get():
             self._auto_select_templates(self.gen_type_var.get())
+        self._update_creation_options_visibility()
+        self._sync_societe_generation_values()
         self._update_selection_feedback()
 
     def _on_frame_configure(self, event=None):
@@ -577,10 +723,76 @@ class GenerationSelectorDialog(tk.Toplevel):
 
     def _on_generation_type_changed(self):
         """Handle generation type changes and refresh automatic template summary."""
+        self._update_creation_options_visibility()
+        self._sync_societe_generation_values()
         self._refresh_template_list()
         if self.gen_type_var.get():
             self._auto_select_templates(self.gen_type_var.get())
         self._update_selection_feedback()
+
+    def _on_creation_options_changed(self):
+        self._update_creation_options_visibility()
+        self._sync_societe_generation_values()
+
+    def _update_creation_options_visibility(self):
+        gen_type = normalize_generation_type_selection(self.gen_type_var.get())
+        is_creation = gen_type == "creation"
+        is_accelerated = is_creation and normalize_creation_procedure(self.creation_procedure_var.get()) == "acceleree"
+
+        if hasattr(self, "creation_options_frame"):
+            if is_creation:
+                self.creation_options_frame.grid()
+            else:
+                self.creation_options_frame.grid_remove()
+
+        if hasattr(self, "accelerated_depot_frame"):
+            if is_accelerated:
+                self.accelerated_depot_frame.grid()
+            else:
+                self.accelerated_depot_frame.grid_remove()
+
+    def _sync_societe_generation_values(self):
+        """Persist generation choices into the shared values dict for cross-form synchronization."""
+        if not isinstance(self.values, dict):
+            return
+
+        societe = self.values.get("societe")
+        if not isinstance(societe, dict):
+            societe = {}
+            self.values["societe"] = societe
+
+        generation_type = normalize_generation_type_selection(self.gen_type_var.get())
+        procedure_creation = normalize_creation_procedure(self.creation_procedure_var.get())
+        depot_mode = normalize_creation_depot_mode(self.creation_depot_mode_var.get())
+
+        if generation_type != "creation":
+            procedure_creation = ""
+            depot_mode = ""
+        elif procedure_creation != "acceleree":
+            depot_mode = ""
+
+        societe["type_generation"] = generation_type
+        societe["generation_type"] = generation_type
+        societe["procedure_creation"] = procedure_creation
+        societe["creation_procedure"] = procedure_creation
+        societe["mode_depot_creation"] = depot_mode
+        societe["creation_depot_mode"] = depot_mode
+
+        # Live synchronization with the Societe form when it exists.
+        try:
+            main_form = getattr(self.parent, "main_form", None)
+            societe_form = getattr(main_form, "societe_form", None)
+            if societe_form is not None:
+                if hasattr(societe_form, "type_generation_var"):
+                    societe_form.type_generation_var.set(generation_type)
+                if hasattr(societe_form, "procedure_creation_var"):
+                    societe_form.procedure_creation_var.set(procedure_creation or "normal")
+                if hasattr(societe_form, "mode_depot_creation_var"):
+                    societe_form.mode_depot_creation_var.set(depot_mode or "depot_physique")
+                if hasattr(societe_form, "_update_generation_options_visibility"):
+                    societe_form._update_generation_options_visibility()
+        except Exception:
+            pass
 
     def _selected_templates_count(self) -> int:
         return sum(1 for var in getattr(self, 'template_vars', {}).values() if var.get())
@@ -1423,13 +1635,16 @@ class GenerationSelectorDialog(tk.Toplevel):
             return
         
         # Validate generation type selection (SECOND)
-        gen_type = self.gen_type_var.get()
+        gen_type = normalize_generation_type_selection(self.gen_type_var.get())
         if not gen_type:
             messagebox.showwarning(
                 "Sélection requise",
                 "⬆️ Veuillez choisir un type de génération\n(Création ou Domiciliation)"
             )
             return
+
+        # Keep current choices synchronized with the main form values payload.
+        self._sync_societe_generation_values()
 
         # Store selections
         self.creation_type = legal_form

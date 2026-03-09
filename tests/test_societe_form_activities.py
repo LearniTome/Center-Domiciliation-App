@@ -43,6 +43,41 @@ class TestSocieteFormActivities(unittest.TestCase):
         values = self.form.get_values()
         self.assertEqual([], values.get("activites", []))
 
+    def test_generation_options_visibility_and_values(self):
+        self.form.type_generation_var.set("creation")
+        self.form.procedure_creation_var.set("normal")
+        self.form._update_generation_options_visibility()
+        self.root.update_idletasks()
+
+        self.assertEqual("grid", self.form.creation_procedure_frame.winfo_manager())
+        self.assertEqual("", self.form.creation_depot_frame.winfo_manager())
+
+        values = self.form.get_values()
+        self.assertEqual("creation", values.get("type_generation"))
+        self.assertEqual("normal", values.get("procedure_creation"))
+        self.assertEqual("", values.get("mode_depot_creation"))
+
+        self.form.procedure_creation_var.set("acceleree")
+        self.form.mode_depot_creation_var.set("depot_en_ligne")
+        self.form._update_generation_options_visibility()
+        self.root.update_idletasks()
+
+        self.assertEqual("grid", self.form.creation_depot_frame.winfo_manager())
+        values = self.form.get_values()
+        self.assertEqual("acceleree", values.get("procedure_creation"))
+        self.assertEqual("depot_en_ligne", values.get("mode_depot_creation"))
+
+        self.form.type_generation_var.set("domiciliation")
+        self.form._update_generation_options_visibility()
+        self.root.update_idletasks()
+
+        self.assertEqual("", self.form.creation_procedure_frame.winfo_manager())
+        self.assertEqual("", self.form.creation_depot_frame.winfo_manager())
+        values = self.form.get_values()
+        self.assertEqual("domiciliation", values.get("type_generation"))
+        self.assertEqual("", values.get("procedure_creation"))
+        self.assertEqual("", values.get("mode_depot_creation"))
+
 
 if __name__ == "__main__":
     unittest.main()

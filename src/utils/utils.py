@@ -11,6 +11,7 @@ from typing import Optional, Callable, Any
 import datetime
 import re
 import unicodedata
+from decimal import Decimal, InvalidOperation
 from fractions import Fraction
 from urllib import request as _urlrequest
 from urllib import error as _urlerror
@@ -32,6 +33,155 @@ logger = logging.getLogger(__name__)
 # Process-local cache for reference sheets loaded from the Excel database.
 # Keyed by resolved DB path and invalidated when file mtime changes.
 _REFERENCE_DATA_CACHE = {}
+
+_DB_DATE_COLUMNS = {
+    'DATE_ICE',
+    'DATE_EXP_CERT_NEG',
+    'CIN_VALIDATY',
+    'DATE_NAISS',
+    'DATE_CONTRAT',
+    'DATE_DEBUT_CONTRAT',
+    'DATE_FIN_CONTRAT',
+}
+
+_DB_BOOLEAN_COLUMNS = {
+    'IS_GERANT',
+}
+
+_DB_INTEGER_COLUMNS = {
+    'CAPITAL',
+    'PART_SOCIAL',
+    'VALEUR_NOMINALE',
+    'PART_PERCENT',
+    'PARTS',
+    'CAPITAL_DETENU',
+    'DUREE_CONTRAT_MOIS',
+    'TAUX_TVA_POURCENT',
+    'TAUX_TVA_RENOUVELLEMENT_POURCENT',
+}
+
+_DB_AMOUNT_COLUMNS = {
+    'LOYER_MENSUEL_TTC',
+    'FRAIS_INTERMEDIAIRE_CONTRAT',
+    'LOYER_MENSUEL_HT',
+    'MONTANT_TOTAL_HT_CONTRAT',
+    'MONTANT_PACK_DEMARRAGE_TTC',
+    'LOYER_MENSUEL_PACK_DEMARRAGE_TTC',
+    'LOYER_MENSUEL_HT_RENOUVELLEMENT',
+    'MONTANT_TOTAL_HT_RENOUVELLEMENT',
+    'LOYER_MENSUEL_RENOUVELLEMENT_TTC',
+    'LOYER_ANNUEL_RENOUVELLEMENT_TTC',
+}
+
+
+def _storage_empty_string(value) -> str:
+    if value is None:
+        return ''
+    try:
+        if pd.isna(value):
+            return ''
+    except Exception:
+        pass
+    text = str(value).strip()
+    return '' if text.lower() == 'nan' else text
+
+
+def _format_storage_date(value) -> str:
+    text = _storage_empty_string(value)
+    if not text:
+        return ''
+    if len(text) == 10 and text[2] == '/' and text[5] == '/':
+        return text
+
+    parsed = None
+    for fmt in ('%Y-%m-%d %H:%M:%S', '%Y-%m-%d', '%d/%m/%Y %H:%M:%S', '%d/%m/%Y'):
+        try:
+            parsed = datetime.datetime.strptime(text, fmt)
+            break
+        except Exception:
+            continue
+
+    if parsed is None:
+        try:
+            parsed = _pd.to_datetime(text, dayfirst='/' in text, errors='coerce')
+        except Exception:
+            parsed = None
+    if parsed is None or _pd.isna(parsed):
+        return text
+    return parsed.strftime('%d/%m/%Y')
+
+
+def _format_storage_bool(value) -> str:
+    text = _storage_empty_string(value)
+    if not text:
+        return ''
+    lowered = text.lower()
+    if lowered in {'1', 'true', 'vrai', 'yes', 'oui'}:
+        return 'Oui'
+    if lowered in {'0', 'false', 'faux', 'no', 'non'}:
+        return 'Non'
+    return text
+
+
+def _format_storage_number(value, min_decimals: int = 0, max_decimals: int = 4) -> str:
+    text = _storage_empty_string(value)
+    if not text:
+        return ''
+
+    normalized = text.replace('\xa0', ' ').replace(' ', '')
+    if ',' in normalized and '.' in normalized:
+        normalized = normalized.replace(',', '')
+    elif ',' in normalized:
+        normalized = normalized.replace(',', '.')
+
+    try:
+        number = Decimal(normalized)
+    except (InvalidOperation, ValueError):
+        return text
+
+    if min_decimals == 0 and number == number.to_integral():
+        return f"{int(number):,}".replace(',', ' ')
+
+    original_decimals = ''
+    if '.' in normalized:
+        original_decimals = normalized.split('.', 1)[1]
+    trimmed_len = len(original_decimals.rstrip('0'))
+    decimals = max(min_decimals, min(max_decimals, trimmed_len if trimmed_len else min_decimals))
+    if decimals <= 0:
+        return f"{int(number):,}".replace(',', ' ')
+
+    formatted = f"{number:,.{decimals}f}"
+    integer_part, fractional_part = formatted.split('.')
+    integer_part = integer_part.replace(',', ' ')
+    if decimals > min_decimals:
+        fractional_part = fractional_part.rstrip('0')
+        if len(fractional_part) < min_decimals:
+            fractional_part = fractional_part.ljust(min_decimals, '0')
+    return f"{integer_part},{fractional_part}"
+
+
+def normalize_canonical_dataframe_for_storage(df: _pd.DataFrame) -> _pd.DataFrame:
+    """Normalize canonical workbook values to user-facing strings in the Excel file."""
+    if df is None:
+        return _pd.DataFrame()
+
+    out = df.copy()
+    if out.empty:
+        return out.fillna('')
+
+    for col in out.columns:
+        if col in _DB_DATE_COLUMNS:
+            out[col] = out[col].apply(_format_storage_date)
+        elif col in _DB_BOOLEAN_COLUMNS:
+            out[col] = out[col].apply(_format_storage_bool)
+        elif col in _DB_AMOUNT_COLUMNS:
+            out[col] = out[col].apply(lambda value: _format_storage_number(value, min_decimals=2, max_decimals=4))
+        elif col in _DB_INTEGER_COLUMNS:
+            out[col] = out[col].apply(_format_storage_number)
+        else:
+            out[col] = out[col].apply(_storage_empty_string)
+
+    return out.fillna('')
 
 class ErrorHandler:
     """Gestionnaire d'erreurs centralisé pour l'application"""
@@ -1085,6 +1235,35 @@ def ensure_excel_db(path, sheets: dict):
             modified = True
     if modified:
         wb.save(path)
+
+    # Align canonical columns for existing sheets (add newly introduced columns).
+    try:
+        for name, cols in sheets.items():
+            try:
+                existing = _pd.read_excel(path, sheet_name=name, dtype=str)
+            except Exception:
+                existing = _pd.DataFrame(columns=cols)
+
+            aligned = existing.reindex(columns=cols, fill_value='')
+            if list(existing.columns) == list(cols):
+                continue
+
+            try:
+                with _pd.ExcelWriter(path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+                    aligned.to_excel(writer, sheet_name=name, index=False)
+            except TypeError:
+                wb = openpyxl.load_workbook(path)
+                if name in wb.sheetnames:
+                    try:
+                        std = wb[name]
+                        wb.remove(std)
+                        wb.save(path)
+                    except Exception:
+                        pass
+                with _pd.ExcelWriter(path, engine='openpyxl', mode='a') as writer:
+                    aligned.to_excel(writer, sheet_name=name, index=False)
+    except Exception:
+        logger.exception('Failed to align workbook columns in ensure_excel_db')
     return
 
 
@@ -1334,7 +1513,13 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
             'parts_social': 'PART_SOCIAL',
             'valeur_nominale': 'VALEUR_NOMINALE',
             'adresse': 'STE_ADRESS',
-            'tribunal': 'TRIBUNAL'
+            'tribunal': 'TRIBUNAL',
+            'type_generation': 'TYPE_GENERATION',
+            'generation_type': 'TYPE_GENERATION',
+            'procedure_creation': 'PROCEDURE_CREATION',
+            'creation_procedure': 'PROCEDURE_CREATION',
+            'mode_depot_creation': 'MODE_DEPOT_CREATION',
+            'creation_depot_mode': 'MODE_DEPOT_CREATION',
         }
         for k, h in mapping.items():
             if k in societe_vals:
@@ -1475,6 +1660,10 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
                             r[h] = s
         contrat_df = _pd.DataFrame([r])
 
+    soc_df = normalize_canonical_dataframe_for_storage(soc_df)
+    assoc_df = normalize_canonical_dataframe_for_storage(assoc_df)
+    contrat_df = normalize_canonical_dataframe_for_storage(contrat_df)
+
     # Write into workbook
     # If file exists, append; otherwise create fresh workbook
     if not path.exists():
@@ -1515,9 +1704,10 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
                     existing = _pd.DataFrame(columns=headers)
                 if sheet_name == 'Contrats':
                     existing = _normalize_contrat_columns(existing)
+                existing = normalize_canonical_dataframe_for_storage(existing.reindex(columns=headers, fill_value=''))
                 if set(existing.columns) != set(headers):
                     # rewrite sheet with canonical headers but keep existing rows aligned if possible
-                    existing_aligned = existing.reindex(columns=headers, fill_value='')
+                    existing_aligned = existing
                     try:
                         with _pd.ExcelWriter(path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
                             existing_aligned.to_excel(writer, sheet_name=sheet_name, index=False)
@@ -1542,8 +1732,12 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
                 new_df = _normalize_contrat_columns(new_df)
 
             # Reindex both to canonical headers to avoid column shifts
-            existing_aligned = existing.reindex(columns=headers, fill_value='')
-            new_aligned = new_df.reindex(columns=headers, fill_value='')
+            existing_aligned = normalize_canonical_dataframe_for_storage(
+                existing.reindex(columns=headers, fill_value='')
+            )
+            new_aligned = normalize_canonical_dataframe_for_storage(
+                new_df.reindex(columns=headers, fill_value='')
+            )
 
             # Avoid concatenating empty or all-NA frames to prevent pandas FutureWarning
             parts = []
@@ -1566,6 +1760,7 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
             else:
                 # both frames empty/all-NA -> produce an empty canonical DataFrame
                 combined = _pd.DataFrame(columns=headers)
+            combined = normalize_canonical_dataframe_for_storage(combined.reindex(columns=headers, fill_value=''))
 
             # Write back replacing the sheet — use if_sheet_exists='replace' when available
             try:
@@ -1744,6 +1939,75 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
         wb.save(path)
     except Exception:
         logger.exception('Failed to autofit column widths after writing records')
+
+
+def normalize_excel_storage(path):
+    """Rewrite canonical sheets so workbook values are stored in normalized user-facing format."""
+    path = _Path(path)
+    if not path.exists():
+        return
+
+    from . import constants as _const
+
+    aliases = getattr(_const, 'contrat_header_aliases', {}) or {}
+    sheets = (
+        ('Societes', _const.societe_headers),
+        ('Associes', _const.associe_headers),
+        ('Contrats', _const.contrat_headers),
+    )
+
+    normalized_frames = {}
+    for sheet_name, headers in sheets:
+        try:
+            df = _pd.read_excel(path, sheet_name=sheet_name, dtype=str).fillna('')
+        except Exception:
+            df = _pd.DataFrame(columns=headers)
+        if sheet_name == 'Contrats':
+            for old_col, new_col in aliases.items():
+                if old_col not in df.columns:
+                    continue
+                if new_col not in df.columns:
+                    df[new_col] = df[old_col]
+                else:
+                    try:
+                        old_vals = df[old_col].fillna('').astype(str).str.strip()
+                        new_vals = df[new_col].fillna('').astype(str).str.strip()
+                        mask = (new_vals == '') & (old_vals != '')
+                        df.loc[mask, new_col] = df.loc[mask, old_col]
+                    except Exception:
+                        pass
+                try:
+                    df.drop(columns=[old_col], inplace=True)
+                except Exception:
+                    pass
+        normalized_frames[sheet_name] = normalize_canonical_dataframe_for_storage(
+            df.reindex(columns=headers, fill_value='')
+        )
+
+    try:
+        with _pd.ExcelWriter(path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+            for sheet_name, headers in sheets:
+                normalized_frames[sheet_name].reindex(columns=headers, fill_value='').to_excel(
+                    writer,
+                    sheet_name=sheet_name,
+                    index=False,
+                )
+    except TypeError:
+        wb = load_workbook(path)
+        for sheet_name, _headers in sheets:
+            if sheet_name in wb.sheetnames:
+                try:
+                    wb.remove(wb[sheet_name])
+                except Exception:
+                    pass
+        wb.save(path)
+        with _pd.ExcelWriter(path, engine='openpyxl', mode='a') as writer:
+            for sheet_name, headers in sheets:
+                normalized_frames[sheet_name].reindex(columns=headers, fill_value='').to_excel(
+                    writer,
+                    sheet_name=sheet_name,
+                    index=False,
+                )
 
 
 def cleanup_old_backups(db_path, max_backups=5):
@@ -1937,6 +2201,62 @@ def migrate_excel_workbook(path):
             except Exception:
                 pass
         wb.save(path)
+
+    # Ensure canonical sheets always use the latest canonical columns
+    # (adds newly introduced columns to existing workbooks without data loss).
+    try:
+        for cname, headers in _const.excel_sheets.items():
+            try:
+                existing = _pd.read_excel(path, sheet_name=cname, dtype=str)
+            except Exception:
+                existing = _pd.DataFrame(columns=headers)
+
+            if cname == 'Contrats':
+                aliases = getattr(_const, 'contrat_header_aliases', {}) or {}
+                for old_col, new_col in aliases.items():
+                    if old_col not in existing.columns:
+                        continue
+                    if new_col not in existing.columns:
+                        existing[new_col] = existing[old_col]
+                    else:
+                        try:
+                            old_vals = existing[old_col].fillna('').astype(str).str.strip()
+                            new_vals = existing[new_col].fillna('').astype(str).str.strip()
+                            mask = (new_vals == '') & (old_vals != '')
+                            existing.loc[mask, new_col] = existing.loc[mask, old_col]
+                        except Exception:
+                            pass
+                    try:
+                        existing.drop(columns=[old_col], inplace=True)
+                    except Exception:
+                        pass
+
+            aligned = existing.reindex(columns=headers, fill_value='')
+            if list(existing.columns) == list(headers):
+                continue
+
+            try:
+                with _pd.ExcelWriter(path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+                    aligned.to_excel(writer, sheet_name=cname, index=False)
+            except TypeError:
+                wb = load_workbook(path)
+                if cname in wb.sheetnames:
+                    try:
+                        std = wb[cname]
+                        wb.remove(std)
+                        wb.save(path)
+                    except Exception:
+                        pass
+                with _pd.ExcelWriter(path, engine='openpyxl', mode='a') as writer:
+                    aligned.to_excel(writer, sheet_name=cname, index=False)
+    except Exception:
+        logger.exception('Failed to align canonical workbook columns during migration')
+
+    try:
+        normalize_excel_storage(path)
+    except Exception:
+        logger.exception('Failed to normalize canonical workbook values during migration')
+
     # Ensure Excel date columns use a readable date number format
     try:
         # Reload constants to get canonical headers

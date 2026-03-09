@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from tkcalendar import DateEntry
 from typing import Optional, List
+from decimal import Decimal, InvalidOperation
 from ..utils.constants import DenSte, Formjur, Capital, PartsSocial, SteAdresse, Tribunnaux
 from ..utils.utils import ThemeManager, WidgetFactory
 
@@ -22,12 +23,14 @@ class SocieteForm(ttk.Frame):
 
         # Liste pour stocker les références aux combobox
         self.combos = []
+        self._numeric_entry_bindings = []
 
         # Variables pour stocker les valeurs des champs
         self.initialize_variables()
 
         # Création du formulaire
         self.setup_gui()
+        self._apply_numeric_display_format()
 
         # Définir les valeurs initiales si fournies
         if values_dict:
@@ -48,6 +51,15 @@ class SocieteForm(ttk.Frame):
         self.parts_social_var = tk.StringVar(value=defaults['parts_social'])
         self.valeur_nominale_var = tk.StringVar(value=defaults['valeur_nominale'])
         self.mode_signature_gerance_var = tk.StringVar(value=defaults['mode_signature_gerance'])
+        self.type_generation_var = tk.StringVar(
+            value=self._normalize_generation_type(defaults.get('type_generation'))
+        )
+        self.procedure_creation_var = tk.StringVar(
+            value=self._normalize_creation_procedure(defaults.get('procedure_creation'))
+        )
+        self.mode_depot_creation_var = tk.StringVar(
+            value=self._normalize_creation_depot_mode(defaults.get('mode_depot_creation'))
+        )
 
         # Load reference data from database
         self.ste_adresses = get_reference_data('SteAdresses')
@@ -80,6 +92,9 @@ class SocieteForm(ttk.Frame):
             'adresse': defaults_mgr.get_default('societe', 'SteAdresse') or (SteAdresse[0] if SteAdresse else ""),
             'tribunal': defaults_mgr.get_default('societe', 'Tribunal') or (Tribunnaux[0] if Tribunnaux else ""),
             'mode_signature_gerance': defaults_mgr.get_default('societe', 'ModeSignatureGerance') or "separee",
+            'type_generation': defaults_mgr.get_default('societe', 'TypeGeneration') or "creation",
+            'procedure_creation': defaults_mgr.get_default('societe', 'ProcedureCreation') or "normal",
+            'mode_depot_creation': defaults_mgr.get_default('societe', 'ModeDepotCreation') or "depot_physique",
         }
 
     def reset(self):
@@ -96,13 +111,21 @@ class SocieteForm(ttk.Frame):
         self.ste_adress_var.set(defaults['adresse'])
         self.tribunal_var.set(defaults['tribunal'])
         self.mode_signature_gerance_var.set(defaults['mode_signature_gerance'])
+        self.type_generation_var.set(self._normalize_generation_type(defaults.get('type_generation')))
+        self.procedure_creation_var.set(self._normalize_creation_procedure(defaults.get('procedure_creation')))
+        self.mode_depot_creation_var.set(self._normalize_creation_depot_mode(defaults.get('mode_depot_creation')))
         self.clear_all_activities()
         self._update_mode_signature_visibility()
+        self._update_generation_options_visibility()
+        self._apply_numeric_display_format()
 
     def setup_gui(self):
         """Configure une mise en page compacte sans sous-blocs internes."""
         main_frame = ttk.Frame(self, padding=(10, 5))
         main_frame.pack(fill="both", expand=True)
+
+        # Première section après le grand titre: nature de procédure de création
+        self._create_generation_options_section(main_frame)
 
         fields = ttk.Frame(main_frame)
         fields.pack(fill="x", padx=5, pady=(2, 4))
@@ -161,13 +184,19 @@ class SocieteForm(ttk.Frame):
 
         # Ligne 2: Adresse en dernier (2 colonnes)
         capital_cell = _cell(1, 0, "Capital:")
-        ttk.Entry(capital_cell, textvariable=self.capital_var).grid(row=1, column=0, sticky="ew")
+        capital_entry = ttk.Entry(capital_cell, textvariable=self.capital_var)
+        capital_entry.grid(row=1, column=0, sticky="ew")
+        self._bind_numeric_entry(capital_entry, self.capital_var)
 
         parts_cell = _cell(1, 1, "Parts:")
-        ttk.Entry(parts_cell, textvariable=self.parts_social_var).grid(row=1, column=0, sticky="ew")
+        parts_entry = ttk.Entry(parts_cell, textvariable=self.parts_social_var)
+        parts_entry.grid(row=1, column=0, sticky="ew")
+        self._bind_numeric_entry(parts_entry, self.parts_social_var)
 
         valeur_nominale_cell = _cell(1, 2, "Valeur nominale (DH):")
-        ttk.Entry(valeur_nominale_cell, textvariable=self.valeur_nominale_var).grid(row=1, column=0, sticky="ew")
+        valeur_nominale_entry = ttk.Entry(valeur_nominale_cell, textvariable=self.valeur_nominale_var)
+        valeur_nominale_entry.grid(row=1, column=0, sticky="ew")
+        self._bind_numeric_entry(valeur_nominale_entry, self.valeur_nominale_var)
 
         adresse_cell = _cell(1, 3, "Adresse:", span=2)
         adresse_combo = ttk.Combobox(adresse_cell, textvariable=self.ste_adress_var, values=self.ste_adresses)
@@ -188,6 +217,170 @@ class SocieteForm(ttk.Frame):
 
         # Ligne 3+: activités
         self.create_activities_section(main_frame)
+
+    @staticmethod
+    def _format_numeric_text(value: str) -> str:
+        text = str(value or '').strip()
+        if not text:
+            return ''
+
+        normalized = text.replace('\xa0', ' ').replace(' ', '')
+        if ',' in normalized and '.' in normalized:
+            normalized = normalized.replace(',', '')
+        elif ',' in normalized:
+            normalized = normalized.replace(',', '.')
+
+        try:
+            number = Decimal(normalized)
+        except (InvalidOperation, ValueError):
+            return text
+
+        if number == number.to_integral():
+            return f"{int(number):,}".replace(',', ' ')
+
+        decimals = normalized.split('.', 1)[1] if '.' in normalized else ''
+        trimmed_decimals = decimals.rstrip('0')
+        decimal_places = min(max(len(trimmed_decimals), 1), 4)
+        formatted = f"{number:,.{decimal_places}f}"
+        integer_part, fractional_part = formatted.split('.')
+        integer_part = integer_part.replace(',', ' ')
+        fractional_part = fractional_part.rstrip('0')
+        if not fractional_part:
+            return integer_part
+        return f"{integer_part},{fractional_part}"
+
+    def _on_numeric_focus_out(self, variable: tk.StringVar):
+        try:
+            variable.set(self._format_numeric_text(variable.get()))
+        except Exception:
+            pass
+
+    def _bind_numeric_entry(self, entry: ttk.Entry, variable: tk.StringVar):
+        entry.bind("<FocusOut>", lambda _event, var=variable: self._on_numeric_focus_out(var), add="+")
+        entry.bind("<Return>", lambda _event, var=variable: self._on_numeric_focus_out(var), add="+")
+        self._numeric_entry_bindings.append((entry, variable))
+
+    def _apply_numeric_display_format(self):
+        for _entry, variable in self._numeric_entry_bindings:
+            self._on_numeric_focus_out(variable)
+
+    @staticmethod
+    def _normalize_generation_type(raw_value) -> str:
+        raw = str(raw_value or "").strip().lower()
+        mapping = {
+            "creation": "creation",
+            "création": "creation",
+            "domiciliation": "domiciliation",
+        }
+        return mapping.get(raw, "creation")
+
+    @staticmethod
+    def _normalize_creation_procedure(raw_value) -> str:
+        raw = str(raw_value or "").strip().lower()
+        mapping = {
+            "normal": "normal",
+            "acceleree": "acceleree",
+            "accélérée": "acceleree",
+            "accelere": "acceleree",
+            "accélérer": "acceleree",
+        }
+        return mapping.get(raw, "normal")
+
+    @staticmethod
+    def _normalize_creation_depot_mode(raw_value) -> str:
+        raw = str(raw_value or "").strip().lower()
+        mapping = {
+            "depot_physique": "depot_physique",
+            "dépôt physique": "depot_physique",
+            "depot physique": "depot_physique",
+            "physique": "depot_physique",
+            "depot_en_ligne": "depot_en_ligne",
+            "dépôt en ligne": "depot_en_ligne",
+            "depot en ligne": "depot_en_ligne",
+            "en_ligne": "depot_en_ligne",
+            "en ligne": "depot_en_ligne",
+        }
+        return mapping.get(raw, "depot_physique")
+
+    def _create_generation_options_section(self, parent):
+        section = ttk.LabelFrame(parent, text="Nature de Procédure de Création", padding=(8, 8))
+        section.pack(fill="x", padx=5, pady=(0, 6))
+        section.columnconfigure(0, weight=1)
+
+        generation_row = ttk.Frame(section)
+        generation_row.grid(row=0, column=0, sticky="w")
+        ttk.Radiobutton(
+            generation_row,
+            text="Création",
+            variable=self.type_generation_var,
+            value="creation",
+            command=self._on_generation_options_changed,
+        ).pack(side="left", padx=(0, 14))
+        ttk.Radiobutton(
+            generation_row,
+            text="Domiciliation",
+            variable=self.type_generation_var,
+            value="domiciliation",
+            command=self._on_generation_options_changed,
+        ).pack(side="left")
+
+        self.creation_procedure_frame = ttk.Frame(section)
+        self.creation_procedure_frame.grid(row=1, column=0, sticky="w", pady=(8, 0))
+        ttk.Label(self.creation_procedure_frame, text="Procédure (Création):").pack(side="left", padx=(0, 8))
+        ttk.Radiobutton(
+            self.creation_procedure_frame,
+            text="Normal",
+            variable=self.procedure_creation_var,
+            value="normal",
+            command=self._on_generation_options_changed,
+        ).pack(side="left", padx=(0, 10))
+        ttk.Radiobutton(
+            self.creation_procedure_frame,
+            text="Accélérer",
+            variable=self.procedure_creation_var,
+            value="acceleree",
+            command=self._on_generation_options_changed,
+        ).pack(side="left")
+
+        self.creation_depot_frame = ttk.Frame(section)
+        self.creation_depot_frame.grid(row=2, column=0, sticky="w", pady=(6, 0))
+        ttk.Label(self.creation_depot_frame, text="Dépôt (Accélérer):").pack(side="left", padx=(0, 8))
+        ttk.Radiobutton(
+            self.creation_depot_frame,
+            text="Dépôt Physique",
+            variable=self.mode_depot_creation_var,
+            value="depot_physique",
+            command=self._on_generation_options_changed,
+        ).pack(side="left", padx=(0, 10))
+        ttk.Radiobutton(
+            self.creation_depot_frame,
+            text="Dépôt En Ligne",
+            variable=self.mode_depot_creation_var,
+            value="depot_en_ligne",
+            command=self._on_generation_options_changed,
+        ).pack(side="left")
+
+        self._update_generation_options_visibility()
+
+    def _on_generation_options_changed(self, *_args):
+        self._update_generation_options_visibility()
+
+    def _update_generation_options_visibility(self):
+        generation_type = self._normalize_generation_type(self.type_generation_var.get())
+        is_creation = generation_type == "creation"
+        is_accelerated = is_creation and self._normalize_creation_procedure(self.procedure_creation_var.get()) == "acceleree"
+
+        if hasattr(self, "creation_procedure_frame"):
+            if is_creation:
+                self.creation_procedure_frame.grid()
+            else:
+                self.creation_procedure_frame.grid_remove()
+
+        if hasattr(self, "creation_depot_frame"):
+            if is_accelerated:
+                self.creation_depot_frame.grid()
+            else:
+                self.creation_depot_frame.grid_remove()
 
     def create_activities_section(self, parent):
         """Crée une section activités sous forme de tableau compact."""
@@ -226,7 +419,7 @@ class SocieteForm(ttk.Frame):
         border_color = '#555555' if getattr(self.theme_manager, 'is_dark_mode', True) else '#cccccc'
         self.activities_canvas = tk.Canvas(
             list_area,
-            height=300,
+            height=220,
             bg=canvas_bg,
             highlightthickness=1,
             highlightbackground=border_color,
@@ -492,6 +685,17 @@ class SocieteForm(ttk.Frame):
 
     def get_values(self):
         """Récupère toutes les valeurs du formulaire"""
+        self._apply_numeric_display_format()
+        generation_type = self._normalize_generation_type(self.type_generation_var.get())
+        creation_procedure = self._normalize_creation_procedure(self.procedure_creation_var.get())
+        depot_mode = self._normalize_creation_depot_mode(self.mode_depot_creation_var.get())
+
+        if generation_type != 'creation':
+            creation_procedure = ''
+            depot_mode = ''
+        elif creation_procedure != 'acceleree':
+            depot_mode = ''
+
         values = {
             'denomination': self.den_ste_var.get(),
             'forme_juridique': self.forme_jur_var.get(),
@@ -504,6 +708,12 @@ class SocieteForm(ttk.Frame):
             'valeur_nominale': self.valeur_nominale_var.get(),
             'adresse': self.ste_adress_var.get(),
             'tribunal': self.tribunal_var.get(),
+            'type_generation': generation_type,
+            'generation_type': generation_type,
+            'procedure_creation': creation_procedure,
+            'creation_procedure': creation_procedure,
+            'mode_depot_creation': depot_mode,
+            'creation_depot_mode': depot_mode,
             'activites': [var.get().strip() for var in self.activites_vars if var.get().strip()]
         }
         if self._is_sarl_form():
@@ -532,7 +742,37 @@ class SocieteForm(ttk.Frame):
         self.mode_signature_gerance_var.set(
             values_dict.get('mode_signature_gerance', values_dict.get('mode_signature', self.mode_signature_gerance_var.get()))
         )
+
+        generation_type = values_dict.get(
+            'type_generation',
+            values_dict.get(
+                'generation_type',
+                values_dict.get('TYPE_GENERATION', self.type_generation_var.get())
+            )
+        )
+        self.type_generation_var.set(self._normalize_generation_type(generation_type))
+
+        creation_procedure = values_dict.get(
+            'procedure_creation',
+            values_dict.get(
+                'creation_procedure',
+                values_dict.get('PROCEDURE_CREATION', self.procedure_creation_var.get())
+            )
+        )
+        self.procedure_creation_var.set(self._normalize_creation_procedure(creation_procedure))
+
+        depot_mode = values_dict.get(
+            'mode_depot_creation',
+            values_dict.get(
+                'creation_depot_mode',
+                values_dict.get('MODE_DEPOT_CREATION', self.mode_depot_creation_var.get())
+            )
+        )
+        self.mode_depot_creation_var.set(self._normalize_creation_depot_mode(depot_mode))
+
         self._update_mode_signature_visibility()
+        self._update_generation_options_visibility()
+        self._apply_numeric_display_format()
 
         # Mise à jour des activités
         self._clear_activities(load_defaults=False)

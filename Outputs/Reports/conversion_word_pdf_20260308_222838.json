@@ -1,0 +1,60 @@
+{
+  "tool": "word_pdf_batch",
+  "generated_at": "2026-03-08T22:28:38",
+  "source_dir": "C:\\Users\\Dev\\Desktop\\2026-03-07_DosDom_SARL_PERSONA\\2026-03-08_DosCré_SARL_SLAMA",
+  "recursive": true,
+  "engine": "docx2pdf",
+  "global_status": "ok",
+  "global_error": null,
+  "total_files": 6,
+  "success_count": 6,
+  "skipped_count": 0,
+  "error_count": 0,
+  "duration_seconds": 48.047,
+  "files": [
+    {
+      "source_docx": "C:\\Users\\Dev\\Desktop\\2026-03-07_DosDom_SARL_PERSONA\\2026-03-08_DosCré_SARL_SLAMA\\2026-03-08_SARL_Annonce_SLAMA.docx",
+      "out_pdf": "C:\\Users\\Dev\\Desktop\\2026-03-07_DosDom_SARL_PERSONA\\2026-03-08_DosCré_SARL_SLAMA\\2026-03-08_SARL_Annonce_SLAMA.pdf",
+      "status": "ok",
+      "error": "",
+      "duration_seconds": 6.218
+    },
+    {
+      "source_docx": "C:\\Users\\Dev\\Desktop\\2026-03-07_DosDom_SARL_PERSONA\\2026-03-08_DosCré_SARL_SLAMA\\2026-03-08_SARL_Attestation_SLAMA.docx",
+      "out_pdf": "C:\\Users\\Dev\\Desktop\\2026-03-07_DosDom_SARL_PERSONA\\2026-03-08_DosCré_SARL_SLAMA\\2026-03-08_SARL_Attestation_SLAMA.pdf",
+      "status": "ok",
+      "error": "",
+      "duration_seconds": 12.55
+    },
+    {
+      "source_docx": "C:\\Users\\Dev\\Desktop\\2026-03-07_DosDom_SARL_PERSONA\\2026-03-08_DosCré_SARL_SLAMA\\2026-03-08_SARL_Contrat_SLAMA.docx",
+      "out_pdf": "C:\\Users\\Dev\\Desktop\\2026-03-07_DosDom_SARL_PERSONA\\2026-03-08_DosCré_SARL_SLAMA\\2026-03-08_SARL_Contrat_SLAMA.pdf",
+      "status": "ok",
+      "error": "",
+      "duration_seconds": 9.107
+    },
+    {
+      "source_docx": "C:\\Users\\Dev\\Desktop\\2026-03-07_DosDom_SARL_PERSONA\\2026-03-08_DosCré_SARL_SLAMA\\2026-03-08_SARL_Declaration_SLAMA.docx",
+      "out_pdf": "C:\\Users\\Dev\\Desktop\\2026-03-07_DosDom_SARL_PERSONA\\2026-03-08_DosCré_SARL_SLAMA\\2026-03-08_SARL_Declaration_SLAMA.pdf",
+      "status": "ok",
+      "error": "",
+      "duration_seconds": 5.068
+    },
+    {
+      "source_docx": "C:\\Users\\Dev\\Desktop\\2026-03-07_DosDom_SARL_PERSONA\\2026-03-08_DosCré_SARL_SLAMA\\2026-03-08_SARL_Depot_SLAMA.docx",
+      "out_pdf": "C:\\Users\\Dev\\Desktop\\2026-03-07_DosDom_SARL_PERSONA\\2026-03-08_DosCré_SARL_SLAMA\\2026-03-08_SARL_Depot_SLAMA.pdf",
+      "status": "ok",
+      "error": "",
+      "duration_seconds": 6.716
+    },
+    {
+      "source_docx": "C:\\Users\\Dev\\Desktop\\2026-03-07_DosDom_SARL_PERSONA\\2026-03-08_DosCré_SARL_SLAMA\\2026-03-08_SARL_Statuts_SLAMA.docx",
+      "out_pdf": "C:\\Users\\Dev\\Desktop\\2026-03-07_DosDom_SARL_PERSONA\\2026-03-08_DosCré_SARL_SLAMA\\2026-03-08_SARL_Statuts_SLAMA.pdf",
+      "status": "ok",
+      "error": "",
+      "duration_seconds": 7.943
+    }
+  ],
+  "report_json": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\Outputs\\Reports\\conversion_word_pdf_20260308_222838.json",
+  "report_html": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\Outputs\\Reports\\conversion_word_pdf_20260308_222838.html"
+}

@@ -1,0 +1,53 @@
+{
+  "tool": "word_pdf_batch",
+  "generated_at": "2026-03-08T22:34:40",
+  "source_dir": "C:\\Users\\Dev\\Desktop\\2026-03-07_DosDom_SARL_PERSONA\\2026-03-08_DosCré_SARL_LA_COMMUNE",
+  "recursive": true,
+  "engine": "docx2pdf",
+  "global_status": "ok",
+  "global_error": null,
+  "total_files": 5,
+  "success_count": 5,
+  "skipped_count": 0,
+  "error_count": 0,
+  "duration_seconds": 60.142,
+  "files": [
+    {
+      "source_docx": "C:\\Users\\Dev\\Desktop\\2026-03-07_DosDom_SARL_PERSONA\\2026-03-08_DosCré_SARL_LA_COMMUNE\\2026-03-08_SARL_Annonce_LA_COMMUNE.docx",
+      "out_pdf": "C:\\Users\\Dev\\Desktop\\2026-03-07_DosDom_SARL_PERSONA\\2026-03-08_DosCré_SARL_LA_COMMUNE\\2026-03-08_SARL_Annonce_LA_COMMUNE.pdf",
+      "status": "ok",
+      "error": "",
+      "duration_seconds": 3.889
+    },
+    {
+      "source_docx": "C:\\Users\\Dev\\Desktop\\2026-03-07_DosDom_SARL_PERSONA\\2026-03-08_DosCré_SARL_LA_COMMUNE\\2026-03-08_SARL_Attestation_LA_COMMUNE.docx",
+      "out_pdf": "C:\\Users\\Dev\\Desktop\\2026-03-07_DosDom_SARL_PERSONA\\2026-03-08_DosCré_SARL_LA_COMMUNE\\2026-03-08_SARL_Attestation_LA_COMMUNE.pdf",
+      "status": "ok",
+      "error": "",
+      "duration_seconds": 17.145
+    },
+    {
+      "source_docx": "C:\\Users\\Dev\\Desktop\\2026-03-07_DosDom_SARL_PERSONA\\2026-03-08_DosCré_SARL_LA_COMMUNE\\2026-03-08_SARL_Contrat_LA_COMMUNE.docx",
+      "out_pdf": "C:\\Users\\Dev\\Desktop\\2026-03-07_DosDom_SARL_PERSONA\\2026-03-08_DosCré_SARL_LA_COMMUNE\\2026-03-08_SARL_Contrat_LA_COMMUNE.pdf",
+      "status": "ok",
+      "error": "",
+      "duration_seconds": 16.271
+    },
+    {
+      "source_docx": "C:\\Users\\Dev\\Desktop\\2026-03-07_DosDom_SARL_PERSONA\\2026-03-08_DosCré_SARL_LA_COMMUNE\\2026-03-08_SARL_Declaration_LA_COMMUNE.docx",
+      "out_pdf": "C:\\Users\\Dev\\Desktop\\2026-03-07_DosDom_SARL_PERSONA\\2026-03-08_DosCré_SARL_LA_COMMUNE\\2026-03-08_SARL_Declaration_LA_COMMUNE.pdf",
+      "status": "ok",
+      "error": "",
+      "duration_seconds": 13.097
+    },
+    {
+      "source_docx": "C:\\Users\\Dev\\Desktop\\2026-03-07_DosDom_SARL_PERSONA\\2026-03-08_DosCré_SARL_LA_COMMUNE\\2026-03-08_SARL_Depot_LA_COMMUNE.docx",
+      "out_pdf": "C:\\Users\\Dev\\Desktop\\2026-03-07_DosDom_SARL_PERSONA\\2026-03-08_DosCré_SARL_LA_COMMUNE\\2026-03-08_SARL_Depot_LA_COMMUNE.pdf",
+      "status": "ok",
+      "error": "",
+      "duration_seconds": 9.595
+    }
+  ],
+  "report_json": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\Outputs\\Reports\\conversion_word_pdf_20260308_223440.json",
+  "report_html": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\Outputs\\Reports\\conversion_word_pdf_20260308_223440.html"
+}

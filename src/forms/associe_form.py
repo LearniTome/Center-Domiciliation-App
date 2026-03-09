@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from tkcalendar import DateEntry
 from typing import Optional, Callable, Tuple, List
+from decimal import Decimal, InvalidOperation
 from src.utils.utils import ThemeManager
 
 class AssocieForm(ttk.Frame):
@@ -64,6 +65,7 @@ class AssocieForm(ttk.Frame):
         self._is_updating_distribution = False
         self._label_width = 12
         self._label_width_long = 18
+        self._numeric_entry_bindings = []
         self._init_local_styles()
 
         # Load reference data from database
@@ -309,7 +311,9 @@ class AssocieForm(ttk.Frame):
         ttk.Entry(adr_cell, textvariable=vars_dict['adresse']).grid(row=1, column=0, sticky="ew")
 
         pct_cell = _cell(2, 2, "% des parts:")
-        ttk.Entry(pct_cell, textvariable=vars_dict['percentage']).grid(row=1, column=0, sticky="ew")
+        pct_entry = ttk.Entry(pct_cell, textvariable=vars_dict['percentage'])
+        pct_entry.grid(row=1, column=0, sticky="ew")
+        self._bind_numeric_entry(pct_entry, vars_dict['percentage'], decimals=4)
 
         cap_cell = _cell(2, 3, "Capital détenu (DH):")
         capital_entry = ttk.Entry(
@@ -644,7 +648,9 @@ class AssocieForm(ttk.Frame):
         pct_cell = ttk.Frame(grid)
         pct_cell.columnconfigure(0, weight=1)
         ttk.Label(pct_cell, text="% des parts:", anchor="w").grid(row=0, column=0, sticky="w", pady=(0, 1))
-        ttk.Entry(pct_cell, textvariable=vars_dict['percentage']).grid(row=1, column=0, sticky="ew")
+        pct_entry = ttk.Entry(pct_cell, textvariable=vars_dict['percentage'])
+        pct_entry.grid(row=1, column=0, sticky="ew")
+        self._bind_numeric_entry(pct_entry, vars_dict['percentage'], decimals=4)
 
         cap_cell = ttk.Frame(grid)
         cap_cell.columnconfigure(0, weight=1)
@@ -849,6 +855,7 @@ class AssocieForm(ttk.Frame):
 
     def get_values(self):
         """Retourne la liste des associés sous forme de dictionnaires."""
+        self._apply_numeric_display_format()
         results = []
         for vars_dict in self.associe_vars:
             item = {}
@@ -915,6 +922,7 @@ class AssocieForm(ttk.Frame):
                             pass
         finally:
             self._is_updating_distribution = False
+        self._apply_numeric_display_format()
         self._backfill_percentages_for_loaded_data()
         self._redistribute_by_percentages()
 
@@ -977,12 +985,64 @@ class AssocieForm(ttk.Frame):
     def _format_number(self, value: Optional[float], decimals: int = 2) -> str:
         if value is None:
             return ''
+        try:
+            number = Decimal(str(float(value)))
+        except Exception:
+            return ''
         if decimals <= 0:
-            return str(int(round(value)))
-        s = f"{float(value):.{decimals}f}"
-        if '.' in s:
-            s = s.rstrip('0').rstrip('.')
-        return s
+            return f"{int(round(float(value))):,}".replace(',', ' ')
+        s = f"{float(value):,.{decimals}f}"
+        integer_part, fractional_part = s.split('.')
+        integer_part = integer_part.replace(',', ' ')
+        fractional_part = fractional_part.rstrip('0')
+        if not fractional_part:
+            return integer_part
+        return f"{integer_part},{fractional_part}"
+
+    def _format_numeric_text(self, value, decimals: int = 4) -> str:
+        text = str(value or '').strip()
+        if not text:
+            return ''
+        normalized = text.replace('\xa0', ' ').replace(' ', '')
+        if ',' in normalized and '.' in normalized:
+            normalized = normalized.replace(',', '')
+        elif ',' in normalized:
+            normalized = normalized.replace(',', '.')
+        try:
+            number = Decimal(normalized)
+        except (InvalidOperation, ValueError):
+            return text
+
+        if decimals <= 0:
+            return f"{int(round(float(number))):,}".replace(',', ' ')
+
+        rendered = f"{float(number):,.{decimals}f}"
+        integer_part, fractional_part = rendered.split('.')
+        integer_part = integer_part.replace(',', ' ')
+        fractional_part = fractional_part.rstrip('0')
+        if not fractional_part:
+            return integer_part
+        return f"{integer_part},{fractional_part}"
+
+    def _bind_numeric_entry(self, entry: ttk.Entry, variable, decimals: int = 4):
+        entry.bind(
+            "<FocusOut>",
+            lambda _event, var=variable, places=decimals: var.set(self._format_numeric_text(var.get(), places)),
+            add="+",
+        )
+        entry.bind(
+            "<Return>",
+            lambda _event, var=variable, places=decimals: var.set(self._format_numeric_text(var.get(), places)),
+            add="+",
+        )
+        self._numeric_entry_bindings.append((entry, variable, decimals))
+
+    def _apply_numeric_display_format(self):
+        for _entry, variable, decimals in self._numeric_entry_bindings:
+            try:
+                variable.set(self._format_numeric_text(variable.get(), decimals))
+            except Exception:
+                pass
 
     def _get_societe_totals(self) -> Tuple[Optional[float], Optional[int]]:
         """Return (capital_total, parts_total) from callback or top-level MainForm."""
@@ -1068,7 +1128,7 @@ class AssocieForm(ttk.Frame):
                 else:
                     int_parts = [max(0, int(round(x))) for x in raw_parts]
                 for idx, vars_dict in enumerate(self.associe_vars):
-                    vars_dict['num_parts'].set(str(max(0, int_parts[idx])))
+                    vars_dict['num_parts'].set(self._format_number(max(0, int_parts[idx]), 0))
         finally:
             self._is_updating_distribution = False
         self._update_repartition_status()
@@ -1130,7 +1190,7 @@ class AssocieForm(ttk.Frame):
         total_pct = sum(self._iter_percentages()) if self.associe_vars else 0.0
         cap_total, parts_total = self._get_societe_totals()
         cap_txt = self._format_number(cap_total, 2) if cap_total is not None else '—'
-        parts_txt = str(parts_total) if parts_total is not None else '—'
+        parts_txt = self._format_number(parts_total, 0) if parts_total is not None else '—'
 
         if not self.associe_vars:
             self._set_status("Répartition: aucun associé", 'neutral')
@@ -1237,3 +1297,4 @@ class AssocieForm(ttk.Frame):
         self._capital_layout_widgets = {}
         self._remove_buttons = {}
         self._associe_layout_widgets = {}
+        self._numeric_entry_bindings = []

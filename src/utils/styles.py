@@ -1,10 +1,17 @@
+import logging
 from tkinter import ttk
 from ttkthemes import ThemedStyle
+
+logger = logging.getLogger(__name__)
 
 class ModernTheme:
     def __init__(self, root, mode: str = 'light'):
         self.root = root
-        self.style = ThemedStyle(root)
+        try:
+            self.style = ThemedStyle(root)
+        except Exception:
+            logger.exception("ThemedStyle indisponible, fallback vers ttk.Style")
+            self.style = ttk.Style(root)
         self.mode = mode if mode in ('light', 'dark') else 'light'
         self.setup_colors()
         self.apply_theme()
@@ -59,7 +66,10 @@ class ModernTheme:
 
     def apply_theme(self):
         """Applique le thème moderne à tous les widgets"""
-        self.style.set_theme("clam")
+        try:
+            self.style.set_theme("clam")
+        except AttributeError:
+            self.style.theme_use("clam")
 
         # Configuration générale
         # Base style applied to all widgets: set default font and colors
@@ -132,13 +142,15 @@ class ModernTheme:
         upload_bg = '#5F8577'
         copy_bg = '#8A7A66'
         compact_pad = (10, 6)
+        unified_button_pad = (12, 7)
+        unified_button_font = ('Segoe UI', 10, 'bold')
 
         # Style principal pour les boutons
         self.style.configure('TButton',
             background=self.colors['accent'],
             foreground='white',
-            font=('Segoe UI', 10),
-            padding=compact_pad,
+            font=unified_button_font,
+            padding=unified_button_pad,
             relief='flat',
             borderwidth=1)
 
@@ -146,10 +158,31 @@ class ModernTheme:
         self.style.configure('Nav.TButton',
             background=self.colors['accent'],
             foreground='white',
-            font=('Segoe UI', 10),
-            padding=compact_pad,
+            font=unified_button_font,
+            padding=unified_button_pad,
             relief='flat',
             borderwidth=1)
+
+        tab_inactive_bg = '#343434' if self.mode == 'dark' else '#e7ebf0'
+        tab_inactive_fg = '#d7dbe0' if self.mode == 'dark' else '#46515d'
+        tab_active_bg = '#7b8794' if self.mode == 'dark' else '#c9d5e2'
+        tab_active_fg = '#ffffff' if self.mode == 'dark' else '#223042'
+
+        self.style.configure('DashboardTab.TButton',
+            background=tab_inactive_bg,
+            foreground=tab_inactive_fg,
+            relief='flat',
+            borderwidth=0,
+            padding=(16, 8),
+            font=('Segoe UI', 10, 'bold'))
+
+        self.style.configure('DashboardTabActive.TButton',
+            background=tab_active_bg,
+            foreground=tab_active_fg,
+            relief='solid',
+            borderwidth=1,
+            padding=(18, 9),
+            font=('Segoe UI', 10, 'bold'))
 
         # Style pour les boutons d'action
         self.style.configure('Action.TButton',
@@ -167,8 +200,8 @@ class ModernTheme:
             foreground=secondary_fg,
             relief='solid',
             borderwidth=1,
-            padding=compact_pad,
-            font=('Segoe UI', 10))
+            padding=unified_button_pad,
+            font=unified_button_font)
 
         # Make other logical button styles visually match Secondary by default
         try:
@@ -177,19 +210,22 @@ class ModernTheme:
                 foreground=secondary_fg,
                 relief='solid',
                 borderwidth=1,
-                padding=compact_pad)
+                padding=unified_button_pad,
+                font=unified_button_font)
             self.style.configure('Action.TButton',
                 background=secondary_bg,
                 foreground=secondary_fg,
                 relief='solid',
                 borderwidth=1,
-                padding=compact_pad)
+                padding=unified_button_pad,
+                font=unified_button_font)
             self.style.configure('Danger.TButton',
                 background=secondary_bg,
                 foreground=secondary_fg,
                 relief='solid',
                 borderwidth=1,
-                padding=compact_pad)
+                padding=unified_button_pad,
+                font=unified_button_font)
         except Exception:
             pass
 
@@ -204,8 +240,8 @@ class ModernTheme:
             foreground='white',
             relief='solid',
             borderwidth=1,
-            padding=(12, 7),
-            font=('Segoe UI', 10, 'bold'))
+            padding=unified_button_pad,
+            font=unified_button_font)
 
         # Boutons d'annulation (rouge doux)
         self.style.configure('Cancel.TButton',
@@ -213,8 +249,8 @@ class ModernTheme:
             foreground='white',
             relief='solid',
             borderwidth=1,
-            padding=(12, 7),
-            font=('Segoe UI', 10, 'bold'))
+            padding=unified_button_pad,
+            font=unified_button_font)
 
         # Boutons de gestion (bleu doux)
         self.style.configure('Manage.TButton',
@@ -222,8 +258,8 @@ class ModernTheme:
             foreground='white',
             relief='solid',
             borderwidth=1,
-            padding=compact_pad,
-            font=('Segoe UI', 9))
+            padding=unified_button_pad,
+            font=unified_button_font)
 
         # Quatre styles dédiés pour les actions de modèles (couleurs différenciées)
         self.style.configure('Refresh.TButton',
@@ -231,29 +267,29 @@ class ModernTheme:
             foreground='white',
             relief='solid',
             borderwidth=1,
-            padding=compact_pad,
-            font=('Segoe UI', 9))
+            padding=unified_button_pad,
+            font=unified_button_font)
         self.style.configure('View.TButton',
             background=view_bg,
             foreground='white',
             relief='solid',
             borderwidth=1,
-            padding=compact_pad,
-            font=('Segoe UI', 9))
+            padding=unified_button_pad,
+            font=unified_button_font)
         self.style.configure('Upload.TButton',
             background=upload_bg,
             foreground='white',
             relief='solid',
             borderwidth=1,
-            padding=compact_pad,
-            font=('Segoe UI', 9))
+            padding=unified_button_pad,
+            font=unified_button_font)
         self.style.configure('Copy.TButton',
             background=copy_bg,
             foreground='white',
             relief='solid',
             borderwidth=1,
-            padding=compact_pad,
-            font=('Segoe UI', 9))
+            padding=unified_button_pad,
+            font=unified_button_font)
 
         # Boutons de confirmation (bleu doux)
         self.style.configure('Confirm.TButton',
@@ -261,8 +297,8 @@ class ModernTheme:
             foreground='white',
             relief='solid',
             borderwidth=1,
-            padding=compact_pad,
-            font=('Segoe UI', 10, 'bold'))
+            padding=unified_button_pad,
+            font=unified_button_font)
 
         # Boutons de fermeture (gris doux)
         self.style.configure('Close.TButton',
@@ -270,8 +306,8 @@ class ModernTheme:
             foreground='white',
             relief='solid',
             borderwidth=1,
-            padding=compact_pad,
-            font=('Segoe UI', 10, 'bold'))
+            padding=unified_button_pad,
+            font=unified_button_font)
 
         # Make sure focus/active mappings don't introduce a distinct blue ring
         try:
@@ -285,6 +321,12 @@ class ModernTheme:
             self.style.map('Secondary.TButton',
                 background=[('active', '#5b5b5b' if self.mode == 'dark' else '#e7ebf0'), ('disabled', self.colors['disabled'])],
                 foreground=[('disabled', self.colors['fg'])])
+            self.style.map('DashboardTab.TButton',
+                background=[('active', '#444444' if self.mode == 'dark' else '#dde4ec'), ('disabled', self.colors['disabled'])],
+                foreground=[('disabled', '#bfc5cb' if self.mode == 'dark' else '#7a8691')])
+            self.style.map('DashboardTabActive.TButton',
+                background=[('active', '#8a97a5' if self.mode == 'dark' else '#d6e0ea'), ('disabled', self.colors['disabled'])],
+                foreground=[('disabled', '#d8d8d8' if self.mode == 'dark' else '#8a8a8a')])
             # Success button states
             self.style.map('Success.TButton',
                 background=[('active', '#5EAE88'), ('disabled', self.colors['disabled']), ('pressed', '#3F8767')],
