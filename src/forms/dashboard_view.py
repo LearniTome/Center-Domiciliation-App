@@ -110,6 +110,8 @@ class DashboardView(tk.Toplevel):
         self._search_var = tk.StringVar()
         self._column_filter_var = tk.StringVar()
         self._column_filter_column_var = tk.StringVar(value='(Toutes)')
+        self._column_filter_display_to_name = {'(Toutes)': '(Toutes)'}
+        self._column_filter_name_to_display = {'(Toutes)': '(Toutes)'}
         self._nav_buttons = {}
         self._action_buttons = {}
         self.empty_state_label: Optional[ttk.Label] = None
@@ -760,7 +762,8 @@ class DashboardView(tk.Toplevel):
         if not query:
             return df
 
-        selected_column = self._column_filter_column_var.get() or '(Toutes)'
+        selected_display = self._column_filter_column_var.get() or '(Toutes)'
+        selected_column = self._column_filter_display_to_name.get(selected_display, selected_display)
         try:
             if selected_column == '(Toutes)':
                 mask = df.astype(str).apply(
@@ -785,7 +788,22 @@ class DashboardView(tk.Toplevel):
             return
 
         columns = list(tree["columns"])
-        values = ['(Toutes)'] + columns
+        display_to_name = {'(Toutes)': '(Toutes)'}
+        name_to_display = {'(Toutes)': '(Toutes)'}
+        used_labels = {'(Toutes)'}
+
+        for col in columns:
+            base_label = self._column_label(col)
+            display_label = base_label
+            if display_label in used_labels:
+                display_label = f"{base_label} ({col})"
+            used_labels.add(display_label)
+            display_to_name[display_label] = col
+            name_to_display[col] = display_label
+
+        self._column_filter_display_to_name = display_to_name
+        self._column_filter_name_to_display = name_to_display
+        values = list(display_to_name.keys())
         try:
             self.column_filter_combo.configure(values=values)
         except Exception:

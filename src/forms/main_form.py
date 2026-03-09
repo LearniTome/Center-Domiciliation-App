@@ -42,8 +42,8 @@ class MainForm(ttk.Frame):
             'copy': 'Toolbar.Copy.TButton',
         }
         self.toolbar_button_widths = {
-            'tools': 16,
-            'dashboard': 16,
+            'tools': 14,
+            'dashboard': 18,
             'new': 12,
             'save': 14,
             'finish': 12,

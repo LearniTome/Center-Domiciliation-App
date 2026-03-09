@@ -60,6 +60,7 @@ class SocieteForm(ttk.Frame):
         self.mode_depot_creation_var = tk.StringVar(
             value=self._normalize_creation_depot_mode(defaults.get('mode_depot_creation'))
         )
+        self._societe_calc_trace_refs = []
 
         # Load reference data from database
         self.ste_adresses = get_reference_data('SteAdresses')
@@ -106,8 +107,8 @@ class SocieteForm(ttk.Frame):
         self.date_ice_var.set(defaults['date_ice'])
         self.date_expiration_certificat_negatif_var.set(defaults['date_expiration_certificat_negatif'])
         self.capital_var.set(defaults['capital'])
-        self.parts_social_var.set(defaults['parts_social'])
         self.valeur_nominale_var.set(defaults['valeur_nominale'])
+        self._update_parts_social()
         self.ste_adress_var.set(defaults['adresse'])
         self.tribunal_var.set(defaults['tribunal'])
         self.mode_signature_gerance_var.set(defaults['mode_signature_gerance'])
@@ -189,14 +190,14 @@ class SocieteForm(ttk.Frame):
         self._bind_numeric_entry(capital_entry, self.capital_var)
 
         parts_cell = _cell(1, 1, "Parts:")
-        parts_entry = ttk.Entry(parts_cell, textvariable=self.parts_social_var)
+        parts_entry = ttk.Entry(parts_cell, textvariable=self.parts_social_var, state="readonly")
         parts_entry.grid(row=1, column=0, sticky="ew")
-        self._bind_numeric_entry(parts_entry, self.parts_social_var)
 
         valeur_nominale_cell = _cell(1, 2, "Valeur nominale (DH):")
         valeur_nominale_entry = ttk.Entry(valeur_nominale_cell, textvariable=self.valeur_nominale_var)
         valeur_nominale_entry.grid(row=1, column=0, sticky="ew")
         self._bind_numeric_entry(valeur_nominale_entry, self.valeur_nominale_var)
+        self._bind_parts_social_calculation()
 
         adresse_cell = _cell(1, 3, "Adresse:", span=2)
         adresse_combo = ttk.Combobox(adresse_cell, textvariable=self.ste_adress_var, values=self.ste_adresses)
@@ -254,6 +255,7 @@ class SocieteForm(ttk.Frame):
             variable.set(self._format_numeric_text(variable.get()))
         except Exception:
             pass
+        self._update_parts_social()
 
     def _bind_numeric_entry(self, entry: ttk.Entry, variable: tk.StringVar):
         entry.bind("<FocusOut>", lambda _event, var=variable: self._on_numeric_focus_out(var), add="+")
@@ -263,6 +265,55 @@ class SocieteForm(ttk.Frame):
     def _apply_numeric_display_format(self):
         for _entry, variable in self._numeric_entry_bindings:
             self._on_numeric_focus_out(variable)
+        self._update_parts_social()
+
+    @staticmethod
+    def _parse_decimal(value):
+        text = str(value or '').strip()
+        if not text:
+            return None
+        normalized = text.replace('\xa0', ' ').replace(' ', '')
+        if ',' in normalized and '.' in normalized:
+            normalized = normalized.replace(',', '')
+        elif ',' in normalized:
+            normalized = normalized.replace(',', '.')
+        try:
+            return Decimal(normalized)
+        except (InvalidOperation, ValueError):
+            return None
+
+    @staticmethod
+    def _format_parts_value(value: Decimal) -> str:
+        if value == value.to_integral():
+            return f"{int(value):,}".replace(',', ' ')
+        rendered = f"{value:,.4f}"
+        integer_part, fractional_part = rendered.split('.')
+        integer_part = integer_part.replace(',', ' ')
+        fractional_part = fractional_part.rstrip('0')
+        if not fractional_part:
+            return integer_part
+        return f"{integer_part},{fractional_part}"
+
+    def _update_parts_social(self, *_args):
+        capital = self._parse_decimal(self.capital_var.get())
+        nominal = self._parse_decimal(self.valeur_nominale_var.get())
+        if capital is None or nominal is None or nominal == 0:
+            self.parts_social_var.set('')
+            return
+        try:
+            self.parts_social_var.set(self._format_parts_value(capital / nominal))
+        except Exception:
+            self.parts_social_var.set('')
+
+    def _bind_parts_social_calculation(self):
+        try:
+            for var in (self.capital_var, self.valeur_nominale_var):
+                self._societe_calc_trace_refs.append(
+                    (var, var.trace_add('write', self._update_parts_social))
+                )
+        except Exception:
+            pass
+        self._update_parts_social()
 
     @staticmethod
     def _normalize_generation_type(raw_value) -> str:
@@ -468,7 +519,7 @@ class SocieteForm(ttk.Frame):
 
         clear_all_btn = WidgetFactory.create_button(
             actions_bottom,
-            text="🗑️ Vider tout (0 activité)",
+            text="🗑Vider tout (0 activité)",
             command=self._on_clear_all_activities_clicked,
             style='Cancel.TButton',
         )
@@ -735,7 +786,6 @@ class SocieteForm(ttk.Frame):
             values_dict.get('date_expiration_certificat_negatif', values_dict.get('date_exp_certificat_negatif', ''))
         )
         self.capital_var.set(values_dict.get('capital', ''))
-        self.parts_social_var.set(values_dict.get('parts_social', ''))
         self.valeur_nominale_var.set(values_dict.get('valeur_nominale', values_dict.get('valeur_nominal', '')))
         self.ste_adress_var.set(values_dict.get('adresse', ''))
         self.tribunal_var.set(values_dict.get('tribunal', ''))
@@ -773,6 +823,7 @@ class SocieteForm(ttk.Frame):
         self._update_mode_signature_visibility()
         self._update_generation_options_visibility()
         self._apply_numeric_display_format()
+        self._update_parts_social()
 
         # Mise à jour des activités
         self._clear_activities(load_defaults=False)
