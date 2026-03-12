@@ -1423,11 +1423,11 @@ def initialize_reference_sheets(path):
         logger.exception('Failed to initialize reference sheets: %s', e)
 
 
-def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_vals: dict):
+def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_vals: dict, collaborateur_vals: Optional[dict] = None):
     """Write the provided records into the Excel workbook at `path`.
 
     This function is idempotent and will compute incremental integer IDs
-    for Societes/Associes/Contrats based on existing rows in the workbook.
+    for Societes/Associes/Contrats/Collaborateurs based on existing rows in the workbook.
     Date-like fields are converted to datetime so Excel stores them as dates.
     """
     path = _Path(path)
@@ -1494,6 +1494,7 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
     soc_df = _pd.DataFrame(columns=_const.societe_headers)
     assoc_df = _pd.DataFrame(columns=_const.associe_headers)
     contrat_df = _pd.DataFrame(columns=_const.contrat_headers)
+    collab_df = _pd.DataFrame(columns=_const.collaborateur_headers)
 
     # Societe
     if societe_vals:
@@ -1660,9 +1661,40 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
                             r[h] = s
         contrat_df = _pd.DataFrame([r])
 
+    # Collaborateur
+    if collaborateur_vals:
+        col_id = _next_id('Collaborateurs', 'ID_COLLABORATEUR')
+        r: dict = {h: None for h in _const.collaborateur_headers}
+        r['ID_COLLABORATEUR'] = col_id
+        r['ID_SOCIETE'] = soc_df['ID_SOCIETE'].iloc[0] if not soc_df.empty else None
+        map_col = {
+            'nom': 'COLLABORATEUR_NOM',
+            'ice': 'COLLABORATEUR_ICE',
+            'tp': 'COLLABORATEUR_TP',
+            'rc': 'COLLABORATEUR_RC',
+            'if': 'COLLABORATEUR_IF',
+            'tel_fixe': 'COLLABORATEUR_TEL_FIXE',
+            'tel_mobile': 'COLLABORATEUR_TEL_MOBILE',
+            'adresse': 'COLLABORATEUR_ADRESSE',
+            'email': 'COLLABORATEUR_EMAIL',
+        }
+        for k, h in map_col.items():
+            if k in collaborateur_vals:
+                v = collaborateur_vals.get(k)
+                if v is None:
+                    r[h] = None
+                elif isinstance(v, bool):
+                    r[h] = int(v)
+                elif isinstance(v, (int, float)):
+                    r[h] = v
+                else:
+                    r[h] = str(v)
+        collab_df = _pd.DataFrame([r])
+
     soc_df = normalize_canonical_dataframe_for_storage(soc_df)
     assoc_df = normalize_canonical_dataframe_for_storage(assoc_df)
     contrat_df = normalize_canonical_dataframe_for_storage(contrat_df)
+    collab_df = normalize_canonical_dataframe_for_storage(collab_df)
 
     # Write into workbook
     # If file exists, append; otherwise create fresh workbook
@@ -1681,6 +1713,10 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
                 contrat_df.to_excel(writer, sheet_name='Contrats', index=False)
             else:
                 _pd.DataFrame(columns=_const.contrat_headers).to_excel(writer, sheet_name='Contrats', index=False)
+            if not collab_df.empty:
+                collab_df.to_excel(writer, sheet_name='Collaborateurs', index=False)
+            else:
+                _pd.DataFrame(columns=_const.collaborateur_headers).to_excel(writer, sheet_name='Collaborateurs', index=False)
         return
 
     # Append to existing workbook — safer approach:
@@ -1693,6 +1729,7 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
             ("Societes", soc_df, _const.societe_headers),
             ("Associes", assoc_df, _const.associe_headers),
             ("Contrats", contrat_df, _const.contrat_headers),
+            ("Collaborateurs", collab_df, _const.collaborateur_headers),
         ]
 
         for sheet_name, new_df, headers in sheets_to_write:
@@ -1800,6 +1837,12 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
                         contrat_df.to_excel(writer, sheet_name='Contrats', index=False, header=False, startrow=start)
                     else:
                         contrat_df.to_excel(writer, sheet_name='Contrats', index=False)
+                if not collab_df.empty:
+                    if 'Collaborateurs' in writer.book.sheetnames:
+                        start = writer.book['Collaborateurs'].max_row
+                        collab_df.to_excel(writer, sheet_name='Collaborateurs', index=False, header=False, startrow=start)
+                    else:
+                        collab_df.to_excel(writer, sheet_name='Collaborateurs', index=False)
         except Exception:
             logger.exception('Failed to append records to workbook')
 
@@ -1808,7 +1851,12 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
         from . import constants as _const
         wb = load_workbook(path)
         # iterate canonical sheets and apply format to columns whose header contains 'DATE'
-        for sheet_name, headers in [('Societes', _const.societe_headers), ('Associes', _const.associe_headers), ('Contrats', _const.contrat_headers)]:
+        for sheet_name, headers in [
+            ('Societes', _const.societe_headers),
+            ('Associes', _const.associe_headers),
+            ('Contrats', _const.contrat_headers),
+            ('Collaborateurs', _const.collaborateur_headers),
+        ]:
             if sheet_name not in wb.sheetnames:
                 continue
             ws = wb[sheet_name]
@@ -1954,6 +2002,7 @@ def normalize_excel_storage(path):
         ('Societes', _const.societe_headers),
         ('Associes', _const.associe_headers),
         ('Contrats', _const.contrat_headers),
+        ('Collaborateurs', _const.collaborateur_headers),
     )
 
     normalized_frames = {}

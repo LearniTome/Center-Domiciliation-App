@@ -61,6 +61,8 @@ def _infer_section(variable_name: str, key_sections: Dict[str, str]) -> str:
     if not name:
         return "autre"
 
+    if "COLLAB" in name:
+        return "collaborateur"
     if any(token in name for token in ("ASSOC", "GERANT", "CIN", "NAISS", "CIVIL", "NATIONAL", "QUALITE", "PHONE", "EMAIL")):
         return "associe"
     if any(token in name for token in ("CONTRAT", "LOYER", "RENOUV", "TVA", "MONTANT", "PACK", "DOM_", "DATE_CONTRAT")):

@@ -35,10 +35,12 @@ def test_dashboard_action_payloads():
     societes_df = pd.read_excel(excel_path, sheet_name='Societes', dtype=str).fillna('')
     associes_df = pd.read_excel(excel_path, sheet_name='Associes', dtype=str).fillna('')
     contrats_df = pd.read_excel(excel_path, sheet_name='Contrats', dtype=str).fillna('')
+    collaborateurs_df = pd.read_excel(excel_path, sheet_name='Collaborateurs', dtype=str).fillna('')
 
     print(f"  ✓ Societes: {len(societes_df)} rows")
     print(f"  ✓ Associes: {len(associes_df)} rows")
     print(f"  ✓ Contrats: {len(contrats_df)} rows")
+    print(f"  ✓ Collaborateurs: {len(collaborateurs_df)} rows")
 
     # Test 1: Verify that edit action gets correct data for Societes
     print("\n📋 Test 1: EDIT button on Societes page")
@@ -109,6 +111,7 @@ def test_dashboard_action_payloads():
         ('societe', 'Societes', const.societe_headers),
         ('associe', 'Associes', const.associe_headers),
         ('contrat', 'Contrats', const.contrat_headers),
+        ('collaborateur', 'Collaborateurs', const.collaborateur_headers),
     ]
 
     for page_key, sheet_name, headers in pages_info:
@@ -126,6 +129,7 @@ def test_dashboard_action_payloads():
     print(f"    - Societes sheet ({len(societes_df)} current rows)")
     print(f"    - Associes sheet ({len(associes_df)} current rows)")
     print(f"    - Contrats sheet ({len(contrats_df)} current rows)")
+    print(f"    - Collaborateurs sheet ({len(collaborateurs_df)} current rows)")
 
     # Test 7: Verify data consistency - IDs should match between sheets
     print("\n📋 Test 7: Data consistency checks")
@@ -160,9 +164,10 @@ def test_dashboard_action_payloads():
     print(f"   Societes page  → Societes sheet → {len(const.societe_headers)} columns")
     print(f"   Associes page  → Associes sheet → {len(const.associe_headers)} columns")
     print(f"   Contrats page  → Contrats sheet → {len(const.contrat_headers)} columns")
+    print(f"   Collaborateurs page  → Collaborateurs sheet → {len(const.collaborateur_headers)} columns")
     print("\n✓ Each page correctly identifies which sheet to operate on")
     print("✓ Add/Edit/Delete buttons will send correct data structure")
-    print("✓ Refresh button will reload all three sheets correctly")
+    print("✓ Refresh button will reload all four sheets correctly")
     print("=" * 80 + "\n")
 
     return True

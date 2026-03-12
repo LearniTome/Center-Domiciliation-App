@@ -21,7 +21,7 @@
     "Adresse": "",
     "Telephone": "",
     "Email": "",
-    "Quality": "Associé Gérant"
+    "Quality": "Associé"
   },
   "contrat": {
     "NbMois": "12",
@@ -33,5 +33,16 @@
     "DhHt": "83.3333",
     "TvaRenouvellement": "20",
     "DhHtRenouvellement": "166.667"
+  },
+  "collaborateur": {
+    "Nom": "",
+    "Ice": "",
+    "Tp": "",
+    "Rc": "",
+    "If": "",
+    "TelFixe": "",
+    "TelMobile": "",
+    "Adresse": "",
+    "Email": ""
   }
 }

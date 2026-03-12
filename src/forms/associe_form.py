@@ -62,6 +62,9 @@ class AssocieForm(ttk.Frame):
         self._capital_layout_widgets = {}
         self._remove_buttons = {}
         self._associe_layout_widgets = {}
+        self._legal_form_min_associes = 0
+        self._legal_form_max_associes = 10
+        self.add_button: Optional[ttk.Button] = None
         self._is_updating_distribution = False
         self._label_width = 12
         self._label_width_long = 18
@@ -158,14 +161,14 @@ class AssocieForm(ttk.Frame):
         """Crée et retourne les variables pour un nouvel associé"""
         # Get custom defaults or use sensible defaults
         from ..utils.defaults_manager import get_defaults_manager
-        from ..utils.constants import Civility, QualityGerant
+        from ..utils.constants import Civility, QualityAssocie
         
         defaults_mgr = get_defaults_manager()
         
         default_civility = self.normalize_civility(
             defaults_mgr.get_default('associe', 'Civility') or (Civility[0] if Civility else self._CIVILITY_CANONICAL[0])
         )
-        default_quality = defaults_mgr.get_default('associe', 'Quality') or (QualityGerant[0] if QualityGerant else 'Associé Gérant')
+        default_quality = defaults_mgr.get_default('associe', 'Quality') or (QualityAssocie[0] if QualityAssocie else 'Associé')
         default_nom = defaults_mgr.get_default('associe', 'Nom') or 'NOM'
         default_prenom = defaults_mgr.get_default('associe', 'Prenom') or 'PRENOM'
         default_nationalite = defaults_mgr.get_default('associe', 'Nationality') or (self.nationalites[0] if self.nationalites else '')
@@ -290,9 +293,9 @@ class AssocieForm(ttk.Frame):
         qualite_cell = _cell(1, 2, "Qualité:")
         try:
             from ..utils import constants as _constants
-            qual_options = getattr(_constants, 'QualityGerant', ["Associé Gérant", "Associé"])
+            qual_options = getattr(_constants, 'QualityAssocie', ["Associé", "Associé Unique"])
         except Exception:
-            qual_options = ["Associé Gérant", "Associé"]
+            qual_options = ["Associé", "Associé Unique"]
         ttk.Combobox(
             qualite_cell,
             textvariable=vars_dict['qualite'],
@@ -482,8 +485,8 @@ class AssocieForm(ttk.Frame):
         ttk.Combobox(grid, textvariable=vars_dict['lieu_naiss'], values=self.lieux_naissance, state="readonly").grid(row=1, column=1, sticky="ew", pady=2)
 
     def create_manager_section(self, parent, vars_dict):
-        """Crée la section Statut de Gérant"""
-        manager_frame = ttk.LabelFrame(parent, text="👔 Statut de Gérant")
+        """Crée la section Statut de l'Associé"""
+        manager_frame = ttk.LabelFrame(parent, text="👔 Statut de l'Associé")
         manager_frame.pack(fill="x", pady=5)
 
         grid = ttk.Frame(manager_frame)
@@ -498,9 +501,9 @@ class AssocieForm(ttk.Frame):
         ttk.Label(grid, text="Qualité:", anchor="e", width=self._label_width).grid(row=1, column=0, padx=(0, 5), pady=2)
         try:
             from ..utils import constants as _constants
-            qual_options = getattr(_constants, 'QualityGerant', ["Associé Gérant", "Associé"])
+            qual_options = getattr(_constants, 'QualityAssocie', ["Associé", "Associé Unique"])
         except Exception:
-            qual_options = ["Associé Gérant", "Associé"]
+            qual_options = ["Associé", "Associé Unique"]
         ttk.Combobox(
             grid,
             textvariable=vars_dict['qualite'],
@@ -562,9 +565,9 @@ class AssocieForm(ttk.Frame):
         ttk.Label(qual_cell, text="Qualité:", anchor="w").grid(row=0, column=0, sticky="w", pady=(0, 1))
         try:
             from ..utils import constants as _constants
-            qual_options = getattr(_constants, 'QualityGerant', ["Associé Gérant", "Associé"])
+            qual_options = getattr(_constants, 'QualityAssocie', ["Associé", "Associé Unique"])
         except Exception:
-            qual_options = ["Associé Gérant", "Associé"]
+            qual_options = ["Associé", "Associé Unique"]
         ttk.Combobox(
             qual_cell,
             textvariable=vars_dict['qualite'],
@@ -745,6 +748,113 @@ class AssocieForm(ttk.Frame):
             command=self.add_associe
         )
         add_button.grid(row=0, column=1, sticky="e")
+        self.add_button = add_button
+
+    @staticmethod
+    def _normalize_legal_form(raw_value: Optional[str]) -> str:
+        text = str(raw_value or "").strip().upper()
+        if not text:
+            return ""
+        text = text.replace("_", " ").replace("-", " ")
+        text = " ".join(text.split())
+        return text
+
+    @classmethod
+    def _legal_form_rules(cls, legal_form: Optional[str]) -> Tuple[int, int]:
+        normalized = cls._normalize_legal_form(legal_form)
+        if normalized in {"SARL AU", "SARLAU"} or ("SARL" in normalized and "AU" in normalized):
+            return 1, 1
+        if normalized == "SARL":
+            return 2, 10
+        return 0, 10
+
+    def apply_legal_form_constraints(self, legal_form: Optional[str], auto_adjust: bool = True, add_if_empty: bool = False):
+        min_count, max_count = self._legal_form_rules(legal_form)
+        self._legal_form_min_associes = min_count
+        self._legal_form_max_associes = max_count
+
+        current_count = len(self.associe_vars)
+        target_min = min_count
+        if add_if_empty and current_count == 0 and min_count == 0:
+            target_min = 1
+
+        added = False
+        if auto_adjust and current_count < target_min:
+            for _ in range(target_min - current_count):
+                self.add_associe()
+                added = True
+            if added and current_count == 0 and target_min >= 2:
+                self._distribute_evenly_across_associes()
+
+        removed = False
+        if max_count > 0 and len(self.associe_vars) > max_count:
+            frames = self._associe_frames()
+            while len(self.associe_vars) > max_count:
+                frame = frames.pop() if frames else None
+                vars_dict = self.associe_vars[-1]
+                self._force_remove_associe(frame, vars_dict)
+                removed = True
+
+        if removed:
+            self.update_associes_numbers()
+            self._distribute_evenly_across_associes()
+            messagebox.showinfo(
+                "Nombre d'associés",
+                "Les associés en trop ont été supprimés automatiquement pour la forme SARL AU."
+            )
+
+        self._update_associe_action_states()
+
+    def _update_associe_action_states(self):
+        current_count = len(self.associe_vars)
+        max_count = self._legal_form_max_associes
+        min_count = self._legal_form_min_associes
+
+        if self.add_button is not None:
+            try:
+                if max_count > 0 and current_count >= max_count:
+                    self.add_button.configure(state="disabled")
+                else:
+                    self.add_button.configure(state="normal")
+            except Exception:
+                pass
+
+        for vars_dict in self.associe_vars:
+            btn = self._remove_buttons.get(id(vars_dict))
+            if btn is None:
+                continue
+            try:
+                if current_count <= min_count:
+                    btn.configure(state="disabled")
+                else:
+                    btn.configure(state="normal")
+            except Exception:
+                pass
+
+    def _associe_frames(self) -> List[ttk.LabelFrame]:
+        try:
+            children = list(self.associes_frame.winfo_children())
+        except Exception:
+            return []
+        return [child for child in children if isinstance(child, ttk.LabelFrame)]
+
+    def _force_remove_associe(self, frame: Optional[tk.Widget], vars_dict):
+        vars_id = id(vars_dict)
+        try:
+            if vars_dict in self.associe_vars:
+                self.associe_vars.remove(vars_dict)
+        except Exception:
+            pass
+        self._capital_summary_vars.pop(vars_id, None)
+        self._capital_entry_widgets.pop(vars_id, None)
+        self._capital_layout_widgets.pop(vars_id, None)
+        self._remove_buttons.pop(vars_id, None)
+        self._associe_layout_widgets.pop(vars_id, None)
+        if frame is not None:
+            try:
+                frame.destroy()
+            except Exception:
+                pass
 
     def _layout_mode_for_width(self, width: int) -> str:
         if width >= 1300:
@@ -831,6 +941,14 @@ class AssocieForm(ttk.Frame):
 
     def add_associe(self):
         """Ajoute un nouvel associé en préservant la répartition existante."""
+        current_count = len(self.associe_vars)
+        max_count = min(10, self._legal_form_max_associes) if self._legal_form_max_associes else 10
+        if max_count > 0 and current_count >= max_count:
+            messagebox.showwarning(
+                "Limite atteinte",
+                "Vous ne pouvez pas ajouter plus d'associés pour cette forme juridique."
+            )
+            return
         if len(self.associe_vars) >= 10:
             messagebox.showwarning(
                 "Limite atteinte",
@@ -852,6 +970,7 @@ class AssocieForm(ttk.Frame):
         finally:
             self._is_updating_distribution = False
         self._redistribute_by_percentages()
+        self._update_associe_action_states()
 
     def get_values(self):
         """Retourne la liste des associés sous forme de dictionnaires."""
@@ -893,6 +1012,7 @@ class AssocieForm(ttk.Frame):
         self._capital_layout_widgets = {}
         self._remove_buttons = {}
         self._associe_layout_widgets = {}
+        self._update_associe_action_states()
 
     def set_values(self, associes_list):
         """Remplit le formulaire des associés avec une liste de dicts.
@@ -925,9 +1045,17 @@ class AssocieForm(ttk.Frame):
         self._apply_numeric_display_format()
         self._backfill_percentages_for_loaded_data()
         self._redistribute_by_percentages()
+        self._update_associe_action_states()
 
     def remove_associe(self, frame, vars_dict):
         """Supprime un associé"""
+        current_count = len(self.associe_vars)
+        if current_count <= self._legal_form_min_associes:
+            messagebox.showwarning(
+                "Suppression impossible",
+                "Le nombre minimal d'associés pour cette forme juridique est atteint."
+            )
+            return
         if messagebox.askyesno("Confirmation",
                              "Voulez-vous vraiment supprimer cet associé ?"):
             vars_id = id(vars_dict)
@@ -940,6 +1068,7 @@ class AssocieForm(ttk.Frame):
             frame.destroy()
             self.update_associes_numbers()
             self._redistribute_by_percentages()
+            self._update_associe_action_states()
 
     def update_associes_numbers(self):
         """Met à jour les numéros des associés après une suppression"""

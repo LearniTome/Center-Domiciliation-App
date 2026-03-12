@@ -85,7 +85,7 @@ class DefaultsManager:
                 'Adresse': '',
                 'Telephone': '',
                 'Email': '',
-                'Quality': constants.QualityGerant[0] if constants.QualityGerant else '',
+                'Quality': constants.QualityAssocie[0] if constants.QualityAssocie else '',
             },
             'contrat': {
                 'NbMois': constants.Nbmois[1] if len(constants.Nbmois) > 1 else (constants.Nbmois[0] if constants.Nbmois else ''),
@@ -97,7 +97,18 @@ class DefaultsManager:
                 'DhHt': '83.3333',
                 'TvaRenouvellement': '20',
                 'DhHtRenouvellement': '166.667',
-            }
+            },
+            'collaborateur': {
+                'Nom': '',
+                'Ice': '',
+                'Tp': '',
+                'Rc': '',
+                'If': '',
+                'TelFixe': '',
+                'TelMobile': '',
+                'Adresse': '',
+                'Email': '',
+            },
         }
 
     def get_default(self, section: str, key: str) -> Optional[str]:

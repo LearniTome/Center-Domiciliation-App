@@ -10,6 +10,7 @@ from contextlib import nullcontext
 from .societe_form import SocieteForm
 from .associe_form import AssocieForm
 from .contrat_form import ContratForm
+from .collaborateur_form import CollaborateurForm
 from ..utils.utils import ThemeManager, WidgetFactory, WindowManager, PathManager, ensure_excel_db
 from ..utils import constants as _const
 from pathlib import Path
@@ -185,6 +186,8 @@ class MainForm(ttk.Frame):
             self.create_associe_page()
         with self._profile_scope("MainForm.create_contrat_page"):
             self.create_contrat_page()
+        with self._profile_scope("MainForm.create_collaborateur_page"):
+            self.create_collaborateur_page()
         self._bind_cross_form_synchronization()
 
         # Show first page
@@ -266,12 +269,19 @@ class MainForm(ttk.Frame):
                     child.destroy()
             except Exception:
                 pass
-        # Ensure exactly one initial associé form is present
+        # Ensure initial associates based on legal form (SARL AU: 1, SARL: 2, others: 1)
         try:
-            # add one initial associé if none exist yet
-            if len(self.associe_form.associe_vars) == 0:
-                with self._profile_scope("AssocieForm.add_initial_associe"):
-                    self.associe_form.add_associe()
+            legal_form = ''
+            try:
+                legal_form = self.societe_form.forme_jur_var.get()
+            except Exception:
+                legal_form = ''
+            with self._profile_scope("AssocieForm.apply_legal_form_constraints"):
+                self.associe_form.apply_legal_form_constraints(
+                    legal_form,
+                    auto_adjust=True,
+                    add_if_empty=True,
+                )
         except Exception:
             # conservative: ignore errors here to avoid breaking startup
             pass
@@ -315,6 +325,16 @@ class MainForm(ttk.Frame):
         except Exception:
             pass
 
+        try:
+            if hasattr(self, 'associe_form') and self.associe_form is not None:
+                self.associe_form.apply_legal_form_constraints(
+                    legal_form,
+                    auto_adjust=True,
+                    add_if_empty=False,
+                )
+        except Exception:
+            pass
+
     def _on_societe_legal_form_changed(self, *_args):
         self._sync_legal_form_dependents()
 
@@ -344,6 +364,22 @@ class MainForm(ttk.Frame):
             self.contrat_form = ContratForm(page, self.theme_manager, self.values.get('contrat', {}))
         self.contrat_form.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
         self.pages.append(('contrat', page, self.contrat_form))
+
+    def create_collaborateur_page(self):
+        page = ttk.Frame(self.forms_container)
+        page.grid(row=1, column=0, sticky="nsew", padx=5, pady=(0, 10))
+        page.grid_rowconfigure(0, weight=0)
+        page.grid_rowconfigure(1, weight=1)
+        page.grid_columnconfigure(0, weight=1)
+        header = self.create_section_header(page, "Informations du Collaborateur", "🤝", 0, 0)
+        with self._profile_scope("CollaborateurForm.__init__"):
+            self.collaborateur_form = CollaborateurForm(
+                page,
+                self.theme_manager,
+                self.values.get('collaborateur', {}),
+            )
+        self.collaborateur_form.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
+        self.pages.append(('collaborateur', page, self.collaborateur_form))
 
     def create_collapsible_section(self, title, form_creator):
         """Create a collapsible section with the given title and form"""
@@ -1042,7 +1078,7 @@ class MainForm(ttk.Frame):
                         ('Telephone', 'Téléphone', []),
                         ('Email', 'Email', []),
                         ('Adresse', 'Adresse', []),
-                        ('Quality', 'Qualité', constants.QualityGerant),
+                        ('Quality', 'Qualité', constants.QualityAssocie),
                     ]
                 },
                 'contrat': {
@@ -1057,6 +1093,20 @@ class MainForm(ttk.Frame):
                         ('DhHt', 'Loyer HT initial (DH)', ['83.3333']),
                         ('TvaRenouvellement', 'TVA renouvellement (%)', ['20']),
                         ('DhHtRenouvellement', 'Loyer HT renouvellement (DH)', ['166.667']),
+                    ]
+                },
+                'collaborateur': {
+                    'label': '🤝 Collaborateur',
+                    'fields': [
+                        ('Nom', 'Nom / Raison sociale', []),
+                        ('Ice', 'ICE', []),
+                        ('Tp', 'TP', []),
+                        ('Rc', 'RC', []),
+                        ('If', 'IF', []),
+                        ('TelFixe', 'Téléphone fixe', []),
+                        ('TelMobile', 'Téléphone mobile', []),
+                        ('Adresse', 'Adresse', []),
+                        ('Email', 'Email', []),
                     ]
                 }
             }
@@ -1640,6 +1690,9 @@ class MainForm(ttk.Frame):
             
             if hasattr(self, 'contrat_form') and self.contrat_form:
                 self.contrat_form.initialize_variables()
+
+            if hasattr(self, 'collaborateur_form') and self.collaborateur_form:
+                self.collaborateur_form.initialize_variables()
             
             logger.info("Formulaires rechargés avec les nouvelles valeurs par défaut")
         except Exception as e:
@@ -1667,7 +1720,8 @@ class MainForm(ttk.Frame):
             self.values = {
                 'societe': getattr(self, 'societe_form', None) and self.societe_form.get_values(),
                 'associes': getattr(self, 'associe_form', None) and self.associe_form.get_values(),
-                'contrat': getattr(self, 'contrat_form', None) and self.contrat_form.get_values()
+                'contrat': getattr(self, 'contrat_form', None) and self.contrat_form.get_values(),
+                'collaborateur': getattr(self, 'collaborateur_form', None) and self.collaborateur_form.get_values()
             }
         return self.values
 
@@ -1919,7 +1973,7 @@ class MainForm(ttk.Frame):
     @staticmethod
     def _infer_dashboard_page_key(payload: dict | None, page_key: str | None) -> str:
         """Infer dashboard page when older callers do not pass it explicitly."""
-        if page_key in {'societe', 'associe', 'contrat'}:
+        if page_key in {'societe', 'associe', 'contrat', 'collaborateur'}:
             return page_key
         if not isinstance(payload, dict):
             return 'societe'
@@ -1927,11 +1981,13 @@ class MainForm(ttk.Frame):
             return 'associe'
         if 'ID_CONTRAT' in payload:
             return 'contrat'
+        if 'ID_COLLABORATEUR' in payload:
+            return 'collaborateur'
         return 'societe'
 
     @staticmethod
     def _dashboard_page_index(page_key: str) -> int:
-        return {'societe': 0, 'associe': 1, 'contrat': 2}.get(page_key, 0)
+        return {'societe': 0, 'associe': 1, 'contrat': 2, 'collaborateur': 3}.get(page_key, 0)
 
     @staticmethod
     def _filter_dashboard_rows(df, sid: str, den: str):
@@ -1968,8 +2024,12 @@ class MainForm(ttk.Frame):
             contrat_df = _pd.read_excel(db_path, sheet_name='Contrats', dtype=str).fillna('')
         except Exception:
             contrat_df = _pd.DataFrame(columns=_const.contrat_headers)
+        try:
+            collab_df = _pd.read_excel(db_path, sheet_name='Collaborateurs', dtype=str).fillna('')
+        except Exception:
+            collab_df = _pd.DataFrame(columns=getattr(_const, 'collaborateur_headers', []))
 
-        return db_path, soc_df, assoc_df, contrat_df
+        return db_path, soc_df, assoc_df, contrat_df, collab_df
 
     def _resolve_company_payload_from_dashboard(self, page_key: str, payload: dict | None, soc_df):
         """Resolve the selected dashboard row to its company row."""
@@ -1995,7 +2055,7 @@ class MainForm(ttk.Frame):
             return None
         return matches.iloc[0].to_dict()
 
-    def _build_dashboard_edit_values(self, company_payload: dict, assoc_df, contrat_df):
+    def _build_dashboard_edit_values(self, company_payload: dict, assoc_df, contrat_df, collab_df):
         """Build complete form values from the selected company and linked sheets."""
         soc_map = {
             'DEN_STE': 'denomination',
@@ -2060,6 +2120,17 @@ class MainForm(ttk.Frame):
             'LOYER_RENOUVELLEMENT_MENSUEL_TTC': 'loyer_renouvellement_mensuel',
             'LOYER_RENOUVELLEMENT_ANNUEL_TTC': 'loyer_renouvellement_annuel',
         }
+        inverse_collab_map = {
+            'COLLABORATEUR_NOM': 'nom',
+            'COLLABORATEUR_ICE': 'ice',
+            'COLLABORATEUR_TP': 'tp',
+            'COLLABORATEUR_RC': 'rc',
+            'COLLABORATEUR_IF': 'if',
+            'COLLABORATEUR_TEL_FIXE': 'tel_fixe',
+            'COLLABORATEUR_TEL_MOBILE': 'tel_mobile',
+            'COLLABORATEUR_ADRESSE': 'adresse',
+            'COLLABORATEUR_EMAIL': 'email',
+        }
 
         soc_vals = {}
         for key, value in company_payload.items():
@@ -2070,6 +2141,7 @@ class MainForm(ttk.Frame):
         den = str(company_payload.get('DEN_STE') or '').strip()
         associes_list = []
         contrat_vals = {}
+        collaborateur_vals = {}
 
         assoc_matches = self._filter_dashboard_rows(assoc_df, sid, den)
         if assoc_matches is not None and not assoc_matches.empty:
@@ -2087,7 +2159,19 @@ class MainForm(ttk.Frame):
                 if column in inverse_contrat_map:
                     contrat_vals[inverse_contrat_map[column]] = contrat_row.get(column)
 
-        return {'societe': soc_vals or {}, 'associes': associes_list, 'contrat': contrat_vals}
+        collab_matches = self._filter_dashboard_rows(collab_df, sid, den)
+        if collab_matches is not None and not collab_matches.empty:
+            collab_row = collab_matches.iloc[0]
+            for column in collab_row.index:
+                if column in inverse_collab_map:
+                    collaborateur_vals[inverse_collab_map[column]] = collab_row.get(column)
+
+        return {
+            'societe': soc_vals or {},
+            'associes': associes_list,
+            'contrat': contrat_vals,
+            'collaborateur': collaborateur_vals,
+        }
 
     def handle_dashboard_action(self, action: str, payload: dict | None, page_key: str | None = None):
         """Handle actions coming from the DashboardView.
@@ -2121,7 +2205,7 @@ class MainForm(ttk.Frame):
                     return {'status': 'invalid'}
 
                 try:
-                    _db_path, soc_df, assoc_df, contrat_df = self._load_dashboard_workbook_frames()
+                    _db_path, soc_df, assoc_df, contrat_df, collab_df = self._load_dashboard_workbook_frames()
                 except FileNotFoundError:
                     messagebox.showerror('Erreur', 'Fichier de base de données introuvable.')
                     return {'status': 'error'}
@@ -2141,7 +2225,7 @@ class MainForm(ttk.Frame):
                     )
                     return {'status': 'not_found'}
 
-                values = self._build_dashboard_edit_values(company_payload, assoc_df, contrat_df)
+                values = self._build_dashboard_edit_values(company_payload, assoc_df, contrat_df, collab_df)
                 self.set_values(values)
                 self.show_page(self._dashboard_page_index(page_key))
                 return {'status': 'opened', 'page': page_key}
@@ -2154,7 +2238,7 @@ class MainForm(ttk.Frame):
                 # Remove rows from the Excel workbook
                 try:
                     import pandas as _pd
-                    db_path, soc_df, assoc_df, contrat_df = self._load_dashboard_workbook_frames()
+                    db_path, soc_df, assoc_df, contrat_df, collab_df = self._load_dashboard_workbook_frames()
                     company_payload = self._resolve_company_payload_from_dashboard(page_key, payload, soc_df)
                     if not company_payload:
                         messagebox.showwarning(
@@ -2178,6 +2262,8 @@ class MainForm(ttk.Frame):
                             assoc_df = assoc_df[~(assoc_df['ID_SOCIETE'].astype(str).str.strip() == sid)]
                         if not contrat_df.empty and 'ID_SOCIETE' in contrat_df.columns:
                             contrat_df = contrat_df[~(contrat_df['ID_SOCIETE'].astype(str).str.strip() == sid)]
+                        if not collab_df.empty and 'ID_SOCIETE' in collab_df.columns:
+                            collab_df = collab_df[~(collab_df['ID_SOCIETE'].astype(str).str.strip() == sid)]
                     else:
                         # fallback to DEN_STE match
                         if not soc_df.empty and 'DEN_STE' in soc_df.columns:
@@ -2186,6 +2272,8 @@ class MainForm(ttk.Frame):
                             assoc_df = assoc_df[~(assoc_df['DEN_STE'].astype(str).str.strip().str.lower() == den.strip().lower())]
                         if not contrat_df.empty and 'DEN_STE' in contrat_df.columns:
                             contrat_df = contrat_df[~(contrat_df['DEN_STE'].astype(str).str.strip().str.lower() == den.strip().lower())]
+                        if not collab_df.empty and 'DEN_STE' in collab_df.columns:
+                            collab_df = collab_df[~(collab_df['DEN_STE'].astype(str).str.strip().str.lower() == den.strip().lower())]
 
                     # Write back sheets replacing them
                     try:
@@ -2194,16 +2282,18 @@ class MainForm(ttk.Frame):
                         soc_df = normalize_canonical_dataframe_for_storage(soc_df.reindex(columns=_const.societe_headers, fill_value=''))
                         assoc_df = normalize_canonical_dataframe_for_storage(assoc_df.reindex(columns=_const.associe_headers, fill_value=''))
                         contrat_df = normalize_canonical_dataframe_for_storage(contrat_df.reindex(columns=_const.contrat_headers, fill_value=''))
+                        collab_df = normalize_canonical_dataframe_for_storage(collab_df.reindex(columns=_const.collaborateur_headers, fill_value=''))
 
                         with _pd.ExcelWriter(db_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
                             soc_df.to_excel(writer, sheet_name='Societes', index=False)
                             assoc_df.to_excel(writer, sheet_name='Associes', index=False)
                             contrat_df.to_excel(writer, sheet_name='Contrats', index=False)
+                            collab_df.to_excel(writer, sheet_name='Collaborateurs', index=False)
                     except TypeError:
                         # pandas older version fallback
                         from openpyxl import load_workbook
                         wb = load_workbook(db_path)
-                        for sname, df in (('Societes', soc_df), ('Associes', assoc_df), ('Contrats', contrat_df)):
+                        for sname, df in (('Societes', soc_df), ('Associes', assoc_df), ('Contrats', contrat_df), ('Collaborateurs', collab_df)):
                             if sname in wb.sheetnames:
                                 try:
                                     std = wb[sname]
@@ -2215,6 +2305,7 @@ class MainForm(ttk.Frame):
                             soc_df.to_excel(writer, sheet_name='Societes', index=False)
                             assoc_df.to_excel(writer, sheet_name='Associes', index=False)
                             contrat_df.to_excel(writer, sheet_name='Contrats', index=False)
+                            collab_df.to_excel(writer, sheet_name='Collaborateurs', index=False)
 
                     try:
                         normalize_excel_storage(db_path)

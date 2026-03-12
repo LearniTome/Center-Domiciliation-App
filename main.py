@@ -673,6 +673,7 @@ class MainApp(tk.Tk):
             societe_vals = self.values.get('societe', {}) or {}
             contrat_vals = self.values.get('contrat', {}) or {}
             associes_list = self.values.get('associes', []) or []
+            collaborateur_vals = self.values.get('collaborateur', {}) or {}
 
             # If a company name is provided, check for duplicates in the DB and *forbid* saving
             try:
@@ -686,7 +687,7 @@ class MainApp(tk.Tk):
                 logger.exception('Failed to perform duplicate societe check')
 
             # Delegate the heavy lifting to the utility that handles IDs and date conversion
-            write_records_to_db(db_path, societe_vals, associes_list, contrat_vals)
+            write_records_to_db(db_path, societe_vals, associes_list, contrat_vals, collaborateur_vals)
             normalize_excel_storage(db_path)
             # Do not show a modal message here — let the caller (finish or other
             # UI action) present a single, consolidated message to the user.

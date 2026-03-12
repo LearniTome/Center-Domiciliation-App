@@ -57,8 +57,8 @@ SteAdresse = [
 # Court locations
 Tribunnaux = ["Casablanca", "Berrechid", "Mohammedia"]
 
-# Manager roles
-QualityGerant = ["Associé Gérant", "Associé Unique Gérant", "Associé"]
+# Associate roles
+QualityAssocie = ["Associé", "Associé Unique"]
 
 # Company activities
 Activities = [
@@ -93,6 +93,14 @@ contrat_headers = [
     "LOYER_MENSUEL_RENOUVELLEMENT_TTC", "LOYER_ANNUEL_RENOUVELLEMENT_TTC"
 ]
 
+collaborateur_headers = [
+    "ID_COLLABORATEUR", "ID_SOCIETE",
+    "COLLABORATEUR_NOM", "COLLABORATEUR_ICE", "COLLABORATEUR_TP",
+    "COLLABORATEUR_RC", "COLLABORATEUR_IF",
+    "COLLABORATEUR_TEL_FIXE", "COLLABORATEUR_TEL_MOBILE",
+    "COLLABORATEUR_ADRESSE", "COLLABORATEUR_EMAIL",
+]
+
 # Compatibility aliases to migrate old contract column names.
 contrat_header_aliases = {
     "PERIOD_DOMCIL": "DUREE_CONTRAT_MOIS",
@@ -118,6 +126,7 @@ excel_sheets = {
     "Societes": societe_headers,
     "Associes": associe_headers,
     "Contrats": contrat_headers,
+    "Collaborateurs": collaborateur_headers,
     "SteAdresses": ste_adresses_headers,
     "Tribunaux": tribunaux_headers,
     "Activites": activites_headers,

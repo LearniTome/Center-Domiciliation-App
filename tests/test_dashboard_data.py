@@ -33,6 +33,7 @@ def test_dashboard_data():
         ('Societes', _const.societe_headers),
         ('Associes', _const.associe_headers),
         ('Contrats', _const.contrat_headers),
+        ('Collaborateurs', _const.collaborateur_headers),
     ]:
         try:
             df = pd.read_excel(db_path, sheet_name=sheet_name, dtype=str).fillna('')
@@ -49,6 +50,7 @@ def test_dashboard_data():
         ('Societes', _const.societe_headers),
         ('Associes', _const.associe_headers),
         ('Contrats', _const.contrat_headers),
+        ('Collaborateurs', _const.collaborateur_headers),
     ]:
         df = sheets_data[sheet_name]
         actual_cols = list(df.columns)
@@ -71,6 +73,7 @@ def test_dashboard_data():
         ('Societes', [c for c in _const.societe_headers if not c.startswith('ID_')]),
         ('Associes', [c for c in _const.associe_headers if not c.startswith('ID_')]),
         ('Contrats', [c for c in _const.contrat_headers if not c.startswith('ID_')]),
+        ('Collaborateurs', [c for c in _const.collaborateur_headers if not c.startswith('ID_')]),
     ]
 
     for sheet_name, display_cols in display_checks:
@@ -97,10 +100,12 @@ def test_dashboard_data():
         societes_df = pd.read_excel(excel_path, sheet_name='Societes', dtype=str).fillna('')
         associes_df = pd.read_excel(excel_path, sheet_name='Associes', dtype=str).fillna('')
         contrats_df = pd.read_excel(excel_path, sheet_name='Contrats', dtype=str).fillna('')
+        collaborateurs_df = pd.read_excel(excel_path, sheet_name='Collaborateurs', dtype=str).fillna('')
 
         print(f"✓ Societes loaded: {len(societes_df)} rows")
         print(f"✓ Associes loaded: {len(associes_df)} rows")
         print(f"✓ Contrats loaded: {len(contrats_df)} rows")
+        print(f"✓ Collaborateurs loaded: {len(collaborateurs_df)} rows")
 
     except Exception as e:
         print(f"✗ Error loading data: {e}")
@@ -112,6 +117,7 @@ def test_dashboard_data():
     print("   ✓ Societes sheet")
     print("   ✓ Associes sheet")
     print("   ✓ Contrats sheet")
+    print("   ✓ Collaborateurs sheet")
     print("=" * 70)
 
     return True

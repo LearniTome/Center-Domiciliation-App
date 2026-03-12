@@ -33,13 +33,6 @@ RENAMED_CONTEXT_ALIASES = {
     "CAPITAL_DETENU": "CAPITAL_DETENU_ASSOCIE",
     "IS_GERANT": "EST_GERANT",
     "QUALITY": "QUALITE_ASSOCIE",
-    "GERANT_ADRESS": "ADRESSE_GERANT",
-    "GERANT_QUALITY": "QUALITE_GERANT",
-    "GERANT_NOM": "NOM_GERANT",
-    "GERANT_PRENOM": "PRENOM_GERANT",
-    "GERANT_PHONE": "TELEPHONE_GERANT",
-    "GERANT_EMAIL": "EMAIL_GERANT",
-    "GERANT_CIN": "NUMERO_CIN_GERANT",
     "PERIOD_DOMCIL": "DUREE_CONTRAT_MOIS",
     "PRIX_CONTRAT": "LOYER_MENSUEL_TTC",
     "PRIX_INTERMEDIARE_CONTRAT": "FRAIS_INTERMEDIAIRE_CONTRAT",
@@ -67,6 +60,7 @@ def _build_expected_context_key_sections() -> Dict[str, str]:
     # Nested roots available in rendering context.
     _add("societe", "societe")
     _add("associe", "associes", "associe")
+    _add("collaborateur", "collaborateur")
     _add("contrat", "contrat")
     _add("autre", "values")
 
@@ -102,13 +96,24 @@ def _build_expected_context_key_sections() -> Dict[str, str]:
         "PARTS", "parts", "num_parts",
         "CAPITAL_DETENU", "capital_detenu",
         "IS_GERANT", "est_gerant",
-        "GERANT_ADRESS", "GERANT_QUALITY", "GERANT_NOM", "GERANT_PRENOM",
-        "GERANT_PHONE", "GERANT_EMAIL", "GERANT_CIN",
     )
     for base in ("ADRESSE", "PHONE", "EMAIL", "QUALITY", "NOM", "PRENOM"):
         _add("associe", f"ASSOCIE_{base}", f"{base}_ASSOCIE", base.lower())
         camel = base[0].lower() + base[1:].lower()
         _add("associe", f"{camel}Associe")
+
+    # Collaborateur-oriented keys
+    _add(
+        "collaborateur",
+        "COLLABORATEUR_NOM", "COLLABORATEUR_ICE", "COLLABORATEUR_TP",
+        "COLLABORATEUR_RC", "COLLABORATEUR_IF",
+        "COLLABORATEUR_TEL_FIXE", "COLLABORATEUR_TEL_MOBILE",
+        "COLLABORATEUR_ADRESSE", "COLLABORATEUR_EMAIL",
+        "collaborateur_nom", "collaborateur_ice", "collaborateur_tp",
+        "collaborateur_rc", "collaborateur_if",
+        "collaborateur_tel_fixe", "collaborateur_tel_mobile",
+        "collaborateur_adresse", "collaborateur_email",
+    )
 
     # Contrat-oriented keys
     _add(
@@ -514,6 +519,7 @@ def render_templates(
         ctx['societe'] = vals.get('societe', {}) or {}
         ctx['associes'] = vals.get('associes', []) or []
         ctx['contrat'] = vals.get('contrat', {}) or {}
+        ctx['collaborateur'] = vals.get('collaborateur', {}) or {}
 
         soc = ctx['societe']
         # Societe mappings
@@ -587,39 +593,6 @@ def render_templates(
                         ctx[f'{camel}Associe'] = ctx[base]
                     except Exception:
                         pass
-
-            # If this associe is marked as the gérant, provide GERANT_* aliases
-            try:
-                is_gerant = a.get('est_gerant') or a.get('est_gerant') == True or ctx.get('IS_GERANT')
-            except Exception:
-                is_gerant = False
-            if is_gerant:
-                try:
-                    # prefer already-normalized keys (from above) then fallback to raw a dict
-                    ger_nom = ctx.get('NOM') or a.get('nom')
-                    ger_prenom = ctx.get('PRENOM') or a.get('prenom')
-                    ger_adress = ctx.get('ADRESSE') or a.get('adresse')
-                    ger_phone = ctx.get('PHONE') or a.get('telephone')
-                    ger_email = ctx.get('EMAIL') or a.get('email')
-                    ger_quality = ctx.get('QUALITY') or a.get('qualite')
-                    ger_cin = ctx.get('CIN_NUM') or a.get('num_piece')
-
-                    if ger_adress:
-                        ctx['GERANT_ADRESS'] = ger_adress
-                    if ger_quality:
-                        ctx['GERANT_QUALITY'] = ger_quality
-                    if ger_nom:
-                        ctx['GERANT_NOM'] = ger_nom
-                    if ger_prenom:
-                        ctx['GERANT_PRENOM'] = ger_prenom
-                    if ger_phone:
-                        ctx['GERANT_PHONE'] = ger_phone
-                    if ger_email:
-                        ctx['GERANT_EMAIL'] = ger_email
-                    if ger_cin:
-                        ctx['GERANT_CIN'] = ger_cin
-                except Exception:
-                    pass
 
         # Contrat mappings
         c = ctx['contrat']
@@ -714,6 +687,30 @@ def render_templates(
         # Backward compatibility for legacy templates still using this variable name.
         if ctx.get('TYPE_CONTRAT_DOMICILIATION') and not ctx.get('CONTRAT_FORME_JURIDIQUE'):
             ctx['CONTRAT_FORME_JURIDIQUE'] = ctx.get('TYPE_CONTRAT_DOMICILIATION')
+
+        # Collaborateur mappings
+        collab = ctx.get('collaborateur', {})
+        if isinstance(collab, dict):
+            collab_map = {
+                'nom': 'COLLABORATEUR_NOM',
+                'ice': 'COLLABORATEUR_ICE',
+                'tp': 'COLLABORATEUR_TP',
+                'rc': 'COLLABORATEUR_RC',
+                'if': 'COLLABORATEUR_IF',
+                'tel_fixe': 'COLLABORATEUR_TEL_FIXE',
+                'tel_mobile': 'COLLABORATEUR_TEL_MOBILE',
+                'adresse': 'COLLABORATEUR_ADRESSE',
+                'email': 'COLLABORATEUR_EMAIL',
+            }
+            for fk, hk in collab_map.items():
+                v = None
+                try:
+                    v = collab.get(fk)
+                except Exception:
+                    v = None
+                if v is not None and v != '':
+                    ctx[hk] = v
+                    ctx[fk] = v
         return ctx
 
     if templates_list:

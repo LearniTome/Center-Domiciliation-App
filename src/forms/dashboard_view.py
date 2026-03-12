@@ -11,7 +11,7 @@ import pandas as pd
 
 from ..utils.utils import ThemeManager, WidgetFactory, PathManager, ErrorHandler
 from ..utils import constants as _const
-from ..utils.constants import societe_headers, associe_headers, contrat_headers
+from ..utils.constants import societe_headers, associe_headers, contrat_headers, collaborateur_headers
 
 logger = logging.getLogger(__name__)
 
@@ -106,6 +106,7 @@ class DashboardView(tk.Toplevel):
         self._societes_df = None
         self._associes_df = None
         self._contrats_df = None
+        self._collaborateurs_df = None
         self._current_page = 'societe'
         self._search_var = tk.StringVar()
         self._column_filter_var = tk.StringVar()
@@ -115,9 +116,9 @@ class DashboardView(tk.Toplevel):
         self._nav_buttons = {}
         self._action_buttons = {}
         self.empty_state_label: Optional[ttk.Label] = None
-        self._sort_column_by_page = {'societe': None, 'associe': None, 'contrat': None}
-        self._sort_desc_by_page = {'societe': False, 'associe': False, 'contrat': False}
-        self._page_index_by_page = {'societe': 0, 'associe': 0, 'contrat': 0}
+        self._sort_column_by_page = {'societe': None, 'associe': None, 'contrat': None, 'collaborateur': None}
+        self._sort_desc_by_page = {'societe': False, 'associe': False, 'contrat': False, 'collaborateur': False}
+        self._page_index_by_page = {'societe': 0, 'associe': 0, 'contrat': 0, 'collaborateur': 0}
         self._page_size_var = tk.IntVar(value=50)
         self._current_view_df = pd.DataFrame()
         self._toast_job = None
@@ -212,7 +213,7 @@ class DashboardView(tk.Toplevel):
             'PART_PERCENT': '% Parts',
             'PARTS': 'Nb Parts',
             'CAPITAL_DETENU': 'Capital Détenu',
-            'IS_GERANT': 'Gérant',
+            'IS_GERANT': 'Est Gérant',
             'QUALITY': 'Qualité',
             'DATE_CONTRAT': 'Date Contrat',
             'DUREE_CONTRAT_MOIS': 'Durée (mois)',
@@ -233,6 +234,15 @@ class DashboardView(tk.Toplevel):
             'MONTANT_TOTAL_HT_RENOUVELLEMENT': 'Montant Renouv. HT',
             'LOYER_MENSUEL_RENOUVELLEMENT_TTC': 'Loyer Renouv. TTC',
             'LOYER_ANNUEL_RENOUVELLEMENT_TTC': 'Loyer Annuel Renouv.',
+            'COLLABORATEUR_NOM': 'Nom / Raison sociale',
+            'COLLABORATEUR_ICE': 'ICE',
+            'COLLABORATEUR_TP': 'TP',
+            'COLLABORATEUR_RC': 'RC',
+            'COLLABORATEUR_IF': 'IF',
+            'COLLABORATEUR_TEL_FIXE': 'Tél. Fixe',
+            'COLLABORATEUR_TEL_MOBILE': 'Tél. Mobile',
+            'COLLABORATEUR_ADRESSE': 'Adresse',
+            'COLLABORATEUR_EMAIL': 'Email',
         }
         return labels.get(column_name, column_name)
 
@@ -287,6 +297,15 @@ class DashboardView(tk.Toplevel):
             'MONTANT_TOTAL_HT_RENOUVELLEMENT': 150,
             'LOYER_MENSUEL_RENOUVELLEMENT_TTC': 150,
             'LOYER_ANNUEL_RENOUVELLEMENT_TTC': 160,
+            'COLLABORATEUR_NOM': 200,
+            'COLLABORATEUR_ICE': 140,
+            'COLLABORATEUR_TP': 120,
+            'COLLABORATEUR_RC': 120,
+            'COLLABORATEUR_IF': 120,
+            'COLLABORATEUR_TEL_FIXE': 130,
+            'COLLABORATEUR_TEL_MOBILE': 140,
+            'COLLABORATEUR_ADRESSE': 260,
+            'COLLABORATEUR_EMAIL': 200,
         }
         return widths.get(column_name, 120)
 
@@ -404,7 +423,11 @@ class DashboardView(tk.Toplevel):
         self._nav_buttons['contrat'] = WidgetFactory.create_button(
             nav_row, text="📄 Contrats", command=lambda: self._show_page('contrat'), style='DashboardTab.TButton'
         )
-        self._nav_buttons['contrat'].pack(side='left')
+        self._nav_buttons['contrat'].pack(side='left', padx=(0, 8))
+        self._nav_buttons['collaborateur'] = WidgetFactory.create_button(
+            nav_row, text="🤝 Collaborateurs", command=lambda: self._show_page('collaborateur'), style='DashboardTab.TButton'
+        )
+        self._nav_buttons['collaborateur'].pack(side='left')
 
         right = ttk.Frame(header)
         right.pack(side='right')
@@ -479,6 +502,7 @@ class DashboardView(tk.Toplevel):
             ('societe', 'Sociétés', [c for c in societe_headers if not c.startswith('ID_')]),
             ('associe', 'Associés', [c for c in associe_headers if not c.startswith('ID_')]),
             ('contrat', 'Contrats', [c for c in contrat_headers if not c.startswith('ID_')]),
+            ('collaborateur', 'Collaborateurs', [c for c in collaborateur_headers if not c.startswith('ID_')]),
         ]:
             page = ttk.Frame(self.page_container)
             page.pack_forget()
@@ -609,6 +633,10 @@ class DashboardView(tk.Toplevel):
                     self._contrats_df = _normalize_contrats_df(self._contrats_df).reindex(
                         columns=_const.contrat_headers, fill_value=''
                     )
+                    try:
+                        self._collaborateurs_df = pd.read_excel(excel_path, sheet_name='Collaborateurs', dtype=str).fillna('')
+                    except Exception:
+                        self._collaborateurs_df = pd.DataFrame(columns=_const.collaborateur_headers)
                     # Initialize with societes data
                     self._df = self._societes_df
                 except Exception as e:
@@ -616,11 +644,13 @@ class DashboardView(tk.Toplevel):
                     self._societes_df = pd.DataFrame(columns=_const.societe_headers)
                     self._associes_df = pd.DataFrame(columns=_const.associe_headers)
                     self._contrats_df = pd.DataFrame(columns=_const.contrat_headers)
+                    self._collaborateurs_df = pd.DataFrame(columns=_const.collaborateur_headers)
                     self._df = self._societes_df
             else:
                 self._societes_df = pd.DataFrame(columns=_const.societe_headers)
                 self._associes_df = pd.DataFrame(columns=_const.associe_headers)
                 self._contrats_df = pd.DataFrame(columns=_const.contrat_headers)
+                self._collaborateurs_df = pd.DataFrame(columns=_const.collaborateur_headers)
                 self._df = self._societes_df
 
             self._refresh_display()
@@ -629,6 +659,7 @@ class DashboardView(tk.Toplevel):
             self._societes_df = pd.DataFrame()
             self._associes_df = pd.DataFrame()
             self._contrats_df = pd.DataFrame()
+            self._collaborateurs_df = pd.DataFrame()
             self._df = pd.DataFrame()
 
     def _show_page(self, page_key: str):
@@ -642,6 +673,8 @@ class DashboardView(tk.Toplevel):
             self._df = self._associes_df
         elif page_key == 'contrat':
             self._df = self._contrats_df
+        elif page_key == 'collaborateur':
+            self._df = self._collaborateurs_df
 
         # Show/hide pages
         for key, page in self.pages.items():
