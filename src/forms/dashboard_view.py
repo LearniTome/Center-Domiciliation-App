@@ -66,36 +66,10 @@ class DashboardView(tk.Toplevel):
         self.geometry("1100x700")
         self.minsize(800, 520)
         self._is_fullscreen = False
+        # Keep dashboard non-modal to allow opening tools/settings without blocking.
         self._use_modal_parent_lock = False
-
-        # Make modal only when parent window is actually visible.
-        try:
-            self._use_modal_parent_lock = bool(parent.winfo_viewable())
-        except Exception:
-            self._use_modal_parent_lock = False
-        if self._use_modal_parent_lock:
-            try:
-                self.transient(parent)
-                self.grab_set()
-            except Exception:
-                pass
-
-        # Track parent state
         self._parent_disabled = False
         self._parent_withdrawn = False
-        if self._use_modal_parent_lock:
-            try:
-                try:
-                    parent.attributes('-disabled', True)
-                    self._parent_disabled = True
-                except Exception:
-                    try:
-                        parent.withdraw()
-                        self._parent_withdrawn = True
-                    except Exception:
-                        pass
-            except Exception:
-                pass
 
         # Theme
         self.theme = ThemeManager(self.winfo_toplevel())
@@ -435,6 +409,12 @@ class DashboardView(tk.Toplevel):
             nav_row, text="🤝 Collaborateurs", command=lambda: self._show_page('collaborateur'), style='DashboardTab.TButton'
         )
         self._nav_buttons['collaborateur'].pack(side='left')
+
+        tools_cmd = self._open_tools
+        self.tools_button = WidgetFactory.create_button(
+            nav_row, text='🧰 Outils', command=tools_cmd, style='Secondary.TButton'
+        )
+        self.tools_button.pack(side='left', padx=(16, 0))
 
         right = ttk.Frame(header)
         right.pack(side='right')
@@ -1244,6 +1224,39 @@ class DashboardView(tk.Toplevel):
 
         try:
             self.withdraw()
+        except Exception:
+            pass
+
+    def _open_tools(self):
+        """Open tools dialog from dashboard, releasing grabs first."""
+        try:
+            self.grab_release()
+        except Exception:
+            pass
+        # Try main_form first (même logique que dans le générateur)
+        try:
+            mf = getattr(self.parent, 'main_form', None)
+            if mf and callable(getattr(mf, 'open_configuration', None)):
+                try:
+                    mf.open_configuration(parent_window=self)
+                except TypeError:
+                    mf.open_configuration()
+                return
+        except Exception:
+            pass
+        # Fallback: directement via le parent
+        try:
+            tools_cmd = getattr(self.parent, 'open_configuration', None)
+            if callable(tools_cmd):
+                try:
+                    tools_cmd(parent_window=self)
+                except TypeError:
+                    tools_cmd()
+                return
+        except Exception:
+            pass
+        try:
+            messagebox.showwarning("Outils", "Impossible d'ouvrir les outils depuis le tableau de bord.")
         except Exception:
             pass
 

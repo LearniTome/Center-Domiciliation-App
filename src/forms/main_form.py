@@ -738,13 +738,6 @@ class MainForm(ttk.Frame):
 
         left = [
             {
-                'key': 'tools',
-                'text': '🧰 Outils',
-                'command': self.open_configuration,
-                'style': secondary,
-                'width': widths['tools'],
-            },
-            {
                 'key': 'dashboard',
                 'text': '📊 Tableau de bord',
                 'command': lambda: self.show_dashboard(start_fullscreen=True),
@@ -813,11 +806,12 @@ class MainForm(ttk.Frame):
         if attr_name:
             setattr(self, attr_name, button)
 
-    def open_configuration(self):
+    def open_configuration(self, parent_window=None):
         """Open a lightweight tools launcher."""
         try:
-            top = tk.Toplevel(self.winfo_toplevel())
-            top.transient(self.winfo_toplevel())
+            owner = parent_window or self.winfo_toplevel()
+            top = tk.Toplevel(owner)
+            top.transient(owner)
             top.title("Outils")
             top.geometry("470x340")
             top.resizable(False, False)
@@ -848,14 +842,14 @@ class MainForm(ttk.Frame):
                     top.destroy()
                 except Exception:
                     pass
-                self._open_defaults_dialog()
+                self._open_defaults_dialog(parent_window=parent_window or owner)
 
             def _open_analyzer():
                 try:
                     top.destroy()
                 except Exception:
                     pass
-                self._open_template_values_analyzer_dialog()
+                self._open_template_values_analyzer_dialog(parent_window=parent_window or owner)
 
             def _open_generator():
                 try:
@@ -863,6 +857,12 @@ class MainForm(ttk.Frame):
                 except Exception:
                     pass
                 try:
+                    if parent_window and hasattr(parent_window, '_hide_for_parent_switch'):
+                        parent_window._hide_for_parent_switch(fullscreen_parent=True)
+                    try:
+                        self.winfo_toplevel().deiconify()
+                    except Exception:
+                        pass
                     top_level = self.winfo_toplevel()
                     generate_fn = getattr(top_level, 'generate_documents', None)
                     if callable(generate_fn):
@@ -875,7 +875,7 @@ class MainForm(ttk.Frame):
                     top.destroy()
                 except Exception:
                     pass
-                self._open_word_pdf_batch_dialog()
+                self._open_word_pdf_batch_dialog(parent_window=parent_window or owner)
 
             WidgetFactory.create_button(
                 actions,
@@ -915,11 +915,16 @@ class MainForm(ttk.Frame):
             ).pack(side="right")
 
             WindowManager.center_window(top)
+            try:
+                top.lift()
+                top.focus_force()
+            except Exception:
+                pass
         except Exception as e:
-            logger.exception("Erreur lors de l'ouverture de la configuration")
-            messagebox.showerror("Erreur", f"Impossible d'ouvrir la configuration: {e}")
+            logger.exception("Erreur lors de l'ouverture des outils")
+            messagebox.showerror("Erreur", f"Impossible d'ouvrir les outils: {e}")
 
-    def _open_word_pdf_batch_dialog(self):
+    def _open_word_pdf_batch_dialog(self, parent_window=None):
         """Open tool dialog to convert many DOCX files to PDF with report."""
         try:
             from ..utils.word_pdf_batch import convert_docx_batch
@@ -930,8 +935,9 @@ class MainForm(ttk.Frame):
             )
             return
 
-        top = tk.Toplevel(self.winfo_toplevel())
-        top.transient(self.winfo_toplevel())
+        owner = parent_window or self.winfo_toplevel()
+        top = tk.Toplevel(owner)
+        top.transient(owner)
         top.title("Outils - Conversion Word vers PDF")
         top.geometry("840x520")
         top.resizable(True, True)
@@ -1189,15 +1195,16 @@ class MainForm(ttk.Frame):
 
         WindowManager.center_window(top)
 
-    def _open_defaults_dialog(self):
-        """Open configuration dialog to manage default values for the entire application."""
+    def _open_defaults_dialog(self, parent_window=None):
+        """Open tools dialog to manage default values for the entire application."""
         try:
             from ..utils.defaults_manager import get_defaults_manager
             from ..utils import constants
             
-            top = tk.Toplevel(self.winfo_toplevel())
-            top.transient(self.winfo_toplevel())
-            top.title('Configuration - Valeurs par défaut')
+            owner = parent_window or self.winfo_toplevel()
+            top = tk.Toplevel(owner)
+            top.transient(owner)
+            top.title('Outils - Valeurs par défaut')
             top.geometry('960x560')
             top.resizable(True, True)
             
@@ -1437,7 +1444,7 @@ class MainForm(ttk.Frame):
                     if hasattr(self.parent, '_on_defaults_changed'):
                         self.parent._on_defaults_changed()
                     
-                    messagebox.showinfo('Configuration', 'Valeurs par défaut enregistrées avec succès.')
+                        messagebox.showinfo('Outils', 'Valeurs par défaut enregistrées avec succès.')
                     try:
                         top.destroy()
                     except Exception:
@@ -1464,7 +1471,7 @@ class MainForm(ttk.Frame):
                         if hasattr(self.parent, '_on_defaults_changed'):
                             self.parent._on_defaults_changed()
                         
-                        messagebox.showinfo('Configuration', 'Défauts réinitialisés aux valeurs initiales.')
+                        messagebox.showinfo('Outils', 'Défauts réinitialisés aux valeurs initiales.')
                     except Exception as e:
                         messagebox.showerror('Erreur', f"Impossible de réinitialiser: {e}")
 
@@ -1488,10 +1495,10 @@ class MainForm(ttk.Frame):
             except Exception:
                 pass
         except Exception as e:
-            logger.exception('Erreur lors de l\'ouverture de la configuration')
-            messagebox.showerror('Erreur', f"Impossible d'ouvrir la configuration: {e}")
+            logger.exception("Erreur lors de l'ouverture des outils")
+            messagebox.showerror("Erreur", f"Impossible d'ouvrir les outils: {e}")
 
-    def _open_template_values_analyzer_dialog(self):
+    def _open_template_values_analyzer_dialog(self, parent_window=None):
         """Open template variable analyzer with global and detailed views."""
         try:
             from ..utils.doc_generator import get_expected_context_keys
@@ -1501,9 +1508,10 @@ class MainForm(ttk.Frame):
                 filter_analysis_rows,
             )
 
-            top = tk.Toplevel(self.winfo_toplevel())
-            top.transient(self.winfo_toplevel())
-            top.title("Configuration - Analyse des valeurs templates")
+            owner = parent_window or self.winfo_toplevel()
+            top = tk.Toplevel(owner)
+            top.transient(owner)
+            top.title("Outils - Analyse des valeurs templates")
             top.geometry("1200x760")
             top.resizable(True, True)
 
