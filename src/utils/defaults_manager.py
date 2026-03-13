@@ -99,6 +99,8 @@ class DefaultsManager:
                 'DhHtRenouvellement': '166.667',
             },
             'collaborateur': {
+                'Type': '',
+                'Code': '',
                 'Nom': '',
                 'Ice': '',
                 'Tp': '',

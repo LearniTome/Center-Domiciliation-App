@@ -70,56 +70,151 @@ Activities = [
 
 # Excel sheet headers
 societe_headers = [
-    "ID_SOCIETE", "DEN_STE", "FORME_JUR", "ICE", "DATE_ICE", "CAPITAL",
-    "PART_SOCIAL", "VALEUR_NOMINALE", "DATE_EXP_CERT_NEG", "STE_ADRESS", "TRIBUNAL",
-    "TYPE_GENERATION", "PROCEDURE_CREATION", "MODE_DEPOT_CREATION"
+    "id_societe", "den_ste", "forme_jur", "ice", "date_ice", "capital",
+    "part_social", "valeur_nominale", "date_exp_cert_neg", "ste_adress", "tribunal",
+    "type_generation", "procedure_creation", "mode_depot_creation"
 ]
 
 associe_headers = [
-    "ID_ASSOCIE", "ID_SOCIETE", "CIVIL", "PRENOM", "NOM",
-    "NATIONALITY", "CIN_NUM", "CIN_VALIDATY", "DATE_NAISS",
-    "LIEU_NAISS", "ADRESSE", "PHONE", "EMAIL",
-    "PART_PERCENT", "PARTS", "CAPITAL_DETENU", "IS_GERANT", "QUALITY"
+    "id_associe", "id_societe", "den_ste", "civil", "prenom", "nom",
+    "nationality", "cin_num", "cin_validaty", "date_naiss",
+    "lieu_naiss", "adresse", "phone", "email",
+    "part_percent", "parts", "capital_detenu", "is_gerant", "quality"
 ]
 
 contrat_headers = [
-    "ID_CONTRAT", "ID_SOCIETE", "DATE_CONTRAT", "DUREE_CONTRAT_MOIS",
-    "TYPE_CONTRAT_DOMICILIATION", "TYPE_CONTRAT_DOMICILIATION_AUTRE",
-    "LOYER_MENSUEL_TTC", "FRAIS_INTERMEDIAIRE_CONTRAT", "DATE_DEBUT_CONTRAT",
-    "DATE_FIN_CONTRAT", "TAUX_TVA_POURCENT", "LOYER_MENSUEL_HT", "MONTANT_TOTAL_HT_CONTRAT",
-    "MONTANT_PACK_DEMARRAGE_TTC", "LOYER_MENSUEL_PACK_DEMARRAGE_TTC",
-    "TYPE_RENOUVELLEMENT", "TAUX_TVA_RENOUVELLEMENT_POURCENT",
-    "LOYER_MENSUEL_HT_RENOUVELLEMENT", "MONTANT_TOTAL_HT_RENOUVELLEMENT",
-    "LOYER_MENSUEL_RENOUVELLEMENT_TTC", "LOYER_ANNUEL_RENOUVELLEMENT_TTC"
+    "id_contrat", "id_societe", "den_ste", "date_contrat", "duree_contrat_mois",
+    "type_contrat_domiciliation", "type_contrat_domiciliation_autre",
+    "loyer_mensuel_ttc", "frais_intermediaire_contrat", "date_debut_contrat",
+    "date_fin_contrat", "taux_tva_pourcent", "loyer_mensuel_ht", "montant_total_ht_contrat",
+    "montant_pack_demarrage_ttc", "loyer_mensuel_pack_demarrage_ttc",
+    "type_renouvellement", "taux_tva_renouvellement_pourcent",
+    "loyer_mensuel_ht_renouvellement", "montant_total_ht_renouvellement",
+    "loyer_mensuel_renouvellement_ttc", "loyer_annuel_renouvellement_ttc"
 ]
 
 collaborateur_headers = [
-    "ID_COLLABORATEUR", "ID_SOCIETE",
-    "COLLABORATEUR_NOM", "COLLABORATEUR_ICE", "COLLABORATEUR_TP",
-    "COLLABORATEUR_RC", "COLLABORATEUR_IF",
-    "COLLABORATEUR_TEL_FIXE", "COLLABORATEUR_TEL_MOBILE",
-    "COLLABORATEUR_ADRESSE", "COLLABORATEUR_EMAIL",
+    "id_collaborateur", "id_societe",
+    "collaborateur_type", "collaborateur_code",
+    "collaborateur_nom", "collaborateur_ice", "collaborateur_tp",
+    "collaborateur_rc", "collaborateur_if",
+    "collaborateur_tel_fixe", "collaborateur_tel_mobile",
+    "collaborateur_adresse", "collaborateur_email",
 ]
+
+# Human-readable header labels for Excel output
+excel_header_labels = {
+    "den_ste": "Dénomination sociale",
+    "DEN_STE": "Dénomination sociale",
+}
 
 # Compatibility aliases to migrate old contract column names.
 contrat_header_aliases = {
-    "PERIOD_DOMCIL": "DUREE_CONTRAT_MOIS",
-    "PRIX_CONTRAT": "LOYER_MENSUEL_TTC",
-    "PRIX_INTERMEDIARE_CONTRAT": "FRAIS_INTERMEDIAIRE_CONTRAT",
-    "DOM_DATEDEB": "DATE_DEBUT_CONTRAT",
-    "DOM_DATEFIN": "DATE_FIN_CONTRAT",
-    "PACK_DEMARRAGE_MONTANT_TTC": "MONTANT_PACK_DEMARRAGE_TTC",
-    "PACK_DEMARRAGE_LOYER_MENSUEL_TTC": "LOYER_MENSUEL_PACK_DEMARRAGE_TTC",
-    "LOYER_RENOUVELLEMENT_MENSUEL_TTC": "LOYER_MENSUEL_RENOUVELLEMENT_TTC",
-    "LOYER_RENOUVELLEMENT_ANNUEL_TTC": "LOYER_ANNUEL_RENOUVELLEMENT_TTC",
+    "ID_CONTRAT": "id_contrat",
+    "ID_SOCIETE": "id_societe",
+    "DEN_STE": "den_ste",
+    "Dénomination sociale": "den_ste",
+    "DATE_CONTRAT": "date_contrat",
+    "DUREE_CONTRAT_MOIS": "duree_contrat_mois",
+    "TYPE_CONTRAT_DOMICILIATION": "type_contrat_domiciliation",
+    "TYPE_CONTRAT_DOMICILIATION_AUTRE": "type_contrat_domiciliation_autre",
+    "LOYER_MENSUEL_TTC": "loyer_mensuel_ttc",
+    "FRAIS_INTERMEDIAIRE_CONTRAT": "frais_intermediaire_contrat",
+    "DATE_DEBUT_CONTRAT": "date_debut_contrat",
+    "DATE_FIN_CONTRAT": "date_fin_contrat",
+    "TAUX_TVA_POURCENT": "taux_tva_pourcent",
+    "LOYER_MENSUEL_HT": "loyer_mensuel_ht",
+    "MONTANT_TOTAL_HT_CONTRAT": "montant_total_ht_contrat",
+    "MONTANT_PACK_DEMARRAGE_TTC": "montant_pack_demarrage_ttc",
+    "LOYER_MENSUEL_PACK_DEMARRAGE_TTC": "loyer_mensuel_pack_demarrage_ttc",
+    "TYPE_RENOUVELLEMENT": "type_renouvellement",
+    "TAUX_TVA_RENOUVELLEMENT_POURCENT": "taux_tva_renouvellement_pourcent",
+    "LOYER_MENSUEL_HT_RENOUVELLEMENT": "loyer_mensuel_ht_renouvellement",
+    "MONTANT_TOTAL_HT_RENOUVELLEMENT": "montant_total_ht_renouvellement",
+    "LOYER_MENSUEL_RENOUVELLEMENT_TTC": "loyer_mensuel_renouvellement_ttc",
+    "LOYER_ANNUEL_RENOUVELLEMENT_TTC": "loyer_annuel_renouvellement_ttc",
+    "PERIOD_DOMCIL": "duree_contrat_mois",
+    "PRIX_CONTRAT": "loyer_mensuel_ttc",
+    "PRIX_INTERMEDIARE_CONTRAT": "frais_intermediaire_contrat",
+    "DOM_DATEDEB": "date_debut_contrat",
+    "DOM_DATEFIN": "date_fin_contrat",
+    "PACK_DEMARRAGE_MONTANT_TTC": "montant_pack_demarrage_ttc",
+    "PACK_DEMARRAGE_LOYER_MENSUEL_TTC": "loyer_mensuel_pack_demarrage_ttc",
+    "LOYER_RENOUVELLEMENT_MENSUEL_TTC": "loyer_mensuel_renouvellement_ttc",
+    "LOYER_RENOUVELLEMENT_ANNUEL_TTC": "loyer_annuel_renouvellement_ttc",
+}
+
+societe_header_aliases = {
+    "ID_SOCIETE": "id_societe",
+    "DEN_STE": "den_ste",
+    "Dénomination sociale": "den_ste",
+    "FORME_JUR": "forme_jur",
+    "ICE": "ice",
+    "DATE_ICE": "date_ice",
+    "CAPITAL": "capital",
+    "PART_SOCIAL": "part_social",
+    "VALEUR_NOMINALE": "valeur_nominale",
+    "DATE_EXP_CERT_NEG": "date_exp_cert_neg",
+    "STE_ADRESS": "ste_adress",
+    "TRIBUNAL": "tribunal",
+    "TYPE_GENERATION": "type_generation",
+    "PROCEDURE_CREATION": "procedure_creation",
+    "MODE_DEPOT_CREATION": "mode_depot_creation",
+}
+
+associe_header_aliases = {
+    "ID_ASSOCIE": "id_associe",
+    "ID_SOCIETE": "id_societe",
+    "DEN_STE": "den_ste",
+    "Dénomination sociale": "den_ste",
+    "CIVIL": "civil",
+    "PRENOM": "prenom",
+    "NOM": "nom",
+    "NATIONALITY": "nationality",
+    "CIN_NUM": "cin_num",
+    "CIN_VALIDATY": "cin_validaty",
+    "DATE_NAISS": "date_naiss",
+    "LIEU_NAISS": "lieu_naiss",
+    "ADRESSE": "adresse",
+    "PHONE": "phone",
+    "EMAIL": "email",
+    "PART_PERCENT": "part_percent",
+    "PARTS": "parts",
+    "CAPITAL_DETENU": "capital_detenu",
+    "IS_GERANT": "is_gerant",
+    "QUALITY": "quality",
+}
+
+collaborateur_header_aliases = {
+    "ID_COLLABORATEUR": "id_collaborateur",
+    "ID_SOCIETE": "id_societe",
+    "COLLABORATEUR_TYPE": "collaborateur_type",
+    "COLLABORATEUR_CODE": "collaborateur_code",
+    "COLLABORATEUR_NOM": "collaborateur_nom",
+    "COLLABORATEUR_ICE": "collaborateur_ice",
+    "COLLABORATEUR_TP": "collaborateur_tp",
+    "COLLABORATEUR_RC": "collaborateur_rc",
+    "COLLABORATEUR_IF": "collaborateur_if",
+    "COLLABORATEUR_TEL_FIXE": "collaborateur_tel_fixe",
+    "COLLABORATEUR_TEL_MOBILE": "collaborateur_tel_mobile",
+    "COLLABORATEUR_ADRESSE": "collaborateur_adresse",
+    "COLLABORATEUR_EMAIL": "collaborateur_email",
 }
 
 # Reference sheets for dropdown lists and lookups
-ste_adresses_headers = ["STE_ADRESSE"]
-tribunaux_headers = ["TRIBUNAL"]
-activites_headers = ["ACTIVITE"]
-nationalites_headers = ["NATIONALITE"]
-lieux_naissance_headers = ["LIEU_NAISSANCE"]
+ste_adresses_headers = ["ste_adresse"]
+tribunaux_headers = ["tribunal"]
+activites_headers = ["activite"]
+nationalites_headers = ["nationalite"]
+lieux_naissance_headers = ["lieu_naissance"]
+
+reference_header_aliases = {
+    "SteAdresses": {"STE_ADRESSE": "ste_adresse", "STE_ADRESS": "ste_adresse"},
+    "Tribunaux": {"TRIBUNAL": "tribunal"},
+    "Activites": {"ACTIVITE": "activite"},
+    "Nationalites": {"NATIONALITE": "nationalite"},
+    "LieuxNaissance": {"LIEU_NAISSANCE": "lieu_naissance", "LIEU_NAISS": "lieu_naissance"},
+}
 
 # Dictionary for Excel sheets (includes both data sheets and reference sheets)
 excel_sheets = {

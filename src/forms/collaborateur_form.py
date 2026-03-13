@@ -31,6 +31,8 @@ class CollaborateurForm(ttk.Frame):
         from ..utils.defaults_manager import get_defaults_manager
 
         defaults_mgr = get_defaults_manager()
+        self.type_var = tk.StringVar(value=defaults_mgr.get_default('collaborateur', 'Type') or '')
+        self.code_var = tk.StringVar(value=defaults_mgr.get_default('collaborateur', 'Code') or '')
         self.nom_var = tk.StringVar(value=defaults_mgr.get_default('collaborateur', 'Nom') or '')
         self.ice_var = tk.StringVar(value=defaults_mgr.get_default('collaborateur', 'Ice') or '')
         self.tp_var = tk.StringVar(value=defaults_mgr.get_default('collaborateur', 'Tp') or '')
@@ -42,6 +44,8 @@ class CollaborateurForm(ttk.Frame):
         self.email_var = tk.StringVar(value=defaults_mgr.get_default('collaborateur', 'Email') or '')
 
     def setup_gui(self):
+        from ..utils.constants import Collaborateurs
+
         main_frame = ttk.Frame(self)
         main_frame.pack(fill="both", expand=True, padx=10, pady=6)
 
@@ -65,36 +69,51 @@ class CollaborateurForm(ttk.Frame):
             return cell
 
         # Ligne 1
-        nom_cell = _cell(0, 0, "Nom / Raison sociale", span=2)
+        type_cell = _cell(0, 0, "Type collaborateur", span=2)
+        self.type_combo = ttk.Combobox(type_cell, textvariable=self.type_var, values=list(Collaborateurs or []))
+        self.type_combo.grid(row=1, column=0, sticky="ew", pady=(2, 0))
+
+        code_cell = _cell(0, 2, "Code collaborateur")
+        ttk.Entry(code_cell, textvariable=self.code_var, state='readonly').grid(row=1, column=0, sticky="ew", pady=(2, 0))
+
+        nom_cell = _cell(0, 3, "Nom / Raison sociale", span=3)
         ttk.Entry(nom_cell, textvariable=self.nom_var).grid(row=1, column=0, sticky="ew", pady=(2, 0))
 
-        ice_cell = _cell(0, 2, "ICE")
+        ice_cell = _cell(1, 0, "ICE")
         ttk.Entry(ice_cell, textvariable=self.ice_var).grid(row=1, column=0, sticky="ew", pady=(2, 0))
 
-        tp_cell = _cell(0, 3, "TP")
+        tp_cell = _cell(1, 1, "TP")
         ttk.Entry(tp_cell, textvariable=self.tp_var).grid(row=1, column=0, sticky="ew", pady=(2, 0))
 
-        rc_cell = _cell(0, 4, "RC")
+        rc_cell = _cell(1, 2, "RC")
         ttk.Entry(rc_cell, textvariable=self.rc_var).grid(row=1, column=0, sticky="ew", pady=(2, 0))
 
-        if_cell = _cell(0, 5, "IF")
+        if_cell = _cell(1, 3, "IF")
         ttk.Entry(if_cell, textvariable=self.if_var).grid(row=1, column=0, sticky="ew", pady=(2, 0))
 
-        # Ligne 2
-        tel_fixe_cell = _cell(1, 0, "Téléphone fixe")
+        # Ligne 3
+        tel_fixe_cell = _cell(2, 0, "Téléphone fixe")
         ttk.Entry(tel_fixe_cell, textvariable=self.tel_fixe_var).grid(row=1, column=0, sticky="ew", pady=(2, 0))
 
-        tel_mobile_cell = _cell(1, 1, "Téléphone mobile")
+        tel_mobile_cell = _cell(2, 1, "Téléphone mobile")
         ttk.Entry(tel_mobile_cell, textvariable=self.tel_mobile_var).grid(row=1, column=0, sticky="ew", pady=(2, 0))
 
-        email_cell = _cell(1, 2, "Email", span=2)
+        email_cell = _cell(2, 2, "Email", span=2)
         ttk.Entry(email_cell, textvariable=self.email_var).grid(row=1, column=0, sticky="ew", pady=(2, 0))
 
-        adresse_cell = _cell(1, 4, "Adresse", span=2)
+        adresse_cell = _cell(2, 4, "Adresse", span=2)
         ttk.Entry(adresse_cell, textvariable=self.adresse_var).grid(row=1, column=0, sticky="ew", pady=(2, 0))
+
+        try:
+            self.type_combo.bind('<<ComboboxSelected>>', lambda _e: self._sync_code_from_type())
+        except Exception:
+            pass
+        self._sync_code_from_type()
 
     def get_values(self):
         return {
+            'type': self.type_var.get(),
+            'code': self.code_var.get(),
             'nom': self.nom_var.get(),
             'ice': self.ice_var.get(),
             'tp': self.tp_var.get(),
@@ -112,6 +131,8 @@ class CollaborateurForm(ttk.Frame):
             return
         values_dict = values_dict or {}
         try:
+            self.type_var.set(values_dict.get('type', '') or '')
+            self.code_var.set(values_dict.get('code', '') or '')
             self.nom_var.set(values_dict.get('nom', '') or '')
             self.ice_var.set(values_dict.get('ice', '') or '')
             self.tp_var.set(values_dict.get('tp', '') or '')
@@ -121,8 +142,21 @@ class CollaborateurForm(ttk.Frame):
             self.tel_mobile_var.set(values_dict.get('tel_mobile', '') or '')
             self.adresse_var.set(values_dict.get('adresse', '') or '')
             self.email_var.set(values_dict.get('email', '') or '')
+            self._sync_code_from_type()
         except Exception:
             pass
+
+    def _sync_code_from_type(self):
+        raw = str(self.type_var.get() or '').strip()
+        if not raw:
+            self.code_var.set('')
+            return
+        import re
+        match = re.match(r'^([A-Z0-9]+)', raw.upper())
+        if match:
+            self.code_var.set(match.group(1))
+        else:
+            self.code_var.set('')
 
     def _cleanup(self, _event):
         return

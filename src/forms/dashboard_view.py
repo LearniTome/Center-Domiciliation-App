@@ -16,42 +16,42 @@ from ..utils.constants import societe_headers, associe_headers, contrat_headers,
 logger = logging.getLogger(__name__)
 
 DATE_COLUMNS = {
-    'DATE_ICE',
-    'DATE_EXP_CERT_NEG',
-    'CIN_VALIDATY',
-    'DATE_NAISS',
-    'DATE_CONTRAT',
-    'DATE_DEBUT_CONTRAT',
-    'DATE_FIN_CONTRAT',
+    'date_ice',
+    'date_exp_cert_neg',
+    'cin_validaty',
+    'date_naiss',
+    'date_contrat',
+    'date_debut_contrat',
+    'date_fin_contrat',
 }
 
 BOOLEAN_COLUMNS = {
-    'IS_GERANT',
+    'is_gerant',
 }
 
 INTEGER_COLUMNS = {
-    'CAPITAL',
-    'PART_SOCIAL',
-    'VALEUR_NOMINALE',
-    'PART_PERCENT',
-    'PARTS',
-    'CAPITAL_DETENU',
-    'DUREE_CONTRAT_MOIS',
-    'TAUX_TVA_POURCENT',
-    'TAUX_TVA_RENOUVELLEMENT_POURCENT',
+    'capital',
+    'part_social',
+    'valeur_nominale',
+    'part_percent',
+    'parts',
+    'capital_detenu',
+    'duree_contrat_mois',
+    'taux_tva_pourcent',
+    'taux_tva_renouvellement_pourcent',
 }
 
 AMOUNT_COLUMNS = {
-    'LOYER_MENSUEL_TTC',
-    'FRAIS_INTERMEDIAIRE_CONTRAT',
-    'LOYER_MENSUEL_HT',
-    'MONTANT_TOTAL_HT_CONTRAT',
-    'MONTANT_PACK_DEMARRAGE_TTC',
-    'LOYER_MENSUEL_PACK_DEMARRAGE_TTC',
-    'LOYER_MENSUEL_HT_RENOUVELLEMENT',
-    'MONTANT_TOTAL_HT_RENOUVELLEMENT',
-    'LOYER_MENSUEL_RENOUVELLEMENT_TTC',
-    'LOYER_ANNUEL_RENOUVELLEMENT_TTC',
+    'loyer_mensuel_ttc',
+    'frais_intermediaire_contrat',
+    'loyer_mensuel_ht',
+    'montant_total_ht_contrat',
+    'montant_pack_demarrage_ttc',
+    'loyer_mensuel_pack_demarrage_ttc',
+    'loyer_mensuel_ht_renouvellement',
+    'montant_total_ht_renouvellement',
+    'loyer_mensuel_renouvellement_ttc',
+    'loyer_annuel_renouvellement_ttc',
 }
 
 
@@ -150,7 +150,7 @@ class DashboardView(tk.Toplevel):
         self._update_clock()
 
         # Cleanup on close
-        self.protocol('WM_DELETE_WINDOW', self._on_close)
+        self.protocol('WM_DELETE_WINDOW', lambda: self._on_close(call_parent=True))
 
     def _enter_fullscreen(self):
         """Maximize dashboard window."""
@@ -186,7 +186,7 @@ class DashboardView(tk.Toplevel):
     @staticmethod
     def _column_label(column_name: str) -> str:
         labels = {
-            'DEN_STE': 'Dénomination',
+            'DEN_STE': 'Dénomination sociale',
             'FORME_JUR': 'Forme Juridique',
             'ICE': 'ICE',
             'DATE_ICE': 'Date Cert. Négatif',
@@ -234,6 +234,8 @@ class DashboardView(tk.Toplevel):
             'MONTANT_TOTAL_HT_RENOUVELLEMENT': 'Montant Renouv. HT',
             'LOYER_MENSUEL_RENOUVELLEMENT_TTC': 'Loyer Renouv. TTC',
             'LOYER_ANNUEL_RENOUVELLEMENT_TTC': 'Loyer Annuel Renouv.',
+            'COLLABORATEUR_TYPE': 'Type collaborateur',
+            'COLLABORATEUR_CODE': 'Code collaborateur',
             'COLLABORATEUR_NOM': 'Nom / Raison sociale',
             'COLLABORATEUR_ICE': 'ICE',
             'COLLABORATEUR_TP': 'TP',
@@ -244,7 +246,8 @@ class DashboardView(tk.Toplevel):
             'COLLABORATEUR_ADRESSE': 'Adresse',
             'COLLABORATEUR_EMAIL': 'Email',
         }
-        return labels.get(column_name, column_name)
+        key = str(column_name or '')
+        return labels.get(key.upper(), labels.get(key, column_name))
 
     @staticmethod
     def _column_width(column_name: str) -> int:
@@ -297,6 +300,8 @@ class DashboardView(tk.Toplevel):
             'MONTANT_TOTAL_HT_RENOUVELLEMENT': 150,
             'LOYER_MENSUEL_RENOUVELLEMENT_TTC': 150,
             'LOYER_ANNUEL_RENOUVELLEMENT_TTC': 160,
+            'COLLABORATEUR_TYPE': 180,
+            'COLLABORATEUR_CODE': 140,
             'COLLABORATEUR_NOM': 200,
             'COLLABORATEUR_ICE': 140,
             'COLLABORATEUR_TP': 120,
@@ -307,7 +312,8 @@ class DashboardView(tk.Toplevel):
             'COLLABORATEUR_ADRESSE': 260,
             'COLLABORATEUR_EMAIL': 200,
         }
-        return widths.get(column_name, 120)
+        key = str(column_name or '')
+        return widths.get(key.upper(), widths.get(key, 120))
 
     @staticmethod
     def _format_date_value(value) -> str:
@@ -385,13 +391,14 @@ class DashboardView(tk.Toplevel):
         return f"{integer_part},{fractional_part}"
 
     def _format_display_value(self, column_name: str, value) -> str:
-        if column_name in DATE_COLUMNS:
+        key = str(column_name or '').lower()
+        if key in DATE_COLUMNS:
             return self._format_date_value(value)
-        if column_name in BOOLEAN_COLUMNS:
+        if key in BOOLEAN_COLUMNS:
             return self._format_bool_value(value)
-        if column_name in AMOUNT_COLUMNS:
+        if key in AMOUNT_COLUMNS:
             return self._format_number_value(value, min_decimals=2)
-        if column_name in INTEGER_COLUMNS:
+        if key in INTEGER_COLUMNS:
             return self._format_number_value(value)
         if value in (None, ''):
             return ''
@@ -437,6 +444,7 @@ class DashboardView(tk.Toplevel):
 
         self.clock_label = ttk.Label(right, text='', font=('Segoe UI', 13, 'bold'))
         self.clock_label.pack(anchor='e')
+
 
     def _build_body(self):
         """Build main body with navigation and content"""
@@ -498,11 +506,18 @@ class DashboardView(tk.Toplevel):
         self.trees = {}
 
         # Create tables for each page
+        associe_cols = [c for c in associe_headers if not str(c).lower().startswith('id_')]
+        if 'den_ste' not in associe_cols:
+            associe_cols = ['den_ste'] + associe_cols
+        contrat_cols = [c for c in contrat_headers if not str(c).lower().startswith('id_')]
+        if 'den_ste' not in contrat_cols:
+            contrat_cols = ['den_ste'] + contrat_cols
+
         for page_key, page_title, columns in [
-            ('societe', 'Sociétés', [c for c in societe_headers if not c.startswith('ID_')]),
-            ('associe', 'Associés', [c for c in associe_headers if not c.startswith('ID_')]),
-            ('contrat', 'Contrats', [c for c in contrat_headers if not c.startswith('ID_')]),
-            ('collaborateur', 'Collaborateurs', [c for c in collaborateur_headers if not c.startswith('ID_')]),
+            ('societe', 'Sociétés', [c for c in societe_headers if not str(c).lower().startswith('id_')]),
+            ('associe', 'Associés', associe_cols),
+            ('contrat', 'Contrats', contrat_cols),
+            ('collaborateur', 'Collaborateurs', [c for c in collaborateur_headers if not str(c).lower().startswith('id_')]),
         ]:
             page = ttk.Frame(self.page_container)
             page.pack_forget()
@@ -583,11 +598,15 @@ class DashboardView(tk.Toplevel):
         self.prev_page_btn = WidgetFactory.create_button(
             right_nav, text='◀ Précédent', command=self._go_prev_page, style='Secondary.TButton'
         )
-        self.prev_page_btn.pack(side='right', padx=(4, 0))
         self.next_page_btn = WidgetFactory.create_button(
             right_nav, text='Suivant ▶', command=self._go_next_page, style='Secondary.TButton'
         )
+        self.quit_button = WidgetFactory.create_button(
+            right_nav, text='❌ Quitter', command=self._quit_app, style='Cancel.TButton'
+        )
+        self.quit_button.pack(side='right', padx=(4, 0))
         self.next_page_btn.pack(side='right', padx=4)
+        self.prev_page_btn.pack(side='right', padx=(4, 0))
         self.page_label = ttk.Label(right_nav, text='Page 1/1')
         self.page_label.pack(side='right', padx=8)
 
@@ -621,6 +640,51 @@ class DashboardView(tk.Toplevel):
                         pass
                 return out
 
+            def _apply_aliases(df: pd.DataFrame, alias_map: dict) -> pd.DataFrame:
+                if df is None or df.empty or not alias_map:
+                    return df
+                out = df.copy()
+                for old_col, new_col in alias_map.items():
+                    if old_col not in out.columns:
+                        continue
+                    if new_col not in out.columns:
+                        out[new_col] = out[old_col]
+                    else:
+                        try:
+                            old_vals = out[old_col].fillna('').astype(str).str.strip()
+                            new_vals = out[new_col].fillna('').astype(str).str.strip()
+                            mask = (new_vals == '') & (old_vals != '')
+                            out.loc[mask, new_col] = out.loc[mask, old_col]
+                        except Exception:
+                            pass
+                    try:
+                        out.drop(columns=[old_col], inplace=True)
+                    except Exception:
+                        pass
+                return out
+
+            def _inject_denomination(df: pd.DataFrame, denom_map: dict) -> pd.DataFrame:
+                if df is None:
+                    return pd.DataFrame()
+                out = df.copy()
+                if 'den_ste' not in out.columns:
+                    out['den_ste'] = ''
+                if denom_map and 'id_societe' in out.columns:
+                    mapped = (
+                        out['id_societe']
+                        .fillna('')
+                        .astype(str)
+                        .str.strip()
+                        .map(denom_map)
+                        .fillna('')
+                    )
+                    try:
+                        existing = out['den_ste'].fillna('').astype(str).str.strip()
+                        out.loc[existing == '', 'den_ste'] = mapped
+                    except Exception:
+                        out['den_ste'] = mapped
+                return out
+
             PathManager.ensure_directories()
             excel_path = PathManager.get_database_path('DataBase_domiciliation.xlsx')
 
@@ -630,13 +694,39 @@ class DashboardView(tk.Toplevel):
                     self._societes_df = pd.read_excel(excel_path, sheet_name='Societes', dtype=str).fillna('')
                     self._associes_df = pd.read_excel(excel_path, sheet_name='Associes', dtype=str).fillna('')
                     self._contrats_df = pd.read_excel(excel_path, sheet_name='Contrats', dtype=str).fillna('')
-                    self._contrats_df = _normalize_contrats_df(self._contrats_df).reindex(
-                        columns=_const.contrat_headers, fill_value=''
+                    self._societes_df = _apply_aliases(
+                        self._societes_df,
+                        getattr(_const, 'societe_header_aliases', {}) or {},
                     )
+                    self._associes_df = _apply_aliases(
+                        self._associes_df,
+                        getattr(_const, 'associe_header_aliases', {}) or {},
+                    )
+                    self._contrats_df = _normalize_contrats_df(self._contrats_df)
+                    self._contrats_df = _apply_aliases(
+                        self._contrats_df,
+                        getattr(_const, 'contrat_header_aliases', {}) or {},
+                    ).reindex(columns=_const.contrat_headers, fill_value='')
+                    denom_map = {}
+                    try:
+                        if 'id_societe' in self._societes_df.columns and 'den_ste' in self._societes_df.columns:
+                            soc_ids = self._societes_df['id_societe'].fillna('').astype(str).str.strip()
+                            soc_names = self._societes_df['den_ste'].fillna('').astype(str).str.strip()
+                            denom_map = {
+                                sid: den for sid, den in zip(soc_ids, soc_names) if sid and den
+                            }
+                    except Exception:
+                        denom_map = {}
+                    self._associes_df = _inject_denomination(self._associes_df, denom_map)
+                    self._contrats_df = _inject_denomination(self._contrats_df, denom_map)
                     try:
                         self._collaborateurs_df = pd.read_excel(excel_path, sheet_name='Collaborateurs', dtype=str).fillna('')
                     except Exception:
                         self._collaborateurs_df = pd.DataFrame(columns=_const.collaborateur_headers)
+                    self._collaborateurs_df = _apply_aliases(
+                        self._collaborateurs_df,
+                        getattr(_const, 'collaborateur_header_aliases', {}) or {},
+                    )
                     # Initialize with societes data
                     self._df = self._societes_df
                 except Exception as e:
@@ -652,6 +742,20 @@ class DashboardView(tk.Toplevel):
                 self._contrats_df = pd.DataFrame(columns=_const.contrat_headers)
                 self._collaborateurs_df = pd.DataFrame(columns=_const.collaborateur_headers)
                 self._df = self._societes_df
+
+            try:
+                denom_map = {}
+                if hasattr(self, '_societes_df') and isinstance(self._societes_df, pd.DataFrame):
+                    if 'id_societe' in self._societes_df.columns and 'den_ste' in self._societes_df.columns:
+                        soc_ids = self._societes_df['id_societe'].fillna('').astype(str).str.strip()
+                        soc_names = self._societes_df['den_ste'].fillna('').astype(str).str.strip()
+                        denom_map = {sid: den for sid, den in zip(soc_ids, soc_names) if sid and den}
+                if hasattr(self, '_associes_df'):
+                    self._associes_df = _inject_denomination(self._associes_df, denom_map)
+                if hasattr(self, '_contrats_df'):
+                    self._contrats_df = _inject_denomination(self._contrats_df, denom_map)
+            except Exception:
+                pass
 
             self._refresh_display()
         except Exception as e:
@@ -983,7 +1087,17 @@ class DashboardView(tk.Toplevel):
             if not target:
                 return
 
-            df.to_csv(target, index=False, encoding='utf-8-sig')
+            export_df = df.copy()
+            used_labels = set()
+            display_columns = []
+            for col in export_df.columns:
+                label = self._column_label(col)
+                if label in used_labels:
+                    label = f"{label} ({col})"
+                used_labels.add(label)
+                display_columns.append(label)
+            export_df.columns = display_columns
+            export_df.to_csv(target, index=False, encoding='utf-8-sig')
             self._show_toast('Export CSV réussi')
         except Exception as e:
             logger.error("CSV export failed: %s", e)
@@ -1198,6 +1312,13 @@ class DashboardView(tk.Toplevel):
 
     def _on_close(self, call_parent=False, fullscreen_parent: bool = False):
         """Close dashboard and restore parent"""
+        if call_parent:
+            try:
+                if getattr(self.parent, "_startup_dashboard_mode", False):
+                    self._quit_app()
+                    return
+            except Exception:
+                pass
         try:
             main_form = getattr(self.parent, 'main_form', None)
             if getattr(main_form, '_dashboard_window', None) is self:
@@ -1225,3 +1346,20 @@ class DashboardView(tk.Toplevel):
                 self.parent.destroy()
             except Exception:
                 pass
+
+    def _quit_app(self):
+        """Exit the application from the dashboard."""
+        try:
+            self.grab_release()
+        except Exception:
+            pass
+        try:
+            if self.parent is not None:
+                self.parent.destroy()
+                return
+        except Exception:
+            pass
+        try:
+            self.destroy()
+        except Exception:
+            pass

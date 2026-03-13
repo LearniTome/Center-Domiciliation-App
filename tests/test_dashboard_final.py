@@ -14,6 +14,7 @@ if PROJECT_ROOT not in sys.path:
 from src.forms.dashboard_view import DashboardView
 from src.utils.utils import PathManager
 import pandas as pd
+from tests.excel_utils import apply_excel_aliases
 
 def test_all_pages():
     """Test that all three pages display their data correctly"""
@@ -26,8 +27,11 @@ def test_all_pages():
         # Load expected data
         excel_path = PathManager.get_database_path('DataBase_domiciliation.xlsx')
         societes_df = pd.read_excel(excel_path, sheet_name='Societes', dtype=str).fillna('')
+        societes_df = apply_excel_aliases(societes_df, "Societes")
         associes_df = pd.read_excel(excel_path, sheet_name='Associes', dtype=str).fillna('')
+        associes_df = apply_excel_aliases(associes_df, "Associes")
         contrats_df = pd.read_excel(excel_path, sheet_name='Contrats', dtype=str).fillna('')
+        contrats_df = apply_excel_aliases(contrats_df, "Contrats")
 
         print(f"\n📂 Database found with:")
         print(f"  - Societes: {len(societes_df)} rows")

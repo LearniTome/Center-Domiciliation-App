@@ -14,6 +14,7 @@ if PROJECT_ROOT not in sys.path:
 import pandas as pd
 from src.utils import constants as const
 from src.utils.utils import PathManager
+from tests.excel_utils import apply_excel_aliases
 
 
 def test_dashboard_sheet_loading():
@@ -37,12 +38,15 @@ def test_dashboard_sheet_loading():
         print("\n📋 Loading sheets...")
 
         societes_df = pd.read_excel(excel_path, sheet_name='Societes', dtype=str).fillna('')
+        societes_df = apply_excel_aliases(societes_df, "Societes")
         print(f"  ✓ Societes: {len(societes_df)} rows, columns: {list(societes_df.columns)[:3]}...")
 
         associes_df = pd.read_excel(excel_path, sheet_name='Associes', dtype=str).fillna('')
+        associes_df = apply_excel_aliases(associes_df, "Associes")
         print(f"  ✓ Associes: {len(associes_df)} rows, columns: {list(associes_df.columns)[:3]}...")
 
         contrats_df = pd.read_excel(excel_path, sheet_name='Contrats', dtype=str).fillna('')
+        contrats_df = apply_excel_aliases(contrats_df, "Contrats")
         print(f"  ✓ Contrats: {len(contrats_df)} rows, columns: {list(contrats_df.columns)[:3]}...")
 
     except Exception as e:
@@ -72,9 +76,9 @@ def test_dashboard_sheet_loading():
     print("\n📋 Verifying display columns...")
 
     display_checks = [
-        ('Societes', societes_df, [c for c in const.societe_headers if not c.startswith('ID_')]),
-        ('Associes', associes_df, [c for c in const.associe_headers if not c.startswith('ID_')]),
-        ('Contrats', contrats_df, [c for c in const.contrat_headers if not c.startswith('ID_')]),
+        ('Societes', societes_df, [c for c in const.societe_headers if not str(c).lower().startswith('id_')]),
+        ('Associes', associes_df, [c for c in const.associe_headers if not str(c).lower().startswith('id_')]),
+        ('Contrats', contrats_df, [c for c in const.contrat_headers if not str(c).lower().startswith('id_')]),
     ]
 
     for sheet_name, df, display_cols in display_checks:
@@ -109,7 +113,7 @@ def test_dashboard_sheet_loading():
             print(f"  ❌ Page '{page_key}': DataFrame mismatch")
             return False
 
-        display_cols = [c for c in current_df.columns if not c.startswith('ID_')]
+        display_cols = [c for c in current_df.columns if not str(c).lower().startswith('id_')]
         print(f"  ✓ Page '{page_key}': {len(current_df)} rows, {len(display_cols)} display columns")
 
     print("\n" + "=" * 70)

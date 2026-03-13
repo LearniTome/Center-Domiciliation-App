@@ -6,6 +6,7 @@ import pandas as pd
 
 from src.utils import constants as _const
 from src.utils.utils import ensure_excel_db, write_records_to_db
+from tests.excel_utils import apply_excel_aliases
 
 
 class TestSocieteGenerationDbFields(unittest.TestCase):
@@ -24,14 +25,15 @@ class TestSocieteGenerationDbFields(unittest.TestCase):
             write_records_to_db(db, soc, [], {})
 
             df = pd.read_excel(db, sheet_name="Societes", dtype=str).fillna("")
-            self.assertIn("TYPE_GENERATION", df.columns)
-            self.assertIn("PROCEDURE_CREATION", df.columns)
-            self.assertIn("MODE_DEPOT_CREATION", df.columns)
+            df = apply_excel_aliases(df, "Societes")
+            self.assertIn("type_generation", df.columns)
+            self.assertIn("procedure_creation", df.columns)
+            self.assertIn("mode_depot_creation", df.columns)
 
             row = df.iloc[-1]
-            self.assertEqual("creation", str(row.get("TYPE_GENERATION", "")).strip())
-            self.assertEqual("acceleree", str(row.get("PROCEDURE_CREATION", "")).strip())
-            self.assertEqual("depot_en_ligne", str(row.get("MODE_DEPOT_CREATION", "")).strip())
+            self.assertEqual("creation", str(row.get("type_generation", "")).strip())
+            self.assertEqual("acceleree", str(row.get("procedure_creation", "")).strip())
+            self.assertEqual("depot_en_ligne", str(row.get("mode_depot_creation", "")).strip())
 
     def test_ensure_excel_db_upgrades_legacy_societe_columns(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -64,10 +66,11 @@ class TestSocieteGenerationDbFields(unittest.TestCase):
             ensure_excel_db(db, _const.excel_sheets)
 
             upgraded = pd.read_excel(db, sheet_name="Societes", dtype=str).fillna("")
-            self.assertIn("TYPE_GENERATION", upgraded.columns)
-            self.assertIn("PROCEDURE_CREATION", upgraded.columns)
-            self.assertIn("MODE_DEPOT_CREATION", upgraded.columns)
-            self.assertEqual("LEGACY STE", str(upgraded.iloc[0].get("DEN_STE", "")).strip())
+            upgraded = apply_excel_aliases(upgraded, "Societes")
+            self.assertIn("type_generation", upgraded.columns)
+            self.assertIn("procedure_creation", upgraded.columns)
+            self.assertIn("mode_depot_creation", upgraded.columns)
+            self.assertEqual("LEGACY STE", str(upgraded.iloc[0].get("den_ste", "")).strip())
 
 
 if __name__ == "__main__":

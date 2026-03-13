@@ -13,10 +13,12 @@ if PROJECT_ROOT not in sys.path:
 import pandas as pd
 from src.utils import constants as const
 from src.utils.utils import PathManager
+from tests.excel_utils import apply_excel_aliases
 
 # Load data
 excel_path = PathManager.get_database_path('DataBase_domiciliation.xlsx')
 societes_df = pd.read_excel(excel_path, sheet_name='Societes', dtype=str).fillna('')
+societes_df = apply_excel_aliases(societes_df, "Societes")
 
 print("=" * 80)
 print("DEBUG: Data display in Dashboard")
@@ -30,7 +32,7 @@ print(societes_df)
 
 print("\n" + "-" * 80)
 print("Display columns (without ID_):")
-display_cols = [c for c in const.societe_headers if not c.startswith('ID_')]
+display_cols = [c for c in const.societe_headers if not str(c).lower().startswith('id_')]
 print(f"  {display_cols}")
 
 print("\n" + "-" * 80)

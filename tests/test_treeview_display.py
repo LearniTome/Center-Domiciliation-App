@@ -15,6 +15,7 @@ if PROJECT_ROOT not in sys.path:
 import pandas as pd
 from src.utils import constants as const
 from src.utils.utils import PathManager
+from tests.excel_utils import apply_excel_aliases
 
 def test_treeview_display():
     """Test that data is correctly inserted into Treeview"""
@@ -27,6 +28,7 @@ def test_treeview_display():
 
     # Load data
     societes_df = pd.read_excel(excel_path, sheet_name='Societes', dtype=str).fillna('')
+    societes_df = apply_excel_aliases(societes_df, "Societes")
 
     print(f"\n📋 Loaded data:")
     print(f"  Shape: {societes_df.shape}")
@@ -44,7 +46,7 @@ def test_treeview_display():
     mock_tree = MagicMock()
 
     # Display columns (without ID_*)
-    display_cols = [c for c in const.societe_headers if not c.startswith('ID_')]
+    display_cols = [c for c in const.societe_headers if not str(c).lower().startswith('id_')]
 
     # Mock tree["columns"] to return display columns
     mock_tree.__getitem__ = MagicMock(return_value=tuple(display_cols))

@@ -1,6 +1,7 @@
 import pandas as pd
 from src.utils.utils import migrate_excel_workbook, ensure_excel_db
 from src.utils import constants as _const
+from tests.excel_utils import apply_excel_aliases
 
 
 def test_migration_moves_old_sheets(tmp_path):
@@ -21,9 +22,10 @@ def test_migration_moves_old_sheets(tmp_path):
 
     # After migration, OldAssoc should be removed and rows appended to 'Associes'
     df_assoc = pd.read_excel(db, sheet_name='Associes', dtype=str)
+    df_assoc = apply_excel_aliases(df_assoc, "Associes")
     assert not df_assoc.empty
-    # Find migrated row by matching PRENOM/NOM
-    found = ((df_assoc['PRENOM'] == 'Jean') & (df_assoc['NOM'] == 'Dupont')).any()
+    # Find migrated row by matching prenom/nom
+    found = ((df_assoc['prenom'] == 'Jean') & (df_assoc['nom'] == 'Dupont')).any()
     assert found
 
     # Also ensure old sheet no longer exists

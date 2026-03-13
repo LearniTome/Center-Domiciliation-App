@@ -15,6 +15,7 @@ import pandas as pd
 from src.utils import constants as const
 from src.utils.utils import PathManager
 from unittest.mock import Mock
+from tests.excel_utils import apply_excel_aliases
 
 
 def run_full_dashboard_test():
@@ -40,8 +41,11 @@ def run_full_dashboard_test():
 
     try:
         societes_df = pd.read_excel(excel_path, sheet_name='Societes', dtype=str).fillna('')
+        societes_df = apply_excel_aliases(societes_df, "Societes")
         associes_df = pd.read_excel(excel_path, sheet_name='Associes', dtype=str).fillna('')
+        associes_df = apply_excel_aliases(associes_df, "Associes")
         contrats_df = pd.read_excel(excel_path, sheet_name='Contrats', dtype=str).fillna('')
+        contrats_df = apply_excel_aliases(contrats_df, "Contrats")
 
         print(f"\n✓ Sheet Loading:")
         print(f"  - Societes: {len(societes_df):3d} rows × {len(societes_df.columns):2d} columns")
@@ -90,7 +94,7 @@ def run_full_dashboard_test():
     ]
 
     for sheet_name, df, all_headers in display_configs:
-        display_cols = [c for c in all_headers if not c.startswith('ID_')]
+        display_cols = [c for c in all_headers if not str(c).lower().startswith('id_')]
         missing = [c for c in display_cols if c not in df.columns]
 
         if missing:
@@ -127,7 +131,7 @@ def run_full_dashboard_test():
         if current_df.equals(expected_df):
             print(f"\n✓ Page '{page_key}' ({page_title}):")
             print(f"  Data: {len(current_df)} records loaded")
-            print(f"  Columns: {len(current_df.columns)} total, {len([c for c in current_df.columns if not c.startswith('ID_')])} displayed")
+            print(f"  Columns: {len(current_df.columns)} total, {len([c for c in current_df.columns if not str(c).lower().startswith('id_')])} displayed")
         else:
             print(f"\n❌ Page '{page_key}': DataFrame mismatch")
             all_ok = False
@@ -171,7 +175,7 @@ def run_full_dashboard_test():
         if len(df) > 0:
             row = df.iloc[0]
             payload = row.to_dict()
-            print(f"  Page '{page_key}': Removes record with ID={payload.get('ID_' + page_key.upper(), 'N/A')}")
+            print(f"  Page '{page_key}': Removes record with ID={payload.get(f'id_{page_key}', 'N/A')}")
         else:
             print(f"  Page '{page_key}': (no data)")
 
@@ -191,8 +195,8 @@ def run_full_dashboard_test():
 
     # Check foreign keys
     if len(associes_df) > 0 and len(societes_df) > 0:
-        societe_ids = set(societes_df['ID_SOCIETE'].unique())
-        associe_refs = set(associes_df['ID_SOCIETE'].unique())
+        societe_ids = set(societes_df['id_societe'].unique())
+        associe_refs = set(associes_df['id_societe'].unique())
         orphans = associe_refs - societe_ids
 
         if orphans:
@@ -201,8 +205,8 @@ def run_full_dashboard_test():
             print(f"\n✓ Associes → Societes: All {len(associe_refs)} reference(s) valid")
 
     if len(contrats_df) > 0 and len(societes_df) > 0:
-        societe_ids = set(societes_df['ID_SOCIETE'].unique())
-        contrat_refs = set(contrats_df['ID_SOCIETE'].unique())
+        societe_ids = set(societes_df['id_societe'].unique())
+        contrat_refs = set(contrats_df['id_societe'].unique())
         orphans = contrat_refs - societe_ids
 
         if orphans:

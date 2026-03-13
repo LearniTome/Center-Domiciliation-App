@@ -8,8 +8,9 @@ import sys
 sys.path.insert(0, str(Path(__file__).parent))
 
 from src.utils import constants as _const
-from src.utils.utils import write_records_to_db
+from src.utils.utils import write_records_to_db, ensure_excel_db
 import pandas as pd
+from tests.excel_utils import apply_excel_aliases
 
 def test_dashboard_data():
     """Test that Dashboard can load data from database"""
@@ -26,6 +27,9 @@ def test_dashboard_data():
         return False
     print(f"✅ Database found: {db_path.name}")
 
+    # Ensure workbook is aligned with current headers before validating columns.
+    ensure_excel_db(db_path, _const.excel_sheets)
+
     print("\n📋 Step 2: Load data from each sheet...")
 
     sheets_data = {}
@@ -37,6 +41,7 @@ def test_dashboard_data():
     ]:
         try:
             df = pd.read_excel(db_path, sheet_name=sheet_name, dtype=str).fillna('')
+            df = apply_excel_aliases(df, sheet_name)
             sheets_data[sheet_name] = df
             print(f"✓ {sheet_name:15s}: {len(df)} rows, {len(df.columns)} columns")
         except Exception as e:
@@ -70,10 +75,10 @@ def test_dashboard_data():
 
     # Check display columns (without ID_* columns)
     display_checks = [
-        ('Societes', [c for c in _const.societe_headers if not c.startswith('ID_')]),
-        ('Associes', [c for c in _const.associe_headers if not c.startswith('ID_')]),
-        ('Contrats', [c for c in _const.contrat_headers if not c.startswith('ID_')]),
-        ('Collaborateurs', [c for c in _const.collaborateur_headers if not c.startswith('ID_')]),
+        ('Societes', [c for c in _const.societe_headers if not str(c).lower().startswith('id_')]),
+        ('Associes', [c for c in _const.associe_headers if not str(c).lower().startswith('id_')]),
+        ('Contrats', [c for c in _const.contrat_headers if not str(c).lower().startswith('id_')]),
+        ('Collaborateurs', [c for c in _const.collaborateur_headers if not str(c).lower().startswith('id_')]),
     ]
 
     for sheet_name, display_cols in display_checks:
@@ -98,9 +103,13 @@ def test_dashboard_data():
         excel_path = PathManager.get_database_path('DataBase_domiciliation.xlsx')
 
         societes_df = pd.read_excel(excel_path, sheet_name='Societes', dtype=str).fillna('')
+        societes_df = apply_excel_aliases(societes_df, "Societes")
         associes_df = pd.read_excel(excel_path, sheet_name='Associes', dtype=str).fillna('')
+        associes_df = apply_excel_aliases(associes_df, "Associes")
         contrats_df = pd.read_excel(excel_path, sheet_name='Contrats', dtype=str).fillna('')
+        contrats_df = apply_excel_aliases(contrats_df, "Contrats")
         collaborateurs_df = pd.read_excel(excel_path, sheet_name='Collaborateurs', dtype=str).fillna('')
+        collaborateurs_df = apply_excel_aliases(collaborateurs_df, "Collaborateurs")
 
         print(f"✓ Societes loaded: {len(societes_df)} rows")
         print(f"✓ Associes loaded: {len(associes_df)} rows")

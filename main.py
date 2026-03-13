@@ -148,6 +148,24 @@ class MainApp(tk.Tk):
         with self._startup_span("MainApp.setup_buttons"):
             self.setup_buttons()
 
+        try:
+            self.protocol("WM_DELETE_WINDOW", self._handle_main_close)
+        except Exception:
+            pass
+
+    def _handle_main_close(self):
+        """Return to dashboard instead of closing the app."""
+        try:
+            if hasattr(self, "main_form") and self.main_form is not None:
+                self.main_form.return_to_dashboard(start_fullscreen=True)
+                return
+        except Exception:
+            pass
+        try:
+            self.destroy()
+        except Exception:
+            pass
+
     def setup_buttons(self):
         """Configure les boutons de contrôle"""
         buttons_frame = ttk.Frame(self)
@@ -677,7 +695,7 @@ class MainApp(tk.Tk):
 
             # If a company name is provided, check for duplicates in the DB and *forbid* saving
             try:
-                name = societe_vals.get('denomination') or societe_vals.get('DEN_STE')
+                name = societe_vals.get('denomination') or societe_vals.get('den_ste') or societe_vals.get('DEN_STE')
                 if name and societe_exists(name, db_path):
                     # Do not allow duplicate société names in the DB
                     messagebox.showerror('Société existante', f"La société '{name}' existe déjà dans la base. Enregistrement interdit pour éviter les doublons.")

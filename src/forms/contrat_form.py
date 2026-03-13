@@ -1,13 +1,20 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from tkcalendar import DateEntry
-from typing import Optional
+from typing import Optional, Callable, Iterable
 from decimal import Decimal, InvalidOperation
 from ..utils.constants import Nbmois
-from ..utils.utils import ThemeManager
+from ..utils.utils import ThemeManager, WidgetFactory, PathManager
 
 class ContratForm(ttk.Frame):
-    def __init__(self, parent, theme_manager: Optional[ThemeManager] = None, values_dict=None):
+    def __init__(
+        self,
+        parent,
+        theme_manager: Optional[ThemeManager] = None,
+        values_dict=None,
+        on_add_collaborateur: Optional[Callable[[], None]] = None,
+        get_collaborateur_name: Optional[Callable[[], str]] = None,
+    ):
         super().__init__(parent)
         self.parent = parent
         self.values = values_dict or {}
@@ -17,6 +24,10 @@ class ContratForm(ttk.Frame):
             values_dict = theme_manager
             theme_manager = None
         self.values = values_dict or {}
+        self.on_add_collaborateur = on_add_collaborateur
+        self.get_collaborateur_name = get_collaborateur_name
+        self.collaborateur_nom_combo = None
+        self.collaborateur_names = []
 
         # Nettoyage lors de la destruction
         self.bind("<Destroy>", self._cleanup)
@@ -36,7 +47,7 @@ class ContratForm(ttk.Frame):
     def initialize_variables(self):
         """Initialise les variables du formulaire"""
         import datetime
-        from ..utils.constants import Nbmois, TypeRenouvellement, TypeContratDomiciliation, Collaborateurs
+        from ..utils.constants import Nbmois, TypeRenouvellement, TypeContratDomiciliation
         from ..utils.defaults_manager import get_defaults_manager
 
         today = datetime.date.today().strftime('%d/%m/%Y')
@@ -47,10 +58,11 @@ class ContratForm(ttk.Frame):
         default_type_contrat = defaults_mgr.get_default('contrat', 'TypeContratDomiciliation') or (
             TypeContratDomiciliation[0] if TypeContratDomiciliation else ''
         )
-        self.collaborateurs = list(Collaborateurs or [])
-        default_collaborateur_code = defaults_mgr.get_default('contrat', 'CollaborateurCode') or 'CLTD'
         default_collaborateur_nom = defaults_mgr.get_default('contrat', 'CollaborateurNom') or ''
-        default_collaborateur_selection = self._selection_from_collaborateur_code(default_collaborateur_code)
+        self.collaborateur_names = self._merge_collaborateur_names(
+            self._load_collaborateur_names(),
+            [default_collaborateur_nom],
+        )
         default_type_renouvellement = defaults_mgr.get_default('contrat', 'TypeRenouvellement') or self._default_renewal_period(TypeRenouvellement)
         default_tva = defaults_mgr.get_default('contrat', 'Tva') or '20'
         default_dh_ht = defaults_mgr.get_default('contrat', 'DhHt') or '83.3333'
@@ -62,7 +74,6 @@ class ContratForm(ttk.Frame):
         self.period_var = tk.StringVar(value=default_period)
         self.type_contrat_domiciliation_var = tk.StringVar(value=default_type_contrat)
         self.type_contrat_domiciliation_autre_var = tk.StringVar(value='')
-        self.collaborateur_selection_var = tk.StringVar(value=default_collaborateur_selection)
         self.collaborateur_nom_var = tk.StringVar(value=default_collaborateur_nom)
         self.prix_mensuel_var = tk.StringVar(value='')
         self.prix_inter_var = tk.StringVar(value='')
@@ -161,44 +172,110 @@ class ContratForm(ttk.Frame):
         _place(2, 5, self.create_combo_field_group(fields, "Renouv. - Période", self.type_renouvellement_var, TypeRenouvellement))
 
         # Ligne 4: collaborateur (nomenclature dossier domiciliation)
-        _place(
-            3,
-            0,
-            self.create_combo_field_group(
-                fields,
-                "Collaborateur (code)",
-                self.collaborateur_selection_var,
-                self.collaborateurs,
-            ),
+        nom_frame = ttk.Frame(fields)
+        ttk.Label(nom_frame, text="Nom collaborateur:", anchor='w').grid(row=0, column=0, sticky='w')
+        self.collaborateur_nom_combo = ttk.Combobox(
+            nom_frame,
+            textvariable=self.collaborateur_nom_var,
+            values=self.collaborateur_names,
         )
-        _place(3, 1, self.create_entry_field_group(fields, "Nom collaborateur", self.collaborateur_nom_var))
+        self.collaborateur_nom_combo.grid(row=1, column=0, sticky='ew', pady=(2, 0))
+        nom_frame.grid_columnconfigure(0, weight=1)
+        _place(3, 0, nom_frame)
+
+        add_frame = ttk.Frame(fields)
+        ttk.Label(add_frame, text="").grid(row=0, column=0, sticky='w')
+        add_btn = WidgetFactory.create_button(
+            add_frame,
+            text="➕ Ajouter un nouveau collaborateur",
+            command=self._handle_add_collaborateur,
+            style='Secondary.TButton',
+        )
+        add_btn.grid(row=1, column=0, sticky='w', pady=(2, 0))
+        add_frame.grid_columnconfigure(0, weight=1)
+        _place(3, 1, add_frame, span=2)
         self._update_loyer_calculations()
 
-    def _selection_from_collaborateur_code(self, code: str) -> str:
-        c = str(code or '').strip().upper()
-        if not c:
-            c = 'CLTD'
-        for option in getattr(self, 'collaborateurs', []):
-            if str(option).strip().upper().startswith(f"{c} "):
-                return option
-        # fallback for initialization before collaborators list exists
-        from ..utils.constants import Collaborateurs
-        for option in list(Collaborateurs or []):
-            if str(option).strip().upper().startswith(f"{c} "):
-                return option
-        return (list(Collaborateurs or ['CLTD -- Client Direct'])[0])
+    def _merge_collaborateur_names(self, base: Iterable[str], extras: Iterable[str] = ()) -> list:
+        merged = []
+        seen = set()
+        for source in (base, extras):
+            for raw in source or []:
+                name = str(raw or '').strip()
+                if not name:
+                    continue
+                key = name.lower()
+                if key in seen:
+                    continue
+                seen.add(key)
+                merged.append(name)
+        return merged
 
-    def _code_from_collaborateur_selection(self, selection: str) -> str:
-        raw = str(selection or '').strip().upper()
-        if not raw:
-            return 'CLTD'
-        import re
-        match = re.match(r'^([A-Z0-9]+)', raw)
-        if not match:
-            return 'CLTD'
-        code = match.group(1)
-        allowed = {'EXP', 'AGR', 'IND', 'COAG', 'COIND', 'COEXP', 'CLTD'}
-        return code if code in allowed else 'CLTD'
+    def _load_collaborateur_names(self) -> list:
+        try:
+            from ..utils import constants as _const
+            import pandas as _pd
+            db_path = PathManager.DATABASE_DIR / _const.DB_FILENAME
+            if not db_path.exists():
+                return []
+            df = _pd.read_excel(db_path, sheet_name='Collaborateurs', dtype=str).fillna('')
+            if df.empty:
+                return []
+            col = None
+            for candidate in ('collaborateur_nom', 'COLLABORATEUR_NOM', 'NOM_COLLABORATEUR', 'NOM'):
+                if candidate in df.columns:
+                    col = candidate
+                    break
+            if col is None:
+                for candidate in df.columns:
+                    if 'NOM' in str(candidate).upper():
+                        col = candidate
+                        break
+            if col is None:
+                return []
+            values = [str(v).strip() for v in df[col].fillna('').tolist()]
+            return [v for v in values if v]
+        except Exception:
+            return []
+
+    def refresh_collaborateur_names(self):
+        names = self._load_collaborateur_names()
+        extras = []
+        try:
+            current = self.collaborateur_nom_var.get().strip()
+            if current:
+                extras.append(current)
+        except Exception:
+            pass
+        try:
+            if callable(self.get_collaborateur_name):
+                draft = self.get_collaborateur_name()
+                if draft:
+                    extras.append(draft)
+        except Exception:
+            pass
+        if not names and self.collaborateur_names:
+            names = list(self.collaborateur_names)
+        merged = self._merge_collaborateur_names(names, extras)
+        self.collaborateur_names = merged
+        if self.collaborateur_nom_combo is not None:
+            try:
+                self.collaborateur_nom_combo.configure(values=self.collaborateur_names)
+            except Exception:
+                pass
+
+    def recalculate_date_fin(self):
+        self._update_date_fin()
+        self.refresh_collaborateur_names()
+
+    def _handle_add_collaborateur(self):
+        if callable(self.on_add_collaborateur):
+            try:
+                self.on_add_collaborateur()
+                return
+            except Exception:
+                pass
+        messagebox.showinfo("Information", "Ouvrez l'onglet Collaborateur pour ajouter un nouveau collaborateur.")
 
     def create_date_field_group(self, parent, label_text, variable, bind_update: bool = False):
         """Crée un groupe de champs pour les dates.
@@ -261,8 +338,6 @@ class ContratForm(ttk.Frame):
             'period': self.period_var.get(),
             'type_contrat_domiciliation': self.type_contrat_domiciliation_var.get(),
             'type_contrat_domiciliation_autre': self.type_contrat_domiciliation_autre_var.get(),
-            'collaborateur': self.collaborateur_selection_var.get(),
-            'collaborateur_code': self._code_from_collaborateur_selection(self.collaborateur_selection_var.get()),
             'collaborateur_nom': self.collaborateur_nom_var.get().strip(),
             'prix_mensuel': self.prix_mensuel_var.get(),
             'prix_inter': self.prix_inter_var.get(),
@@ -492,16 +567,8 @@ class ContratForm(ttk.Frame):
             self.period_var.set(values.get('period', ''))
             self.type_contrat_domiciliation_var.set(values.get('type_contrat_domiciliation', ''))
             self.type_contrat_domiciliation_autre_var.set(values.get('type_contrat_domiciliation_autre', ''))
-            selected_collaborateur = values.get('collaborateur', values.get('collaborateur_selection', ''))
-            if selected_collaborateur:
-                self.collaborateur_selection_var.set(str(selected_collaborateur))
-            else:
-                self.collaborateur_selection_var.set(
-                    self._selection_from_collaborateur_code(
-                        values.get('collaborateur_code', values.get('CollaborateurCode', 'CLTD'))
-                    )
-                )
             self.collaborateur_nom_var.set(values.get('collaborateur_nom', values.get('CollaborateurNom', '')))
+            self.refresh_collaborateur_names()
             self.prix_mensuel_var.set(values.get('prix_mensuel', ''))
             self.prix_inter_var.set(values.get('prix_inter', ''))
             self.date_debut_var.set(values.get('date_debut', ''))
@@ -537,10 +604,8 @@ class ContratForm(ttk.Frame):
         self.period_var.set((Nbmois[1] if len(Nbmois) > 1 else (Nbmois[0] if Nbmois else '')))
         self.type_contrat_domiciliation_var.set(TypeContratDomiciliation[0] if TypeContratDomiciliation else '')
         self.type_contrat_domiciliation_autre_var.set('')
-        self.collaborateur_selection_var.set(
-            self._selection_from_collaborateur_code(defaults_mgr.get_default('contrat', 'CollaborateurCode') or 'CLTD')
-        )
         self.collaborateur_nom_var.set(defaults_mgr.get_default('contrat', 'CollaborateurNom') or '')
+        self.refresh_collaborateur_names()
         self.prix_mensuel_var.set('')
         self.prix_inter_var.set('')
         self.date_debut_var.set(today)

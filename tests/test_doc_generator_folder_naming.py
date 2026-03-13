@@ -54,10 +54,6 @@ def test_render_templates_uses_domiciliation_folder_nomenclature(tmp_path):
 
     values = {
         'societe': {'denomination': 'ACME SARL'},
-        'contrat': {
-            'collaborateur': 'EXP -- Expert Comptable',
-            'collaborateur_nom': 'Cabinet Atlas',
-        },
     }
 
     def _fake_render(_template_path, _context, out_path):
@@ -78,7 +74,7 @@ def test_render_templates_uses_domiciliation_folder_nomenclature(tmp_path):
     assert len(folders) == 1
 
     year = datetime.date.today().strftime('%Y')
-    expected_pattern = rf"^DOM-{year}-0001_EXP-CABINET_ATLAS_ACME_SARL$"
+    expected_pattern = rf"^DOM-{year}-0001_ACME_SARL$"
     assert re.match(expected_pattern, folders[0]), f"Unexpected folder name: {folders[0]}"
 
 
@@ -86,7 +82,7 @@ def test_render_templates_increments_domiciliation_sequence(tmp_path):
     out_dir = tmp_path / 'out'
     out_dir.mkdir()
     year = datetime.date.today().strftime('%Y')
-    (out_dir / f"DOM-{year}-0007_CLTD-CLIENT_DIRECT_OLD_CLIENT").mkdir()
+    (out_dir / f"DOM-{year}-0007_OLD_CLIENT").mkdir()
 
     models_dir = tmp_path / 'models'
     models_dir.mkdir()
@@ -95,7 +91,6 @@ def test_render_templates_increments_domiciliation_sequence(tmp_path):
 
     values = {
         'societe': {'denomination': 'NOUVEAU CLIENT'},
-        'contrat': {'collaborateur_code': 'CLTD', 'collaborateur_nom': 'Client Direct'},
     }
 
     def _fake_render(_template_path, _context, out_path):

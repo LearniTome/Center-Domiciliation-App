@@ -14,6 +14,7 @@ if PROJECT_ROOT not in sys.path:
 import pandas as pd
 from src.utils import constants as const
 from src.utils.utils import PathManager, write_records_to_db
+from tests.excel_utils import apply_excel_aliases
 
 
 def test_dashboard_action_payloads():
@@ -33,9 +34,13 @@ def test_dashboard_action_payloads():
     print("\n📋 Step 1: Load current data from database...")
 
     societes_df = pd.read_excel(excel_path, sheet_name='Societes', dtype=str).fillna('')
+    societes_df = apply_excel_aliases(societes_df, "Societes")
     associes_df = pd.read_excel(excel_path, sheet_name='Associes', dtype=str).fillna('')
+    associes_df = apply_excel_aliases(associes_df, "Associes")
     contrats_df = pd.read_excel(excel_path, sheet_name='Contrats', dtype=str).fillna('')
+    contrats_df = apply_excel_aliases(contrats_df, "Contrats")
     collaborateurs_df = pd.read_excel(excel_path, sheet_name='Collaborateurs', dtype=str).fillna('')
+    collaborateurs_df = apply_excel_aliases(collaborateurs_df, "Collaborateurs")
 
     print(f"  ✓ Societes: {len(societes_df)} rows")
     print(f"  ✓ Associes: {len(associes_df)} rows")
@@ -58,9 +63,9 @@ def test_dashboard_action_payloads():
             return False
 
         print(f"  ✓ Edit payload would include {len(expected_columns)} fields from Societes:")
-        print(f"    - ID_SOCIETE: {row_data.get('ID_SOCIETE', 'N/A')}")
-        print(f"    - DEN_STE: {row_data.get('DEN_STE', 'N/A')}")
-        print(f"    - FORME_JUR: {row_data.get('FORME_JUR', 'N/A')}")
+        print(f"    - id_societe: {row_data.get('id_societe', 'N/A')}")
+        print(f"    - den_ste: {row_data.get('den_ste', 'N/A')}")
+        print(f"    - forme_jur: {row_data.get('forme_jur', 'N/A')}")
     else:
         print(f"  ℹ Societes sheet is empty (no rows to edit)")
 
@@ -78,9 +83,9 @@ def test_dashboard_action_payloads():
             return False
 
         print(f"  ✓ Edit payload would include {len(expected_columns)} fields from Associes:")
-        print(f"    - ID_ASSOCIE: {row_data.get('ID_ASSOCIE', 'N/A')}")
-        print(f"    - PRENOM: {row_data.get('PRENOM', 'N/A')}")
-        print(f"    - NOM: {row_data.get('NOM', 'N/A')}")
+        print(f"    - id_associe: {row_data.get('id_associe', 'N/A')}")
+        print(f"    - prenom: {row_data.get('prenom', 'N/A')}")
+        print(f"    - nom: {row_data.get('nom', 'N/A')}")
     else:
         print(f"  ℹ Associes sheet is empty (no rows to edit)")
 
@@ -98,9 +103,9 @@ def test_dashboard_action_payloads():
             return False
 
         print(f"  ✓ Edit payload would include {len(expected_columns)} fields from Contrats:")
-        print(f"    - ID_CONTRAT: {row_data.get('ID_CONTRAT', 'N/A')}")
-        print(f"    - DATE_CONTRAT: {row_data.get('DATE_CONTRAT', 'N/A')}")
-        print(f"    - PRIX_CONTRAT: {row_data.get('PRIX_CONTRAT', 'N/A')}")
+        print(f"    - id_contrat: {row_data.get('id_contrat', 'N/A')}")
+        print(f"    - date_contrat: {row_data.get('date_contrat', 'N/A')}")
+        print(f"    - loyer_mensuel_ttc: {row_data.get('loyer_mensuel_ttc', 'N/A')}")
     else:
         print(f"  ℹ Contrats sheet is empty (no rows to edit)")
 
@@ -134,10 +139,10 @@ def test_dashboard_action_payloads():
     # Test 7: Verify data consistency - IDs should match between sheets
     print("\n📋 Test 7: Data consistency checks")
 
-    # Check that Associes' ID_SOCIETE references existing Societes
+    # Check that Associes' id_societe references existing Societes
     if len(associes_df) > 0 and len(societes_df) > 0:
-        societe_ids = set(societes_df['ID_SOCIETE'].unique())
-        associe_societe_refs = set(associes_df['ID_SOCIETE'].unique())
+        societe_ids = set(societes_df['id_societe'].unique())
+        associe_societe_refs = set(associes_df['id_societe'].unique())
         orphan_refs = associe_societe_refs - societe_ids
 
         if orphan_refs:
@@ -145,10 +150,10 @@ def test_dashboard_action_payloads():
         else:
             print(f"  ✓ All Associes reference valid Societes")
 
-    # Check that Contrats' ID_SOCIETE references existing Societes
+    # Check that Contrats' id_societe references existing Societes
     if len(contrats_df) > 0 and len(societes_df) > 0:
-        societe_ids = set(societes_df['ID_SOCIETE'].unique())
-        contrat_societe_refs = set(contrats_df['ID_SOCIETE'].unique())
+        societe_ids = set(societes_df['id_societe'].unique())
+        contrat_societe_refs = set(contrats_df['id_societe'].unique())
         orphan_refs = contrat_societe_refs - societe_ids
 
         if orphan_refs:

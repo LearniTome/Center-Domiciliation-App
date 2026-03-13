@@ -60,7 +60,6 @@ def _build_expected_context_key_sections() -> Dict[str, str]:
     # Nested roots available in rendering context.
     _add("societe", "societe")
     _add("associe", "associes", "associe")
-    _add("collaborateur", "collaborateur")
     _add("contrat", "contrat")
     _add("autre", "values")
 
@@ -102,19 +101,6 @@ def _build_expected_context_key_sections() -> Dict[str, str]:
         camel = base[0].lower() + base[1:].lower()
         _add("associe", f"{camel}Associe")
 
-    # Collaborateur-oriented keys
-    _add(
-        "collaborateur",
-        "COLLABORATEUR_NOM", "COLLABORATEUR_ICE", "COLLABORATEUR_TP",
-        "COLLABORATEUR_RC", "COLLABORATEUR_IF",
-        "COLLABORATEUR_TEL_FIXE", "COLLABORATEUR_TEL_MOBILE",
-        "COLLABORATEUR_ADRESSE", "COLLABORATEUR_EMAIL",
-        "collaborateur_nom", "collaborateur_ice", "collaborateur_tp",
-        "collaborateur_rc", "collaborateur_if",
-        "collaborateur_tel_fixe", "collaborateur_tel_mobile",
-        "collaborateur_adresse", "collaborateur_email",
-    )
-
     # Contrat-oriented keys
     _add(
         "contrat",
@@ -127,8 +113,6 @@ def _build_expected_context_key_sections() -> Dict[str, str]:
         "TYPE_CONTRAT_DOMICILIATION", "type_contrat_domiciliation",
         "TYPE_CONTRAT_DOMICILIATION_AUTRE", "type_contrat_domiciliation_autre",
         "CONTRAT_FORME_JURIDIQUE", "contrat_forme_juridique",
-        "COLLABORATEUR_CODE", "collaborateur_code",
-        "COLLABORATEUR_NOM", "collaborateur_nom",
     )
 
     # Activity aliases
@@ -360,77 +344,6 @@ def render_templates(
                 return "DosDom"
         return "DosCré"
 
-    def _extract_collaborateur_code(vals: Dict) -> str:
-        allowed = {"EXP", "AGR", "IND", "COAG", "COIND", "COEXP", "CLTD"}
-        candidates = []
-        if isinstance(vals, dict):
-            contrat = vals.get("contrat", {})
-            societe = vals.get("societe", {})
-            if isinstance(contrat, dict):
-                candidates.extend(
-                    [
-                        contrat.get("collaborateur_code"),
-                        contrat.get("CollaborateurCode"),
-                        contrat.get("collaborateur"),
-                    ]
-                )
-            if isinstance(societe, dict):
-                candidates.extend(
-                    [
-                        societe.get("collaborateur_code"),
-                        societe.get("CollaborateurCode"),
-                    ]
-                )
-            candidates.extend(
-                [
-                    vals.get("collaborateur_code"),
-                    vals.get("CollaborateurCode"),
-                    vals.get("collaborateur"),
-                ]
-            )
-        for candidate in candidates:
-            raw = str(candidate or "").strip().upper()
-            if not raw:
-                continue
-            match = re.match(r"^([A-Z0-9]+)", raw)
-            if not match:
-                continue
-            code = match.group(1)
-            if code in allowed:
-                return code
-        return "CLTD"
-
-    def _extract_collaborateur_nom(vals: Dict) -> str:
-        candidates = []
-        if isinstance(vals, dict):
-            contrat = vals.get("contrat", {})
-            societe = vals.get("societe", {})
-            if isinstance(contrat, dict):
-                candidates.extend(
-                    [
-                        contrat.get("collaborateur_nom"),
-                        contrat.get("CollaborateurNom"),
-                    ]
-                )
-            if isinstance(societe, dict):
-                candidates.extend(
-                    [
-                        societe.get("collaborateur_nom"),
-                        societe.get("CollaborateurNom"),
-                    ]
-                )
-            candidates.extend(
-                [
-                    vals.get("collaborateur_nom"),
-                    vals.get("CollaborateurNom"),
-                ]
-            )
-        for candidate in candidates:
-            value = str(candidate or "").strip()
-            if value:
-                return value
-        return "COLLABORATEUR"
-
     def _next_domiciliation_sequence(base_out_dir: Path, year_token: str) -> int:
         pattern = re.compile(rf"^DOM-{re.escape(year_token)}-(\d{{4}})_")
         max_seq = 0
@@ -484,14 +397,10 @@ def render_templates(
 
     if folder_kind_token == "DosDom":
         year_token = gen_date[:4]
-        collaborator_code = _extract_collaborateur_code(values or {})
-        collaborator_name = _sanitize_name(_extract_collaborateur_nom(values or {})).upper() or "COLLABORATEUR"
         client_name = company_clean.upper() or "UNKNOWNCOMPANY"
         seq = _next_domiciliation_sequence(out_dir, year_token)
         while True:
-            generation_folder_name = (
-                f"DOM-{year_token}-{seq:04d}_{collaborator_code}-{collaborator_name}_{client_name}"
-            )
+            generation_folder_name = f"DOM-{year_token}-{seq:04d}_{client_name}"
             out_subdir = out_dir / generation_folder_name
             if not out_subdir.exists():
                 break
@@ -519,8 +428,6 @@ def render_templates(
         ctx['societe'] = vals.get('societe', {}) or {}
         ctx['associes'] = vals.get('associes', []) or []
         ctx['contrat'] = vals.get('contrat', {}) or {}
-        ctx['collaborateur'] = vals.get('collaborateur', {}) or {}
-
         soc = ctx['societe']
         # Societe mappings
         soc_map = {
@@ -605,8 +512,6 @@ def render_templates(
             'type_contrat_domiciliation_autre': 'TYPE_CONTRAT_DOMICILIATION_AUTRE',
             # Compatibility input key used in some older payloads/templates.
             'contrat_forme_juridique': 'CONTRAT_FORME_JURIDIQUE',
-            'collaborateur_code': 'COLLABORATEUR_CODE',
-            'collaborateur_nom': 'COLLABORATEUR_NOM',
         }
         for fk, hk in contrat_map.items():
             v = None
@@ -688,29 +593,6 @@ def render_templates(
         if ctx.get('TYPE_CONTRAT_DOMICILIATION') and not ctx.get('CONTRAT_FORME_JURIDIQUE'):
             ctx['CONTRAT_FORME_JURIDIQUE'] = ctx.get('TYPE_CONTRAT_DOMICILIATION')
 
-        # Collaborateur mappings
-        collab = ctx.get('collaborateur', {})
-        if isinstance(collab, dict):
-            collab_map = {
-                'nom': 'COLLABORATEUR_NOM',
-                'ice': 'COLLABORATEUR_ICE',
-                'tp': 'COLLABORATEUR_TP',
-                'rc': 'COLLABORATEUR_RC',
-                'if': 'COLLABORATEUR_IF',
-                'tel_fixe': 'COLLABORATEUR_TEL_FIXE',
-                'tel_mobile': 'COLLABORATEUR_TEL_MOBILE',
-                'adresse': 'COLLABORATEUR_ADRESSE',
-                'email': 'COLLABORATEUR_EMAIL',
-            }
-            for fk, hk in collab_map.items():
-                v = None
-                try:
-                    v = collab.get(fk)
-                except Exception:
-                    v = None
-                if v is not None and v != '':
-                    ctx[hk] = v
-                    ctx[fk] = v
         return ctx
 
     if templates_list:

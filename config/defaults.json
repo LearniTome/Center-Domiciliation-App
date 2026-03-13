@@ -35,6 +35,8 @@
     "DhHtRenouvellement": "166.667"
   },
   "collaborateur": {
+    "Type": "CLTD -- Client Direct",
+    "Code": "CLTD",
     "Nom": "",
     "Ice": "",
     "Tp": "",

@@ -36,6 +36,7 @@ class MainForm(ttk.Frame):
         self.config_btn: Optional[ttk.Button] = None
         self.quit_btn: Optional[ttk.Button] = None
         self._dashboard_window: Optional[tk.Toplevel] = None
+        self._last_collaborateur_name: str = ''
         self.toolbar_style_names = {
             'secondary': 'Toolbar.Secondary.TButton',
             'success': 'Toolbar.Success.TButton',
@@ -186,8 +187,6 @@ class MainForm(ttk.Frame):
             self.create_associe_page()
         with self._profile_scope("MainForm.create_contrat_page"):
             self.create_contrat_page()
-        with self._profile_scope("MainForm.create_collaborateur_page"):
-            self.create_collaborateur_page()
         self._bind_cross_form_synchronization()
 
         # Show first page
@@ -361,25 +360,197 @@ class MainForm(ttk.Frame):
         page.grid_columnconfigure(0, weight=1)
         header = self.create_section_header(page, "Informations du Contrat", "📋", 0, 0)
         with self._profile_scope("ContratForm.__init__"):
-            self.contrat_form = ContratForm(page, self.theme_manager, self.values.get('contrat', {}))
+            self.contrat_form = ContratForm(
+                page,
+                self.theme_manager,
+                self.values.get('contrat', {}),
+                on_add_collaborateur=self._open_collaborateur_from_contrat,
+                get_collaborateur_name=self._get_current_collaborateur_name,
+            )
         self.contrat_form.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
         self.pages.append(('contrat', page, self.contrat_form))
 
-    def create_collaborateur_page(self):
-        page = ttk.Frame(self.forms_container)
-        page.grid(row=1, column=0, sticky="nsew", padx=5, pady=(0, 10))
-        page.grid_rowconfigure(0, weight=0)
-        page.grid_rowconfigure(1, weight=1)
-        page.grid_columnconfigure(0, weight=1)
-        header = self.create_section_header(page, "Informations du Collaborateur", "🤝", 0, 0)
-        with self._profile_scope("CollaborateurForm.__init__"):
-            self.collaborateur_form = CollaborateurForm(
-                page,
-                self.theme_manager,
-                self.values.get('collaborateur', {}),
-            )
-        self.collaborateur_form.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
-        self.pages.append(('collaborateur', page, self.collaborateur_form))
+    def _open_collaborateur_from_contrat(self):
+        self._open_collaborateur_dialog()
+
+    def _get_current_collaborateur_name(self) -> str:
+        try:
+            return str(self._last_collaborateur_name or '').strip()
+        except Exception:
+            return ''
+
+    def _open_collaborateur_dialog(self, values: Optional[dict] = None, edit_context: Optional[dict] = None):
+        dialog = tk.Toplevel(self)
+        dialog.title("Collaborateur")
+        try:
+            dialog.configure(bg=self.theme_manager.colors.get('bg', '#1f1f1f'))
+        except Exception:
+            pass
+        try:
+            dialog.transient(self.winfo_toplevel())
+            dialog.grab_set()
+        except Exception:
+            pass
+
+        body = ttk.Frame(dialog, style='Card.TFrame')
+        body.pack(fill="both", expand=True, padx=12, pady=10)
+
+        form = CollaborateurForm(body, self.theme_manager, values or {})
+        form.pack(fill="both", expand=True)
+
+        btn_row = ttk.Frame(dialog)
+        btn_row.pack(fill="x", padx=12, pady=(0, 10))
+
+        def _on_save():
+            vals = form.get_values()
+            if not any(str(v or '').strip() for v in vals.values()):
+                messagebox.showwarning("Collaborateur", "Veuillez saisir au moins le nom du collaborateur.")
+                return
+            saved = self._save_collaborateur_to_db(vals, edit_context=edit_context)
+            if saved:
+                try:
+                    if hasattr(self, 'contrat_form') and self.contrat_form is not None:
+                        self.contrat_form.refresh_collaborateur_names()
+                        nom = str(vals.get('nom') or '').strip()
+                        if nom:
+                            self.contrat_form.collaborateur_nom_var.set(nom)
+                except Exception:
+                    pass
+                dialog.destroy()
+
+        def _on_close():
+            dialog.destroy()
+
+        WidgetFactory.create_button(
+            btn_row,
+            text="💾 Enregistrer",
+            command=_on_save,
+            style='Success.TButton',
+        ).pack(side='right', padx=6)
+        WidgetFactory.create_button(
+            btn_row,
+            text="Annuler",
+            command=_on_close,
+            style='Secondary.TButton',
+        ).pack(side='right')
+
+        try:
+            WindowManager.center_window(dialog)
+        except Exception:
+            pass
+
+    def _save_collaborateur_to_db(self, values: dict, edit_context: Optional[dict] = None) -> Optional[Path]:
+        try:
+            db_path = Path(PathManager.DATABASE_DIR) / _const.DB_FILENAME
+            from ..utils.utils import ensure_excel_db, write_records_to_db, normalize_excel_storage
+            ensure_excel_db(db_path, _const.excel_sheets)
+            updated = False
+            if edit_context:
+                try:
+                    import pandas as _pd
+                    from ..utils.utils import normalize_canonical_dataframe_for_storage
+
+                    df = _pd.read_excel(db_path, sheet_name='Collaborateurs', dtype=str).fillna('')
+                    alias_map = getattr(_const, 'collaborateur_header_aliases', {}) or {}
+                    if alias_map:
+                        for old_col, new_col in alias_map.items():
+                            if old_col not in df.columns:
+                                continue
+                            if new_col not in df.columns:
+                                df[new_col] = df[old_col]
+                            else:
+                                try:
+                                    old_vals = df[old_col].fillna('').astype(str).str.strip()
+                                    new_vals = df[new_col].fillna('').astype(str).str.strip()
+                                    mask = (new_vals == '') & (old_vals != '')
+                                    df.loc[mask, new_col] = df.loc[mask, old_col]
+                                except Exception:
+                                    pass
+                            try:
+                                df.drop(columns=[old_col], inplace=True)
+                            except Exception:
+                                pass
+
+                    collab_id = str(edit_context.get('id_collaborateur') or '').strip()
+                    sid = str(edit_context.get('id_societe') or '').strip()
+                    mask = None
+                    if collab_id and 'id_collaborateur' in df.columns:
+                        mask = df['id_collaborateur'].astype(str).str.strip() == collab_id
+                    elif sid and 'id_societe' in df.columns:
+                        mask = df['id_societe'].astype(str).str.strip() == sid
+                        name = str(values.get('nom') or '').strip()
+                        if name and 'collaborateur_nom' in df.columns:
+                            mask = mask & (df['collaborateur_nom'].astype(str).str.strip().str.lower() == name.lower())
+
+                    if mask is not None and not df.empty and mask.any():
+                        mapping = {
+                            'type': 'collaborateur_type',
+                            'code': 'collaborateur_code',
+                            'nom': 'collaborateur_nom',
+                            'ice': 'collaborateur_ice',
+                            'tp': 'collaborateur_tp',
+                            'rc': 'collaborateur_rc',
+                            'if': 'collaborateur_if',
+                            'tel_fixe': 'collaborateur_tel_fixe',
+                            'tel_mobile': 'collaborateur_tel_mobile',
+                            'adresse': 'collaborateur_adresse',
+                            'email': 'collaborateur_email',
+                        }
+                        for k, col in mapping.items():
+                            if col in df.columns:
+                                df.loc[mask, col] = values.get(k)
+                        if sid and 'id_societe' in df.columns:
+                            df.loc[mask, 'id_societe'] = sid
+
+                        df = normalize_canonical_dataframe_for_storage(
+                            df.reindex(columns=_const.collaborateur_headers, fill_value='')
+                        )
+                        try:
+                            with _pd.ExcelWriter(db_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+                                df.to_excel(writer, sheet_name='Collaborateurs', index=False)
+                        except TypeError:
+                            from openpyxl import load_workbook
+                            wb = load_workbook(db_path)
+                            if 'Collaborateurs' in wb.sheetnames:
+                                try:
+                                    wb.remove(wb['Collaborateurs'])
+                                except Exception:
+                                    pass
+                            wb.save(db_path)
+                            with _pd.ExcelWriter(db_path, engine='openpyxl', mode='a') as writer:
+                                df.to_excel(writer, sheet_name='Collaborateurs', index=False)
+                        normalize_excel_storage(db_path)
+                        updated = True
+                except Exception:
+                    updated = False
+
+            if not updated:
+                write_records_to_db(db_path, {}, [], {}, values)
+                normalize_excel_storage(db_path)
+            try:
+                self._last_collaborateur_name = str(values.get('nom') or '').strip()
+            except Exception:
+                self._last_collaborateur_name = ''
+            try:
+                if edit_context and getattr(self, '_dashboard_window', None):
+                    self._dashboard_window._load_data()
+                    self._dashboard_window._show_page(getattr(self._dashboard_window, '_current_page', 'societe'))
+            except Exception:
+                pass
+            try:
+                if edit_context:
+                    self._dashboard_edit_context = None
+            except Exception:
+                pass
+            messagebox.showinfo("Collaborateur", "Collaborateur enregistré avec succès.")
+            return db_path
+        except Exception as e:
+            try:
+                from ..utils.utils import ErrorHandler
+                ErrorHandler.handle_error(e, "Erreur lors de l'enregistrement du collaborateur.")
+            except Exception:
+                messagebox.showerror("Erreur", f"Impossible d'enregistrer le collaborateur: {e}")
+            return None
 
     def create_collapsible_section(self, title, form_creator):
         """Create a collapsible section with the given title and form"""
@@ -538,11 +709,24 @@ class MainForm(ttk.Frame):
         return self.reset
 
     def _get_main_toolbar_quit_command(self):
-        top = self.winfo_toplevel()
-        quit_fn = getattr(top, 'quit', None)
-        if callable(quit_fn):
-            return quit_fn
-        return self.winfo_toplevel().destroy
+        return self.return_to_dashboard
+
+    def return_to_dashboard(self, start_fullscreen: bool = True):
+        """Hide the generator and show the dashboard instead of quitting."""
+        try:
+            dashboard = self.show_dashboard(start_fullscreen=start_fullscreen)
+            try:
+                if dashboard is not None:
+                    dashboard._load_data()
+                    dashboard._show_page(getattr(dashboard, '_current_page', 'societe'))
+            except Exception:
+                pass
+        except Exception:
+            pass
+        try:
+            self.winfo_toplevel().withdraw()
+        except Exception:
+            pass
 
     def get_main_toolbar_button_specs(self):
         """Return button definitions for the main application toolbar."""
@@ -1086,7 +1270,6 @@ class MainForm(ttk.Frame):
                     'fields': [
                         ('NbMois', 'Période (mois)', constants.Nbmois),
                         ('TypeContratDomiciliation', 'Type contrat domiciliation', constants.TypeContratDomiciliation),
-                        ('CollaborateurCode', 'Collaborateur (code)', constants.Collaborateurs),
                         ('CollaborateurNom', 'Nom collaborateur', []),
                         ('TypeRenouvellement', 'Type renouvellement', constants.TypeRenouvellement),
                         ('Tva', 'TVA initiale (%)', ['20']),
@@ -1098,6 +1281,8 @@ class MainForm(ttk.Frame):
                 'collaborateur': {
                     'label': '🤝 Collaborateur',
                     'fields': [
+                        ('Type', 'Type collaborateur', constants.Collaborateurs),
+                        ('Code', 'Code collaborateur', []),
                         ('Nom', 'Nom / Raison sociale', []),
                         ('Ice', 'ICE', []),
                         ('Tp', 'TP', []),
@@ -1690,9 +1875,6 @@ class MainForm(ttk.Frame):
             
             if hasattr(self, 'contrat_form') and self.contrat_form:
                 self.contrat_form.initialize_variables()
-
-            if hasattr(self, 'collaborateur_form') and self.collaborateur_form:
-                self.collaborateur_form.initialize_variables()
             
             logger.info("Formulaires rechargés avec les nouvelles valeurs par défaut")
         except Exception as e:
@@ -1721,7 +1903,6 @@ class MainForm(ttk.Frame):
                 'societe': getattr(self, 'societe_form', None) and self.societe_form.get_values(),
                 'associes': getattr(self, 'associe_form', None) and self.associe_form.get_values(),
                 'contrat': getattr(self, 'contrat_form', None) and self.contrat_form.get_values(),
-                'collaborateur': getattr(self, 'collaborateur_form', None) and self.collaborateur_form.get_values()
             }
         return self.values
 
@@ -1812,8 +1993,9 @@ class MainForm(ttk.Frame):
                 if key == 'societe':
                     try:
                         from ..utils.utils import societe_exists
-                        name = vals.get('denomination') or vals.get('DEN_STE')
-                        if name and societe_exists(name):
+                        name = vals.get('denomination') or vals.get('den_ste') or vals.get('DEN_STE')
+                        editing = getattr(self, '_dashboard_edit_context', None)
+                        if name and societe_exists(name) and not editing:
                             messagebox.showerror('Société existante', f"La société '{name}' existe déjà dans la base. Enregistrement interdit pour éviter les doublons.")
                             return
                     except Exception:
@@ -1822,6 +2004,12 @@ class MainForm(ttk.Frame):
                         logger.exception('Failed to run societe_exists check')
 
                 self.values[key] = vals
+                try:
+                    if getattr(self, '_dashboard_edit_context', None):
+                        self._apply_dashboard_edit_for_page(key, vals)
+                except Exception:
+                    logger = __import__('logging').getLogger(__name__)
+                    logger.exception('Failed to apply dashboard edit update')
                 messagebox.showinfo("Sauvegarde", f"Section '{key}' sauvegardée.")
             except Exception as e:
                 messagebox.showerror("Erreur", f"Impossible de sauvegarder la section: {e}")
@@ -1977,26 +2165,26 @@ class MainForm(ttk.Frame):
             return page_key
         if not isinstance(payload, dict):
             return 'societe'
-        if 'ID_ASSOCIE' in payload:
+        if 'id_associe' in payload:
             return 'associe'
-        if 'ID_CONTRAT' in payload:
+        if 'id_contrat' in payload:
             return 'contrat'
-        if 'ID_COLLABORATEUR' in payload:
+        if 'id_collaborateur' in payload:
             return 'collaborateur'
         return 'societe'
 
     @staticmethod
     def _dashboard_page_index(page_key: str) -> int:
-        return {'societe': 0, 'associe': 1, 'contrat': 2, 'collaborateur': 3}.get(page_key, 0)
+        return {'societe': 0, 'associe': 1, 'contrat': 2}.get(page_key, 0)
 
     @staticmethod
     def _filter_dashboard_rows(df, sid: str, den: str):
         """Filter a worksheet DataFrame to rows linked to the selected company."""
         try:
-            if sid and not df.empty and 'ID_SOCIETE' in df.columns:
-                return df[df['ID_SOCIETE'].astype(str).str.strip() == sid]
-            if den and not df.empty and 'DEN_STE' in df.columns:
-                return df[df['DEN_STE'].astype(str).str.strip().str.lower() == den.lower()]
+            if sid and not df.empty and 'id_societe' in df.columns:
+                return df[df['id_societe'].astype(str).str.strip() == sid]
+            if den and not df.empty and 'den_ste' in df.columns:
+                return df[df['den_ste'].astype(str).str.strip().str.lower() == den.lower()]
         except Exception:
             pass
         try:
@@ -2012,22 +2200,52 @@ class MainForm(ttk.Frame):
         if not db_path.exists():
             raise FileNotFoundError('Fichier de base de données introuvable.')
 
+        def _apply_aliases(df: _pd.DataFrame, alias_map: dict) -> _pd.DataFrame:
+            if df is None or df.empty or not alias_map:
+                return df
+            out = df.copy()
+            for old_col, new_col in alias_map.items():
+                if old_col not in out.columns:
+                    continue
+                if new_col not in out.columns:
+                    out[new_col] = out[old_col]
+                else:
+                    try:
+                        old_vals = out[old_col].fillna('').astype(str).str.strip()
+                        new_vals = out[new_col].fillna('').astype(str).str.strip()
+                        mask = (new_vals == '') & (old_vals != '')
+                        out.loc[mask, new_col] = out.loc[mask, old_col]
+                    except Exception:
+                        pass
+                try:
+                    out.drop(columns=[old_col], inplace=True)
+                except Exception:
+                    pass
+            return out
+
         try:
             soc_df = _pd.read_excel(db_path, sheet_name='Societes', dtype=str).fillna('')
         except Exception:
             soc_df = _pd.DataFrame(columns=_const.societe_headers)
+        soc_df = _apply_aliases(soc_df, getattr(_const, 'societe_header_aliases', {}) or {})
+
         try:
             assoc_df = _pd.read_excel(db_path, sheet_name='Associes', dtype=str).fillna('')
         except Exception:
             assoc_df = _pd.DataFrame(columns=_const.associe_headers)
+        assoc_df = _apply_aliases(assoc_df, getattr(_const, 'associe_header_aliases', {}) or {})
+
         try:
             contrat_df = _pd.read_excel(db_path, sheet_name='Contrats', dtype=str).fillna('')
         except Exception:
             contrat_df = _pd.DataFrame(columns=_const.contrat_headers)
+        contrat_df = _apply_aliases(contrat_df, getattr(_const, 'contrat_header_aliases', {}) or {})
+
         try:
             collab_df = _pd.read_excel(db_path, sheet_name='Collaborateurs', dtype=str).fillna('')
         except Exception:
             collab_df = _pd.DataFrame(columns=getattr(_const, 'collaborateur_headers', []))
+        collab_df = _apply_aliases(collab_df, getattr(_const, 'collaborateur_header_aliases', {}) or {})
 
         return db_path, soc_df, assoc_df, contrat_df, collab_df
 
@@ -2036,16 +2254,16 @@ class MainForm(ttk.Frame):
         if not isinstance(payload, dict):
             return None
 
-        sid = str(payload.get('ID_SOCIETE') or '').strip()
-        den = str(payload.get('DEN_STE') or '').strip()
+        sid = str(payload.get('id_societe') or '').strip()
+        den = str(payload.get('den_ste') or '').strip()
 
         if page_key == 'societe':
-            if sid and not soc_df.empty and 'ID_SOCIETE' in soc_df.columns:
-                matches = soc_df[soc_df['ID_SOCIETE'].astype(str).str.strip() == sid]
+            if sid and not soc_df.empty and 'id_societe' in soc_df.columns:
+                matches = soc_df[soc_df['id_societe'].astype(str).str.strip() == sid]
                 if not matches.empty:
                     return matches.iloc[0].to_dict()
-            if den and not soc_df.empty and 'DEN_STE' in soc_df.columns:
-                matches = soc_df[soc_df['DEN_STE'].astype(str).str.strip().str.lower() == den.lower()]
+            if den and not soc_df.empty and 'den_ste' in soc_df.columns:
+                matches = soc_df[soc_df['den_ste'].astype(str).str.strip().str.lower() == den.lower()]
                 if not matches.empty:
                     return matches.iloc[0].to_dict()
             return payload
@@ -2058,78 +2276,80 @@ class MainForm(ttk.Frame):
     def _build_dashboard_edit_values(self, company_payload: dict, assoc_df, contrat_df, collab_df):
         """Build complete form values from the selected company and linked sheets."""
         soc_map = {
-            'DEN_STE': 'denomination',
-            'FORME_JUR': 'forme_juridique',
-            'ICE': 'ice',
-            'DATE_ICE': 'date_ice',
-            'DATE_EXP_CERT_NEG': 'date_expiration_certificat_negatif',
-            'CAPITAL': 'capital',
-            'PART_SOCIAL': 'parts_social',
-            'VALEUR_NOMINALE': 'valeur_nominale',
-            'STE_ADRESS': 'adresse',
-            'TRIBUNAL': 'tribunal',
-            'TYPE_GENERATION': 'type_generation',
-            'PROCEDURE_CREATION': 'procedure_creation',
-            'MODE_DEPOT_CREATION': 'mode_depot_creation',
+            'den_ste': 'denomination',
+            'forme_jur': 'forme_juridique',
+            'ice': 'ice',
+            'date_ice': 'date_ice',
+            'date_exp_cert_neg': 'date_expiration_certificat_negatif',
+            'capital': 'capital',
+            'part_social': 'parts_social',
+            'valeur_nominale': 'valeur_nominale',
+            'ste_adress': 'adresse',
+            'tribunal': 'tribunal',
+            'type_generation': 'type_generation',
+            'procedure_creation': 'procedure_creation',
+            'mode_depot_creation': 'mode_depot_creation',
         }
         inverse_assoc_map = {
-            'CIVIL': 'civilite',
-            'PRENOM': 'prenom',
-            'NOM': 'nom',
-            'PARTS': 'num_parts',
-            'DATE_NAISS': 'date_naiss',
-            'LIEU_NAISS': 'lieu_naiss',
-            'NATIONALITY': 'nationalite',
-            'CIN_NUM': 'num_piece',
-            'CIN_VALIDATY': 'validite_piece',
-            'ADRESSE': 'adresse',
-            'PHONE': 'telephone',
-            'EMAIL': 'email',
-            'IS_GERANT': 'est_gerant',
-            'QUALITY': 'qualite',
-            'CAPITAL_DETENU': 'capital_detenu',
-            'PART_PERCENT': 'percentage',
+            'civil': 'civilite',
+            'prenom': 'prenom',
+            'nom': 'nom',
+            'parts': 'num_parts',
+            'date_naiss': 'date_naiss',
+            'lieu_naiss': 'lieu_naiss',
+            'nationality': 'nationalite',
+            'cin_num': 'num_piece',
+            'cin_validaty': 'validite_piece',
+            'adresse': 'adresse',
+            'phone': 'telephone',
+            'email': 'email',
+            'is_gerant': 'est_gerant',
+            'quality': 'qualite',
+            'capital_detenu': 'capital_detenu',
+            'part_percent': 'percentage',
         }
         inverse_contrat_map = {
-            'DATE_CONTRAT': 'date_contrat',
-            'DUREE_CONTRAT_MOIS': 'period',
-            'TYPE_CONTRAT_DOMICILIATION': 'type_contrat_domiciliation',
-            'TYPE_CONTRAT_DOMICILIATION_AUTRE': 'type_contrat_domiciliation_autre',
-            'LOYER_MENSUEL_TTC': 'prix_mensuel',
-            'FRAIS_INTERMEDIAIRE_CONTRAT': 'prix_inter',
-            'DATE_DEBUT_CONTRAT': 'date_debut',
-            'DATE_FIN_CONTRAT': 'date_fin',
-            'TAUX_TVA_POURCENT': 'tva',
-            'LOYER_MENSUEL_HT': 'dh_ht',
-            'MONTANT_TOTAL_HT_CONTRAT': 'montant_ht',
-            'MONTANT_PACK_DEMARRAGE_TTC': 'pack_demarrage_montant',
-            'LOYER_MENSUEL_PACK_DEMARRAGE_TTC': 'pack_demarrage_loyer',
-            'TYPE_RENOUVELLEMENT': 'type_renouvellement',
-            'TAUX_TVA_RENOUVELLEMENT_POURCENT': 'tva_renouvellement',
-            'LOYER_MENSUEL_HT_RENOUVELLEMENT': 'dh_ht_renouvellement',
-            'MONTANT_TOTAL_HT_RENOUVELLEMENT': 'montant_ht_renouvellement',
-            'LOYER_MENSUEL_RENOUVELLEMENT_TTC': 'loyer_renouvellement_mensuel',
-            'LOYER_ANNUEL_RENOUVELLEMENT_TTC': 'loyer_renouvellement_annuel',
-            'PERIOD_DOMCIL': 'period',
-            'PRIX_CONTRAT': 'prix_mensuel',
-            'PRIX_INTERMEDIARE_CONTRAT': 'prix_inter',
-            'DOM_DATEDEB': 'date_debut',
-            'DOM_DATEFIN': 'date_fin',
-            'PACK_DEMARRAGE_MONTANT_TTC': 'pack_demarrage_montant',
-            'PACK_DEMARRAGE_LOYER_MENSUEL_TTC': 'pack_demarrage_loyer',
-            'LOYER_RENOUVELLEMENT_MENSUEL_TTC': 'loyer_renouvellement_mensuel',
-            'LOYER_RENOUVELLEMENT_ANNUEL_TTC': 'loyer_renouvellement_annuel',
+            'date_contrat': 'date_contrat',
+            'duree_contrat_mois': 'period',
+            'type_contrat_domiciliation': 'type_contrat_domiciliation',
+            'type_contrat_domiciliation_autre': 'type_contrat_domiciliation_autre',
+            'loyer_mensuel_ttc': 'prix_mensuel',
+            'frais_intermediaire_contrat': 'prix_inter',
+            'date_debut_contrat': 'date_debut',
+            'date_fin_contrat': 'date_fin',
+            'taux_tva_pourcent': 'tva',
+            'loyer_mensuel_ht': 'dh_ht',
+            'montant_total_ht_contrat': 'montant_ht',
+            'montant_pack_demarrage_ttc': 'pack_demarrage_montant',
+            'loyer_mensuel_pack_demarrage_ttc': 'pack_demarrage_loyer',
+            'type_renouvellement': 'type_renouvellement',
+            'taux_tva_renouvellement_pourcent': 'tva_renouvellement',
+            'loyer_mensuel_ht_renouvellement': 'dh_ht_renouvellement',
+            'montant_total_ht_renouvellement': 'montant_ht_renouvellement',
+            'loyer_mensuel_renouvellement_ttc': 'loyer_renouvellement_mensuel',
+            'loyer_annuel_renouvellement_ttc': 'loyer_renouvellement_annuel',
+            'period_domcil': 'period',
+            'prix_contrat': 'prix_mensuel',
+            'prix_intermediare_contrat': 'prix_inter',
+            'dom_datedeb': 'date_debut',
+            'dom_datefin': 'date_fin',
+            'pack_demarrage_montant_ttc': 'pack_demarrage_montant',
+            'pack_demarrage_loyer_mensuel_ttc': 'pack_demarrage_loyer',
+            'loyer_renouvellement_mensuel_ttc': 'loyer_renouvellement_mensuel',
+            'loyer_renouvellement_annuel_ttc': 'loyer_renouvellement_annuel',
         }
         inverse_collab_map = {
-            'COLLABORATEUR_NOM': 'nom',
-            'COLLABORATEUR_ICE': 'ice',
-            'COLLABORATEUR_TP': 'tp',
-            'COLLABORATEUR_RC': 'rc',
-            'COLLABORATEUR_IF': 'if',
-            'COLLABORATEUR_TEL_FIXE': 'tel_fixe',
-            'COLLABORATEUR_TEL_MOBILE': 'tel_mobile',
-            'COLLABORATEUR_ADRESSE': 'adresse',
-            'COLLABORATEUR_EMAIL': 'email',
+            'collaborateur_type': 'type',
+            'collaborateur_code': 'code',
+            'collaborateur_nom': 'nom',
+            'collaborateur_ice': 'ice',
+            'collaborateur_tp': 'tp',
+            'collaborateur_rc': 'rc',
+            'collaborateur_if': 'if',
+            'collaborateur_tel_fixe': 'tel_fixe',
+            'collaborateur_tel_mobile': 'tel_mobile',
+            'collaborateur_adresse': 'adresse',
+            'collaborateur_email': 'email',
         }
 
         soc_vals = {}
@@ -2137,8 +2357,8 @@ class MainForm(ttk.Frame):
             if key in soc_map:
                 soc_vals[soc_map[key]] = value
 
-        sid = str(company_payload.get('ID_SOCIETE') or '').strip()
-        den = str(company_payload.get('DEN_STE') or '').strip()
+        sid = str(company_payload.get('id_societe') or '').strip()
+        den = str(company_payload.get('den_ste') or '').strip()
         associes_list = []
         contrat_vals = {}
         collaborateur_vals = {}
@@ -2173,6 +2393,203 @@ class MainForm(ttk.Frame):
             'collaborateur': collaborateur_vals,
         }
 
+    def _apply_dashboard_edit_for_page(self, page_key: str, page_values):
+        """Persist edits coming from the dashboard into the Excel DB."""
+        try:
+            import pandas as _pd
+            from ..utils.utils import normalize_canonical_dataframe_for_storage, normalize_excel_storage
+        except Exception:
+            return
+
+        context = getattr(self, '_dashboard_edit_context', None) or {}
+        sid = str(context.get('id_societe') or '').strip()
+        den_old = str(context.get('den_ste') or '').strip()
+        if not sid and not den_old:
+            return
+
+        db_path, soc_df, assoc_df, contrat_df, collab_df = self._load_dashboard_workbook_frames()
+
+        def _update_societe(df, vals):
+            if df.empty:
+                return df
+            mask = None
+            if sid and 'id_societe' in df.columns:
+                mask = df['id_societe'].astype(str).str.strip() == sid
+            elif den_old and 'den_ste' in df.columns:
+                mask = df['den_ste'].astype(str).str.strip().str.lower() == den_old.lower()
+            if mask is None:
+                return df
+            mapping = {
+                'denomination': 'den_ste',
+                'den_ste': 'den_ste',
+                'forme_juridique': 'forme_jur',
+                'forme_jur': 'forme_jur',
+                'ice': 'ice',
+                'date_ice': 'date_ice',
+                'date_certificat_negatif': 'date_ice',
+                'date_expiration_certificat_negatif': 'date_exp_cert_neg',
+                'capital': 'capital',
+                'parts_social': 'part_social',
+                'valeur_nominale': 'valeur_nominale',
+                'adresse': 'ste_adress',
+                'ste_adress': 'ste_adress',
+                'tribunal': 'tribunal',
+                'type_generation': 'type_generation',
+                'generation_type': 'type_generation',
+                'procedure_creation': 'procedure_creation',
+                'creation_procedure': 'procedure_creation',
+                'mode_depot_creation': 'mode_depot_creation',
+                'creation_depot_mode': 'mode_depot_creation',
+            }
+            for k, col in mapping.items():
+                if k in vals and col in df.columns:
+                    df.loc[mask, col] = vals.get(k)
+            if sid and 'id_societe' in df.columns:
+                df.loc[mask, 'id_societe'] = sid
+            return df
+
+        def _build_associes_rows(values_list):
+            rows = []
+            if not values_list:
+                return rows
+            existing_ids = _pd.to_numeric(assoc_df.get('id_associe', []), errors='coerce').dropna()
+            next_id = int(existing_ids.max()) + 1 if not existing_ids.empty else 1
+            for item in values_list:
+                if not isinstance(item, dict):
+                    continue
+                row = {h: '' for h in _const.associe_headers}
+                row['id_associe'] = next_id
+                next_id += 1
+                row['id_societe'] = sid or row.get('id_societe', '')
+                row['den_ste'] = item.get('den_ste') or context.get('den_ste') or den_old or ''
+                mapping = {
+                    'civilite': 'civil',
+                    'prenom': 'prenom',
+                    'nom': 'nom',
+                    'nationalite': 'nationality',
+                    'num_piece': 'cin_num',
+                    'validite_piece': 'cin_validaty',
+                    'date_naiss': 'date_naiss',
+                    'lieu_naiss': 'lieu_naiss',
+                    'adresse': 'adresse',
+                    'telephone': 'phone',
+                    'email': 'email',
+                    'percentage': 'part_percent',
+                    'part_percentage': 'part_percent',
+                    'parts': 'parts',
+                    'num_parts': 'parts',
+                    'capital_detenu': 'capital_detenu',
+                    'est_gerant': 'is_gerant',
+                    'qualite': 'quality',
+                }
+                for k, col in mapping.items():
+                    if k in item and col in row:
+                        row[col] = item.get(k)
+                rows.append(row)
+            return rows
+
+        def _build_contrat_row(values_dict):
+            row = {h: '' for h in _const.contrat_headers}
+            existing_ids = _pd.to_numeric(contrat_df.get('id_contrat', []), errors='coerce').dropna()
+            row['id_contrat'] = int(existing_ids.max()) + 1 if not existing_ids.empty else 1
+            row['id_societe'] = sid or row.get('id_societe', '')
+            row['den_ste'] = values_dict.get('den_ste') or context.get('den_ste') or den_old or ''
+            mapping = {
+                'date_contrat': 'date_contrat',
+                'period': 'duree_contrat_mois',
+                'type_contrat_domiciliation': 'type_contrat_domiciliation',
+                'type_contrat_domiciliation_autre': 'type_contrat_domiciliation_autre',
+                'prix_mensuel': 'loyer_mensuel_ttc',
+                'prix_inter': 'frais_intermediaire_contrat',
+                'date_debut': 'date_debut_contrat',
+                'date_fin': 'date_fin_contrat',
+                'tva': 'taux_tva_pourcent',
+                'dh_ht': 'loyer_mensuel_ht',
+                'montant_ht': 'montant_total_ht_contrat',
+                'pack_demarrage_montant': 'montant_pack_demarrage_ttc',
+                'pack_demarrage_loyer': 'loyer_mensuel_pack_demarrage_ttc',
+                'type_renouvellement': 'type_renouvellement',
+                'tva_renouvellement': 'taux_tva_renouvellement_pourcent',
+                'dh_ht_renouvellement': 'loyer_mensuel_ht_renouvellement',
+                'montant_ht_renouvellement': 'montant_total_ht_renouvellement',
+                'loyer_renouvellement_mensuel': 'loyer_mensuel_renouvellement_ttc',
+                'loyer_renouvellement_annuel': 'loyer_annuel_renouvellement_ttc',
+            }
+            for k, col in mapping.items():
+                if k in values_dict and col in row:
+                    row[col] = values_dict.get(k)
+            return row
+
+        if page_key == 'societe':
+            soc_df = _update_societe(soc_df, page_values or {})
+            try:
+                new_den = str((page_values or {}).get('denomination') or (page_values or {}).get('den_ste') or '').strip()
+                if new_den:
+                    if not assoc_df.empty and 'den_ste' in assoc_df.columns and 'id_societe' in assoc_df.columns:
+                        assoc_df.loc[assoc_df['id_societe'].astype(str).str.strip() == sid, 'den_ste'] = new_den
+                    if not contrat_df.empty and 'den_ste' in contrat_df.columns and 'id_societe' in contrat_df.columns:
+                        contrat_df.loc[contrat_df['id_societe'].astype(str).str.strip() == sid, 'den_ste'] = new_den
+                    if not collab_df.empty and 'den_ste' in collab_df.columns and 'id_societe' in collab_df.columns:
+                        collab_df.loc[collab_df['id_societe'].astype(str).str.strip() == sid, 'den_ste'] = new_den
+                    context['den_ste'] = new_den
+                    self._dashboard_edit_context = context
+            except Exception:
+                pass
+        elif page_key == 'associes':
+            if 'id_societe' in assoc_df.columns:
+                assoc_df = assoc_df[assoc_df['id_societe'].astype(str).str.strip() != sid]
+            rows = _build_associes_rows(page_values or [])
+            if rows:
+                assoc_df = _pd.concat([assoc_df, _pd.DataFrame(rows)], ignore_index=True)
+        elif page_key == 'contrat':
+            if 'id_societe' in contrat_df.columns:
+                contrat_df = contrat_df[contrat_df['id_societe'].astype(str).str.strip() != sid]
+            if page_values:
+                row = _build_contrat_row(page_values)
+                contrat_df = _pd.concat([contrat_df, _pd.DataFrame([row])], ignore_index=True)
+        else:
+            return
+
+        soc_df = normalize_canonical_dataframe_for_storage(soc_df.reindex(columns=_const.societe_headers, fill_value=''))
+        assoc_df = normalize_canonical_dataframe_for_storage(assoc_df.reindex(columns=_const.associe_headers, fill_value=''))
+        contrat_df = normalize_canonical_dataframe_for_storage(contrat_df.reindex(columns=_const.contrat_headers, fill_value=''))
+        collab_df = normalize_canonical_dataframe_for_storage(collab_df.reindex(columns=_const.collaborateur_headers, fill_value=''))
+
+        try:
+            with _pd.ExcelWriter(db_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+                soc_df.to_excel(writer, sheet_name='Societes', index=False)
+                assoc_df.to_excel(writer, sheet_name='Associes', index=False)
+                contrat_df.to_excel(writer, sheet_name='Contrats', index=False)
+                collab_df.to_excel(writer, sheet_name='Collaborateurs', index=False)
+        except TypeError:
+            from openpyxl import load_workbook
+            wb = load_workbook(db_path)
+            for sname in ('Societes', 'Associes', 'Contrats', 'Collaborateurs'):
+                if sname in wb.sheetnames:
+                    try:
+                        wb.remove(wb[sname])
+                    except Exception:
+                        pass
+            wb.save(db_path)
+            with _pd.ExcelWriter(db_path, engine='openpyxl', mode='a') as writer:
+                soc_df.to_excel(writer, sheet_name='Societes', index=False)
+                assoc_df.to_excel(writer, sheet_name='Associes', index=False)
+                contrat_df.to_excel(writer, sheet_name='Contrats', index=False)
+                collab_df.to_excel(writer, sheet_name='Collaborateurs', index=False)
+
+        try:
+            normalize_excel_storage(db_path)
+        except Exception:
+            pass
+
+        try:
+            dashboard = getattr(self, '_dashboard_window', None)
+            if dashboard is not None and dashboard.winfo_exists():
+                dashboard._load_data()
+                dashboard._show_page(getattr(dashboard, '_current_page', 'societe'))
+        except Exception:
+            pass
+
     def handle_dashboard_action(self, action: str, payload: dict | None, page_key: str | None = None):
         """Handle actions coming from the DashboardView.
 
@@ -2194,8 +2611,13 @@ class MainForm(ttk.Frame):
                 pass
 
             if action == 'add':
+                if page_key == 'collaborateur':
+                    self._open_collaborateur_dialog()
+                    return {'status': 'opened', 'page': 'collaborateur'}
+
                 # Reset forms to default/new state and show first page
                 self.reset()
+                self._dashboard_edit_context = None
                 self.show_page(0)
                 return {'status': 'opened', 'page': 'societe'}
 
@@ -2225,7 +2647,29 @@ class MainForm(ttk.Frame):
                     )
                     return {'status': 'not_found'}
 
+                try:
+                    self._dashboard_edit_context = {
+                        'page_key': page_key,
+                        'id_societe': company_payload.get('id_societe'),
+                        'den_ste': company_payload.get('den_ste'),
+                    }
+                except Exception:
+                    self._dashboard_edit_context = None
+
                 values = self._build_dashboard_edit_values(company_payload, assoc_df, contrat_df, collab_df)
+                if page_key == 'collaborateur':
+                    try:
+                        self._dashboard_edit_context = {
+                            'page_key': page_key,
+                            'id_societe': company_payload.get('id_societe'),
+                            'den_ste': company_payload.get('den_ste'),
+                            'id_collaborateur': payload.get('id_collaborateur') if isinstance(payload, dict) else None,
+                        }
+                    except Exception:
+                        self._dashboard_edit_context = None
+                    self._open_collaborateur_dialog(values.get('collaborateur', {}), edit_context=self._dashboard_edit_context)
+                    return {'status': 'opened', 'page': 'collaborateur'}
+
                 self.set_values(values)
                 self.show_page(self._dashboard_page_index(page_key))
                 return {'status': 'opened', 'page': page_key}
@@ -2247,8 +2691,8 @@ class MainForm(ttk.Frame):
                         )
                         return {'status': 'not_found'}
 
-                    den = str(company_payload.get('DEN_STE') or '').strip()
-                    sid = str(company_payload.get('ID_SOCIETE') or '').strip()
+                    den = str(company_payload.get('den_ste') or '').strip()
+                    sid = str(company_payload.get('id_societe') or '').strip()
                     if not messagebox.askyesno(
                         'Confirmation',
                         f"Voulez-vous vraiment supprimer le dossier société '{den}' ?"
@@ -2256,24 +2700,24 @@ class MainForm(ttk.Frame):
                         return {'status': 'cancelled'}
 
                     if sid:
-                        if not soc_df.empty and 'ID_SOCIETE' in soc_df.columns:
-                            soc_df = soc_df[~(soc_df['ID_SOCIETE'].astype(str).str.strip() == sid)]
-                        if not assoc_df.empty and 'ID_SOCIETE' in assoc_df.columns:
-                            assoc_df = assoc_df[~(assoc_df['ID_SOCIETE'].astype(str).str.strip() == sid)]
-                        if not contrat_df.empty and 'ID_SOCIETE' in contrat_df.columns:
-                            contrat_df = contrat_df[~(contrat_df['ID_SOCIETE'].astype(str).str.strip() == sid)]
-                        if not collab_df.empty and 'ID_SOCIETE' in collab_df.columns:
-                            collab_df = collab_df[~(collab_df['ID_SOCIETE'].astype(str).str.strip() == sid)]
+                        if not soc_df.empty and 'id_societe' in soc_df.columns:
+                            soc_df = soc_df[~(soc_df['id_societe'].astype(str).str.strip() == sid)]
+                        if not assoc_df.empty and 'id_societe' in assoc_df.columns:
+                            assoc_df = assoc_df[~(assoc_df['id_societe'].astype(str).str.strip() == sid)]
+                        if not contrat_df.empty and 'id_societe' in contrat_df.columns:
+                            contrat_df = contrat_df[~(contrat_df['id_societe'].astype(str).str.strip() == sid)]
+                        if not collab_df.empty and 'id_societe' in collab_df.columns:
+                            collab_df = collab_df[~(collab_df['id_societe'].astype(str).str.strip() == sid)]
                     else:
                         # fallback to DEN_STE match
-                        if not soc_df.empty and 'DEN_STE' in soc_df.columns:
-                            soc_df = soc_df[~(soc_df['DEN_STE'].astype(str).str.strip().str.lower() == den.strip().lower())]
-                        if not assoc_df.empty and 'DEN_STE' in assoc_df.columns:
-                            assoc_df = assoc_df[~(assoc_df['DEN_STE'].astype(str).str.strip().str.lower() == den.strip().lower())]
-                        if not contrat_df.empty and 'DEN_STE' in contrat_df.columns:
-                            contrat_df = contrat_df[~(contrat_df['DEN_STE'].astype(str).str.strip().str.lower() == den.strip().lower())]
-                        if not collab_df.empty and 'DEN_STE' in collab_df.columns:
-                            collab_df = collab_df[~(collab_df['DEN_STE'].astype(str).str.strip().str.lower() == den.strip().lower())]
+                        if not soc_df.empty and 'den_ste' in soc_df.columns:
+                            soc_df = soc_df[~(soc_df['den_ste'].astype(str).str.strip().str.lower() == den.strip().lower())]
+                        if not assoc_df.empty and 'den_ste' in assoc_df.columns:
+                            assoc_df = assoc_df[~(assoc_df['den_ste'].astype(str).str.strip().str.lower() == den.strip().lower())]
+                        if not contrat_df.empty and 'den_ste' in contrat_df.columns:
+                            contrat_df = contrat_df[~(contrat_df['den_ste'].astype(str).str.strip().str.lower() == den.strip().lower())]
+                        if not collab_df.empty and 'den_ste' in collab_df.columns:
+                            collab_df = collab_df[~(collab_df['den_ste'].astype(str).str.strip().str.lower() == den.strip().lower())]
 
                     # Write back sheets replacing them
                     try:

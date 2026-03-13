@@ -24,6 +24,7 @@ def test_dashboard_headless():
         from src.forms.dashboard_view import DashboardView
         from src.utils.utils import PathManager
         import pandas as pd
+        from tests.excel_utils import apply_excel_aliases
 
         # Create a headless root window
         root = tk.Tk()
@@ -41,6 +42,7 @@ def test_dashboard_headless():
 
         # Load expected data
         societes_df = pd.read_excel(excel_path, sheet_name='Societes', dtype=str).fillna('')
+        societes_df = apply_excel_aliases(societes_df, "Societes")
         print(f"✓ Expected Societes data: {len(societes_df)} rows")
 
         # Create Dashboard

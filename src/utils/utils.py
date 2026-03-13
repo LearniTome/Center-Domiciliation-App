@@ -35,42 +35,42 @@ logger = logging.getLogger(__name__)
 _REFERENCE_DATA_CACHE = {}
 
 _DB_DATE_COLUMNS = {
-    'DATE_ICE',
-    'DATE_EXP_CERT_NEG',
-    'CIN_VALIDATY',
-    'DATE_NAISS',
-    'DATE_CONTRAT',
-    'DATE_DEBUT_CONTRAT',
-    'DATE_FIN_CONTRAT',
+    'date_ice',
+    'date_exp_cert_neg',
+    'cin_validaty',
+    'date_naiss',
+    'date_contrat',
+    'date_debut_contrat',
+    'date_fin_contrat',
 }
 
 _DB_BOOLEAN_COLUMNS = {
-    'IS_GERANT',
+    'is_gerant',
 }
 
 _DB_INTEGER_COLUMNS = {
-    'CAPITAL',
-    'PART_SOCIAL',
-    'VALEUR_NOMINALE',
-    'PART_PERCENT',
-    'PARTS',
-    'CAPITAL_DETENU',
-    'DUREE_CONTRAT_MOIS',
-    'TAUX_TVA_POURCENT',
-    'TAUX_TVA_RENOUVELLEMENT_POURCENT',
+    'capital',
+    'part_social',
+    'valeur_nominale',
+    'part_percent',
+    'parts',
+    'capital_detenu',
+    'duree_contrat_mois',
+    'taux_tva_pourcent',
+    'taux_tva_renouvellement_pourcent',
 }
 
 _DB_AMOUNT_COLUMNS = {
-    'LOYER_MENSUEL_TTC',
-    'FRAIS_INTERMEDIAIRE_CONTRAT',
-    'LOYER_MENSUEL_HT',
-    'MONTANT_TOTAL_HT_CONTRAT',
-    'MONTANT_PACK_DEMARRAGE_TTC',
-    'LOYER_MENSUEL_PACK_DEMARRAGE_TTC',
-    'LOYER_MENSUEL_HT_RENOUVELLEMENT',
-    'MONTANT_TOTAL_HT_RENOUVELLEMENT',
-    'LOYER_MENSUEL_RENOUVELLEMENT_TTC',
-    'LOYER_ANNUEL_RENOUVELLEMENT_TTC',
+    'loyer_mensuel_ttc',
+    'frais_intermediaire_contrat',
+    'loyer_mensuel_ht',
+    'montant_total_ht_contrat',
+    'montant_pack_demarrage_ttc',
+    'loyer_mensuel_pack_demarrage_ttc',
+    'loyer_mensuel_ht_renouvellement',
+    'montant_total_ht_renouvellement',
+    'loyer_mensuel_renouvellement_ttc',
+    'loyer_annuel_renouvellement_ttc',
 }
 
 
@@ -158,6 +158,81 @@ def _format_storage_number(value, min_decimals: int = 0, max_decimals: int = 4) 
         if len(fractional_part) < min_decimals:
             fractional_part = fractional_part.ljust(min_decimals, '0')
     return f"{integer_part},{fractional_part}"
+
+
+def _apply_excel_header_labels(path: _Path, header_labels: dict) -> None:
+    """Apply UI-friendly header labels to Excel workbook sheets."""
+    try:
+        from openpyxl import load_workbook
+    except Exception:
+        return
+
+    path = _Path(path)
+    if not path.exists():
+        return
+
+    try:
+        wb = load_workbook(path)
+    except Exception:
+        return
+
+    changed = False
+    for ws in wb.worksheets:
+        try:
+            for cell in list(ws[1]):
+                raw = cell.value
+                if raw is None:
+                    continue
+                key = str(raw).strip()
+                label = header_labels.get(key)
+                if label and label != raw:
+                    cell.value = label
+                    changed = True
+        except Exception:
+            continue
+
+    if changed:
+        try:
+            wb.save(path)
+        except Exception:
+            pass
+
+
+def _apply_excel_sheet_order(path: _Path, ordered_names: list[str]) -> None:
+    """Reorder workbook sheets to match the desired order."""
+    try:
+        from openpyxl import load_workbook
+    except Exception:
+        return
+
+    path = _Path(path)
+    if not path.exists():
+        return
+
+    try:
+        wb = load_workbook(path)
+    except Exception:
+        return
+
+    existing = {ws.title: ws for ws in wb.worksheets}
+    ordered = []
+    for name in ordered_names:
+        ws = existing.get(name)
+        if ws is not None:
+            ordered.append(ws)
+    for ws in wb.worksheets:
+        if ws.title not in ordered_names:
+            ordered.append(ws)
+
+    if [ws.title for ws in wb.worksheets] != [ws.title for ws in ordered]:
+        try:
+            wb._sheets = ordered
+        except Exception:
+            return
+        try:
+            wb.save(path)
+        except Exception:
+            pass
 
 
 def normalize_canonical_dataframe_for_storage(df: _pd.DataFrame) -> _pd.DataFrame:
@@ -1213,6 +1288,8 @@ def ensure_excel_db(path, sheets: dict):
     except Exception:
         raise RuntimeError('openpyxl is required for ensure_excel_db')
 
+    from . import constants as _const
+
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -1221,6 +1298,13 @@ def ensure_excel_db(path, sheets: dict):
         with pd.ExcelWriter(path, engine='openpyxl') as writer:
             for name, cols in sheets.items():
                 pd.DataFrame(columns=cols).to_excel(writer, sheet_name=name, index=False)
+        try:
+            label_map = getattr(_const, 'excel_header_labels', {}) or {}
+            if label_map:
+                _apply_excel_header_labels(path, label_map)
+            _apply_excel_sheet_order(path, list(_const.excel_sheets.keys()))
+        except Exception:
+            pass
         return
 
     # If exists, open and add missing sheets
@@ -1244,6 +1328,39 @@ def ensure_excel_db(path, sheets: dict):
             except Exception:
                 existing = _pd.DataFrame(columns=cols)
 
+            alias_map = {}
+            try:
+                if name == 'Societes':
+                    alias_map = getattr(_const, 'societe_header_aliases', {}) or {}
+                elif name == 'Associes':
+                    alias_map = getattr(_const, 'associe_header_aliases', {}) or {}
+                elif name == 'Contrats':
+                    alias_map = getattr(_const, 'contrat_header_aliases', {}) or {}
+                elif name == 'Collaborateurs':
+                    alias_map = getattr(_const, 'collaborateur_header_aliases', {}) or {}
+                else:
+                    alias_map = getattr(_const, 'reference_header_aliases', {}).get(name, {}) or {}
+            except Exception:
+                alias_map = {}
+            if alias_map and not existing.empty:
+                for old_col, new_col in alias_map.items():
+                    if old_col not in existing.columns:
+                        continue
+                    if new_col not in existing.columns:
+                        existing[new_col] = existing[old_col]
+                    else:
+                        try:
+                            old_vals = existing[old_col].fillna('').astype(str).str.strip()
+                            new_vals = existing[new_col].fillna('').astype(str).str.strip()
+                            mask = (new_vals == '') & (old_vals != '')
+                            existing.loc[mask, new_col] = existing.loc[mask, old_col]
+                        except Exception:
+                            pass
+                    try:
+                        existing.drop(columns=[old_col], inplace=True)
+                    except Exception:
+                        pass
+
             aligned = existing.reindex(columns=cols, fill_value='')
             if list(existing.columns) == list(cols):
                 continue
@@ -1264,6 +1381,13 @@ def ensure_excel_db(path, sheets: dict):
                     aligned.to_excel(writer, sheet_name=name, index=False)
     except Exception:
         logger.exception('Failed to align workbook columns in ensure_excel_db')
+    try:
+        label_map = getattr(_const, 'excel_header_labels', {}) or {}
+        if label_map:
+            _apply_excel_header_labels(path, label_map)
+        _apply_excel_sheet_order(path, list(_const.excel_sheets.keys()))
+    except Exception:
+        pass
     return
 
 
@@ -1389,15 +1513,15 @@ def initialize_reference_sheets(path):
                 if existing.empty:
                     # Get the header name for this sheet
                     if sheet_name == 'SteAdresses':
-                        col_name = 'STE_ADRESSE'
+                        col_name = 'ste_adresse'
                     elif sheet_name == 'Tribunaux':
-                        col_name = 'TRIBUNAL'
+                        col_name = 'tribunal'
                     elif sheet_name == 'Activites':
-                        col_name = 'ACTIVITE'
+                        col_name = 'activite'
                     elif sheet_name == 'Nationalites':
-                        col_name = 'NATIONALITE'
+                        col_name = 'nationalite'
                     else:  # LieuxNaissance
-                        col_name = 'LIEU_NAISSANCE'
+                        col_name = 'lieu_naissance'
 
                     # Create DataFrame from data list
                     df = _pd.DataFrame({col_name: data_list})
@@ -1498,35 +1622,35 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
 
     # Societe
     if societe_vals:
-        sid = _next_id('Societes', 'ID_SOCIETE')
+        sid = _next_id('Societes', 'id_societe')
         # initialize with None so columns can hold datetimes or numbers
         row: dict = {h: None for h in _const.societe_headers}
-        row['ID_SOCIETE'] = sid
+        row['id_societe'] = sid
         # mapping from form keys to headers (best-effort)
         mapping = {
-            'denomination': 'DEN_STE',
-            'forme_juridique': 'FORME_JUR',
-            'ice': 'ICE',
-            'date_ice': 'DATE_ICE',
-            'date_certificat_negatif': 'DATE_ICE',
-            'date_expiration_certificat_negatif': 'DATE_EXP_CERT_NEG',
-            'capital': 'CAPITAL',
-            'parts_social': 'PART_SOCIAL',
-            'valeur_nominale': 'VALEUR_NOMINALE',
-            'adresse': 'STE_ADRESS',
-            'tribunal': 'TRIBUNAL',
-            'type_generation': 'TYPE_GENERATION',
-            'generation_type': 'TYPE_GENERATION',
-            'procedure_creation': 'PROCEDURE_CREATION',
-            'creation_procedure': 'PROCEDURE_CREATION',
-            'mode_depot_creation': 'MODE_DEPOT_CREATION',
-            'creation_depot_mode': 'MODE_DEPOT_CREATION',
+            'denomination': 'den_ste',
+            'forme_juridique': 'forme_jur',
+            'ice': 'ice',
+            'date_ice': 'date_ice',
+            'date_certificat_negatif': 'date_ice',
+            'date_expiration_certificat_negatif': 'date_exp_cert_neg',
+            'capital': 'capital',
+            'parts_social': 'part_social',
+            'valeur_nominale': 'valeur_nominale',
+            'adresse': 'ste_adress',
+            'tribunal': 'tribunal',
+            'type_generation': 'type_generation',
+            'generation_type': 'type_generation',
+            'procedure_creation': 'procedure_creation',
+            'creation_procedure': 'procedure_creation',
+            'mode_depot_creation': 'mode_depot_creation',
+            'creation_depot_mode': 'mode_depot_creation',
         }
         for k, h in mapping.items():
             if k in societe_vals:
                 v = societe_vals.get(k)
                 # try to parse dates into datetime
-                if h.upper().find('DATE') >= 0:
+                if 'date' in h:
                     dt = _to_datetime(v)
                     row[h] = dt.to_pydatetime() if dt is not None else None
                 else:
@@ -1542,34 +1666,37 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
 
     # Associes
     if associes_list:
-        aid = _next_id('Associes', 'ID_ASSOCIE')
+        aid = _next_id('Associes', 'id_associe')
         assoc_rows = []
         # Determine linked societe id
-        linked_sid = soc_df['ID_SOCIETE'].iloc[0] if not soc_df.empty else ''
+        linked_sid = soc_df['id_societe'].iloc[0] if not soc_df.empty else ''
+        linked_den = soc_df['den_ste'].iloc[0] if not soc_df.empty and 'den_ste' in soc_df.columns else ''
         for a in associes_list:
             if not isinstance(a, dict):
                 continue
             r: dict = {h: None for h in _const.associe_headers}
-            r['ID_ASSOCIE'] = aid
+            r['id_associe'] = aid
             aid += 1
-            r['ID_SOCIETE'] = linked_sid
+            r['id_societe'] = linked_sid
+            if 'den_ste' in r:
+                r['den_ste'] = linked_den
             map_a = {
-                'civilite': 'CIVIL', 'prenom': 'PRENOM', 'nom': 'NOM',
-                'nationalite': 'NATIONALITY', 'num_piece': 'CIN_NUM',
-                'validite_piece': 'CIN_VALIDATY', 'date_naiss': 'DATE_NAISS',
-                'lieu_naiss': 'LIEU_NAISS', 'adresse': 'ADRESSE',
-                'telephone': 'PHONE', 'email': 'EMAIL',
-                'percentage': 'PART_PERCENT', 'part_percentage': 'PART_PERCENT',
+                'civilite': 'civil', 'prenom': 'prenom', 'nom': 'nom',
+                'nationalite': 'nationality', 'num_piece': 'cin_num',
+                'validite_piece': 'cin_validaty', 'date_naiss': 'date_naiss',
+                'lieu_naiss': 'lieu_naiss', 'adresse': 'adresse',
+                'telephone': 'phone', 'email': 'email',
+                'percentage': 'part_percent', 'part_percentage': 'part_percent',
                 # forms historically used either 'parts' or 'num_parts'
-                'parts': 'PARTS', 'num_parts': 'PARTS',
-                # form uses 'capital_detenu' variable, store it in CAPITAL_DETENU
-                'capital_detenu': 'CAPITAL_DETENU',
-                'est_gerant': 'IS_GERANT', 'qualite': 'QUALITY'
+                'parts': 'parts', 'num_parts': 'parts',
+                # form uses 'capital_detenu' variable, store it in capital_detenu
+                'capital_detenu': 'capital_detenu',
+                'est_gerant': 'is_gerant', 'qualite': 'quality'
             }
             for k, h in map_a.items():
                 if k in a:
                     v = a.get(k)
-                    if h.upper().find('DATE') >= 0:
+                    if 'date' in h:
                         dt = _to_datetime(v)
                         r[h] = dt.to_pydatetime() if dt is not None else None
                     else:
@@ -1582,7 +1709,7 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
                         else:
                             s = str(v).strip()
                             # Try numeric conversion for parts / capital
-                            if h in ('PART_PERCENT', 'PARTS', 'CAPITAL_DETENU'):
+                            if h in ('part_percent', 'parts', 'capital_detenu'):
                                 try:
                                     # remove spaces and parse comma/point
                                     ns = s.replace(' ', '').replace(',', '.')
@@ -1600,44 +1727,46 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
 
     # Contrat
     if contrat_vals:
-        cid = _next_id('Contrats', 'ID_CONTRAT')
+        cid = _next_id('Contrats', 'id_contrat')
         r: dict = {h: None for h in _const.contrat_headers}
-        r['ID_CONTRAT'] = cid
-        r['ID_SOCIETE'] = soc_df['ID_SOCIETE'].iloc[0] if not soc_df.empty else None
+        r['id_contrat'] = cid
+        r['id_societe'] = soc_df['id_societe'].iloc[0] if not soc_df.empty else None
+        if 'den_ste' in r:
+            r['den_ste'] = soc_df['den_ste'].iloc[0] if not soc_df.empty and 'den_ste' in soc_df.columns else None
         # Map keys used by ContratForm -> canonical headers
         map_c = {
-            'date_contrat': 'DATE_CONTRAT',
-            'period': 'DUREE_CONTRAT_MOIS',
-            'type_contrat_domiciliation': 'TYPE_CONTRAT_DOMICILIATION',
-            'type_contrat_domiciliation_autre': 'TYPE_CONTRAT_DOMICILIATION_AUTRE',
-            'prix_mensuel': 'LOYER_MENSUEL_TTC',
-            'prix_inter': 'FRAIS_INTERMEDIAIRE_CONTRAT',
-            'date_debut': 'DATE_DEBUT_CONTRAT',
-            'date_fin': 'DATE_FIN_CONTRAT',
-            'tva': 'TAUX_TVA_POURCENT',
-            'dh_ht': 'LOYER_MENSUEL_HT',
-            'montant_ht': 'MONTANT_TOTAL_HT_CONTRAT',
-            'pack_demarrage_montant': 'MONTANT_PACK_DEMARRAGE_TTC',
-            'pack_demarrage_loyer': 'LOYER_MENSUEL_PACK_DEMARRAGE_TTC',
-            'type_renouvellement': 'TYPE_RENOUVELLEMENT',
-            'tva_renouvellement': 'TAUX_TVA_RENOUVELLEMENT_POURCENT',
-            'dh_ht_renouvellement': 'LOYER_MENSUEL_HT_RENOUVELLEMENT',
-            'montant_ht_renouvellement': 'MONTANT_TOTAL_HT_RENOUVELLEMENT',
-            'loyer_renouvellement_mensuel': 'LOYER_MENSUEL_RENOUVELLEMENT_TTC',
-            'loyer_renouvellement_annuel': 'LOYER_ANNUEL_RENOUVELLEMENT_TTC',
+            'date_contrat': 'date_contrat',
+            'period': 'duree_contrat_mois',
+            'type_contrat_domiciliation': 'type_contrat_domiciliation',
+            'type_contrat_domiciliation_autre': 'type_contrat_domiciliation_autre',
+            'prix_mensuel': 'loyer_mensuel_ttc',
+            'prix_inter': 'frais_intermediaire_contrat',
+            'date_debut': 'date_debut_contrat',
+            'date_fin': 'date_fin_contrat',
+            'tva': 'taux_tva_pourcent',
+            'dh_ht': 'loyer_mensuel_ht',
+            'montant_ht': 'montant_total_ht_contrat',
+            'pack_demarrage_montant': 'montant_pack_demarrage_ttc',
+            'pack_demarrage_loyer': 'loyer_mensuel_pack_demarrage_ttc',
+            'type_renouvellement': 'type_renouvellement',
+            'tva_renouvellement': 'taux_tva_renouvellement_pourcent',
+            'dh_ht_renouvellement': 'loyer_mensuel_ht_renouvellement',
+            'montant_ht_renouvellement': 'montant_total_ht_renouvellement',
+            'loyer_renouvellement_mensuel': 'loyer_mensuel_renouvellement_ttc',
+            'loyer_renouvellement_annuel': 'loyer_annuel_renouvellement_ttc',
         }
         numeric_contract_cols = {
-            'LOYER_MENSUEL_TTC', 'FRAIS_INTERMEDIAIRE_CONTRAT',
-            'TAUX_TVA_POURCENT', 'LOYER_MENSUEL_HT', 'MONTANT_TOTAL_HT_CONTRAT',
-            'MONTANT_PACK_DEMARRAGE_TTC', 'LOYER_MENSUEL_PACK_DEMARRAGE_TTC',
-            'TAUX_TVA_RENOUVELLEMENT_POURCENT', 'LOYER_MENSUEL_HT_RENOUVELLEMENT',
-            'MONTANT_TOTAL_HT_RENOUVELLEMENT', 'LOYER_MENSUEL_RENOUVELLEMENT_TTC',
-            'LOYER_ANNUEL_RENOUVELLEMENT_TTC',
+            'loyer_mensuel_ttc', 'frais_intermediaire_contrat',
+            'taux_tva_pourcent', 'loyer_mensuel_ht', 'montant_total_ht_contrat',
+            'montant_pack_demarrage_ttc', 'loyer_mensuel_pack_demarrage_ttc',
+            'taux_tva_renouvellement_pourcent', 'loyer_mensuel_ht_renouvellement',
+            'montant_total_ht_renouvellement', 'loyer_mensuel_renouvellement_ttc',
+            'loyer_annuel_renouvellement_ttc',
         }
         for k, h in map_c.items():
             if k in contrat_vals:
                 v = contrat_vals.get(k)
-                if h.upper().find('DATE') >= 0:
+                if 'date' in h:
                     dt = _to_datetime(v)
                     r[h] = dt.to_pydatetime() if dt is not None else None
                 else:
@@ -1663,20 +1792,22 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
 
     # Collaborateur
     if collaborateur_vals:
-        col_id = _next_id('Collaborateurs', 'ID_COLLABORATEUR')
+        col_id = _next_id('Collaborateurs', 'id_collaborateur')
         r: dict = {h: None for h in _const.collaborateur_headers}
-        r['ID_COLLABORATEUR'] = col_id
-        r['ID_SOCIETE'] = soc_df['ID_SOCIETE'].iloc[0] if not soc_df.empty else None
+        r['id_collaborateur'] = col_id
+        r['id_societe'] = soc_df['id_societe'].iloc[0] if not soc_df.empty else None
         map_col = {
-            'nom': 'COLLABORATEUR_NOM',
-            'ice': 'COLLABORATEUR_ICE',
-            'tp': 'COLLABORATEUR_TP',
-            'rc': 'COLLABORATEUR_RC',
-            'if': 'COLLABORATEUR_IF',
-            'tel_fixe': 'COLLABORATEUR_TEL_FIXE',
-            'tel_mobile': 'COLLABORATEUR_TEL_MOBILE',
-            'adresse': 'COLLABORATEUR_ADRESSE',
-            'email': 'COLLABORATEUR_EMAIL',
+            'type': 'collaborateur_type',
+            'code': 'collaborateur_code',
+            'nom': 'collaborateur_nom',
+            'ice': 'collaborateur_ice',
+            'tp': 'collaborateur_tp',
+            'rc': 'collaborateur_rc',
+            'if': 'collaborateur_if',
+            'tel_fixe': 'collaborateur_tel_fixe',
+            'tel_mobile': 'collaborateur_tel_mobile',
+            'adresse': 'collaborateur_adresse',
+            'email': 'collaborateur_email',
         }
         for k, h in map_col.items():
             if k in collaborateur_vals:
@@ -1717,6 +1848,12 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
                 collab_df.to_excel(writer, sheet_name='Collaborateurs', index=False)
             else:
                 _pd.DataFrame(columns=_const.collaborateur_headers).to_excel(writer, sheet_name='Collaborateurs', index=False)
+        try:
+            label_map = getattr(_const, 'excel_header_labels', {}) or {}
+            if label_map:
+                _apply_excel_header_labels(path, label_map)
+        except Exception:
+            pass
         return
 
     # Append to existing workbook — safer approach:
@@ -1733,12 +1870,24 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
         ]
 
         for sheet_name, new_df, headers in sheets_to_write:
+            alias_map = {}
+            if sheet_name == 'Societes':
+                alias_map = getattr(_const, 'societe_header_aliases', {}) or {}
+            elif sheet_name == 'Associes':
+                alias_map = getattr(_const, 'associe_header_aliases', {}) or {}
+            elif sheet_name == 'Contrats':
+                alias_map = getattr(_const, 'contrat_header_aliases', {}) or {}
+            elif sheet_name == 'Collaborateurs':
+                alias_map = getattr(_const, 'collaborateur_header_aliases', {}) or {}
+
             if new_df.empty:
                 # still ensure the sheet exists with correct headers
                 try:
                     existing = _pd.read_excel(path, sheet_name=sheet_name, dtype=str)
                 except Exception:
                     existing = _pd.DataFrame(columns=headers)
+                if alias_map:
+                    existing = _apply_aliases(existing, alias_map)
                 if sheet_name == 'Contrats':
                     existing = _normalize_contrat_columns(existing)
                 existing = normalize_canonical_dataframe_for_storage(existing.reindex(columns=headers, fill_value=''))
@@ -1764,6 +1913,8 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
                 existing = _pd.read_excel(path, sheet_name=sheet_name, dtype=str)
             except Exception:
                 existing = _pd.DataFrame(columns=headers)
+            if alias_map:
+                existing = _apply_aliases(existing, alias_map)
             if sheet_name == 'Contrats':
                 existing = _normalize_contrat_columns(existing)
                 new_df = _normalize_contrat_columns(new_df)
@@ -1955,7 +2106,11 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
                                     except Exception:
                                         pass
                             # phone as text
-                            if h in ('PHONE',):
+                            if h in (
+                                'PHONE',
+                                'COLLABORATEUR_TEL_FIXE',
+                                'COLLABORATEUR_TEL_MOBILE',
+                            ):
                                 for row_idx in range(2, ws.max_row + 1):
                                     try:
                                         c = ws[f"{col_letter}{row_idx}"]
@@ -1964,7 +2119,13 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
                                     except Exception:
                                         pass
                             # long text fields -> wrap
-                            if h in ('ADRESSE', 'STE_ADRESS', 'LIEU_NAISS'):
+                            if h in (
+                                'ADRESSE',
+                                'STE_ADRESS',
+                                'STE_ADRESSE',
+                                'LIEU_NAISS',
+                                'COLLABORATEUR_ADRESSE',
+                            ):
                                 for row_idx in range(2, ws.max_row + 1):
                                     try:
                                         c = ws[f"{col_letter}{row_idx}"]
@@ -1987,6 +2148,13 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
         wb.save(path)
     except Exception:
         logger.exception('Failed to autofit column widths after writing records')
+    try:
+        label_map = getattr(_const, 'excel_header_labels', {}) or {}
+        if label_map:
+            _apply_excel_header_labels(path, label_map)
+        _apply_excel_sheet_order(path, list(_const.excel_sheets.keys()))
+    except Exception:
+        pass
 
 
 def normalize_excel_storage(path):
@@ -2005,30 +2173,70 @@ def normalize_excel_storage(path):
         ('Collaborateurs', _const.collaborateur_headers),
     )
 
+    try:
+        soc_df = _pd.read_excel(path, sheet_name='Societes', dtype=str).fillna('')
+    except Exception:
+        soc_df = _pd.DataFrame(columns=_const.societe_headers)
+    denom_map = {}
+    try:
+        if 'id_societe' in soc_df.columns and 'den_ste' in soc_df.columns:
+            soc_ids = soc_df['id_societe'].fillna('').astype(str).str.strip()
+            soc_names = soc_df['den_ste'].fillna('').astype(str).str.strip()
+            denom_map = {sid: den for sid, den in zip(soc_ids, soc_names) if sid and den}
+    except Exception:
+        denom_map = {}
+
     normalized_frames = {}
     for sheet_name, headers in sheets:
         try:
             df = _pd.read_excel(path, sheet_name=sheet_name, dtype=str).fillna('')
         except Exception:
             df = _pd.DataFrame(columns=headers)
-        if sheet_name == 'Contrats':
-            for old_col, new_col in aliases.items():
-                if old_col not in df.columns:
-                    continue
-                if new_col not in df.columns:
-                    df[new_col] = df[old_col]
-                else:
-                    try:
-                        old_vals = df[old_col].fillna('').astype(str).str.strip()
-                        new_vals = df[new_col].fillna('').astype(str).str.strip()
-                        mask = (new_vals == '') & (old_vals != '')
-                        df.loc[mask, new_col] = df.loc[mask, old_col]
-                    except Exception:
-                        pass
+        alias_map = {}
+        if sheet_name == 'Societes':
+            alias_map = getattr(_const, 'societe_header_aliases', {}) or {}
+        elif sheet_name == 'Associes':
+            alias_map = getattr(_const, 'associe_header_aliases', {}) or {}
+        elif sheet_name == 'Contrats':
+            alias_map = aliases
+        elif sheet_name == 'Collaborateurs':
+            alias_map = getattr(_const, 'collaborateur_header_aliases', {}) or {}
+
+        for old_col, new_col in alias_map.items():
+            if old_col not in df.columns:
+                continue
+            if new_col not in df.columns:
+                df[new_col] = df[old_col]
+            else:
                 try:
-                    df.drop(columns=[old_col], inplace=True)
+                    old_vals = df[old_col].fillna('').astype(str).str.strip()
+                    new_vals = df[new_col].fillna('').astype(str).str.strip()
+                    mask = (new_vals == '') & (old_vals != '')
+                    df.loc[mask, new_col] = df.loc[mask, old_col]
                 except Exception:
                     pass
+            try:
+                df.drop(columns=[old_col], inplace=True)
+            except Exception:
+                pass
+
+        if sheet_name in {'Associes', 'Contrats'} and 'den_ste' in headers:
+            try:
+                if 'den_ste' not in df.columns:
+                    df['den_ste'] = ''
+                if denom_map and 'id_societe' in df.columns:
+                    mapped = (
+                        df['id_societe']
+                        .fillna('')
+                        .astype(str)
+                        .str.strip()
+                        .map(denom_map)
+                        .fillna('')
+                    )
+                    existing = df['den_ste'].fillna('').astype(str).str.strip()
+                    df.loc[existing == '', 'den_ste'] = mapped
+            except Exception:
+                pass
         normalized_frames[sheet_name] = normalize_canonical_dataframe_for_storage(
             df.reindex(columns=headers, fill_value='')
         )
@@ -2057,6 +2265,13 @@ def normalize_excel_storage(path):
                     sheet_name=sheet_name,
                     index=False,
                 )
+    try:
+        label_map = getattr(_const, 'excel_header_labels', {}) or {}
+        if label_map:
+            _apply_excel_header_labels(path, label_map)
+        _apply_excel_sheet_order(path, list(_const.excel_sheets.keys()))
+    except Exception:
+        pass
 
 
 def cleanup_old_backups(db_path, max_backups=5):
@@ -2175,6 +2390,63 @@ def migrate_excel_workbook(path):
     # Build set of canonical header sets for quick matching
     canonical = {name: set([h.upper() for h in cols]) for name, cols in _const.excel_sheets.items()}
     to_remove = []
+
+    def _apply_sheet_aliases(df: _pd.DataFrame, sheet_name: str) -> _pd.DataFrame:
+        alias_map = {}
+        if sheet_name == 'Societes':
+            alias_map = getattr(_const, 'societe_header_aliases', {}) or {}
+        elif sheet_name == 'Associes':
+            alias_map = getattr(_const, 'associe_header_aliases', {}) or {}
+        elif sheet_name == 'Contrats':
+            alias_map = getattr(_const, 'contrat_header_aliases', {}) or {}
+        elif sheet_name == 'Collaborateurs':
+            alias_map = getattr(_const, 'collaborateur_header_aliases', {}) or {}
+        else:
+            alias_map = getattr(_const, 'reference_header_aliases', {}).get(sheet_name, {}) or {}
+        if not alias_map or df is None:
+            return df
+        out = df.copy()
+        for old_col, new_col in alias_map.items():
+            if old_col not in out.columns:
+                continue
+            if new_col not in out.columns:
+                out[new_col] = out[old_col]
+            else:
+                try:
+                    old_vals = out[old_col].fillna('').astype(str).str.strip()
+                    new_vals = out[new_col].fillna('').astype(str).str.strip()
+                    mask = (new_vals == '') & (old_vals != '')
+                    out.loc[mask, new_col] = out.loc[mask, old_col]
+                except Exception:
+                    pass
+            try:
+                out.drop(columns=[old_col], inplace=True)
+            except Exception:
+                pass
+        return out
+
+    def _apply_aliases(df, alias_map):
+        if df is None or df.empty or not alias_map:
+            return df
+        out = df.copy()
+        for old_col, new_col in alias_map.items():
+            if old_col not in out.columns:
+                continue
+            if new_col not in out.columns:
+                out[new_col] = out[old_col]
+            else:
+                try:
+                    old_vals = out[old_col].fillna('').astype(str).str.strip()
+                    new_vals = out[new_col].fillna('').astype(str).str.strip()
+                    mask = (new_vals == '') & (old_vals != '')
+                    out.loc[mask, new_col] = out.loc[mask, old_col]
+                except Exception:
+                    pass
+            try:
+                out.drop(columns=[old_col], inplace=True)
+            except Exception:
+                pass
+        return out
     for sheet in list(wb.sheetnames):
         if sheet in canonical:
             continue
@@ -2194,42 +2466,8 @@ def migrate_excel_workbook(path):
                     existing = _pd.read_excel(path, sheet_name=cname, dtype=str)
                 except Exception:
                     existing = _pd.DataFrame(columns=_const.excel_sheets.get(cname, []))
-                if cname == 'Contrats':
-                    aliases = getattr(_const, 'contrat_header_aliases', {}) or {}
-                    for old_col, new_col in aliases.items():
-                        if old_col not in df.columns:
-                            continue
-                        if new_col not in df.columns:
-                            df[new_col] = df[old_col]
-                        else:
-                            try:
-                                old_vals = df[old_col].fillna('').astype(str).str.strip()
-                                new_vals = df[new_col].fillna('').astype(str).str.strip()
-                                mask = (new_vals == '') & (old_vals != '')
-                                df.loc[mask, new_col] = df.loc[mask, old_col]
-                            except Exception:
-                                pass
-                        try:
-                            df.drop(columns=[old_col], inplace=True)
-                        except Exception:
-                            pass
-                    for old_col, new_col in aliases.items():
-                        if old_col not in existing.columns:
-                            continue
-                        if new_col not in existing.columns:
-                            existing[new_col] = existing[old_col]
-                        else:
-                            try:
-                                old_vals = existing[old_col].fillna('').astype(str).str.strip()
-                                new_vals = existing[new_col].fillna('').astype(str).str.strip()
-                                mask = (new_vals == '') & (old_vals != '')
-                                existing.loc[mask, new_col] = existing.loc[mask, old_col]
-                            except Exception:
-                                pass
-                        try:
-                            existing.drop(columns=[old_col], inplace=True)
-                        except Exception:
-                            pass
+                df = _apply_sheet_aliases(df, cname)
+                existing = _apply_sheet_aliases(existing, cname)
                 # Align legacy df to canonical headers to ensure correct column placement
                 canonical_cols = _const.excel_sheets.get(cname, [])
                 df_aligned = df.reindex(columns=canonical_cols, fill_value='')
@@ -2260,25 +2498,7 @@ def migrate_excel_workbook(path):
             except Exception:
                 existing = _pd.DataFrame(columns=headers)
 
-            if cname == 'Contrats':
-                aliases = getattr(_const, 'contrat_header_aliases', {}) or {}
-                for old_col, new_col in aliases.items():
-                    if old_col not in existing.columns:
-                        continue
-                    if new_col not in existing.columns:
-                        existing[new_col] = existing[old_col]
-                    else:
-                        try:
-                            old_vals = existing[old_col].fillna('').astype(str).str.strip()
-                            new_vals = existing[new_col].fillna('').astype(str).str.strip()
-                            mask = (new_vals == '') & (old_vals != '')
-                            existing.loc[mask, new_col] = existing.loc[mask, old_col]
-                        except Exception:
-                            pass
-                    try:
-                        existing.drop(columns=[old_col], inplace=True)
-                    except Exception:
-                        pass
+            existing = _apply_sheet_aliases(existing, cname)
 
             aligned = existing.reindex(columns=headers, fill_value='')
             if list(existing.columns) == list(headers):
@@ -2361,6 +2581,11 @@ def migrate_excel_workbook(path):
     except Exception:
         logger.exception('Failed to autofit column widths after migration')
 
+    try:
+        _apply_excel_sheet_order(path, list(_const.excel_sheets.keys()))
+    except Exception:
+        pass
+
 
 def societe_exists(name: str, path: Optional[_Path] = None) -> bool:
     """Check whether a société with the given name exists in the Excel database.
@@ -2390,14 +2615,14 @@ def societe_exists(name: str, path: Optional[_Path] = None) -> bool:
         except Exception:
             return False
 
-        if 'DEN_STE' not in df.columns:
+        if 'den_ste' not in df.columns:
             # fallback: try to detect any column that looks like a company name
             candidates = [c for c in df.columns if 'DEN' in str(c).upper() or 'STE' in str(c).upper() or 'NAME' in str(c).upper()]
             if not candidates:
                 return False
             col = candidates[0]
         else:
-            col = 'DEN_STE'
+            col = 'den_ste'
 
         target = (str(name or '')).strip().lower()
         if not target:
