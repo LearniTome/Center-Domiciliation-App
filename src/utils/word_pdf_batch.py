@@ -122,14 +122,22 @@ def convert_docx_batch(
     generated_at = datetime.now().isoformat(timespec="seconds")
     gen_date = datetime.now().strftime("%Y-%m-%d")
     gen_time = datetime.now().strftime("%H%M%S")
-    folder_name = source_path.name or "Conversion"
+
+    report_dir = Path(report_root) if report_root else None
+    if report_dir is None:
+        unique_dirs = {p.parent for p in files} if files else set()
+        if len(unique_dirs) == 1:
+            report_dir = next(iter(unique_dirs))
+        else:
+            report_dir = source_path
+
+    report_dir.mkdir(parents=True, exist_ok=True)
+    folder_name = report_dir.name or "Conversion"
     folder_clean = re.sub(r"[^A-Za-z0-9]+", "_", folder_name).strip("_")
     folder_clean = re.sub(r"__+", "_", folder_clean) or "Conversion"
 
-    reports_dir = Path(report_root) if report_root else (PathManager.BASE_DIR / "Outputs" / "Reports")
-    reports_dir.mkdir(parents=True, exist_ok=True)
-    json_path = reports_dir / f"{gen_date}_{folder_clean}_Rapport_Conversion_Word_PDF_{gen_time}.json"
-    html_path = reports_dir / f"{gen_date}_{folder_clean}_Rapport_Conversion_Word_PDF_{gen_time}.html"
+    json_path = report_dir / f"{gen_date}_{folder_clean}_Rapport_Conversion_Word_PDF_{gen_time}.json"
+    html_path = report_dir / f"{gen_date}_{folder_clean}_Rapport_Conversion_Word_PDF_{gen_time}.html"
 
     if files is None:
         files = _find_docx_files(source_path, recursive=recursive)
