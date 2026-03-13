@@ -702,7 +702,7 @@ def render_templates(
 
     # Save report (write both a human-named JSON matching the HTML report,
     # and keep the legacy `generation_report.json` for backward compatibility)
-    json_name = f"{gen_date}_{company_clean}_Raport_Docs_generer_{gen_time}.json"
+    json_name = f"{gen_date}_{legal_form_token}_Rapport_Docs_Generes_{company_clean}_{gen_time}.json"
     report_path = out_subdir / json_name
     try:
         with report_path.open('w', encoding='utf-8') as f:
@@ -718,9 +718,9 @@ def render_templates(
     # re-enable the block below.
 
     # Also write a human-friendly HTML report with the requested name format:
-    # yyyy-mm-dd_DenSte_Raport_Docs_generer.html
+    # yyyy-mm-dd_Forme_Rapport_Docs_Generes_DenSte_HH-MM-SS.html
     try:
-        html_name = f"{gen_date}_{company_clean}_Raport_Docs_generer_{gen_time}.html"
+        html_name = f"{gen_date}_{legal_form_token}_Rapport_Docs_Generes_{company_clean}_{gen_time}.html"
         html_path = out_subdir / html_name
         # Build a simple HTML page: header + table of report entries + embedded JSON for tools
         def _escape(s: str) -> str:
@@ -756,17 +756,17 @@ def render_templates(
   <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">
   <title>Rapport de génération - {_escape(company_raw)} - {gen_date} {gen_time}</title>
   <style>
-    body{{font-family:Segoe UI,Arial,Helvetica,sans-serif;margin:18px}}
+    body{{font-family:Segoe UI,Arial,Helvetica,sans-serif;margin:18px;background:#1f1f1f;color:#f3f3f3}}
     header{{display:flex;align-items:center;justify-content:space-between}}
     h1{{margin:0;font-size:20px}}
-    .meta{{color:#555}}
-    .summary{{display:flex;gap:12px;margin-top:12px}}
-    .card{{background:#f8f9fb;padding:10px;border-radius:6px;border:1px solid #e6e9ef}}
+    .meta{{color:#d0d0d0}}
+    .summary{{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap}}
+    .card{{background:#2b2b2b;padding:10px;border-radius:6px;border:1px solid #3a3a3a}}
     table{{border-collapse:collapse;width:100%;margin-top:12px}}
-    th,td{{border:1px solid #ddd;padding:8px;text-align:left}}
-    th{{background:#f2f2f2}}
-    pre#genjson{{background:#1e1e1e;color:#e6e6e6;padding:12px;overflow:auto;max-height:420px}}
-    a.filelink{{color:#1a73e8;text-decoration:none}}
+    th,td{{border:1px solid #3a3a3a;padding:8px;text-align:left}}
+    th{{background:#2b2b2b;color:#f3f3f3}}
+    pre#genjson{{background:#1e1e1e;color:#e6e6e6;padding:12px;overflow:auto;max-height:420px;border:1px solid #3a3a3a}}
+    a.filelink{{color:#9cc9ff;text-decoration:none}}
   </style>
 </head>
 <body>

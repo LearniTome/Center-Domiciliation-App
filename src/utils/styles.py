@@ -25,6 +25,10 @@ class ModernTheme:
             'accent_light': '#8a95a1',
             'error': '#dc3545',
             'success': '#28a745',
+            'success_row_bg': '#dff3e6',
+            'success_row_fg': '#1f5c3a',
+            'error_row_bg': '#fde2e1',
+            'error_row_fg': '#7a2e2e',
             'warning': '#ffc107',
             'info': '#17a2b8',
             'border': '#dee2e6',
@@ -46,6 +50,10 @@ class ModernTheme:
             'accent_light': '#828d99',
             'error': '#ff6b6b',
             'success': '#28a745',
+            'success_row_bg': '#1f5f3a',
+            'success_row_fg': '#e7f7ed',
+            'error_row_bg': '#5a2a2a',
+            'error_row_fg': '#f4d7d6',
             'warning': '#ffc107',
             'info': '#17a2b8',
             # Make borders slightly brighter than background so framed sections are visible
@@ -388,6 +396,8 @@ class ModernTheme:
         # Treeview rows slightly taller for readability and visible separators
         # Use section_bg for better contrast in dark mode
         treeview_bg = self.colors['section_bg'] if self.mode == 'dark' else self.colors['bg']
+        selection_bg = '#2a2f36' if self.mode == 'dark' else '#eef2f6'
+        selection_fg = self.colors['fg'] if self.mode == 'dark' else '#2a2f36'
 
         self.style.configure('Treeview',
             background=treeview_bg,
@@ -405,9 +415,9 @@ class ModernTheme:
             font=('Segoe UI', 9, 'bold'))
 
         self.style.map('Treeview',
-            background=[('selected', self.colors['accent']),
+            background=[('selected', selection_bg),
                        ('alternate', self.colors['bg'])],
-            foreground=[('selected', 'white')])
+            foreground=[('selected', selection_fg)])
 
     def _setup_notebook_styles(self):
         self.style.configure('TNotebook',

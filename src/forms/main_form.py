@@ -950,7 +950,7 @@ class MainForm(ttk.Frame):
         container = ttk.Frame(top, padding=14)
         container.pack(fill="both", expand=True)
         container.columnconfigure(1, weight=1)
-        container.rowconfigure(5, weight=1)
+        container.rowconfigure(6, weight=1)
 
         ttk.Label(
             container,
@@ -962,8 +962,12 @@ class MainForm(ttk.Frame):
         recursive_var = tk.BooleanVar(value=True)
         status_var = tk.StringVar(value="Sélectionnez un dossier source puis lancez la conversion.")
         progress_var = tk.StringVar(value="0 / 0")
+        progress_value = tk.DoubleVar(value=0.0)
+        progress_percent_var = tk.StringVar(value="0%")
+        selection_var = tk.StringVar(value="Sélection : 0 / 0")
         report_html = {"path": None}
         pending_files = {"paths": []}
+        file_items = {"items": {}, "by_path": {}, "labels": {}, "total": 0}
 
         ttk.Label(container, text="Dossier source (.docx):").grid(row=1, column=0, sticky="w", padx=(0, 8))
         source_entry = ttk.Entry(container, textvariable=source_var)
@@ -999,70 +1003,249 @@ class MainForm(ttk.Frame):
         ttk.Label(status_row, textvariable=status_var).grid(row=0, column=0, sticky="w")
         ttk.Label(status_row, textvariable=progress_var).grid(row=0, column=1, sticky="e")
 
-        progress = ttk.Progressbar(container, mode="indeterminate")
-        progress.grid(row=4, column=0, columnspan=3, sticky="ew", pady=(0, 8))
+        progress_style = "WordPdf.Horizontal.TProgressbar"
+        progress_label_style = "WordPdf.ProgressText.TLabel"
+        try:
+            colors = getattr(self.theme_manager, "colors", {})
+            trough_color = colors.get("section_bg", "#2b2b2b")
+            bar_color = colors.get("success", "#2ecc71")
+            self.style.configure(
+                progress_style,
+                troughcolor=trough_color,
+                background=bar_color,
+                bordercolor=trough_color,
+                lightcolor=bar_color,
+                darkcolor=bar_color,
+            )
+            self.style.configure(
+                progress_label_style,
+                background=trough_color,
+                foreground="#ffffff",
+                font=("Segoe UI", 9, "bold"),
+            )
+        except Exception:
+            pass
 
-        log_text = tk.Text(container, height=14, state="disabled")
-        log_text.grid(row=5, column=0, columnspan=3, sticky="nsew")
-        log_scroll = ttk.Scrollbar(container, orient="vertical", command=log_text.yview)
-        log_scroll.grid(row=5, column=3, sticky="ns")
-        log_text.configure(yscrollcommand=log_scroll.set)
+        progress_frame = ttk.Frame(container)
+        progress_frame.grid(row=4, column=0, columnspan=3, sticky="ew", pady=(0, 8))
+        progress_frame.columnconfigure(0, weight=1)
+        progress = ttk.Progressbar(
+            progress_frame,
+            mode="determinate",
+            variable=progress_value,
+            maximum=1,
+            style=progress_style,
+        )
+        progress.grid(row=0, column=0, sticky="ew")
+        progress_label = ttk.Label(
+            progress_frame,
+            textvariable=progress_percent_var,
+            style=progress_label_style,
+        )
+        progress_label.place(relx=0.5, rely=0.5, anchor="center")
+
+        selection_row = ttk.Frame(container)
+        selection_row.grid(row=5, column=0, columnspan=3, sticky="ew", pady=(0, 6))
+        selection_row.columnconfigure(0, weight=1)
+
+        ttk.Label(selection_row, textvariable=selection_var).grid(row=0, column=0, sticky="w")
+
+        select_all_btn = WidgetFactory.create_button(
+            selection_row,
+            text="✅ Tout sélectionner",
+            command=lambda: _select_all_files(),
+            style="Secondary.TButton",
+        )
+        select_all_btn.grid(row=0, column=1, sticky="e", padx=(8, 4))
+
+        clear_sel_btn = WidgetFactory.create_button(
+            selection_row,
+            text="❌ Désélectionner",
+            command=lambda: _clear_file_selection(),
+            style="Secondary.TButton",
+        )
+        clear_sel_btn.grid(row=0, column=2, sticky="e")
+
+        files_frame = ttk.Frame(container)
+        files_frame.grid(row=6, column=0, columnspan=3, sticky="nsew")
+        files_frame.columnconfigure(0, weight=1)
+        files_frame.rowconfigure(0, weight=1)
+
+        files_tree = ttk.Treeview(
+            files_frame,
+            columns=("file", "progress", "status"),
+            show="headings",
+            selectmode="extended",
+            height=12,
+        )
+        files_tree.heading("file", text="Fichier")
+        files_tree.heading("progress", text="Progression")
+        files_tree.heading("status", text="Statut")
+        files_tree.column("file", width=520, anchor="w")
+        files_tree.column("progress", width=140, anchor="center")
+        files_tree.column("status", width=140, anchor="center")
+        files_tree.grid(row=0, column=0, sticky="nsew")
+
+        files_scroll = ttk.Scrollbar(files_frame, orient="vertical", command=files_tree.yview)
+        files_scroll.grid(row=0, column=1, sticky="ns")
+        files_tree.configure(yscrollcommand=files_scroll.set)
+
+        tag_colors = getattr(self.theme_manager, "colors", {})
+        files_tree.tag_configure("pending", foreground="#f2994a")
+        files_tree.tag_configure("running", foreground="#f2994a")
+        files_tree.tag_configure(
+            "ok",
+            foreground=tag_colors.get("success_row_fg", "#e7f7ed"),
+            background=tag_colors.get("success_row_bg", "#1f5f3a"),
+        )
+        files_tree.tag_configure(
+            "error",
+            foreground=tag_colors.get("error_row_fg", "#f4d7d6"),
+            background=tag_colors.get("error_row_bg", "#5a2a2a"),
+        )
 
         buttons = ttk.Frame(container)
-        buttons.grid(row=6, column=0, columnspan=3, sticky="ew", pady=(10, 0))
+        buttons.grid(row=7, column=0, columnspan=3, sticky="ew", pady=(10, 0))
 
-        def _append_log(line: str):
-            log_text.configure(state="normal")
-            log_text.insert("end", line + "\n")
-            log_text.see("end")
-            log_text.configure(state="disabled")
+        def _status_display(status: str) -> tuple[str, str]:
+            status_key = (status or "pending").lower()
+            if status_key == "ok":
+                return "✅ OK", "ok"
+            if status_key == "skipped":
+                return "✅ OK", "ok"
+            if status_key == "running":
+                return "🟠 En cours", "running"
+            if status_key == "error":
+                return "❌ Non converti", "error"
+            return "🟠 En attente", "pending"
 
-        def _clear_log():
-            log_text.configure(state="normal")
-            log_text.delete("1.0", "end")
-            log_text.configure(state="disabled")
+        def _progress_bar(percent: int) -> str:
+            blocks = 14
+            percent = max(0, min(100, int(percent)))
+            filled = int(round((percent / 100) * blocks))
+            bar = "▰" * filled + "▱" * (blocks - filled)
+            return f"{bar} {percent}%"
+
+        def _progress_display(status: str) -> str:
+            status_key = (status or "pending").lower()
+            if status_key in {"ok", "skipped", "error"}:
+                return _progress_bar(100)
+            if status_key == "running":
+                return _progress_bar(50)
+            return _progress_bar(0)
+
+        def _set_global_progress(processed: int, total: int):
+            total_safe = max(total, 1)
+            progress_var.set(f"{processed} / {total}")
+            progress_value.set(processed)
+            percent = int(round((processed / total_safe) * 100))
+            progress_percent_var.set(f"{percent}%")
+
+        def _update_selection_summary():
+            total = file_items.get("total", 0)
+            selected = len(files_tree.selection())
+            selection_var.set(f"Sélection : {selected} / {total}")
+
+        def _select_all_files():
+            items = files_tree.get_children()
+            files_tree.selection_set(items)
+            _update_selection_summary()
+
+        def _clear_file_selection():
+            items = files_tree.get_children()
+            files_tree.selection_remove(items)
+            _update_selection_summary()
+
+        def _toggle_tree_selection(event):
+            try:
+                region = files_tree.identify("region", event.x, event.y)
+                if region in {"heading", "separator"}:
+                    return None
+                row_id = files_tree.identify_row(event.y)
+                if not row_id:
+                    return None
+                if row_id in files_tree.selection():
+                    files_tree.selection_remove(row_id)
+                else:
+                    files_tree.selection_add(row_id)
+                    files_tree.focus(row_id)
+                _update_selection_summary()
+                return "break"
+            except Exception:
+                return None
+
+        files_tree.bind("<<TreeviewSelect>>", lambda _e: _update_selection_summary())
+        files_tree.bind("<Button-1>", _toggle_tree_selection, add=True)
 
         def _scan_source_folder():
             source_raw = source_var.get().strip()
             report_html["path"] = None
             open_report_btn.configure(state="disabled")
             pending_files["paths"] = []
+            file_items["items"].clear()
+            file_items["by_path"].clear()
+            file_items["labels"].clear()
+            file_items["total"] = 0
 
             if not source_raw:
-                _clear_log()
+                for item in files_tree.get_children():
+                    files_tree.delete(item)
                 status_var.set("Sélectionnez un dossier source puis lancez la conversion.")
-                progress_var.set("0 / 0")
+                _set_global_progress(0, 0)
+                progress_value.set(0)
+                progress.configure(maximum=1)
+                selection_var.set("Sélection : 0 / 0")
                 launch_btn.configure(state="disabled")
                 return
 
             source_dir = Path(source_raw).expanduser()
             if not source_dir.exists() or not source_dir.is_dir():
-                _clear_log()
+                for item in files_tree.get_children():
+                    files_tree.delete(item)
                 status_var.set("Dossier source invalide.")
-                progress_var.set("0 / 0")
+                _set_global_progress(0, 0)
+                progress_value.set(0)
+                progress.configure(maximum=1)
+                selection_var.set("Sélection : 0 / 0")
                 launch_btn.configure(state="disabled")
                 return
 
             paths = sorted(p for p in source_dir.rglob("*.docx") if p.is_file())
             pending_files["paths"] = paths
             total = len(paths)
-            progress_var.set(f"0 / {total}")
+            _set_global_progress(0, total)
+            progress_value.set(0)
+            progress.configure(maximum=max(total, 1))
+            file_items["total"] = total
+            for item in files_tree.get_children():
+                files_tree.delete(item)
 
-            _clear_log()
             if total == 0:
                 status_var.set("Aucun document .docx trouvé dans ce dossier.")
-                _append_log("[info] Aucun fichier .docx détecté.")
+                selection_var.set("Sélection : 0 / 0")
                 launch_btn.configure(state="disabled")
                 return
 
             status_var.set(f"{total} document(s) .docx détecté(s), prêt(s) à convertir.")
-            _append_log(f"[info] Fichiers détectés ({total}):")
             for docx_path in paths:
                 try:
                     rel = docx_path.relative_to(source_dir)
-                    _append_log(f"[a convertir] {rel}")
+                    label = str(rel)
                 except Exception:
-                    _append_log(f"[a convertir] {docx_path}")
+                    label = str(docx_path)
+                status_text, status_tag = _status_display("pending")
+                progress_text = _progress_display("pending")
+                item_id = files_tree.insert(
+                    "",
+                    "end",
+                    values=(label, progress_text, status_text),
+                    tags=(status_tag,),
+                )
+                resolved = str(docx_path.expanduser().resolve())
+                file_items["items"][item_id] = docx_path
+                file_items["by_path"][resolved] = item_id
+                file_items["labels"][item_id] = label
+            _select_all_files()
             launch_btn.configure(state="normal")
 
         def _open_report():
@@ -1092,84 +1275,197 @@ class MainForm(ttk.Frame):
             browse_btn.configure(state=run_state)
             launch_btn.configure(state=run_state)
             close_btn.configure(state=run_state)
+            select_all_btn.configure(state=run_state)
+            clear_sel_btn.configure(state=run_state)
             if is_running:
                 open_report_btn.configure(state="disabled")
-                progress.start(10)
             else:
-                progress.stop()
                 report_path = report_html.get("path")
                 if report_path and Path(report_path).exists():
                     open_report_btn.configure(state="normal")
                 else:
                     open_report_btn.configure(state="disabled")
 
+        def _safe_ui_call(fn):
+            try:
+                if top.winfo_exists():
+                    fn()
+            except Exception:
+                pass
+
+        def _safe_after(fn):
+            try:
+                if top.winfo_exists():
+                    top.after(1, fn)
+            except Exception:
+                pass
+
         def _start_batch_conversion():
             source_raw = source_var.get().strip()
             if not source_raw:
-                messagebox.showwarning("Dossier source", "Veuillez sélectionner un dossier source.")
+                messagebox.showwarning(
+                    "Dossier source",
+                    "Veuillez sélectionner un dossier source.",
+                    parent=top,
+                )
                 return
 
             source_dir = Path(source_raw).expanduser()
             if not source_dir.exists() or not source_dir.is_dir():
-                messagebox.showerror("Dossier source", f"Dossier invalide:\n{source_dir}")
+                messagebox.showerror(
+                    "Dossier source",
+                    f"Dossier invalide:\n{source_dir}",
+                    parent=top,
+                )
                 return
 
             if not pending_files["paths"]:
                 _scan_source_folder()
             if not pending_files["paths"]:
-                messagebox.showwarning("Conversion Word -> PDF", "Aucun fichier .docx à convertir dans le dossier sélectionné.")
+                messagebox.showwarning(
+                    "Conversion Word -> PDF",
+                    "Aucun fichier .docx à convertir dans le dossier sélectionné.",
+                    parent=top,
+                )
+                return
+            selected_items = files_tree.selection()
+            if not selected_items:
+                messagebox.showwarning(
+                    "Conversion Word -> PDF",
+                    "Veuillez sélectionner au moins un fichier à convertir.",
+                    parent=top,
+                )
                 return
 
             report_html["path"] = None
-            progress_var.set("0 / 0")
+            _set_global_progress(0, 0)
             status_var.set("Conversion en cours...")
-            _clear_log()
+            for item_id in selected_items:
+                label = file_items["labels"].get(item_id, "")
+                status_text, status_tag = _status_display("pending")
+                progress_text = _progress_display("pending")
+                files_tree.item(item_id, values=(label, progress_text, status_text), tags=(status_tag,))
+            progress_value.set(0)
             _set_running(True)
 
             def _progress_callback(processed: int, total: int, filename: str, entry: dict):
                 def _update_ui():
-                    progress_var.set(f"{processed} / {total}")
-                    _append_log(
-                        f"[{entry.get('status', 'pending')}] {filename}"
-                        + (f" - {entry.get('error')}" if entry.get("error") else "")
-                    )
+                    if not top.winfo_exists():
+                        return
+                    status_key = str(entry.get("status", "pending")).lower()
+                    if status_key != "running":
+                        _set_global_progress(processed, total)
+                    source_key = entry.get("source_docx") or filename
+                    try:
+                        source_key = str(Path(source_key).expanduser().resolve())
+                    except Exception:
+                        source_key = str(source_key)
+                    item_id = file_items["by_path"].get(source_key)
+                    if item_id:
+                        label = file_items["labels"].get(item_id, filename)
+                        status_text, status_tag = _status_display(entry.get("status"))
+                        progress_text = _progress_display(entry.get("status"))
+                        files_tree.item(
+                            item_id,
+                            values=(label, progress_text, status_text),
+                            tags=(status_tag,),
+                        )
+                        if status_key in {"ok", "skipped", "error"}:
+                            try:
+                                files_tree.selection_remove(item_id)
+                            except Exception:
+                                pass
 
-                try:
-                    top.after(1, _update_ui)
-                except Exception:
-                    pass
+                _safe_after(_update_ui)
 
             def _worker():
                 try:
+                    selected_paths = []
+                    for item_id in selected_items:
+                        path = file_items["items"].get(item_id)
+                        if path is not None:
+                            selected_paths.append(path)
+                    total_selected = len(selected_paths)
+                    progress_value.set(0)
+                    progress.configure(maximum=max(total_selected, 1))
+                    progress_percent_var.set("0%")
                     result = convert_docx_batch(
                         source_dir=source_dir,
                         recursive=True,
+                        files=selected_paths,
                         progress_callback=_progress_callback,
                     )
 
                     def _done():
+                        if not top.winfo_exists():
+                            return
                         report_html["path"] = result.get("report_html")
                         _set_running(False)
                         status_var.set("Conversion terminée.")
+                        total_files = result.get("total_files", 0)
+                        _set_global_progress(total_files, total_files)
+                        _update_selection_summary()
+                        try:
+                            files_tree.selection_remove(files_tree.selection())
+                        except Exception:
+                            pass
+                        location_path = source_dir
+                        try:
+                            output_dirs = {
+                                str(Path(item.get("out_pdf", "")).expanduser().resolve().parent)
+                                for item in result.get("files", [])
+                                if item.get("status") in {"ok", "skipped"} and item.get("out_pdf")
+                            }
+                            if len(output_dirs) == 1:
+                                location_path = Path(next(iter(output_dirs)))
+                        except Exception:
+                            location_path = source_dir
                         summary = (
                             f"Conversion terminée.\n\n"
                             f"Total: {result.get('total_files', 0)}\n"
                             f"Succès: {result.get('success_count', 0)}\n"
                             f"Ignorés: {result.get('skipped_count', 0)}\n"
-                            f"Erreurs: {result.get('error_count', 0)}"
+                            f"Erreurs: {result.get('error_count', 0)}\n\n"
+                            f"Emplacement: {location_path}"
                         )
                         if result.get("global_error"):
                             summary += f"\n\nErreur globale:\n{result.get('global_error')}"
-                        messagebox.showinfo("Conversion Word -> PDF", summary)
+                        try:
+                            top.lift()
+                            top.focus_force()
+                        except Exception:
+                            pass
+                        try:
+                            messagebox.showinfo("Conversion Word -> PDF", summary, parent=top)
+                        except Exception:
+                            pass
+                        try:
+                            self._open_path_in_system(Path(location_path))
+                        except Exception:
+                            pass
 
-                    top.after(1, _done)
+                    _safe_after(_done)
                 except Exception as e:
                     def _failed():
+                        if not top.winfo_exists():
+                            return
                         _set_running(False)
                         status_var.set("Échec de conversion.")
-                        messagebox.showerror("Conversion Word -> PDF", f"Erreur:\n{e}")
+                        try:
+                            top.lift()
+                            top.focus_force()
+                        except Exception:
+                            pass
+                        try:
+                            messagebox.showerror(
+                                "Conversion Word -> PDF",
+                                f"Erreur:\n{e}",
+                                parent=top,
+                            )
+                        except Exception:
+                            pass
 
-                    top.after(1, _failed)
+                    _safe_after(_failed)
 
             threading.Thread(target=_worker, daemon=True).start()
 

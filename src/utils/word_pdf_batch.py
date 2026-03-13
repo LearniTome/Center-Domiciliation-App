@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import shutil
 import time
 from datetime import datetime
@@ -55,15 +56,16 @@ def _render_html_report(data: Dict[str, Any]) -> str:
   <meta charset="utf-8" />
   <title>Rapport conversion Word -> PDF</title>
   <style>
-    body {{ font-family: Segoe UI, Arial, sans-serif; margin: 20px; }}
+    body {{ font-family: Segoe UI, Arial, sans-serif; margin: 20px; background: #1f1f1f; color: #f3f3f3; }}
     h1 {{ margin-bottom: 8px; }}
-    .meta {{ margin-bottom: 16px; color: #333; }}
+    .meta {{ margin-bottom: 16px; color: #d0d0d0; }}
     table {{ border-collapse: collapse; width: 100%; }}
-    th, td {{ border: 1px solid #bbb; padding: 6px 8px; text-align: left; }}
-    th {{ background: #f2f2f2; }}
-    .ok {{ color: #137333; font-weight: 600; }}
-    .error {{ color: #b00020; font-weight: 600; }}
-    .skipped {{ color: #7a5c00; font-weight: 600; }}
+    th, td {{ border: 1px solid #3a3a3a; padding: 6px 8px; text-align: left; }}
+    th {{ background: #2b2b2b; color: #f3f3f3; }}
+    .ok {{ color: #7fd4a5; font-weight: 600; }}
+    .error {{ color: #ff9b9b; font-weight: 600; }}
+    .skipped {{ color: #e9c07a; font-weight: 600; }}
+    a {{ color: #9cc9ff; }}
   </style>
 </head>
 <body>
@@ -104,6 +106,7 @@ def _render_html_report(data: Dict[str, Any]) -> str:
 def convert_docx_batch(
     source_dir: Path,
     recursive: bool = True,
+    files: Optional[List[Path]] = None,
     report_root: Optional[Path] = None,
     progress_callback: Optional[Callable[[int, int, str, Dict[str, Any]], None]] = None,
 ) -> Dict[str, Any]:
@@ -117,14 +120,29 @@ def convert_docx_batch(
 
     start_ts = time.perf_counter()
     generated_at = datetime.now().isoformat(timespec="seconds")
-    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    gen_date = datetime.now().strftime("%Y-%m-%d")
+    gen_time = datetime.now().strftime("%H%M%S")
+    folder_name = source_path.name or "Conversion"
+    folder_clean = re.sub(r"[^A-Za-z0-9]+", "_", folder_name).strip("_")
+    folder_clean = re.sub(r"__+", "_", folder_clean) or "Conversion"
 
     reports_dir = Path(report_root) if report_root else (PathManager.BASE_DIR / "Outputs" / "Reports")
     reports_dir.mkdir(parents=True, exist_ok=True)
-    json_path = reports_dir / f"conversion_word_pdf_{stamp}.json"
-    html_path = reports_dir / f"conversion_word_pdf_{stamp}.html"
+    json_path = reports_dir / f"{gen_date}_{folder_clean}_Rapport_Conversion_Word_PDF_{gen_time}.json"
+    html_path = reports_dir / f"{gen_date}_{folder_clean}_Rapport_Conversion_Word_PDF_{gen_time}.html"
 
-    files = _find_docx_files(source_path, recursive=recursive)
+    if files is None:
+        files = _find_docx_files(source_path, recursive=recursive)
+    else:
+        normalized_files: List[Path] = []
+        for item in files:
+            try:
+                candidate = Path(item).expanduser().resolve()
+                if candidate.is_file() and candidate.suffix.lower() == ".docx":
+                    normalized_files.append(candidate)
+            except Exception:
+                continue
+        files = sorted(normalized_files)
     has_engine, engine_name = _detect_pdf_engine()
     global_error = None if has_engine else (
         "Aucun moteur PDF disponible (docx2pdf / LibreOffice). "
@@ -147,6 +165,14 @@ def convert_docx_batch(
             "error": "",
             "duration_seconds": 0.0,
         }
+
+        if callable(progress_callback):
+            try:
+                running_entry = dict(entry)
+                running_entry["status"] = "running"
+                progress_callback(idx - 1, total, str(docx_path), running_entry)
+            except Exception:
+                logger.debug("progress_callback failed", exc_info=True)
 
         if not has_engine:
             entry["status"] = "error"
@@ -178,7 +204,7 @@ def convert_docx_batch(
 
         if callable(progress_callback):
             try:
-                progress_callback(idx, total, docx_path.name, entry)
+                progress_callback(idx, total, str(docx_path), entry)
             except Exception:
                 logger.debug("progress_callback failed", exc_info=True)
 
@@ -206,4 +232,3 @@ def convert_docx_batch(
 
     html_path.write_text(_render_html_report(payload), encoding="utf-8")
     return payload
-

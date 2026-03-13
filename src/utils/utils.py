@@ -2327,30 +2327,37 @@ def migrate_excel_workbook(path):
             # Try to find an HTML generation report and update its embedded JSON
             updated = False
             try:
-                for html in tmp_out.glob('*_Raport_Docs_generer.html'):
-                    try:
-                        text = html.read_text(encoding='utf-8')
-                        start_tag = '<pre id="genjson">'
-                        end_tag = '</pre>'
-                        sidx = text.find(start_tag)
-                        if sidx != -1:
-                            sidx += len(start_tag)
-                            eidx = text.find(end_tag, sidx)
-                            if eidx != -1:
-                                raw = text[sidx:eidx]
-                                try:
-                                    rep = json.loads(raw)
-                                except Exception:
-                                    rep = {}
-                                rep['migration_backup'] = str(backup_path)
-                                # replace the JSON block
-                                new_raw = json.dumps(rep, ensure_ascii=False, indent=2)
-                                new_text = text[:sidx] + new_raw + text[eidx:]
-                                html.write_text(new_text, encoding='utf-8')
-                                updated = True
-                                break
-                    except Exception:
-                        continue
+                html_patterns = (
+                    "*_Rapport_Docs_Generes_*.html",
+                    "*_Raport_Docs_generer.html",
+                )
+                for pattern in html_patterns:
+                    for html in tmp_out.glob(pattern):
+                        try:
+                            text = html.read_text(encoding='utf-8')
+                            start_tag = '<pre id="genjson">'
+                            end_tag = '</pre>'
+                            sidx = text.find(start_tag)
+                            if sidx != -1:
+                                sidx += len(start_tag)
+                                eidx = text.find(end_tag, sidx)
+                                if eidx != -1:
+                                    raw = text[sidx:eidx]
+                                    try:
+                                        rep = json.loads(raw)
+                                    except Exception:
+                                        rep = {}
+                                    rep['migration_backup'] = str(backup_path)
+                                    # replace the JSON block
+                                    new_raw = json.dumps(rep, ensure_ascii=False, indent=2)
+                                    new_text = text[:sidx] + new_raw + text[eidx:]
+                                    html.write_text(new_text, encoding='utf-8')
+                                    updated = True
+                                    break
+                        except Exception:
+                            continue
+                    if updated:
+                        break
             except Exception:
                 updated = False
 
@@ -2367,7 +2374,8 @@ def migrate_excel_workbook(path):
                     import time as _time
                     gen_time = _time.strftime('%H-%M-%S')
                 company_clean = 'UnknownCompany'
-                gen_name = f"{gen_date}_{company_clean}_Raport_Docs_generer_{gen_time}.json"
+                legal_form_token = 'UnknownForme'
+                gen_name = f"{gen_date}_{legal_form_token}_Rapport_Docs_Generes_{company_clean}_{gen_time}.json"
                 gen_report = tmp_out / gen_name
                 if gen_report.exists():
                     try:
