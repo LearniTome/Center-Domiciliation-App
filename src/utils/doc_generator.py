@@ -76,6 +76,7 @@ def _build_expected_context_key_sections() -> Dict[str, str]:
         "VALEUR_NOMINALE", "valeur_nominale",
         "STE_ADRESS", "adresse",
         "TRIBUNAL", "tribunal",
+        "DOSSIER_DOMICILIATION", "dossier_domiciliation",
         "MODE_SIGNATURE_GERANCE", "mode_signature_gerance",
     )
 
@@ -344,8 +345,8 @@ def render_templates(
                 return "DosDom"
         return "DosCré"
 
-    def _next_domiciliation_sequence(base_out_dir: Path, year_token: str) -> int:
-        pattern = re.compile(rf"^DOM-{re.escape(year_token)}-(\d{{4}})_")
+    def _next_domiciliation_sequence(base_out_dir: Path) -> int:
+        pattern = re.compile(r"^DOM-(\d{4})-")
         max_seq = 0
         try:
             for existing in base_out_dir.iterdir():
@@ -363,6 +364,102 @@ def render_templates(
         except Exception:
             pass
         return max_seq + 1
+
+    def _sanitize_domiciliation_client_label(name: str) -> str:
+        import re
+        s = str(name or "").strip()
+        if not s:
+            return "UNKNOWN"
+        s = s.replace("&", " ET ")
+        s = re.sub(r"\s+", " ", s)
+        s = s.upper()
+        s = re.sub(r"[^A-Z0-9 .\-]", "", s)
+        s = s.strip(" .-")
+        return s or "UNKNOWN"
+
+    def _extract_code_from_type(raw_type: str) -> str:
+        if not raw_type:
+            return ""
+        # Expected format like "CLTD -- Client Direct" or "CPT -- Comptable"
+        parts = str(raw_type).split("--", 1)
+        return parts[0].strip() if parts else str(raw_type).strip()
+
+    def _split_collaborateur_string(raw_value: str) -> tuple[str, str]:
+        if not raw_value:
+            return "", ""
+        text = str(raw_value)
+        for sep in (" -- ", " - ", "--"):
+            if sep in text:
+                left, right = text.split(sep, 1)
+                left = left.strip()
+                right = right.strip()
+                if left and right:
+                    return left, right
+        return "", text.strip()
+
+    def _sanitize_collab_part(part: str) -> str:
+        import re
+        s = str(part or "").strip().upper()
+        if not s:
+            return ""
+        s = re.sub(r"\s+", "", s)
+        s = re.sub(r"[^A-Z0-9]", "", s)
+        return s
+
+    def _is_direct_client(raw_type: str, raw_code: str, raw_name: str) -> bool:
+        t = str(raw_type or "").lower()
+        if "client direct" in t:
+            return True
+        code = str(raw_code or "").replace("-", "").upper()
+        if code in ("CLTD", "CLTDRCT", "CLTDR", "CLT"):
+            return True
+        name = str(raw_name or "").strip().lower()
+        if name in ("client direct", "clt drct", "clt-drct", "cltd", "clt"):
+            return True
+        return False
+
+    def _derive_collaborateur_token(vals: Dict) -> str:
+        collab = vals.get('collaborateur', {}) if isinstance(vals, dict) else {}
+        contrat = vals.get('contrat', {}) if isinstance(vals, dict) else {}
+
+        raw_type = collab.get('type') if isinstance(collab, dict) else ""
+        raw_code = collab.get('code') if isinstance(collab, dict) else ""
+        raw_name = collab.get('nom') if isinstance(collab, dict) else ""
+
+        if not raw_code and raw_type:
+            raw_code = _extract_code_from_type(raw_type)
+
+        if (not raw_code and not raw_name) and isinstance(contrat, dict):
+            fallback = contrat.get('collaborateur_nom') or ""
+            maybe_code, maybe_name = _split_collaborateur_string(fallback)
+            raw_code = raw_code or maybe_code
+            raw_name = raw_name or maybe_name
+
+        if _is_direct_client(raw_type, raw_code, raw_name):
+            return "CLT-DRCT"
+
+        code_part = _sanitize_collab_part(raw_code)
+        name_part = _sanitize_collab_part(raw_name)
+        if code_part and name_part:
+            return f"{code_part}-{name_part}"
+        if code_part:
+            return code_part
+        if name_part:
+            return name_part
+        return "CLT-DRCT"
+
+    def _normalize_domiciliation_prefix(raw_value: Optional[str]) -> Optional[int]:
+        import re
+        s = str(raw_value or "").strip().upper()
+        if not s:
+            return None
+        match = re.search(r"(\d{1,4})", s)
+        if not match:
+            return None
+        try:
+            return int(match.group(1))
+        except Exception:
+            return None
 
     def _derive_doc_label(template_stem: str) -> str:
         stem = template_stem
@@ -396,11 +493,18 @@ def render_templates(
     folder_kind_token = _normalize_generation_folder_token(generation_type, pre_templates)
 
     if folder_kind_token == "DosDom":
-        year_token = gen_date[:4]
-        client_name = company_clean.upper() or "UNKNOWNCOMPANY"
-        seq = _next_domiciliation_sequence(out_dir, year_token)
+        client_name = _sanitize_domiciliation_client_label(company_raw)
+        collaborateur_token = _derive_collaborateur_token(values or {})
+        societe_vals = values.get('societe', {}) if isinstance(values, dict) else {}
+        raw_dossier = ""
+        if isinstance(societe_vals, dict):
+            raw_dossier = societe_vals.get('dossier_domiciliation', societe_vals.get('DOSSIER_DOMICILIATION', ''))
+        if not raw_dossier and isinstance(values, dict):
+            raw_dossier = values.get('dossier_domiciliation', values.get('DOSSIER_DOMICILIATION', ''))
+        forced_seq = _normalize_domiciliation_prefix(raw_dossier)
+        seq = forced_seq if forced_seq is not None else _next_domiciliation_sequence(out_dir)
         while True:
-            generation_folder_name = f"DOM-{year_token}-{seq:04d}_{client_name}"
+            generation_folder_name = f"DOM-{seq:04d}-[{collaborateur_token}]-{client_name}"
             out_subdir = out_dir / generation_folder_name
             if not out_subdir.exists():
                 break
@@ -444,6 +548,7 @@ def render_templates(
             'creation_procedure': 'PROCEDURE_CREATION',
             'mode_depot_creation': 'MODE_DEPOT_CREATION',
             'creation_depot_mode': 'MODE_DEPOT_CREATION',
+            'dossier_domiciliation': 'DOSSIER_DOMICILIATION',
         }
         for fk, hk in soc_map.items():
             v = None

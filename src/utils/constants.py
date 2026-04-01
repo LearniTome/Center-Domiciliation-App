@@ -70,9 +70,9 @@ Activities = [
 
 # Excel sheet headers
 societe_headers = [
-    "id_societe", "den_ste", "forme_jur", "ice", "date_ice", "capital",
+    "id_societe", "dossier_domiciliation", "den_ste", "forme_jur", "ice", "date_ice", "capital",
     "part_social", "valeur_nominale", "date_exp_cert_neg", "ste_adress", "tribunal",
-    "type_generation", "procedure_creation", "mode_depot_creation"
+    "type_generation", "procedure_creation", "mode_depot_creation",
 ]
 
 associe_headers = [
@@ -106,6 +106,8 @@ collaborateur_headers = [
 excel_header_labels = {
     "den_ste": "Dénomination sociale",
     "DEN_STE": "Dénomination sociale",
+    "dossier_domiciliation": "N° dossier domiciliation",
+    "DOSSIER_DOMICILIATION": "N° dossier domiciliation",
 }
 
 # Compatibility aliases to migrate old contract column names.
@@ -160,6 +162,11 @@ societe_header_aliases = {
     "TYPE_GENERATION": "type_generation",
     "PROCEDURE_CREATION": "procedure_creation",
     "MODE_DEPOT_CREATION": "mode_depot_creation",
+    "DOSSIER_DOMICILIATION": "dossier_domiciliation",
+    "NUM_DOSSIER_DOMICILIATION": "dossier_domiciliation",
+    "N° dossier domiciliation": "dossier_domiciliation",
+    "N° dossier": "dossier_domiciliation",
+    "Numero dossier domiciliation": "dossier_domiciliation",
 }
 
 associe_header_aliases = {

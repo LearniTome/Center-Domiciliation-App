@@ -173,6 +173,7 @@ class DashboardView(tk.Toplevel):
             'TYPE_GENERATION': 'Type Génération',
             'PROCEDURE_CREATION': 'Procédure Création',
             'MODE_DEPOT_CREATION': 'Mode Dépôt Création',
+            'DOSSIER_DOMICILIATION': 'N° dossier domiciliation',
             'CIVIL': 'Civilité',
             'PRENOM': 'Prénom',
             'NOM': 'Nom',
@@ -239,6 +240,7 @@ class DashboardView(tk.Toplevel):
             'TYPE_GENERATION': 140,
             'PROCEDURE_CREATION': 150,
             'MODE_DEPOT_CREATION': 170,
+            'DOSSIER_DOMICILIATION': 170,
             'CIVIL': 100,
             'PRENOM': 130,
             'NOM': 140,
@@ -677,6 +679,10 @@ class DashboardView(tk.Toplevel):
                     self._societes_df = _apply_aliases(
                         self._societes_df,
                         getattr(_const, 'societe_header_aliases', {}) or {},
+                    )
+                    self._societes_df = self._societes_df.reindex(
+                        columns=_const.societe_headers,
+                        fill_value='',
                     )
                     self._associes_df = _apply_aliases(
                         self._associes_df,

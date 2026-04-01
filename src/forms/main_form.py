@@ -31,6 +31,7 @@ class MainForm(ttk.Frame):
         self.prev_btn: Optional[ttk.Button] = None
         self.next_btn: Optional[ttk.Button] = None
         self.save_btn: Optional[ttk.Button] = None
+        self.save_edit_btn: Optional[ttk.Button] = None
         self.finish_btn: Optional[ttk.Button] = None
         self.generate_btn: Optional[ttk.Button] = None
         self.config_btn: Optional[ttk.Button] = None
@@ -48,6 +49,7 @@ class MainForm(ttk.Frame):
             'dashboard': 18,
             'new': 12,
             'save': 14,
+            'save_edit': 18,
             'finish': 12,
             'prev': 12,
             'next': 12,
@@ -776,6 +778,14 @@ class MainForm(ttk.Frame):
                 'hidden': True,
             },
             {
+                'key': 'save_edit',
+                'text': '✅ Enregistrer Modifs',
+                'command': self._save_dashboard_edit_and_return,
+                'style': success,
+                'width': widths['save_edit'],
+                'hidden': True,
+            },
+            {
                 'key': 'save',
                 'text': '💾 Sauvegarder',
                 'command': self.save_current,
@@ -799,6 +809,7 @@ class MainForm(ttk.Frame):
             'prev': 'prev_btn',
             'next': 'next_btn',
             'save': 'save_btn',
+            'save_edit': 'save_edit_btn',
             'finish': 'finish_btn',
             'quit': 'quit_btn',
         }
@@ -1552,6 +1563,7 @@ class MainForm(ttk.Frame):
                         ('ValeurNominale', 'Valeur nominale', ['100']),
                         ('SteAdresse', 'Adresse', constants.SteAdresse),
                         ('Tribunal', 'Tribunal', constants.Tribunnaux),
+                        ('DossierDomiciliation', 'N° dossier domiciliation', []),
                     ]
                 },
                 'associe': {
@@ -1808,7 +1820,37 @@ class MainForm(ttk.Frame):
             top = tk.Toplevel(owner)
             top.transient(owner)
             top.title("Outils - Analyse des valeurs templates")
-            top.geometry("1200x760")
+            try:
+                screen_w = top.winfo_screenwidth()
+                screen_h = top.winfo_screenheight()
+                target_w = max(1100, int(screen_w * 0.9))
+                work_x = 0
+                work_y = 0
+                work_w = screen_w
+                work_h = screen_h
+                try:
+                    if os.name == "nt":
+                        import ctypes
+
+                        rect = ctypes.wintypes.RECT()
+                        SPI_GETWORKAREA = 0x0030
+                        if ctypes.windll.user32.SystemParametersInfoW(SPI_GETWORKAREA, 0, ctypes.byref(rect), 0):
+                            work_x = rect.left
+                            work_y = rect.top
+                            work_w = max(1, rect.right - rect.left)
+                            work_h = max(1, rect.bottom - rect.top)
+                except Exception:
+                    pass
+                # Use full screen width (avoid left taskbar offset) and keep
+                # a small vertical margin so footer/buttons stay visible.
+                target_w = screen_w
+                target_h = max(700, screen_h - 40)
+                x = 0
+                y = 0
+                top.geometry(f"{target_w}x{target_h}+{x}+{y}")
+                top.minsize(800, 520)
+            except Exception:
+                top.geometry("1200x760")
             top.resizable(True, True)
 
             try:
@@ -1820,6 +1862,7 @@ class MainForm(ttk.Frame):
             main_frame.pack(fill="both", expand=True)
             main_frame.columnconfigure(0, weight=1)
             main_frame.rowconfigure(3, weight=1)
+            main_frame.rowconfigure(4, weight=0, minsize=46)
 
             ttk.Label(
                 main_frame,
@@ -1829,14 +1872,14 @@ class MainForm(ttk.Frame):
 
             filter_frame = ttk.Frame(main_frame)
             filter_frame.grid(row=1, column=0, sticky="ew", pady=(0, 8))
-            for idx in range(8):
+            for idx in range(10):
                 filter_frame.columnconfigure(idx, weight=1 if idx % 2 else 0)
-            filter_frame.columnconfigure(8, weight=0)
 
             search_var = tk.StringVar()
             template_var = tk.StringVar(value="Tous")
             section_var = tk.StringVar(value="Tous")
             coverage_var = tk.StringVar(value="Tous")
+            legal_form_var = tk.StringVar(value="Tous")
             status_var = tk.StringVar(value="")
             errors_var = tk.StringVar(value="")
 
@@ -1866,8 +1909,14 @@ class MainForm(ttk.Frame):
             )
             coverage_combo.grid(row=0, column=7, sticky="ew", padx=(0, 10))
 
-            actions = ttk.Frame(filter_frame)
-            actions.grid(row=0, column=8, sticky="e")
+            ttk.Label(filter_frame, text="Forme juridique:").grid(row=0, column=8, sticky="w", padx=(0, 6))
+            legal_form_combo = ttk.Combobox(
+                filter_frame,
+                textvariable=legal_form_var,
+                state="readonly",
+                values=["Tous"],
+            )
+            legal_form_combo.grid(row=0, column=9, sticky="ew", padx=(0, 10))
 
             notebook = ttk.Notebook(main_frame)
             notebook.grid(row=3, column=0, sticky="nsew", pady=(0, 8))
@@ -1920,7 +1969,7 @@ class MainForm(ttk.Frame):
                     tree.heading(col_name, text=heading, command=lambda c=col_name: _sort_by(c))
                     tree.column(
                         col_name,
-                        width=220 if col_name in ("variable", "template") else 130,
+                        width=200 if col_name in ("variable", "template") else 110,
                         anchor="center",
                     )
                 return tree
@@ -1954,10 +2003,13 @@ class MainForm(ttk.Frame):
             ttk.Label(kpi_frame, textvariable=total_uncovered_var).grid(row=0, column=4, sticky="w")
 
             footer = ttk.Frame(main_frame)
-            footer.grid(row=4, column=0, sticky="ew")
+            footer.grid(row=4, column=0, sticky="ew", pady=(6, 0))
             footer.columnconfigure(0, weight=1)
+            footer.columnconfigure(1, weight=0)
             ttk.Label(footer, textvariable=status_var).grid(row=0, column=0, sticky="w")
             ttk.Label(footer, textvariable=errors_var, foreground="#c5865d").grid(row=1, column=0, sticky="w")
+            actions = ttk.Frame(footer)
+            actions.grid(row=0, column=1, rowspan=2, sticky="e")
 
             analysis_data = {"variables": [], "details": [], "summary": {}, "templates": [], "errors": []}
             current_global_rows = []
@@ -1982,6 +2034,7 @@ class MainForm(ttk.Frame):
                     template_name=template_var.get(),
                     section=section_var.get(),
                     coverage=coverage_var.get(),
+                    legal_form=legal_form_var.get(),
                 )
                 detail_rows = filter_analysis_rows(
                     analysis_data.get("details", []),
@@ -1989,6 +2042,7 @@ class MainForm(ttk.Frame):
                     template_name=template_var.get(),
                     section=section_var.get(),
                     coverage=coverage_var.get(),
+                    legal_form=legal_form_var.get(),
                 )
                 current_global_rows = global_rows
                 current_detail_rows = detail_rows
@@ -2096,6 +2150,10 @@ class MainForm(ttk.Frame):
                         section_var.set("Tous")
                     if coverage_var.get() not in ("Tous", "couvert", "non couvert"):
                         coverage_var.set("Tous")
+                    legal_form_values = ["Tous"] + list(data.get("legal_forms", []))
+                    legal_form_combo.configure(values=legal_form_values)
+                    if legal_form_var.get() not in legal_form_values:
+                        legal_form_var.set("Tous")
 
                     error_count = len(data.get("errors", []))
                     if error_count:
@@ -2143,9 +2201,13 @@ class MainForm(ttk.Frame):
             template_var.trace_add("write", lambda *_args: _apply_filters())
             section_var.trace_add("write", lambda *_args: _apply_filters())
             coverage_var.trace_add("write", lambda *_args: _apply_filters())
+            legal_form_var.trace_add("write", lambda *_args: _apply_filters())
 
             _refresh_analysis()
-            WindowManager.center_window(top)
+            try:
+                top.update_idletasks()
+            except Exception:
+                pass
         except Exception as e:
             logger.exception("Erreur lors de l'ouverture de l'analyse des valeurs templates")
             messagebox.showerror("Erreur", f"Impossible d'ouvrir l'analyse: {e}")
@@ -2291,7 +2353,7 @@ class MainForm(ttk.Frame):
                 if key == 'associes' and hasattr(form, 'validate_for_submit'):
                     valid, _errors = form.validate_for_submit(show_dialog=True)
                     if not valid:
-                        return
+                        return False
 
                 # If we're saving the societe page, check for existing company name and forbid duplicates
                 if key == 'societe':
@@ -2299,9 +2361,15 @@ class MainForm(ttk.Frame):
                         from ..utils.utils import societe_exists
                         name = vals.get('denomination') or vals.get('den_ste') or vals.get('DEN_STE')
                         editing = getattr(self, '_dashboard_edit_context', None)
-                        if name and societe_exists(name) and not editing:
+                        exclude_id = None
+                        try:
+                            if isinstance(editing, dict):
+                                exclude_id = str(editing.get('id_societe') or '').strip() or None
+                        except Exception:
+                            exclude_id = None
+                        if name and societe_exists(name, exclude_id=exclude_id):
                             messagebox.showerror('Société existante', f"La société '{name}' existe déjà dans la base. Enregistrement interdit pour éviter les doublons.")
-                            return
+                            return False
                     except Exception:
                         # If the check fails, log but allow save to proceed (conservative)
                         logger = __import__('logging').getLogger(__name__)
@@ -2314,9 +2382,45 @@ class MainForm(ttk.Frame):
                 except Exception:
                     logger = __import__('logging').getLogger(__name__)
                     logger.exception('Failed to apply dashboard edit update')
+                try:
+                    self._refresh_dashboard_after_save()
+                except Exception:
+                    pass
                 messagebox.showinfo("Sauvegarde", f"Section '{key}' sauvegardée.")
+                return True
             except Exception as e:
                 messagebox.showerror("Erreur", f"Impossible de sauvegarder la section: {e}")
+                return False
+        return False
+
+    def _refresh_dashboard_after_save(self):
+        dashboard = getattr(self, '_dashboard_window', None)
+        if dashboard is None:
+            return
+        try:
+            if not dashboard.winfo_exists():
+                return
+        except Exception:
+            return
+        try:
+            dashboard._load_data()
+            dashboard._show_page(getattr(dashboard, '_current_page', 'societe'))
+        except Exception:
+            pass
+
+    def _save_dashboard_edit_and_return(self):
+        saved = self.save_current()
+        if not saved:
+            return
+        try:
+            self._dashboard_edit_context = None
+        except Exception:
+            pass
+        try:
+            self.update_nav_buttons()
+        except Exception:
+            pass
+        self.return_to_dashboard(start_fullscreen=True)
 
     def _trigger_generate_documents(self):
         """Run the exact same generation flow as the main 'Generer' button."""
@@ -2462,6 +2566,26 @@ class MainForm(ttk.Frame):
                     state='normal',
                 )
 
+        _save_edit = getattr(self, 'save_edit_btn', None)
+        _save = getattr(self, 'save_btn', None)
+        if _save_edit is not None:
+            in_edit = bool(getattr(self, '_dashboard_edit_context', None))
+            try:
+                if in_edit:
+                    if not _save_edit.winfo_ismapped():
+                        if _save is not None:
+                            _save_edit.pack(before=_save, side='right', padx=6, pady=3)
+                        else:
+                            _save_edit.pack(side='right', padx=6, pady=3)
+                    _save_edit.configure(state='normal')
+                else:
+                    try:
+                        _save_edit.pack_forget()
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
     @staticmethod
     def _infer_dashboard_page_key(payload: dict | None, page_key: str | None) -> str:
         """Infer dashboard page when older callers do not pass it explicitly."""
@@ -2532,6 +2656,7 @@ class MainForm(ttk.Frame):
         except Exception:
             soc_df = _pd.DataFrame(columns=_const.societe_headers)
         soc_df = _apply_aliases(soc_df, getattr(_const, 'societe_header_aliases', {}) or {})
+        soc_df = soc_df.reindex(columns=_const.societe_headers, fill_value='')
 
         try:
             assoc_df = _pd.read_excel(db_path, sheet_name='Associes', dtype=str).fillna('')
@@ -2593,6 +2718,7 @@ class MainForm(ttk.Frame):
             'type_generation': 'type_generation',
             'procedure_creation': 'procedure_creation',
             'mode_depot_creation': 'mode_depot_creation',
+            'dossier_domiciliation': 'dossier_domiciliation',
         }
         inverse_assoc_map = {
             'civil': 'civilite',
@@ -2744,6 +2870,8 @@ class MainForm(ttk.Frame):
                 'creation_procedure': 'procedure_creation',
                 'mode_depot_creation': 'mode_depot_creation',
                 'creation_depot_mode': 'mode_depot_creation',
+                'dossier_domiciliation': 'dossier_domiciliation',
+                'DOSSIER_DOMICILIATION': 'dossier_domiciliation',
             }
             for k, col in mapping.items():
                 if k in vals and col in df.columns:

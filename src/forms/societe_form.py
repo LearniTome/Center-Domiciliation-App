@@ -51,6 +51,7 @@ class SocieteForm(ttk.Frame):
         self.parts_social_var = tk.StringVar(value=defaults['parts_social'])
         self.valeur_nominale_var = tk.StringVar(value=defaults['valeur_nominale'])
         self.mode_signature_gerance_var = tk.StringVar(value=defaults['mode_signature_gerance'])
+        self.dossier_domiciliation_var = tk.StringVar(value=defaults['dossier_domiciliation'])
         self.type_generation_var = tk.StringVar(
             value=self._normalize_generation_type(defaults.get('type_generation'))
         )
@@ -96,6 +97,7 @@ class SocieteForm(ttk.Frame):
             'type_generation': defaults_mgr.get_default('societe', 'TypeGeneration') or "creation",
             'procedure_creation': defaults_mgr.get_default('societe', 'ProcedureCreation') or "normal",
             'mode_depot_creation': defaults_mgr.get_default('societe', 'ModeDepotCreation') or "depot_physique",
+            'dossier_domiciliation': defaults_mgr.get_default('societe', 'DossierDomiciliation') or "",
         }
 
     def reset(self):
@@ -112,6 +114,7 @@ class SocieteForm(ttk.Frame):
         self.ste_adress_var.set(defaults['adresse'])
         self.tribunal_var.set(defaults['tribunal'])
         self.mode_signature_gerance_var.set(defaults['mode_signature_gerance'])
+        self.dossier_domiciliation_var.set(defaults['dossier_domiciliation'])
         self.type_generation_var.set(self._normalize_generation_type(defaults.get('type_generation')))
         self.procedure_creation_var.set(self._normalize_creation_procedure(defaults.get('procedure_creation')))
         self.mode_depot_creation_var.set(self._normalize_creation_depot_mode(defaults.get('mode_depot_creation')))
@@ -130,7 +133,8 @@ class SocieteForm(ttk.Frame):
 
         fields = ttk.Frame(main_frame)
         fields.pack(fill="x", padx=5, pady=(2, 4))
-        for col in range(6):
+        num_cols = 7
+        for col in range(num_cols):
             fields.columnconfigure(col, weight=1, uniform="societe_cols")
 
         def _cell(row: int, col: int, label_text: str, span: int = 1, pad: int = 8) -> ttk.Frame:
@@ -140,34 +144,37 @@ class SocieteForm(ttk.Frame):
                 column=col,
                 columnspan=span,
                 sticky="ew",
-                padx=(0, pad) if (col + span - 1) < 5 else (0, 0),
+                padx=(0, pad) if (col + span - 1) < (num_cols - 1) else (0, 0),
                 pady=(0, 4),
             )
             cell.columnconfigure(0, weight=1)
             ttk.Label(cell, text=label_text, anchor="w").grid(row=0, column=0, sticky="w", pady=(0, 1))
             return cell
 
-        # Ligne 1: 6 colonnes (Tribunal juste après Forme Juridique)
-        den_cell = _cell(0, 0, "Dénomination:")
+        # Ligne 1: 7 colonnes (N° dossier avant Dénomination)
+        dossier_cell = _cell(0, 0, "N° dossier domiciliation:")
+        ttk.Entry(dossier_cell, textvariable=self.dossier_domiciliation_var).grid(row=1, column=0, sticky="ew")
+
+        den_cell = _cell(0, 1, "Dénomination:")
         den_combo = ttk.Combobox(den_cell, textvariable=self.den_ste_var, values=DenSte)
         den_combo.grid(row=1, column=0, sticky="ew")
         self.combos.append(den_combo)
 
-        form_cell = _cell(0, 1, "Forme Juridique:")
+        form_cell = _cell(0, 2, "Forme Juridique:")
         form_combo = ttk.Combobox(form_cell, textvariable=self.forme_jur_var, values=Formjur)
         form_combo.grid(row=1, column=0, sticky="ew")
         self.combos.append(form_combo)
         form_combo.bind("<<ComboboxSelected>>", self._on_forme_juridique_changed)
 
-        tribunal_cell = _cell(0, 2, "Tribunal:")
+        tribunal_cell = _cell(0, 3, "Tribunal:")
         tribunal_combo = ttk.Combobox(tribunal_cell, textvariable=self.tribunal_var, values=self.tribunaux)
         tribunal_combo.grid(row=1, column=0, sticky="ew")
         self.combos.append(tribunal_combo)
 
-        ice_cell = _cell(0, 3, "ICE:")
+        ice_cell = _cell(0, 4, "ICE:")
         ttk.Entry(ice_cell, textvariable=self.ice_var).grid(row=1, column=0, sticky="ew")
 
-        date_cell = _cell(0, 4, "Date certificat négatif:")
+        date_cell = _cell(0, 5, "Date certificat négatif:")
         DateEntry(
             date_cell,
             textvariable=self.date_ice_var,
@@ -175,7 +182,7 @@ class SocieteForm(ttk.Frame):
             width=12,
         ).grid(row=1, column=0, sticky="ew")
 
-        date_exp_cell = _cell(0, 5, "Date expiration certificat négatif:")
+        date_exp_cell = _cell(0, 6, "Date expiration certificat négatif:")
         DateEntry(
             date_exp_cell,
             textvariable=self.date_expiration_certificat_negatif_var,
@@ -432,6 +439,116 @@ class SocieteForm(ttk.Frame):
                 self.creation_depot_frame.grid()
             else:
                 self.creation_depot_frame.grid_remove()
+
+        self._maybe_prefill_dossier_domiciliation()
+
+    def _maybe_prefill_dossier_domiciliation(self):
+        generation_type = self._normalize_generation_type(self.type_generation_var.get())
+        if generation_type != "domiciliation":
+            return
+        current = str(self.dossier_domiciliation_var.get() or "").strip()
+        if current:
+            return
+        next_seq = self._compute_next_dossier_sequence()
+        if next_seq is None:
+            return
+        self.dossier_domiciliation_var.set(f"DOM-{next_seq:04d}")
+
+    def _compute_next_dossier_sequence(self) -> Optional[int]:
+        try:
+            from ..utils.utils import PathManager
+            from ..utils.constants import DB_FILENAME
+            db_path = PathManager.DATABASE_DIR / DB_FILENAME
+            if not db_path.exists():
+                return 1
+        except Exception:
+            return 1
+
+        def _extract_max_from_rows(rows, col_idx, type_idx=None):
+            import re
+            max_seq = 0
+            for row in rows:
+                try:
+                    if type_idx is not None and type_idx < len(row):
+                        tval = str(row[type_idx] or '').strip().lower()
+                        if tval and tval != 'domiciliation':
+                            continue
+                    raw = row[col_idx] if col_idx < len(row) else ''
+                except Exception:
+                    continue
+                match = re.search(r"(\d{1,4})", str(raw))
+                if not match:
+                    continue
+                try:
+                    num = int(match.group(1))
+                except Exception:
+                    continue
+                if num > max_seq:
+                    max_seq = num
+            return max_seq
+
+        # Try pandas first (fast, consistent)
+        try:
+            import pandas as _pd
+            df = _pd.read_excel(db_path, sheet_name='Societes', dtype=str).fillna('')
+            if df.empty:
+                return 1
+            if 'dossier_domiciliation' not in df.columns:
+                for alt in (
+                    'DOSSIER_DOMICILIATION',
+                    'NUM_DOSSIER_DOMICILIATION',
+                    'N° dossier domiciliation',
+                    'N° dossier',
+                    'Numero dossier domiciliation',
+                ):
+                    if alt in df.columns:
+                        df['dossier_domiciliation'] = df[alt]
+                        break
+            if 'dossier_domiciliation' not in df.columns:
+                return 1
+            series = df['dossier_domiciliation']
+            if 'type_generation' in df.columns:
+                mask = df['type_generation'].fillna('').astype(str).str.strip().str.lower() == 'domiciliation'
+                if mask.any():
+                    series = series[mask]
+            max_seq = _extract_max_from_rows([(v,) for v in series.fillna('').astype(str)], 0)
+            return max_seq + 1
+        except Exception:
+            pass
+
+        # Fallback: openpyxl (no pandas)
+        try:
+            import openpyxl
+            wb = openpyxl.load_workbook(db_path, read_only=True, data_only=True)
+            if 'Societes' not in wb.sheetnames:
+                return 1
+            ws = wb['Societes']
+            rows = list(ws.iter_rows(values_only=True))
+            if not rows:
+                return 1
+            headers = [str(h or '').strip() for h in rows[0]]
+            normalized = [h.strip().lower() for h in headers]
+            def _find_col(candidates):
+                for cand in candidates:
+                    c = cand.strip().lower()
+                    if c in normalized:
+                        return normalized.index(c)
+                return None
+            dossier_idx = _find_col([
+                'dossier_domiciliation',
+                'DOSSIER_DOMICILIATION',
+                'NUM_DOSSIER_DOMICILIATION',
+                'N° dossier domiciliation',
+                'N° dossier',
+                'Numero dossier domiciliation',
+            ])
+            if dossier_idx is None:
+                return 1
+            type_idx = _find_col(['type_generation', 'TYPE_GENERATION'])
+            max_seq = _extract_max_from_rows(rows[1:], dossier_idx, type_idx)
+            return max_seq + 1
+        except Exception:
+            return 1
 
     def create_activities_section(self, parent):
         """Crée une section activités sous forme de tableau compact."""
@@ -765,6 +882,7 @@ class SocieteForm(ttk.Frame):
             'creation_procedure': creation_procedure,
             'mode_depot_creation': depot_mode,
             'creation_depot_mode': depot_mode,
+            'dossier_domiciliation': self.dossier_domiciliation_var.get().strip(),
             'activites': [var.get().strip() for var in self.activites_vars if var.get().strip()]
         }
         if self._is_sarl_form():
@@ -789,6 +907,9 @@ class SocieteForm(ttk.Frame):
         self.valeur_nominale_var.set(values_dict.get('valeur_nominale', values_dict.get('valeur_nominal', '')))
         self.ste_adress_var.set(values_dict.get('adresse', ''))
         self.tribunal_var.set(values_dict.get('tribunal', ''))
+        self.dossier_domiciliation_var.set(
+            values_dict.get('dossier_domiciliation', values_dict.get('DOSSIER_DOMICILIATION', ''))
+        )
         self.mode_signature_gerance_var.set(
             values_dict.get('mode_signature_gerance', values_dict.get('mode_signature', self.mode_signature_gerance_var.get()))
         )

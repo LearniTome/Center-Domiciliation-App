@@ -75,6 +75,7 @@ class DefaultsManager:
                 'TypeGeneration': 'creation',
                 'ProcedureCreation': 'normal',
                 'ModeDepotCreation': 'depot_physique',
+                'DossierDomiciliation': '',
             },
             'associe': {
                 'Civility': constants.Civility[0] if constants.Civility else '',

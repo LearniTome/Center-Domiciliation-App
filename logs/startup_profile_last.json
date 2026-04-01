@@ -1,162 +1,162 @@
 {
-  "generated_at_ms": 3522.029,
+  "generated_at_ms": 7171.695,
   "events": [
     {
       "type": "span",
       "name": "tk.Tk.__init__",
-      "start_ms": 0.006,
-      "end_ms": 67.534,
-      "duration_ms": 67.528,
+      "start_ms": 0.009,
+      "end_ms": 162.385,
+      "duration_ms": 162.375,
       "meta": {}
     },
     {
       "type": "span",
       "name": "WindowManager.setup_window",
-      "start_ms": 67.571,
-      "end_ms": 113.843,
-      "duration_ms": 46.272,
+      "start_ms": 162.432,
+      "end_ms": 259.305,
+      "duration_ms": 96.873,
       "meta": {}
     },
     {
       "type": "span",
       "name": "ThemeManager.__init__",
-      "start_ms": 113.891,
-      "end_ms": 1069.634,
-      "duration_ms": 955.743,
+      "start_ms": 259.339,
+      "end_ms": 2225.599,
+      "duration_ms": 1966.26,
       "meta": {}
     },
     {
       "type": "span",
       "name": "MainApp.setup_gui.main_container",
-      "start_ms": 1069.658,
-      "end_ms": 1073.299,
-      "duration_ms": 3.641,
+      "start_ms": 2225.63,
+      "end_ms": 2230.772,
+      "duration_ms": 5.141,
       "meta": {}
     },
     {
       "type": "span",
       "name": "MainForm.setup_scrollable_container",
-      "start_ms": 1078.336,
-      "end_ms": 1082.062,
-      "duration_ms": 3.726,
+      "start_ms": 2239.187,
+      "end_ms": 2246.201,
+      "duration_ms": 7.014,
       "meta": {}
     },
     {
       "type": "span",
       "name": "SocieteForm.__init__",
-      "start_ms": 1449.68,
-      "end_ms": 1827.47,
-      "duration_ms": 377.791,
+      "start_ms": 3113.976,
+      "end_ms": 4142.137,
+      "duration_ms": 1028.16,
       "meta": {}
     },
     {
       "type": "span",
       "name": "MainForm.create_societe_page",
-      "start_ms": 1082.087,
-      "end_ms": 1827.504,
-      "duration_ms": 745.418,
+      "start_ms": 2246.234,
+      "end_ms": 4142.189,
+      "duration_ms": 1895.956,
       "meta": {}
     },
     {
       "type": "span",
       "name": "AssocieForm.__init__",
-      "start_ms": 1847.259,
-      "end_ms": 1873.253,
-      "duration_ms": 25.994,
+      "start_ms": 4171.622,
+      "end_ms": 4212.329,
+      "duration_ms": 40.707,
       "meta": {}
     },
     {
       "type": "span",
       "name": "AssocieForm.apply_legal_form_constraints",
-      "start_ms": 1873.337,
-      "end_ms": 2350.515,
-      "duration_ms": 477.177,
+      "start_ms": 4212.429,
+      "end_ms": 5239.614,
+      "duration_ms": 1027.184,
       "meta": {}
     },
     {
       "type": "span",
       "name": "MainForm.create_associe_page",
-      "start_ms": 1827.518,
-      "end_ms": 2350.527,
-      "duration_ms": 523.009,
+      "start_ms": 4142.207,
+      "end_ms": 5239.632,
+      "duration_ms": 1097.425,
       "meta": {}
     },
     {
       "type": "span",
       "name": "ContratForm.__init__",
-      "start_ms": 2366.081,
-      "end_ms": 3239.393,
-      "duration_ms": 873.312,
+      "start_ms": 5268.521,
+      "end_ms": 6732.21,
+      "duration_ms": 1463.69,
       "meta": {}
     },
     {
       "type": "span",
       "name": "MainForm.create_contrat_page",
-      "start_ms": 2350.539,
-      "end_ms": 3239.424,
-      "duration_ms": 888.885,
+      "start_ms": 5239.648,
+      "end_ms": 6732.261,
+      "duration_ms": 1492.613,
       "meta": {}
     },
     {
       "type": "span",
       "name": "MainForm.show_page.initial",
-      "start_ms": 3239.51,
-      "end_ms": 3240.101,
-      "duration_ms": 0.591,
+      "start_ms": 6732.379,
+      "end_ms": 6734.581,
+      "duration_ms": 2.201,
       "meta": {}
     },
     {
       "type": "span",
       "name": "MainForm.setup_navigation",
-      "start_ms": 3240.113,
-      "end_ms": 3240.16,
-      "duration_ms": 0.047,
+      "start_ms": 6734.611,
+      "end_ms": 6734.838,
+      "duration_ms": 0.227,
       "meta": {}
     },
     {
       "type": "span",
       "name": "MainForm.setup_forms",
-      "start_ms": 1082.082,
-      "end_ms": 3240.166,
-      "duration_ms": 2158.084,
+      "start_ms": 2246.227,
+      "end_ms": 6734.853,
+      "duration_ms": 4488.625,
       "meta": {}
     },
     {
       "type": "span",
       "name": "MainForm.__init__",
-      "start_ms": 1073.331,
-      "end_ms": 3240.187,
-      "duration_ms": 2166.856,
+      "start_ms": 2230.803,
+      "end_ms": 6734.889,
+      "duration_ms": 4504.086,
       "meta": {}
     },
     {
       "type": "span",
       "name": "MainApp.setup_buttons",
-      "start_ms": 3240.196,
-      "end_ms": 3286.878,
-      "duration_ms": 46.682,
+      "start_ms": 6734.903,
+      "end_ms": 6805.801,
+      "duration_ms": 70.899,
       "meta": {}
     },
     {
       "type": "span",
       "name": "MainApp.setup_gui",
-      "start_ms": 1069.655,
-      "end_ms": 3286.908,
-      "duration_ms": 2217.253,
+      "start_ms": 2225.625,
+      "end_ms": 6805.837,
+      "duration_ms": 4580.212,
       "meta": {}
     },
     {
       "type": "span",
       "name": "MainApp.__init__",
-      "start_ms": 0.003,
-      "end_ms": 3286.935,
-      "duration_ms": 3286.932,
+      "start_ms": 0.005,
+      "end_ms": 6805.869,
+      "duration_ms": 6805.863,
       "meta": {}
     },
     {
       "type": "mark",
       "name": "MainApp.mainloop.first_idle",
-      "at_ms": 3521.67,
+      "at_ms": 7171.261,
       "meta": {}
     }
   ]

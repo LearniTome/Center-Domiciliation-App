@@ -78,12 +78,14 @@ def filter_analysis_rows(
     template_name: str = "Tous",
     section: str = "Tous",
     coverage: str = "Tous",
+    legal_form: str = "Tous",
 ) -> List[Dict]:
     """Apply common filters used by global/detail analyzer views."""
     search = (search_text or "").strip().lower()
     template_filter = (template_name or "Tous").strip()
     section_filter = (section or "Tous").strip().lower()
     coverage_filter = (coverage or "Tous").strip().lower()
+    legal_form_filter = (legal_form or "Tous").strip()
 
     filtered: List[Dict] = []
     for row in rows:
@@ -92,6 +94,8 @@ def filter_analysis_rows(
         templates = [str(t) for t in row.get("templates", [])]
         row_section = str(row.get("section", "")).strip().lower()
         row_coverage = str(row.get("coverage", "")).strip().lower()
+        row_legal_form = str(row.get("legal_form", "")).strip()
+        row_legal_forms = [str(v).strip() for v in row.get("legal_forms", []) if str(v).strip()]
 
         if search:
             haystack_parts = [variable, tpl] + templates
@@ -110,6 +114,16 @@ def filter_analysis_rows(
 
         if coverage_filter != "tous" and row_coverage != coverage_filter:
             continue
+
+        if legal_form_filter != "Tous":
+            if row_legal_form:
+                if row_legal_form != legal_form_filter:
+                    continue
+            elif row_legal_forms:
+                if legal_form_filter not in row_legal_forms:
+                    continue
+            else:
+                continue
 
         filtered.append(row)
     return filtered
@@ -132,6 +146,17 @@ def analyze_templates(
     details: List[Dict] = []
     errors: List[Dict] = []
     templates_with_variables = 0
+    legal_forms: Set[str] = set()
+
+    def _infer_legal_form(template_path: Path) -> str:
+        try:
+            relative = template_path.relative_to(root)
+            parts = relative.parts
+            if len(parts) > 1:
+                return parts[0]
+        except Exception:
+            pass
+        return "Racine"
 
     for template_path in template_files:
         try:
@@ -141,6 +166,8 @@ def analyze_templates(
             errors.append({"template": str(template_path), "error": str(exc)})
             continue
 
+        legal_form = _infer_legal_form(template_path)
+        legal_forms.add(legal_form)
         if counts:
             templates_with_variables += 1
 
@@ -156,6 +183,7 @@ def analyze_templates(
                     "occurrences": int(occurrence_count),
                     "section": _infer_section(variable_name, key_sections),
                     "coverage": "couvert" if variable_name in expected_keys else "non couvert",
+                    "legal_form": legal_form,
                 }
             )
 
@@ -163,6 +191,10 @@ def analyze_templates(
     for variable_name, occurrence_count in global_counts.items():
         templates = sorted(variable_templates.get(variable_name, set()))
         paths_for_variable = sorted(variable_template_paths.get(variable_name, set()))
+        variable_legal_forms = sorted({
+            _infer_legal_form(Path(path_value))
+            for path_value in paths_for_variable
+        })
         variable_rows.append(
             {
                 "variable": variable_name,
@@ -172,6 +204,7 @@ def analyze_templates(
                 "template_paths": paths_for_variable,
                 "section": _infer_section(variable_name, key_sections),
                 "coverage": "couvert" if variable_name in expected_keys else "non couvert",
+                "legal_forms": variable_legal_forms,
             }
         )
 
@@ -193,6 +226,7 @@ def analyze_templates(
         "variables": variable_rows,
         "details": details,
         "templates": [p.name for p in template_files],
+        "legal_forms": sorted(legal_forms),
         "errors": errors,
     }
 

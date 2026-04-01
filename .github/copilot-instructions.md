@@ -2,7 +2,7 @@
 
 # Center-Domiciliation-App — Agent Guidance
 
-**Purpose:** Help an AI agent be productive in this Tkinter desktop app that remplits Word templates, manages Excel records, and provides a dashboard for document generation and data visualization.
+**Purpose:** Help an AI agent be productive in this Tkinter desktop app that fills Word templates, manages Excel records, and provides a dashboard for document generation and data visualization.
 
 **Python Version:** 3.9+ (tested on 3.10, 3.11, 3.12)
 
@@ -250,7 +250,7 @@ out_dir/
 **Location:** `databases/DataBase_domiciliation.xlsx`
 
 **Sheets & Headers:** (from `src/utils/constants.py`)
-- `Societes`: ID_SOCIETE, DEN_STE, FORME_JUR, ICE, DATE_ICE, CAPITAL, PART_SOCIAL, STE_ADRESS, TRIBUNAL
+- `Societes`: ID_SOCIETE, DOSSIER_DOMICILIATION, DEN_STE, FORME_JUR, ICE, DATE_ICE, CAPITAL, PART_SOCIAL, STE_ADRESS, TRIBUNAL, TYPE_GENERATION, PROCEDURE_CREATION, MODE_DEPOT_CREATION
 - `Associes`: ID_ASSOCIE, ID_SOCIETE, CIVIL, PRENOM, NOM, NATIONALITY, CIN_NUM, CIN_VALIDATY, DATE_NAISS, LIEU_NAISS, ADRESSE, PHONE, EMAIL, PARTS, CAPITAL_DETENU, IS_GERANT, QUALITY
 - `Contrats`: ID_CONTRAT, ID_SOCIETE, DATE_CONTRAT, PERIOD_DOMCIL, PRIX_CONTRAT, PRIX_INTERMEDIARE_CONTRAT, DOM_DATEDEB, DOM_DATEFIN
 - Reference sheets: `SteAdresses`, `Tribunaux`, `Activites`, `Nationalites`, `LieuxNaissance`
@@ -477,6 +477,22 @@ All issues are logged to `app.log` in project root with full tracebacks. Always 
 3. Update `DashboardView` to display new columns
 4. Run `ensure_excel_db()` to validate
 
+### Domiciliation Folder Naming (Updated)
+- Domiciliation output folders use: `DOM-0001-[TOKEN]-CLIENT NAME`
+- `TOKEN` comes from collaborator code/name (ex: `CPT-FIDBA`).
+- If `societe.dossier_domiciliation` is set (e.g., `DOM-0042` or `0042`), it forces the sequence number for **domiciliation only**.
+- Creation naming remains unchanged.
+
+### Dossier Domiciliation Field
+- New field: `societe.dossier_domiciliation` (UI + Excel column).
+- Auto-prefill happens when **Domiciliation** is selected and the field is empty.
+- Dashboard shows it as first visible column for Societes.
+
+### Dashboard Edit Flow (Updated)
+- Editing uses `_dashboard_edit_context` + `_apply_dashboard_edit_for_page()`.
+- Toolbar shows **"✅ Enregistrer Modifs"** during edit; it saves and returns to dashboard.
+- Dashboard auto-refreshes after save (no restart needed).
+
 ### Add New Document Type/Template Filter
 1. Update `CREATION_TEMPLATES_KEYWORDS` or `DOMICILIATION_TEMPLATES` in `generation_selector.py`
 2. Test auto-selection in `GenerationSelectorDialog`
@@ -496,7 +512,8 @@ All issues are logged to `app.log` in project root with full tracebacks. Always 
 - **Documentation:** All documentation is organized in `docs/` directory. Root contains only README.md, CHANGELOG.md, and DOCUMENTATION_ORGANIZATION.md. See [📚 Documentation Organization](#-documentation-organization) section above.
 - **Excel Lock:** Close Excel before running tests that write to database (Windows may lock file).
 - **PDF Conversion:** Prefer `docx2pdf` (requires MS Word + Python package). Fallback: LibreOffice CLI (`soffice`).
-- **Company Name Sanitization:** `render_templates()` auto-sanitizes folder names (spaces→underscore, remove special chars).
+- **Company Name Sanitization:** `render_templates()` auto-sanitizes **creation** folder names (spaces→underscore, remove special chars).
+- **Duplicate Company Names:** `societe_exists()` blocks duplicates (case-insensitive, trimmed). In edit flow, exclude current `id_societe`.
 - **Preferences:** Dark mode & UI state saved to `config/preferences.json` via `ThemeManager.save_preferences()`.
 - **Defaults:** Application defaults saved to `config/defaults.json` via `DefaultsManager` singleton.
 - **Logging:** `app.log` in project root captures all app activity.

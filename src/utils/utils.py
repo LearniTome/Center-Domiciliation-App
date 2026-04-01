@@ -1645,6 +1645,7 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
             'creation_procedure': 'procedure_creation',
             'mode_depot_creation': 'mode_depot_creation',
             'creation_depot_mode': 'mode_depot_creation',
+            'dossier_domiciliation': 'dossier_domiciliation',
         }
         for k, h in mapping.items():
             if k in societe_vals:
@@ -2595,7 +2596,7 @@ def migrate_excel_workbook(path):
         pass
 
 
-def societe_exists(name: str, path: Optional[_Path] = None) -> bool:
+def societe_exists(name: str, path: Optional[_Path] = None, exclude_id: Optional[str] = None) -> bool:
     """Check whether a société with the given name exists in the Excel database.
 
     Args:
@@ -2623,6 +2624,26 @@ def societe_exists(name: str, path: Optional[_Path] = None) -> bool:
         except Exception:
             return False
 
+        alias_map = getattr(_const, 'societe_header_aliases', {}) or {}
+        if alias_map:
+            try:
+                for old_col, new_col in alias_map.items():
+                    if old_col not in df.columns:
+                        continue
+                    if new_col not in df.columns:
+                        df[new_col] = df[old_col]
+                    else:
+                        old_vals = df[old_col].fillna('').astype(str).str.strip()
+                        new_vals = df[new_col].fillna('').astype(str).str.strip()
+                        mask = (new_vals == '') & (old_vals != '')
+                        df.loc[mask, new_col] = df.loc[mask, old_col]
+                    try:
+                        df.drop(columns=[old_col], inplace=True)
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
         if 'den_ste' not in df.columns:
             # fallback: try to detect any column that looks like a company name
             candidates = [c for c in df.columns if 'DEN' in str(c).upper() or 'STE' in str(c).upper() or 'NAME' in str(c).upper()]
@@ -2632,13 +2653,25 @@ def societe_exists(name: str, path: Optional[_Path] = None) -> bool:
         else:
             col = 'den_ste'
 
-        target = (str(name or '')).strip().lower()
+        if exclude_id and 'id_societe' in df.columns:
+            try:
+                df = df[df['id_societe'].astype(str).str.strip() != str(exclude_id).strip()]
+            except Exception:
+                pass
+
+        def _normalize(val: str) -> str:
+            import re
+            text = (str(val or '')).strip().lower()
+            text = re.sub(r'\s+', ' ', text)
+            return text
+
+        target = _normalize(name)
         if not target:
             return False
 
         # check for exact matches (case-insensitive) or trimmed contains
         for val in df[col].fillna('').astype(str):
-            if val.strip().lower() == target:
+            if _normalize(val) == target:
                 return True
         return False
     except Exception:
