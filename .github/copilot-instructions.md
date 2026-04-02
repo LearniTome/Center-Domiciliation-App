@@ -493,6 +493,9 @@ All issues are logged to `app.log` in project root with full tracebacks. Always 
 - Toolbar shows **"✅ Enregistrer Modifs"** during edit; it saves and returns to dashboard.
 - Dashboard auto-refreshes after save (no restart needed).
 
+### Backup modèles (Rapport)
+- Le rapport de backup est **toujours en HTML** et propose l’ouverture après génération.
+
 ### Add New Document Type/Template Filter
 1. Update `CREATION_TEMPLATES_KEYWORDS` or `DOMICILIATION_TEMPLATES` in `generation_selector.py`
 2. Test auto-selection in `GenerationSelectorDialog`

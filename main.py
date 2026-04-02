@@ -154,17 +154,35 @@ class MainApp(tk.Tk):
             pass
 
     def _handle_main_close(self):
-        """Return to dashboard instead of closing the app."""
+        """Handle window close (ask to quit, then exit)."""
         try:
-            if hasattr(self, "main_form") and self.main_form is not None:
-                self.main_form.return_to_dashboard(start_fullscreen=True)
-                return
+            self.request_quit()
         except Exception:
-            pass
+            try:
+                self.destroy()
+            except Exception:
+                pass
+
+    def request_quit(self, force: bool = False):
+        """Ask confirmation then quit the application."""
+        if force:
+            try:
+                self.destroy()
+            except Exception:
+                pass
+            return
         try:
-            self.destroy()
+            confirm = messagebox.askyesno(
+                "Quitter",
+                "Voulez-vous fermer l'application ?",
+            )
         except Exception:
-            pass
+            confirm = True
+        if confirm:
+            try:
+                self.destroy()
+            except Exception:
+                pass
 
     def setup_buttons(self):
         """Configure les boutons de contrôle"""
@@ -376,6 +394,7 @@ class MainApp(tk.Tk):
 
     def generate_documents(self):
         """Open generation selector directly (all choices now live inside selector)."""
+        was_visible = True
         try:
             associe_form = getattr(getattr(self, 'main_form', None), 'associe_form', None)
             if associe_form is not None and hasattr(associe_form, 'validate_for_submit'):
@@ -385,31 +404,35 @@ class MainApp(tk.Tk):
 
             self.collect_values()
 
+            # Keep current visibility state to restore focus afterwards.
+            try:
+                was_visible = bool(self.state() not in ('withdrawn', 'iconic'))
+            except Exception:
+                was_visible = True
+
             # Show generation selector - pass values and format for integrated generation
             # The selector now handles template selection, output format and optional save.
-            selector_result = show_generation_selector(
+            _ = show_generation_selector(
                 self,
                 self.values,
                 output_format='word',
                 save_callback=self.save_to_db,
             )
-            # The selector handles generation internally. Keep the generator in front afterwards.
+
+        except Exception as e:
+            logger.exception('Erreur pendant la génération: %s', e)
+        finally:
+            # Restore focus after selector closes (or on failure).
             try:
-                self.deiconify()
-                self.state('zoomed')
+                if was_visible:
+                    self.deiconify()
             except Exception:
-                try:
-                    self.attributes('-zoomed', True)
-                except Exception:
-                    pass
+                pass
             try:
                 self.lift()
                 self.focus_force()
             except Exception:
                 pass
-
-        except Exception as e:
-            logger.exception('Erreur pendant la génération: %s', e)
 
     def start_generation(self, out_dir: str, to_pdf: bool, templates_list: Optional[list] = None):
         """Start generation on a background thread and show modal progress."""
@@ -696,9 +719,24 @@ class MainApp(tk.Tk):
             # If a company name is provided, check for duplicates in the DB and *forbid* saving
             try:
                 name = societe_vals.get('denomination') or societe_vals.get('den_ste') or societe_vals.get('DEN_STE')
-                if name and societe_exists(name, db_path):
-                    # Do not allow duplicate société names in the DB
-                    messagebox.showerror('Société existante', f"La société '{name}' existe déjà dans la base. Enregistrement interdit pour éviter les doublons.")
+                exclude_id = None
+                try:
+                    exclude_id = str(societe_vals.get('id_societe') or '').strip() or None
+                except Exception:
+                    exclude_id = None
+                if not exclude_id:
+                    try:
+                        edit_ctx = getattr(getattr(self, 'main_form', None), '_dashboard_edit_context', None)
+                        if isinstance(edit_ctx, dict):
+                            exclude_id = str(edit_ctx.get('id_societe') or '').strip() or None
+                    except Exception:
+                        exclude_id = None
+                if name and societe_exists(name, db_path, exclude_id=exclude_id):
+                    # Do not allow duplicate société names in the DB (ignore current record when editing)
+                    messagebox.showerror(
+                        'Société existante',
+                        f"La société '{name}' existe déjà dans la base. Enregistrement interdit pour éviter les doublons."
+                    )
                     return None
             except Exception:
                 # Defensive: on any failure of the check, log and continue with save

@@ -711,6 +711,10 @@ class MainForm(ttk.Frame):
         return self.reset
 
     def _get_main_toolbar_quit_command(self):
+        top = self.winfo_toplevel()
+        quit_fn = getattr(top, 'request_quit', None)
+        if callable(quit_fn):
+            return quit_fn
         return self.return_to_dashboard
 
     def return_to_dashboard(self, start_fullscreen: bool = True):
@@ -835,6 +839,53 @@ class MainForm(ttk.Frame):
             main_frame = ttk.Frame(top, padding=14)
             main_frame.pack(fill="both", expand=True)
 
+            # Custom tool button styles (distinct colors per action).
+            try:
+                tool_font = ('Segoe UI', 10, 'bold')
+                tool_pad = (12, 7)
+                self.style.configure(
+                    'ToolsView.TButton',
+                    background='#3E7CB1',
+                    foreground='white',
+                    relief='solid',
+                    borderwidth=1,
+                    padding=tool_pad,
+                    font=tool_font,
+                )
+                self.style.configure(
+                    'ToolsPdf.TButton',
+                    background='#C07A3A',
+                    foreground='white',
+                    relief='solid',
+                    borderwidth=1,
+                    padding=tool_pad,
+                    font=tool_font,
+                )
+                self.style.configure(
+                    'ToolsDefaults.TButton',
+                    background='#4E9D78',
+                    foreground='white',
+                    relief='solid',
+                    borderwidth=1,
+                    padding=tool_pad,
+                    font=tool_font,
+                )
+                self.style.configure(
+                    'ToolsAnalyze.TButton',
+                    background='#7A5DC7',
+                    foreground='white',
+                    relief='solid',
+                    borderwidth=1,
+                    padding=tool_pad,
+                    font=tool_font,
+                )
+                self.style.map('ToolsView.TButton', background=[('active', '#4C8FD0')])
+                self.style.map('ToolsPdf.TButton', background=[('active', '#D68A44')])
+                self.style.map('ToolsDefaults.TButton', background=[('active', '#5AB98A')])
+                self.style.map('ToolsAnalyze.TButton', background=[('active', '#8C6FE0')])
+            except Exception:
+                pass
+
             ttk.Label(
                 main_frame,
                 text="🧰 Outils",
@@ -868,16 +919,15 @@ class MainForm(ttk.Frame):
                 except Exception:
                     pass
                 try:
-                    if parent_window and hasattr(parent_window, '_hide_for_parent_switch'):
-                        parent_window._hide_for_parent_switch(fullscreen_parent=True)
-                    try:
-                        self.winfo_toplevel().deiconify()
-                    except Exception:
-                        pass
-                    top_level = self.winfo_toplevel()
-                    generate_fn = getattr(top_level, 'generate_documents', None)
-                    if callable(generate_fn):
-                        generate_fn()
+                    from .generation_selector import show_generation_selector
+                    values = self.values if isinstance(self.values, dict) else {}
+                    show_generation_selector(
+                        parent_window or self.winfo_toplevel(),
+                        values,
+                        output_format='word',
+                        save_callback=None,
+                        view_only=True,
+                    )
                 except Exception:
                     logger.exception("Erreur lors de l'ouverture du générateur de documents")
 
@@ -890,30 +940,30 @@ class MainForm(ttk.Frame):
 
             WidgetFactory.create_button(
                 actions,
-                text="🧾 Générateur de Documents",
+                text="🧾 Voir les modèles de documents",
                 command=_open_generator,
-                style="Manage.TButton",
+                style="ToolsView.TButton",
             ).pack(fill="x", pady=(0, 8))
 
             WidgetFactory.create_button(
                 actions,
                 text="📄 Convertisseur Word -> PDF (lot)",
                 command=_open_word_pdf_batch,
-                style="Upload.TButton",
+                style="ToolsPdf.TButton",
             ).pack(fill="x", pady=(0, 8))
 
             WidgetFactory.create_button(
                 actions,
                 text="⚙ Valeurs par défaut",
                 command=_open_defaults,
-                style="Success.TButton",
+                style="ToolsDefaults.TButton",
             ).pack(fill="x", pady=(0, 8))
 
             WidgetFactory.create_button(
                 actions,
                 text="📊 Analyse des valeurs templates",
                 command=_open_analyzer,
-                style="Refresh.TButton",
+                style="ToolsAnalyze.TButton",
             ).pack(fill="x", pady=(0, 8))
 
             buttons = ttk.Frame(main_frame)
@@ -1821,15 +1871,15 @@ class MainForm(ttk.Frame):
             top.transient(owner)
             top.title("Outils - Analyse des valeurs templates")
             try:
+                margin = 36
                 screen_w = top.winfo_screenwidth()
                 screen_h = top.winfo_screenheight()
-                target_w = max(1100, int(screen_w * 0.9))
                 work_x = 0
                 work_y = 0
                 work_w = screen_w
                 work_h = screen_h
-                try:
-                    if os.name == "nt":
+                if os.name == "nt":
+                    try:
                         import ctypes
 
                         rect = ctypes.wintypes.RECT()
@@ -1839,15 +1889,11 @@ class MainForm(ttk.Frame):
                             work_y = rect.top
                             work_w = max(1, rect.right - rect.left)
                             work_h = max(1, rect.bottom - rect.top)
-                except Exception:
-                    pass
-                # Use full screen width (avoid left taskbar offset) and keep
-                # a small vertical margin so footer/buttons stay visible.
-                target_w = screen_w
-                target_h = max(700, screen_h - 40)
-                x = 0
-                y = 0
-                top.geometry(f"{target_w}x{target_h}+{x}+{y}")
+                    except Exception:
+                        pass
+                width = max(1100, int(work_w) - margin)
+                height = max(700, int(work_h) - margin)
+                top.geometry(f"{width}x{height}+{int(work_x)}+{int(work_y)}")
                 top.minsize(800, 520)
             except Exception:
                 top.geometry("1200x760")

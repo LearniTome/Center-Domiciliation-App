@@ -160,6 +160,182 @@ def get_expected_context_keys() -> set[str]:
     return set(_EXPECTED_CONTEXT_KEY_SECTIONS.keys())
 
 
+def build_render_context(values: Dict) -> Dict:
+    """Build a flat context dict for docxtpl from nested values.
+
+    Keeps the original nested structure under keys 'societe', 'associes', 'contrat'
+    but also injects many alternative keys (uppercase canonical headers and
+    common form keys) to maximize chance of matching the variables used in
+    the .docx templates.
+    """
+    ctx: Dict = {}
+    if not isinstance(values, dict):
+        return ctx
+
+    # keep nested
+    ctx['societe'] = values.get('societe', {}) or {}
+    ctx['associes'] = values.get('associes', []) or []
+    ctx['contrat'] = values.get('contrat', {}) or {}
+    soc = ctx['societe']
+    # Societe mappings
+    soc_map = {
+        'denomination': 'DEN_STE', 'denomination_sociale': 'DEN_STE', 'den_ste': 'DEN_STE', 'name': 'DEN_STE',
+        'forme_juridique': 'FORME_JUR', 'ice': 'ICE', 'date_ice': 'DATE_ICE',
+        'date_certificat_negatif': 'DATE_ICE',
+        'date_expiration_certificat_negatif': 'DATE_EXP_CERT_NEG',
+        'capital': 'CAPITAL', 'parts_social': 'PART_SOCIAL', 'valeur_nominale': 'VALEUR_NOMINALE',
+        'adresse': 'STE_ADRESS', 'tribunal': 'TRIBUNAL',
+        'mode_signature_gerance': 'MODE_SIGNATURE_GERANCE',
+        'type_generation': 'TYPE_GENERATION',
+        'generation_type': 'TYPE_GENERATION',
+        'procedure_creation': 'PROCEDURE_CREATION',
+        'creation_procedure': 'PROCEDURE_CREATION',
+        'mode_depot_creation': 'MODE_DEPOT_CREATION',
+        'creation_depot_mode': 'MODE_DEPOT_CREATION',
+        'dossier_domiciliation': 'DOSSIER_DOMICILIATION',
+    }
+    for fk, hk in soc_map.items():
+        v = None
+        try:
+            v = soc.get(fk)
+        except Exception:
+            v = None
+        if v:
+            ctx[hk] = v
+            # also lowercase friendly name
+            ctx[fk] = v
+        # (DATE_CONTRAT will be ensured after mapping the contrat dict below)
+
+    # If no DEN_STE found, try any string in soc
+    if 'DEN_STE' not in ctx:
+        for k, v in soc.items():
+            if isinstance(v, str) and v.strip():
+                ctx['DEN_STE'] = v
+                break
+
+    # Associe: prefer first associe for single-value templates
+    assoc_list = ctx['associes']
+    if assoc_list and isinstance(assoc_list, list) and len(assoc_list) > 0:
+        a = assoc_list[0] or {}
+        assoc_map = {
+            'civilite': 'CIVIL', 'prenom': 'PRENOM', 'nom': 'NOM', 'nationalite': 'NATIONALITY',
+            'num_piece': 'CIN_NUM', 'validite_piece': 'CIN_VALIDATY', 'date_naiss': 'DATE_NAISS',
+            'lieu_naiss': 'LIEU_NAISS', 'adresse': 'ADRESSE', 'telephone': 'PHONE', 'email': 'EMAIL',
+            'parts': 'PARTS', 'num_parts': 'PARTS', 'capital_detenu': 'CAPITAL_DETENU',
+            'est_gerant': 'IS_GERANT', 'qualite': 'QUALITY'
+        }
+        for fk, hk in assoc_map.items():
+            v = None
+            try:
+                v = a.get(fk)
+            except Exception:
+                v = None
+            if v is not None and v != '':
+                ctx[hk] = v
+                ctx[fk] = v
+
+        # Provide additional alias keys for templates that expect associe-prefixed
+        # or suffixed variable names. This helps catch documents using patterns
+        # like {{ASSOCIE_ADRESSE}} or {{ADRESSE_ASSOCIE}} or camelCase variants.
+        for base in ('ADRESSE', 'PHONE', 'EMAIL', 'QUALITY', 'NOM', 'PRENOM'):
+            if base in ctx:
+                try:
+                    ctx[f'ASSOCIE_{base}'] = ctx[base]
+                    ctx[f'{base}_ASSOCIE'] = ctx[base]
+                    # also provide lowercase/camel variants
+                    ctx[base.lower()] = ctx[base]
+                    # camelCase (e.g., adresseAssocie)
+                    camel = base[0].lower() + base[1:].lower()
+                    ctx[f'{camel}Associe'] = ctx[base]
+                except Exception:
+                    pass
+
+    # Contrat mappings
+    c = ctx['contrat']
+    contrat_map = {
+        'date_contrat': 'DATE_CONTRAT', 'period': 'PERIOD_DOMCIL', 'period_domcil': 'PERIOD_DOMCIL',
+        'prix_mensuel': 'PRIX_CONTRAT', 'prix_inter': 'PRIX_INTERMEDIARE_CONTRAT',
+        'prix_contrat': 'PRIX_CONTRAT', 'prix_intermediare': 'PRIX_INTERMEDIARE_CONTRAT',
+        'date_debut': 'DOM_DATEDEB', 'date_fin': 'DOM_DATEFIN', 'dom_datedeb': 'DOM_DATEDEB', 'dom_datefin': 'DOM_DATEFIN',
+        'type_contrat_domiciliation': 'TYPE_CONTRAT_DOMICILIATION',
+        'type_contrat_domiciliation_autre': 'TYPE_CONTRAT_DOMICILIATION_AUTRE',
+        # Compatibility input key used in some older payloads/templates.
+        'contrat_forme_juridique': 'CONTRAT_FORME_JURIDIQUE',
+    }
+    for fk, hk in contrat_map.items():
+        v = None
+        try:
+            v = c.get(fk)
+        except Exception:
+            v = None
+        if v is not None and v != '':
+            ctx[hk] = v
+            ctx[fk] = v
+
+    # Keep DATE_CONTRAT alias if present in contrat
+    if 'DATE_CONTRAT' not in ctx:
+        try:
+            v = c.get('date_contrat')
+            if v:
+                ctx['DATE_CONTRAT'] = v
+        except Exception:
+            pass
+
+    try:
+        activities = _extract_activities_list(
+            ctx.get('ACTIVITIES') or ctx.get('ACTIVITES') or ctx.get('activities') or ctx.get('activites') or []
+        )
+        if not activities:
+            activities = _extract_activities_list(
+                ctx['societe'].get('activites') if isinstance(ctx.get('societe'), dict) else []
+            )
+
+        # Provide activity list variables and indexed activity variables (ACTIVITY1, ACTIVITY2, ...)
+        for i in range(0, 20):
+            key = f'ACTIVITY{i+1}'
+            val = activities[i] if i < len(activities) else ''
+            ctx[key] = val
+            # Lowercase alias for some templates
+            ctx[key.lower()] = val
+            # camelCase (activity1) for template compatibility.
+            ctx[f'activity{i+1}'] = val
+
+        activities_multiline = "\n".join(activities)
+        activities_bullets = "\n".join(f"• {item}" for item in activities)
+        activities_continuation_bullets = activities_multiline
+        activities_inline = "; ".join(activities)
+        # Default aliases are plain multi-line (no bullets) so templates can reuse their own bullet style.
+        ctx['ACTIVITIES'] = activities_multiline
+        ctx['ACTIVITES'] = activities_multiline
+        ctx['ACTIVITIES_LIST'] = list(activities)
+        ctx['ACTIVITES_LIST'] = list(activities)
+        ctx['LISTE_ACTIVITES'] = activities_multiline
+        # Plain multiline aliases.
+        ctx['ACTIVITIES_PLAIN'] = activities_multiline
+        ctx['ACTIVITES_PLAIN'] = activities_multiline
+        # Optional explicit bullet aliases for templates that need generated bullets.
+        ctx['ACTIVITIES_BULLETS'] = activities_bullets
+        ctx['ACTIVITES_PUCES'] = activities_bullets
+        ctx['ACTIVITIES_CONTINUATION_BULLETS'] = activities_continuation_bullets
+        ctx['ACTIVITES_CONTINUATION_PUCES'] = activities_continuation_bullets
+        ctx['ACTIVITIES_INLINE'] = activities_inline
+        ctx['ACTIVITES_INLINE'] = activities_inline
+        ctx['ACTIVITY_COUNT'] = len(activities)
+        ctx['activities'] = activities_multiline
+        ctx['activites'] = activities_multiline
+    except Exception:
+        # non-fatal
+        pass
+
+    for old_key, new_key in RENAMED_CONTEXT_ALIASES.items():
+        if old_key in ctx and ctx.get(new_key) in (None, ''):
+            ctx[new_key] = ctx.get(old_key)
+    # Backward compatibility for legacy templates still using this variable name.
+    if ctx.get('TYPE_CONTRAT_DOMICILIATION') and not ctx.get('CONTRAT_FORME_JURIDIQUE'):
+        ctx['CONTRAT_FORME_JURIDIQUE'] = ctx.get('TYPE_CONTRAT_DOMICILIATION')
+    return ctx
+
+
 def _extract_activities_list(raw_activities) -> List[str]:
     """Normalize activities from list/string payloads into a clean list."""
     activities: List[str] = []
@@ -461,28 +637,24 @@ def render_templates(
         except Exception:
             return None
 
+    def _sanitize_filename_piece(text: str) -> str:
+        s = str(text or "").strip()
+        # Remove characters invalid on Windows file names.
+        s = re.sub(r'[<>:"/\\\\|?*]', '', s)
+        s = re.sub(r"\s+", " ", s)
+        return s.strip() or "Document"
+
     def _derive_doc_label(template_stem: str) -> str:
         stem = template_stem
         if stem.startswith('My_'):
             stem = stem[3:]
         stem = re.sub(r"^\d{4}_Mod[èe]le_[^_]+_", "", stem, flags=re.IGNORECASE)
-        s_lower = stem.lower()
-        if "statut" in s_lower:
-            return "Statuts"
-        if "contrat" in s_lower:
-            return "Contrat"
-        if "attest" in s_lower:
-            return "Attestation"
-        if "annonce" in s_lower:
-            return "Annonce"
-        if "décl" in s_lower or "decl" in s_lower:
-            return "Declaration"
-        if "dépot" in s_lower or "depot" in s_lower:
-            return "Depot"
-        # Generic fallback from stem
-        generic = re.sub(r"[^A-Za-z0-9]+", "_", stem).strip("_")
-        generic = re.sub(r"__+", "_", generic)
-        return generic or "Document"
+        # Remove trailing Template token and leading date token but keep the rest of the model name.
+        stem = re.sub(r"(?i)[_-]?template$", "", stem).strip()
+        stem = re.sub(r"(?i)(^|[_-])\d{4}[-_]\d{2}(?:[-_]\d{2})?[_-]?", r"\1", stem)
+        stem = re.sub(r"__+", "_", stem)
+        stem = stem.strip("_- ")
+        return _sanitize_filename_piece(stem)
 
     company_raw = _extract_company_name(values or {})
     company_clean = _sanitize_name(company_raw)
@@ -729,6 +901,10 @@ def render_templates(
     for tpl in templates:
         try:
             doc_label = _derive_doc_label(tpl.stem)
+            if folder_kind_token == "DosDom":
+                if "domiciliation" not in doc_label.lower():
+                    doc_label = f"{doc_label}_Domiciliation"
+            doc_label = _sanitize_filename_piece(doc_label)
             file_stem = f"{gen_date}_{legal_form_token}_{doc_label}_{company_clean}"
             if file_stem in used_file_stems:
                 idx = 2

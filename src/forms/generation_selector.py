@@ -11,6 +11,7 @@ import shutil
 import logging
 import threading
 import re
+import os
 
 from ..utils.utils import ThemeManager, WidgetFactory, PathManager, ErrorHandler, WindowManager
 from ..utils.doc_generator import render_templates
@@ -154,18 +155,24 @@ def template_matches_generation_type(template_name: str, generation_type: str) -
 class GenerationSelectorDialog(tk.Toplevel):
     """Modal dialog to select generation type and manage templates."""
 
+    _last_output_dir: Optional[str] = None
+
     def __init__(
         self,
         parent,
         values: Optional[dict] = None,
         output_format: str = 'word',
         save_callback: Optional[Callable[[], Optional[Path]]] = None,
+        view_only: bool = False,
     ):
         super().__init__(parent)
         self.parent = parent
         self.values = values or {}
         self.output_format = output_format  # 'word', 'pdf', or 'both'
         self.save_callback = save_callback
+        self.view_only = bool(view_only)
+        self._edit_context = None
+        self._is_edit_mode = False
         self._initial_center_done = False
         self._one_shot_recenter_done = False
         self._proceed_tooltip_window = None
@@ -175,6 +182,19 @@ class GenerationSelectorDialog(tk.Toplevel):
         self.save_before_var = tk.BooleanVar(value=True)
         self.initial_legal_form = self._extract_initial_legal_form()
         self.initial_generation_settings = self._extract_initial_generation_settings()
+        try:
+            main_form = getattr(parent, "main_form", None)
+            self._edit_context = getattr(main_form, "_dashboard_edit_context", None)
+            if isinstance(self._edit_context, dict):
+                self._is_edit_mode = bool(self._edit_context.get("id_societe") or self._edit_context.get("den_ste"))
+        except Exception:
+            self._edit_context = None
+            self._is_edit_mode = False
+        if self._is_edit_mode:
+            try:
+                self.save_before_var.set(False)
+            except Exception:
+                pass
 
         # Backward-compat normalization.
         normalized = (self.output_format or '').strip().lower()
@@ -187,18 +207,43 @@ class GenerationSelectorDialog(tk.Toplevel):
         else:
             self.output_format_var.set('word')
 
-        self.title("📄 Sélectionner les documents à générer")
-        # Dynamic initial geometry: use available screen height, keep vertical expansion comfortable.
+        if self.view_only:
+            self.title("📄 Modèles de documents")
+        else:
+            self.title("📄 Sélectionner les documents à générer")
+        # Slightly reduce geometry to avoid taskbar overlap.
         try:
-            sw = self.winfo_screenwidth()
-            sh = self.winfo_screenheight()
-            initial_w = min(1320, max(1080, sw - 80))
-            initial_h = min(900, max(760, sh - 120))
-            self.geometry(f"{initial_w}x{initial_h}")
+            margin = 36
+            screen_w = self.winfo_screenwidth()
+            screen_h = self.winfo_screenheight()
+            work_x = 0
+            work_y = 0
+            work_w = screen_w
+            work_h = screen_h
+            if os.name == "nt":
+                try:
+                    import ctypes
+
+                    rect = ctypes.wintypes.RECT()
+                    SPI_GETWORKAREA = 0x0030
+                    if ctypes.windll.user32.SystemParametersInfoW(SPI_GETWORKAREA, 0, ctypes.byref(rect), 0):
+                        work_x = rect.left
+                        work_y = rect.top
+                        work_w = max(1, rect.right - rect.left)
+                        work_h = max(1, rect.bottom - rect.top)
+                except Exception:
+                    pass
+            width = max(1080, int(work_w) - margin)
+            height = max(700, int(work_h) - margin)
+            self.geometry(f"{width}x{height}+{int(work_x)}+{int(work_y)}")
+            self._skip_centering = True
         except Exception:
-            self.geometry("1260x840")
+            pass
         self.resizable(True, True)
-        self.minsize(1080, 700)
+        try:
+            self.minsize(1080, 700)
+        except Exception:
+            pass
 
         # Apply the SAME theme as the parent window (not a new one)
         # This ensures the dialog inherits the parent's style configuration
@@ -218,7 +263,12 @@ class GenerationSelectorDialog(tk.Toplevel):
 
         # Make modal BEFORE centering
         try:
-            self.transient(parent)
+            try:
+                parent_state = parent.state() if hasattr(parent, "state") else ""
+            except Exception:
+                parent_state = ""
+            if parent_state not in ("withdrawn", "iconic"):
+                self.transient(parent)
             self.grab_set()
         except Exception:
             pass
@@ -351,6 +401,13 @@ class GenerationSelectorDialog(tk.Toplevel):
 
     def _center_on_screen(self, source: str = "unknown"):
         """Center horizontally on screen and align vertically with parent window."""
+        if getattr(self, "_skip_centering", False):
+            return
+        try:
+            if str(self.state()) == "zoomed":
+                return
+        except Exception:
+            pass
         self.update_idletasks()
         window_width = self.winfo_width()
         window_height = self.winfo_height()
@@ -388,11 +445,11 @@ class GenerationSelectorDialog(tk.Toplevel):
                 mi.cbSize = ctypes.sizeof(_MONITORINFO)
                 ok = ctypes.windll.user32.GetMonitorInfoW(monitor, ctypes.byref(mi))
                 if ok:
-                    # Use full monitor rectangle for true screen center.
-                    screen_x = int(mi.rcMonitor.left)
-                    screen_y = int(mi.rcMonitor.top)
-                    screen_width = int(mi.rcMonitor.right - mi.rcMonitor.left)
-                    screen_height = int(mi.rcMonitor.bottom - mi.rcMonitor.top)
+                    # Use work area (exclude taskbar) so bottom stays visible.
+                    screen_x = int(mi.rcWork.left)
+                    screen_y = int(mi.rcWork.top)
+                    screen_width = int(mi.rcWork.right - mi.rcWork.left)
+                    screen_height = int(mi.rcWork.bottom - mi.rcWork.top)
         except Exception:
             pass
 
@@ -409,6 +466,7 @@ class GenerationSelectorDialog(tk.Toplevel):
         y = max(screen_y, min(y, screen_y + screen_height - window_height))
 
         self.geometry(f"{window_width}x{window_height}+{x}+{y}")
+
 
     def _setup_ui(self):
         """Setup the dialog UI with improved design and layout.
@@ -467,6 +525,15 @@ class GenerationSelectorDialog(tk.Toplevel):
         proceed_wrap.bind('<Leave>', self._hide_proceed_tooltip)
         self.proceed_btn.bind('<Enter>', self._show_proceed_tooltip_if_disabled)
         self.proceed_btn.bind('<Leave>', self._hide_proceed_tooltip)
+        if self.view_only:
+            try:
+                self.proceed_btn.configure(text="Fermer", command=self._cancel, style='Close.TButton')
+            except Exception:
+                pass
+            try:
+                self.cancel_btn.pack_forget()
+            except Exception:
+                pass
 
         # ===== SECTIONS 1 & 2: SIDE BY SIDE =====
         top_sections_frame = ttk.Frame(main_frame)
@@ -585,11 +652,37 @@ class GenerationSelectorDialog(tk.Toplevel):
             value='both',
         ).grid(row=0, column=2, sticky='w')
 
-        ttk.Checkbutton(
+        self.save_before_chk = ttk.Checkbutton(
             options_frame,
             text="💾 Sauvegarder dans la base avant génération",
             variable=self.save_before_var,
-        ).grid(row=1, column=0, columnspan=3, sticky='w', pady=(8, 0))
+        )
+        self.save_before_chk.grid(row=1, column=0, columnspan=3, sticky='w', pady=(8, 0))
+        if self.view_only:
+            try:
+                options_frame.pack_forget()
+            except Exception:
+                pass
+            try:
+                self.save_before_var.set(False)
+            except Exception:
+                pass
+        if self._is_edit_mode and not self.view_only:
+            try:
+                self.save_before_chk.state(["disabled"])
+            except Exception:
+                try:
+                    self.save_before_chk.configure(state="disabled")
+                except Exception:
+                    pass
+            try:
+                ttk.Label(
+                    options_frame,
+                    text="ℹ En modification, la génération ne sauvegarde pas automatiquement.",
+                    style='FieldLabel.TLabel',
+                ).grid(row=2, column=0, columnspan=3, sticky='w', pady=(6, 0))
+            except Exception:
+                pass
 
         # ===== SECTION 3: TEMPLATE LIST =====
         template_frame = ttk.LabelFrame(main_frame, text="Modèles disponibles", padding=15)
@@ -681,6 +774,16 @@ class GenerationSelectorDialog(tk.Toplevel):
         copy_btn.configure(width=15)
         copy_btn.pack(side='left', padx=(0, 6))
 
+        backup_btn = WidgetFactory.create_button(
+            actions_frame,
+            text="Backup modèles",
+            command=self._backup_templates,
+            style='Copy.TButton',
+            icon_key='',
+        )
+        backup_btn.configure(width=16)
+        backup_btn.pack(side='left', padx=(0, 6))
+
         delete_btn = WidgetFactory.create_button(
             actions_frame,
             text="Supprimer modèles",
@@ -700,6 +803,304 @@ class GenerationSelectorDialog(tk.Toplevel):
         self._update_creation_options_visibility()
         self._sync_societe_generation_values()
         self._update_selection_feedback()
+
+    def _backup_templates(self):
+        """Backup selected or all templates into backup-models with a detailed report."""
+        try:
+            from datetime import datetime
+            import json
+            import shutil
+            import html as _html
+            import os
+            from ..utils.doc_generator import build_render_context, get_expected_context_key_sections
+            from ..utils.template_value_analyzer import extract_template_variables, _infer_section
+            from ..utils.utils import ErrorHandler
+
+            if not self.available_templates:
+                messagebox.showwarning("Backup modèles", "Aucun modèle disponible pour le backup.")
+                return
+
+            selected_templates = [
+                template for template, var in self.template_vars.items() if var.get()
+            ]
+            all_templates = sorted(
+                p for p in PathManager.MODELS_DIR.rglob("*.docx") if p.is_file()
+            )
+
+            if selected_templates:
+                choice = messagebox.askyesnocancel(
+                    "Backup modèles",
+                    "Choisissez le type de backup :\n\n"
+                    "Oui = Modèles sélectionnés (forme juridique courante)\n"
+                    "Non = Tous les modèles (toutes les formes juridiques)\n"
+                    "Annuler = rien faire"
+                )
+                if choice is None:
+                    return
+                if choice is True:
+                    templates = selected_templates
+                    mode = "selected_current_form"
+                else:
+                    templates = all_templates
+                    mode = "all_forms"
+            else:
+                use_current_form = messagebox.askyesno(
+                    "Backup modèles",
+                    "Aucun modèle sélectionné.\n\n"
+                    "Oui = Backuper tous les modèles de la forme juridique courante\n"
+                    "Non = Backuper tous les modèles (toutes les formes juridiques)"
+                )
+                if use_current_form:
+                    templates = list(self.available_templates)
+                    mode = "current_form_all"
+                else:
+                    templates = all_templates
+                    mode = "all_forms"
+
+            timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            backup_root = PathManager.BASE_DIR / "backup-models"
+            selected_form_label = (self.legal_form_var.get() or '').strip()
+
+            def _safe_name(text: str) -> str:
+                s = str(text or "").strip()
+                s = re.sub(r"\s+", "-", s)
+                s = re.sub(r"[^A-Za-z0-9_\-]+", "", s)
+                return s or "Unknown"
+
+            def _strip_docx_suffix(name: str) -> str:
+                raw = str(name or "").strip()
+                if raw.lower().endswith(".docx"):
+                    return raw[:-5]
+                return raw
+
+            def _strip_docx_token(name: str) -> str:
+                raw = str(name or "").strip()
+                if not raw:
+                    return raw
+                return re.sub(r"(?i)(^|[-_])docx$", "", raw)
+
+            if mode == "all_forms":
+                backup_label = "Tous-Modeles"
+            elif mode == "current_form_all":
+                backup_label = f"Forme-{_safe_name(selected_form_label)}"
+            elif mode == "selected_current_form":
+                backup_label = f"Forme-{_safe_name(selected_form_label)}-Selection"
+            else:
+                backup_label = _safe_name(mode)
+
+            backup_dir = backup_root / f"{timestamp}_{backup_label}"
+            backup_dir.mkdir(parents=True, exist_ok=True)
+
+            context = build_render_context(self.values or {})
+            context['values'] = self.values or {}
+            key_sections = get_expected_context_key_sections()
+
+            def _resolve_value(var_name: str):
+                if var_name in context:
+                    return context.get(var_name)
+                soc = context.get('societe')
+                if isinstance(soc, dict) and var_name in soc:
+                    return soc.get(var_name)
+                contrat = context.get('contrat')
+                if isinstance(contrat, dict) and var_name in contrat:
+                    return contrat.get(var_name)
+                associes = context.get('associes')
+                if isinstance(associes, list):
+                    vals = []
+                    for assoc in associes:
+                        if isinstance(assoc, dict) and var_name in assoc and assoc.get(var_name) not in (None, ''):
+                            vals.append(assoc.get(var_name))
+                    if vals:
+                        return vals
+                return None
+
+            report = {
+                "timestamp": timestamp,
+                "mode": mode,
+                "templates_count": len(templates),
+                "backup_dir": str(backup_dir),
+                "templates": [],
+            }
+
+            used_names = {}
+            folder_counts = {}
+            for idx, template in enumerate(templates, start=1):
+                try:
+                    try:
+                        rel = template.relative_to(PathManager.MODELS_DIR)
+                        legal_form_folder = rel.parts[0] if len(rel.parts) > 1 else "Racine"
+                    except Exception:
+                        legal_form_folder = "Racine"
+
+                    display_name = _strip_docx_suffix(self._format_template_display_name(template))
+                    friendly = _safe_name(display_name)
+                    friendly = _strip_docx_token(friendly)
+                    if not friendly:
+                        friendly = _safe_name(template.stem)
+                    prefix = "Backup"
+                    folder_key = str(legal_form_folder)
+                    folder_counts[folder_key] = folder_counts.get(folder_key, 0) + 1
+                    seq = folder_counts[folder_key]
+                    candidate = f"{seq:02d}_{prefix}_{friendly}{template.suffix}"
+                    used_set = used_names.setdefault(folder_key, set())
+                    if candidate in used_set:
+                        suffix_idx = 2
+                        base = f"{seq:02d}_{prefix}_{friendly}"
+                        while f"{base}-{suffix_idx}{template.suffix}" in used_set:
+                            suffix_idx += 1
+                        candidate = f"{base}-{suffix_idx}{template.suffix}"
+                    used_set.add(candidate)
+
+                    dest = backup_dir / legal_form_folder / candidate
+                    dest.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(template, dest)
+
+                    counts = extract_template_variables(template)
+                    variables = []
+                    missing = []
+                    for var_name, occ in counts.items():
+                        val = _resolve_value(var_name)
+                        if val in (None, ''):
+                            missing.append(var_name)
+                        variables.append({
+                            "variable": var_name,
+                            "occurrences": int(occ),
+                            "section": _infer_section(var_name, key_sections),
+                            "value": val,
+                        })
+
+                    report["templates"].append({
+                        "template": template.name,
+                        "source_path": str(template),
+                        "backup_path": str(dest),
+                        "backup_legal_form": str(legal_form_folder),
+                        "backup_name": str(dest.name),
+                        "display_name": display_name,
+                        "backup_prefix": "Backup",
+                        "variables": variables,
+                        "missing_values": missing,
+                    })
+                except Exception as exc:
+                    report["templates"].append({
+                        "template": template.name,
+                        "source_path": str(template),
+                        "backup_path": None,
+                        "variables": [],
+                        "missing_values": [],
+                        "error": str(exc),
+                    })
+
+            report_path = backup_dir / f"backup_report_{timestamp}.json"
+            with report_path.open("w", encoding="utf-8") as f:
+                json.dump(report, f, ensure_ascii=False, indent=2, default=str)
+
+            # Build HTML report
+            def _fmt_val(val):
+                if isinstance(val, list):
+                    return ", ".join(str(v) for v in val)
+                if val is None:
+                    return ""
+                return str(val)
+
+            rows_html = []
+            for tpl in report["templates"]:
+                tpl_name = _html.escape(str(tpl.get("template", "")))
+                display_name_html = _html.escape(str(tpl.get("display_name", "")))
+                backup_name_html = _html.escape(str(tpl.get("backup_name", "")))
+                backup_prefix_html = _html.escape(str(tpl.get("backup_prefix", "")))
+                source_path = _html.escape(str(tpl.get("source_path", "")))
+                backup_path = _html.escape(str(tpl.get("backup_path", "")))
+                error = tpl.get("error")
+                error_html = f"<div class='error'>Erreur: {_html.escape(str(error))}</div>" if error else ""
+
+                var_rows = []
+                for v in tpl.get("variables", []):
+                    var_rows.append(
+                        "<tr>"
+                        f"<td>{_html.escape(str(v.get('variable','')))}</td>"
+                        f"<td>{_html.escape(str(v.get('section','')))}</td>"
+                        f"<td>{_html.escape(str(v.get('occurrences','')))}</td>"
+                        f"<td>{_html.escape(_fmt_val(v.get('value')))}</td>"
+                        "</tr>"
+                    )
+                vars_table = (
+                    "<table class='vars'>"
+                    "<thead><tr><th>Variable</th><th>Section</th><th>Occ.</th><th>Valeur</th></tr></thead>"
+                    "<tbody>" + "".join(var_rows) + "</tbody></table>"
+                )
+
+                missing_vals = tpl.get("missing_values", []) or []
+                missing_html = ""
+                if missing_vals:
+                    missing_html = "<div class='missing'>Manquantes: " + _html.escape(", ".join(missing_vals)) + "</div>"
+
+                rows_html.append(
+                    "<div class='template'>"
+                    f"<h3>{display_name_html or tpl_name}</h3>"
+                    f"<div class='paths'>"
+                    f"<div>Nom original: {tpl_name}</div>"
+                    f"<div>Nom backup: {backup_name_html}</div>"
+                    f"<div>Préfixe: {backup_prefix_html}</div>"
+                    f"<div>Source: {source_path}</div><div>Backup: {backup_path}</div>"
+                    f"</div>"
+                    f"{missing_html}{error_html}"
+                    f"{vars_table}"
+                    "</div>"
+                )
+
+            html_content = f"""<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <title>Rapport Backup Modèles - {timestamp}</title>
+  <style>
+    body {{ font-family: Arial, sans-serif; margin: 20px; background: #1e1e1e; color: #e6e6e6; }}
+    h1 {{ margin-bottom: 4px; }}
+    .meta {{ color: #b8b8b8; margin-bottom: 16px; }}
+    .template {{ margin: 18px 0; padding: 12px; border: 1px solid #3a3a3a; border-radius: 6px; background: #252525; }}
+    .paths {{ font-size: 12px; color: #b8b8b8; margin-bottom: 8px; }}
+    .vars {{ width: 100%; border-collapse: collapse; margin-top: 8px; }}
+    .vars th, .vars td {{ border: 1px solid #3a3a3a; padding: 6px; font-size: 12px; }}
+    .vars th {{ background: #333; text-align: left; }}
+    .missing {{ color: #ff7aa2; font-weight: bold; margin: 6px 0; }}
+    .error {{ color: #ff6b6b; font-weight: bold; margin: 6px 0; }}
+  </style>
+</head>
+<body>
+  <h1>Rapport Backup Modèles</h1>
+  <div class="meta">Horodatage: {timestamp} | Mode: {_html.escape(mode)} | Modèles: {len(templates)}</div>
+  {''.join(rows_html)}
+</body>
+</html>
+"""
+            report_html_path = backup_dir / f"backup_report_{timestamp}.html"
+            with report_html_path.open("w", encoding="utf-8") as f:
+                f.write(html_content)
+
+            messagebox.showinfo(
+                "Backup terminé",
+                f"Backup terminé avec succès.\n\nDossier:\n{backup_dir}\n\nRapport:\n{report_html_path}",
+            )
+            try:
+                if messagebox.askyesno("Ouvrir le rapport", "Voulez-vous ouvrir le rapport HTML ?"):
+                    try:
+                        if hasattr(os, "startfile"):
+                            os.startfile(str(report_html_path))  # type: ignore[attr-defined]
+                        elif os.name == "posix":
+                            import subprocess
+                            subprocess.run(["xdg-open", str(report_html_path)], check=False)
+                        else:
+                            import subprocess
+                            subprocess.run(["open", str(report_html_path)], check=False)
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+        except Exception as e:
+            try:
+                ErrorHandler.handle_error(e, "Erreur lors du backup des modèles")
+            except Exception:
+                messagebox.showerror("Erreur", f"Erreur lors du backup des modèles: {e}")
 
     def _on_frame_configure(self, event=None):
         """Update the scroll region when the inner frame changes."""
@@ -1625,6 +2026,9 @@ class GenerationSelectorDialog(tk.Toplevel):
 
     def _confirm(self):
         """Validate, generate templates, and show progress."""
+        if getattr(self, 'view_only', False):
+            self._cancel()
+            return
         # Validate legal form selection (FIRST)
         legal_form = self.legal_form_var.get()
         if not legal_form:
@@ -1663,8 +2067,26 @@ class GenerationSelectorDialog(tk.Toplevel):
             )
             return
 
+        values_for_generation = self.values
+
+        # In edit mode, let the user choose between old info or current (no save).
+        if self._is_edit_mode:
+            choice = self._prompt_edit_generation_choice()
+            if choice == "cancel":
+                return
+            if choice == "old":
+                previous_values = self._resolve_previous_values_from_db()
+                if not previous_values:
+                    messagebox.showwarning(
+                        "Anciennes données indisponibles",
+                        "Impossible de charger les anciennes informations depuis la base."
+                    )
+                    return
+                values_for_generation = previous_values
+            # choice == "current" -> keep current values
+
         # Optional save to DB (choice now lives in this selector)
-        if self.save_before_var.get():
+        elif self.save_before_var.get():
             if not self.save_callback:
                 messagebox.showwarning(
                     "Sauvegarde indisponible",
@@ -1675,34 +2097,44 @@ class GenerationSelectorDialog(tk.Toplevel):
                 db_path = self.save_callback()
             except Exception as _err:
                 logger.exception("Erreur lors de la sauvegarde avant génération: %s", _err)
-                messagebox.showwarning(
-                    "Sauvegarde échouée",
-                    "La sauvegarde a échoué. La génération a été annulée."
-                )
-                return
+                db_path = None
             if not db_path:
-                messagebox.showwarning(
-                    "Sauvegarde manquante",
-                    "La sauvegarde a échoué ou a été annulée. La génération a été annulée."
-                )
-                return
+                choice = self._prompt_generation_after_save_fail()
+                if choice == "cancel":
+                    return
+                if choice == "old":
+                    previous_values = self._resolve_previous_values_from_db()
+                    if not previous_values:
+                        messagebox.showwarning(
+                            "Anciennes données indisponibles",
+                            "Impossible de charger les anciennes informations depuis la base."
+                        )
+                        return
+                    values_for_generation = previous_values
+                # choice == "nosave" -> keep current values_for_generation
 
-        # Ask for output directory
-        out_dir = filedialog.askdirectory(title="Sélectionner le dossier de sortie")
+        # Ask for output directory (keep it simple to avoid hidden dialogs)
+        out_dir = self._prompt_output_dir()
         if not out_dir:
             return  # User cancelled
 
         self.selected_templates = selected_templates
 
-        # Disable dialog controls during generation
-        self.withdraw()  # Hide dialog temporarily
-
         # Create progress window
-        progress_win = tk.Toplevel(self.parent)
+        progress_win = tk.Toplevel(self)
         progress_win.title("Génération en cours")
         progress_win.geometry("600x400")
         try:
-            progress_win.transient(self.parent)
+            progress_win.transient(self)
+        except Exception:
+            pass
+        try:
+            progress_win.lift()
+            progress_win.focus_force()
+        except Exception:
+            pass
+        try:
+            progress_win.grab_set()
         except Exception:
             pass
         progress_win.after_idle(lambda: WindowManager.center_window(progress_win, center_on_parent=False))
@@ -1756,7 +2188,7 @@ class GenerationSelectorDialog(tk.Toplevel):
 
                 # Call render_templates with generation type and legal form info
                 report = render_templates(
-                    self.values,
+                    values_for_generation,
                     templates_dir=str(PathManager.MODELS_DIR),
                     out_dir=out_dir,
                     to_pdf=to_pdf,
@@ -1811,6 +2243,306 @@ class GenerationSelectorDialog(tk.Toplevel):
         t = threading.Thread(target=worker, daemon=True)
         t.start()
 
+    def _prompt_edit_generation_choice(self) -> str:
+        """Ask what to generate in edit mode (old info or current without save)."""
+        result = {"choice": "cancel"}
+        dialog = tk.Toplevel(self)
+        dialog.title("Génération en modification")
+        dialog.resizable(False, False)
+        try:
+            dialog.transient(self)
+            dialog.grab_set()
+        except Exception:
+            pass
+
+        frame = ttk.Frame(dialog, padding=14)
+        frame.pack(fill="both", expand=True)
+        ttk.Label(
+            frame,
+            text="Vous êtes en modification.",
+            style="SectionHeader.TLabel",
+        ).pack(anchor="w", pady=(0, 6))
+        ttk.Label(
+            frame,
+            text="Choisissez le mode de génération :",
+        ).pack(anchor="w", pady=(0, 10))
+
+        buttons = ttk.Frame(frame)
+        buttons.pack(fill="x")
+
+        def _choose(choice: str):
+            result["choice"] = choice
+            try:
+                dialog.destroy()
+            except Exception:
+                pass
+
+        WidgetFactory.create_button(
+            buttons,
+            text="Anciennes informations",
+            command=lambda: _choose("old"),
+            style="Secondary.TButton",
+        ).pack(side="left")
+
+        WidgetFactory.create_button(
+            buttons,
+            text="Sans sauvegarde",
+            command=lambda: _choose("current"),
+            style="Success.TButton",
+        ).pack(side="left", padx=(8, 0))
+
+        WidgetFactory.create_button(
+            buttons,
+            text="Annuler",
+            command=lambda: _choose("cancel"),
+            style="Close.TButton",
+        ).pack(side="right")
+
+        try:
+            dialog.after_idle(lambda: WindowManager.center_window(dialog))
+        except Exception:
+            pass
+        dialog.wait_window(dialog)
+        return result["choice"]
+
+    def _prompt_generation_after_save_fail(self) -> str:
+        """Ask what to do when save-before-generation fails in edit mode."""
+        has_edit_context = False
+        try:
+            main_form = getattr(self.parent, "main_form", None)
+            ctx = getattr(main_form, "_dashboard_edit_context", None)
+            has_edit_context = isinstance(ctx, dict) and bool(ctx.get("id_societe") or ctx.get("den_ste"))
+        except Exception:
+            has_edit_context = False
+
+        if not has_edit_context:
+            confirmed = messagebox.askyesno(
+                "Sauvegarde échouée",
+                "La sauvegarde a échoué. Voulez-vous générer sans sauvegarde ?"
+            )
+            return "nosave" if confirmed else "cancel"
+
+        result = {"choice": "cancel"}
+        dialog = tk.Toplevel(self)
+        dialog.title("Sauvegarde échouée")
+        dialog.resizable(False, False)
+        try:
+            dialog.transient(self)
+            dialog.grab_set()
+        except Exception:
+            pass
+
+        frame = ttk.Frame(dialog, padding=14)
+        frame.pack(fill="both", expand=True)
+        ttk.Label(
+            frame,
+            text="La sauvegarde a échoué. Que voulez-vous faire ?",
+            style="SectionHeader.TLabel",
+        ).pack(anchor="w", pady=(0, 10))
+
+        ttk.Label(
+            frame,
+            text=(
+                "• Générer avec les anciennes informations (dans la base)\n"
+                "• Générer sans sauvegarder (utiliser les infos actuelles)"
+            ),
+        ).pack(anchor="w")
+
+        buttons = ttk.Frame(frame)
+        buttons.pack(fill="x", pady=(12, 0))
+
+        def _choose(choice: str):
+            result["choice"] = choice
+            try:
+                dialog.destroy()
+            except Exception:
+                pass
+
+        WidgetFactory.create_button(
+            buttons,
+            text="Anciennes infos",
+            command=lambda: _choose("old"),
+            style="Secondary.TButton",
+        ).pack(side="left")
+
+        WidgetFactory.create_button(
+            buttons,
+            text="Sans sauvegarde",
+            command=lambda: _choose("nosave"),
+            style="Success.TButton",
+        ).pack(side="left", padx=(8, 0))
+
+        WidgetFactory.create_button(
+            buttons,
+            text="Annuler",
+            command=lambda: _choose("cancel"),
+            style="Close.TButton",
+        ).pack(side="right")
+
+        try:
+            dialog.after_idle(lambda: WindowManager.center_window(dialog))
+        except Exception:
+            pass
+        dialog.wait_window(dialog)
+        return result["choice"]
+
+    def _resolve_previous_values_from_db(self) -> Optional[dict]:
+        """Load previous values from DB based on dashboard edit context."""
+        try:
+            main_form = getattr(self.parent, "main_form", None)
+            if not main_form:
+                return None
+            ctx = getattr(main_form, "_dashboard_edit_context", None)
+            if not isinstance(ctx, dict):
+                return None
+            page_key = ctx.get("page_key") or "societe"
+            payload = {
+                "id_societe": ctx.get("id_societe"),
+                "den_ste": ctx.get("den_ste"),
+            }
+            _db_path, soc_df, assoc_df, contrat_df, collab_df = main_form._load_dashboard_workbook_frames()
+            company_payload = main_form._resolve_company_payload_from_dashboard(page_key, payload, soc_df)
+            if not company_payload:
+                return None
+            return main_form._build_dashboard_edit_values(company_payload, assoc_df, contrat_df, collab_df)
+        except Exception:
+            logger.exception("Failed to resolve previous values from DB")
+            return None
+
+    def _prompt_output_dir(self) -> Optional[str]:
+        """Prompt for output directory using an in-app dialog (fallback to manual input)."""
+        default_dir = self._last_output_dir
+        if not default_dir:
+            try:
+                default_dir = str(PathManager.BASE_DIR / "Outputs")
+            except Exception:
+                default_dir = ""
+        if default_dir:
+            try:
+                Path(default_dir).mkdir(parents=True, exist_ok=True)
+            except Exception:
+                pass
+
+        result = {"path": None}
+        dialog = tk.Toplevel(self)
+        dialog.title("Choisir le dossier de sortie")
+        dialog.resizable(False, False)
+        try:
+            dialog.transient(self)
+        except Exception:
+            pass
+        try:
+            dialog.grab_set()
+        except Exception:
+            pass
+
+        container = ttk.Frame(dialog, padding=14)
+        container.pack(fill="both", expand=True)
+        container.columnconfigure(0, weight=1)
+        container.columnconfigure(1, weight=0)
+
+        ttk.Label(
+            container,
+            text="Dossier de sortie:",
+            style="SectionHeader.TLabel",
+        ).grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 10))
+
+        path_var = tk.StringVar(value=default_dir or "")
+        entry = ttk.Entry(container, textvariable=path_var, width=64)
+        entry.grid(row=1, column=0, sticky="ew")
+
+        def _browse():
+            try:
+                dialog.grab_release()
+            except Exception:
+                pass
+            try:
+                dialog.lift()
+                dialog.focus_force()
+                dialog.update_idletasks()
+            except Exception:
+                pass
+            chosen = filedialog.askdirectory(
+                title="Sélectionner le dossier de sortie",
+                initialdir=path_var.get() or None,
+            )
+            try:
+                dialog.grab_set()
+            except Exception:
+                pass
+            if chosen:
+                path_var.set(chosen)
+
+        browse_btn = WidgetFactory.create_button(
+            container,
+            text="📁 Parcourir",
+            command=_browse,
+            style="Secondary.TButton",
+        )
+        browse_btn.grid(row=1, column=1, padx=(8, 0), sticky="e")
+
+        hint = ttk.Label(
+            container,
+            text="Vous pouvez aussi coller un chemin directement si l’explorateur ne s’affiche pas.",
+        )
+        hint.grid(row=2, column=0, columnspan=2, sticky="w", pady=(8, 0))
+
+        button_row = ttk.Frame(container)
+        button_row.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(12, 0))
+        button_row.columnconfigure(0, weight=1)
+
+        def _confirm():
+            path = (path_var.get() or "").strip()
+            if not path:
+                messagebox.showwarning(
+                    "Dossier requis",
+                    "Veuillez sélectionner ou saisir un dossier de sortie.",
+                    parent=dialog,
+                )
+                return
+            try:
+                Path(path).mkdir(parents=True, exist_ok=True)
+            except Exception:
+                messagebox.showerror(
+                    "Dossier invalide",
+                    "Impossible de créer ce dossier. Vérifiez le chemin.",
+                    parent=dialog,
+                )
+                return
+            result["path"] = path
+            dialog.destroy()
+
+        def _cancel():
+            result["path"] = None
+            dialog.destroy()
+
+        cancel_btn = WidgetFactory.create_button(
+            button_row,
+            text="Annuler",
+            command=_cancel,
+            style="Secondary.TButton",
+        )
+        cancel_btn.pack(side="right")
+
+        ok_btn = WidgetFactory.create_button(
+            button_row,
+            text="Valider",
+            command=_confirm,
+            style="Success.TButton",
+        )
+        ok_btn.pack(side="right", padx=(0, 8))
+
+        try:
+            dialog.after_idle(lambda: WindowManager.center_window(dialog))
+        except Exception:
+            pass
+        entry.focus_set()
+        dialog.wait_window(dialog)
+
+        if result["path"]:
+            self._last_output_dir = result["path"]
+        return result["path"]
+
 
     def _cancel(self):
         """Cancel and close the dialog."""
@@ -1827,6 +2559,7 @@ def show_generation_selector(
     values: Optional[dict] = None,
     output_format: str = 'word',
     save_callback: Optional[Callable[[], Optional[Path]]] = None,
+    view_only: bool = False,
 ) -> Optional[dict]:
     """Show the generation selector dialog and return the result.
 
@@ -1839,6 +2572,12 @@ def show_generation_selector(
     Returns:
         Dictionary with generation result, or None if cancelled
     """
-    dialog = GenerationSelectorDialog(parent, values or {}, output_format, save_callback=save_callback)
+    dialog = GenerationSelectorDialog(
+        parent,
+        values or {},
+        output_format,
+        save_callback=save_callback,
+        view_only=view_only,
+    )
     parent.wait_window(dialog)
     return dialog.get_result()

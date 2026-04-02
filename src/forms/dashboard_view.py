@@ -9,7 +9,7 @@ from typing import Optional
 
 import pandas as pd
 
-from ..utils.utils import ThemeManager, WidgetFactory, PathManager, ErrorHandler
+from ..utils.utils import ThemeManager, WidgetFactory, PathManager, ErrorHandler, WindowManager
 from ..utils import constants as _const
 from ..utils.constants import societe_headers, associe_headers, contrat_headers, collaborateur_headers
 

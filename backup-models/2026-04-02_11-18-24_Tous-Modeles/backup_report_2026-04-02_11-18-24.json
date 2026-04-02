@@ -1,0 +1,1787 @@
+{
+  "timestamp": "2026-04-02_11-18-24",
+  "mode": "all_forms",
+  "templates_count": 19,
+  "backup_dir": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\backup-models\\2026-04-02_11-18-24_Tous-Modeles",
+  "templates": [
+    {
+      "template": "2026-03_Annonce-Legale-Journal_Template.docx",
+      "source_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\Models\\2026-03_Annonce-Legale-Journal_Template.docx",
+      "backup_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\backup-models\\2026-04-02_11-18-24_Tous-Modeles\\Racine\\01_Backup_2026-03_Annonce-Legale-Journal_Template.docx",
+      "backup_legal_form": "Racine",
+      "backup_name": "01_Backup_2026-03_Annonce-Legale-Journal_Template.docx",
+      "display_name": "2026-03_Annonce-Legale-Journal_Template",
+      "backup_prefix": "Backup",
+      "variables": [
+        {
+          "variable": "DENOMINATION_SOCIALE",
+          "occurrences": 2,
+          "section": "societe",
+          "value": "NOUVELLE STE"
+        },
+        {
+          "variable": "FORME_JURIDIQUE",
+          "occurrences": 2,
+          "section": "societe",
+          "value": "SARL AU"
+        },
+        {
+          "variable": "DTAE_CONTRAT",
+          "occurrences": 2,
+          "section": "contrat",
+          "value": null
+        },
+        {
+          "variable": "ACTIVITY1",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "Travaux Divers ou de Construction"
+        },
+        {
+          "variable": "ACTIVITY2",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "Marchand effectuant Import Export"
+        },
+        {
+          "variable": "ACTIVITY3",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "Négociant"
+        },
+        {
+          "variable": "ACTIVITY4",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "Conseil de Gestion"
+        },
+        {
+          "variable": "ACTIVITY5",
+          "occurrences": 1,
+          "section": "societe",
+          "value": ""
+        },
+        {
+          "variable": "ACTIVITY6",
+          "occurrences": 1,
+          "section": "societe",
+          "value": ""
+        },
+        {
+          "variable": "ADRESSE_SIEGE_SOCIAL",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "HAY MOULAY ABDELLAH RUE 300 N 152 ETG 2 AIN CHOCK, CASABLANCA"
+        },
+        {
+          "variable": "CAPITAL_SOCIAL",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "100 000"
+        },
+        {
+          "variable": "NOMBRE_PARTS_SOCIALES",
+          "occurrences": 3,
+          "section": "societe",
+          "value": "1 000"
+        },
+        {
+          "variable": "CIVILITE_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": "Monsieur"
+        },
+        {
+          "variable": "PRENOM_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": "PRENOM"
+        },
+        {
+          "variable": "NOM_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": "NOM"
+        },
+        {
+          "variable": "NUM_DEPOT_RC",
+          "occurrences": 1,
+          "section": "autre",
+          "value": null
+        },
+        {
+          "variable": "NUM_RC",
+          "occurrences": 1,
+          "section": "autre",
+          "value": null
+        }
+      ],
+      "missing_values": [
+        "DTAE_CONTRAT",
+        "ACTIVITY5",
+        "ACTIVITY6",
+        "NUM_DEPOT_RC",
+        "NUM_RC"
+      ]
+    },
+    {
+      "template": "2026-03_Attestation-Domiciliation-Initiale_Template.docx",
+      "source_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\Models\\2026-03_Attestation-Domiciliation-Initiale_Template.docx",
+      "backup_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\backup-models\\2026-04-02_11-18-24_Tous-Modeles\\Racine\\02_Backup_2026-03_Attestation-Domiciliation-Initiale_Template.docx",
+      "backup_legal_form": "Racine",
+      "backup_name": "02_Backup_2026-03_Attestation-Domiciliation-Initiale_Template.docx",
+      "display_name": "2026-03_Attestation-Domiciliation-Initiale_Template",
+      "backup_prefix": "Backup",
+      "variables": [
+        {
+          "variable": "CONTRAT_FORME_JURIDIQUE",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": "SARL AU"
+        },
+        {
+          "variable": "DENOMINATION_SOCIALE",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "NOUVELLE STE"
+        },
+        {
+          "variable": "FORME_JURIDIQUE",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "SARL AU"
+        },
+        {
+          "variable": "NUMERO_ICE",
+          "occurrences": 1,
+          "section": "societe",
+          "value": null
+        },
+        {
+          "variable": "DUREE_CONTRAT_MOIS",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": "12"
+        },
+        {
+          "variable": "DATE_DEBUT_CONTRAT",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": "02/04/2026"
+        },
+        {
+          "variable": "DATE_FIN_CONTRAT",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": "02/04/2026"
+        },
+        {
+          "variable": "DATE_CONTRAT",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": "02/04/2026"
+        }
+      ],
+      "missing_values": [
+        "NUMERO_ICE"
+      ]
+    },
+    {
+      "template": "2026-03_Contrat-Domiciliation_Template.docx",
+      "source_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\Models\\2026-03_Contrat-Domiciliation_Template.docx",
+      "backup_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\backup-models\\2026-04-02_11-18-24_Tous-Modeles\\Racine\\03_Backup_2026-03_Contrat-Domiciliation_Template.docx",
+      "backup_legal_form": "Racine",
+      "backup_name": "03_Backup_2026-03_Contrat-Domiciliation_Template.docx",
+      "display_name": "2026-03_Contrat-Domiciliation_Template",
+      "backup_prefix": "Backup",
+      "variables": [
+        {
+          "variable": "CONTRAT_FORME_JURIDIQUE",
+          "occurrences": 2,
+          "section": "contrat",
+          "value": "SARL AU"
+        },
+        {
+          "variable": "DENOMINATION_SOCIALE",
+          "occurrences": 6,
+          "section": "societe",
+          "value": "NOUVELLE STE"
+        },
+        {
+          "variable": "FORME_JURIDIQUE",
+          "occurrences": 6,
+          "section": "societe",
+          "value": "SARL AU"
+        },
+        {
+          "variable": "NUMERO_ICE",
+          "occurrences": 2,
+          "section": "societe",
+          "value": null
+        },
+        {
+          "variable": "CIVILITE_ASSOCIE",
+          "occurrences": 4,
+          "section": "associe",
+          "value": "Monsieur"
+        },
+        {
+          "variable": "PRENOM_ASSOCIE",
+          "occurrences": 4,
+          "section": "associe",
+          "value": "PRENOM"
+        },
+        {
+          "variable": "NOM_ASSOCIE",
+          "occurrences": 4,
+          "section": "associe",
+          "value": "NOM"
+        },
+        {
+          "variable": "DATE_NAISSANCE_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": null
+        },
+        {
+          "variable": "NATIONALITE_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": "Marocaine"
+        },
+        {
+          "variable": "NUMERO_CIN_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": null
+        },
+        {
+          "variable": "ADRESSE_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": null
+        },
+        {
+          "variable": "QUALITE_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": "Associé"
+        },
+        {
+          "variable": "TELEPHONE_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": null
+        },
+        {
+          "variable": "EMAIL_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": null
+        },
+        {
+          "variable": "DUREE_CONTRAT_MOIS",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": "12"
+        },
+        {
+          "variable": "DATE_DEBUT_CONTRAT",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": "02/04/2026"
+        },
+        {
+          "variable": "DATE_FIN_CONTRAT",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": "02/04/2026"
+        },
+        {
+          "variable": "PACK_DEMARRAGE_TOTAL_TTC",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": null
+        },
+        {
+          "variable": "PACK_DEMARRAGE_LOYER_MENSUEL",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": null
+        },
+        {
+          "variable": "RENOUVELLEMENT_LOYER_MENSUEL",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": null
+        },
+        {
+          "variable": "RENOUVELLEMENT_LOYER_ANNUEL",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": null
+        },
+        {
+          "variable": "DATE_CONTRAT",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": "02/04/2026"
+        }
+      ],
+      "missing_values": [
+        "NUMERO_ICE",
+        "DATE_NAISSANCE_ASSOCIE",
+        "NUMERO_CIN_ASSOCIE",
+        "ADRESSE_ASSOCIE",
+        "TELEPHONE_ASSOCIE",
+        "EMAIL_ASSOCIE",
+        "PACK_DEMARRAGE_TOTAL_TTC",
+        "PACK_DEMARRAGE_LOYER_MENSUEL",
+        "RENOUVELLEMENT_LOYER_MENSUEL",
+        "RENOUVELLEMENT_LOYER_ANNUEL"
+      ]
+    },
+    {
+      "template": "2026-03_Declaration-Immatriculation-RC_Template.docx",
+      "source_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\Models\\2026-03_Declaration-Immatriculation-RC_Template.docx",
+      "backup_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\backup-models\\2026-04-02_11-18-24_Tous-Modeles\\Racine\\04_Backup_2026-03_Declaration-Immatriculation-RC_Template.docx",
+      "backup_legal_form": "Racine",
+      "backup_name": "04_Backup_2026-03_Declaration-Immatriculation-RC_Template.docx",
+      "display_name": "2026-03_Declaration-Immatriculation-RC_Template",
+      "backup_prefix": "Backup",
+      "variables": [
+        {
+          "variable": "TRIBUNAL_COMPETENT",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "Casablanca"
+        },
+        {
+          "variable": "DENOMINATION_SOCIALE",
+          "occurrences": 2,
+          "section": "societe",
+          "value": "NOUVELLE STE"
+        },
+        {
+          "variable": "FORME_JURIDIQUE",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "SARL AU"
+        },
+        {
+          "variable": "DATE_IMMATRICULATION_ICE",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "02/04/2026"
+        },
+        {
+          "variable": "ADRESSE_SIEGE_SOCIAL",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "HAY MOULAY ABDELLAH RUE 300 N 152 ETG 2 AIN CHOCK, CASABLANCA"
+        },
+        {
+          "variable": "CIVILITE_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": "Monsieur"
+        },
+        {
+          "variable": "PRENOM_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": "PRENOM"
+        },
+        {
+          "variable": "NOM_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": "NOM"
+        },
+        {
+          "variable": "DATE_NAISSANCE_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": null
+        },
+        {
+          "variable": "LIEU_NAISSANCE_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": "Casablanca"
+        },
+        {
+          "variable": "ADRESSE_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": null
+        },
+        {
+          "variable": "NUMERO_CIN_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": null
+        },
+        {
+          "variable": "DATE_VALIDITE_CIN_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": null
+        }
+      ],
+      "missing_values": [
+        "DATE_NAISSANCE_ASSOCIE",
+        "ADRESSE_ASSOCIE",
+        "NUMERO_CIN_ASSOCIE",
+        "DATE_VALIDITE_CIN_ASSOCIE"
+      ]
+    },
+    {
+      "template": "2026-03_Depot-Legal-Constitution_Template.docx",
+      "source_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\Models\\2026-03_Depot-Legal-Constitution_Template.docx",
+      "backup_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\backup-models\\2026-04-02_11-18-24_Tous-Modeles\\Racine\\05_Backup_2026-03_Depot-Legal-Constitution_Template.docx",
+      "backup_legal_form": "Racine",
+      "backup_name": "05_Backup_2026-03_Depot-Legal-Constitution_Template.docx",
+      "display_name": "2026-03_Depot-Legal-Constitution_Template",
+      "backup_prefix": "Backup",
+      "variables": [
+        {
+          "variable": "TRIBUNAL_COMPETENT",
+          "occurrences": 2,
+          "section": "societe",
+          "value": "Casablanca"
+        },
+        {
+          "variable": "FORME_JURIDIQUE",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "SARL AU"
+        },
+        {
+          "variable": "DENOMINATION_SOCIALE",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "NOUVELLE STE"
+        },
+        {
+          "variable": "ADRESSE_SIEGE_SOCIAL",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "HAY MOULAY ABDELLAH RUE 300 N 152 ETG 2 AIN CHOCK, CASABLANCA"
+        },
+        {
+          "variable": "CIVILITE_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": "Monsieur"
+        },
+        {
+          "variable": "PRENOM_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": "PRENOM"
+        },
+        {
+          "variable": "NOM_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": "NOM"
+        }
+      ],
+      "missing_values": []
+    },
+    {
+      "template": "2026-03_Statuts_Template.docx",
+      "source_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\Models\\2026-03_Statuts_Template.docx",
+      "backup_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\backup-models\\2026-04-02_11-18-24_Tous-Modeles\\Racine\\06_Backup_2026-03_Statuts_Template.docx",
+      "backup_legal_form": "Racine",
+      "backup_name": "06_Backup_2026-03_Statuts_Template.docx",
+      "display_name": "2026-03_Statuts_Template",
+      "backup_prefix": "Backup",
+      "variables": [
+        {
+          "variable": "DENOMINATION_SOCIALE",
+          "occurrences": 2,
+          "section": "societe",
+          "value": "NOUVELLE STE"
+        },
+        {
+          "variable": "FORME_JURIDIQUE",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "SARL AU"
+        },
+        {
+          "variable": "CAPITAL_SOCIAL",
+          "occurrences": 3,
+          "section": "societe",
+          "value": "100 000"
+        },
+        {
+          "variable": "ADRESSE_SIEGE_SOCIAL",
+          "occurrences": 2,
+          "section": "societe",
+          "value": "HAY MOULAY ABDELLAH RUE 300 N 152 ETG 2 AIN CHOCK, CASABLANCA"
+        },
+        {
+          "variable": "NUMERO_ICE",
+          "occurrences": 1,
+          "section": "societe",
+          "value": null
+        },
+        {
+          "variable": "CIVILITE_ASSOCIE",
+          "occurrences": 3,
+          "section": "associe",
+          "value": "Monsieur"
+        },
+        {
+          "variable": "PRENOM_ASSOCIE",
+          "occurrences": 5,
+          "section": "associe",
+          "value": "PRENOM"
+        },
+        {
+          "variable": "NOM_ASSOCIE",
+          "occurrences": 5,
+          "section": "associe",
+          "value": "NOM"
+        },
+        {
+          "variable": "NATIONALITE_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": "Marocaine"
+        },
+        {
+          "variable": "NUMERO_CIN_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": null
+        },
+        {
+          "variable": "DATE_NAISSANCE_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": null
+        },
+        {
+          "variable": "LIEU_NAISSANCE_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": "Casablanca"
+        },
+        {
+          "variable": "ADRESSE_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": null
+        },
+        {
+          "variable": "a",
+          "occurrences": 1,
+          "section": "autre",
+          "value": null
+        },
+        {
+          "variable": "NOMBRE_PARTS_SOCIALES",
+          "occurrences": 2,
+          "section": "societe",
+          "value": "1 000"
+        },
+        {
+          "variable": "TRIBUNAL_COMPETENT",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "Casablanca"
+        },
+        {
+          "variable": "QUALITE_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": "Associé"
+        }
+      ],
+      "missing_values": [
+        "NUMERO_ICE",
+        "NUMERO_CIN_ASSOCIE",
+        "DATE_NAISSANCE_ASSOCIE",
+        "ADRESSE_ASSOCIE",
+        "a"
+      ]
+    },
+    {
+      "template": "SARL_2026-03_Annonce-Legale-Journal_Template.docx",
+      "source_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\Models\\SARL\\SARL_2026-03_Annonce-Legale-Journal_Template.docx",
+      "backup_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\backup-models\\2026-04-02_11-18-24_Tous-Modeles\\SARL\\01_Backup_SARL_2026-03_Annonce-Legale-Journal_Template.docx",
+      "backup_legal_form": "SARL",
+      "backup_name": "01_Backup_SARL_2026-03_Annonce-Legale-Journal_Template.docx",
+      "display_name": "SARL_2026-03_Annonce-Legale-Journal_Template",
+      "backup_prefix": "Backup",
+      "variables": [
+        {
+          "variable": "DENOMINATION_SOCIALE",
+          "occurrences": 2,
+          "section": "societe",
+          "value": "NOUVELLE STE"
+        },
+        {
+          "variable": "FORME_JURIDIQUE",
+          "occurrences": 2,
+          "section": "societe",
+          "value": "SARL AU"
+        },
+        {
+          "variable": "DTAE_CONTRAT",
+          "occurrences": 2,
+          "section": "contrat",
+          "value": null
+        },
+        {
+          "variable": "ACTIVITY1",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "Travaux Divers ou de Construction"
+        },
+        {
+          "variable": "ACTIVITY2",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "Marchand effectuant Import Export"
+        },
+        {
+          "variable": "ACTIVITY3",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "Négociant"
+        },
+        {
+          "variable": "ACTIVITY4",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "Conseil de Gestion"
+        },
+        {
+          "variable": "ACTIVITY5",
+          "occurrences": 1,
+          "section": "societe",
+          "value": ""
+        },
+        {
+          "variable": "ACTIVITY6",
+          "occurrences": 1,
+          "section": "societe",
+          "value": ""
+        },
+        {
+          "variable": "ADRESSE_SIEGE_SOCIAL",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "HAY MOULAY ABDELLAH RUE 300 N 152 ETG 2 AIN CHOCK, CASABLANCA"
+        },
+        {
+          "variable": "CAPITAL_SOCIAL",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "100 000"
+        },
+        {
+          "variable": "NOMBRE_PARTS_SOCIALES",
+          "occurrences": 3,
+          "section": "societe",
+          "value": "1 000"
+        },
+        {
+          "variable": "CIVILITE_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": "Monsieur"
+        },
+        {
+          "variable": "PRENOM_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": "PRENOM"
+        },
+        {
+          "variable": "NOM_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": "NOM"
+        },
+        {
+          "variable": "NUM_DEPOT_RC",
+          "occurrences": 1,
+          "section": "autre",
+          "value": null
+        },
+        {
+          "variable": "NUM_RC",
+          "occurrences": 1,
+          "section": "autre",
+          "value": null
+        }
+      ],
+      "missing_values": [
+        "DTAE_CONTRAT",
+        "ACTIVITY5",
+        "ACTIVITY6",
+        "NUM_DEPOT_RC",
+        "NUM_RC"
+      ]
+    },
+    {
+      "template": "SARL_2026-03_Attestation-Domiciliation-Initiale_Template.docx",
+      "source_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\Models\\SARL\\SARL_2026-03_Attestation-Domiciliation-Initiale_Template.docx",
+      "backup_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\backup-models\\2026-04-02_11-18-24_Tous-Modeles\\SARL\\02_Backup_SARL_2026-03_Attestation-Domiciliation-Initiale_Template.docx",
+      "backup_legal_form": "SARL",
+      "backup_name": "02_Backup_SARL_2026-03_Attestation-Domiciliation-Initiale_Template.docx",
+      "display_name": "SARL_2026-03_Attestation-Domiciliation-Initiale_Template",
+      "backup_prefix": "Backup",
+      "variables": [
+        {
+          "variable": "CONTRAT_FORME_JURIDIQUE",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": "SARL AU"
+        },
+        {
+          "variable": "DENOMINATION_SOCIALE",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "NOUVELLE STE"
+        },
+        {
+          "variable": "FORME_JURIDIQUE",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "SARL AU"
+        },
+        {
+          "variable": "NUMERO_ICE",
+          "occurrences": 1,
+          "section": "societe",
+          "value": null
+        },
+        {
+          "variable": "DUREE_CONTRAT_MOIS",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": "12"
+        },
+        {
+          "variable": "DATE_DEBUT_CONTRAT",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": "02/04/2026"
+        },
+        {
+          "variable": "DATE_FIN_CONTRAT",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": "02/04/2026"
+        },
+        {
+          "variable": "DATE_CONTRAT",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": "02/04/2026"
+        }
+      ],
+      "missing_values": [
+        "NUMERO_ICE"
+      ]
+    },
+    {
+      "template": "SARL_2026-03_Contrat-Domiciliation_Template.docx",
+      "source_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\Models\\SARL\\SARL_2026-03_Contrat-Domiciliation_Template.docx",
+      "backup_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\backup-models\\2026-04-02_11-18-24_Tous-Modeles\\SARL\\03_Backup_SARL_2026-03_Contrat-Domiciliation_Template.docx",
+      "backup_legal_form": "SARL",
+      "backup_name": "03_Backup_SARL_2026-03_Contrat-Domiciliation_Template.docx",
+      "display_name": "SARL_2026-03_Contrat-Domiciliation_Template",
+      "backup_prefix": "Backup",
+      "variables": [
+        {
+          "variable": "CONTRAT_FORME_JURIDIQUE",
+          "occurrences": 2,
+          "section": "contrat",
+          "value": "SARL AU"
+        },
+        {
+          "variable": "DENOMINATION_SOCIALE",
+          "occurrences": 6,
+          "section": "societe",
+          "value": "NOUVELLE STE"
+        },
+        {
+          "variable": "FORME_JURIDIQUE",
+          "occurrences": 6,
+          "section": "societe",
+          "value": "SARL AU"
+        },
+        {
+          "variable": "NUMERO_ICE",
+          "occurrences": 2,
+          "section": "societe",
+          "value": null
+        },
+        {
+          "variable": "CIVILITE_ASSOCIE",
+          "occurrences": 4,
+          "section": "associe",
+          "value": "Monsieur"
+        },
+        {
+          "variable": "PRENOM_ASSOCIE",
+          "occurrences": 4,
+          "section": "associe",
+          "value": "PRENOM"
+        },
+        {
+          "variable": "NOM_ASSOCIE",
+          "occurrences": 4,
+          "section": "associe",
+          "value": "NOM"
+        },
+        {
+          "variable": "DATE_NAISSANCE_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": null
+        },
+        {
+          "variable": "NATIONALITE_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": "Marocaine"
+        },
+        {
+          "variable": "NUMERO_CIN_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": null
+        },
+        {
+          "variable": "ADRESSE_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": null
+        },
+        {
+          "variable": "QUALITE_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": "Associé"
+        },
+        {
+          "variable": "TELEPHONE_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": null
+        },
+        {
+          "variable": "EMAIL_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": null
+        },
+        {
+          "variable": "DUREE_CONTRAT_MOIS",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": "12"
+        },
+        {
+          "variable": "DATE_DEBUT_CONTRAT",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": "02/04/2026"
+        },
+        {
+          "variable": "DATE_FIN_CONTRAT",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": "02/04/2026"
+        },
+        {
+          "variable": "PACK_DEMARRAGE_TOTAL_TTC",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": null
+        },
+        {
+          "variable": "PACK_DEMARRAGE_LOYER_MENSUEL",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": null
+        },
+        {
+          "variable": "RENOUVELLEMENT_LOYER_MENSUEL",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": null
+        },
+        {
+          "variable": "RENOUVELLEMENT_LOYER_ANNUEL",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": null
+        },
+        {
+          "variable": "DATE_CONTRAT",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": "02/04/2026"
+        }
+      ],
+      "missing_values": [
+        "NUMERO_ICE",
+        "DATE_NAISSANCE_ASSOCIE",
+        "NUMERO_CIN_ASSOCIE",
+        "ADRESSE_ASSOCIE",
+        "TELEPHONE_ASSOCIE",
+        "EMAIL_ASSOCIE",
+        "PACK_DEMARRAGE_TOTAL_TTC",
+        "PACK_DEMARRAGE_LOYER_MENSUEL",
+        "RENOUVELLEMENT_LOYER_MENSUEL",
+        "RENOUVELLEMENT_LOYER_ANNUEL"
+      ]
+    },
+    {
+      "template": "SARL_2026-03_Declaration-Immatriculation-RC_Template.docx",
+      "source_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\Models\\SARL\\SARL_2026-03_Declaration-Immatriculation-RC_Template.docx",
+      "backup_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\backup-models\\2026-04-02_11-18-24_Tous-Modeles\\SARL\\04_Backup_SARL_2026-03_Declaration-Immatriculation-RC_Template.docx",
+      "backup_legal_form": "SARL",
+      "backup_name": "04_Backup_SARL_2026-03_Declaration-Immatriculation-RC_Template.docx",
+      "display_name": "SARL_2026-03_Declaration-Immatriculation-RC_Template",
+      "backup_prefix": "Backup",
+      "variables": [
+        {
+          "variable": "TRIBUNAL_COMPETENT",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "Casablanca"
+        },
+        {
+          "variable": "DENOMINATION_SOCIALE",
+          "occurrences": 2,
+          "section": "societe",
+          "value": "NOUVELLE STE"
+        },
+        {
+          "variable": "FORME_JURIDIQUE",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "SARL AU"
+        },
+        {
+          "variable": "DATE_IMMATRICULATION_ICE",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "02/04/2026"
+        },
+        {
+          "variable": "ADRESSE_SIEGE_SOCIAL",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "HAY MOULAY ABDELLAH RUE 300 N 152 ETG 2 AIN CHOCK, CASABLANCA"
+        },
+        {
+          "variable": "CIVILITE_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": "Monsieur"
+        },
+        {
+          "variable": "PRENOM_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": "PRENOM"
+        },
+        {
+          "variable": "NOM_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": "NOM"
+        },
+        {
+          "variable": "DATE_NAISSANCE_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": null
+        },
+        {
+          "variable": "LIEU_NAISSANCE_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": "Casablanca"
+        },
+        {
+          "variable": "ADRESSE_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": null
+        },
+        {
+          "variable": "NUMERO_CIN_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": null
+        },
+        {
+          "variable": "DATE_VALIDITE_CIN_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": null
+        }
+      ],
+      "missing_values": [
+        "DATE_NAISSANCE_ASSOCIE",
+        "ADRESSE_ASSOCIE",
+        "NUMERO_CIN_ASSOCIE",
+        "DATE_VALIDITE_CIN_ASSOCIE"
+      ]
+    },
+    {
+      "template": "SARL_2026-03_Depot-Legal-Constitution_Template.docx",
+      "source_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\Models\\SARL\\SARL_2026-03_Depot-Legal-Constitution_Template.docx",
+      "backup_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\backup-models\\2026-04-02_11-18-24_Tous-Modeles\\SARL\\05_Backup_SARL_2026-03_Depot-Legal-Constitution_Template.docx",
+      "backup_legal_form": "SARL",
+      "backup_name": "05_Backup_SARL_2026-03_Depot-Legal-Constitution_Template.docx",
+      "display_name": "SARL_2026-03_Depot-Legal-Constitution_Template",
+      "backup_prefix": "Backup",
+      "variables": [
+        {
+          "variable": "TRIBUNAL_COMPETENT",
+          "occurrences": 2,
+          "section": "societe",
+          "value": "Casablanca"
+        },
+        {
+          "variable": "FORME_JURIDIQUE",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "SARL AU"
+        },
+        {
+          "variable": "DENOMINATION_SOCIALE",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "NOUVELLE STE"
+        },
+        {
+          "variable": "ADRESSE_SIEGE_SOCIAL",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "HAY MOULAY ABDELLAH RUE 300 N 152 ETG 2 AIN CHOCK, CASABLANCA"
+        },
+        {
+          "variable": "CIVILITE_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": "Monsieur"
+        },
+        {
+          "variable": "PRENOM_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": "PRENOM"
+        },
+        {
+          "variable": "NOM_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": "NOM"
+        }
+      ],
+      "missing_values": []
+    },
+    {
+      "template": "SARL_2026-03_Statuts_Template.docx",
+      "source_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\Models\\SARL\\SARL_2026-03_Statuts_Template.docx",
+      "backup_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\backup-models\\2026-04-02_11-18-24_Tous-Modeles\\SARL\\06_Backup_SARL_2026-03_Statuts_Template.docx",
+      "backup_legal_form": "SARL",
+      "backup_name": "06_Backup_SARL_2026-03_Statuts_Template.docx",
+      "display_name": "SARL_2026-03_Statuts_Template",
+      "backup_prefix": "Backup",
+      "variables": [
+        {
+          "variable": "DENOMINATION_SOCIALE",
+          "occurrences": 2,
+          "section": "societe",
+          "value": "NOUVELLE STE"
+        },
+        {
+          "variable": "FORME_JURIDIQUE",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "SARL AU"
+        },
+        {
+          "variable": "CAPITAL_SOCIAL",
+          "occurrences": 2,
+          "section": "societe",
+          "value": "100 000"
+        },
+        {
+          "variable": "ADRESSE_SIEGE_SOCIAL",
+          "occurrences": 2,
+          "section": "societe",
+          "value": "HAY MOULAY ABDELLAH RUE 300 N 152 ETG 2 AIN CHOCK, CASABLANCA"
+        },
+        {
+          "variable": "NUMERO_ICE",
+          "occurrences": 1,
+          "section": "societe",
+          "value": null
+        },
+        {
+          "variable": "a",
+          "occurrences": 18,
+          "section": "autre",
+          "value": null
+        },
+        {
+          "variable": "NOMBRE_PARTS_SOCIALES",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "1 000"
+        },
+        {
+          "variable": "gerants",
+          "occurrences": 14,
+          "section": "associe",
+          "value": null
+        },
+        {
+          "variable": "TRIBUNAL_COMPETENT",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "Casablanca"
+        }
+      ],
+      "missing_values": [
+        "NUMERO_ICE",
+        "a",
+        "gerants"
+      ]
+    },
+    {
+      "template": "SARL-AU_2026-03_Annonce-Legale-Journal_Template.docx",
+      "source_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\Models\\SARL AU\\SARL-AU_2026-03_Annonce-Legale-Journal_Template.docx",
+      "backup_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\backup-models\\2026-04-02_11-18-24_Tous-Modeles\\SARL AU\\01_Backup_SARL-AU_2026-03_Annonce-Legale-Journal_Template.docx",
+      "backup_legal_form": "SARL AU",
+      "backup_name": "01_Backup_SARL-AU_2026-03_Annonce-Legale-Journal_Template.docx",
+      "display_name": "SARL-AU_2026-03_Annonce-Legale-Journal_Template",
+      "backup_prefix": "Backup",
+      "variables": [
+        {
+          "variable": "DENOMINATION_SOCIALE",
+          "occurrences": 2,
+          "section": "societe",
+          "value": "NOUVELLE STE"
+        },
+        {
+          "variable": "FORME_JURIDIQUE",
+          "occurrences": 2,
+          "section": "societe",
+          "value": "SARL AU"
+        },
+        {
+          "variable": "DTAE_CONTRAT",
+          "occurrences": 2,
+          "section": "contrat",
+          "value": null
+        },
+        {
+          "variable": "ACTIVITY1",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "Travaux Divers ou de Construction"
+        },
+        {
+          "variable": "ACTIVITY2",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "Marchand effectuant Import Export"
+        },
+        {
+          "variable": "ACTIVITY3",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "Négociant"
+        },
+        {
+          "variable": "ACTIVITY4",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "Conseil de Gestion"
+        },
+        {
+          "variable": "ACTIVITY5",
+          "occurrences": 1,
+          "section": "societe",
+          "value": ""
+        },
+        {
+          "variable": "ACTIVITY6",
+          "occurrences": 1,
+          "section": "societe",
+          "value": ""
+        },
+        {
+          "variable": "ADRESSE_SIEGE_SOCIAL",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "HAY MOULAY ABDELLAH RUE 300 N 152 ETG 2 AIN CHOCK, CASABLANCA"
+        },
+        {
+          "variable": "CAPITAL_SOCIAL",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "100 000"
+        },
+        {
+          "variable": "NOMBRE_PARTS_SOCIALES",
+          "occurrences": 3,
+          "section": "societe",
+          "value": "1 000"
+        },
+        {
+          "variable": "CIVILITE_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": "Monsieur"
+        },
+        {
+          "variable": "PRENOM_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": "PRENOM"
+        },
+        {
+          "variable": "NOM_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": "NOM"
+        },
+        {
+          "variable": "NUM_DEPOT_RC",
+          "occurrences": 1,
+          "section": "autre",
+          "value": null
+        },
+        {
+          "variable": "NUM_RC",
+          "occurrences": 1,
+          "section": "autre",
+          "value": null
+        }
+      ],
+      "missing_values": [
+        "DTAE_CONTRAT",
+        "ACTIVITY5",
+        "ACTIVITY6",
+        "NUM_DEPOT_RC",
+        "NUM_RC"
+      ]
+    },
+    {
+      "template": "SARL-AU_2026-03_Attestation-Domiciliation-Initiale_Template.docx",
+      "source_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\Models\\SARL AU\\SARL-AU_2026-03_Attestation-Domiciliation-Initiale_Template.docx",
+      "backup_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\backup-models\\2026-04-02_11-18-24_Tous-Modeles\\SARL AU\\02_Backup_SARL-AU_2026-03_Attestation-Domiciliation-Initiale_Template.docx",
+      "backup_legal_form": "SARL AU",
+      "backup_name": "02_Backup_SARL-AU_2026-03_Attestation-Domiciliation-Initiale_Template.docx",
+      "display_name": "SARL-AU_2026-03_Attestation-Domiciliation-Initiale_Template",
+      "backup_prefix": "Backup",
+      "variables": [
+        {
+          "variable": "CONTRAT_FORME_JURIDIQUE",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": "SARL AU"
+        },
+        {
+          "variable": "DENOMINATION_SOCIALE",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "NOUVELLE STE"
+        },
+        {
+          "variable": "FORME_JURIDIQUE",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "SARL AU"
+        },
+        {
+          "variable": "NUMERO_ICE",
+          "occurrences": 1,
+          "section": "societe",
+          "value": null
+        },
+        {
+          "variable": "DUREE_CONTRAT_MOIS",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": "12"
+        },
+        {
+          "variable": "DATE_DEBUT_CONTRAT",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": "02/04/2026"
+        },
+        {
+          "variable": "DATE_FIN_CONTRAT",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": "02/04/2026"
+        },
+        {
+          "variable": "DATE_CONTRAT",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": "02/04/2026"
+        }
+      ],
+      "missing_values": [
+        "NUMERO_ICE"
+      ]
+    },
+    {
+      "template": "SARL-AU_2026-03_Contrat-Domiciliation_Template.docx",
+      "source_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\Models\\SARL AU\\SARL-AU_2026-03_Contrat-Domiciliation_Template.docx",
+      "backup_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\backup-models\\2026-04-02_11-18-24_Tous-Modeles\\SARL AU\\03_Backup_SARL-AU_2026-03_Contrat-Domiciliation_Template.docx",
+      "backup_legal_form": "SARL AU",
+      "backup_name": "03_Backup_SARL-AU_2026-03_Contrat-Domiciliation_Template.docx",
+      "display_name": "SARL-AU_2026-03_Contrat-Domiciliation_Template",
+      "backup_prefix": "Backup",
+      "variables": [
+        {
+          "variable": "CONTRAT_FORME_JURIDIQUE",
+          "occurrences": 2,
+          "section": "contrat",
+          "value": "SARL AU"
+        },
+        {
+          "variable": "DENOMINATION_SOCIALE",
+          "occurrences": 6,
+          "section": "societe",
+          "value": "NOUVELLE STE"
+        },
+        {
+          "variable": "FORME_JURIDIQUE",
+          "occurrences": 6,
+          "section": "societe",
+          "value": "SARL AU"
+        },
+        {
+          "variable": "NUMERO_ICE",
+          "occurrences": 2,
+          "section": "societe",
+          "value": null
+        },
+        {
+          "variable": "CIVILITE_ASSOCIE",
+          "occurrences": 4,
+          "section": "associe",
+          "value": "Monsieur"
+        },
+        {
+          "variable": "PRENOM_ASSOCIE",
+          "occurrences": 4,
+          "section": "associe",
+          "value": "PRENOM"
+        },
+        {
+          "variable": "NOM_ASSOCIE",
+          "occurrences": 4,
+          "section": "associe",
+          "value": "NOM"
+        },
+        {
+          "variable": "DATE_NAISSANCE_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": null
+        },
+        {
+          "variable": "NATIONALITE_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": "Marocaine"
+        },
+        {
+          "variable": "NUMERO_CIN_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": null
+        },
+        {
+          "variable": "ADRESSE_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": null
+        },
+        {
+          "variable": "QUALITE_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": "Associé"
+        },
+        {
+          "variable": "TELEPHONE_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": null
+        },
+        {
+          "variable": "EMAIL_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": null
+        },
+        {
+          "variable": "DUREE_CONTRAT_MOIS",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": "12"
+        },
+        {
+          "variable": "DATE_DEBUT_CONTRAT",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": "02/04/2026"
+        },
+        {
+          "variable": "DATE_FIN_CONTRAT",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": "02/04/2026"
+        },
+        {
+          "variable": "PACK_DEMARRAGE_TOTAL_TTC",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": null
+        },
+        {
+          "variable": "PACK_DEMARRAGE_LOYER_MENSUEL",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": null
+        },
+        {
+          "variable": "RENOUVELLEMENT_LOYER_MENSUEL",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": null
+        },
+        {
+          "variable": "RENOUVELLEMENT_LOYER_ANNUEL",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": null
+        },
+        {
+          "variable": "DATE_CONTRAT",
+          "occurrences": 1,
+          "section": "contrat",
+          "value": "02/04/2026"
+        }
+      ],
+      "missing_values": [
+        "NUMERO_ICE",
+        "DATE_NAISSANCE_ASSOCIE",
+        "NUMERO_CIN_ASSOCIE",
+        "ADRESSE_ASSOCIE",
+        "TELEPHONE_ASSOCIE",
+        "EMAIL_ASSOCIE",
+        "PACK_DEMARRAGE_TOTAL_TTC",
+        "PACK_DEMARRAGE_LOYER_MENSUEL",
+        "RENOUVELLEMENT_LOYER_MENSUEL",
+        "RENOUVELLEMENT_LOYER_ANNUEL"
+      ]
+    },
+    {
+      "template": "SARL-AU_2026-03_Declaration-Immatriculation-RC_Template.docx",
+      "source_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\Models\\SARL AU\\SARL-AU_2026-03_Declaration-Immatriculation-RC_Template.docx",
+      "backup_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\backup-models\\2026-04-02_11-18-24_Tous-Modeles\\SARL AU\\04_Backup_SARL-AU_2026-03_Declaration-Immatriculation-RC_Template.docx",
+      "backup_legal_form": "SARL AU",
+      "backup_name": "04_Backup_SARL-AU_2026-03_Declaration-Immatriculation-RC_Template.docx",
+      "display_name": "SARL-AU_2026-03_Declaration-Immatriculation-RC_Template",
+      "backup_prefix": "Backup",
+      "variables": [
+        {
+          "variable": "TRIBUNAL_COMPETENT",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "Casablanca"
+        },
+        {
+          "variable": "DENOMINATION_SOCIALE",
+          "occurrences": 2,
+          "section": "societe",
+          "value": "NOUVELLE STE"
+        },
+        {
+          "variable": "FORME_JURIDIQUE",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "SARL AU"
+        },
+        {
+          "variable": "DATE_IMMATRICULATION_ICE",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "02/04/2026"
+        },
+        {
+          "variable": "ADRESSE_SIEGE_SOCIAL",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "HAY MOULAY ABDELLAH RUE 300 N 152 ETG 2 AIN CHOCK, CASABLANCA"
+        },
+        {
+          "variable": "CIVILITE_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": "Monsieur"
+        },
+        {
+          "variable": "PRENOM_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": "PRENOM"
+        },
+        {
+          "variable": "NOM_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": "NOM"
+        },
+        {
+          "variable": "DATE_NAISSANCE_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": null
+        },
+        {
+          "variable": "LIEU_NAISSANCE_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": "Casablanca"
+        },
+        {
+          "variable": "ADRESSE_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": null
+        },
+        {
+          "variable": "NUMERO_CIN_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": null
+        },
+        {
+          "variable": "DATE_VALIDITE_CIN_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": null
+        }
+      ],
+      "missing_values": [
+        "DATE_NAISSANCE_ASSOCIE",
+        "ADRESSE_ASSOCIE",
+        "NUMERO_CIN_ASSOCIE",
+        "DATE_VALIDITE_CIN_ASSOCIE"
+      ]
+    },
+    {
+      "template": "SARL-AU_2026-03_Depot-Legal-Constitution_Template.docx",
+      "source_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\Models\\SARL AU\\SARL-AU_2026-03_Depot-Legal-Constitution_Template.docx",
+      "backup_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\backup-models\\2026-04-02_11-18-24_Tous-Modeles\\SARL AU\\05_Backup_SARL-AU_2026-03_Depot-Legal-Constitution_Template.docx",
+      "backup_legal_form": "SARL AU",
+      "backup_name": "05_Backup_SARL-AU_2026-03_Depot-Legal-Constitution_Template.docx",
+      "display_name": "SARL-AU_2026-03_Depot-Legal-Constitution_Template",
+      "backup_prefix": "Backup",
+      "variables": [
+        {
+          "variable": "TRIBUNAL_COMPETENT",
+          "occurrences": 2,
+          "section": "societe",
+          "value": "Casablanca"
+        },
+        {
+          "variable": "FORME_JURIDIQUE",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "SARL AU"
+        },
+        {
+          "variable": "DENOMINATION_SOCIALE",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "NOUVELLE STE"
+        },
+        {
+          "variable": "ADRESSE_SIEGE_SOCIAL",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "HAY MOULAY ABDELLAH RUE 300 N 152 ETG 2 AIN CHOCK, CASABLANCA"
+        },
+        {
+          "variable": "CIVILITE_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": "Monsieur"
+        },
+        {
+          "variable": "PRENOM_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": "PRENOM"
+        },
+        {
+          "variable": "NOM_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": "NOM"
+        }
+      ],
+      "missing_values": []
+    },
+    {
+      "template": "SARL-AU_2026-03_Statuts_Template.docx",
+      "source_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\Models\\SARL AU\\SARL-AU_2026-03_Statuts_Template.docx",
+      "backup_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\backup-models\\2026-04-02_11-18-24_Tous-Modeles\\SARL AU\\06_Backup_SARL-AU_2026-03_Statuts_Template.docx",
+      "backup_legal_form": "SARL AU",
+      "backup_name": "06_Backup_SARL-AU_2026-03_Statuts_Template.docx",
+      "display_name": "SARL-AU_2026-03_Statuts_Template",
+      "backup_prefix": "Backup",
+      "variables": [
+        {
+          "variable": "DENOMINATION_SOCIALE",
+          "occurrences": 2,
+          "section": "societe",
+          "value": "NOUVELLE STE"
+        },
+        {
+          "variable": "FORME_JURIDIQUE",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "SARL AU"
+        },
+        {
+          "variable": "CAPITAL_SOCIAL",
+          "occurrences": 3,
+          "section": "societe",
+          "value": "100 000"
+        },
+        {
+          "variable": "ADRESSE_SIEGE_SOCIAL",
+          "occurrences": 2,
+          "section": "societe",
+          "value": "HAY MOULAY ABDELLAH RUE 300 N 152 ETG 2 AIN CHOCK, CASABLANCA"
+        },
+        {
+          "variable": "NUMERO_ICE",
+          "occurrences": 1,
+          "section": "societe",
+          "value": null
+        },
+        {
+          "variable": "CIVILITE_ASSOCIE",
+          "occurrences": 3,
+          "section": "associe",
+          "value": "Monsieur"
+        },
+        {
+          "variable": "PRENOM_ASSOCIE",
+          "occurrences": 5,
+          "section": "associe",
+          "value": "PRENOM"
+        },
+        {
+          "variable": "NOM_ASSOCIE",
+          "occurrences": 5,
+          "section": "associe",
+          "value": "NOM"
+        },
+        {
+          "variable": "NATIONALITE_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": "Marocaine"
+        },
+        {
+          "variable": "NUMERO_CIN_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": null
+        },
+        {
+          "variable": "DATE_NAISSANCE_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": null
+        },
+        {
+          "variable": "LIEU_NAISSANCE_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": "Casablanca"
+        },
+        {
+          "variable": "ADRESSE_ASSOCIE",
+          "occurrences": 2,
+          "section": "associe",
+          "value": null
+        },
+        {
+          "variable": "a",
+          "occurrences": 1,
+          "section": "autre",
+          "value": null
+        },
+        {
+          "variable": "NOMBRE_PARTS_SOCIALES",
+          "occurrences": 2,
+          "section": "societe",
+          "value": "1 000"
+        },
+        {
+          "variable": "TRIBUNAL_COMPETENT",
+          "occurrences": 1,
+          "section": "societe",
+          "value": "Casablanca"
+        },
+        {
+          "variable": "QUALITE_ASSOCIE",
+          "occurrences": 1,
+          "section": "associe",
+          "value": "Associé"
+        }
+      ],
+      "missing_values": [
+        "NUMERO_ICE",
+        "NUMERO_CIN_ASSOCIE",
+        "DATE_NAISSANCE_ASSOCIE",
+        "ADRESSE_ASSOCIE",
+        "a"
+      ]
+    },
+    {
+      "template": "Valeurs pour Génération templates Word.docx",
+      "source_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\Models\\Valeurs pour Génération templates Word.docx",
+      "backup_path": "C:\\Users\\Dev\\Desktop\\LearniTome_repos\\center-domiciliation-app\\backup-models\\2026-04-02_11-18-24_Tous-Modeles\\Racine\\07_Backup_Valeurs-pour-Gnration-templates-Word.docx",
+      "backup_legal_form": "Racine",
+      "backup_name": "07_Backup_Valeurs-pour-Gnration-templates-Word.docx",
+      "display_name": "Valeurs pour Génération templates Word",
+      "backup_prefix": "Backup",
+      "variables": [],
+      "missing_values": []
+    }
+  ]
+}
