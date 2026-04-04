@@ -1692,7 +1692,13 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
                 'parts': 'parts', 'num_parts': 'parts',
                 # form uses 'capital_detenu' variable, store it in capital_detenu
                 'capital_detenu': 'capital_detenu',
-                'est_gerant': 'is_gerant', 'qualite': 'quality'
+                'qualite_associe': 'qualite_associe',
+                'qualite_gerant': 'qualite_gerant',
+                # legacy keys
+                'est_gerant': 'qualite_gerant',
+                'qualite': 'qualite_associe',
+                'quality': 'qualite_associe',
+                'is_gerant': 'qualite_gerant',
             }
             for k, h in map_a.items():
                 if k in a:
@@ -1704,7 +1710,10 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
                         if v is None:
                             r[h] = None
                         elif isinstance(v, bool):
-                            r[h] = int(v)
+                            if h == 'qualite_gerant':
+                                r[h] = 'Gérant associé' if v else ''
+                            else:
+                                r[h] = int(v)
                         elif isinstance(v, (int, float)):
                             r[h] = v
                         else:
@@ -2218,6 +2227,19 @@ def normalize_excel_storage(path):
                     pass
             try:
                 df.drop(columns=[old_col], inplace=True)
+            except Exception:
+                pass
+
+        if sheet_name == 'Associes' and 'qualite_gerant' in df.columns:
+            try:
+                def _norm_gerant(val):
+                    raw = str(val or '').strip().lower()
+                    if raw in ('1', 'true', 'vrai', 'yes', 'oui'):
+                        return 'Gérant associé'
+                    if raw in ('0', 'false', 'faux', 'no', 'non'):
+                        return ''
+                    return val
+                df['qualite_gerant'] = df['qualite_gerant'].apply(_norm_gerant)
             except Exception:
                 pass
 

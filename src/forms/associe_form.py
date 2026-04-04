@@ -64,6 +64,7 @@ class AssocieForm(ttk.Frame):
         self._associe_layout_widgets = {}
         self._legal_form_min_associes = 0
         self._legal_form_max_associes = 10
+        self._current_legal_form = ""
         self.add_button: Optional[ttk.Button] = None
         self._is_updating_distribution = False
         self._label_width = 12
@@ -161,14 +162,28 @@ class AssocieForm(ttk.Frame):
         """Crée et retourne les variables pour un nouvel associé"""
         # Get custom defaults or use sensible defaults
         from ..utils.defaults_manager import get_defaults_manager
-        from ..utils.constants import Civility, QualityAssocie
+        from ..utils.constants import Civility, QualityAssocie, QualiteGerant
         
         defaults_mgr = get_defaults_manager()
         
         default_civility = self.normalize_civility(
             defaults_mgr.get_default('associe', 'Civility') or (Civility[0] if Civility else self._CIVILITY_CANONICAL[0])
         )
-        default_quality = defaults_mgr.get_default('associe', 'Quality') or (QualityAssocie[0] if QualityAssocie else 'Associé')
+        default_quality = (
+            defaults_mgr.get_default('associe', 'QualiteAssocie')
+            or defaults_mgr.get_default('associe', 'Quality')
+            or (QualityAssocie[0] if QualityAssocie else 'Personne physique')
+        )
+        default_gerant = (
+            defaults_mgr.get_default('associe', 'QualiteGerant')
+            or (QualiteGerant[0] if QualiteGerant else 'Gérant associé')
+        )
+        # Override defaults based on legal form when applicable
+        target_associe, target_gerant = self._legal_form_default_qualities(self._current_legal_form)
+        if target_associe:
+            default_quality = target_associe
+        if target_gerant:
+            default_gerant = target_gerant
         default_nom = defaults_mgr.get_default('associe', 'Nom') or 'NOM'
         default_prenom = defaults_mgr.get_default('associe', 'Prenom') or 'PRENOM'
         default_nationalite = defaults_mgr.get_default('associe', 'Nationality') or (self.nationalites[0] if self.nationalites else '')
@@ -191,8 +206,8 @@ class AssocieForm(ttk.Frame):
             'adresse': tk.StringVar(value=default_adresse),
             'telephone': tk.StringVar(value=default_telephone),
             'email': tk.StringVar(value=default_email),
-            'est_gerant': tk.BooleanVar(value=True),
-            'qualite': tk.StringVar(value=default_quality),
+            'qualite_associe': tk.StringVar(value=default_quality),
+            'qualite_gerant': tk.StringVar(value=default_gerant),
             'percentage': tk.StringVar(value='100'),
             'capital_detenu': tk.StringVar(value=''),
             'num_parts': tk.StringVar(value='')
@@ -269,8 +284,21 @@ class AssocieForm(ttk.Frame):
         except Exception:
             pass
 
-        # Ligne 2: profil + contact
-        date_cell = _cell(1, 0, "Date de naissance:")
+        # Ligne 2: profil + contact (qualité associé en premier, statut après Email)
+        qualite_cell = _cell(1, 0, "Qualité associé:")
+        try:
+            from ..utils import constants as _constants
+            qual_options = getattr(_constants, 'QualityAssocie', ["Associé", "Associé Unique"])
+        except Exception:
+            qual_options = ["Associé", "Associé Unique"]
+        ttk.Combobox(
+            qualite_cell,
+            textvariable=vars_dict['qualite_associe'],
+            values=qual_options,
+            state="readonly",
+        ).grid(row=1, column=0, sticky="ew")
+
+        date_cell = _cell(1, 1, "Date de naissance:")
         DateEntry(
             date_cell,
             textvariable=vars_dict['date_naiss'],
@@ -282,24 +310,11 @@ class AssocieForm(ttk.Frame):
         except Exception:
             pass
 
-        lieu_cell = _cell(1, 1, "Lieu de naissance:")
+        lieu_cell = _cell(1, 2, "Lieu de naissance:")
         ttk.Combobox(
             lieu_cell,
             textvariable=vars_dict['lieu_naiss'],
             values=self.lieux_naissance,
-            state="readonly",
-        ).grid(row=1, column=0, sticky="ew")
-
-        qualite_cell = _cell(1, 2, "Qualité:")
-        try:
-            from ..utils import constants as _constants
-            qual_options = getattr(_constants, 'QualityAssocie', ["Associé", "Associé Unique"])
-        except Exception:
-            qual_options = ["Associé", "Associé Unique"]
-        ttk.Combobox(
-            qualite_cell,
-            textvariable=vars_dict['qualite'],
-            values=qual_options,
             state="readonly",
         ).grid(row=1, column=0, sticky="ew")
 
@@ -308,6 +323,19 @@ class AssocieForm(ttk.Frame):
 
         email_cell = _cell(1, 4, "Email:")
         ttk.Entry(email_cell, textvariable=vars_dict['email']).grid(row=1, column=0, sticky="ew")
+
+        statut_cell = _cell(1, 5, "Statut:")
+        try:
+            from ..utils import constants as _constants
+            gerant_options = getattr(_constants, 'QualiteGerant', ["Gérant associé", "Gérant non associé"])
+        except Exception:
+            gerant_options = ["Gérant associé", "Gérant non associé"]
+        ttk.Combobox(
+            statut_cell,
+            textvariable=vars_dict['qualite_gerant'],
+            values=gerant_options,
+            state="readonly",
+        ).grid(row=1, column=0, sticky="ew")
 
         # Ligne 3: adresse élargie + capital, statut en dernier
         adr_cell = _cell(2, 0, "Adresse:", span=2)
@@ -336,24 +364,14 @@ class AssocieForm(ttk.Frame):
         )
         parts_entry.grid(row=1, column=0, sticky="ew")
 
-        statut_cell = _cell(2, 5, "Statut:")
-        statut_row = ttk.Frame(statut_cell)
-        statut_row.grid(row=1, column=0, sticky="ew")
-        statut_row.columnconfigure(0, weight=1)
-
-        ttk.Checkbutton(
-            statut_row,
-            text="Est Gérant",
-            variable=vars_dict['est_gerant'],
-        ).grid(row=0, column=0, sticky="w")
-
+        action_cell = _cell(2, 5, "Action:")
         remove_btn = ttk.Button(
-            statut_row,
+            action_cell,
             text="❌ Supprimer",
             style='Cancel.TButton',
             command=lambda: self.remove_associe(frame, vars_dict),
         )
-        remove_btn.grid(row=0, column=1, sticky="e", padx=(6, 0))
+        remove_btn.grid(row=1, column=0, sticky="e")
         self._remove_buttons[assoc_id] = remove_btn
 
         summary_var = tk.StringVar(value="Total société: — | Part associé: —")
@@ -493,21 +511,31 @@ class AssocieForm(ttk.Frame):
         grid.pack(fill="x", padx=6, pady=6)
         grid.columnconfigure(1, weight=1)
 
-        # Checkbox Est Gérant
-        ttk.Checkbutton(grid, text="Est Gérant", variable=vars_dict['est_gerant']).grid(
-            row=0, column=0, columnspan=2, sticky="w", pady=2)
-
-        # Qualité — use Combobox to present common roles while keeping the current default
-        ttk.Label(grid, text="Qualité:", anchor="e", width=self._label_width).grid(row=1, column=0, padx=(0, 5), pady=2)
+        # Qualité associé
+        ttk.Label(grid, text="Qualité associé:", anchor="e", width=self._label_width).grid(row=0, column=0, padx=(0, 5), pady=2)
         try:
             from ..utils import constants as _constants
-            qual_options = getattr(_constants, 'QualityAssocie', ["Associé", "Associé Unique"])
+            associe_options = getattr(_constants, 'QualityAssocie', ["Associé", "Associé Unique"])
         except Exception:
-            qual_options = ["Associé", "Associé Unique"]
+            associe_options = ["Associé", "Associé Unique"]
         ttk.Combobox(
             grid,
-            textvariable=vars_dict['qualite'],
-            values=qual_options,
+            textvariable=vars_dict['qualite_associe'],
+            values=associe_options,
+            state="readonly",
+        ).grid(row=0, column=1, sticky="ew", pady=2)
+
+        # Qualité gérant
+        ttk.Label(grid, text="Qualité gérant:", anchor="e", width=self._label_width).grid(row=1, column=0, padx=(0, 5), pady=2)
+        try:
+            from ..utils import constants as _constants
+            gerant_options = getattr(_constants, 'QualiteGerant', ["Gérant associé", "Gérant non associé"])
+        except Exception:
+            gerant_options = ["Gérant associé", "Gérant non associé"]
+        ttk.Combobox(
+            grid,
+            textvariable=vars_dict['qualite_gerant'],
+            values=gerant_options,
             state="readonly",
         ).grid(row=1, column=1, sticky="ew", pady=2)
 
@@ -552,17 +580,23 @@ class AssocieForm(ttk.Frame):
         check_cell = ttk.Frame(content)
         check_cell.grid(row=0, column=2, sticky="ew", padx=(0, 6))
         check_cell.columnconfigure(0, weight=1)
-        ttk.Label(check_cell, text="Statut:", anchor="w").grid(row=0, column=0, sticky="w", pady=(0, 1))
-        ttk.Checkbutton(
+        ttk.Label(check_cell, text="Qualité gérant:", anchor="w").grid(row=0, column=0, sticky="w", pady=(0, 1))
+        try:
+            from ..utils import constants as _constants
+            gerant_options = getattr(_constants, 'QualiteGerant', ["Gérant associé", "Gérant non associé"])
+        except Exception:
+            gerant_options = ["Gérant associé", "Gérant non associé"]
+        ttk.Combobox(
             check_cell,
-            text="Est Gérant",
-            variable=vars_dict['est_gerant'],
-        ).grid(row=1, column=0, sticky="w")
+            textvariable=vars_dict['qualite_gerant'],
+            values=gerant_options,
+            state="readonly",
+        ).grid(row=1, column=0, sticky="ew")
 
         qual_cell = ttk.Frame(content)
         qual_cell.grid(row=0, column=3, sticky="ew")
         qual_cell.columnconfigure(0, weight=1)
-        ttk.Label(qual_cell, text="Qualité:", anchor="w").grid(row=0, column=0, sticky="w", pady=(0, 1))
+        ttk.Label(qual_cell, text="Qualité associé:", anchor="w").grid(row=0, column=0, sticky="w", pady=(0, 1))
         try:
             from ..utils import constants as _constants
             qual_options = getattr(_constants, 'QualityAssocie', ["Associé", "Associé Unique"])
@@ -570,7 +604,7 @@ class AssocieForm(ttk.Frame):
             qual_options = ["Associé", "Associé Unique"]
         ttk.Combobox(
             qual_cell,
-            textvariable=vars_dict['qualite'],
+            textvariable=vars_dict['qualite_associe'],
             values=qual_options,
             state="readonly",
         ).grid(row=1, column=0, sticky="ew")
@@ -768,7 +802,44 @@ class AssocieForm(ttk.Frame):
             return 2, 10
         return 0, 10
 
+    @classmethod
+    def _legal_form_default_qualities(cls, legal_form: Optional[str]) -> Tuple[Optional[str], Optional[str]]:
+        normalized = cls._normalize_legal_form(legal_form)
+        if normalized in {"SARL AU", "SARLAU"} or ("SARL" in normalized and "AU" in normalized):
+            return "Associé unique", "Gérant unique"
+        if normalized == "SARL":
+            return "Associé fondateur", "Gérant associé"
+        return None, None
+
+    def _apply_legal_form_quality_defaults(self, legal_form: Optional[str], only_if_empty: bool = True):
+        target_associe, target_gerant = self._legal_form_default_qualities(legal_form)
+        if not target_associe and not target_gerant:
+            return
+        try:
+            from ..utils.defaults_manager import get_defaults_manager
+            defaults_mgr = get_defaults_manager()
+            default_associe = (
+                defaults_mgr.get_default('associe', 'QualiteAssocie')
+                or defaults_mgr.get_default('associe', 'Quality')
+                or ''
+            )
+            default_gerant = defaults_mgr.get_default('associe', 'QualiteGerant') or ''
+        except Exception:
+            default_associe = ''
+            default_gerant = ''
+
+        for vars_dict in self.associe_vars:
+            if target_associe and 'qualite_associe' in vars_dict:
+                current = str(vars_dict['qualite_associe'].get() or '').strip()
+                if (not only_if_empty) or (current == '' or current == default_associe):
+                    vars_dict['qualite_associe'].set(target_associe)
+            if target_gerant and 'qualite_gerant' in vars_dict:
+                current = str(vars_dict['qualite_gerant'].get() or '').strip()
+                if (not only_if_empty) or (current == '' or current == default_gerant):
+                    vars_dict['qualite_gerant'].set(target_gerant)
+
     def apply_legal_form_constraints(self, legal_form: Optional[str], auto_adjust: bool = True, add_if_empty: bool = False):
+        self._current_legal_form = legal_form or ""
         min_count, max_count = self._legal_form_rules(legal_form)
         self._legal_form_min_associes = min_count
         self._legal_form_max_associes = max_count
@@ -803,6 +874,9 @@ class AssocieForm(ttk.Frame):
                 "Les associés en trop ont été supprimés automatiquement pour la forme SARL AU."
             )
 
+        # Apply legal-form dependent default roles when appropriate.
+        # In SARL AU / SARL, enforce defaults across all associés.
+        self._apply_legal_form_quality_defaults(legal_form, only_if_empty=False)
         self._update_associe_action_states()
 
     def _update_associe_action_states(self):
@@ -988,6 +1062,12 @@ class AssocieForm(ttk.Frame):
                 except Exception:
                     item[k] = None
             item['civilite'] = self.normalize_civility(item.get('civilite'))
+            # Legacy compatibility keys
+            if 'qualite_associe' in item:
+                item['qualite'] = item.get('qualite_associe')
+            if 'qualite_gerant' in item:
+                qg = item.get('qualite_gerant')
+                item['est_gerant'] = bool(str(qg).strip())
             results.append(item)
         return results
 
@@ -1029,6 +1109,28 @@ class AssocieForm(ttk.Frame):
                 self.create_associe_fields(self.associes_frame, len(self.associe_vars))
                 # Populate the latest vars dict
                 vars_dict = self.associe_vars[-1]
+                # Backward compatibility mapping for old keys
+                if isinstance(assoc, dict):
+                    if 'qualite_associe' not in assoc:
+                        legacy_quality = assoc.get('qualite') or assoc.get('quality')
+                        if legacy_quality:
+                            assoc = dict(assoc)
+                            assoc['qualite_associe'] = legacy_quality
+                    if 'qualite_gerant' not in assoc:
+                        legacy_gerant = assoc.get('qualite_gerant')
+                        if legacy_gerant:
+                            assoc = dict(assoc)
+                            assoc['qualite_gerant'] = legacy_gerant
+                        else:
+                            legacy_bool = assoc.get('est_gerant') if 'est_gerant' in assoc else assoc.get('is_gerant')
+                            if self.parse_legacy_bool(legacy_bool):
+                                try:
+                                    from ..utils.constants import QualiteGerant
+                                    default_gerant = QualiteGerant[0] if QualiteGerant else "Gérant associé"
+                                except Exception:
+                                    default_gerant = "Gérant associé"
+                                assoc = dict(assoc)
+                                assoc['qualite_gerant'] = default_gerant
                 for k, val in assoc.items():
                     if k in vars_dict:
                         try:

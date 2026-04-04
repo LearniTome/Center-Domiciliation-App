@@ -20,7 +20,16 @@ logger = logging.getLogger(__name__)
 
 # Template mappings for different document types
 DOMICILIATION_TEMPLATES = ['attest', 'contrat', 'domiciliation']
-LEGAL_FORM_OPTIONS = ['SARL-AU', 'SARL', 'SA', 'Personne Physique', 'Association', 'Fondation']
+LEGAL_FORM_OPTIONS = [
+    'SARL-AU',
+    'SARL',
+    'SA',
+    'Personne Physique',
+    'Association',
+    'Fondation',
+    'Succurssale Etrangère',
+    'Succurssale Marocaine',
+]
 LEGAL_FORM_TO_FOLDER = {
     'SARL-AU': 'SARL AU',
     'SARL': 'SARL',
@@ -28,6 +37,8 @@ LEGAL_FORM_TO_FOLDER = {
     'Personne Physique': 'Personne Physique',
     'Association': 'Association',
     'Fondation': 'Fondation',
+    'Succurssale Etrangère': 'Succurssale Etrangère',
+    'Succurssale Marocaine': 'Succurssale Marocaine',
 }
 LEGAL_FORM_PREFIXES = {
     'SARL AU': 'SARL-AU',
@@ -36,6 +47,8 @@ LEGAL_FORM_PREFIXES = {
     'Personne Physique': 'PP',
     'Association': 'ASSO',
     'Fondation': 'FOND',
+    'Succurssale Etrangère': 'SUCC-ETR',
+    'Succurssale Marocaine': 'SUCC-MAR',
 }
 
 CREATION_PROCEDURE_OPTIONS = ['normal', 'acceleree']
@@ -58,6 +71,9 @@ def normalize_legal_form_selection(raw_value: Optional[str]) -> str:
         "PP": "Personne Physique",
         "ASSOCIATION": "Association",
         "FONDATION": "Fondation",
+        "SUCCURSSALE ETRANGERE": "Succurssale Etrangère",
+        "SUCCURSSALE ÉTRANGÈRE": "Succurssale Etrangère",
+        "SUCCURSSALE MAROCAINE": "Succurssale Marocaine",
     }
     return mapping.get(compact, LEGAL_FORM_OPTIONS[0])
 

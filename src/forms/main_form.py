@@ -1627,7 +1627,8 @@ class MainForm(ttk.Frame):
                         ('Telephone', 'Téléphone', []),
                         ('Email', 'Email', []),
                         ('Adresse', 'Adresse', []),
-                        ('Quality', 'Qualité', constants.QualityAssocie),
+                        ('QualiteAssocie', 'Qualité associé', constants.QualityAssocie),
+                        ('QualiteGerant', 'Qualité gérant', constants.QualiteGerant),
                     ]
                 },
                 'contrat': {
@@ -2779,8 +2780,10 @@ class MainForm(ttk.Frame):
             'adresse': 'adresse',
             'phone': 'telephone',
             'email': 'email',
-            'is_gerant': 'est_gerant',
-            'quality': 'qualite',
+            'qualite_associe': 'qualite_associe',
+            'qualite_gerant': 'qualite_gerant',
+            'is_gerant': 'qualite_gerant',
+            'quality': 'qualite_associe',
             'capital_detenu': 'capital_detenu',
             'part_percent': 'percentage',
         }
@@ -2957,8 +2960,10 @@ class MainForm(ttk.Frame):
                     'parts': 'parts',
                     'num_parts': 'parts',
                     'capital_detenu': 'capital_detenu',
-                    'est_gerant': 'is_gerant',
-                    'qualite': 'quality',
+                    'qualite_associe': 'qualite_associe',
+                    'qualite_gerant': 'qualite_gerant',
+                    'est_gerant': 'qualite_gerant',
+                    'qualite': 'qualite_associe',
                 }
                 for k, col in mapping.items():
                     if k in item and col in row:
@@ -3079,16 +3084,16 @@ class MainForm(ttk.Frame):
         """
         try:
             page_key = self._infer_dashboard_page_key(payload, page_key)
-            # Bring main window to front
-            top = self.winfo_toplevel()
-            try:
-                top.deiconify()
-                top.lift()
-                top.focus_force()
-            except Exception:
-                pass
 
             if action == 'add':
+                # Bring main window to front only for add/edit flows
+                top = self.winfo_toplevel()
+                try:
+                    top.deiconify()
+                    top.lift()
+                    top.focus_force()
+                except Exception:
+                    pass
                 if page_key == 'collaborateur':
                     self._open_collaborateur_dialog()
                     return {'status': 'opened', 'page': 'collaborateur'}
@@ -3100,6 +3105,14 @@ class MainForm(ttk.Frame):
                 return {'status': 'opened', 'page': 'societe'}
 
             if action == 'edit':
+                # Bring main window to front only for add/edit flows
+                top = self.winfo_toplevel()
+                try:
+                    top.deiconify()
+                    top.lift()
+                    top.focus_force()
+                except Exception:
+                    pass
                 if not payload:
                     messagebox.showwarning('Modifier', 'Aucune donnée fournie pour modification.')
                     return {'status': 'invalid'}
@@ -3157,6 +3170,14 @@ class MainForm(ttk.Frame):
                     messagebox.showwarning('Supprimer', 'Aucune société sélectionnée pour suppression.')
                     return {'status': 'invalid'}
 
+                msg_parent = None
+                try:
+                    dashboard = getattr(self, '_dashboard_window', None)
+                    if dashboard is not None and dashboard.winfo_exists():
+                        msg_parent = dashboard
+                except Exception:
+                    msg_parent = None
+
                 # Remove rows from the Excel workbook
                 try:
                     import pandas as _pd
@@ -3166,6 +3187,7 @@ class MainForm(ttk.Frame):
                         messagebox.showwarning(
                             'Supprimer',
                             "Impossible de retrouver la société liée à l'enregistrement sélectionné."
+                            , parent=msg_parent
                         )
                         return {'status': 'not_found'}
 
@@ -3173,7 +3195,8 @@ class MainForm(ttk.Frame):
                     sid = str(company_payload.get('id_societe') or '').strip()
                     if not messagebox.askyesno(
                         'Confirmation',
-                        f"Voulez-vous vraiment supprimer le dossier société '{den}' ?"
+                        f"Voulez-vous vraiment supprimer le dossier société '{den}' ?",
+                        parent=msg_parent,
                     ):
                         return {'status': 'cancelled'}
 
@@ -3234,17 +3257,25 @@ class MainForm(ttk.Frame):
                     except Exception:
                         pass
 
-                    messagebox.showinfo('Succès', f"Dossier société '{den}' supprimé avec succès.")
+                    messagebox.showinfo(
+                        'Succès',
+                        f"Dossier société '{den}' supprimé avec succès.",
+                        parent=msg_parent,
+                    )
                     return {'status': 'deleted', 'company_name': den}
                 except PermissionError:
-                    messagebox.showerror('Erreur', 'Le fichier Excel est ouvert dans une autre application. Fermez Excel et réessayez.')
+                    messagebox.showerror(
+                        'Erreur',
+                        'Le fichier Excel est ouvert dans une autre application. Fermez Excel et réessayez.',
+                        parent=msg_parent,
+                    )
                     return {'status': 'error'}
                 except Exception as e:
                     try:
                         from ..utils.utils import ErrorHandler
                         ErrorHandler.handle_error(e, 'Erreur lors de la suppression')
                     except Exception:
-                        messagebox.showerror('Erreur', f'Impossible de supprimer: {e}')
+                        messagebox.showerror('Erreur', f'Impossible de supprimer: {e}', parent=msg_parent)
                     return {'status': 'error'}
 
         except Exception as e:

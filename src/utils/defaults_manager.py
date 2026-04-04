@@ -86,7 +86,10 @@ class DefaultsManager:
                 'Adresse': '',
                 'Telephone': '',
                 'Email': '',
+                # Legacy + new defaults
                 'Quality': constants.QualityAssocie[0] if constants.QualityAssocie else '',
+                'QualiteAssocie': constants.QualityAssocie[0] if constants.QualityAssocie else '',
+                'QualiteGerant': constants.QualiteGerant[0] if getattr(constants, 'QualiteGerant', None) else '',
             },
             'contrat': {
                 'NbMois': constants.Nbmois[1] if len(constants.Nbmois) > 1 else (constants.Nbmois[0] if constants.Nbmois else ''),

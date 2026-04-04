@@ -7,7 +7,14 @@ DenSte = ["ASTRAPIA", "SAOUZ", "F 4", "OLA MOVING", "LOHACOM", "SKY NEST", "SKY 
 Civility = ["Monsieur", "Madame"]
 
 # Company legal forms
-Formjur = ["SARL AU", "SARL", "Personne Physique", "SA"]
+Formjur = [
+    "SARL AU",
+    "SARL",
+    "Personne Physique",
+    "SA",
+    "Succurssale Etrangère",
+    "Succurssale Marocaine",
+]
 
 # Contract durations in months
 Nbmois = ["06", "12", "15", "24"]
@@ -58,7 +65,24 @@ SteAdresse = [
 Tribunnaux = ["Casablanca", "Berrechid", "Mohammedia"]
 
 # Associate roles
-QualityAssocie = ["Associé", "Associé Unique"]
+QualityAssocie = [
+    "Personne physique",
+    "Personne morale",
+    "Associé fondateur",
+    "Associé majoritaire",
+    "Associé minoritaire",
+    "Associé unique",
+]
+
+# Gérant roles
+QualiteGerant = [
+    "Gérant associé",
+    "Gérant non associé",
+    "Gérant unique",
+    "Co-gérant",
+    "Gérant majoritaire",
+    "Gérant minoritaire",
+]
 
 # Company activities
 Activities = [
@@ -79,7 +103,8 @@ associe_headers = [
     "id_associe", "id_societe", "den_ste", "civil", "prenom", "nom",
     "nationality", "cin_num", "cin_validaty", "date_naiss",
     "lieu_naiss", "adresse", "phone", "email",
-    "part_percent", "parts", "capital_detenu", "is_gerant", "quality"
+    "qualite_associe", "qualite_gerant",
+    "part_percent", "parts", "capital_detenu",
 ]
 
 contrat_headers = [
@@ -108,6 +133,10 @@ excel_header_labels = {
     "DEN_STE": "Dénomination sociale",
     "dossier_domiciliation": "N° dossier domiciliation",
     "DOSSIER_DOMICILIATION": "N° dossier domiciliation",
+    "qualite_associe": "Qualité associé",
+    "QUALITE_ASSOCIE": "Qualité associé",
+    "qualite_gerant": "Qualité gérant",
+    "QUALITE_GERANT": "Qualité gérant",
 }
 
 # Compatibility aliases to migrate old contract column names.
@@ -188,8 +217,12 @@ associe_header_aliases = {
     "PART_PERCENT": "part_percent",
     "PARTS": "parts",
     "CAPITAL_DETENU": "capital_detenu",
-    "IS_GERANT": "is_gerant",
-    "QUALITY": "quality",
+    "IS_GERANT": "qualite_gerant",
+    "EST_GERANT": "qualite_gerant",
+    "QUALITY": "qualite_associe",
+    "QUALITE": "qualite_associe",
+    "QUALITE_ASSOCIE": "qualite_associe",
+    "QUALITE_GERANT": "qualite_gerant",
 }
 
 collaborateur_header_aliases = {

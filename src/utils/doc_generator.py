@@ -91,13 +91,13 @@ def _build_expected_context_key_sections() -> Dict[str, str]:
         "CIN_VALIDATY", "validite_piece",
         "DATE_NAISS", "date_naiss",
         "LIEU_NAISS", "lieu_naiss",
-        "ADRESSE", "PHONE", "EMAIL", "QUALITY",
-        "adresse", "telephone", "email", "qualite",
+        "ADRESSE", "PHONE", "EMAIL", "QUALITY", "QUALITE_ASSOCIE", "QUALITE_GERANT",
+        "adresse", "telephone", "email", "qualite", "qualite_associe", "qualite_gerant",
         "PARTS", "parts", "num_parts",
         "CAPITAL_DETENU", "capital_detenu",
         "IS_GERANT", "est_gerant",
     )
-    for base in ("ADRESSE", "PHONE", "EMAIL", "QUALITY", "NOM", "PRENOM"):
+    for base in ("ADRESSE", "PHONE", "EMAIL", "QUALITY", "QUALITE_ASSOCIE", "QUALITE_GERANT", "NOM", "PRENOM"):
         _add("associe", f"ASSOCIE_{base}", f"{base}_ASSOCIE", base.lower())
         camel = base[0].lower() + base[1:].lower()
         _add("associe", f"{camel}Associe")
@@ -222,7 +222,8 @@ def build_render_context(values: Dict) -> Dict:
             'num_piece': 'CIN_NUM', 'validite_piece': 'CIN_VALIDATY', 'date_naiss': 'DATE_NAISS',
             'lieu_naiss': 'LIEU_NAISS', 'adresse': 'ADRESSE', 'telephone': 'PHONE', 'email': 'EMAIL',
             'parts': 'PARTS', 'num_parts': 'PARTS', 'capital_detenu': 'CAPITAL_DETENU',
-            'est_gerant': 'IS_GERANT', 'qualite': 'QUALITY'
+            'qualite_associe': 'QUALITE_ASSOCIE', 'qualite_gerant': 'QUALITE_GERANT',
+            'est_gerant': 'IS_GERANT', 'qualite': 'QUALITY',
         }
         for fk, hk in assoc_map.items():
             v = None
@@ -233,6 +234,14 @@ def build_render_context(values: Dict) -> Dict:
             if v is not None and v != '':
                 ctx[hk] = v
                 ctx[fk] = v
+
+        # Backward-compatible aliases for templates still using QUALITY / IS_GERANT
+        if 'QUALITE_ASSOCIE' in ctx and 'QUALITY' not in ctx:
+            ctx['QUALITY'] = ctx['QUALITE_ASSOCIE']
+            ctx['qualite'] = ctx['QUALITE_ASSOCIE']
+        if 'QUALITE_GERANT' in ctx and 'IS_GERANT' not in ctx:
+            ctx['IS_GERANT'] = bool(str(ctx['QUALITE_GERANT']).strip())
+            ctx['est_gerant'] = ctx['IS_GERANT']
 
         # Provide additional alias keys for templates that expect associe-prefixed
         # or suffixed variable names. This helps catch documents using patterns
@@ -506,6 +515,10 @@ def render_templates(
             return "PP"
         if compact in ("SA",):
             return "SA"
+        if compact in ("SUCCURSSALEETRANGERE", "SUCCURSSALEÉTRANGÈRE"):
+            return "SUCC-ETR"
+        if compact in ("SUCCURSSALEMAROCAINE",):
+            return "SUCC-MAR"
         return compact or "UNKNOWN"
 
     def _normalize_generation_folder_token(raw_type: Optional[str], templates: Optional[List[Path]]) -> str:
@@ -750,6 +763,7 @@ def render_templates(
                 'num_piece': 'CIN_NUM', 'validite_piece': 'CIN_VALIDATY', 'date_naiss': 'DATE_NAISS',
                 'lieu_naiss': 'LIEU_NAISS', 'adresse': 'ADRESSE', 'telephone': 'PHONE', 'email': 'EMAIL',
                 'parts': 'PARTS', 'num_parts': 'PARTS', 'capital_detenu': 'CAPITAL_DETENU',
+                'qualite_associe': 'QUALITE_ASSOCIE', 'qualite_gerant': 'QUALITE_GERANT',
                 'est_gerant': 'IS_GERANT', 'qualite': 'QUALITY'
             }
             for fk, hk in assoc_map.items():
@@ -762,10 +776,17 @@ def render_templates(
                     ctx[hk] = v
                     ctx[fk] = v
 
+            if 'QUALITE_ASSOCIE' in ctx and 'QUALITY' not in ctx:
+                ctx['QUALITY'] = ctx['QUALITE_ASSOCIE']
+                ctx['qualite'] = ctx['QUALITE_ASSOCIE']
+            if 'QUALITE_GERANT' in ctx and 'IS_GERANT' not in ctx:
+                ctx['IS_GERANT'] = bool(str(ctx['QUALITE_GERANT']).strip())
+                ctx['est_gerant'] = ctx['IS_GERANT']
+
             # Provide additional alias keys for templates that expect associe-prefixed
             # or suffixed variable names. This helps catch documents using patterns
             # like {{ASSOCIE_ADRESSE}} or {{ADRESSE_ASSOCIE}} or camelCase variants.
-            for base in ('ADRESSE', 'PHONE', 'EMAIL', 'QUALITY', 'NOM', 'PRENOM'):
+            for base in ('ADRESSE', 'PHONE', 'EMAIL', 'QUALITY', 'QUALITE_ASSOCIE', 'QUALITE_GERANT', 'NOM', 'PRENOM'):
                 if base in ctx:
                     try:
                         ctx[f'ASSOCIE_{base}'] = ctx[base]
