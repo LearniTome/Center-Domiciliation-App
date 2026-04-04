@@ -1078,6 +1078,23 @@ class DashboardView(tk.Toplevel):
                 return
 
             export_df = df.copy()
+            try:
+                if self._current_page == 'societe':
+                    preferred = [c for c in _const.societe_headers if c in export_df.columns]
+                elif self._current_page == 'associe':
+                    preferred = [c for c in _const.associe_headers if c in export_df.columns]
+                elif self._current_page == 'contrat':
+                    preferred = [c for c in _const.contrat_headers if c in export_df.columns]
+                elif self._current_page == 'collaborateur':
+                    preferred = [c for c in _const.collaborateur_headers if c in export_df.columns]
+                else:
+                    preferred = []
+                preferred = [c for c in preferred if not str(c).lower().startswith('id_')]
+                extras = [c for c in export_df.columns if c not in preferred and not str(c).lower().startswith('id_')]
+                if preferred or extras:
+                    export_df = export_df.reindex(columns=preferred + extras)
+            except Exception:
+                pass
             used_labels = set()
             display_columns = []
             for col in export_df.columns:
