@@ -1294,7 +1294,7 @@ class GenerationSelectorDialog(tk.Toplevel):
             return []
 
     def _get_templates_for_legal_form(self, legal_form: str) -> List[Path]:
-        """Return all .docx templates for the given legal form folder."""
+        """Return templates for legal form; fallback to generic root-active folder."""
         models_dir = PathManager.MODELS_DIR
         if not models_dir.exists():
             return []
@@ -1305,8 +1305,17 @@ class GenerationSelectorDialog(tk.Toplevel):
 
         form_path = models_dir / LEGAL_FORM_TO_FOLDER.get(selected_form, selected_form)
         if form_path.exists() and form_path.is_dir():
-            return sorted(form_path.glob('*.docx'))
-        return []
+            form_templates = sorted(form_path.glob('*.docx'))
+            if form_templates:
+                return form_templates
+
+        # Fallback: reusable generic templates.
+        root_active_dir = models_dir / "_Racine-Actifs"
+        if root_active_dir.exists() and root_active_dir.is_dir():
+            return sorted(root_active_dir.glob("*.docx"))
+
+        # Backward compatibility: legacy root-level templates.
+        return sorted(models_dir.glob("*.docx"))
 
     def _format_template_display_name(self, template: Path) -> str:
         """Return the exact filename as stored on disk for the selected legal form."""
@@ -1695,14 +1704,16 @@ class GenerationSelectorDialog(tk.Toplevel):
             ErrorHandler.handle_error(e, "Erreur lors de l'ouverture du dossier")
 
     def _get_root_templates_for_distribution(self) -> List[Path]:
-        """Return root Models templates matching naming charter pattern."""
+        """Return root-active templates matching naming charter pattern."""
         models_dir = PathManager.MODELS_DIR
         if not models_dir.exists():
             return []
+        root_active_dir = models_dir / "_Racine-Actifs"
+        source_dir = root_active_dir if root_active_dir.exists() and root_active_dir.is_dir() else models_dir
         templates = []
-        for file_path in models_dir.glob("*.docx"):
+        for file_path in source_dir.glob("*.docx"):
             name = file_path.name
-            # Keep only charter-compliant root templates (exclude utility docs).
+            # Keep only charter-compliant templates (exclude utility docs).
             if re.match(r"^\d{4}-\d{2}_.+_Template\.docx$", name):
                 templates.append(file_path)
         return sorted(templates)
@@ -1722,7 +1733,7 @@ class GenerationSelectorDialog(tk.Toplevel):
             if not self._get_root_templates_for_distribution():
                 messagebox.showwarning(
                     "Aucun template conforme",
-                    "Aucun template racine conforme à la charte n'a été trouvé.\n"
+                    "Aucun template conforme à la charte n'a été trouvé dans _Racine-Actifs ni à la racine.\n"
                     "Format attendu: YYYY-MM_Nom-Document_Template.docx"
                 )
                 return
