@@ -227,9 +227,9 @@ class GenerationSelectorDialog(tk.Toplevel):
             self.title("📄 Modèles de documents")
         else:
             self.title("📄 Sélectionner les documents à générer")
-        # Slightly reduce geometry to avoid taskbar overlap.
+        # Fit dialog to visible work area so footer buttons stay reachable.
         try:
-            margin = 36
+            margin = 24
             screen_w = self.winfo_screenwidth()
             screen_h = self.winfo_screenheight()
             work_x = 0
@@ -249,15 +249,18 @@ class GenerationSelectorDialog(tk.Toplevel):
                         work_h = max(1, rect.bottom - rect.top)
                 except Exception:
                     pass
-            width = max(1080, int(work_w) - margin)
-            height = max(700, int(work_h) - margin)
+            # Never exceed visible work area; clamp to a practical desktop size.
+            max_width = max(760, int(work_w) - margin)
+            max_height = max(560, int(work_h) - margin)
+            width = min(1280, max_width)
+            height = min(860, max_height)
             self.geometry(f"{width}x{height}+{int(work_x)}+{int(work_y)}")
             self._skip_centering = True
         except Exception:
             pass
         self.resizable(True, True)
         try:
-            self.minsize(1080, 700)
+            self.minsize(920, 620)
         except Exception:
             pass
 
@@ -1387,8 +1390,15 @@ class GenerationSelectorDialog(tk.Toplevel):
         selected_form = (self.legal_form_var.get() or '').strip() or LEGAL_FORM_OPTIONS[0]
         dialog = tk.Toplevel(self)
         dialog.title("Supprimer des modèles")
-        dialog.geometry("760x560")
-        dialog.minsize(680, 480)
+        try:
+            host_w = max(680, int(self.winfo_width()))
+            host_h = max(520, int(self.winfo_height()))
+            dialog_w = min(900, max(700, host_w - 180))
+            dialog_h = min(720, max(500, host_h - 140))
+            dialog.geometry(f"{dialog_w}x{dialog_h}")
+        except Exception:
+            dialog.geometry("760x560")
+        dialog.minsize(640, 460)
         try:
             dialog.transient(self)
             dialog.grab_set()
@@ -1600,16 +1610,7 @@ class GenerationSelectorDialog(tk.Toplevel):
 
         button_row = ttk.Frame(container)
         button_row.pack(fill='x', pady=(10, 0))
-
-        clear_all_btn = WidgetFactory.create_button(
-            button_row,
-            text="Désélectionner tous",
-            command=_clear_all_delete_templates,
-            style='Secondary.TButton',
-            icon_key='',
-        )
-        clear_all_btn.configure(width=18)
-        clear_all_btn.pack(side='left', padx=(0, 6))
+        btn_gap = 8
 
         select_all_btn = WidgetFactory.create_button(
             button_row,
@@ -1619,7 +1620,17 @@ class GenerationSelectorDialog(tk.Toplevel):
             icon_key='',
         )
         select_all_btn.configure(width=18)
-        select_all_btn.pack(side='left')
+        select_all_btn.pack(side='left', padx=(0, btn_gap))
+
+        clear_all_btn = WidgetFactory.create_button(
+            button_row,
+            text="Désélectionner tous",
+            command=_clear_all_delete_templates,
+            style='Secondary.TButton',
+            icon_key='',
+        )
+        clear_all_btn.configure(width=18)
+        clear_all_btn.pack(side='left', padx=(0, btn_gap))
 
         cancel_btn = WidgetFactory.create_button(
             button_row,
@@ -1631,16 +1642,6 @@ class GenerationSelectorDialog(tk.Toplevel):
         cancel_btn.configure(width=14)
         cancel_btn.pack(side='right')
 
-        confirm_btn = WidgetFactory.create_button(
-            button_row,
-            text="Supprimer",
-            command=_confirm_delete,
-            style='Cancel.TButton',
-            icon_key='',
-        )
-        confirm_btn.configure(width=14)
-        confirm_btn.pack(side='right', padx=(0, 6))
-
         delete_all_btn = WidgetFactory.create_button(
             button_row,
             text="Supprimer tous",
@@ -1649,7 +1650,17 @@ class GenerationSelectorDialog(tk.Toplevel):
             icon_key='',
         )
         delete_all_btn.configure(width=16)
-        delete_all_btn.pack(side='right', padx=(0, 6))
+        delete_all_btn.pack(side='right', padx=(0, btn_gap))
+
+        confirm_btn = WidgetFactory.create_button(
+            button_row,
+            text="Supprimer",
+            command=_confirm_delete,
+            style='Cancel.TButton',
+            icon_key='',
+        )
+        confirm_btn.configure(width=14)
+        confirm_btn.pack(side='right', padx=(0, btn_gap))
 
         form_combo.bind('<<ComboboxSelected>>', _refresh_delete_list)
         inner_frame.bind('<Configure>', lambda _event=None: canvas.configure(scrollregion=canvas.bbox('all')))
@@ -1719,8 +1730,15 @@ class GenerationSelectorDialog(tk.Toplevel):
             selected_form = (self.legal_form_var.get() or '').strip() or LEGAL_FORM_OPTIONS[0]
             dialog = tk.Toplevel(self)
             dialog.title("Copier des modèles")
-            dialog.geometry("760x560")
-            dialog.minsize(680, 480)
+            try:
+                host_w = max(680, int(self.winfo_width()))
+                host_h = max(520, int(self.winfo_height()))
+                dialog_w = min(900, max(700, host_w - 180))
+                dialog_h = min(720, max(500, host_h - 140))
+                dialog.geometry(f"{dialog_w}x{dialog_h}")
+            except Exception:
+                dialog.geometry("760x560")
+            dialog.minsize(640, 460)
             try:
                 dialog.transient(self)
                 dialog.grab_set()
@@ -1922,16 +1940,7 @@ class GenerationSelectorDialog(tk.Toplevel):
 
             button_row = ttk.Frame(container)
             button_row.pack(fill='x', pady=(10, 0))
-
-            clear_all_btn = WidgetFactory.create_button(
-                button_row,
-                text="Désélectionner tous",
-                command=_clear_all_copy_templates,
-                style='Secondary.TButton',
-                icon_key='',
-            )
-            clear_all_btn.configure(width=18)
-            clear_all_btn.pack(side='left', padx=(0, 6))
+            btn_gap = 8
 
             select_all_btn = WidgetFactory.create_button(
                 button_row,
@@ -1941,7 +1950,17 @@ class GenerationSelectorDialog(tk.Toplevel):
                 icon_key='',
             )
             select_all_btn.configure(width=18)
-            select_all_btn.pack(side='left')
+            select_all_btn.pack(side='left', padx=(0, btn_gap))
+
+            clear_all_btn = WidgetFactory.create_button(
+                button_row,
+                text="Désélectionner tous",
+                command=_clear_all_copy_templates,
+                style='Secondary.TButton',
+                icon_key='',
+            )
+            clear_all_btn.configure(width=18)
+            clear_all_btn.pack(side='left', padx=(0, btn_gap))
 
             cancel_btn = WidgetFactory.create_button(
                 button_row,
@@ -1961,7 +1980,7 @@ class GenerationSelectorDialog(tk.Toplevel):
                 icon_key='',
             )
             confirm_btn.configure(width=14)
-            confirm_btn.pack(side='right', padx=(0, 6))
+            confirm_btn.pack(side='right', padx=(0, btn_gap))
 
             form_combo.bind('<<ComboboxSelected>>', _refresh_copy_list)
             inner_frame.bind('<Configure>', lambda _event=None: canvas.configure(scrollregion=canvas.bbox('all')))
