@@ -266,6 +266,18 @@ def build_render_context(values: Dict) -> Dict:
         'prix_mensuel': 'PRIX_CONTRAT', 'prix_inter': 'PRIX_INTERMEDIARE_CONTRAT',
         'prix_contrat': 'PRIX_CONTRAT', 'prix_intermediare': 'PRIX_INTERMEDIARE_CONTRAT',
         'date_debut': 'DOM_DATEDEB', 'date_fin': 'DOM_DATEFIN', 'dom_datedeb': 'DOM_DATEDEB', 'dom_datefin': 'DOM_DATEFIN',
+        'pack_demarrage_montant': 'MONTANT_PACK_DEMARRAGE_TTC',
+        'pack_demarrage_loyer': 'LOYER_MENSUEL_PACK_DEMARRAGE_TTC',
+        'montant_pack_demarrage_ttc': 'MONTANT_PACK_DEMARRAGE_TTC',
+        'loyer_mensuel_pack_demarrage_ttc': 'LOYER_MENSUEL_PACK_DEMARRAGE_TTC',
+        'type_renouvellement': 'TYPE_RENOUVELLEMENT',
+        'tva_renouvellement': 'TAUX_TVA_RENOUVELLEMENT_POURCENT',
+        'dh_ht_renouvellement': 'LOYER_MENSUEL_HT_RENOUVELLEMENT',
+        'montant_ht_renouvellement': 'MONTANT_TOTAL_HT_RENOUVELLEMENT',
+        'loyer_renouvellement_mensuel': 'LOYER_MENSUEL_RENOUVELLEMENT_TTC',
+        'loyer_renouvellement_annuel': 'LOYER_ANNUEL_RENOUVELLEMENT_TTC',
+        'loyer_mensuel_renouvellement_ttc': 'LOYER_MENSUEL_RENOUVELLEMENT_TTC',
+        'loyer_annuel_renouvellement_ttc': 'LOYER_ANNUEL_RENOUVELLEMENT_TTC',
         'type_contrat_domiciliation': 'TYPE_CONTRAT_DOMICILIATION',
         'type_contrat_domiciliation_autre': 'TYPE_CONTRAT_DOMICILIATION_AUTRE',
         # Compatibility input key used in some older payloads/templates.
@@ -289,6 +301,21 @@ def build_render_context(values: Dict) -> Dict:
                 ctx['DATE_CONTRAT'] = v
         except Exception:
             pass
+    if 'DATE_CONTRAT' in ctx and 'DTAE_CONTRAT' not in ctx:
+        try:
+            ctx['DTAE_CONTRAT'] = ctx['DATE_CONTRAT']
+        except Exception:
+            pass
+
+    # Extra legacy aliases used by some contract templates.
+    if ctx.get('MONTANT_PACK_DEMARRAGE_TTC') and not ctx.get('PACK_DEMARRAGE_TOTAL_TTC'):
+        ctx['PACK_DEMARRAGE_TOTAL_TTC'] = ctx['MONTANT_PACK_DEMARRAGE_TTC']
+    if ctx.get('LOYER_MENSUEL_PACK_DEMARRAGE_TTC') and not ctx.get('PACK_DEMARRAGE_LOYER_MENSUEL'):
+        ctx['PACK_DEMARRAGE_LOYER_MENSUEL'] = ctx['LOYER_MENSUEL_PACK_DEMARRAGE_TTC']
+    if ctx.get('LOYER_MENSUEL_RENOUVELLEMENT_TTC') and not ctx.get('RENOUVELLEMENT_LOYER_MENSUEL'):
+        ctx['RENOUVELLEMENT_LOYER_MENSUEL'] = ctx['LOYER_MENSUEL_RENOUVELLEMENT_TTC']
+    if ctx.get('LOYER_ANNUEL_RENOUVELLEMENT_TTC') and not ctx.get('RENOUVELLEMENT_LOYER_ANNUEL'):
+        ctx['RENOUVELLEMENT_LOYER_ANNUEL'] = ctx['LOYER_ANNUEL_RENOUVELLEMENT_TTC']
 
     try:
         activities = _extract_activities_list(
@@ -806,6 +833,18 @@ def render_templates(
             'prix_mensuel': 'PRIX_CONTRAT', 'prix_inter': 'PRIX_INTERMEDIARE_CONTRAT',
             'prix_contrat': 'PRIX_CONTRAT', 'prix_intermediare': 'PRIX_INTERMEDIARE_CONTRAT',
             'date_debut': 'DOM_DATEDEB', 'date_fin': 'DOM_DATEFIN', 'dom_datedeb': 'DOM_DATEDEB', 'dom_datefin': 'DOM_DATEFIN',
+            'pack_demarrage_montant': 'MONTANT_PACK_DEMARRAGE_TTC',
+            'pack_demarrage_loyer': 'LOYER_MENSUEL_PACK_DEMARRAGE_TTC',
+            'montant_pack_demarrage_ttc': 'MONTANT_PACK_DEMARRAGE_TTC',
+            'loyer_mensuel_pack_demarrage_ttc': 'LOYER_MENSUEL_PACK_DEMARRAGE_TTC',
+            'type_renouvellement': 'TYPE_RENOUVELLEMENT',
+            'tva_renouvellement': 'TAUX_TVA_RENOUVELLEMENT_POURCENT',
+            'dh_ht_renouvellement': 'LOYER_MENSUEL_HT_RENOUVELLEMENT',
+            'montant_ht_renouvellement': 'MONTANT_TOTAL_HT_RENOUVELLEMENT',
+            'loyer_renouvellement_mensuel': 'LOYER_MENSUEL_RENOUVELLEMENT_TTC',
+            'loyer_renouvellement_annuel': 'LOYER_ANNUEL_RENOUVELLEMENT_TTC',
+            'loyer_mensuel_renouvellement_ttc': 'LOYER_MENSUEL_RENOUVELLEMENT_TTC',
+            'loyer_annuel_renouvellement_ttc': 'LOYER_ANNUEL_RENOUVELLEMENT_TTC',
             'type_contrat_domiciliation': 'TYPE_CONTRAT_DOMICILIATION',
             'type_contrat_domiciliation_autre': 'TYPE_CONTRAT_DOMICILIATION_AUTRE',
             # Compatibility input key used in some older payloads/templates.
@@ -845,6 +884,15 @@ def render_templates(
                 ctx['DTAE_CONTRAT'] = ctx['DATE_CONTRAT']
             except Exception:
                 pass
+        # Extra legacy aliases used by some contract templates.
+        if ctx.get('MONTANT_PACK_DEMARRAGE_TTC') and not ctx.get('PACK_DEMARRAGE_TOTAL_TTC'):
+            ctx['PACK_DEMARRAGE_TOTAL_TTC'] = ctx['MONTANT_PACK_DEMARRAGE_TTC']
+        if ctx.get('LOYER_MENSUEL_PACK_DEMARRAGE_TTC') and not ctx.get('PACK_DEMARRAGE_LOYER_MENSUEL'):
+            ctx['PACK_DEMARRAGE_LOYER_MENSUEL'] = ctx['LOYER_MENSUEL_PACK_DEMARRAGE_TTC']
+        if ctx.get('LOYER_MENSUEL_RENOUVELLEMENT_TTC') and not ctx.get('RENOUVELLEMENT_LOYER_MENSUEL'):
+            ctx['RENOUVELLEMENT_LOYER_MENSUEL'] = ctx['LOYER_MENSUEL_RENOUVELLEMENT_TTC']
+        if ctx.get('LOYER_ANNUEL_RENOUVELLEMENT_TTC') and not ctx.get('RENOUVELLEMENT_LOYER_ANNUEL'):
+            ctx['RENOUVELLEMENT_LOYER_ANNUEL'] = ctx['LOYER_ANNUEL_RENOUVELLEMENT_TTC']
 
         # Activities — keep backward compatibility (1..6) while supporting all provided entries.
         try:
