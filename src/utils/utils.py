@@ -1139,7 +1139,7 @@ class WidgetFactory:
 
 class WindowManager:
     @staticmethod
-    def setup_window(root, title=""):
+    def setup_window(root, title="", enter_fullscreen: bool = True):
         # Obtenir les dimensions de l'écran
         screen_width = root.winfo_screenwidth()
         screen_height = root.winfo_screenheight()
@@ -1156,15 +1156,21 @@ class WindowManager:
         if title:
             root.title(title)
 
+        if not enter_fullscreen:
+            return
+
         # Configurer le plein écran selon le système
         import platform
-        if platform.system() == "Linux":
-            root.attributes('-fullscreen', True)
+        system_name = platform.system()
+        if system_name in ("Linux", "Darwin"):
+            try:
+                root.attributes('-fullscreen', True)
+            except Exception:
+                pass
+            root.bind('<Escape>', lambda e: root.attributes('-fullscreen', False))
         else:  # Windows
             root.state('zoomed')
-
-        # Configurer la touche Échap pour quitter le plein écran
-        root.bind('<Escape>', lambda e: root.state('normal'))
+            root.bind('<Escape>', lambda e: root.state('normal'))
 
     @staticmethod
     def center_window(win, center_on_parent: bool = True):

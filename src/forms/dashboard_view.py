@@ -60,6 +60,7 @@ class DashboardView(tk.Toplevel):
 
     def __init__(self, parent, action_handler=None, start_fullscreen: bool = False):
         super().__init__(parent)
+        self.withdraw()
         self.parent = parent
         self.action_handler = action_handler
         self.title("Tableau de Bord — Centre de Domiciliation")
@@ -110,9 +111,15 @@ class DashboardView(tk.Toplevel):
 
         if start_fullscreen:
             self._enter_fullscreen()
+
         try:
             self.lift()
             self.focus_force()
+        except Exception:
+            pass
+
+        try:
+            self.deiconify()
         except Exception:
             pass
 
@@ -128,6 +135,13 @@ class DashboardView(tk.Toplevel):
 
     def _enter_fullscreen(self):
         """Maximize dashboard window."""
+        try:
+            self.update_idletasks()
+            self.attributes('-fullscreen', True)
+            self._is_fullscreen = True
+            return
+        except Exception:
+            pass
         try:
             self.state('zoomed')
             self._is_fullscreen = True
@@ -147,6 +161,10 @@ class DashboardView(tk.Toplevel):
         return "break"
 
     def _exit_fullscreen(self, _event=None):
+        try:
+            self.attributes('-fullscreen', False)
+        except Exception:
+            pass
         try:
             self.state('normal')
         except Exception:
@@ -1207,6 +1225,14 @@ class DashboardView(tk.Toplevel):
                     pass
             elif self._parent_withdrawn:
                 try:
+                    try:
+                        self.parent.overrideredirect(False)
+                    except Exception:
+                        pass
+                    try:
+                        self.parent.attributes('-alpha', 1.0)
+                    except Exception:
+                        pass
                     if fullscreen_parent:
                         try:
                             self.parent.state('zoomed')

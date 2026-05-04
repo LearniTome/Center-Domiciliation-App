@@ -51,13 +51,28 @@ class MainApp(tk.Tk):
         app_token = self.startup_profiler.start_span("MainApp.__init__")
         tk_token = self.startup_profiler.start_span("tk.Tk.__init__")
         super().__init__()
+        try:
+            self.withdraw()
+            self.update_idletasks()
+        except Exception:
+            pass
         self.startup_profiler.end_span(tk_token)
 
         self._startup_dashboard_mode = self._should_open_dashboard_on_startup()
 
         # Configuration de la fenêtre principale
         with self._startup_span("WindowManager.setup_window"):
-            WindowManager.setup_window(self, "Genérateurs Docs Juridiques")
+            WindowManager.setup_window(
+                self,
+                "Genérateurs Docs Juridiques",
+                enter_fullscreen=not self._startup_dashboard_mode,
+            )
+
+        if not self._startup_dashboard_mode:
+            try:
+                self.deiconify()
+            except Exception:
+                pass
 
         # Startup dashboard mode: keep the main generator window hidden initially.
         if self._startup_dashboard_mode:
