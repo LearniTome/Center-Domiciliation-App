@@ -218,7 +218,8 @@ class ContratForm(ttk.Frame):
             db_path = PathManager.DATABASE_DIR / _const.DB_FILENAME
             if not db_path.exists():
                 return []
-            df = _pd.read_excel(db_path, sheet_name='Collaborateurs', dtype=str).fillna('')
+            from ..utils.utils import read_db_table
+            df = read_db_table(db_path, 'Collaborateurs', ['collaborateur_nom'])
             if df.empty:
                 return []
             col = None

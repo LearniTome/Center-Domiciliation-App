@@ -270,4 +270,4 @@ excel_sheets = {
 }
 
 # Default database filename used across the app
-DB_FILENAME = "DataBase_domiciliation.xlsx"
+DB_FILENAME = "app.db"

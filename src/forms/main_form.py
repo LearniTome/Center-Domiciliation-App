@@ -11,7 +11,7 @@ from .societe_form import SocieteForm
 from .associe_form import AssocieForm
 from .contrat_form import ContratForm
 from .collaborateur_form import CollaborateurForm
-from ..utils.utils import ThemeManager, WidgetFactory, WindowManager, PathManager, ensure_excel_db
+from ..utils.utils import ThemeManager, WidgetFactory, WindowManager, PathManager, ensure_excel_db, read_db_table, write_db_table
 from ..utils import constants as _const
 from pathlib import Path
 
@@ -452,7 +452,7 @@ class MainForm(ttk.Frame):
                     import pandas as _pd
                     from ..utils.utils import normalize_canonical_dataframe_for_storage
 
-                    df = _pd.read_excel(db_path, sheet_name='Collaborateurs', dtype=str).fillna('')
+                    df = read_db_table(db_path, 'Collaborateurs', _const.collaborateur_headers)
                     alias_map = getattr(_const, 'collaborateur_header_aliases', {}) or {}
                     if alias_map:
                         for old_col, new_col in alias_map.items():
@@ -507,20 +507,7 @@ class MainForm(ttk.Frame):
                         df = normalize_canonical_dataframe_for_storage(
                             df.reindex(columns=_const.collaborateur_headers, fill_value='')
                         )
-                        try:
-                            with _pd.ExcelWriter(db_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-                                df.to_excel(writer, sheet_name='Collaborateurs', index=False)
-                        except TypeError:
-                            from openpyxl import load_workbook
-                            wb = load_workbook(db_path)
-                            if 'Collaborateurs' in wb.sheetnames:
-                                try:
-                                    wb.remove(wb['Collaborateurs'])
-                                except Exception:
-                                    pass
-                            wb.save(db_path)
-                            with _pd.ExcelWriter(db_path, engine='openpyxl', mode='a') as writer:
-                                df.to_excel(writer, sheet_name='Collaborateurs', index=False)
+                        write_db_table(db_path, 'Collaborateurs', df)
                         normalize_excel_storage(db_path)
                         updated = True
                 except Exception:
@@ -2699,26 +2686,26 @@ class MainForm(ttk.Frame):
             return out
 
         try:
-            soc_df = _pd.read_excel(db_path, sheet_name='Societes', dtype=str).fillna('')
+            soc_df = read_db_table(db_path, 'Societes', _const.societe_headers)
         except Exception:
             soc_df = _pd.DataFrame(columns=_const.societe_headers)
         soc_df = _apply_aliases(soc_df, getattr(_const, 'societe_header_aliases', {}) or {})
         soc_df = soc_df.reindex(columns=_const.societe_headers, fill_value='')
 
         try:
-            assoc_df = _pd.read_excel(db_path, sheet_name='Associes', dtype=str).fillna('')
+            assoc_df = read_db_table(db_path, 'Associes', _const.associe_headers)
         except Exception:
             assoc_df = _pd.DataFrame(columns=_const.associe_headers)
         assoc_df = _apply_aliases(assoc_df, getattr(_const, 'associe_header_aliases', {}) or {})
 
         try:
-            contrat_df = _pd.read_excel(db_path, sheet_name='Contrats', dtype=str).fillna('')
+            contrat_df = read_db_table(db_path, 'Contrats', _const.contrat_headers)
         except Exception:
             contrat_df = _pd.DataFrame(columns=_const.contrat_headers)
         contrat_df = _apply_aliases(contrat_df, getattr(_const, 'contrat_header_aliases', {}) or {})
 
         try:
-            collab_df = _pd.read_excel(db_path, sheet_name='Collaborateurs', dtype=str).fillna('')
+            collab_df = read_db_table(db_path, 'Collaborateurs', _const.collaborateur_headers)
         except Exception:
             collab_df = _pd.DataFrame(columns=getattr(_const, 'collaborateur_headers', []))
         collab_df = _apply_aliases(collab_df, getattr(_const, 'collaborateur_header_aliases', {}) or {})
@@ -3038,27 +3025,10 @@ class MainForm(ttk.Frame):
         contrat_df = normalize_canonical_dataframe_for_storage(contrat_df.reindex(columns=_const.contrat_headers, fill_value=''))
         collab_df = normalize_canonical_dataframe_for_storage(collab_df.reindex(columns=_const.collaborateur_headers, fill_value=''))
 
-        try:
-            with _pd.ExcelWriter(db_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-                soc_df.to_excel(writer, sheet_name='Societes', index=False)
-                assoc_df.to_excel(writer, sheet_name='Associes', index=False)
-                contrat_df.to_excel(writer, sheet_name='Contrats', index=False)
-                collab_df.to_excel(writer, sheet_name='Collaborateurs', index=False)
-        except TypeError:
-            from openpyxl import load_workbook
-            wb = load_workbook(db_path)
-            for sname in ('Societes', 'Associes', 'Contrats', 'Collaborateurs'):
-                if sname in wb.sheetnames:
-                    try:
-                        wb.remove(wb[sname])
-                    except Exception:
-                        pass
-            wb.save(db_path)
-            with _pd.ExcelWriter(db_path, engine='openpyxl', mode='a') as writer:
-                soc_df.to_excel(writer, sheet_name='Societes', index=False)
-                assoc_df.to_excel(writer, sheet_name='Associes', index=False)
-                contrat_df.to_excel(writer, sheet_name='Contrats', index=False)
-                collab_df.to_excel(writer, sheet_name='Collaborateurs', index=False)
+        write_db_table(db_path, 'Societes', soc_df)
+        write_db_table(db_path, 'Associes', assoc_df)
+        write_db_table(db_path, 'Contrats', contrat_df)
+        write_db_table(db_path, 'Collaborateurs', collab_df)
 
         try:
             normalize_excel_storage(db_path)
@@ -3229,28 +3199,12 @@ class MainForm(ttk.Frame):
                         contrat_df = normalize_canonical_dataframe_for_storage(contrat_df.reindex(columns=_const.contrat_headers, fill_value=''))
                         collab_df = normalize_canonical_dataframe_for_storage(collab_df.reindex(columns=_const.collaborateur_headers, fill_value=''))
 
-                        with _pd.ExcelWriter(db_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-                            soc_df.to_excel(writer, sheet_name='Societes', index=False)
-                            assoc_df.to_excel(writer, sheet_name='Associes', index=False)
-                            contrat_df.to_excel(writer, sheet_name='Contrats', index=False)
-                            collab_df.to_excel(writer, sheet_name='Collaborateurs', index=False)
-                    except TypeError:
-                        # pandas older version fallback
-                        from openpyxl import load_workbook
-                        wb = load_workbook(db_path)
-                        for sname, df in (('Societes', soc_df), ('Associes', assoc_df), ('Contrats', contrat_df), ('Collaborateurs', collab_df)):
-                            if sname in wb.sheetnames:
-                                try:
-                                    std = wb[sname]
-                                    wb.remove(std)
-                                except Exception:
-                                    pass
-                        wb.save(db_path)
-                        with _pd.ExcelWriter(db_path, engine='openpyxl', mode='a') as writer:
-                            soc_df.to_excel(writer, sheet_name='Societes', index=False)
-                            assoc_df.to_excel(writer, sheet_name='Associes', index=False)
-                            contrat_df.to_excel(writer, sheet_name='Contrats', index=False)
-                            collab_df.to_excel(writer, sheet_name='Collaborateurs', index=False)
+                        write_db_table(db_path, 'Societes', soc_df)
+                        write_db_table(db_path, 'Associes', assoc_df)
+                        write_db_table(db_path, 'Contrats', contrat_df)
+                        write_db_table(db_path, 'Collaborateurs', collab_df)
+                    except Exception:
+                        pass
 
                     try:
                         normalize_excel_storage(db_path)

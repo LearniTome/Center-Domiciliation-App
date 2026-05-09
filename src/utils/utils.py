@@ -21,6 +21,7 @@ from openpyxl import Workbook
 from pathlib import Path as _Path
 import pandas as _pd
 import shutil
+import sqlite3
 
 # Configuration du logging
 logging.basicConfig(
@@ -1227,7 +1228,7 @@ class PathManager:
     CONFIG_DIR = BASE_DIR / "config"
     ALLOWED_EXTENSIONS = {
         'models': ['.docx', '.doc'],
-        'database': ['.xlsx', '.xls'],
+        'database': ['.xlsx', '.xls', '.db', '.sqlite', '.sqlite3'],
         'config': ['.json']
     }
 
@@ -1289,6 +1290,11 @@ def ensure_excel_db(path, sheets: dict):
     Idempotent: if the file exists, ensure missing sheets are added with headers.
     Also attempts to set basic date column formatting where column names contain 'date'.
     """
+    path = Path(path)
+    if path.suffix.lower() in {'.db', '.sqlite', '.sqlite3'}:
+        ensure_sqlite_db(path, sheets)
+        return
+
     try:
         import openpyxl
     except Exception:
@@ -1296,7 +1302,6 @@ def ensure_excel_db(path, sheets: dict):
 
     from . import constants as _const
 
-    path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
 
     if not path.exists():
@@ -1325,6 +1330,81 @@ def ensure_excel_db(path, sheets: dict):
             modified = True
     if modified:
         wb.save(path)
+
+
+def ensure_sqlite_db(path, sheets: dict):
+    """Create SQLite DB and ensure all expected tables/columns exist."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(path)
+    try:
+        cur = conn.cursor()
+        for table_name, columns in sheets.items():
+            col_defs = []
+            for col in columns:
+                if col.startswith("id_"):
+                    col_defs.append(f'"{col}" INTEGER')
+                else:
+                    col_defs.append(f'"{col}" TEXT')
+            cur.execute(f'CREATE TABLE IF NOT EXISTS "{table_name}" ({", ".join(col_defs)})')
+            # Add missing columns for schema drift
+            cur.execute(f'PRAGMA table_info("{table_name}")')
+            existing_cols = {row[1] for row in cur.fetchall()}
+            for col in columns:
+                if col not in existing_cols:
+                    col_type = "INTEGER" if col.startswith("id_") else "TEXT"
+                    cur.execute(f'ALTER TABLE "{table_name}" ADD COLUMN "{col}" {col_type}')
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def read_db_table(path, table_name: str, columns: list[str]) -> _pd.DataFrame:
+    """Read a table from Excel or SQLite and return canonical DataFrame."""
+    path = _Path(path)
+    if path.suffix.lower() in {".db", ".sqlite", ".sqlite3"}:
+        if not path.exists():
+            return _pd.DataFrame(columns=columns)
+        conn = sqlite3.connect(path)
+        try:
+            df = _pd.read_sql_query(f'SELECT * FROM "{table_name}"', conn)
+            if df.empty:
+                return _pd.DataFrame(columns=columns)
+            return df.fillna('').reindex(columns=columns, fill_value='')
+        except Exception:
+            return _pd.DataFrame(columns=columns)
+        finally:
+            conn.close()
+    try:
+        return _pd.read_excel(path, sheet_name=table_name, dtype=str).fillna('').reindex(columns=columns, fill_value='')
+    except Exception:
+        return _pd.DataFrame(columns=columns)
+
+
+def write_db_table(path, table_name: str, df: _pd.DataFrame):
+    """Write/replace table content in Excel or SQLite."""
+    path = _Path(path)
+    if path.suffix.lower() in {".db", ".sqlite", ".sqlite3"}:
+        ensure_sqlite_db(path, {table_name: list(df.columns)})
+        conn = sqlite3.connect(path)
+        try:
+            df.to_sql(table_name, conn, if_exists='replace', index=False)
+        finally:
+            conn.close()
+        return
+    try:
+        with _pd.ExcelWriter(path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+            df.to_excel(writer, sheet_name=table_name, index=False)
+    except TypeError:
+        wb = load_workbook(path)
+        if table_name in wb.sheetnames:
+            try:
+                wb.remove(wb[table_name])
+            except Exception:
+                pass
+        wb.save(path)
+        with _pd.ExcelWriter(path, engine='openpyxl', mode='a') as writer:
+            df.to_excel(writer, sheet_name=table_name, index=False)
 
     # Align canonical columns for existing sheets (add newly introduced columns).
     try:
@@ -1417,6 +1497,18 @@ def _normalize_reference_values(values) -> list:
     return normalized
 
 
+def _reference_sheet_column_name(sheet_name: str) -> str:
+    if sheet_name == 'SteAdresses':
+        return 'ste_adresse'
+    if sheet_name == 'Tribunaux':
+        return 'tribunal'
+    if sheet_name == 'Activites':
+        return 'activite'
+    if sheet_name == 'Nationalites':
+        return 'nationalite'
+    return 'lieu_naissance'
+
+
 def _load_reference_sheets_cached(db_path: _Path) -> dict:
     fallback = _reference_fallback_map()
     try:
@@ -1437,18 +1529,28 @@ def _load_reference_sheets_cached(db_path: _Path) -> dict:
     sheets_data = {}
     if path_obj.exists():
         try:
-            excel_file = _pd.ExcelFile(path_obj)
-            for sheet_name in fallback.keys():
-                try:
-                    df = excel_file.parse(sheet_name=sheet_name, dtype=str)
-                    if df.empty or len(df.columns) == 0:
+            if path_obj.suffix.lower() in {'.db', '.sqlite', '.sqlite3'}:
+                for sheet_name in fallback.keys():
+                    col_name = _reference_sheet_column_name(sheet_name)
+                    df = read_db_table(path_obj, sheet_name, [col_name])
+                    if df.empty:
                         sheets_data[sheet_name] = list(fallback[sheet_name])
                     else:
-                        col_name = df.columns[0]
                         values = _normalize_reference_values(df[col_name].fillna('').tolist())
                         sheets_data[sheet_name] = values if values else list(fallback[sheet_name])
-                except Exception:
-                    sheets_data[sheet_name] = list(fallback[sheet_name])
+            else:
+                excel_file = _pd.ExcelFile(path_obj)
+                for sheet_name in fallback.keys():
+                    try:
+                        df = excel_file.parse(sheet_name=sheet_name, dtype=str)
+                        if df.empty or len(df.columns) == 0:
+                            sheets_data[sheet_name] = list(fallback[sheet_name])
+                        else:
+                            col_name = df.columns[0]
+                            values = _normalize_reference_values(df[col_name].fillna('').tolist())
+                            sheets_data[sheet_name] = values if values else list(fallback[sheet_name])
+                    except Exception:
+                        sheets_data[sheet_name] = list(fallback[sheet_name])
         except Exception:
             logger.exception('Failed to load reference workbook cache from %s', path_obj)
 
@@ -1496,6 +1598,22 @@ def initialize_reference_sheets(path):
 
         path = Path(path)
         if not path.exists():
+            return
+        if path.suffix.lower() in {'.db', '.sqlite', '.sqlite3'}:
+            ensure_sqlite_db(path, _const.excel_sheets)
+            ref_data = {
+                'SteAdresses': _const.SteAdresse,
+                'Tribunaux': _const.Tribunnaux,
+                'Activites': _const.Activities,
+                'Nationalites': _const.Nationalite,
+                'LieuxNaissance': ["Casablanca", "Rabat", "Fes", "Marrakech", "Agadir"],
+            }
+            for sheet_name, data_list in ref_data.items():
+                col_name = _const.excel_sheets[sheet_name][0]
+                existing = read_db_table(path, sheet_name, [col_name])
+                if existing.empty or existing[col_name].fillna('').astype(str).str.strip().eq('').all():
+                    df = _pd.DataFrame({col_name: data_list})
+                    write_db_table(path, sheet_name, df)
             return
 
         # Mapping of sheet names to data lists from constants
@@ -1565,6 +1683,121 @@ def write_records_to_db(path, societe_vals: dict, associes_list: list, contrat_v
 
     # import constants lazily to avoid circular imports
     from . import constants as _const
+
+    if path.suffix.lower() in {'.db', '.sqlite', '.sqlite3'}:
+        ensure_sqlite_db(path, _const.excel_sheets)
+        soc_existing = read_db_table(path, 'Societes', _const.societe_headers)
+        assoc_existing = read_db_table(path, 'Associes', _const.associe_headers)
+        contrat_existing = read_db_table(path, 'Contrats', _const.contrat_headers)
+        collab_existing = read_db_table(path, 'Collaborateurs', _const.collaborateur_headers)
+
+        def _next_id(df, col):
+            if col in df.columns and not df.empty:
+                nums = _pd.to_numeric(df[col], errors='coerce').dropna()
+                if not nums.empty:
+                    return int(nums.max()) + 1
+            return 1
+
+        sid = _next_id(soc_existing, 'id_societe')
+        soc_row = {h: '' for h in _const.societe_headers}
+        soc_row['id_societe'] = sid
+        soc_row['den_ste'] = societe_vals.get('denomination') or societe_vals.get('den_ste') or ''
+        soc_row['forme_jur'] = societe_vals.get('forme_juridique') or ''
+        soc_row['ice'] = societe_vals.get('ice') or ''
+        soc_row['date_ice'] = societe_vals.get('date_ice') or ''
+        soc_row['date_exp_cert_neg'] = societe_vals.get('date_expiration_certificat_negatif') or ''
+        soc_row['capital'] = societe_vals.get('capital') or ''
+        soc_row['part_social'] = societe_vals.get('parts_social') or ''
+        soc_row['valeur_nominale'] = societe_vals.get('valeur_nominale') or ''
+        soc_row['ste_adress'] = societe_vals.get('adresse') or ''
+        soc_row['tribunal'] = societe_vals.get('tribunal') or ''
+        soc_row['type_generation'] = societe_vals.get('type_generation') or societe_vals.get('generation_type') or ''
+        soc_row['procedure_creation'] = societe_vals.get('procedure_creation') or societe_vals.get('creation_procedure') or ''
+        soc_row['mode_depot_creation'] = societe_vals.get('mode_depot_creation') or societe_vals.get('creation_depot_mode') or ''
+        soc_row['dossier_domiciliation'] = societe_vals.get('dossier_domiciliation') or ''
+        soc_existing = _pd.concat([soc_existing, _pd.DataFrame([soc_row])], ignore_index=True)
+        write_db_table(path, 'Societes', soc_existing.reindex(columns=_const.societe_headers, fill_value=''))
+
+        if associes_list:
+            aid = _next_id(assoc_existing, 'id_associe')
+            rows = []
+            for a in associes_list:
+                if not isinstance(a, dict):
+                    continue
+                r = {h: '' for h in _const.associe_headers}
+                r['id_associe'] = aid
+                aid += 1
+                r['id_societe'] = sid
+                r['den_ste'] = soc_row['den_ste']
+                r['civil'] = a.get('civilite', '')
+                r['prenom'] = a.get('prenom', '')
+                r['nom'] = a.get('nom', '')
+                r['date_naiss'] = a.get('date_naiss', '')
+                r['lieu_naiss'] = a.get('lieu_naiss', '')
+                r['nationality'] = a.get('nationalite', '')
+                r['cin_num'] = a.get('num_piece', '')
+                r['cin_validaty'] = a.get('validite_piece', '')
+                r['adresse'] = a.get('adresse', '')
+                r['phone'] = a.get('telephone', '')
+                r['email'] = a.get('email', '')
+                r['part_percent'] = a.get('percentage', a.get('part_percentage', ''))
+                r['parts'] = a.get('parts', a.get('num_parts', ''))
+                r['capital_detenu'] = a.get('capital_detenu', '')
+                r['qualite_associe'] = a.get('qualite_associe', '')
+                r['qualite_gerant'] = a.get('qualite_gerant', '')
+                rows.append(r)
+            if rows:
+                assoc_existing = _pd.concat([assoc_existing, _pd.DataFrame(rows)], ignore_index=True)
+                write_db_table(path, 'Associes', assoc_existing.reindex(columns=_const.associe_headers, fill_value=''))
+
+        if contrat_vals:
+            cid = _next_id(contrat_existing, 'id_contrat')
+            r = {h: '' for h in _const.contrat_headers}
+            r['id_contrat'] = cid
+            r['id_societe'] = sid
+            r['den_ste'] = soc_row['den_ste']
+            map_c = {
+                'date_contrat': 'date_contrat', 'period': 'duree_contrat_mois',
+                'type_contrat_domiciliation': 'type_contrat_domiciliation',
+                'type_contrat_domiciliation_autre': 'type_contrat_domiciliation_autre',
+                'prix_mensuel': 'loyer_mensuel_ttc', 'prix_inter': 'frais_intermediaire_contrat',
+                'date_debut': 'date_debut_contrat', 'date_fin': 'date_fin_contrat',
+                'tva': 'taux_tva_pourcent', 'dh_ht': 'loyer_mensuel_ht',
+                'montant_ht': 'montant_total_ht_contrat',
+                'pack_demarrage_montant': 'montant_pack_demarrage_ttc',
+                'pack_demarrage_loyer': 'loyer_mensuel_pack_demarrage_ttc',
+                'type_renouvellement': 'type_renouvellement',
+                'tva_renouvellement': 'taux_tva_renouvellement_pourcent',
+                'dh_ht_renouvellement': 'loyer_mensuel_ht_renouvellement',
+                'montant_ht_renouvellement': 'montant_total_ht_renouvellement',
+                'loyer_renouvellement_mensuel': 'loyer_mensuel_renouvellement_ttc',
+                'loyer_renouvellement_annuel': 'loyer_annuel_renouvellement_ttc',
+            }
+            for k, h in map_c.items():
+                r[h] = contrat_vals.get(k, '')
+            contrat_existing = _pd.concat([contrat_existing, _pd.DataFrame([r])], ignore_index=True)
+            write_db_table(path, 'Contrats', contrat_existing.reindex(columns=_const.contrat_headers, fill_value=''))
+
+        if collaborateur_vals:
+            col_id = _next_id(collab_existing, 'id_collaborateur')
+            r = {h: '' for h in _const.collaborateur_headers}
+            r['id_collaborateur'] = col_id
+            r['id_societe'] = sid
+            r['den_ste'] = soc_row['den_ste']
+            r['collaborateur_type'] = collaborateur_vals.get('type', '')
+            r['collaborateur_code'] = collaborateur_vals.get('code', '')
+            r['collaborateur_nom'] = collaborateur_vals.get('nom', '')
+            r['collaborateur_ice'] = collaborateur_vals.get('ice', '')
+            r['collaborateur_tp'] = collaborateur_vals.get('tp', '')
+            r['collaborateur_rc'] = collaborateur_vals.get('rc', '')
+            r['collaborateur_if'] = collaborateur_vals.get('if', '')
+            r['collaborateur_tel_fixe'] = collaborateur_vals.get('tel_fixe', '')
+            r['collaborateur_tel_mobile'] = collaborateur_vals.get('tel_mobile', '')
+            r['collaborateur_adresse'] = collaborateur_vals.get('adresse', '')
+            r['collaborateur_email'] = collaborateur_vals.get('email', '')
+            collab_existing = _pd.concat([collab_existing, _pd.DataFrame([r])], ignore_index=True)
+            write_db_table(path, 'Collaborateurs', collab_existing.reindex(columns=_const.collaborateur_headers, fill_value=''))
+        return
 
     def _normalize_contrat_columns(df):
         """Rename legacy contract columns to the canonical names and merge values."""
@@ -2178,6 +2411,8 @@ def normalize_excel_storage(path):
     path = _Path(path)
     if not path.exists():
         return
+    if path.suffix.lower() in {'.db', '.sqlite', '.sqlite3'}:
+        return
 
     from . import constants as _const
 
@@ -2338,6 +2573,23 @@ def migrate_excel_workbook(path):
     """
     path = _Path(path)
     if not path.exists():
+        return
+    if path.suffix.lower() in {'.db', '.sqlite', '.sqlite3'}:
+        # Best effort one-time import from legacy Excel file if present.
+        try:
+            from . import constants as _const
+            legacy = path.parent / 'DataBase_domiciliation.xlsx'
+            if legacy.exists():
+                ensure_sqlite_db(path, _const.excel_sheets)
+                for sheet_name, headers in _const.excel_sheets.items():
+                    try:
+                        df = _pd.read_excel(legacy, sheet_name=sheet_name, dtype=str).fillna('')
+                    except Exception:
+                        continue
+                    if not df.empty:
+                        write_db_table(path, sheet_name, df.reindex(columns=headers, fill_value=''))
+        except Exception:
+            logger.exception('Failed SQLite migration from legacy Excel')
         return
     try:
         # Create a timestamped backup before modifying the workbook
@@ -2625,7 +2877,7 @@ def migrate_excel_workbook(path):
 
 
 def societe_exists(name: str, path: Optional[_Path] = None, exclude_id: Optional[str] = None) -> bool:
-    """Check whether a société with the given name exists in the Excel database.
+    """Check whether a société with the given name exists in the main database.
 
     Args:
         name: Company name to search for (case-insensitive, trimmed)
@@ -2647,9 +2899,8 @@ def societe_exists(name: str, path: Optional[_Path] = None, exclude_id: Optional
         if not db_path.exists():
             return False
 
-        try:
-            df = _pd.read_excel(db_path, sheet_name='Societes', dtype=str)
-        except Exception:
+        df = read_db_table(db_path, 'Societes', _const.societe_headers)
+        if df.empty:
             return False
 
         alias_map = getattr(_const, 'societe_header_aliases', {}) or {}
@@ -2705,4 +2956,3 @@ def societe_exists(name: str, path: Optional[_Path] = None, exclude_id: Optional
     except Exception:
         logger.exception('societe_exists check failed')
         return False
-

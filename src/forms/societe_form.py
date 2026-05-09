@@ -489,8 +489,9 @@ class SocieteForm(ttk.Frame):
 
         # Try pandas first (fast, consistent)
         try:
-            import pandas as _pd
-            df = _pd.read_excel(db_path, sheet_name='Societes', dtype=str).fillna('')
+            from ..utils.utils import read_db_table
+            from ..utils import constants as _const
+            df = read_db_table(db_path, 'Societes', _const.societe_headers)
             if df.empty:
                 return 1
             if 'dossier_domiciliation' not in df.columns:
@@ -515,6 +516,9 @@ class SocieteForm(ttk.Frame):
             return max_seq + 1
         except Exception:
             pass
+
+        if db_path.suffix.lower() in {'.db', '.sqlite', '.sqlite3'}:
+            return 1
 
         # Fallback: openpyxl (no pandas)
         try:

@@ -9,7 +9,7 @@ from typing import Optional
 
 import pandas as pd
 
-from ..utils.utils import ThemeManager, WidgetFactory, PathManager, ErrorHandler, WindowManager
+from ..utils.utils import ThemeManager, WidgetFactory, PathManager, ErrorHandler, WindowManager, read_db_table
 from ..utils import constants as _const
 from ..utils.constants import societe_headers, associe_headers, contrat_headers, collaborateur_headers
 
@@ -690,14 +690,14 @@ class DashboardView(tk.Toplevel):
                 return out
 
             PathManager.ensure_directories()
-            excel_path = PathManager.get_database_path('DataBase_domiciliation.xlsx')
+            db_path = PathManager.DATABASE_DIR / _const.DB_FILENAME
 
-            if excel_path.exists():
+            if db_path.exists():
                 try:
                     # Load all three main sheets
-                    self._societes_df = pd.read_excel(excel_path, sheet_name='Societes', dtype=str).fillna('')
-                    self._associes_df = pd.read_excel(excel_path, sheet_name='Associes', dtype=str).fillna('')
-                    self._contrats_df = pd.read_excel(excel_path, sheet_name='Contrats', dtype=str).fillna('')
+                    self._societes_df = read_db_table(db_path, 'Societes', _const.societe_headers)
+                    self._associes_df = read_db_table(db_path, 'Associes', _const.associe_headers)
+                    self._contrats_df = read_db_table(db_path, 'Contrats', _const.contrat_headers)
                     self._societes_df = _apply_aliases(
                         self._societes_df,
                         getattr(_const, 'societe_header_aliases', {}) or {},
@@ -728,7 +728,7 @@ class DashboardView(tk.Toplevel):
                     self._associes_df = _inject_denomination(self._associes_df, denom_map)
                     self._contrats_df = _inject_denomination(self._contrats_df, denom_map)
                     try:
-                        self._collaborateurs_df = pd.read_excel(excel_path, sheet_name='Collaborateurs', dtype=str).fillna('')
+                        self._collaborateurs_df = read_db_table(db_path, 'Collaborateurs', _const.collaborateur_headers)
                     except Exception:
                         self._collaborateurs_df = pd.DataFrame(columns=_const.collaborateur_headers)
                     self._collaborateurs_df = _apply_aliases(
