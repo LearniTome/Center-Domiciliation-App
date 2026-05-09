@@ -288,7 +288,13 @@ class ContratForm(ttk.Frame):
 
         # Label on top, widget below (matches AssocieForm style)
         ttk.Label(frame, text=label_text + ':', anchor='w').grid(row=0, column=0, sticky='w')
-        date_widget = DateEntry(frame, textvariable=variable, date_pattern='dd/mm/yyyy', width=12)
+        date_widget = DateEntry(
+            frame,
+            textvariable=variable,
+            date_pattern='dd/mm/yyyy',
+            width=12,
+            state='readonly',
+        )
         date_widget.grid(row=1, column=0, sticky='ew', pady=(2, 0))
         if bind_update:
             try:
@@ -372,9 +378,13 @@ class ContratForm(ttk.Frame):
         if not start or not period:
             return
 
-        # parse period as int (handle leading zeros)
+        # Parse period as number of months, allowing labels such as "12 mois".
         try:
-            months = int(period)
+            import re
+            match = re.search(r'\d+', str(period))
+            if not match:
+                return
+            months = int(match.group(0))
         except Exception:
             return
 

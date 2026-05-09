@@ -587,6 +587,15 @@ class DashboardView(tk.Toplevel):
             center_actions, text="➕ Ajouter", command=lambda: self._action('add'), style='Success.TButton'
         )
         self._action_buttons['add'].pack(side='left', padx=(0, 6), pady=2)
+        self._action_buttons['add_collaborateur'] = WidgetFactory.create_button(
+            center_actions,
+            text="🤝 Ajouter un collaborateur",
+            command=lambda: self._action('add_collaborateur'),
+            style='Success.TButton',
+        )
+        # Visible uniquement sur l'onglet Collaborateurs.
+        self._action_buttons['add_collaborateur'].pack(side='left', padx=(0, 6), pady=2)
+        self._action_buttons['add_collaborateur'].pack_forget()
         self._action_buttons['edit'] = WidgetFactory.create_button(
             center_actions, text="✏️ Modifier", command=lambda: self._action('edit'), style='Manage.TButton'
         )
@@ -1206,9 +1215,21 @@ class DashboardView(tk.Toplevel):
         action_handler = self._resolve_action_handler()
         has_handler = callable(action_handler)
         has_selection = self._get_selected_payload() is not None
+        is_collaborateur_page = self._current_page == 'collaborateur'
 
         try:
-            self._action_buttons['add'].configure(state='normal' if has_handler else 'disabled')
+            self._action_buttons['add'].configure(
+                state='disabled' if is_collaborateur_page else ('normal' if has_handler else 'disabled')
+            )
+            collab_btn = self._action_buttons.get('add_collaborateur')
+            if collab_btn is not None:
+                if is_collaborateur_page:
+                    if not collab_btn.winfo_manager():
+                        collab_btn.pack(side='left', padx=(0, 6), pady=2, before=self._action_buttons['edit'])
+                    collab_btn.configure(state='normal' if has_handler else 'disabled')
+                else:
+                    if collab_btn.winfo_manager():
+                        collab_btn.pack_forget()
             self._action_buttons['refresh'].configure(state='normal')
             edit_delete_state = 'normal' if has_handler and has_selection else 'disabled'
             self._action_buttons['edit'].configure(state=edit_delete_state)
@@ -1304,18 +1325,13 @@ class DashboardView(tk.Toplevel):
             pass
 
     def _hide_for_parent_switch(self, fullscreen_parent: bool = False):
-        """Hide dashboard while keeping it reusable, then focus the generator."""
+        """Keep dashboard visible and just focus the generator window."""
         try:
             self.grab_release()
         except Exception:
             pass
 
         self._restore_parent_window(fullscreen_parent=fullscreen_parent)
-
-        try:
-            self.withdraw()
-        except Exception:
-            pass
 
     def _open_tools(self):
         """Open tools dialog from dashboard, releasing grabs first."""
@@ -1356,12 +1372,30 @@ class DashboardView(tk.Toplevel):
             if action == 'refresh':
                 self._load_data()
                 self._show_toast('Données actualisées')
+            elif action == 'add_collaborateur':
+                if self._current_page != 'collaborateur':
+                    return
+                if not callable(self._resolve_action_handler()):
+                    messagebox.showwarning(
+                        'Ajouter un collaborateur',
+                        'Action Ajouter un collaborateur indisponible (handler introuvable).'
+                    )
+                    return
+                result = self._invoke_action_handler('add', None)
+                if (
+                    (not isinstance(result, dict) or result.get('status') != 'error')
+                    and not (isinstance(result, dict) and result.get('page') == 'collaborateur')
+                ):
+                    self._hide_for_parent_switch(fullscreen_parent=True)
             elif action == 'add':
                 if not callable(self._resolve_action_handler()):
                     messagebox.showwarning('Ajouter', 'Action Ajouter indisponible (handler introuvable).')
                     return
                 result = self._invoke_action_handler('add', None)
-                if not isinstance(result, dict) or result.get('status') != 'error':
+                if (
+                    (not isinstance(result, dict) or result.get('status') != 'error')
+                    and not (isinstance(result, dict) and result.get('page') == 'collaborateur')
+                ):
                     self._hide_for_parent_switch(fullscreen_parent=True)
             elif action == 'edit':
                 payload = self._get_selected_payload()
@@ -1375,7 +1409,10 @@ class DashboardView(tk.Toplevel):
                     messagebox.showwarning('Modifier', 'Action Modifier indisponible (handler introuvable).')
                     return
                 result = self._invoke_action_handler('edit', payload)
-                if not isinstance(result, dict) or result.get('status') == 'opened':
+                if (
+                    (not isinstance(result, dict) or result.get('status') == 'opened')
+                    and not (isinstance(result, dict) and result.get('page') == 'collaborateur')
+                ):
                     self._hide_for_parent_switch(fullscreen_parent=True)
             elif action == 'delete':
                 payload = self._get_selected_payload()
@@ -1426,6 +1463,13 @@ class DashboardView(tk.Toplevel):
             main_form = getattr(self.parent, 'main_form', None)
             if getattr(main_form, '_dashboard_window', None) is self:
                 main_form._dashboard_window = None
+            if getattr(main_form, '_dashboard_opening', None):
+                main_form._dashboard_opening = False
+        except Exception:
+            pass
+        try:
+            if getattr(self.parent, '_dashboard_window', None) is self:
+                setattr(self.parent, '_dashboard_window', None)
         except Exception:
             pass
 

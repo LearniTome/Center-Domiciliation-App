@@ -38,6 +38,7 @@ class MainForm(ttk.Frame):
         self.config_btn: Optional[ttk.Button] = None
         self.quit_btn: Optional[ttk.Button] = None
         self._dashboard_window: Optional[tk.Toplevel] = None
+        self._dashboard_opening = False
         self._last_collaborateur_name: str = ''
         self.toolbar_style_names = {
             'secondary': 'Toolbar.Secondary.TButton',
@@ -382,15 +383,21 @@ class MainForm(ttk.Frame):
         except Exception:
             return ''
 
-    def _open_collaborateur_dialog(self, values: Optional[dict] = None, edit_context: Optional[dict] = None):
-        dialog = tk.Toplevel(self)
+    def _open_collaborateur_dialog(
+        self,
+        values: Optional[dict] = None,
+        edit_context: Optional[dict] = None,
+        parent_window=None,
+    ):
+        owner = parent_window if parent_window is not None else self.winfo_toplevel()
+        dialog = tk.Toplevel(owner)
         dialog.title("Collaborateur")
         try:
             dialog.configure(bg=self.theme_manager.colors.get('bg', '#1f1f1f'))
         except Exception:
             pass
         try:
-            dialog.transient(self.winfo_toplevel())
+            dialog.transient(owner)
             dialog.grab_set()
         except Exception:
             pass
@@ -411,6 +418,13 @@ class MainForm(ttk.Frame):
                 return
             saved = self._save_collaborateur_to_db(vals, edit_context=edit_context)
             if saved:
+                try:
+                    dashboard = getattr(self, '_dashboard_window', None)
+                    if dashboard is not None and dashboard.winfo_exists():
+                        dashboard._load_data()
+                        dashboard._show_page('collaborateur')
+                except Exception:
+                    pass
                 try:
                     if hasattr(self, 'contrat_form') and self.contrat_form is not None:
                         self.contrat_form.refresh_collaborateur_names()
@@ -646,7 +660,21 @@ class MainForm(ttk.Frame):
         except Exception:
             pass
 
-        existing = getattr(self, '_dashboard_window', None)
+        top = self.winfo_toplevel()
+        if getattr(self, '_dashboard_opening', False):
+            existing_opening = getattr(top, '_dashboard_window', None)
+            try:
+                if existing_opening is not None and existing_opening.winfo_exists():
+                    return existing_opening
+            except Exception:
+                pass
+            return None
+
+        # Global singleton guard at app level (prevents duplicate dashboard windows
+        # even if multiple call paths trigger show_dashboard).
+        existing = getattr(top, '_dashboard_window', None)
+        if existing is None:
+            existing = getattr(self, '_dashboard_window', None)
         try:
             if existing is not None and existing.winfo_exists():
                 try:
@@ -664,13 +692,21 @@ class MainForm(ttk.Frame):
         except Exception:
             self._dashboard_window = None
 
-        dashboard = DashboardView(
-            self.winfo_toplevel(),
-            action_handler=self.handle_dashboard_action,
-            start_fullscreen=start_fullscreen,
-        )
-        self._dashboard_window = dashboard
-        return dashboard
+        self._dashboard_opening = True
+        try:
+            dashboard = DashboardView(
+                top,
+                action_handler=self.handle_dashboard_action,
+                start_fullscreen=start_fullscreen,
+            )
+            self._dashboard_window = dashboard
+            try:
+                setattr(top, '_dashboard_window', dashboard)
+            except Exception:
+                pass
+            return dashboard
+        finally:
+            self._dashboard_opening = False
 
     def configure_main_toolbar_styles(self):
         """Create main-toolbar style aliases once, based on the app theme."""
@@ -718,7 +754,7 @@ class MainForm(ttk.Frame):
         return self.return_to_dashboard
 
     def return_to_dashboard(self, start_fullscreen: bool = True):
-        """Hide the generator and show the dashboard instead of quitting."""
+        """Open dashboard without hiding the generator window."""
         try:
             dashboard = self.show_dashboard(start_fullscreen=start_fullscreen)
             try:
@@ -727,10 +763,6 @@ class MainForm(ttk.Frame):
                     dashboard._show_page(getattr(dashboard, '_current_page', 'societe'))
             except Exception:
                 pass
-        except Exception:
-            pass
-        try:
-            self.winfo_toplevel().withdraw()
         except Exception:
             pass
 
@@ -2423,14 +2455,32 @@ class MainForm(ttk.Frame):
                         logger.exception('Failed to run societe_exists check')
 
                 self.values[key] = vals
+                dashboard_page_map = {
+                    'societe': 'societe',
+                    'associes': 'associe',
+                    'contrat': 'contrat',
+                    'collaborateur': 'collaborateur',
+                }
+                target_dashboard_page = dashboard_page_map.get(key, 'societe')
                 try:
                     if getattr(self, '_dashboard_edit_context', None):
                         self._apply_dashboard_edit_for_page(key, vals)
                 except Exception:
                     logger = __import__('logging').getLogger(__name__)
                     logger.exception('Failed to apply dashboard edit update')
+                # In dashboard workflows, persist to DB immediately so the table updates
+                # right after "Sauvegarder" (same behavior as Collaborateur dialog).
                 try:
-                    self._refresh_dashboard_after_save()
+                    dashboard = getattr(self, '_dashboard_window', None)
+                    if dashboard is not None and dashboard.winfo_exists() and key in {'societe', 'associes', 'contrat'}:
+                        top = self.winfo_toplevel()
+                        save_to_db = getattr(top, 'save_to_db', None)
+                        if callable(save_to_db):
+                            save_to_db()
+                except Exception:
+                    pass
+                try:
+                    self._refresh_dashboard_after_save(target_dashboard_page=target_dashboard_page)
                 except Exception:
                     pass
                 messagebox.showinfo("Sauvegarde", f"Section '{key}' sauvegardée.")
@@ -2440,7 +2490,7 @@ class MainForm(ttk.Frame):
                 return False
         return False
 
-    def _refresh_dashboard_after_save(self):
+    def _refresh_dashboard_after_save(self, target_dashboard_page: Optional[str] = None):
         dashboard = getattr(self, '_dashboard_window', None)
         if dashboard is None:
             return
@@ -2451,7 +2501,7 @@ class MainForm(ttk.Frame):
             return
         try:
             dashboard._load_data()
-            dashboard._show_page(getattr(dashboard, '_current_page', 'societe'))
+            dashboard._show_page(target_dashboard_page or getattr(dashboard, '_current_page', 'societe'))
         except Exception:
             pass
 
@@ -3119,11 +3169,12 @@ class MainForm(ttk.Frame):
                     pass
 
             if action == 'add':
-                # Bring main window to front only for add/edit flows
-                _expand_top_window()
                 if page_key == 'collaborateur':
-                    self._open_collaborateur_dialog()
+                    dashboard = getattr(self, '_dashboard_window', None)
+                    self._open_collaborateur_dialog(parent_window=dashboard)
                     return {'status': 'opened', 'page': 'collaborateur'}
+                # Bring main window to front only for generator add/edit flows.
+                _expand_top_window()
 
                 # Reset forms to default/new state and show first page
                 self.reset()
@@ -3132,8 +3183,6 @@ class MainForm(ttk.Frame):
                 return {'status': 'opened', 'page': 'societe'}
 
             if action == 'edit':
-                # Bring main window to front only for add/edit flows
-                _expand_top_window()
                 if not payload:
                     messagebox.showwarning('Modifier', 'Aucune donnée fournie pour modification.')
                     return {'status': 'invalid'}
@@ -3179,8 +3228,16 @@ class MainForm(ttk.Frame):
                         }
                     except Exception:
                         self._dashboard_edit_context = None
-                    self._open_collaborateur_dialog(values.get('collaborateur', {}), edit_context=self._dashboard_edit_context)
+                    dashboard = getattr(self, '_dashboard_window', None)
+                    self._open_collaborateur_dialog(
+                        values.get('collaborateur', {}),
+                        edit_context=self._dashboard_edit_context,
+                        parent_window=dashboard,
+                    )
                     return {'status': 'opened', 'page': 'collaborateur'}
+
+                # Bring main window to front only for generator edit flows.
+                _expand_top_window()
 
                 self.set_values(values)
                 self.show_page(self._dashboard_page_index(page_key))

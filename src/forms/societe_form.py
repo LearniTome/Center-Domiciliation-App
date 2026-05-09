@@ -100,7 +100,7 @@ class SocieteForm(ttk.Frame):
             'dossier_domiciliation': defaults_mgr.get_default('societe', 'DossierDomiciliation') or "",
         }
 
-    def reset(self):
+    def reset(self, reset_activities: bool = True):
         """Réinitialise le formulaire société aux valeurs par défaut."""
         defaults = self._get_default_values()
         self.den_ste_var.set(defaults['denomination'])
@@ -118,7 +118,8 @@ class SocieteForm(ttk.Frame):
         self.type_generation_var.set(self._normalize_generation_type(defaults.get('type_generation')))
         self.procedure_creation_var.set(self._normalize_creation_procedure(defaults.get('procedure_creation')))
         self.mode_depot_creation_var.set(self._normalize_creation_depot_mode(defaults.get('mode_depot_creation')))
-        self.clear_all_activities()
+        if reset_activities:
+            self.clear_all_activities()
         self._update_mode_signature_visibility()
         self._update_generation_options_visibility()
         self._apply_numeric_display_format()
@@ -180,6 +181,7 @@ class SocieteForm(ttk.Frame):
             textvariable=self.date_ice_var,
             date_pattern='dd/mm/yyyy',
             width=12,
+            state='readonly',
         ).grid(row=1, column=0, sticky="ew")
 
         date_exp_cell = _cell(0, 6, "Date expiration certificat négatif:")
@@ -188,6 +190,7 @@ class SocieteForm(ttk.Frame):
             textvariable=self.date_expiration_certificat_negatif_var,
             date_pattern='dd/mm/yyyy',
             width=12,
+            state='readonly',
         ).grid(row=1, column=0, sticky="ew")
 
         # Ligne 2: Adresse en dernier (2 colonnes)
@@ -896,7 +899,9 @@ class SocieteForm(ttk.Frame):
     def set_values(self, values_dict):
         """Définit les valeurs du formulaire"""
         if not values_dict:
-            self.reset()
+            # Empty payloads happen during some open/switch flows.
+            # Keep current activities instead of wiping/reloading them.
+            self.reset(reset_activities=False)
             return
 
         # Mise à jour des champs simples
@@ -951,10 +956,14 @@ class SocieteForm(ttk.Frame):
         self._update_parts_social()
 
         # Mise à jour des activités
-        self._clear_activities(load_defaults=False)
-        activites = values_dict.get('activites', [])
-        if activites:
-            for activite in activites:
-                self.add_activity(initial_value=str(activite))
-        else:
-            self._load_default_activities()
+        # Important: only rewrite activities when caller explicitly provides them.
+        # This prevents accidental wipe/regeneration when opening flows that do
+        # not include `activites` in payload.
+        if 'activites' in values_dict:
+            self._clear_activities(load_defaults=False)
+            activites = values_dict.get('activites', [])
+            if activites:
+                for activite in activites:
+                    self.add_activity(initial_value=str(activite))
+            else:
+                self._load_default_activities()

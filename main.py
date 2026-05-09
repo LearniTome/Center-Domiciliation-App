@@ -46,6 +46,7 @@ class MainApp(tk.Tk):
         self.startup_profiler = StartupProfiler(enabled=True)
         self._startup_profile_flushed = False
         self._startup_dashboard_opened = False
+        self._startup_dashboard_opening = False
         self._startup_dashboard_mode = False
 
         app_token = self.startup_profiler.start_span("MainApp.__init__")
@@ -65,7 +66,7 @@ class MainApp(tk.Tk):
             WindowManager.setup_window(
                 self,
                 "Genérateurs Docs Juridiques",
-                enter_fullscreen=True,
+                enter_fullscreen=not self._startup_dashboard_mode,
             )
 
         if not self._startup_dashboard_mode:
@@ -101,6 +102,7 @@ class MainApp(tk.Tk):
 
     @staticmethod
     def _should_open_dashboard_on_startup() -> bool:
+        # Default to dashboard-only startup.
         raw = str(os.environ.get("APP_START_DASHBOARD", "1") or "").strip().lower()
         if raw in ("0", "false", "no", "off"):
             return False
@@ -110,18 +112,17 @@ class MainApp(tk.Tk):
         return True
 
     def _open_dashboard_on_startup(self):
-        if self._startup_dashboard_opened:
+        if self._startup_dashboard_opened or self._startup_dashboard_opening:
             return
-        self._startup_dashboard_opened = True
+        self._startup_dashboard_opening = True
         try:
-            try:
-                self.withdraw()
-            except Exception:
-                pass
             if hasattr(self, "main_form") and self.main_form is not None:
                 self.main_form.show_dashboard(start_fullscreen=True)
+            self._startup_dashboard_opened = True
         except Exception:
             logger.exception("Failed to open dashboard at startup")
+        finally:
+            self._startup_dashboard_opening = False
 
     def _startup_span(self, name: str):
         if not getattr(self, "startup_profiler", None):
