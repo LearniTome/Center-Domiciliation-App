@@ -182,6 +182,11 @@ class GenerationSelectorDialog(tk.Toplevel):
         view_only: bool = False,
     ):
         super().__init__(parent)
+        try:
+            # Avoid visible "center then resize" jitter on first open.
+            self.withdraw()
+        except Exception:
+            pass
         self.parent = parent
         self.values = values or {}
         self.output_format = output_format  # 'word', 'pdf', or 'both'
@@ -191,6 +196,7 @@ class GenerationSelectorDialog(tk.Toplevel):
         self._is_edit_mode = False
         self._initial_center_done = False
         self._one_shot_recenter_done = False
+        self._skip_centering = True
         self._proceed_tooltip_window = None
         self._proceed_tooltip_text = ""
         self._last_uploaded_template_name: Optional[str] = None
@@ -249,18 +255,16 @@ class GenerationSelectorDialog(tk.Toplevel):
                         work_h = max(1, rect.bottom - rect.top)
                 except Exception:
                     pass
-            # Never exceed visible work area; clamp to a practical desktop size.
-            max_width = max(760, int(work_w) - margin)
-            max_height = max(560, int(work_h) - margin)
-            width = min(1280, max_width)
-            height = min(860, max_height)
+            # Open directly in full available work area.
+            width = max(740, int(work_w) - margin)
+            height = max(540, int(work_h) - margin)
             self.geometry(f"{width}x{height}+{int(work_x)}+{int(work_y)}")
             self._skip_centering = True
         except Exception:
             pass
         self.resizable(True, True)
         try:
-            self.minsize(920, 620)
+            self.minsize(820, 560)
         except Exception:
             pass
 
@@ -300,11 +304,12 @@ class GenerationSelectorDialog(tk.Toplevel):
 
         # Setup UI
         self._setup_ui()
-        # First center pass after widgets are laid out (uses final requested size).
-        self.after_idle(self._center_initial_position)
-        # One-shot recenter at first mapping/configure to absorb DPI/window chrome offset.
-        self.bind("<Map>", self._one_shot_recenter_on_first_show, add="+")
-        self.bind("<Configure>", self._one_shot_recenter_on_first_show, add="+")
+        try:
+            self.deiconify()
+            self.lift()
+            self.focus_force()
+        except Exception:
+            pass
 
     def _extract_initial_legal_form(self) -> str:
         """Infer initial legal form from collected values when available."""
@@ -815,13 +820,25 @@ class GenerationSelectorDialog(tk.Toplevel):
 
         self.available_templates: List[Path] = []
         self.template_vars = {}
+        self._initial_templates_loaded = False
 
-        self._refresh_template_list()
-        if self.gen_type_var.get():
-            self._auto_select_templates(self.gen_type_var.get())
+        # Keep dialog opening responsive: defer filesystem-heavy template scan.
+        self.template_status_var.set("Chargement des modèles...")
         self._update_creation_options_visibility()
         self._sync_societe_generation_values()
         self._update_selection_feedback()
+        self.after(10, self._deferred_initial_template_load)
+
+    def _deferred_initial_template_load(self):
+        """Load templates after the window is visible to avoid blocking open."""
+        try:
+            self._refresh_template_list()
+            if self.gen_type_var.get():
+                self._auto_select_templates(self.gen_type_var.get())
+            self._update_selection_feedback()
+            self._initial_templates_loaded = True
+        except Exception:
+            logger.exception("Chargement différé des modèles échoué")
 
     def _backup_templates(self):
         """Backup selected or all templates into backup-models with a detailed report."""
@@ -2618,12 +2635,46 @@ def show_generation_selector(
     Returns:
         Dictionary with generation result, or None if cancelled
     """
+    # Resolve host/root window for cross-window coordination.
+    try:
+        host = parent.winfo_toplevel()
+    except Exception:
+        host = parent
+
+    # Close dashboard if open: only one of Dashboard / Generator should remain open.
+    try:
+        main_form = getattr(host, "main_form", None) or getattr(parent, "main_form", None)
+        dashboard = getattr(main_form, "_dashboard_window", None) if main_form is not None else None
+        if dashboard is None and parent.__class__.__name__ == "DashboardView":
+            dashboard = parent
+        if dashboard is not None and dashboard.winfo_exists():
+            try:
+                dashboard.destroy()
+            except Exception:
+                pass
+            try:
+                if main_form is not None:
+                    main_form._dashboard_window = None
+            except Exception:
+                pass
+    except Exception:
+        pass
+
     dialog = GenerationSelectorDialog(
-        parent,
+        host,
         values or {},
         output_format,
         save_callback=save_callback,
         view_only=view_only,
     )
-    parent.wait_window(dialog)
+    try:
+        setattr(host, "_generation_selector_window", dialog)
+    except Exception:
+        pass
+    host.wait_window(dialog)
+    try:
+        if getattr(host, "_generation_selector_window", None) is dialog:
+            setattr(host, "_generation_selector_window", None)
+    except Exception:
+        pass
     return dialog.get_result()

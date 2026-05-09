@@ -6,6 +6,7 @@ from pathlib import Path
 import logging
 import inspect
 from typing import Optional
+import platform
 
 import pandas as pd
 
@@ -1217,6 +1218,33 @@ class DashboardView(tk.Toplevel):
 
     def _restore_parent_window(self, fullscreen_parent: bool = False):
         """Restore and focus the parent window, optionally already maximized."""
+        def _force_parent_fullscreen_geometry():
+            try:
+                sw = int(self.parent.winfo_screenwidth())
+                sh = int(self.parent.winfo_screenheight())
+                if sw > 200 and sh > 200:
+                    self.parent.geometry(f"{sw}x{sh}+0+0")
+            except Exception:
+                pass
+            # macOS: `zoomed` is unreliable; force native fullscreen when requested.
+            if fullscreen_parent and platform.system() == "Darwin":
+                try:
+                    self.parent.attributes('-fullscreen', True)
+                except Exception:
+                    pass
+
+        def _log_parent_geometry(tag: str):
+            try:
+                logger.info(
+                    "PARENT_GEOMETRY[%s]: geometry=%s state=%s fullscreen=%s",
+                    tag,
+                    self.parent.winfo_geometry(),
+                    self.parent.state(),
+                    self.parent.attributes('-fullscreen'),
+                )
+            except Exception:
+                pass
+
         try:
             if self._parent_disabled:
                 try:
@@ -1234,6 +1262,7 @@ class DashboardView(tk.Toplevel):
                     except Exception:
                         pass
                     if fullscreen_parent:
+                        _force_parent_fullscreen_geometry()
                         try:
                             self.parent.state('zoomed')
                         except Exception:
@@ -1245,6 +1274,7 @@ class DashboardView(tk.Toplevel):
                 except Exception:
                     pass
             elif fullscreen_parent:
+                _force_parent_fullscreen_geometry()
                 try:
                     self.parent.state('zoomed')
                 except Exception:
@@ -1263,6 +1293,13 @@ class DashboardView(tk.Toplevel):
         try:
             self.parent.lift()
             self.parent.focus_force()
+        except Exception:
+            pass
+
+        _log_parent_geometry("after_restore")
+        try:
+            self.after(50, lambda: _log_parent_geometry("after_restore_50ms"))
+            self.after(250, lambda: _log_parent_geometry("after_restore_250ms"))
         except Exception:
             pass
 

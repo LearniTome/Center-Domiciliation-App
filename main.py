@@ -65,7 +65,7 @@ class MainApp(tk.Tk):
             WindowManager.setup_window(
                 self,
                 "Genérateurs Docs Juridiques",
-                enter_fullscreen=not self._startup_dashboard_mode,
+                enter_fullscreen=True,
             )
 
         if not self._startup_dashboard_mode:

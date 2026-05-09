@@ -6,6 +6,7 @@ import os
 import subprocess
 import sys
 import threading
+import platform
 from contextlib import nullcontext
 from .societe_form import SocieteForm
 from .associe_form import AssocieForm
@@ -629,6 +630,22 @@ class MainForm(ttk.Frame):
     def show_dashboard(self, start_fullscreen: bool = False):
         """Switch to dashboard view."""
         from .dashboard_view import DashboardView
+        # Ensure generator dialog is fully closed when switching to dashboard.
+        try:
+            top = self.winfo_toplevel()
+            selector = getattr(top, '_generation_selector_window', None)
+            if selector is not None and selector.winfo_exists():
+                try:
+                    selector.destroy()
+                except Exception:
+                    pass
+            try:
+                setattr(top, '_generation_selector_window', None)
+            except Exception:
+                pass
+        except Exception:
+            pass
+
         existing = getattr(self, '_dashboard_window', None)
         try:
             if existing is not None and existing.winfo_exists():
@@ -698,10 +715,6 @@ class MainForm(ttk.Frame):
         return self.reset
 
     def _get_main_toolbar_quit_command(self):
-        top = self.winfo_toplevel()
-        quit_fn = getattr(top, 'request_quit', None)
-        if callable(quit_fn):
-            return quit_fn
         return self.return_to_dashboard
 
     def return_to_dashboard(self, start_fullscreen: bool = True):
@@ -741,7 +754,7 @@ class MainForm(ttk.Frame):
         right = [
             {
                 'key': 'quit',
-                'text': '❌ Quitter',
+                'text': '❌ Fermer',
                 'command': self._get_main_toolbar_quit_command(),
                 'style': cancel,
                 'width': widths['quit'],
@@ -3054,16 +3067,60 @@ class MainForm(ttk.Frame):
         """
         try:
             page_key = self._infer_dashboard_page_key(payload, page_key)
-
-            if action == 'add':
-                # Bring main window to front only for add/edit flows
+            def _expand_top_window():
                 top = self.winfo_toplevel()
                 try:
                     top.deiconify()
+                except Exception:
+                    pass
+                # Cross-platform maximize fallback: fill the whole screen area.
+                try:
+                    sw = int(top.winfo_screenwidth())
+                    sh = int(top.winfo_screenheight())
+                    if sw > 200 and sh > 200:
+                        top.geometry(f"{sw}x{sh}+0+0")
+                except Exception:
+                    pass
+                try:
+                    top.state('zoomed')
+                except Exception:
+                    try:
+                        top.attributes('-zoomed', True)
+                    except Exception:
+                        pass
+                # macOS: favor native fullscreen to avoid restore-to-centered-size behavior.
+                if platform.system() == "Darwin":
+                    try:
+                        top.attributes('-fullscreen', True)
+                    except Exception:
+                        pass
+                try:
                     top.lift()
                     top.focus_force()
                 except Exception:
                     pass
+                try:
+                    logger.info(
+                        "GEN_WINDOW_GEOMETRY[expand]: geometry=%s state=%s fullscreen=%s",
+                        top.winfo_geometry(),
+                        top.state(),
+                        top.attributes('-fullscreen'),
+                    )
+                    top.after(
+                        200,
+                        lambda: logger.info(
+                            "GEN_WINDOW_GEOMETRY[expand_200ms]: geometry=%s state=%s fullscreen=%s",
+                            top.winfo_geometry(),
+                            top.state(),
+                            top.attributes('-fullscreen'),
+                        ),
+                    )
+                except Exception:
+                    pass
+
+            if action == 'add':
+                # Bring main window to front only for add/edit flows
+                _expand_top_window()
                 if page_key == 'collaborateur':
                     self._open_collaborateur_dialog()
                     return {'status': 'opened', 'page': 'collaborateur'}
@@ -3076,13 +3133,7 @@ class MainForm(ttk.Frame):
 
             if action == 'edit':
                 # Bring main window to front only for add/edit flows
-                top = self.winfo_toplevel()
-                try:
-                    top.deiconify()
-                    top.lift()
-                    top.focus_force()
-                except Exception:
-                    pass
+                _expand_top_window()
                 if not payload:
                     messagebox.showwarning('Modifier', 'Aucune donnée fournie pour modification.')
                     return {'status': 'invalid'}
