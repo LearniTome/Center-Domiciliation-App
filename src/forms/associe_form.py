@@ -1,6 +1,5 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from tkcalendar import DateEntry
 from typing import Optional, Callable, Tuple, List
 from decimal import Decimal, InvalidOperation
 from src.utils.utils import ThemeManager
@@ -273,13 +272,12 @@ class AssocieForm(ttk.Frame):
         ttk.Entry(cin_cell, textvariable=vars_dict['num_piece']).grid(row=1, column=0, sticky="ew")
 
         validite_cell = _cell(0, 5, "Validité CIN:")
-        DateEntry(
+        validite_entry = ttk.Entry(
             validite_cell,
             textvariable=vars_dict['validite_piece'],
-            date_pattern='dd/mm/yyyy',
             width=12,
-            state='readonly',
-        ).grid(row=1, column=0, sticky="ew")
+        )
+        validite_entry.grid(row=1, column=0, sticky="ew")
         try:
             vars_dict['validite_piece'].set('')
         except Exception:
@@ -300,13 +298,12 @@ class AssocieForm(ttk.Frame):
         ).grid(row=1, column=0, sticky="ew")
 
         date_cell = _cell(1, 1, "Date de naissance:")
-        DateEntry(
+        naissance_entry = ttk.Entry(
             date_cell,
             textvariable=vars_dict['date_naiss'],
-            date_pattern='dd/mm/yyyy',
             width=12,
-            state='readonly',
-        ).grid(row=1, column=0, sticky="ew")
+        )
+        naissance_entry.grid(row=1, column=0, sticky="ew")
         try:
             vars_dict['date_naiss'].set('')
         except Exception:
@@ -471,13 +468,12 @@ class AssocieForm(ttk.Frame):
         ttk.Entry(cin_cell, textvariable=vars_dict['num_piece']).grid(row=1, column=0, sticky="ew")
 
         validite_cell = _cell(5, "Validité CIN:")
-        DateEntry(
+        validite_entry = ttk.Entry(
             validite_cell,
             textvariable=vars_dict['validite_piece'],
-            date_pattern='dd/mm/yyyy',
             width=12,
-            state='readonly',
-        ).grid(row=1, column=0, sticky="w")
+        )
+        validite_entry.grid(row=1, column=0, sticky="w")
         try:
             vars_dict['validite_piece'].set('')
         except Exception:
@@ -494,13 +490,12 @@ class AssocieForm(ttk.Frame):
 
         # Date de naissance (use DateEntry for convenience)
         ttk.Label(grid, text="Date de naissance:", anchor="e", width=self._label_width_long).grid(row=0, column=0, padx=(0, 5), pady=2)
-        DateEntry(
+        naissance_entry = ttk.Entry(
             grid,
             textvariable=vars_dict['date_naiss'],
-            date_pattern='dd/mm/yyyy',
             width=12,
-            state='readonly',
-        ).grid(row=0, column=1, sticky="w", pady=2)
+        )
+        naissance_entry.grid(row=0, column=1, sticky="w", pady=2)
         # Start with an empty date so the user must pick one explicitly
         try:
             vars_dict['date_naiss'].set('')
@@ -564,13 +559,12 @@ class AssocieForm(ttk.Frame):
         date_cell.grid(row=0, column=0, sticky="ew", padx=(0, 6))
         date_cell.columnconfigure(0, weight=1)
         ttk.Label(date_cell, text="Date de naissance:", anchor="w").grid(row=0, column=0, sticky="w", pady=(0, 1))
-        DateEntry(
+        naissance_entry = ttk.Entry(
             date_cell,
             textvariable=vars_dict['date_naiss'],
-            date_pattern='dd/mm/yyyy',
             width=12,
-            state='readonly',
-        ).grid(row=1, column=0, sticky="w")
+        )
+        naissance_entry.grid(row=1, column=0, sticky="w")
         try:
             vars_dict['date_naiss'].set('')
         except Exception:
@@ -645,13 +639,12 @@ class AssocieForm(ttk.Frame):
 
         # Validité CIN (use DateEntry for convenience)
         ttk.Label(grid, text="Validité CIN:", anchor="e", width=self._label_width).grid(row=2, column=0, padx=(0, 5), pady=2)
-        DateEntry(
+        validite_entry = ttk.Entry(
             grid,
             textvariable=vars_dict['validite_piece'],
-            date_pattern='dd/mm/yyyy',
             width=12,
-            state='readonly',
-        ).grid(row=2, column=1, sticky="w", pady=2)
+        )
+        validite_entry.grid(row=2, column=1, sticky="w", pady=2)
         # Keep the validity date empty until the user selects it
         try:
             vars_dict['validite_piece'].set('')
@@ -686,6 +679,7 @@ class AssocieForm(ttk.Frame):
         email_cell.columnconfigure(0, weight=1)
         ttk.Label(email_cell, text="Email:", anchor="w").grid(row=0, column=0, sticky="w", pady=(0, 1))
         ttk.Entry(email_cell, textvariable=vars_dict['email']).grid(row=1, column=0, sticky="ew")
+
 
     def create_capital_section(self, parent, vars_dict):
         """Crée la section Capital"""

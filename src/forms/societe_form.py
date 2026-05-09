@@ -1,6 +1,5 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from tkcalendar import DateEntry
 from typing import Optional, List
 from decimal import Decimal, InvalidOperation
 from ..utils.constants import DenSte, Formjur, Capital, PartsSocial, SteAdresse, Tribunnaux
@@ -176,22 +175,20 @@ class SocieteForm(ttk.Frame):
         ttk.Entry(ice_cell, textvariable=self.ice_var).grid(row=1, column=0, sticky="ew")
 
         date_cell = _cell(0, 5, "Date certificat négatif:")
-        DateEntry(
+        date_ice_entry = ttk.Entry(
             date_cell,
             textvariable=self.date_ice_var,
-            date_pattern='dd/mm/yyyy',
             width=12,
-            state='readonly',
-        ).grid(row=1, column=0, sticky="ew")
+        )
+        date_ice_entry.grid(row=1, column=0, sticky="ew")
 
         date_exp_cell = _cell(0, 6, "Date expiration certificat négatif:")
-        DateEntry(
+        date_exp_entry = ttk.Entry(
             date_exp_cell,
             textvariable=self.date_expiration_certificat_negatif_var,
-            date_pattern='dd/mm/yyyy',
             width=12,
-            state='readonly',
-        ).grid(row=1, column=0, sticky="ew")
+        )
+        date_exp_entry.grid(row=1, column=0, sticky="ew")
 
         # Ligne 2: Adresse en dernier (2 colonnes)
         capital_cell = _cell(1, 0, "Capital:")
@@ -228,6 +225,7 @@ class SocieteForm(ttk.Frame):
 
         # Ligne 3+: activités
         self.create_activities_section(main_frame)
+
 
     @staticmethod
     def _format_numeric_text(value: str) -> str:

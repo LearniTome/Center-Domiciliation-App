@@ -48,6 +48,9 @@ class MainApp(tk.Tk):
         self._startup_dashboard_opened = False
         self._startup_dashboard_opening = False
         self._startup_dashboard_mode = False
+        self.main_form = None
+        self.main_container = None
+        self._gui_ready = False
 
         app_token = self.startup_profiler.start_span("MainApp.__init__")
         tk_token = self.startup_profiler.start_span("tk.Tk.__init__")
@@ -90,15 +93,17 @@ class MainApp(tk.Tk):
         # Dictionnaire pour stocker toutes les valeurs
         self.values = {}
 
-        # Création de l'interface
-        with self._startup_span("MainApp.setup_gui"):
-            self.setup_gui()
-
+        # Création de l'interface (lazy in dashboard-first mode)
         if self._startup_dashboard_mode:
             self.after_idle(self._open_dashboard_on_startup)
+        else:
+            with self._startup_span("MainApp.setup_gui"):
+                self.setup_gui()
+            self._gui_ready = True
 
         self.startup_profiler.end_span(app_token)
         self.after_idle(self._finalize_startup_profile)
+        self.after(200, self._guard_stale_grab)
 
     @staticmethod
     def _should_open_dashboard_on_startup() -> bool:
@@ -116,13 +121,48 @@ class MainApp(tk.Tk):
             return
         self._startup_dashboard_opening = True
         try:
-            if hasattr(self, "main_form") and self.main_form is not None:
-                self.main_form.show_dashboard(start_fullscreen=True)
+            self._show_dashboard_direct(start_fullscreen=True)
             self._startup_dashboard_opened = True
         except Exception:
             logger.exception("Failed to open dashboard at startup")
         finally:
             self._startup_dashboard_opening = False
+
+    def _ensure_main_gui(self):
+        if self._gui_ready and self.main_form is not None and self.main_container is not None:
+            return
+        with self._startup_span("MainApp.setup_gui"):
+            self.setup_gui()
+        self._gui_ready = True
+
+    def _show_dashboard_direct(self, start_fullscreen: bool = True):
+        from src.forms.dashboard_view import DashboardView
+        existing = getattr(self, "_dashboard_window", None)
+        try:
+            if existing is not None and existing.winfo_exists():
+                existing.deiconify()
+                existing.lift()
+                existing.focus_force()
+                if start_fullscreen:
+                    try:
+                        existing._enter_fullscreen()
+                    except Exception:
+                        pass
+                return existing
+        except Exception:
+            setattr(self, "_dashboard_window", None)
+
+        dashboard = DashboardView(
+            self,
+            action_handler=self._handle_dashboard_action_proxy,
+            start_fullscreen=start_fullscreen,
+        )
+        setattr(self, "_dashboard_window", dashboard)
+        return dashboard
+
+    def _handle_dashboard_action_proxy(self, action, payload=None, page_key=None):
+        self._ensure_main_gui()
+        return self.main_form.handle_dashboard_action(action, payload, page_key)
 
     def _startup_span(self, name: str):
         if not getattr(self, "startup_profiler", None):
@@ -144,8 +184,33 @@ class MainApp(tk.Tk):
         except Exception:
             logger.exception("Failed to write startup profile")
 
+    def _guard_stale_grab(self):
+        """Release orphaned modal grabs that can freeze the UI."""
+        try:
+            grabbed = self.grab_current()
+            if grabbed is not None:
+                try:
+                    top = grabbed.winfo_toplevel()
+                    visible = bool(top.winfo_exists()) and str(top.state()) not in ("withdrawn", "iconic")
+                except Exception:
+                    visible = False
+                if not visible:
+                    try:
+                        grabbed.grab_release()
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+        finally:
+            try:
+                self.after(400, self._guard_stale_grab)
+            except Exception:
+                pass
+
     def setup_gui(self):
         """Configure l'interface utilisateur principale"""
+        if self.main_container is not None and self.main_form is not None:
+            return
         # Create main container
         with self._startup_span("MainApp.setup_gui.main_container"):
             self.main_container = ttk.Frame(self)
@@ -260,6 +325,7 @@ class MainApp(tk.Tk):
 
     def collect_values(self):
         """Collecte toutes les valeurs des formulaires"""
+        self._ensure_main_gui()
         # Get values from the main form
         self.values = self.main_form.get_values()
 
@@ -773,6 +839,7 @@ class MainApp(tk.Tk):
     def clear_form(self):
         """Réinitialise tous les formulaires"""
         try:
+            self._ensure_main_gui()
             self.values.clear()
             self.main_form.reset()
             logger.info("Formulaires réinitialisés")

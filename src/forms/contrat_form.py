@@ -1,6 +1,5 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from tkcalendar import DateEntry
 from typing import Optional, Callable, Iterable
 from decimal import Decimal, InvalidOperation
 from ..utils.constants import Nbmois
@@ -288,19 +287,14 @@ class ContratForm(ttk.Frame):
 
         # Label on top, widget below (matches AssocieForm style)
         ttk.Label(frame, text=label_text + ':', anchor='w').grid(row=0, column=0, sticky='w')
-        date_widget = DateEntry(
+        date_widget = ttk.Entry(
             frame,
             textvariable=variable,
-            date_pattern='dd/mm/yyyy',
             width=12,
-            state='readonly',
         )
         date_widget.grid(row=1, column=0, sticky='ew', pady=(2, 0))
         if bind_update:
-            try:
-                date_widget.bind('<<DateEntrySelected>>', lambda e: self._update_date_fin())
-            except Exception:
-                pass
+            date_widget.bind('<FocusOut>', lambda e: self._update_date_fin(), add='+')
         frame.grid_columnconfigure(0, weight=1)
 
         return frame

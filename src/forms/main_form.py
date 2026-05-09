@@ -398,7 +398,6 @@ class MainForm(ttk.Frame):
             pass
         try:
             dialog.transient(owner)
-            dialog.grab_set()
         except Exception:
             pass
 
@@ -546,7 +545,7 @@ class MainForm(ttk.Frame):
                     self._dashboard_edit_context = None
             except Exception:
                 pass
-            messagebox.showinfo("Collaborateur", "Collaborateur enregistré avec succès.")
+            self._notify_saved("Collaborateur enregistré avec succès.")
             return db_path
         except Exception as e:
             try:
@@ -2483,7 +2482,7 @@ class MainForm(ttk.Frame):
                     self._refresh_dashboard_after_save(target_dashboard_page=target_dashboard_page)
                 except Exception:
                     pass
-                messagebox.showinfo("Sauvegarde", f"Section '{key}' sauvegardée.")
+                self._notify_saved(f"Section '{key}' sauvegardée.")
                 return True
             except Exception as e:
                 messagebox.showerror("Erreur", f"Impossible de sauvegarder la section: {e}")
@@ -2504,6 +2503,16 @@ class MainForm(ttk.Frame):
             dashboard._show_page(target_dashboard_page or getattr(dashboard, '_current_page', 'societe'))
         except Exception:
             pass
+
+    def _notify_saved(self, message: str):
+        dashboard = getattr(self, '_dashboard_window', None)
+        try:
+            if dashboard is not None and dashboard.winfo_exists() and hasattr(dashboard, '_show_toast'):
+                dashboard._show_toast(message)
+                return
+        except Exception:
+            pass
+        messagebox.showinfo("Sauvegarde", message)
 
     def _save_dashboard_edit_and_return(self):
         saved = self.save_current()
