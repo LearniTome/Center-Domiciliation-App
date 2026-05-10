@@ -2635,15 +2635,16 @@ def show_generation_selector(
     Returns:
         Dictionary with generation result, or None if cancelled
     """
-    # Resolve host/root window for cross-window coordination.
-    try:
-        host = parent.winfo_toplevel()
-    except Exception:
-        host = parent
+    host = parent
 
     # Close dashboard if open: only one of Dashboard / Generator should remain open.
     try:
-        main_form = getattr(host, "main_form", None) or getattr(parent, "main_form", None)
+        main_form = getattr(parent, "main_form", None)
+        if main_form is None:
+            parent_owner = getattr(parent, "parent", None)
+            main_form = getattr(parent_owner, "main_form", None)
+        if main_form is None:
+            main_form = getattr(host, "main_form", None)
         dashboard = getattr(main_form, "_dashboard_window", None) if main_form is not None else None
         if dashboard is None and parent.__class__.__name__ == "DashboardView":
             dashboard = parent
@@ -2659,6 +2660,20 @@ def show_generation_selector(
                 pass
     except Exception:
         pass
+
+    # Resolve a live host window after dashboard teardown. If the caller was
+    # itself a Toplevel that we just destroyed, fall back to the main/root app.
+    try:
+        if main_form is not None and main_form.winfo_exists():
+            host = main_form.winfo_toplevel()
+        elif getattr(parent, "winfo_exists", None) and parent.winfo_exists():
+            host = parent.winfo_toplevel()
+        else:
+            parent_owner = getattr(parent, "parent", None)
+            if parent_owner is not None and parent_owner.winfo_exists():
+                host = parent_owner.winfo_toplevel()
+    except Exception:
+        host = parent
 
     dialog = GenerationSelectorDialog(
         host,

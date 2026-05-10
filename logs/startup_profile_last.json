@@ -1,42 +1,42 @@
 {
-  "generated_at_ms": 739.995,
+  "generated_at_ms": 1164.992,
   "events": [
     {
       "type": "span",
       "name": "tk.Tk.__init__",
-      "start_ms": 0.01,
-      "end_ms": 265.685,
-      "duration_ms": 265.674,
+      "start_ms": 0.009,
+      "end_ms": 120.291,
+      "duration_ms": 120.283,
       "meta": {}
     },
     {
       "type": "span",
       "name": "WindowManager.setup_window",
-      "start_ms": 265.731,
-      "end_ms": 266.548,
-      "duration_ms": 0.817,
+      "start_ms": 120.347,
+      "end_ms": 120.466,
+      "duration_ms": 0.118,
       "meta": {}
     },
     {
       "type": "span",
       "name": "ThemeManager.__init__",
-      "start_ms": 268.361,
-      "end_ms": 564.505,
-      "duration_ms": 296.144,
+      "start_ms": 120.553,
+      "end_ms": 557.917,
+      "duration_ms": 437.364,
       "meta": {}
     },
     {
       "type": "span",
       "name": "MainApp.__init__",
-      "start_ms": 0.007,
-      "end_ms": 564.542,
-      "duration_ms": 564.534,
+      "start_ms": 0.006,
+      "end_ms": 557.945,
+      "duration_ms": 557.939,
       "meta": {}
     },
     {
       "type": "mark",
       "name": "MainApp.mainloop.first_idle",
-      "at_ms": 739.91,
+      "at_ms": 1164.818,
       "meta": {}
     }
   ]

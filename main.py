@@ -851,6 +851,8 @@ if __name__ == "__main__":
     try:
         app = MainApp()
         app.mainloop()
+    except KeyboardInterrupt:
+        logging.info("Application interrupted by user")
     except Exception as e:
         logging.critical(f"Failed to start application: {e}", exc_info=True)
         tk.Tk().withdraw()  # Hide root tkinter window
