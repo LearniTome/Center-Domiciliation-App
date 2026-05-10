@@ -1,0 +1,152 @@
+<?php
+
+declare(strict_types=1);
+
+function e(?string $value): string
+{
+    return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+}
+
+function app_url(string $page = 'dashboard', array $params = []): string
+{
+    global $config;
+
+    $query = array_merge(['page' => $page], $params);
+    return $config['base_url'] . '?' . http_build_query($query);
+}
+
+function redirect_to(string $page, array $params = []): never
+{
+    header('Location: ' . app_url($page, $params));
+    exit;
+}
+
+function set_flash(string $type, string $message): void
+{
+    $_SESSION['flash'] = [
+        'type' => $type,
+        'message' => $message,
+    ];
+}
+
+function pull_flash(): ?array
+{
+    if (!isset($_SESSION['flash'])) {
+        return null;
+    }
+
+    $flash = $_SESSION['flash'];
+    unset($_SESSION['flash']);
+    return $flash;
+}
+
+function csrf_token(): string
+{
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+
+    return $_SESSION['csrf_token'];
+}
+
+function csrf_input(): string
+{
+    return '<input type="hidden" name="csrf_token" value="' . e(csrf_token()) . '">';
+}
+
+function verify_csrf(): void
+{
+    $token = $_POST['csrf_token'] ?? '';
+    if (!hash_equals($_SESSION['csrf_token'] ?? '', (string) $token)) {
+        http_response_code(419);
+        exit('Jeton CSRF invalide.');
+    }
+}
+
+function request_method(): string
+{
+    return strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+}
+
+function is_post(): bool
+{
+    return request_method() === 'POST';
+}
+
+function field_value(array $source, string $key, string $default = ''): string
+{
+    return isset($source[$key]) ? trim((string) $source[$key]) : $default;
+}
+
+function money_value(array $source, string $key): ?float
+{
+    $value = field_value($source, $key);
+    if ($value === '') {
+        return null;
+    }
+
+    return (float) str_replace(',', '.', $value);
+}
+
+function int_value(array $source, string $key): ?int
+{
+    $value = field_value($source, $key);
+    if ($value === '') {
+        return null;
+    }
+
+    return (int) $value;
+}
+
+function dashboard_count(?PDO $pdo, string $table): int
+{
+    if (!$pdo) {
+        return 0;
+    }
+
+    $stmt = $pdo->query("SELECT COUNT(*) FROM {$table}");
+    return (int) $stmt->fetchColumn();
+}
+
+function fetch_all_records(?PDO $pdo, string $table): array
+{
+    if (!$pdo) {
+        return [];
+    }
+
+    $allowed = ['societes', 'associes', 'contrats', 'collaborateurs'];
+    if (!in_array($table, $allowed, true)) {
+        return [];
+    }
+
+    $stmt = $pdo->query("SELECT * FROM {$table} ORDER BY id DESC");
+    return $stmt->fetchAll();
+}
+
+function fetch_record(?PDO $pdo, string $table, int $id): ?array
+{
+    if (!$pdo) {
+        return null;
+    }
+
+    $allowed = ['societes', 'associes', 'contrats', 'collaborateurs'];
+    if (!in_array($table, $allowed, true)) {
+        return null;
+    }
+
+    $stmt = $pdo->prepare("SELECT * FROM {$table} WHERE id = :id LIMIT 1");
+    $stmt->execute(['id' => $id]);
+    $record = $stmt->fetch();
+    return $record ?: null;
+}
+
+function fetch_societes_options(?PDO $pdo): array
+{
+    if (!$pdo) {
+        return [];
+    }
+
+    $stmt = $pdo->query('SELECT id, raison_sociale FROM societes ORDER BY raison_sociale ASC');
+    return $stmt->fetchAll();
+}
+

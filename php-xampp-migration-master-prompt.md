@@ -110,4 +110,3 @@ Execution style:
 
 Suggested branch purpose:
 - Use the `php` branch for the full migration from Python desktop UI to a PHP/XAMPP web application.
-

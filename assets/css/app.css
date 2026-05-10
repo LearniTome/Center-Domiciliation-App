@@ -1,0 +1,281 @@
+:root {
+    --bg: #f4efe5;
+    --panel: #fffdf9;
+    --panel-strong: #f8f1e4;
+    --text: #1f1c18;
+    --muted: #6a6256;
+    --line: #ded2c1;
+    --accent: #0f766e;
+    --danger: #b42318;
+    --shadow: 0 18px 40px rgba(88, 66, 34, 0.10);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Georgia, "Times New Roman", serif;
+    color: var(--text);
+    background:
+        radial-gradient(circle at top left, rgba(15, 118, 110, 0.18), transparent 30%),
+        radial-gradient(circle at bottom right, rgba(194, 120, 3, 0.16), transparent 32%),
+        var(--bg);
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.shell {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    min-height: 100vh;
+}
+
+.sidebar {
+    padding: 28px;
+    background: rgba(255, 253, 249, 0.84);
+    border-right: 1px solid var(--line);
+    backdrop-filter: blur(12px);
+}
+
+.brand {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    margin-bottom: 28px;
+}
+
+.brand-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, var(--accent), #d97706);
+    color: #fff;
+    font-weight: 700;
+}
+
+.brand p,
+.sidebar-note p,
+.eyebrow,
+.table-empty,
+.help-text {
+    color: var(--muted);
+}
+
+.nav-links {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 28px;
+}
+
+.nav-links a {
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 1px solid transparent;
+}
+
+.nav-links a.active,
+.nav-links a:hover {
+    background: var(--panel);
+    border-color: var(--line);
+    box-shadow: var(--shadow);
+}
+
+.main {
+    padding: 28px;
+}
+
+.page-header h1 {
+    margin: 4px 0 24px;
+    font-size: 2rem;
+}
+
+.eyebrow {
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.75rem;
+}
+
+.grid {
+    display: grid;
+    gap: 20px;
+}
+
+.grid.two {
+    grid-template-columns: 1.1fr 0.9fr;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.card,
+.stat {
+    background: var(--panel);
+    border: 1px solid rgba(222, 210, 193, 0.8);
+    border-radius: 24px;
+    box-shadow: var(--shadow);
+}
+
+.card {
+    padding: 24px;
+}
+
+.stat {
+    padding: 20px;
+}
+
+.stat strong {
+    display: block;
+    font-size: 2rem;
+    margin-top: 8px;
+}
+
+.flash {
+    padding: 14px 18px;
+    border-radius: 16px;
+    margin-bottom: 20px;
+}
+
+.flash-success {
+    background: #dbfce7;
+    color: #166534;
+}
+
+.flash-error {
+    background: #fee4e2;
+    color: #912018;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.btn,
+button,
+input,
+select,
+textarea {
+    font: inherit;
+}
+
+.btn,
+button {
+    cursor: pointer;
+}
+
+.btn,
+button[type="submit"] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    border: 0;
+    background: var(--accent);
+    color: white;
+}
+
+.btn-secondary {
+    background: var(--panel-strong);
+    color: var(--text);
+    border: 1px solid var(--line);
+}
+
+.btn-danger {
+    background: var(--danger);
+}
+
+.stack {
+    display: grid;
+    gap: 14px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.field {
+    display: grid;
+    gap: 8px;
+}
+
+.field.full {
+    grid-column: 1 / -1;
+}
+
+input,
+select,
+textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: #fff;
+}
+
+textarea {
+    min-height: 110px;
+    resize: vertical;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th,
+td {
+    padding: 12px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+}
+
+.table-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.pill {
+    display: inline-flex;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: var(--panel-strong);
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+@media (max-width: 980px) {
+    .shell,
+    .grid.two,
+    .stats,
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sidebar {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+    }
+}
+

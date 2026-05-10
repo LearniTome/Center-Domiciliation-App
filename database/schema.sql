@@ -1,0 +1,71 @@
+CREATE DATABASE IF NOT EXISTS `center_domiciliation`
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+
+USE `center_domiciliation`;
+
+CREATE TABLE IF NOT EXISTS societes (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    raison_sociale VARCHAR(255) NOT NULL,
+    forme_juridique VARCHAR(120) DEFAULT NULL,
+    ice VARCHAR(100) DEFAULT NULL,
+    rc VARCHAR(100) DEFAULT NULL,
+    if_number VARCHAR(100) DEFAULT NULL,
+    adresse TEXT DEFAULT NULL,
+    ville VARCHAR(120) DEFAULT NULL,
+    email VARCHAR(190) DEFAULT NULL,
+    telephone VARCHAR(60) DEFAULT NULL,
+    capital DECIMAL(12,2) DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS associes (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    societe_id INT UNSIGNED NOT NULL,
+    nom_complet VARCHAR(255) NOT NULL,
+    cin VARCHAR(100) DEFAULT NULL,
+    adresse TEXT DEFAULT NULL,
+    nationalite VARCHAR(120) DEFAULT NULL,
+    parts INT DEFAULT NULL,
+    is_gerant TINYINT(1) NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_associes_societe
+        FOREIGN KEY (societe_id) REFERENCES societes(id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS contrats (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    societe_id INT UNSIGNED NOT NULL,
+    type_contrat VARCHAR(120) NOT NULL,
+    date_debut DATE DEFAULT NULL,
+    date_fin DATE DEFAULT NULL,
+    loyer_mensuel_ttc DECIMAL(12,2) DEFAULT NULL,
+    caution_montant DECIMAL(12,2) DEFAULT NULL,
+    statut VARCHAR(80) DEFAULT 'actif',
+    notes TEXT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_contrats_societe
+        FOREIGN KEY (societe_id) REFERENCES societes(id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS collaborateurs (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    societe_id INT UNSIGNED DEFAULT NULL,
+    nom_complet VARCHAR(255) NOT NULL,
+    fonction VARCHAR(150) DEFAULT NULL,
+    email VARCHAR(190) DEFAULT NULL,
+    telephone VARCHAR(60) DEFAULT NULL,
+    date_debut DATE DEFAULT NULL,
+    statut VARCHAR(80) DEFAULT 'actif',
+    notes TEXT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_collaborateurs_societe
+        FOREIGN KEY (societe_id) REFERENCES societes(id)
+        ON DELETE SET NULL
+);
+

@@ -1,0 +1,10 @@
+/.idea/
+/.vscode/
+/vendor/
+/storage/logs/
+/storage/cache/
+/uploads/
+/.env
+/.env.local
+/*.log
+
