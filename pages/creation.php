@@ -3,17 +3,25 @@
 declare(strict_types=1);
 
 if (!isset($_SESSION['creation_wizard']) || !is_array($_SESSION['creation_wizard'])) {
+    // Charger les valeurs par défaut depuis config/defaults.json
+    $defaultsFile = __DIR__ . '/../config/defaults.json';
+    $defaults = [];
+    if (file_exists($defaultsFile)) {
+        $defaultsContent = file_get_contents($defaultsFile);
+        $defaults = json_decode($defaultsContent, true) ?? [];
+    }
+
     $_SESSION['creation_wizard'] = [
-        'societe' => [],
+        'societe' => $defaults['societe'] ?? [],
         'associes' => [[
             'nom_complet' => '',
             'cin' => '',
             'adresse' => '',
-            'nationalite' => '',
-            'parts' => '',
-            'is_gerant' => '0',
+            'nationalite' => $defaults['associe']['nationalite'] ?? '',
+            'parts' => $defaults['associe']['parts'] ?? '',
+            'is_gerant' => $defaults['associe']['is_gerant'] ? '1' : '0',
         ]],
-        'contrat' => [],
+        'contrat' => $defaults['contrat'] ?? [],
     ];
 }
 

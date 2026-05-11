@@ -202,3 +202,25 @@ function export_csv(string $filename, array $headers, array $rows): never
     fclose($output);
     exit;
 }
+
+function load_defaults(?string $key = null): array
+{
+    $defaultsFile = __DIR__ . '/../config/defaults.json';
+    $defaults = [];
+    
+    if (file_exists($defaultsFile)) {
+        $defaultsContent = file_get_contents($defaultsFile);
+        if ($defaultsContent !== false) {
+            $decoded = json_decode($defaultsContent, true);
+            if (is_array($decoded)) {
+                $defaults = $decoded;
+            }
+        }
+    }
+    
+    if ($key !== null) {
+        return $defaults[$key] ?? [];
+    }
+    
+    return $defaults;
+}

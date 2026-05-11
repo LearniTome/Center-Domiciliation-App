@@ -1,0 +1,41 @@
+{
+  "societe": {
+    "dossier_domiciliation": "DOM-2026",
+    "den_ste": "NOUVELLE STE",
+    "forme_juridique": "SARL AU",
+    "forme_jur": "SARL AU",
+    "capital": "100000",
+    "part_social": "1000",
+    "valeur_nominale": "100",
+    "ste_adress": "HAY MOULAY ABDELLAH RUE 300 N 152 ETG 2 AIN CHOCK, CASABLANCA",
+    "tribunal": "Casablanca",
+    "type_generation": "Standard",
+    "procedure_creation": "Creation",
+    "mode_depot_creation": "Electronique"
+  },
+  "associe": {
+    "civil": "Monsieur",
+    "nom": "NOM",
+    "prenom": "PRENOM",
+    "nationalite": "Marocaine",
+    "parts": "100",
+    "is_gerant": false,
+    "qualite_associe": "Associé"
+  },
+  "contrat": {
+    "type_contrat": "Domiciliation commerciale",
+    "type_contrat_domiciliation": "Personne Morale",
+    "duree_contrat_mois": "12",
+    "type_renouvellement": "Mensuel",
+    "taux_tva_pourcent": "20.00",
+    "loyer_mensuel_ht": "83.33",
+    "taux_tva_renouvellement_pourcent": "20.00",
+    "loyer_mensuel_ht_renouvellement": "166.67",
+    "statut": "actif"
+  },
+  "collaborateur": {
+    "collaborateur_type": "CLTD -- Client Direct",
+    "collaborateur_code": "CLTD",
+    "statut": "actif"
+  }
+}

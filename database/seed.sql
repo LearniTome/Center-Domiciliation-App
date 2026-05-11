@@ -1,5 +1,115 @@
 USE `center_domiciliation`;
 
+-- Données de référence pour les tribunaux
+INSERT INTO ref_tribunaux (tribunal) VALUES
+('Casablanca'),
+('Rabat'),
+('Marrakech'),
+('Fes'),
+('Agadir'),
+('Tangier'),
+('Meknes'),
+('Tetouan'),
+('Oujda'),
+('Beni Mellal'),
+('Khouribga'),
+('Oulad Teima'),
+('Settat'),
+('Khemisset'),
+('Tiflet'),
+('Skhirat-Temara'),
+('Sidi Kacem'),
+('Sidi Slimane'),
+('Souk El Arbaa'),
+('Taourirt');
+
+-- Données de référence pour les adresses
+INSERT INTO ref_ste_adresses (ste_adresse) VALUES
+('123 Boulevard Hassan II'),
+('45 Avenue Mohammed V'),
+('12 Rue Dar El Baraka'),
+('78 Avenue des FAR'),
+('34 Rue Ghandouri'),
+('56 Boulevard de la Corniche'),
+('89 Place de la Concordance'),
+('11 Rue Ibn Sina'),
+('25 Avenue de Marrakech'),
+('67 Boulevard de Paris'),
+('43 Route de Meknes'),
+('55 Boulevard Allal El Fassi'),
+('88 Rue Ahmed Chaouki'),
+('22 Avenue Hassan II (Downtown)'),
+('99 Boulevard Moulay Ismail');
+
+-- Données de référence pour les nationalités
+INSERT INTO ref_nationalites (nationalite) VALUES
+('Marocaine'),
+('Française'),
+('Belge'),
+('Suisse'),
+('Allemande'),
+('Italienne'),
+('Espagnole'),
+('Portugaise'),
+('Britannique'),
+('Américaine'),
+('Canadienne'),
+('Algérienne'),
+('Tunisienne'),
+('Sénégalaise'),
+('Camerounaise'),
+('Gabonaise'),
+('Ivoirienne'),
+('Congolaise'),
+('Guinéenne'),
+('Malienne');
+
+-- Données de référence pour les lieux de naissance
+INSERT INTO ref_lieux_naissance (lieu_naissance) VALUES
+('Casablanca'),
+('Rabat'),
+('Marrakech'),
+('Fes'),
+('Agadir'),
+('Tangier'),
+('Meknes'),
+('Tetouan'),
+('Oujda'),
+('Beni Mellal'),
+('Khouribga'),
+('Essaouira'),
+('Safi'),
+('Azemmour'),
+('Ouezzane'),
+('Sefrou'),
+('Taza'),
+('Nador'),
+('Hoceima'),
+('Driouch');
+
+-- Données de référence pour les activités
+INSERT INTO ref_activites (activite) VALUES
+('Commerce de gros'),
+('Commerce de detail'),
+('Restauration'),
+('Hotel'),
+('Transport'),
+('Logistique'),
+('Consulting'),
+('Services IT'),
+('Services de sante'),
+('Education'),
+('Immobilier'),
+('Construction'),
+('Manufacture'),
+('Agriculture'),
+('Peche'),
+('Energie'),
+('Telecommunications'),
+('Banque et Finance'),
+('Assurance'),
+('Tourisme');
+
 INSERT INTO societes (
     dossier_domiciliation, raison_sociale, den_ste, forme_juridique, forme_jur, ice, date_ice, rc, if_number,
     capital, part_social, valeur_nominale, date_exp_cert_neg, adresse, ste_adress, ville, tribunal, email,
