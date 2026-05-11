@@ -38,9 +38,16 @@ $associes = ($pdo ?? null) instanceof PDO
             <table>
                 <thead>
                 <tr>
-                    <th>Nom</th>
+                    <th>Nom complet</th>
                     <th>Societe</th>
                     <th>CIN</th>
+                    <th>Date naissance</th>
+                    <th>Lieu naissance</th>
+                    <th>Nationalite</th>
+                    <th>Telephone</th>
+                    <th>Email</th>
+                    <th>Qualite</th>
+                    <th>Parts</th>
                     <th>Gerant</th>
                     <th>Creation</th>
                     <th>Modification</th>
@@ -52,7 +59,14 @@ $associes = ($pdo ?? null) instanceof PDO
                     <tr>
                         <td><?= e($associe['nom_complet']) ?></td>
                         <td><?= e($associe['raison_sociale']) ?></td>
-                        <td><?= e($associe['cin']) ?></td>
+                        <td><?= e($associe['cin'] ?? '-') ?></td>
+                        <td><?= e($associe['date_naiss'] ?? '-') ?></td>
+                        <td><?= e($associe['lieu_naiss'] ?? '-') ?></td>
+                        <td><?= e($associe['nationalite'] ?? '-') ?></td>
+                        <td><?= e($associe['phone'] ?? '-') ?></td>
+                        <td><?= e($associe['email'] ?? '-') ?></td>
+                        <td><?= e($associe['qualite_associe'] ?? '-') ?></td>
+                        <td><?= $associe['parts'] !== null ? e((string) $associe['parts']) : '-' ?></td>
                         <td><?= (int) $associe['is_gerant'] === 1 ? 'Oui' : 'Non' ?></td>
                         <td><?= e(substr($associe['created_at'], 0, 10)) ?></td>
                         <td><?= e(substr($associe['updated_at'], 0, 10)) ?></td>
@@ -68,6 +82,7 @@ $associes = ($pdo ?? null) instanceof PDO
                 <?php endforeach; ?>
                 </tbody>
             </table>
+            </div>
         <?php endif; ?>
     </article>
 </section>

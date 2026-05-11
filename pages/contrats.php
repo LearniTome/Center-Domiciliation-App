@@ -39,8 +39,19 @@ $contrats = ($pdo ?? null) instanceof PDO
                 <thead>
                 <tr>
                     <th>Societe</th>
-                    <th>Type</th>
-                    <th>Periode</th>
+                    <th>Type contrat</th>
+                    <th>Date contrat</th>
+                    <th>Duree (mois)</th>
+                    <th>Type domiciliation</th>
+                    <th>Date debut</th>
+                    <th>Date fin</th>
+                    <th>Loyer mensuel TTC</th>
+                    <th>Caution</th>
+                    <th>TVA %</th>
+                    <th>Loyer mensuel HT</th>
+                    <th>Total HT</th>
+                    <th>Pack demarrage TTC</th>
+                    <th>Renouvellement</th>
                     <th>Statut</th>
                     <th>Creation</th>
                     <th>Modification</th>
@@ -52,7 +63,18 @@ $contrats = ($pdo ?? null) instanceof PDO
                     <tr>
                         <td><?= e($contrat['raison_sociale']) ?></td>
                         <td><?= e($contrat['type_contrat']) ?></td>
-                        <td><?= e(($contrat['date_debut'] ?: '-') . ' -> ' . ($contrat['date_fin'] ?: '-')) ?></td>
+                        <td><?= e($contrat['date_contrat'] ?? '-') ?></td>
+                        <td><?= $contrat['duree_contrat_mois'] !== null ? e((string) $contrat['duree_contrat_mois']) : '-' ?></td>
+                        <td><?= e($contrat['type_contrat_domiciliation'] ?? '-') ?></td>
+                        <td><?= e($contrat['date_debut'] ?: '-') ?></td>
+                        <td><?= e($contrat['date_fin'] ?: '-') ?></td>
+                        <td><?= $contrat['loyer_mensuel_ttc'] !== null ? e(number_format((float) $contrat['loyer_mensuel_ttc'], 2, ',', ' ') . ' DH') : '-' ?></td>
+                        <td><?= $contrat['caution_montant'] !== null ? e(number_format((float) $contrat['caution_montant'], 2, ',', ' ') . ' DH') : '-' ?></td>
+                        <td><?= $contrat['taux_tva_pourcent'] !== null ? e(number_format((float) $contrat['taux_tva_pourcent'], 2, ',', ' ') . ' %') : '-' ?></td>
+                        <td><?= $contrat['loyer_mensuel_ht'] !== null ? e(number_format((float) $contrat['loyer_mensuel_ht'], 2, ',', ' ') . ' DH') : '-' ?></td>
+                        <td><?= $contrat['montant_total_ht_contrat'] !== null ? e(number_format((float) $contrat['montant_total_ht_contrat'], 2, ',', ' ') . ' DH') : '-' ?></td>
+                        <td><?= $contrat['montant_pack_demarrage_ttc'] !== null ? e(number_format((float) $contrat['montant_pack_demarrage_ttc'], 2, ',', ' ') . ' DH') : '-' ?></td>
+                        <td><?= e($contrat['type_renouvellement'] ?? '-') ?></td>
                         <td><?= e($contrat['statut']) ?></td>
                         <td><?= e(substr($contrat['created_at'], 0, 10)) ?></td>
                         <td><?= e(substr($contrat['updated_at'], 0, 10)) ?></td>
@@ -68,6 +90,7 @@ $contrats = ($pdo ?? null) instanceof PDO
                 <?php endforeach; ?>
                 </tbody>
             </table>
+            </div>
         <?php endif; ?>
     </article>
 </section>

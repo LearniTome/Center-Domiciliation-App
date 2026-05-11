@@ -101,13 +101,23 @@ if (($pdo ?? null) instanceof PDO) {
         <?php if (!$societes): ?>
             <p class="table-empty">Aucune societe pour le moment.</p>
         <?php else: ?>
+            <div class="table-scroll">
             <table>
                 <thead>
                 <tr>
+                    <th>Dossier</th>
                     <th>Raison sociale</th>
+                    <th>Denomination</th>
                     <th>Forme</th>
+                    <th>ICE</th>
+                    <th>Date ICE</th>
+                    <th>RC</th>
+                    <th>IF</th>
+                    <th>Capital</th>
                     <th>Ville</th>
-                    <th>Contact</th>
+                    <th>Tribunal</th>
+                    <th>Telephone</th>
+                    <th>Email</th>
                     <th>Creation</th>
                     <th>Modification</th>
                     <th>Actions</th>
@@ -116,10 +126,19 @@ if (($pdo ?? null) instanceof PDO) {
                 <tbody>
                 <?php foreach ($societes as $societe): ?>
                     <tr>
+                        <td><?= e($societe['dossier_domiciliation'] ?? '-') ?></td>
                         <td><?= e($societe['raison_sociale']) ?></td>
+                        <td><?= e($societe['den_ste'] ?? '-') ?></td>
                         <td><?= e($societe['forme_juridique']) ?></td>
+                        <td><?= e($societe['ice'] ?? '-') ?></td>
+                        <td><?= e($societe['date_ice'] ?? '-') ?></td>
+                        <td><?= e($societe['rc'] ?? '-') ?></td>
+                        <td><?= e($societe['if_number'] ?? '-') ?></td>
+                        <td><?= $societe['capital'] !== null ? e(number_format((float) $societe['capital'], 2, ',', ' ') . ' DH') : '-' ?></td>
                         <td><?= e($societe['ville']) ?></td>
+                        <td><?= e($societe['tribunal'] ?? '-') ?></td>
                         <td><?= e($societe['telephone']) ?></td>
+                        <td><?= e($societe['email'] ?? '-') ?></td>
                         <td><?= e(substr($societe['created_at'], 0, 10)) ?></td>
                         <td><?= e(substr($societe['updated_at'], 0, 10)) ?></td>
                         <td class="table-actions">
@@ -135,6 +154,7 @@ if (($pdo ?? null) instanceof PDO) {
                 <?php endforeach; ?>
                 </tbody>
             </table>
+            </div>
         <?php endif; ?>
     </article>
 </section>

@@ -29,6 +29,11 @@ $navItems = [
             </a>
         <?php endforeach; ?>
     </nav>
+    <button class="theme-toggle" id="theme-toggle" type="button">
+        <span id="theme-icon">&#9790;</span>
+        <span id="theme-label">Mode sombre</span>
+    </button>
+
     <div class="sidebar-note">
         <p>Version de depart pour la migration depuis l'application desktop vers une interface web XAMPP.</p>
     </div>
