@@ -1,9 +1,7 @@
 {
   "societe": {
     "dossier_domiciliation": "DOM-2026",
-    "den_ste": "NOUVELLE STE",
     "forme_juridique": "SARL AU",
-    "forme_jur": "SARL AU",
     "capital": "100000",
     "part_social": "1000",
     "valeur_nominale": "100",
@@ -14,9 +12,6 @@
     "mode_depot_creation": "Electronique"
   },
   "associe": {
-    "civil": "Monsieur",
-    "nom": "NOM",
-    "prenom": "PRENOM",
     "nationalite": "Marocaine",
     "parts": "100",
     "is_gerant": false,

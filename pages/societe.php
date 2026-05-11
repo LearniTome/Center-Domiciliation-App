@@ -56,7 +56,6 @@ $collaborateurs = ($pdo ?? null) instanceof PDO
         <div class="info-grid">
             <div><strong>Dossier domiciliation</strong><span><?= e($societe['dossier_domiciliation'] ?: '-') ?></span></div>
             <div><strong>Forme juridique</strong><span><?= e($societe['forme_juridique'] ?: '-') ?></span></div>
-            <div><strong>Denomination interne</strong><span><?= e($societe['den_ste'] ?: '-') ?></span></div>
             <div><strong>ICE</strong><span><?= e($societe['ice'] ?: '-') ?></span></div>
             <div><strong>Date ICE</strong><span><?= e($societe['date_ice'] ?: '-') ?></span></div>
             <div><strong>RC</strong><span><?= e($societe['rc'] ?: '-') ?></span></div>

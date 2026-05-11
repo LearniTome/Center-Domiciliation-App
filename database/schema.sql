@@ -6,25 +6,30 @@ USE `center_domiciliation`;
 
 CREATE TABLE IF NOT EXISTS societes (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    -- Identifiants
     dossier_domiciliation VARCHAR(120) DEFAULT NULL,
     raison_sociale VARCHAR(255) NOT NULL,
     den_ste VARCHAR(255) DEFAULT NULL,
+    -- Juridique
     forme_juridique VARCHAR(120) DEFAULT NULL,
-    forme_jur VARCHAR(120) DEFAULT NULL,
     ice VARCHAR(100) DEFAULT NULL,
     date_ice DATE DEFAULT NULL,
     rc VARCHAR(100) DEFAULT NULL,
     if_number VARCHAR(100) DEFAULT NULL,
+    -- Capital
     capital DECIMAL(15,2) DEFAULT NULL,
     part_social INT DEFAULT NULL,
     valeur_nominale DECIMAL(15,2) DEFAULT NULL,
     date_exp_cert_neg DATE DEFAULT NULL,
+    -- Adresse
     adresse TEXT DEFAULT NULL,
     ste_adress TEXT DEFAULT NULL,
     ville VARCHAR(120) DEFAULT NULL,
     tribunal VARCHAR(120) DEFAULT NULL,
+    -- Contact
     email VARCHAR(190) DEFAULT NULL,
     telephone VARCHAR(60) DEFAULT NULL,
+    -- Procedure
     type_generation VARCHAR(120) DEFAULT NULL,
     procedure_creation VARCHAR(120) DEFAULT NULL,
     mode_depot_creation VARCHAR(120) DEFAULT NULL,
@@ -38,26 +43,19 @@ CREATE TABLE IF NOT EXISTS societes (
 CREATE TABLE IF NOT EXISTS associes (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     societe_id INT UNSIGNED NOT NULL,
-    den_ste VARCHAR(255) DEFAULT NULL,
-    civil VARCHAR(50) DEFAULT NULL,
-    prenom VARCHAR(120) DEFAULT NULL,
-    nom VARCHAR(120) DEFAULT NULL,
+    -- Identite
     nom_complet VARCHAR(255) NOT NULL,
     cin VARCHAR(100) DEFAULT NULL,
-    cin_num VARCHAR(100) DEFAULT NULL,
-    cin_validaty DATE DEFAULT NULL,
-    adresse TEXT DEFAULT NULL,
     date_naiss DATE DEFAULT NULL,
     lieu_naiss VARCHAR(120) DEFAULT NULL,
     nationalite VARCHAR(120) DEFAULT NULL,
-    nationality VARCHAR(120) DEFAULT NULL,
+    -- Contact
+    adresse TEXT DEFAULT NULL,
     phone VARCHAR(60) DEFAULT NULL,
     email VARCHAR(190) DEFAULT NULL,
+    -- Participation
     qualite_associe VARCHAR(150) DEFAULT NULL,
-    qualite_gerant VARCHAR(150) DEFAULT NULL,
-    part_percent DECIMAL(7,2) DEFAULT NULL,
     parts INT DEFAULT NULL,
-    capital_detenu DECIMAL(15,2) DEFAULT NULL,
     is_gerant TINYINT(1) NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -71,16 +69,16 @@ CREATE TABLE IF NOT EXISTS associes (
 CREATE TABLE IF NOT EXISTS contrats (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     societe_id INT UNSIGNED NOT NULL,
-    den_ste VARCHAR(255) DEFAULT NULL,
+    -- Type et duree
     type_contrat VARCHAR(120) NOT NULL,
     date_contrat DATE DEFAULT NULL,
     duree_contrat_mois INT DEFAULT NULL,
     type_contrat_domiciliation VARCHAR(120) DEFAULT NULL,
     type_contrat_domiciliation_autre VARCHAR(190) DEFAULT NULL,
+    -- Periode
     date_debut DATE DEFAULT NULL,
-    date_debut_contrat DATE DEFAULT NULL,
     date_fin DATE DEFAULT NULL,
-    date_fin_contrat DATE DEFAULT NULL,
+    -- Loyer
     loyer_mensuel_ttc DECIMAL(15,2) DEFAULT NULL,
     frais_intermediaire_contrat DECIMAL(15,2) DEFAULT NULL,
     caution_montant DECIMAL(15,2) DEFAULT NULL,
@@ -89,6 +87,7 @@ CREATE TABLE IF NOT EXISTS contrats (
     montant_total_ht_contrat DECIMAL(15,2) DEFAULT NULL,
     montant_pack_demarrage_ttc DECIMAL(15,2) DEFAULT NULL,
     loyer_mensuel_pack_demarrage_ttc DECIMAL(15,2) DEFAULT NULL,
+    -- Renouvellement
     type_renouvellement VARCHAR(120) DEFAULT NULL,
     taux_tva_renouvellement_pourcent DECIMAL(7,2) DEFAULT NULL,
     loyer_mensuel_ht_renouvellement DECIMAL(15,2) DEFAULT NULL,
