@@ -142,35 +142,4 @@ if (associesContainer && associeTemplate && addAssocieButton) {
     refreshIndices();
 }
 
-// --- Dark mode ---
-(function () {
-    const html = document.documentElement;
-    const toggle = document.getElementById('theme-toggle');
-    const icon = document.getElementById('theme-icon');
-    const label = document.getElementById('theme-label');
 
-    const saved = localStorage.getItem('theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-    if (saved === 'dark' || (!saved && prefersDark)) {
-        html.setAttribute('data-theme', 'dark');
-    }
-
-    const updateUI = () => {
-        const isDark = html.getAttribute('data-theme') === 'dark';
-        if (icon) icon.innerHTML = isDark ? '\u2600' : '\u263E';
-        if (label) label.textContent = isDark ? 'Mode clair' : 'Mode sombre';
-    };
-
-    updateUI();
-
-    if (toggle) {
-        toggle.addEventListener('click', () => {
-            const current = html.getAttribute('data-theme');
-            const next = current === 'dark' ? 'light' : 'dark';
-            html.setAttribute('data-theme', next);
-            localStorage.setItem('theme', next);
-            updateUI();
-        });
-    }
-})();

@@ -10,8 +10,9 @@ declare(strict_types=1);
     <title><?= e($pageTitle) ?> | <?= e($config['app_name']) ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/app.css">
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css">
+    <link rel="stylesheet" href="assets/css/app.css?v=<?= filemtime(__DIR__ . '/../assets/css/app.css') ?>">
 </head>
 <body>
 <div class="shell">
@@ -19,7 +20,6 @@ declare(strict_types=1);
     <main class="main">
         <header class="page-header">
             <div>
-                <p class="eyebrow">XAMPP + PHP + MySQL</p>
                 <h1><?= e($pageTitle) ?></h1>
             </div>
         </header>

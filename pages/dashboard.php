@@ -22,6 +22,25 @@ $recentContrats = ($pdo ?? null) instanceof PDO
         LIMIT 5
     ')->fetchAll()
     : [];
+
+$recentAssocies = ($pdo ?? null) instanceof PDO
+    ? $pdo->query('
+        SELECT associes.nom_complet, associes.cin, associes.qualite_associe, associes.is_gerant, societes.raison_sociale
+        FROM associes
+        INNER JOIN societes ON societes.id = associes.societe_id
+        ORDER BY associes.id DESC
+        LIMIT 5
+    ')->fetchAll()
+    : [];
+
+$recentCollaborateurs = ($pdo ?? null) instanceof PDO
+    ? $pdo->query('
+        SELECT nom_complet, collaborateur_type, fonction, statut
+        FROM collaborateurs
+        ORDER BY id DESC
+        LIMIT 5
+    ')->fetchAll()
+    : [];
 ?>
 <section class="card hero-card stack">
     <div class="section-header">
@@ -47,41 +66,7 @@ $recentContrats = ($pdo ?? null) instanceof PDO
     <?php endforeach; ?>
 </section>
 
-<section class="grid two">
-    <article class="card">
-        <div class="section-header">
-            <div>
-                <h2>Vue d'ensemble</h2>
-                <p class="help-text">Base de depart pour la migration web de l'application de domiciliation.</p>
-            </div>
-        </div>
-        <div class="stack">
-            <span class="pill">CRUD societes</span>
-            <span class="pill">CRUD associes</span>
-            <span class="pill">CRUD contrats</span>
-            <span class="pill">CRUD collaborateurs</span>
-            <span class="pill">Connexion PDO securisee</span>
-            <span class="pill">Schema MySQL pour phpMyAdmin</span>
-        </div>
-    </article>
-
-    <article class="card">
-        <div class="section-header">
-            <div>
-                <h2>Prochaines etapes</h2>
-                <p class="help-text">Migration progressive des workflows metier restants.</p>
-            </div>
-        </div>
-        <div class="stack">
-            <p>1. Verifier le schema avec vos vraies donnees.</p>
-            <p>2. Ajouter les champs supplementaires metier.</p>
-            <p>3. Migrer la generation documentaire Word/PDF.</p>
-            <p>4. Ajouter authentification, recherche et exports.</p>
-        </div>
-    </article>
-</section>
-
-<section class="grid two">
+<section>
     <article class="card">
         <div class="section-header">
             <div>
@@ -115,7 +100,9 @@ $recentContrats = ($pdo ?? null) instanceof PDO
             </table>
         <?php endif; ?>
     </article>
+</section>
 
+<section>
     <article class="card">
         <div class="section-header">
             <div>
@@ -141,6 +128,74 @@ $recentContrats = ($pdo ?? null) instanceof PDO
                         <td><?= e($contrat['raison_sociale']) ?></td>
                         <td><?= e($contrat['type_contrat']) ?></td>
                         <td><?= e($contrat['statut']) ?></td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php endif; ?>
+    </article>
+</section>
+
+<section>
+    <article class="card">
+        <div class="section-header">
+            <div>
+                <h2>Derniers associes</h2>
+                <p class="help-text">Acces rapide aux associes recemment ajoutes.</p>
+            </div>
+            <a class="btn btn-secondary" href="<?= e(app_url('associes')) ?>">Voir tout</a>
+        </div>
+        <?php if (!$recentAssocies): ?>
+            <p class="table-empty">Aucun associe disponible.</p>
+        <?php else: ?>
+            <table>
+                <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th>Societe</th>
+                    <th>Qualite</th>
+                </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($recentAssocies as $associe): ?>
+                    <tr>
+                        <td><?= e($associe['nom_complet']) ?></td>
+                        <td><?= e($associe['raison_sociale']) ?></td>
+                        <td><?= e($associe['qualite_associe'] ?: '-') ?></td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php endif; ?>
+    </article>
+</section>
+
+<section>
+    <article class="card">
+        <div class="section-header">
+            <div>
+                <h2>Derniers collaborateurs</h2>
+                <p class="help-text">Experts, comptables, coursiers, etc.</p>
+            </div>
+            <a class="btn btn-secondary" href="<?= e(app_url('collaborateurs')) ?>">Voir tout</a>
+        </div>
+        <?php if (!$recentCollaborateurs): ?>
+            <p class="table-empty">Aucun collaborateur disponible.</p>
+        <?php else: ?>
+            <table>
+                <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th>Type</th>
+                    <th>Statut</th>
+                </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($recentCollaborateurs as $c): ?>
+                    <tr>
+                        <td><?= e($c['nom_complet']) ?></td>
+                        <td><?= e($c['collaborateur_type'] ?? '-') ?></td>
+                        <td><?= e($c['statut']) ?></td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
