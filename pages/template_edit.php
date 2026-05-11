@@ -141,30 +141,7 @@ $variables = TemplateEditor::getAvailableVariables();
             <input type="hidden" name="content_html" id="content-html">
 
             <div class="editor-toolbar">
-                <button type="button" class="btn btn-secondary btn-sm" onclick="exec('bold')" title="Gras (Ctrl+B)">
-                    <span class="mdi mdi-format-bold"></span>
-                </button>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="exec('italic')" title="Italique (Ctrl+I)">
-                    <span class="mdi mdi-format-italic"></span>
-                </button>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="exec('underline')" title="Souligne (Ctrl+U)">
-                    <span class="mdi mdi-format-underline"></span>
-                </button>
-                <span class="toolbar-sep"></span>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="exec('justifyleft')" title="Aligner a gauche">
-                    <span class="mdi mdi-format-align-left"></span>
-                </button>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="exec('justifycenter')" title="Centrer">
-                    <span class="mdi mdi-format-align-center"></span>
-                </button>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="exec('justifyright')" title="Aligner a droite">
-                    <span class="mdi mdi-format-align-right"></span>
-                </button>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="exec('justifyfull')" title="Justifier">
-                    <span class="mdi mdi-format-align-justify"></span>
-                </button>
-                <span class="toolbar-sep"></span>
-                <select id="para-style" onchange="applyParagraphStyle(this.value)" title="Style de paragraphe">
+                <select id="para-style" onmousedown="saveSelection()" onchange="applyParagraphStyle(this.value)" title="Style de paragraphe">
                     <option value="p">Paragraphe</option>
                     <option value="h1">Titre 1</option>
                     <option value="h2">Titre 2</option>
@@ -173,7 +150,7 @@ $variables = TemplateEditor::getAvailableVariables();
                     <option value="pre">Code</option>
                     <option value="blockquote">Citation</option>
                 </select>
-                <select id="font-family" onchange="applyFont(this.value)" title="Police">
+                <select id="font-family" onmousedown="saveSelection()" onchange="applyFont(this.value)" title="Police">
                     <option value="Calibri, sans-serif">Calibri</option>
                     <option value="Arial, sans-serif">Arial</option>
                     <option value="Times New Roman, serif">Times New Roman</option>
@@ -184,7 +161,7 @@ $variables = TemplateEditor::getAvailableVariables();
                     <option value="Trebuchet MS, sans-serif">Trebuchet MS</option>
                     <option value="Garamond, serif">Garamond</option>
                 </select>
-                <select id="font-size" onchange="applyFontSize(this.value)" title="Taille de police">
+                <select id="font-size" onmousedown="saveSelection()" onchange="applyFontSize(this.value)" title="Taille de police">
                     <option value="8pt">8</option>
                     <option value="9pt">9</option>
                     <option value="10pt">10</option>
@@ -202,6 +179,16 @@ $variables = TemplateEditor::getAvailableVariables();
                     <option value="48pt">48</option>
                 </select>
                 <span class="toolbar-sep"></span>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="exec('bold')" title="Gras (Ctrl+B)">
+                    <span class="mdi mdi-format-bold"></span>
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="exec('italic')" title="Italique (Ctrl+I)">
+                    <span class="mdi mdi-format-italic"></span>
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="exec('underline')" title="Souligne (Ctrl+U)">
+                    <span class="mdi mdi-format-underline"></span>
+                </button>
+                <span class="toolbar-sep"></span>
                 <span class="color-btn">
                     <input type="color" id="text-color" value="#000000" onchange="applyColor(this.value)" title="Couleur du texte">
                     <span class="color-preview" style="background:#000000"></span>
@@ -210,6 +197,19 @@ $variables = TemplateEditor::getAvailableVariables();
                     <input type="color" id="bg-color" value="#ffff00" onchange="applyBgColor(this.value)" title="Surbrillance">
                     <span class="color-preview" style="background:#ffff00"></span>
                 </span>
+                <span class="toolbar-sep"></span>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="exec('justifyleft')" title="Aligner a gauche">
+                    <span class="mdi mdi-format-align-left"></span>
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="exec('justifycenter')" title="Centrer">
+                    <span class="mdi mdi-format-align-center"></span>
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="exec('justifyright')" title="Aligner a droite">
+                    <span class="mdi mdi-format-align-right"></span>
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="exec('justifyfull')" title="Justifier">
+                    <span class="mdi mdi-format-align-justify"></span>
+                </button>
                 <span class="toolbar-sep"></span>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="exec('insertorderedlist')" title="Liste numerotee">
                     <span class="mdi mdi-format-list-numbered"></span>
@@ -239,11 +239,11 @@ $variables = TemplateEditor::getAvailableVariables();
                     <span class="mdi mdi-eye"></span> Aperçu
                 </button>
                 <span class="toolbar-sep"></span>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="printEditor()" title="Imprimer / PDF (Ctrl+P)">
-                    <span class="mdi mdi-printer"></span> PDF
-                </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="clearFormatting()" title="Effacer la mise en forme">
                     <span class="mdi mdi-format-clear"></span>
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="printEditor()" title="Imprimer / PDF (Ctrl+P)">
+                    <span class="mdi mdi-printer"></span> PDF
                 </button>
             </div>
 
@@ -455,6 +455,23 @@ $variables = TemplateEditor::getAvailableVariables();
 </style>
 
 <script>
+let savedRange = null;
+
+function saveSelection() {
+    const editor = document.getElementById('editor-content');
+    const sel = window.getSelection();
+    if (sel.rangeCount > 0 && editor.contains(sel.anchorNode)) {
+        savedRange = sel.getRangeAt(0).cloneRange();
+    }
+}
+
+function restoreSelection() {
+    if (!savedRange) return;
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(savedRange);
+}
+
 function exec(cmd, val) {
     document.execCommand(cmd, false, val || null);
     document.getElementById('editor-content').focus();
@@ -592,50 +609,23 @@ function beforeSave() {
 }
 
 function applyParagraphStyle(style) {
-    const sel = window.getSelection();
-    if (!sel.rangeCount) return;
-    const range = sel.getRangeAt(0);
-    let node = range.commonAncestorContainer;
-    if (node.nodeType === 3) node = node.parentNode;
-    let block = node;
-    while (block && block !== document.getElementById('editor-content')) {
-        const tag = block.tagName ? block.tagName.toLowerCase() : '';
-        if (['p','h1','h2','h3','h4','h5','h6','pre','blockquote','div','li'].includes(tag)) break;
-        block = block.parentNode;
-    }
-    if (!block || block === document.getElementById('editor-content')) {
-        document.execCommand('formatBlock', false, '<' + style + '>');
-        return;
-    }
-    const inner = block.innerHTML;
-    const newBlock = document.createElement(style);
-    newBlock.innerHTML = inner;
-    newBlock.style.cssText = block.style.cssText;
-    block.parentNode.replaceChild(newBlock, block);
-
-    const allWrappers = document.querySelectorAll('.editor-wrapper');
-    allWrappers.forEach(function(w) { if (w.style.display !== 'none') { w.style.display = ''; } });
-    document.getElementById('editor-content').focus();
+    restoreSelection();
+    const editor = document.getElementById('editor-content');
+    editor.focus();
+    document.execCommand('formatBlock', false, '<' + style + '>');
+    editor.focus();
 }
 
 function applyFont(font) {
-    const sel = window.getSelection();
-    if (!sel.rangeCount) return;
-    if (sel.toString().length > 0) {
-        document.execCommand('fontName', false, font);
-    } else {
-        const editor = document.getElementById('editor-content');
-        const spans = editor.querySelectorAll('span');
-        let lastSpan = null;
-        spans.forEach(function(s) {
-            if (s.style.fontFamily) lastSpan = s;
-        });
-        document.execCommand('fontName', false, font);
-    }
-    document.getElementById('editor-content').focus();
+    restoreSelection();
+    const editor = document.getElementById('editor-content');
+    editor.focus();
+    document.execCommand('fontName', false, font);
+    editor.focus();
 }
 
 function applyFontSize(size) {
+    restoreSelection();
     const editor = document.getElementById('editor-content');
     editor.focus();
     document.execCommand('fontSize', false, '7');
@@ -650,6 +640,7 @@ function applyFontSize(size) {
             }
         });
     }, 0);
+    editor.focus();
 }
 
 function applyColor(color) {
