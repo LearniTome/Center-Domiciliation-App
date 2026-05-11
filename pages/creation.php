@@ -383,6 +383,7 @@ $contratData = array_merge([
             <?= csrf_input() ?>
             <input type="hidden" name="step" value="1">
             <div class="form-grid">
+                <h3 class="section-title">Identifiants</h3>
                 <label class="field">
                     <span>Dossier domiciliation</span>
                     <input name="dossier_domiciliation" value="<?= e((string) $societeData['dossier_domiciliation']) ?>">
@@ -415,18 +416,8 @@ $contratData = array_merge([
                     <span>IF</span>
                     <input name="if_number" value="<?= e((string) $societeData['if_number']) ?>">
                 </label>
-                <label class="field">
-                    <span>Ville</span>
-                    <input name="ville" value="<?= e((string) $societeData['ville']) ?>">
-                </label>
-                <label class="field">
-                    <span>Email</span>
-                    <input type="email" name="email" value="<?= e((string) $societeData['email']) ?>">
-                </label>
-                <label class="field">
-                    <span>Telephone</span>
-                    <input name="telephone" value="<?= e((string) $societeData['telephone']) ?>">
-                </label>
+
+                <h3 class="section-title">Capital</h3>
                 <label class="field">
                     <span>Capital</span>
                     <input type="number" step="0.01" name="capital" value="<?= e((string) $societeData['capital']) ?>">
@@ -440,14 +431,16 @@ $contratData = array_merge([
                     <input type="number" step="0.01" name="valeur_nominale" value="<?= e((string) $societeData['valeur_nominale']) ?>">
                 </label>
                 <label class="field">
-                    <span>Date expiration certificat negatif</span>
+                    <span>Date exp. cert. negatif</span>
                     <input type="date" name="date_exp_cert_neg" value="<?= e((string) $societeData['date_exp_cert_neg']) ?>">
                 </label>
+
+                <h3 class="section-title">Adresse</h3>
                 <label class="field full">
                     <span>Adresse</span>
                     <textarea name="adresse"><?= e((string) $societeData['adresse']) ?></textarea>
                 </label>
-                <label class="field full">
+                <label class="field">
                     <span>Adresse de reference</span>
                     <select name="ste_adress">
                         <option value="">Selectionner</option>
@@ -455,6 +448,10 @@ $contratData = array_merge([
                             <option value="<?= e($option) ?>" <?= (string) $societeData['ste_adress'] === $option ? 'selected' : '' ?>><?= e($option) ?></option>
                         <?php endforeach; ?>
                     </select>
+                </label>
+                <label class="field">
+                    <span>Ville</span>
+                    <input name="ville" value="<?= e((string) $societeData['ville']) ?>">
                 </label>
                 <label class="field">
                     <span>Tribunal</span>
@@ -465,6 +462,18 @@ $contratData = array_merge([
                         <?php endforeach; ?>
                     </select>
                 </label>
+
+                <h3 class="section-title">Contact</h3>
+                <label class="field">
+                    <span>Email</span>
+                    <input type="email" name="email" value="<?= e((string) $societeData['email']) ?>">
+                </label>
+                <label class="field">
+                    <span>Telephone</span>
+                    <input name="telephone" value="<?= e((string) $societeData['telephone']) ?>">
+                </label>
+
+                <h3 class="section-title">Procedure</h3>
                 <label class="field">
                     <span>Type generation</span>
                     <input name="type_generation" value="<?= e((string) $societeData['type_generation']) ?>">
@@ -503,6 +512,7 @@ $contratData = array_merge([
                             <button class="btn btn-secondary" type="button" data-remove-associe>Retirer</button>
                         </div>
                         <div class="form-grid">
+                            <h3 class="section-title">Identite</h3>
                             <label class="field">
                                 <span>Nom complet</span>
                                 <input data-field-name="nom_complet" name="associes[<?= $index ?>][nom_complet]" required value="<?= e((string) ($associe['nom_complet'] ?? '')) ?>">
@@ -528,6 +538,7 @@ $contratData = array_merge([
                                 <span>Lieu naissance</span>
                                 <input data-field-name="lieu_naiss" name="associes[<?= $index ?>][lieu_naiss]" value="<?= e((string) ($associe['lieu_naiss'] ?? '')) ?>">
                             </label>
+                            <h3 class="section-title">Contact</h3>
                             <label class="field">
                                 <span>Telephone</span>
                                 <input data-field-name="phone" name="associes[<?= $index ?>][phone]" value="<?= e((string) ($associe['phone'] ?? '')) ?>">
@@ -536,6 +547,11 @@ $contratData = array_merge([
                                 <span>Email</span>
                                 <input data-field-name="email" type="email" name="associes[<?= $index ?>][email]" value="<?= e((string) ($associe['email'] ?? '')) ?>">
                             </label>
+                            <label class="field full">
+                                <span>Adresse</span>
+                                <textarea data-field-name="adresse" name="associes[<?= $index ?>][adresse]"><?= e((string) ($associe['adresse'] ?? '')) ?></textarea>
+                            </label>
+                            <h3 class="section-title">Participation</h3>
                             <label class="field">
                                 <span>Qualite</span>
                                 <input data-field-name="qualite_associe" name="associes[<?= $index ?>][qualite_associe]" value="<?= e((string) ($associe['qualite_associe'] ?? '')) ?>">
@@ -551,10 +567,6 @@ $contratData = array_merge([
                                     <option value="1" <?= (string) ($associe['is_gerant'] ?? '0') === '1' ? 'selected' : '' ?>>Oui</option>
                                 </select>
                             </label>
-                            <label class="field full">
-                                <span>Adresse</span>
-                                <textarea data-field-name="adresse" name="associes[<?= $index ?>][adresse]"><?= e((string) ($associe['adresse'] ?? '')) ?></textarea>
-                            </label>
                         </div>
                     </div>
                 <?php endforeach; ?>
@@ -567,6 +579,7 @@ $contratData = array_merge([
                         <button class="btn btn-secondary" type="button" data-remove-associe>Retirer</button>
                     </div>
                     <div class="form-grid">
+                        <h3 class="section-title">Identite</h3>
                         <label class="field">
                             <span>Nom complet</span>
                             <input data-field-name="nom_complet" required value="">
@@ -592,6 +605,7 @@ $contratData = array_merge([
                             <span>Lieu naissance</span>
                             <input data-field-name="lieu_naiss" value="">
                         </label>
+                        <h3 class="section-title">Contact</h3>
                         <label class="field">
                             <span>Telephone</span>
                             <input data-field-name="phone" value="">
@@ -600,6 +614,11 @@ $contratData = array_merge([
                             <span>Email</span>
                             <input data-field-name="email" type="email" value="">
                         </label>
+                        <label class="field full">
+                            <span>Adresse</span>
+                            <textarea data-field-name="adresse"></textarea>
+                        </label>
+                        <h3 class="section-title">Participation</h3>
                         <label class="field">
                             <span>Qualite</span>
                             <input data-field-name="qualite_associe" value="">
@@ -614,10 +633,6 @@ $contratData = array_merge([
                                 <option value="0" selected>Non</option>
                                 <option value="1">Oui</option>
                             </select>
-                        </label>
-                        <label class="field full">
-                            <span>Adresse</span>
-                            <textarea data-field-name="adresse"></textarea>
                         </label>
                     </div>
                 </div>
@@ -634,6 +649,7 @@ $contratData = array_merge([
             <?= csrf_input() ?>
             <input type="hidden" name="step" value="3">
             <div class="form-grid">
+                <h3 class="section-title">Type &amp; Duree</h3>
                 <label class="field">
                     <span>Type de contrat</span>
                     <input name="type_contrat" required value="<?= e((string) $contratData['type_contrat']) ?>">
@@ -659,6 +675,16 @@ $contratData = array_merge([
                     <span>Type autre</span>
                     <input name="type_contrat_domiciliation_autre" value="<?= e((string) $contratData['type_contrat_domiciliation_autre']) ?>">
                 </label>
+
+                <h3 class="section-title">Periode</h3>
+                <label class="field">
+                    <span>Date debut</span>
+                    <input type="date" name="date_debut" value="<?= e((string) $contratData['date_debut']) ?>">
+                </label>
+                <label class="field">
+                    <span>Date fin</span>
+                    <input type="date" name="date_fin" value="<?= e((string) $contratData['date_fin']) ?>">
+                </label>
                 <label class="field">
                     <span>Statut</span>
                     <select name="statut">
@@ -669,14 +695,8 @@ $contratData = array_merge([
                         <?php endforeach; ?>
                     </select>
                 </label>
-                <label class="field">
-                    <span>Date debut</span>
-                    <input type="date" name="date_debut" value="<?= e((string) $contratData['date_debut']) ?>">
-                </label>
-                <label class="field">
-                    <span>Date fin</span>
-                    <input type="date" name="date_fin" value="<?= e((string) $contratData['date_fin']) ?>">
-                </label>
+
+                <h3 class="section-title">Loyer</h3>
                 <label class="field">
                     <span>Loyer mensuel TTC</span>
                     <input type="number" step="0.01" name="loyer_mensuel_ttc" value="<?= e((string) $contratData['loyer_mensuel_ttc']) ?>">
@@ -702,13 +722,15 @@ $contratData = array_merge([
                     <input type="number" step="0.01" name="montant_total_ht_contrat" value="<?= e((string) $contratData['montant_total_ht_contrat']) ?>">
                 </label>
                 <label class="field">
-                    <span>Montant pack demarrage TTC</span>
+                    <span>Pack demarrage TTC</span>
                     <input type="number" step="0.01" name="montant_pack_demarrage_ttc" value="<?= e((string) $contratData['montant_pack_demarrage_ttc']) ?>">
                 </label>
                 <label class="field">
                     <span>Loyer pack demarrage TTC</span>
                     <input type="number" step="0.01" name="loyer_mensuel_pack_demarrage_ttc" value="<?= e((string) $contratData['loyer_mensuel_pack_demarrage_ttc']) ?>">
                 </label>
+
+                <h3 class="section-title">Renouvellement</h3>
                 <label class="field">
                     <span>Type renouvellement</span>
                     <select name="type_renouvellement">
@@ -738,6 +760,7 @@ $contratData = array_merge([
                     <span>Loyer annuel renouvellement TTC</span>
                     <input type="number" step="0.01" name="loyer_annuel_renouvellement_ttc" value="<?= e((string) $contratData['loyer_annuel_renouvellement_ttc']) ?>">
                 </label>
+
                 <label class="field full">
                     <span>Notes</span>
                     <textarea name="notes"><?= e((string) $contratData['notes']) ?></textarea>
