@@ -10,7 +10,7 @@ Faire tourner l'application depuis `C:\xampp\htdocs\Center-Domiciliation-App` av
 2. Copier ce projet dans `C:\xampp\htdocs\Center-Domiciliation-App`.
 3. Ouvrir le panneau XAMPP et lancer `Apache` et `MySQL`.
 4. Ouvrir phpMyAdmin via `http://localhost/phpmyadmin`.
-5. Creer une base `center_domiciliation` ou importer directement `database/schema.sql` puis `database/seed.sql`.
+5. Creer une base `center_domiciliation` ou importer directement `database/import.sql`.
 6. Verifier `config/database.php`.
 7. Ouvrir `http://localhost/Center-Domiciliation-App/`.
 
@@ -27,12 +27,15 @@ Faire tourner l'application depuis `C:\xampp\htdocs\Center-Domiciliation-App` av
 1. Cliquer sur `Nouvelle base de donnees`
 2. Nommer la base `center_domiciliation`
 3. Onglet `Importer`
-4. Importer `database/schema.sql`
-5. Importer `database/seed.sql`
+4. Importer `database/import.sql`
 
-## Limites de cette premiere version
+## Etat actuel de la base
 
 - La generation de documents Word/PDF n'est pas encore re-implemente en PHP.
-- Cette base couvre surtout les flux CRUD principaux.
-- La structure MySQL est une premiere approximation basee sur les entites visibles du projet d'origine.
-
+- La base MySQL couvre maintenant les entites principales de la branche `sql`:
+  - `societes`
+  - `associes`
+  - `contrats`
+  - `collaborateurs`
+  - tables de reference (`ref_ste_adresses`, `ref_tribunaux`, `ref_activites`, `ref_nationalites`, `ref_lieux_naissance`)
+- L'application PHP actuelle n'exploite pas encore tous les champs historiques disponibles dans le schema.

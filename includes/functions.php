@@ -150,3 +150,55 @@ function fetch_societes_options(?PDO $pdo): array
     return $stmt->fetchAll();
 }
 
+function fetch_reference_options(?PDO $pdo, string $table, string $column): array
+{
+    if (!$pdo) {
+        return [];
+    }
+
+    $allowed = [
+        'ref_ste_adresses' => 'ste_adresse',
+        'ref_tribunaux' => 'tribunal',
+        'ref_activites' => 'activite',
+        'ref_nationalites' => 'nationalite',
+        'ref_lieux_naissance' => 'lieu_naissance',
+    ];
+
+    if (($allowed[$table] ?? null) !== $column) {
+        return [];
+    }
+
+    $stmt = $pdo->query("SELECT {$column} FROM {$table} ORDER BY {$column} ASC");
+    return array_map(static fn (array $row): string => (string) $row[$column], $stmt->fetchAll());
+}
+
+function search_term(string $key = 'q'): string
+{
+    return trim((string) ($_GET[$key] ?? ''));
+}
+
+function like_term(string $value): string
+{
+    return '%' . $value . '%';
+}
+
+function export_csv(string $filename, array $headers, array $rows): never
+{
+    header('Content-Type: text/csv; charset=UTF-8');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+
+    $output = fopen('php://output', 'wb');
+    if ($output === false) {
+        exit('Impossible de generer le fichier CSV.');
+    }
+
+    fwrite($output, "\xEF\xBB\xBF");
+    fputcsv($output, $headers, ';');
+
+    foreach ($rows as $row) {
+        fputcsv($output, $row, ';');
+    }
+
+    fclose($output);
+    exit;
+}

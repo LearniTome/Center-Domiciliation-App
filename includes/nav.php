@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 $navItems = [
+    'creation' => 'Nouveau dossier',
     'dashboard' => 'Tableau de bord',
     'societes' => 'Societes',
     'associes' => 'Associes',
@@ -32,4 +33,3 @@ $navItems = [
         <p>Version de depart pour la migration depuis l'application desktop vers une interface web XAMPP.</p>
     </div>
 </aside>
-

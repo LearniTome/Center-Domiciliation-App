@@ -5,7 +5,9 @@ declare(strict_types=1);
 require __DIR__ . '/includes/bootstrap.php';
 
 $allowedPages = [
+    'creation',
     'dashboard',
+    'societe',
     'societes',
     'associes',
     'contrats',
@@ -21,7 +23,9 @@ if (!in_array($page, $allowedPages, true)) {
 }
 
 $pageTitleMap = [
+    'creation' => 'Nouveau dossier',
     'dashboard' => 'Tableau de bord',
+    'societe' => 'Fiche societe',
     'societes' => 'Societes',
     'associes' => 'Associes',
     'contrats' => 'Contrats',
@@ -36,4 +40,3 @@ $pageTitle = $pageTitleMap[$page] ?? 'Center Domiciliation App';
 require __DIR__ . '/includes/header.php';
 require __DIR__ . '/pages/' . $page . '.php';
 require __DIR__ . '/includes/footer.php';
-

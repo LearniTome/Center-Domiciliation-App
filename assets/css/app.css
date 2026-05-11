@@ -120,6 +120,11 @@ a {
     margin-bottom: 24px;
 }
 
+.stats.compact {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-bottom: 0;
+}
+
 .card,
 .stat {
     background: var(--panel);
@@ -256,6 +261,99 @@ td {
     flex-wrap: wrap;
 }
 
+.inline-form {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.inline-form input[type="search"] {
+    flex: 1 1 280px;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.info-grid > div {
+    display: grid;
+    gap: 6px;
+    padding: 14px 16px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--panel-strong);
+}
+
+.info-grid .full {
+    grid-column: 1 / -1;
+}
+
+.hero-card {
+    background: linear-gradient(135deg, rgba(15, 118, 110, 0.96), rgba(180, 83, 9, 0.92));
+    color: #fff;
+}
+
+.hero-card .help-text,
+.hero-card .pill {
+    color: rgba(255, 255, 255, 0.88);
+}
+
+.hero-card .pill {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.wizard-steps {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.wizard-step {
+    padding: 14px 16px;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: var(--panel);
+}
+
+.wizard-step.active {
+    border-color: var(--accent);
+    box-shadow: var(--shadow);
+}
+
+.wizard-step strong,
+.wizard-step span {
+    display: block;
+}
+
+.wizard-step span {
+    color: var(--muted);
+    margin-top: 4px;
+    font-size: 0.92rem;
+}
+
+.associe-card {
+    padding: 18px;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: var(--panel-strong);
+}
+
+.associe-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.search-bar {
+    margin-bottom: 16px;
+}
+
 .pill {
     display: inline-flex;
     padding: 6px 10px;
@@ -269,7 +367,10 @@ td {
     .shell,
     .grid.two,
     .stats,
-    .form-grid {
+    .form-grid,
+    .wizard-steps,
+    .stats.compact,
+    .info-grid {
         grid-template-columns: 1fr;
     }
 
@@ -278,4 +379,3 @@ td {
         border-bottom: 1px solid var(--line);
     }
 }
-
