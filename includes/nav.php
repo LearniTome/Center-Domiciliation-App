@@ -12,7 +12,7 @@ $navItems = [
     'generation' => ['Generation', 'mdi-file-sync'],
     'templates' => ['Templates', 'mdi-file-document-outline'],
     'documents' => ['Documents', 'mdi-folder'],
-    'setup' => ['Installation', 'mdi-cog'],
+    'configuration' => ['Configuration', 'mdi-cog'],
 ];
 ?>
 <aside class="sidebar">

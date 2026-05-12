@@ -30,7 +30,10 @@ $wizard = &$_SESSION['creation_wizard'];
 $step = max(1, min(3, (int) ($_GET['step'] ?? 1)));
 $tribunauxOptions = fetch_reference_options($pdo ?? null, 'ref_tribunaux', 'tribunal');
 $adressesOptions = fetch_reference_options($pdo ?? null, 'ref_ste_adresses', 'ste_adresse');
+$villesOptions = fetch_reference_options($pdo ?? null, 'ref_villes', 'ville');
 $nationalitesOptions = fetch_reference_options($pdo ?? null, 'ref_nationalites', 'nationalite');
+$lieuxNaissanceOptions = fetch_reference_options($pdo ?? null, 'ref_lieux_naissance', 'lieu_naissance');
+$qualitesAssocieOptions = fetch_reference_options($pdo ?? null, 'ref_qualites_associe', 'qualite_associe');
 $formesJuridiquesOptions = fetch_reference_options($pdo ?? null, 'ref_formes_juridiques', 'forme_juridique');
 
 if (isset($_GET['reset']) && $_GET['reset'] === '1') {
@@ -56,7 +59,6 @@ if (is_post()) {
             'part_social' => field_value($_POST, 'part_social'),
             'valeur_nominale' => field_value($_POST, 'valeur_nominale'),
             'date_exp_cert_neg' => field_value($_POST, 'date_exp_cert_neg'),
-            'adresse' => field_value($_POST, 'adresse'),
             'ste_adress' => field_value($_POST, 'ste_adress'),
             'ville' => field_value($_POST, 'ville'),
             'tribunal' => field_value($_POST, 'tribunal'),
@@ -87,9 +89,21 @@ if (is_post()) {
                     continue;
                 }
 
+                $civilite = trim((string) ($associe['civilite'] ?? ''));
+                $nom = trim((string) ($associe['nom'] ?? ''));
+                $prenom = trim((string) ($associe['prenom'] ?? ''));
+                $nomComplet = trim((string) ($associe['nom_complet'] ?? ''));
+                if ($nomComplet === '' && $nom !== '' && $prenom !== '') {
+                    $nomComplet = $civilite !== '' ? "$civilite $prenom $nom" : "$prenom $nom";
+                }
+
                 $item = [
-                    'nom_complet' => trim((string) ($associe['nom_complet'] ?? '')),
+                    'civilite' => $civilite,
+                    'nom' => $nom,
+                    'prenom' => $prenom,
+                    'nom_complet' => $nomComplet,
                     'cin' => trim((string) ($associe['cin'] ?? '')),
+                    'date_validite_cin' => trim((string) ($associe['date_validite_cin'] ?? '')),
                     'adresse' => trim((string) ($associe['adresse'] ?? '')),
                     'date_naiss' => trim((string) ($associe['date_naiss'] ?? '')),
                     'lieu_naiss' => trim((string) ($associe['lieu_naiss'] ?? '')),
@@ -128,28 +142,28 @@ if (is_post()) {
     }
 
     if ($postedStep === 3) {
+        $typeContratVal = field_value($_POST, 'type_contrat');
+        $typeContratAutre = field_value($_POST, 'type_contrat_autre');
+        if ($typeContratVal === 'autre' && $typeContratAutre !== '') {
+            $typeContratVal = $typeContratAutre;
+        }
         $contrat = [
-            'type_contrat' => field_value($_POST, 'type_contrat'),
+            'type_contrat' => $typeContratVal,
             'date_contrat' => field_value($_POST, 'date_contrat'),
             'duree_contrat_mois' => field_value($_POST, 'duree_contrat_mois'),
             'type_contrat_domiciliation' => field_value($_POST, 'type_contrat_domiciliation'),
             'type_contrat_domiciliation_autre' => field_value($_POST, 'type_contrat_domiciliation_autre'),
             'date_debut' => field_value($_POST, 'date_debut'),
             'date_fin' => field_value($_POST, 'date_fin'),
-            'loyer_mensuel_ttc' => field_value($_POST, 'loyer_mensuel_ttc'),
-            'frais_intermediaire_contrat' => field_value($_POST, 'frais_intermediaire_contrat'),
-            'caution_montant' => field_value($_POST, 'caution_montant'),
             'taux_tva_pourcent' => field_value($_POST, 'taux_tva_pourcent'),
             'loyer_mensuel_ht' => field_value($_POST, 'loyer_mensuel_ht'),
-            'montant_total_ht_contrat' => field_value($_POST, 'montant_total_ht_contrat'),
-            'montant_pack_demarrage_ttc' => field_value($_POST, 'montant_pack_demarrage_ttc'),
-            'loyer_mensuel_pack_demarrage_ttc' => field_value($_POST, 'loyer_mensuel_pack_demarrage_ttc'),
+            'loyer_ttc_mois' => field_value($_POST, 'loyer_ttc_mois'),
+            'montant_total_loyer' => field_value($_POST, 'montant_total_loyer'),
             'type_renouvellement' => field_value($_POST, 'type_renouvellement'),
             'taux_tva_renouvellement_pourcent' => field_value($_POST, 'taux_tva_renouvellement_pourcent'),
             'loyer_mensuel_ht_renouvellement' => field_value($_POST, 'loyer_mensuel_ht_renouvellement'),
-            'montant_total_ht_renouvellement' => field_value($_POST, 'montant_total_ht_renouvellement'),
-            'loyer_mensuel_renouvellement_ttc' => field_value($_POST, 'loyer_mensuel_renouvellement_ttc'),
-            'loyer_annuel_renouvellement_ttc' => field_value($_POST, 'loyer_annuel_renouvellement_ttc'),
+            'loyer_ttc_renouvellement_mois' => field_value($_POST, 'loyer_ttc_renouvellement_mois'),
+            'montant_total_renouvellement' => field_value($_POST, 'montant_total_renouvellement'),
             'statut' => field_value($_POST, 'statut', 'actif'),
             'notes' => field_value($_POST, 'notes'),
         ];
@@ -176,11 +190,11 @@ if (is_post()) {
             $societeStmt = $pdo->prepare('
                 INSERT INTO societes (
                     dossier_domiciliation, raison_sociale, den_ste, forme_juridique, ice, date_ice, rc, if_number,
-                    capital, part_social, valeur_nominale, date_exp_cert_neg, adresse, ste_adress, ville, tribunal, email,
+                    capital, part_social, valeur_nominale, date_exp_cert_neg, ste_adress, ville, tribunal, email,
                     telephone, type_generation, procedure_creation, mode_depot_creation
                 ) VALUES (
                     :dossier_domiciliation, :raison_sociale, :den_ste, :forme_juridique, :ice, :date_ice, :rc, :if_number,
-                    :capital, :part_social, :valeur_nominale, :date_exp_cert_neg, :adresse, :ste_adress, :ville, :tribunal, :email,
+                    :capital, :part_social, :valeur_nominale, :date_exp_cert_neg, :ste_adress, :ville, :tribunal, :email,
                     :telephone, :type_generation, :procedure_creation, :mode_depot_creation
                 )
             ');
@@ -193,8 +207,7 @@ if (is_post()) {
                 'date_ice' => ($wizard['societe']['date_ice'] ?? '') !== '' ? $wizard['societe']['date_ice'] : null,
                 'rc' => $wizard['societe']['rc'] ?? '',
                 'if_number' => $wizard['societe']['if_number'] ?? '',
-                'adresse' => $wizard['societe']['adresse'] ?? '',
-                'ste_adress' => ($wizard['societe']['ste_adress'] ?? '') !== '' ? $wizard['societe']['ste_adress'] : ($wizard['societe']['adresse'] ?? ''),
+                'ste_adress' => $wizard['societe']['ste_adress'] ?? '',
                 'ville' => $wizard['societe']['ville'] ?? '',
                 'tribunal' => $wizard['societe']['tribunal'] ?? '',
                 'email' => $wizard['societe']['email'] ?? '',
@@ -211,17 +224,26 @@ if (is_post()) {
             $societeId = (int) $pdo->lastInsertId();
 
             $associeStmt = $pdo->prepare('
-                INSERT INTO associes (societe_id, nom_complet, cin, adresse, nationalite, parts, is_gerant)
-                VALUES (:societe_id, :nom_complet, :cin, :adresse, :nationalite, :parts, :is_gerant)
+                INSERT INTO associes (societe_id, civilite, nom, prenom, nom_complet, cin, date_validite_cin, date_naiss, lieu_naiss, nationalite, adresse, phone, email, qualite_associe, parts, is_gerant)
+                VALUES (:societe_id, :civilite, :nom, :prenom, :nom_complet, :cin, :date_validite_cin, :date_naiss, :lieu_naiss, :nationalite, :adresse, :phone, :email, :qualite_associe, :parts, :is_gerant)
             ');
 
             foreach ($wizard['associes'] as $associe) {
                 $associeStmt->execute([
                     'societe_id' => $societeId,
+                    'civilite' => $associe['civilite'] ?? '',
+                    'nom' => $associe['nom'] ?? '',
+                    'prenom' => $associe['prenom'] ?? '',
                     'nom_complet' => $associe['nom_complet'] ?? '',
                     'cin' => $associe['cin'] ?? '',
-                    'adresse' => $associe['adresse'] ?? '',
+                    'date_validite_cin' => ($associe['date_validite_cin'] ?? '') !== '' ? $associe['date_validite_cin'] : null,
+                    'date_naiss' => ($associe['date_naiss'] ?? '') !== '' ? $associe['date_naiss'] : null,
+                    'lieu_naiss' => $associe['lieu_naiss'] ?? '',
                     'nationalite' => $associe['nationalite'] ?? '',
+                    'adresse' => $associe['adresse'] ?? '',
+                    'phone' => $associe['phone'] ?? '',
+                    'email' => $associe['email'] ?? '',
+                    'qualite_associe' => $associe['qualite_associe'] ?? '',
                     'parts' => ($associe['parts'] ?? '') !== '' ? (int) $associe['parts'] : null,
                     'is_gerant' => ((string) ($associe['is_gerant'] ?? '0') === '1') ? 1 : 0,
                 ]);
@@ -231,18 +253,16 @@ if (is_post()) {
                 INSERT INTO contrats (
                     societe_id, type_contrat, date_contrat, duree_contrat_mois, type_contrat_domiciliation,
                     type_contrat_domiciliation_autre, date_debut, date_fin,
-                    loyer_mensuel_ttc, frais_intermediaire_contrat, caution_montant, taux_tva_pourcent, loyer_mensuel_ht,
-                    montant_total_ht_contrat, montant_pack_demarrage_ttc, loyer_mensuel_pack_demarrage_ttc,
+                    taux_tva_pourcent, loyer_mensuel_ht, loyer_ttc_mois, montant_total_loyer,
                     type_renouvellement, taux_tva_renouvellement_pourcent, loyer_mensuel_ht_renouvellement,
-                    montant_total_ht_renouvellement, loyer_mensuel_renouvellement_ttc, loyer_annuel_renouvellement_ttc,
+                    loyer_ttc_renouvellement_mois, montant_total_renouvellement,
                     statut, notes
                 ) VALUES (
                     :societe_id, :type_contrat, :date_contrat, :duree_contrat_mois, :type_contrat_domiciliation,
                     :type_contrat_domiciliation_autre, :date_debut, :date_fin,
-                    :loyer_mensuel_ttc, :frais_intermediaire_contrat, :caution_montant, :taux_tva_pourcent, :loyer_mensuel_ht,
-                    :montant_total_ht_contrat, :montant_pack_demarrage_ttc, :loyer_mensuel_pack_demarrage_ttc,
+                    :taux_tva_pourcent, :loyer_mensuel_ht, :loyer_ttc_mois, :montant_total_loyer,
                     :type_renouvellement, :taux_tva_renouvellement_pourcent, :loyer_mensuel_ht_renouvellement,
-                    :montant_total_ht_renouvellement, :loyer_mensuel_renouvellement_ttc, :loyer_annuel_renouvellement_ttc,
+                    :loyer_ttc_renouvellement_mois, :montant_total_renouvellement,
                     :statut, :notes
                 )
             ');
@@ -255,20 +275,15 @@ if (is_post()) {
                 'type_contrat_domiciliation_autre' => ($wizard['contrat']['type_contrat_domiciliation_autre'] ?? '') !== '' ? $wizard['contrat']['type_contrat_domiciliation_autre'] : null,
                 'date_debut' => ($wizard['contrat']['date_debut'] ?? '') !== '' ? $wizard['contrat']['date_debut'] : null,
                 'date_fin' => ($wizard['contrat']['date_fin'] ?? '') !== '' ? $wizard['contrat']['date_fin'] : null,
-                'loyer_mensuel_ttc' => ($wizard['contrat']['loyer_mensuel_ttc'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['loyer_mensuel_ttc']) : null,
-                'frais_intermediaire_contrat' => ($wizard['contrat']['frais_intermediaire_contrat'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['frais_intermediaire_contrat']) : null,
-                'caution_montant' => ($wizard['contrat']['caution_montant'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['caution_montant']) : null,
                 'taux_tva_pourcent' => ($wizard['contrat']['taux_tva_pourcent'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['taux_tva_pourcent']) : null,
                 'loyer_mensuel_ht' => ($wizard['contrat']['loyer_mensuel_ht'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['loyer_mensuel_ht']) : null,
-                'montant_total_ht_contrat' => ($wizard['contrat']['montant_total_ht_contrat'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['montant_total_ht_contrat']) : null,
-                'montant_pack_demarrage_ttc' => ($wizard['contrat']['montant_pack_demarrage_ttc'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['montant_pack_demarrage_ttc']) : null,
-                'loyer_mensuel_pack_demarrage_ttc' => ($wizard['contrat']['loyer_mensuel_pack_demarrage_ttc'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['loyer_mensuel_pack_demarrage_ttc']) : null,
+                'loyer_ttc_mois' => ($wizard['contrat']['loyer_ttc_mois'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['loyer_ttc_mois']) : null,
+                'montant_total_loyer' => ($wizard['contrat']['montant_total_loyer'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['montant_total_loyer']) : null,
                 'type_renouvellement' => $wizard['contrat']['type_renouvellement'] ?? '',
                 'taux_tva_renouvellement_pourcent' => ($wizard['contrat']['taux_tva_renouvellement_pourcent'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['taux_tva_renouvellement_pourcent']) : null,
                 'loyer_mensuel_ht_renouvellement' => ($wizard['contrat']['loyer_mensuel_ht_renouvellement'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['loyer_mensuel_ht_renouvellement']) : null,
-                'montant_total_ht_renouvellement' => ($wizard['contrat']['montant_total_ht_renouvellement'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['montant_total_ht_renouvellement']) : null,
-                'loyer_mensuel_renouvellement_ttc' => ($wizard['contrat']['loyer_mensuel_renouvellement_ttc'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['loyer_mensuel_renouvellement_ttc']) : null,
-                'loyer_annuel_renouvellement_ttc' => ($wizard['contrat']['loyer_annuel_renouvellement_ttc'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['loyer_annuel_renouvellement_ttc']) : null,
+                'loyer_ttc_renouvellement_mois' => ($wizard['contrat']['loyer_ttc_renouvellement_mois'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['loyer_ttc_renouvellement_mois']) : null,
+                'montant_total_renouvellement' => ($wizard['contrat']['montant_total_renouvellement'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['montant_total_renouvellement']) : null,
                 'statut' => $wizard['contrat']['statut'] ?? 'actif',
                 'notes' => $wizard['contrat']['notes'] ?? '',
             ]);
@@ -299,7 +314,6 @@ $societeData = array_merge([
     'part_social' => '',
     'valeur_nominale' => '',
     'date_exp_cert_neg' => '',
-    'adresse' => '',
     'ste_adress' => '',
     'ville' => '',
     'tribunal' => '',
@@ -315,8 +329,12 @@ $associesData = $wizard['associes'];
 if (!is_array($associesData) || $associesData === []) {
     $associeDefaults = load_defaults('associe');
     $associesData = [[
+        'civilite' => '',
+        'nom' => '',
+        'prenom' => '',
         'nom_complet' => '',
         'cin' => '',
+        'date_validite_cin' => '',
         'adresse' => '',
         'date_naiss' => '',
         'lieu_naiss' => '',
@@ -340,13 +358,13 @@ $contratData = array_merge([
     'loyer_mensuel_ttc' => '',
     'frais_intermediaire_contrat' => '',
     'caution_montant' => '',
-    'taux_tva_pourcent' => '',
+    'taux_tva_pourcent' => '20',
     'loyer_mensuel_ht' => '',
     'montant_total_ht_contrat' => '',
     'montant_pack_demarrage_ttc' => '',
     'loyer_mensuel_pack_demarrage_ttc' => '',
     'type_renouvellement' => '',
-    'taux_tva_renouvellement_pourcent' => '',
+    'taux_tva_renouvellement_pourcent' => '20',
     'loyer_mensuel_ht_renouvellement' => '',
     'montant_total_ht_renouvellement' => '',
     'loyer_mensuel_renouvellement_ttc' => '',
@@ -421,13 +439,15 @@ $contratData = array_merge([
                 </label>
                 <label class="field">
                     <span>Forme juridique</span>
-                    <select name="forme_juridique">
-                        <option value="">Selectionner</option>
-                        <?php foreach ($formesJuridiquesOptions as $option): ?>
-                            <option value="<?= e($option) ?>" <?= (string) $societeData['forme_juridique'] === $option ? 'selected' : '' ?>><?= e($option) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                    <a class="btn btn-secondary" href="<?= e(app_url('formes-juridiques')) ?>" target="_blank" style="margin-top:4px;font-size:0.85em">Gérer</a>
+                    <div style="display:flex;gap:8px;align-items:center">
+                        <select name="forme_juridique" style="flex:1">
+                            <option value="">Selectionner</option>
+                            <?php foreach ($formesJuridiquesOptions as $option): ?>
+                                <option value="<?= e($option) ?>" <?= (string) $societeData['forme_juridique'] === $option ? 'selected' : '' ?>><?= e($option) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <a href="<?= e(app_url('configuration', ['tab' => 'formes-juridiques'])) ?>" target="_blank" title="Gerer les formes juridiques" style="color:var(--primary);text-decoration:none;font-size:1.4rem;line-height:1">&plus;</a>
+                    </div>
                 </label>
                 <label class="field">
                     <span>ICE</span>
@@ -466,21 +486,28 @@ $contratData = array_merge([
 
                 <h3 class="section-title">Adresse</h3>
                 <label class="field full">
-                    <span>Adresse</span>
-                    <textarea name="adresse"><?= e((string) $societeData['adresse']) ?></textarea>
-                </label>
-                <label class="field">
                     <span>Adresse de reference</span>
-                    <select name="ste_adress">
-                        <option value="">Selectionner</option>
-                        <?php foreach ($adressesOptions as $option): ?>
-                            <option value="<?= e($option) ?>" <?= (string) $societeData['ste_adress'] === $option ? 'selected' : '' ?>><?= e($option) ?></option>
-                        <?php endforeach; ?>
-                    </select>
+                    <div style="display:flex;gap:8px;align-items:center">
+                        <select name="ste_adress" style="flex:1">
+                            <option value="">Selectionner</option>
+                            <?php foreach ($adressesOptions as $option): ?>
+                                <option value="<?= e($option) ?>" <?= (string) $societeData['ste_adress'] === $option ? 'selected' : '' ?>><?= e($option) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <a href="<?= e(app_url('configuration', ['tab' => 'adresses'])) ?>" target="_blank" title="Gerer les adresses" style="color:var(--primary);text-decoration:none;font-size:1.4rem;line-height:1">&plus;</a>
+                    </div>
                 </label>
                 <label class="field">
                     <span>Ville</span>
-                    <input name="ville" value="<?= e((string) $societeData['ville']) ?>">
+                    <div style="display:flex;gap:8px;align-items:center">
+                        <select name="ville" style="flex:1">
+                            <option value="">Selectionner</option>
+                            <?php foreach ($villesOptions as $option): ?>
+                                <option value="<?= e($option) ?>" <?= (string) $societeData['ville'] === $option ? 'selected' : '' ?>><?= e($option) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <a href="<?= e(app_url('configuration', ['tab' => 'villes'])) ?>" target="_blank" title="Gerer les villes" style="color:var(--primary);text-decoration:none;font-size:1.4rem;line-height:1">&plus;</a>
+                    </div>
                 </label>
                 <label class="field">
                     <span>Tribunal</span>
@@ -529,21 +556,42 @@ $contratData = array_merge([
                         <div class="form-grid">
                             <h3 class="section-title">Identite</h3>
                             <label class="field">
-                                <span>Nom complet</span>
-                                <input data-field-name="nom_complet" name="associes[<?= $index ?>][nom_complet]" required value="<?= e((string) ($associe['nom_complet'] ?? '')) ?>">
+                                <span>Civilite</span>
+                                <select data-field-name="civilite" name="associes[<?= $index ?>][civilite]">
+                                    <option value="">Selectionner</option>
+                                    <option value="Mr" <?= (string) ($associe['civilite'] ?? '') === 'Mr' ? 'selected' : '' ?>>Mr</option>
+                                    <option value="Mme" <?= (string) ($associe['civilite'] ?? '') === 'Mme' ? 'selected' : '' ?>>Mme</option>
+                                    <option value="Mlle" <?= (string) ($associe['civilite'] ?? '') === 'Mlle' ? 'selected' : '' ?>>Mlle</option>
+                                </select>
                             </label>
                             <label class="field">
-                                <span>CIN</span>
+                                <span>Nom</span>
+                                <input data-field-name="nom" name="associes[<?= $index ?>][nom]" value="<?= e((string) ($associe['nom'] ?? '')) ?>">
+                            </label>
+                            <label class="field">
+                                <span>Prenom</span>
+                                <input data-field-name="prenom" name="associes[<?= $index ?>][prenom]" value="<?= e((string) ($associe['prenom'] ?? '')) ?>">
+                            </label>
+                            <input type="hidden" data-field-name="nom_complet" name="associes[<?= $index ?>][nom_complet]" value="<?= e((string) ($associe['nom_complet'] ?? '')) ?>">
+                            <label class="field">
+                                <span>N CIN/Sejour/Passport</span>
                                 <input data-field-name="cin" name="associes[<?= $index ?>][cin]" value="<?= e((string) ($associe['cin'] ?? '')) ?>">
                             </label>
                             <label class="field">
+                                <span>Date validite CIN</span>
+                                <input data-field-name="date_validite_cin" type="date" name="associes[<?= $index ?>][date_validite_cin]" value="<?= e((string) ($associe['date_validite_cin'] ?? '')) ?>">
+                            </label>
+                            <label class="field">
                                 <span>Nationalite</span>
-                                <select data-field-name="nationalite" name="associes[<?= $index ?>][nationalite]">
-                                    <option value="">Selectionner</option>
-                                    <?php foreach ($nationalitesOptions as $option): ?>
-                                        <option value="<?= e($option) ?>" <?= (string) ($associe['nationalite'] ?? '') === $option ? 'selected' : '' ?>><?= e($option) ?></option>
-                                    <?php endforeach; ?>
-                                </select>
+                                <div style="display:flex;gap:8px;align-items:center">
+                                    <select data-field-name="nationalite" name="associes[<?= $index ?>][nationalite]" style="flex:1">
+                                        <option value="">Selectionner</option>
+                                        <?php foreach ($nationalitesOptions as $option): ?>
+                                            <option value="<?= e($option) ?>" <?= (string) ($associe['nationalite'] ?? '') === $option ? 'selected' : '' ?>><?= e($option) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <a href="<?= e(app_url('configuration', ['tab' => 'nationalites'])) ?>" target="_blank" title="Gerer les nationalites" style="color:var(--primary);text-decoration:none;font-size:1.4rem;line-height:1">&plus;</a>
+                                </div>
                             </label>
                             <label class="field">
                                 <span>Date naissance</span>
@@ -551,7 +599,15 @@ $contratData = array_merge([
                             </label>
                             <label class="field">
                                 <span>Lieu naissance</span>
-                                <input data-field-name="lieu_naiss" name="associes[<?= $index ?>][lieu_naiss]" value="<?= e((string) ($associe['lieu_naiss'] ?? '')) ?>">
+                                <div style="display:flex;gap:8px;align-items:center">
+                                    <select data-field-name="lieu_naiss" name="associes[<?= $index ?>][lieu_naiss]" style="flex:1">
+                                        <option value="">Selectionner</option>
+                                        <?php foreach ($lieuxNaissanceOptions as $option): ?>
+                                            <option value="<?= e($option) ?>" <?= (string) ($associe['lieu_naiss'] ?? '') === $option ? 'selected' : '' ?>><?= e($option) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <a href="<?= e(app_url('configuration', ['tab' => 'lieux-naissance'])) ?>" target="_blank" title="Gerer les lieux de naissance" style="color:var(--primary);text-decoration:none;font-size:1.4rem;line-height:1">&plus;</a>
+                                </div>
                             </label>
                             <h3 class="section-title">Contact</h3>
                             <label class="field">
@@ -568,8 +624,16 @@ $contratData = array_merge([
                             </label>
                             <h3 class="section-title">Participation</h3>
                             <label class="field">
-                                <span>Qualite</span>
-                                <input data-field-name="qualite_associe" name="associes[<?= $index ?>][qualite_associe]" value="<?= e((string) ($associe['qualite_associe'] ?? '')) ?>">
+                                <span>Qualite associe</span>
+                                <div style="display:flex;gap:8px;align-items:center">
+                                    <select data-field-name="qualite_associe" name="associes[<?= $index ?>][qualite_associe]" style="flex:1">
+                                        <option value="">Selectionner</option>
+                                        <?php foreach ($qualitesAssocieOptions as $option): ?>
+                                            <option value="<?= e($option) ?>" <?= (string) ($associe['qualite_associe'] ?? '') === $option ? 'selected' : '' ?>><?= e($option) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <a href="<?= e(app_url('configuration', ['tab' => 'qualites-associe'])) ?>" target="_blank" title="Gerer les qualites" style="color:var(--primary);text-decoration:none;font-size:1.4rem;line-height:1">&plus;</a>
+                                </div>
                             </label>
                             <label class="field">
                                 <span>Parts</span>
@@ -596,21 +660,42 @@ $contratData = array_merge([
                     <div class="form-grid">
                         <h3 class="section-title">Identite</h3>
                         <label class="field">
-                            <span>Nom complet</span>
-                            <input data-field-name="nom_complet" required value="">
+                            <span>Civilite</span>
+                            <select data-field-name="civilite">
+                                <option value="">Selectionner</option>
+                                <option value="Mr">Mr</option>
+                                <option value="Mme">Mme</option>
+                                <option value="Mlle">Mlle</option>
+                            </select>
                         </label>
                         <label class="field">
-                            <span>CIN</span>
+                            <span>Nom</span>
+                            <input data-field-name="nom" value="">
+                        </label>
+                        <label class="field">
+                            <span>Prenom</span>
+                            <input data-field-name="prenom" value="">
+                        </label>
+                        <input type="hidden" data-field-name="nom_complet" value="">
+                        <label class="field">
+                            <span>N CIN/Sejour/Passport</span>
                             <input data-field-name="cin" value="">
                         </label>
                         <label class="field">
+                            <span>Date validite CIN</span>
+                            <input data-field-name="date_validite_cin" type="date" value="">
+                        </label>
+                        <label class="field">
                             <span>Nationalite</span>
-                            <select data-field-name="nationalite">
-                                <option value="">Selectionner</option>
-                                <?php foreach ($nationalitesOptions as $option): ?>
-                                    <option value="<?= e($option) ?>"><?= e($option) ?></option>
-                                <?php endforeach; ?>
-                            </select>
+                            <div style="display:flex;gap:8px;align-items:center">
+                                <select data-field-name="nationalite" style="flex:1">
+                                    <option value="">Selectionner</option>
+                                    <?php foreach ($nationalitesOptions as $option): ?>
+                                        <option value="<?= e($option) ?>"><?= e($option) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <a href="<?= e(app_url('configuration', ['tab' => 'nationalites'])) ?>" target="_blank" title="Gerer les nationalites" style="color:var(--primary);text-decoration:none;font-size:1.4rem;line-height:1">&plus;</a>
+                            </div>
                         </label>
                         <label class="field">
                             <span>Date naissance</span>
@@ -618,7 +703,15 @@ $contratData = array_merge([
                         </label>
                         <label class="field">
                             <span>Lieu naissance</span>
-                            <input data-field-name="lieu_naiss" value="">
+                            <div style="display:flex;gap:8px;align-items:center">
+                                <select data-field-name="lieu_naiss" style="flex:1">
+                                    <option value="">Selectionner</option>
+                                    <?php foreach ($lieuxNaissanceOptions as $option): ?>
+                                        <option value="<?= e($option) ?>"><?= e($option) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <a href="<?= e(app_url('configuration', ['tab' => 'lieux-naissance'])) ?>" target="_blank" title="Gerer les lieux de naissance" style="color:var(--primary);text-decoration:none;font-size:1.4rem;line-height:1">&plus;</a>
+                            </div>
                         </label>
                         <h3 class="section-title">Contact</h3>
                         <label class="field">
@@ -635,8 +728,16 @@ $contratData = array_merge([
                         </label>
                         <h3 class="section-title">Participation</h3>
                         <label class="field">
-                            <span>Qualite</span>
-                            <input data-field-name="qualite_associe" value="">
+                            <span>Qualite associe</span>
+                            <div style="display:flex;gap:8px;align-items:center">
+                                <select data-field-name="qualite_associe" style="flex:1">
+                                    <option value="">Selectionner</option>
+                                    <?php foreach ($qualitesAssocieOptions as $option): ?>
+                                        <option value="<?= e($option) ?>"><?= e($option) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <a href="<?= e(app_url('configuration', ['tab' => 'qualites-associe'])) ?>" target="_blank" title="Gerer les qualites" style="color:var(--primary);text-decoration:none;font-size:1.4rem;line-height:1">&plus;</a>
+                            </div>
                         </label>
                         <label class="field">
                             <span>Parts</span>
@@ -664,18 +765,26 @@ $contratData = array_merge([
             <?= csrf_input() ?>
             <input type="hidden" name="step" value="3">
             <div class="form-grid">
-                <h3 class="section-title">Type &amp; Duree</h3>
+                <h3 class="section-title">Type de contrat</h3>
                 <label class="field">
                     <span>Type de contrat</span>
-                    <input name="type_contrat" required value="<?= e((string) $contratData['type_contrat']) ?>">
+                    <div style="display:flex;gap:8px;align-items:center">
+                        <select name="type_contrat" style="flex:1" data-calc-trigger>
+                            <option value="">Selectionner</option>
+                            <option value="Domiciliation commerciale" <?= (string) $contratData['type_contrat'] === 'Domiciliation commerciale' ? 'selected' : '' ?>>Domiciliation commerciale</option>
+                            <option value="Domiciliation professionnelle" <?= (string) $contratData['type_contrat'] === 'Domiciliation professionnelle' ? 'selected' : '' ?>>Domiciliation professionnelle</option>
+                            <option value="Domiciliation simple" <?= (string) $contratData['type_contrat'] === 'Domiciliation simple' ? 'selected' : '' ?>>Domiciliation simple</option>
+                            <option value="autre" <?= (string) $contratData['type_contrat'] === 'autre' ? 'selected' : '' ?>>Autre (specifier)</option>
+                        </select>
+                    </div>
+                </label>
+                <label class="field" data-show-if="type_contrat" data-show-value="autre">
+                    <span>Autre type</span>
+                    <input name="type_contrat_autre" value="<?= e((string) ($contratData['type_contrat_autre'] ?? '')) ?>">
                 </label>
                 <label class="field">
-                    <span>Date contrat</span>
-                    <input type="date" name="date_contrat" value="<?= e((string) $contratData['date_contrat']) ?>">
-                </label>
-                <label class="field">
-                    <span>Duree (mois)</span>
-                    <input type="number" name="duree_contrat_mois" value="<?= e((string) $contratData['duree_contrat_mois']) ?>">
+                    <span>Date du contrat</span>
+                    <input type="date" name="date_contrat" value="<?= e((string) ($contratData['date_contrat'] ?: date('Y-m-d'))) ?>">
                 </label>
                 <label class="field">
                     <span>Type contrat domiciliation</span>
@@ -686,19 +795,19 @@ $contratData = array_merge([
                         <?php endforeach; ?>
                     </select>
                 </label>
-                <label class="field">
-                    <span>Type autre</span>
-                    <input name="type_contrat_domiciliation_autre" value="<?= e((string) $contratData['type_contrat_domiciliation_autre']) ?>">
-                </label>
 
                 <h3 class="section-title">Periode</h3>
                 <label class="field">
-                    <span>Date debut</span>
-                    <input type="date" name="date_debut" value="<?= e((string) $contratData['date_debut']) ?>">
+                    <span>Date de debut</span>
+                    <input type="date" name="date_debut" data-date-debut value="<?= e((string) ($contratData['date_debut'] ?: date('Y-m-d'))) ?>">
                 </label>
                 <label class="field">
-                    <span>Date fin</span>
-                    <input type="date" name="date_fin" value="<?= e((string) $contratData['date_fin']) ?>">
+                    <span>Duree (mois)</span>
+                    <input type="number" name="duree_contrat_mois" data-duree-mois value="<?= e((string) $contratData['duree_contrat_mois']) ?>">
+                </label>
+                <label class="field">
+                    <span>Date de fin</span>
+                    <input type="date" name="date_fin" data-date-fin value="<?= e((string) $contratData['date_fin']) ?>" readonly>
                 </label>
                 <label class="field">
                     <span>Statut</span>
@@ -711,38 +820,28 @@ $contratData = array_merge([
                     </select>
                 </label>
 
-                <h3 class="section-title">Loyer</h3>
+                <h3 class="section-title">Loyer (Initial)</h3>
                 <label class="field">
-                    <span>Loyer mensuel TTC</span>
-                    <input type="number" step="0.01" name="loyer_mensuel_ttc" value="<?= e((string) $contratData['loyer_mensuel_ttc']) ?>">
-                </label>
-                <label class="field">
-                    <span>Frais intermediaire</span>
-                    <input type="number" step="0.01" name="frais_intermediaire_contrat" value="<?= e((string) $contratData['frais_intermediaire_contrat']) ?>">
-                </label>
-                <label class="field">
-                    <span>Caution</span>
-                    <input type="number" step="0.01" name="caution_montant" value="<?= e((string) $contratData['caution_montant']) ?>">
+                    <span>Loyer HT (Mois)</span>
+                    <input type="number" step="0.01" name="loyer_mensuel_ht" data-loyer-ht value="<?= e((string) $contratData['loyer_mensuel_ht']) ?>">
                 </label>
                 <label class="field">
                     <span>TVA %</span>
-                    <input type="number" step="0.01" name="taux_tva_pourcent" value="<?= e((string) $contratData['taux_tva_pourcent']) ?>">
+                    <select name="taux_tva_pourcent" data-tva-pourcent>
+                        <option value="">Selectionner</option>
+                        <option value="7" <?= (string) $contratData['taux_tva_pourcent'] === '7' ? 'selected' : '' ?>>7%</option>
+                        <option value="10" <?= (string) $contratData['taux_tva_pourcent'] === '10' ? 'selected' : '' ?>>10%</option>
+                        <option value="14" <?= (string) $contratData['taux_tva_pourcent'] === '14' ? 'selected' : '' ?>>14%</option>
+                        <option value="20" <?= (string) $contratData['taux_tva_pourcent'] === '20' ? 'selected' : '' ?>>20%</option>
+                    </select>
                 </label>
                 <label class="field">
-                    <span>Loyer mensuel HT</span>
-                    <input type="number" step="0.01" name="loyer_mensuel_ht" value="<?= e((string) $contratData['loyer_mensuel_ht']) ?>">
+                    <span>Loyer TTC (Mois)</span>
+                    <input type="number" step="0.01" name="loyer_ttc_mois" data-loyer-ttc-mois value="<?= e((string) ($contratData['loyer_ttc_mois'] ?? '')) ?>" readonly>
                 </label>
                 <label class="field">
-                    <span>Montant total HT</span>
-                    <input type="number" step="0.01" name="montant_total_ht_contrat" value="<?= e((string) $contratData['montant_total_ht_contrat']) ?>">
-                </label>
-                <label class="field">
-                    <span>Pack demarrage TTC</span>
-                    <input type="number" step="0.01" name="montant_pack_demarrage_ttc" value="<?= e((string) $contratData['montant_pack_demarrage_ttc']) ?>">
-                </label>
-                <label class="field">
-                    <span>Loyer pack demarrage TTC</span>
-                    <input type="number" step="0.01" name="loyer_mensuel_pack_demarrage_ttc" value="<?= e((string) $contratData['loyer_mensuel_pack_demarrage_ttc']) ?>">
+                    <span>Montant Total du Loyer</span>
+                    <input type="number" step="0.01" name="montant_total_loyer" data-montant-total-loyer value="<?= e((string) ($contratData['montant_total_loyer'] ?? '')) ?>" readonly>
                 </label>
 
                 <h3 class="section-title">Renouvellement</h3>
@@ -756,24 +855,26 @@ $contratData = array_merge([
                     </select>
                 </label>
                 <label class="field">
-                    <span>TVA renouvellement %</span>
-                    <input type="number" step="0.01" name="taux_tva_renouvellement_pourcent" value="<?= e((string) $contratData['taux_tva_renouvellement_pourcent']) ?>">
+                    <span>Loyer HT (Mois)</span>
+                    <input type="number" step="0.01" name="loyer_mensuel_ht_renouvellement" data-loyer-ht-renouvellement value="<?= e((string) ($contratData['loyer_mensuel_ht_renouvellement'] ?: '166.67')) ?>">
                 </label>
                 <label class="field">
-                    <span>Loyer renouvellement HT</span>
-                    <input type="number" step="0.01" name="loyer_mensuel_ht_renouvellement" value="<?= e((string) $contratData['loyer_mensuel_ht_renouvellement']) ?>">
+                    <span>TVA %</span>
+                    <select name="taux_tva_renouvellement_pourcent" data-tva-renouvellement-pourcent>
+                        <option value="">Selectionner</option>
+                        <option value="7" <?= (string) $contratData['taux_tva_renouvellement_pourcent'] === '7' ? 'selected' : '' ?>>7%</option>
+                        <option value="10" <?= (string) $contratData['taux_tva_renouvellement_pourcent'] === '10' ? 'selected' : '' ?>>10%</option>
+                        <option value="14" <?= (string) $contratData['taux_tva_renouvellement_pourcent'] === '14' ? 'selected' : '' ?>>14%</option>
+                        <option value="20" <?= (string) $contratData['taux_tva_renouvellement_pourcent'] === '20' ? 'selected' : '' ?>>20%</option>
+                    </select>
                 </label>
                 <label class="field">
-                    <span>Montant renouvellement HT</span>
-                    <input type="number" step="0.01" name="montant_total_ht_renouvellement" value="<?= e((string) $contratData['montant_total_ht_renouvellement']) ?>">
+                    <span>Loyer TTC (Mois)</span>
+                    <input type="number" step="0.01" name="loyer_ttc_renouvellement_mois" data-loyer-ttc-renouvellement-mois value="<?= e((string) ($contratData['loyer_ttc_renouvellement_mois'] ?? '')) ?>" readonly>
                 </label>
                 <label class="field">
-                    <span>Loyer renouvellement TTC</span>
-                    <input type="number" step="0.01" name="loyer_mensuel_renouvellement_ttc" value="<?= e((string) $contratData['loyer_mensuel_renouvellement_ttc']) ?>">
-                </label>
-                <label class="field">
-                    <span>Loyer annuel renouvellement TTC</span>
-                    <input type="number" step="0.01" name="loyer_annuel_renouvellement_ttc" value="<?= e((string) $contratData['loyer_annuel_renouvellement_ttc']) ?>">
+                    <span>Montant Total du Loyer</span>
+                    <input type="number" step="0.01" name="montant_total_renouvellement" data-montant-total-renouvellement value="<?= e((string) ($contratData['montant_total_renouvellement'] ?? '')) ?>" readonly>
                 </label>
 
                 <label class="field full">

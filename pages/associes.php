@@ -75,7 +75,7 @@ $associes = ($pdo ?? null) instanceof PDO
                                 <?= csrf_input() ?>
                                 <input type="hidden" name="action" value="delete">
                                 <input type="hidden" name="id" value="<?= e((string) $associe['id']) ?>">
-                                <button class="btn-danger" type="submit" data-confirm="Supprimer cet associe ?">Supprimer</button>
+                                <button class="btn-icon danger" type="submit" data-confirm="Supprimer cet associe ?" title="Supprimer"><span class="mdi mdi-delete"></span></button>
                             </form>
                         </td>
                     </tr>

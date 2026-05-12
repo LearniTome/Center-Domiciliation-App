@@ -314,6 +314,34 @@ button[type="submit"]:active {
     background: var(--danger-hover);
 }
 
+a.btn-icon,
+button.btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    font-size: 0.9rem;
+    line-height: 1;
+    border: 0;
+    background: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    text-decoration: none;
+    vertical-align: middle;
+    transition: color var(--transition);
+}
+
+a.btn-icon:hover,
+button.btn-icon:hover {
+    color: var(--text);
+    background: none;
+}
+
+a.btn-icon.danger:hover,
+button.btn-icon.danger:hover {
+    color: var(--danger);
+}
+
 .stack {
     display: grid;
     gap: 0.75rem;
@@ -334,7 +362,7 @@ button[type="submit"]:active {
     padding: 12px 0 4px;
     margin: 0;
     border-bottom: 1px solid var(--line);
-    color: var(--text-secondary);
+    color: var(--primary);
 }
 
 .section-title:first-child {
@@ -400,12 +428,12 @@ table {
 
 th,
 td {
-    padding: 10px 10px;
+    padding: 2px 6px;
     text-align: left;
     border-bottom: 1px solid var(--line);
     vertical-align: middle;
     white-space: nowrap;
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
 }
 
 th {
@@ -593,6 +621,33 @@ tbody tr:hover:nth-child(even) {
 
 .table-scroll::-webkit-scrollbar-thumb:hover {
     background: var(--text-secondary);
+}
+
+.tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid var(--line);
+    margin-bottom: 1.5rem;
+    overflow-x: auto;
+}
+
+.tab {
+    padding: 0.6rem 1rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    white-space: nowrap;
+    transition: color var(--transition), border-color var(--transition);
+}
+
+.tab:hover {
+    color: var(--text);
+}
+
+.tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
 }
 
 @media (max-width: 980px) {

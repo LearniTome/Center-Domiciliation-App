@@ -123,9 +123,7 @@ $aliases = $templatesConfig['variable_aliases'];
                 <p class="help-text"><?= e($legalForms[$info['folder']] ?? $info['folder']) ?></p>
             </div>
             <div class="table-actions">
-                <a class="btn" href="<?= e(app_url('template_edit', ['path' => $templatePath])) ?>">
-                    <span class="mdi mdi-pencil"></span> Editer
-                </a>
+<a class="btn-icon" href="<?= e(app_url('template_edit', ['path' => $templatePath])) ?>" title="Editer"><span class="mdi mdi-pencil"></span></a>
                 <a class="btn btn-secondary" href="<?= e(app_url('templates')) ?>">Retour</a>
                 <a class="btn btn-secondary" href="<?= e($templatePath) ?>" download>Telecharger</a>
             </div>

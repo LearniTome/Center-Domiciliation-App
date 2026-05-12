@@ -93,7 +93,7 @@ $recentCollaborateurs = ($pdo ?? null) instanceof PDO
                         <td><?= e($societe['raison_sociale']) ?></td>
                         <td><?= e($societe['forme_juridique']) ?></td>
                         <td><?= e($societe['ville']) ?></td>
-                        <td><a class="btn btn-secondary" href="<?= e(app_url('societe', ['id' => (int) $societe['id']])) ?>">Ouvrir</a></td>
+                        <td><a class="btn-icon" href="<?= e(app_url('societe', ['id' => (int) $societe['id']])) ?>" title="Ouvrir"><span class="mdi mdi-eye"></span></a></td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>

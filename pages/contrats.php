@@ -83,7 +83,7 @@ $contrats = ($pdo ?? null) instanceof PDO
                                 <?= csrf_input() ?>
                                 <input type="hidden" name="action" value="delete">
                                 <input type="hidden" name="id" value="<?= e((string) $contrat['id']) ?>">
-                                <button class="btn-danger" type="submit" data-confirm="Supprimer ce contrat ?">Supprimer</button>
+                                <button class="btn-icon danger" type="submit" data-confirm="Supprimer ce contrat ?" title="Supprimer"><span class="mdi mdi-delete"></span></button>
                             </form>
                         </td>
                     </tr>

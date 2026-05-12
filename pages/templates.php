@@ -123,12 +123,12 @@ $docTypes = $templatesConfig['document_types'];
                             <td><?= e(number_format($tpl['size'] / 1024, 1)) ?> KB</td>
                             <td><?= e(date('d/m/Y H:i', $tpl['modified'])) ?></td>
                             <td class="table-actions">
-                                <a class="btn btn-secondary" href="<?= e(app_url('template', ['path' => $tpl['path']])) ?>">Voir</a>
+                                <a class="btn-icon" href="<?= e(app_url('template', ['path' => $tpl['path']])) ?>" title="Voir"><span class="mdi mdi-eye"></span></a>
                                 <form method="post">
                                     <?= csrf_input() ?>
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="path" value="<?= e($tpl['path']) ?>">
-                                    <button class="btn-danger" type="submit" data-confirm="Supprimer ce template ?">Supprimer</button>
+                                    <button class="btn-icon danger" type="submit" data-confirm="Supprimer ce template ?" title="Supprimer"><span class="mdi mdi-delete"></span></button>
                                 </form>
                             </td>
                         </tr>

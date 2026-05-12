@@ -44,8 +44,12 @@ CREATE TABLE IF NOT EXISTS associes (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     societe_id INT UNSIGNED NOT NULL,
     -- Identite
+    civilite VARCHAR(10) DEFAULT NULL,
+    nom VARCHAR(120) DEFAULT NULL,
+    prenom VARCHAR(120) DEFAULT NULL,
     nom_complet VARCHAR(255) NOT NULL,
     cin VARCHAR(100) DEFAULT NULL,
+    date_validite_cin DATE DEFAULT NULL,
     date_naiss DATE DEFAULT NULL,
     lieu_naiss VARCHAR(120) DEFAULT NULL,
     nationalite VARCHAR(120) DEFAULT NULL,
@@ -79,21 +83,16 @@ CREATE TABLE IF NOT EXISTS contrats (
     date_debut DATE DEFAULT NULL,
     date_fin DATE DEFAULT NULL,
     -- Loyer
-    loyer_mensuel_ttc DECIMAL(15,2) DEFAULT NULL,
-    frais_intermediaire_contrat DECIMAL(15,2) DEFAULT NULL,
-    caution_montant DECIMAL(15,2) DEFAULT NULL,
     taux_tva_pourcent DECIMAL(7,2) DEFAULT NULL,
     loyer_mensuel_ht DECIMAL(15,2) DEFAULT NULL,
-    montant_total_ht_contrat DECIMAL(15,2) DEFAULT NULL,
-    montant_pack_demarrage_ttc DECIMAL(15,2) DEFAULT NULL,
-    loyer_mensuel_pack_demarrage_ttc DECIMAL(15,2) DEFAULT NULL,
+    loyer_ttc_mois DECIMAL(15,2) DEFAULT NULL,
+    montant_total_loyer DECIMAL(15,2) DEFAULT NULL,
     -- Renouvellement
     type_renouvellement VARCHAR(120) DEFAULT NULL,
     taux_tva_renouvellement_pourcent DECIMAL(7,2) DEFAULT NULL,
     loyer_mensuel_ht_renouvellement DECIMAL(15,2) DEFAULT NULL,
-    montant_total_ht_renouvellement DECIMAL(15,2) DEFAULT NULL,
-    loyer_mensuel_renouvellement_ttc DECIMAL(15,2) DEFAULT NULL,
-    loyer_annuel_renouvellement_ttc DECIMAL(15,2) DEFAULT NULL,
+    loyer_ttc_renouvellement_mois DECIMAL(15,2) DEFAULT NULL,
+    montant_total_renouvellement DECIMAL(15,2) DEFAULT NULL,
     statut VARCHAR(80) DEFAULT 'actif',
     notes TEXT DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -148,6 +147,12 @@ CREATE TABLE IF NOT EXISTS ref_ste_adresses (
     UNIQUE KEY uq_ref_ste_adresses (ste_adresse)
 );
 
+CREATE TABLE IF NOT EXISTS ref_villes (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    ville VARCHAR(120) NOT NULL,
+    UNIQUE KEY uq_ref_villes (ville)
+);
+
 CREATE TABLE IF NOT EXISTS ref_tribunaux (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     tribunal VARCHAR(120) NOT NULL,
@@ -170,6 +175,12 @@ CREATE TABLE IF NOT EXISTS ref_lieux_naissance (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     lieu_naissance VARCHAR(120) NOT NULL,
     UNIQUE KEY uq_ref_lieux_naissance (lieu_naissance)
+);
+
+CREATE TABLE IF NOT EXISTS ref_qualites_associe (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    qualite_associe VARCHAR(150) NOT NULL,
+    UNIQUE KEY uq_ref_qualites_associe (qualite_associe)
 );
 USE `center_domiciliation`;
 
@@ -223,6 +234,79 @@ INSERT INTO ref_ste_adresses (ste_adresse) VALUES
 ('22 Avenue Hassan II (Downtown)'),
 ('99 Boulevard Moulay Ismail');
 
+-- Données de référence pour les villes
+INSERT INTO ref_villes (ville) VALUES
+('Agadir'),
+('Ait Melloul'),
+('Al Hoceima'),
+('Asilah'),
+('Azemmour'),
+('Azrou'),
+('Beni Mellal'),
+('Beni Ansar'),
+('Berrechid'),
+('Berkane'),
+('Boujdour'),
+('Boulemane'),
+('Casablanca'),
+('Chefchaouen'),
+('Chichaoua'),
+('Dakhla'),
+('El Hajeb'),
+('El Jadida'),
+('El Kelaa Des Sraghna'),
+('Errachidia'),
+('Essaouira'),
+('Fes'),
+('Figuig'),
+('Fnideq'),
+('Guelmim'),
+('Guercif'),
+('Ifrane'),
+('Inezgane'),
+('Jerada'),
+('Kelaat Mgouna'),
+('Khemisset'),
+('Khenifra'),
+('Khouribga'),
+('Ksar El Kebir'),
+('Laayoune'),
+('Larache'),
+('Marrakech'),
+('Martil'),
+('Meknes'),
+('Midelt'),
+('Mohammedia'),
+('Nador'),
+('Ouarzazate'),
+('Ouezzane'),
+('Oujda'),
+('Oulad Teima'),
+('Rabat'),
+('Safi'),
+('Sale'),
+('Sefrou'),
+('Settat'),
+('Sidi Bennour'),
+('Sidi Ifni'),
+('Sidi Kacem'),
+('Sidi Slimane'),
+('Skhirat'),
+('Souk El Arbaa'),
+('Tanger'),
+('Tan-Tan'),
+('Taourirt'),
+('Taroudant'),
+('Tata'),
+('Taza'),
+('Temara'),
+('Tetouan'),
+('Tiflet'),
+('Tinghir'),
+('Tiznit'),
+('Youssoufia'),
+('Zagora');
+
 -- Données de référence pour les nationalités
 INSERT INTO ref_nationalites (nationalite) VALUES
 ('Marocaine'),
@@ -268,6 +352,17 @@ INSERT INTO ref_lieux_naissance (lieu_naissance) VALUES
 ('Nador'),
 ('Hoceima'),
 ('Driouch');
+
+-- Données de référence pour les qualités d'associé
+INSERT INTO ref_qualites_associe (qualite_associe) VALUES
+('Gerant'),
+('Associe unique'),
+('Associe majoritaire'),
+('Associe minoritaire'),
+('President'),
+('Directeur General'),
+('Actionnaire'),
+('Porteur de parts');
 
 -- Données de référence pour les activités
 INSERT INTO ref_activites (activite) VALUES
@@ -390,3 +485,11 @@ INSERT IGNORE INTO ref_lieux_naissance (lieu_naissance) VALUES
 ('Casablanca'),
 ('Rabat'),
 ('Mohammedia');
+
+INSERT IGNORE INTO ref_villes (ville) VALUES
+('Casablanca'),
+('Rabat');
+
+INSERT IGNORE INTO ref_qualites_associe (qualite_associe) VALUES
+('Gerant'),
+('Associe unique');

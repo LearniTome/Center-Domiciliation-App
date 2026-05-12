@@ -50,6 +50,7 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 
 ## Page Patterns
 - **List pages** (`societes`, `associes`, `contrats`): Table with search bar, CSV export link, delete button per row, "Voir" link to detail page
+- **Configuration** (`configuration.php`): Unified page with tabs for all 8 reference tables (formes-juridiques, villes, tribunaux, nationalites, lieux-naissance, adresses, qualites-associe, activites). Add/edit/delete inline.
 - **Wizard** (`creation.php`): 3-step session-based wizard with JS dynamic associate forms
 - **Detail page** (`societe.php`): Single record view with related data tables (associates, contracts, collaborators inline)
 
@@ -60,6 +61,7 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - Stats: `<section class="stats">` with `<article class="stat">` children
 - Empty state: `<p class="table-empty">Aucun(e) ...</p>`
 - Buttons: `<a class="btn">` (primary) or `<a class="btn btn-secondary">`
+- **Table action buttons**: Use `class="btn-icon"` with MDI icons only (no text). Voir → `mdi-eye`, Modifier → `mdi-pencil`, Supprimer → `mdi-delete` with `class="btn-icon danger"`
 - Cards: `<article class="card">` with optional `.stack` for vertical spacing
 
 ## Assets

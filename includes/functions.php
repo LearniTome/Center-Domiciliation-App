@@ -163,6 +163,8 @@ function fetch_reference_options(?PDO $pdo, string $table, string $column): arra
         'ref_nationalites' => 'nationalite',
         'ref_lieux_naissance' => 'lieu_naissance',
         'ref_formes_juridiques' => 'forme_juridique',
+        'ref_villes' => 'ville',
+        'ref_qualites_associe' => 'qualite_associe',
     ];
 
     if (($allowed[$table] ?? null) !== $column) {

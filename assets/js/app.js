@@ -35,24 +35,23 @@ const testData = {
     'type_contrat_domiciliation_autre': '',
     'date_debut': '2026-01-01',
     'date_fin': '2026-12-31',
-    'loyer_mensuel_ttc': '100',
-    'frais_intermediaire_contrat': '50',
-    'caution_montant': '500',
     'taux_tva_pourcent': '20',
     'loyer_mensuel_ht': '83.33',
-    'montant_total_ht_contrat': '1000',
-    'montant_pack_demarrage_ttc': '200',
-    'loyer_mensuel_pack_demarrage_ttc': '50',
-    'type_renouvellement': 'Mensuel',
+    'loyer_ttc_mois': '100',
+    'montant_total_loyer': '1200',
+    'type_renouvellement': 'Annuel',
     'taux_tva_renouvellement_pourcent': '20',
     'loyer_mensuel_ht_renouvellement': '166.67',
-    'montant_total_ht_renouvellement': '2000',
-    'loyer_mensuel_renouvellement_ttc': '200',
-    'loyer_annuel_renouvellement_ttc': '2400',
+    'loyer_ttc_renouvellement_mois': '200',
+    'montant_total_renouvellement': '2400',
     'statut': 'actif',
     'notes': 'Contrat de test pour validation',
-    'nom_complet': 'Ahmed BENANI',
+    'civilite': 'Mr',
+    'nom': 'BENANI',
+    'prenom': 'Ahmed',
+    'nom_complet': 'Mr Ahmed BENANI',
     'cin': 'AB123456',
+    'date_validite_cin': '2028-05-15',
     'date_naiss': '1990-05-15',
     'lieu_naiss': 'Casablanca',
     'nationalite': 'Marocaine',
@@ -174,6 +173,123 @@ if (associesContainer && associeTemplate && addAssocieButton) {
     if (typeGen) {
         toggleProcedureFields(typeGen);
     }
+})();
+
+const updateNomComplet = (container) => {
+    const civilite = container.querySelector('[data-field-name="civilite"]');
+    const nom = container.querySelector('[data-field-name="nom"]');
+    const prenom = container.querySelector('[data-field-name="prenom"]');
+    const nomComplet = container.querySelector('[data-field-name="nom_complet"]');
+    if (!nom || !prenom || !nomComplet) return;
+    const parts = [];
+    if (civilite && civilite.value) parts.push(civilite.value);
+    if (prenom.value.trim()) parts.push(prenom.value.trim());
+    if (nom.value.trim()) parts.push(nom.value.trim());
+    nomComplet.value = parts.join(' ');
+};
+
+document.addEventListener('change', (e) => {
+    const field = e.target.closest('[data-field-name="civilite"]');
+    if (field) updateNomComplet(field.closest('[data-associe-item]'));
+});
+
+document.addEventListener('input', (e) => {
+    const field = e.target.closest('[data-field-name="nom"], [data-field-name="prenom"]');
+    if (field) updateNomComplet(field.closest('[data-associe-item]'));
+});
+
+(function() {
+    const dateDebut = document.querySelector('[data-date-debut]');
+    const dureeMois = document.querySelector('[data-duree-mois]');
+    const dateFin = document.querySelector('[data-date-fin]');
+
+    function calculateDateFin() {
+        if (!dateDebut || !dureeMois || !dateFin) return;
+        const debut = dateDebut.value;
+        const mois = parseInt(dureeMois.value, 10);
+        if (!debut || isNaN(mois) || mois <= 0) {
+            dateFin.value = '';
+            return;
+        }
+        const startDate = new Date(debut);
+        startDate.setMonth(startDate.getMonth() + mois);
+        const yyyy = startDate.getFullYear();
+        const mm = String(startDate.getMonth() + 1).padStart(2, '0');
+        const dd = String(startDate.getDate()).padStart(2, '0');
+        dateFin.value = `${yyyy}-${mm}-${dd}`;
+    }
+
+    if (dateDebut) dateDebut.addEventListener('input', calculateDateFin);
+    if (dureeMois) dureeMois.addEventListener('input', calculateDateFin);
+
+    const parseNum = (v) => {
+        if (v === null || v === undefined || v === '') return 0;
+        return parseFloat(String(v).replace(',', '.')) || 0;
+    };
+
+    const dureeMoisRenouvellement = () => {
+        const type = document.querySelector('[name="type_renouvellement"]')?.value || '';
+        const map = {
+            'Mensuel': 1,
+            'Trimestriel': 3,
+            'Annuel': 12,
+            '2 ans': 24,
+            '3 ans': 36,
+            '4 ans': 48,
+            '5 ans': 60,
+        };
+        return map[type] || 0;
+    };
+
+    const calculerLoyerInitial = () => {
+        const ht = parseNum(document.querySelector('[data-loyer-ht]')?.value);
+        const tva = parseNum(document.querySelector('[data-tva-pourcent]')?.value);
+        const duree = parseNum(document.querySelector('[data-duree-mois]')?.value);
+        const ttcMois = Math.round(ht * (1 + tva / 100) * 100) / 100;
+        const ttcMoisField = document.querySelector('[data-loyer-ttc-mois]');
+        const totalField = document.querySelector('[data-montant-total-loyer]');
+        if (ttcMoisField) ttcMoisField.value = ttcMois.toFixed(2);
+        if (totalField) totalField.value = (ttcMois * duree).toFixed(2);
+    };
+
+    const calculerLoyerRenouvellement = () => {
+        const ht = parseNum(document.querySelector('[data-loyer-ht-renouvellement]')?.value);
+        const tva = parseNum(document.querySelector('[data-tva-renouvellement-pourcent]')?.value);
+        const ttcMois = Math.round(ht * (1 + tva / 100) * 100) / 100;
+        const ttcMoisField = document.querySelector('[data-loyer-ttc-renouvellement-mois]');
+        const totalField = document.querySelector('[data-montant-total-renouvellement]');
+        if (ttcMoisField) ttcMoisField.value = ttcMois.toFixed(2);
+        if (totalField) totalField.value = (ttcMois * dureeMoisRenouvellement()).toFixed(2);
+    };
+
+    const recalcAll = () => {
+        calculateDateFin();
+        calculerLoyerInitial();
+        calculerLoyerRenouvellement();
+    };
+
+    document.querySelector('[data-loyer-ht]')?.addEventListener('input', calculerLoyerInitial);
+    document.querySelector('[data-tva-pourcent]')?.addEventListener('change', calculerLoyerInitial);
+    document.querySelector('[data-duree-mois]')?.addEventListener('input', recalcAll);
+
+    document.querySelector('[data-loyer-ht-renouvellement]')?.addEventListener('input', calculerLoyerRenouvellement);
+    document.querySelector('[data-tva-renouvellement-pourcent]')?.addEventListener('change', calculerLoyerRenouvellement);
+    document.querySelector('[name="type_renouvellement"]')?.addEventListener('change', calculerLoyerRenouvellement);
+
+    recalcAll();
+
+    document.querySelectorAll('[data-show-if]').forEach((field) => {
+        const showIf = field.getAttribute('data-show-if');
+        const showValue = field.getAttribute('data-show-value');
+        const trigger = document.querySelector(`[name="${showIf}"]`);
+        const updateVisibility = () => {
+            field.style.display = (trigger?.value === showValue) ? '' : 'none';
+        };
+        if (trigger) {
+            trigger.addEventListener('change', updateVisibility);
+            updateVisibility();
+        }
+    });
 })();
 
 

@@ -142,12 +142,12 @@ if (($pdo ?? null) instanceof PDO) {
                         <td><?= e(substr($societe['created_at'], 0, 10)) ?></td>
                         <td><?= e(substr($societe['updated_at'], 0, 10)) ?></td>
                         <td class="table-actions">
-                            <a class="btn btn-secondary" href="<?= e(app_url('societe', ['id' => (int) $societe['id']])) ?>">Voir</a>
+                            <a class="btn-icon" href="<?= e(app_url('societe', ['id' => (int) $societe['id']])) ?>" title="Voir"><span class="mdi mdi-eye"></span></a>
                             <form method="post">
                                 <?= csrf_input() ?>
                                 <input type="hidden" name="action" value="delete">
                                 <input type="hidden" name="id" value="<?= e((string) $societe['id']) ?>">
-                                <button class="btn-danger" type="submit" data-confirm="Supprimer cette societe ?">Supprimer</button>
+                                <button class="btn-icon danger" type="submit" data-confirm="Supprimer cette societe ?" title="Supprimer"><span class="mdi mdi-delete"></span></button>
                             </form>
                         </td>
                     </tr>

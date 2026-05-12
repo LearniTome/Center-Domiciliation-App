@@ -21,10 +21,10 @@
     "type_contrat": "Domiciliation commerciale",
     "type_contrat_domiciliation": "Personne Morale",
     "duree_contrat_mois": "12",
-    "type_renouvellement": "Mensuel",
-    "taux_tva_pourcent": "20.00",
+    "type_renouvellement": "Annuel",
+    "taux_tva_pourcent": "20",
     "loyer_mensuel_ht": "83.33",
-    "taux_tva_renouvellement_pourcent": "20.00",
+    "taux_tva_renouvellement_pourcent": "20",
     "loyer_mensuel_ht_renouvellement": "166.67",
     "statut": "actif"
   },

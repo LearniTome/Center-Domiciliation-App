@@ -50,6 +50,79 @@ INSERT INTO ref_ste_adresses (ste_adresse) VALUES
 ('22 Avenue Hassan II (Downtown)'),
 ('99 Boulevard Moulay Ismail');
 
+-- Données de référence pour les villes
+INSERT INTO ref_villes (ville) VALUES
+('Agadir'),
+('Ait Melloul'),
+('Al Hoceima'),
+('Asilah'),
+('Azemmour'),
+('Azrou'),
+('Beni Mellal'),
+('Beni Ansar'),
+('Berrechid'),
+('Berkane'),
+('Boujdour'),
+('Boulemane'),
+('Casablanca'),
+('Chefchaouen'),
+('Chichaoua'),
+('Dakhla'),
+('El Hajeb'),
+('El Jadida'),
+('El Kelaa Des Sraghna'),
+('Errachidia'),
+('Essaouira'),
+('Fes'),
+('Figuig'),
+('Fnideq'),
+('Guelmim'),
+('Guercif'),
+('Ifrane'),
+('Inezgane'),
+('Jerada'),
+('Kelaat Mgouna'),
+('Khemisset'),
+('Khenifra'),
+('Khouribga'),
+('Ksar El Kebir'),
+('Laayoune'),
+('Larache'),
+('Marrakech'),
+('Martil'),
+('Meknes'),
+('Midelt'),
+('Mohammedia'),
+('Nador'),
+('Ouarzazate'),
+('Ouezzane'),
+('Oujda'),
+('Oulad Teima'),
+('Rabat'),
+('Safi'),
+('Sale'),
+('Sefrou'),
+('Settat'),
+('Sidi Bennour'),
+('Sidi Ifni'),
+('Sidi Kacem'),
+('Sidi Slimane'),
+('Skhirat'),
+('Souk El Arbaa'),
+('Tanger'),
+('Tan-Tan'),
+('Taourirt'),
+('Taroudant'),
+('Tata'),
+('Taza'),
+('Temara'),
+('Tetouan'),
+('Tiflet'),
+('Tinghir'),
+('Tiznit'),
+('Youssoufia'),
+('Zagora');
+
 -- Données de référence pour les nationalités
 INSERT INTO ref_nationalites (nationalite) VALUES
 ('Marocaine'),
@@ -95,6 +168,17 @@ INSERT INTO ref_lieux_naissance (lieu_naissance) VALUES
 ('Nador'),
 ('Hoceima'),
 ('Driouch');
+
+-- Données de référence pour les qualités d'associé
+INSERT INTO ref_qualites_associe (qualite_associe) VALUES
+('Gerant'),
+('Associe unique'),
+('Associe majoritaire'),
+('Associe minoritaire'),
+('President'),
+('Directeur General'),
+('Actionnaire'),
+('Porteur de parts');
 
 -- Données de référence pour les activités
 INSERT INTO ref_activites (activite) VALUES
@@ -217,3 +301,11 @@ INSERT IGNORE INTO ref_lieux_naissance (lieu_naissance) VALUES
 ('Casablanca'),
 ('Rabat'),
 ('Mohammedia');
+
+INSERT IGNORE INTO ref_villes (ville) VALUES
+('Casablanca'),
+('Rabat');
+
+INSERT IGNORE INTO ref_qualites_associe (qualite_associe) VALUES
+('Gerant'),
+('Associe unique');

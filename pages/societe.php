@@ -27,7 +27,7 @@ $associes = ($pdo ?? null) instanceof PDO
 
 $contrats = ($pdo ?? null) instanceof PDO
     ? (function (PDO $pdo, int $societeId): array {
-        $stmt = $pdo->prepare('SELECT type_contrat, date_debut, date_fin, statut, loyer_mensuel_ttc FROM contrats WHERE societe_id = :societe_id ORDER BY id DESC');
+        $stmt = $pdo->prepare('SELECT type_contrat, date_debut, date_fin, statut, montant_total_loyer FROM contrats WHERE societe_id = :societe_id ORDER BY id DESC');
         $stmt->execute(['societe_id' => $societeId]);
         return $stmt->fetchAll();
     })($pdo, $societeId)
@@ -71,7 +71,6 @@ $collaborateurs = ($pdo ?? null) instanceof PDO
             <div><strong>Type generation</strong><span><?= e($societe['type_generation'] ?: '-') ?></span></div>
             <div><strong>Procedure creation</strong><span><?= e($societe['procedure_creation'] ?: '-') ?></span></div>
             <div><strong>Mode depot creation</strong><span><?= e($societe['mode_depot_creation'] ?: '-') ?></span></div>
-            <div class="full"><strong>Adresse</strong><span><?= e($societe['adresse'] ?: '-') ?></span></div>
             <div class="full"><strong>Adresse reference</strong><span><?= e($societe['ste_adress'] ?: '-') ?></span></div>
         </div>
     </article>
@@ -148,7 +147,7 @@ $collaborateurs = ($pdo ?? null) instanceof PDO
                     <th>Type</th>
                     <th>Periode</th>
                     <th>Statut</th>
-                    <th>Loyer TTC</th>
+                    <th>Montant Total</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -157,7 +156,7 @@ $collaborateurs = ($pdo ?? null) instanceof PDO
                         <td><?= e($contrat['type_contrat']) ?></td>
                         <td><?= e(($contrat['date_debut'] ?: '-') . ' -> ' . ($contrat['date_fin'] ?: '-')) ?></td>
                         <td><?= e($contrat['statut']) ?></td>
-                        <td><?= e($contrat['loyer_mensuel_ttc'] !== null ? (string) $contrat['loyer_mensuel_ttc'] : '-') ?></td>
+                        <td><?= e($contrat['montant_total_loyer'] !== null ? (string) $contrat['montant_total_loyer'] : '-') ?></td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
@@ -196,7 +195,7 @@ $collaborateurs = ($pdo ?? null) instanceof PDO
                     <td><?= e($collaborateur['collaborateur_email'] ?? '-') ?></td>
                     <td><?= e($collaborateur['collaborateur_tel_mobile'] ?? '-') ?></td>
                     <td><?= e($collaborateur['statut']) ?></td>
-                    <td><a class="btn btn-secondary" href="<?= e(app_url('collaborateur', ['id' => (int) $collaborateur['id']])) ?>">Voir</a></td>
+                    <td><a class="btn-icon" href="<?= e(app_url('collaborateur', ['id' => (int) $collaborateur['id']])) ?>" title="Voir"><span class="mdi mdi-eye"></span></a></td>
                 </tr>
             <?php endforeach; ?>
             </tbody>
