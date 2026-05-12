@@ -129,6 +129,16 @@ a:hover {
     text-align: center;
 }
 
+.nav-section-label {
+    display: block;
+    padding: 16px 14px 4px;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
 .main {
     padding: 1.5rem;
 }
