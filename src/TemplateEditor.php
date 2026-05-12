@@ -102,6 +102,9 @@ class TemplateEditor
         $bold = false;
         $italic = false;
         $underline = false;
+        $fontSize = '';
+        $fontColor = '';
+        $bgColor = '';
         $alignment = '';
         $cellContent = '';
         $rowCells = [];
@@ -139,6 +142,9 @@ class TemplateEditor
                         $bold = false;
                         $italic = false;
                         $underline = false;
+                        $fontSize = '';
+                        $fontColor = '';
+                        $bgColor = '';
                     } elseif ($type === 'close') {
                         if ($inTable) break;
                         $alignClass = $alignment ? " style=\"text-align:{$alignment}\"" : '';
@@ -164,11 +170,44 @@ class TemplateEditor
                         $bold = false;
                         $italic = false;
                         $underline = false;
+                        $fontSize = '';
+                        $fontColor = '';
+                        $bgColor = '';
                     } elseif ($type === 'close') {
                     }
                     break;
 
                 case 'rPr':
+                    break;
+
+                case 'sz':
+                    if ($type === 'complete' || $type === 'open') {
+                        $fontSize = (isset($attrs['w:val']) ? ((int)$attrs['w:val'] / 2) . 'pt' : '');
+                    }
+                    break;
+
+                case 'szCs':
+                    if ($type === 'complete' || $type === 'open') {
+                        if ($fontSize === '' && isset($attrs['w:val'])) {
+                            $fontSize = ((int)$attrs['w:val'] / 2) . 'pt';
+                        }
+                    }
+                    break;
+
+                case 'color':
+                    if ($type === 'complete' || $type === 'open') {
+                        if (isset($attrs['w:val'])) {
+                            $fontColor = $attrs['w:val'];
+                        }
+                    }
+                    break;
+
+                case 'highlight':
+                    if ($type === 'complete' || $type === 'open') {
+                        if (isset($attrs['w:val'])) {
+                            $bgColor = self::highlightToHex($attrs['w:val']);
+                        }
+                    }
                     break;
 
                 case 'b':
@@ -199,9 +238,14 @@ class TemplateEditor
                     if ($type === 'complete' || $type === 'cdata') {
                         $text = $val['value'] ?? '';
                         $text = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+                        $styles = '';
+                        if ($fontSize) $styles .= 'font-size:' . $fontSize . ';';
+                        if ($fontColor) $styles .= 'color:#' . $fontColor . ';';
+                        if ($bgColor && $bgColor !== 'transparent') $styles .= 'background-color:' . $bgColor . ';';
                         if ($bold) $text = "<strong>{$text}</strong>";
                         if ($italic) $text = "<em>{$text}</em>";
                         if ($underline) $text = "<u>{$text}</u>";
+                        if ($styles) $text = '<span style="' . $styles . '">' . $text . '</span>';
                         $currentText .= $text;
                     }
                     break;
@@ -352,14 +396,64 @@ class TemplateEditor
         return self::convertInlineWithFormatting($parent, false, false, false);
     }
 
-    private static function convertInlineWithFormatting(DOMNode $parent, bool $inheritBold, bool $inheritItalic, bool $inheritUnderline): string
+    private static function parseStyleValue(string $style, string $property): string
+    {
+        if (preg_match('/(?:^|;)\s*' . $property . '\s*:\s*([^;]+)/i', $style, $m)) {
+            return trim($m[1]);
+        }
+        return '';
+    }
+
+    private static function normalizeColor(string $color): string
+    {
+        $color = trim($color);
+        if (preg_match('/^rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/i', $color, $m)) {
+            return sprintf('#%02x%02x%02x', (int)$m[1], (int)$m[2], (int)$m[3]);
+        }
+        if (!str_starts_with($color, '#')) {
+            $color = '#' . $color;
+        }
+        return $color;
+    }
+
+    private static function highlightToHex(string $color): string
+    {
+        $map = [
+            'black' => '#000000', 'blue' => '#0000ff', 'cyan' => '#00ffff',
+            'green' => '#00ff00', 'magenta' => '#ff00ff', 'red' => '#ff0000',
+            'yellow' => '#ffff00', 'white' => '#ffffff',
+            'darkblue' => '#000080', 'darkcyan' => '#008080', 'darkgreen' => '#008000',
+            'darkmagenta' => '#800080', 'darkred' => '#800000', 'darkyellow' => '#ffcc00',
+            'darkgray' => '#808080', 'lightgray' => '#d3d3d3', 'none' => 'transparent',
+        ];
+        return $map[strtolower($color)] ?? (str_starts_with($color, '#') ? $color : '#' . $color);
+    }
+
+    private static function hexToHighlight(string $hex): string
+    {
+        if (strtolower($hex) === 'transparent') return 'none';
+        $map = [
+            '#ffff00' => 'yellow', '#00ff00' => 'green', '#00ffff' => 'cyan',
+            '#ff00ff' => 'magenta', '#ff0000' => 'red', '#0000ff' => 'blue',
+            '#ffffff' => 'white', '#ffcc00' => 'darkyellow', '#008000' => 'darkgreen',
+            '#008080' => 'darkcyan', '#800080' => 'darkmagenta', '#800000' => 'darkred',
+            '#000080' => 'darkblue', '#000000' => 'black',
+        ];
+        $normalized = strtolower($hex);
+        if (!str_starts_with($normalized, '#')) {
+            $normalized = '#' . $normalized;
+        }
+        return $map[$normalized] ?? ltrim($hex, '#');
+    }
+
+    private static function convertInlineWithFormatting(DOMNode $parent, bool $inheritBold, bool $inheritItalic, bool $inheritUnderline, string $fontSize = '', string $fontColor = '', string $bgColor = ''): string
     {
         $xml = '';
         foreach ($parent->childNodes as $child) {
             if ($child->nodeType === XML_TEXT_NODE) {
                 $text = $child->textContent;
                 if (trim($text) === '') continue;
-                $xml .= self::makeRun($text, $inheritBold, $inheritItalic, $inheritUnderline);
+                $xml .= self::makeRun($text, $inheritBold, $inheritItalic, $inheritUnderline, $fontSize, $fontColor, $bgColor);
                 continue;
             }
             if ($child->nodeType !== XML_ELEMENT_NODE) continue;
@@ -368,15 +462,33 @@ class TemplateEditor
             if ($tag === 'br') {
                 $xml .= '<w:r><w:br/><w:t xml:space="preserve"> </w:t></w:r>';
             } elseif (in_array($tag, ['b', 'strong'])) {
-                $xml .= self::convertInlineWithFormatting($child, true, $inheritItalic, $inheritUnderline);
+                $xml .= self::convertInlineWithFormatting($child, true, $inheritItalic, $inheritUnderline, $fontSize, $fontColor, $bgColor);
             } elseif (in_array($tag, ['i', 'em'])) {
-                $xml .= self::convertInlineWithFormatting($child, $inheritBold, true, $inheritUnderline);
+                $xml .= self::convertInlineWithFormatting($child, $inheritBold, true, $inheritUnderline, $fontSize, $fontColor, $bgColor);
             } elseif ($tag === 'u') {
-                $xml .= self::convertInlineWithFormatting($child, $inheritBold, $inheritItalic, true);
+                $xml .= self::convertInlineWithFormatting($child, $inheritBold, $inheritItalic, true, $fontSize, $fontColor, $bgColor);
             } elseif (in_array($tag, ['span', 'font'])) {
-                $xml .= self::convertInlineWithFormatting($child, $inheritBold, $inheritItalic, $inheritUnderline);
+                $style = $child->getAttribute('style');
+                $elFontSize = self::parseStyleValue($style, 'font-size');
+                $elFontColor = self::parseStyleValue($style, 'color');
+                $elBgColor = self::parseStyleValue($style, 'background-color');
+
+                if ($tag === 'font') {
+                    $attrColor = $child->getAttribute('color');
+                    if ($attrColor && !$elFontColor) {
+                        $elFontColor = $attrColor;
+                    }
+                }
+
+                if ($elFontColor) $elFontColor = self::normalizeColor($elFontColor);
+                if ($elBgColor) $elBgColor = self::normalizeColor($elBgColor);
+
+                $xml .= self::convertInlineWithFormatting($child, $inheritBold, $inheritItalic, $inheritUnderline,
+                    $elFontSize ?: $fontSize,
+                    $elFontColor ?: $fontColor,
+                    $elBgColor ?: $bgColor);
             } else {
-                $xml .= self::convertInlineWithFormatting($child, $inheritBold, $inheritItalic, $inheritUnderline);
+                $xml .= self::convertInlineWithFormatting($child, $inheritBold, $inheritItalic, $inheritUnderline, $fontSize, $fontColor, $bgColor);
             }
         }
         return $xml;
@@ -417,14 +529,27 @@ class TemplateEditor
         return $xml;
     }
 
-    private static function makeRun(string $text, bool $bold = false, bool $italic = false, bool $underline = false): string
+    private static function makeRun(string $text, bool $bold = false, bool $italic = false, bool $underline = false, string $fontSize = '', string $fontColor = '', string $bgColor = ''): string
     {
         if (trim($text) === '') return '';
         $rPr = '';
         if ($bold) $rPr .= '<w:b/><w:bCs/>';
         if ($italic) $rPr .= '<w:i/><w:iCs/>';
         if ($underline) $rPr .= '<w:u w:val="single"/>';
-        $rPr .= '<w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="fr-FR"/>';
+        if ($fontSize) {
+            $val = (int)((float)$fontSize * 2);
+            $rPr .= '<w:sz w:val="' . $val . '"/><w:szCs w:val="' . $val . '"/>';
+        } else {
+            $rPr .= '<w:sz w:val="22"/><w:szCs w:val="22"/>';
+        }
+        if ($fontColor) {
+            $color = ltrim($fontColor, '#');
+            $rPr .= '<w:color w:val="' . $color . '"/>';
+        }
+        if ($bgColor) {
+            $rPr .= '<w:highlight w:val="' . self::hexToHighlight($bgColor) . '"/>';
+        }
+        $rPr .= '<w:lang w:val="fr-FR"/>';
         $rPr = $rPr ? "<w:rPr>{$rPr}</w:rPr>" : '';
         return '<w:r>' . $rPr . '<w:t xml:space="preserve">' . htmlspecialchars($text, ENT_XML1, 'UTF-8') . '</w:t></w:r>';
     }
