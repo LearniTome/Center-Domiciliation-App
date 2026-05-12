@@ -47,7 +47,7 @@ if (is_post()) {
             <span>Nouvelle nationalite</span>
             <div style="display:flex;gap:8px">
                 <input name="nationalite" required>
-                <button type="submit" class="btn">Ajouter</button>
+                <button type="submit" class="btn-icon" title="Ajouter"><span class="mdi mdi-plus"></span></button>
             </div>
         </label>
     </form>

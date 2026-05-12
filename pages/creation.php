@@ -543,7 +543,7 @@ $contratData = array_merge([
                     <h2>Associes de <?= e((string) ($societeData['raison_sociale'] ?: 'la societe')) ?></h2>
                     <p class="help-text">Ajoutez autant d'associes que necessaire.</p>
                 </div>
-                <button class="btn btn-secondary" type="button" data-add-associe>Ajouter un associe</button>
+                <button class="btn-icon" type="button" data-add-associe title="Ajouter un associe"><span class="mdi mdi-plus"></span></button>
             </div>
 
             <div class="stack" data-associes-container>

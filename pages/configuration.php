@@ -82,7 +82,7 @@ if (is_post()) {
         <input type="hidden" name="tab" value="<?= e($tab) ?>">
         <div style="display:flex;gap:6px">
             <input name="<?= e($column) ?>" placeholder="Nouveau..." required style="flex:1;padding:4px 8px;font-size:0.8125rem">
-            <button type="submit" class="btn" style="padding:4px 12px;font-size:0.8125rem">Ajouter</button>
+            <button type="submit" class="btn-icon" title="Ajouter"><span class="mdi mdi-plus"></span></button>
         </div>
     </form>
 
