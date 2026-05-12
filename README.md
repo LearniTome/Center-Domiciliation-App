@@ -82,7 +82,7 @@ Application PHP compatible XAMPP pour la gestion des dossiers de domiciliation :
 ## Pages disponibles
 
 | Page | URL | Description |
-|---|---|---|---|
+|---|---|---|
 | Tableau de bord | `?page=dashboard` | Stats, dernieres entrees, acces rapide |
 | Nouveau dossier | `?page=creation` | Assistant 3 etapes avec associes dynamiques |
 | Configuration | `?page=configuration` | Gestion unifiee de toutes les tables de reference (onglets) |
