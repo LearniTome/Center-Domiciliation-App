@@ -357,12 +357,12 @@ $variables = TemplateEditor::getAvailableVariables();
 .toolbar-sep { width: 1px; height: 22px; background: var(--border); margin: 0 0.25rem; }
 .btn-sm { padding: 0.3rem 0.5rem; font-size: 0.8rem; }
 .editor-content {
-    width: 100%; min-height: 400px; padding: 2cm 2.5cm;
+    width: 21cm; min-height: 29.7cm; padding: 2cm 2.5cm;
     background: white; color: #1a1a1a;
     font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; font-size: 11pt;
     line-height: 1.5; border: 1px solid var(--border);
     outline: none; overflow-y: auto; box-sizing: border-box;
-    max-width: 21cm; margin: 0 auto; box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    margin: 0 auto; box-shadow: 0 2px 12px rgba(0,0,0,0.15);
 }
 .editor-content:empty:before {
     content: attr(data-placeholder);
