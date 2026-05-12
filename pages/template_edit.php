@@ -131,7 +131,7 @@ $variables = TemplateEditor::getAvailableVariables();
                 <p class="help-text"><?= e($legalForms[$folder] ?? $folder) ?> &mdash; <?= e($filename) ?></p>
             </div>
             <div class="table-actions">
-                <a class="btn btn-secondary" href="<?= e(app_url('template', ['path' => $templatePath])) ?>">Fermer</a>
+                <a class="btn-icon" href="<?= e(app_url('template', ['path' => $templatePath])) ?>" title="Fermer"><span class="mdi mdi-close"></span></a>
             </div>
         </div>
 
@@ -259,16 +259,16 @@ $variables = TemplateEditor::getAvailableVariables();
 
             <div class="editor-actions">
                 <div>
-                    <button type="submit" class="btn" onclick="return beforeSave()">
-                        <span class="mdi mdi-content-save"></span> Enregistrer
+                    <button type="submit" class="btn-icon" onclick="return beforeSave()" title="Enregistrer">
+                        <span class="mdi mdi-content-save"></span>
                     </button>
-                    <button type="button" class="btn btn-secondary" onclick="showSaveAs()">
-                        <span class="mdi mdi-content-save-outline"></span> Enregistrer sous...
+                    <button type="button" class="btn-icon" onclick="showSaveAs()" title="Enregistrer sous...">
+                        <span class="mdi mdi-content-save-outline"></span>
                     </button>
                 </div>
                 <div>
-                    <button type="button" class="btn btn-secondary" onclick="if(confirm('Creer un nouveau template vierge ?'))document.getElementById('blank-form').submit();">
-                        <span class="mdi mdi-file-plus"></span> Nouveau vierge
+                    <button type="button" class="btn-icon" onclick="if(confirm('Creer un nouveau template vierge ?'))document.getElementById('blank-form').submit();" title="Nouveau vierge">
+                        <span class="mdi mdi-file-plus"></span>
                     </button>
                 </div>
             </div>
