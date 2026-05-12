@@ -124,8 +124,8 @@ $aliases = $templatesConfig['variable_aliases'];
             </div>
             <div class="table-actions">
 <a class="btn-icon" href="<?= e(app_url('template_edit', ['path' => $templatePath])) ?>" title="Editer"><span class="mdi mdi-pencil"></span></a>
-                <a class="btn btn-secondary" href="<?= e(app_url('templates')) ?>">Retour</a>
-                <a class="btn btn-secondary" href="<?= e($templatePath) ?>" download>Telecharger</a>
+                <a class="btn-icon" href="<?= e(app_url('templates')) ?>" title="Retour"><span class="mdi mdi-arrow-left"></span></a>
+                <a class="btn-icon" href="<?= e($templatePath) ?>" download title="Telecharger"><span class="mdi mdi-download"></span></a>
             </div>
         </div>
 
