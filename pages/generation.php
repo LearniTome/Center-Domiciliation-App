@@ -58,15 +58,20 @@ if ($selectedSociete) {
     $filteredTemplates = filterTemplatesByLegalForm($allTemplates, $legalForm);
 }
 
-$generatedFiles = [];
+$generatedFiles = $_SESSION['gen_files'][$societeId] ?? [];
 
-if (is_post() && ($pdo ?? null) instanceof PDO && $selectedSociete) {
+if (is_post() && !isset($_POST['delete_submit']) && !isset($_POST['validate_submit']) && ($pdo ?? null) instanceof PDO && $selectedSociete) {
     verify_csrf();
 
     $selectedPaths = $_POST['templates'] ?? [];
     $generatePdf = isset($_POST['pdf']);
 
     $context = DocumentRenderer::buildContextFromDb($pdo, $societeId);
+    $forme = $selectedSociete['forme_juridique'] ?? 'PP';
+    $today = date('Y-m-d');
+    $clientName = trim(preg_replace('/[^a-zA-Z0-9-]/', '-', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $selectedSociete['raison_sociale'] ?? 'Client')));
+    $clientName = preg_replace('/-+/', '-', $clientName);
+    $clientName = trim($clientName, '-');
 
     foreach ($selectedPaths as $path) {
         if (!file_exists($path)) continue;
@@ -74,16 +79,28 @@ if (is_post() && ($pdo ?? null) instanceof PDO && $selectedSociete) {
 
         try {
             $renderer = new DocumentRenderer($path, $outputDir);
-            $docxPath = $renderer->render($context);
+
+            $filename = pathinfo($path, PATHINFO_FILENAME);
+            $parts = explode('_', $filename);
+            $docType = '';
+            if (count($parts) >= 4) {
+                $docType = preg_replace('/_?Template$/i', '', implode('_', array_slice($parts, 2)));
+            } elseif (count($parts) === 3) {
+                $docType = preg_replace('/_?Template$/i', '', $parts[1]);
+            }
+            $base = $forme . '_' . $today . '_' . $docType . '_' . $clientName;
+            $outName = $base . '_Brouillon.docx';
+            $docxPath = $renderer->render($context, $outName);
 
             $result = [
                 'docx' => $docxPath,
                 'pdf' => null,
-                'name' => basename($path),
+                'name' => $outName,
             ];
 
             if ($generatePdf) {
-                $pdfPath = $renderer->tryConvertToPdf($docxPath);
+                $pdfName = $base . '_Brouillon.pdf';
+                $pdfPath = $renderer->tryConvertToPdf($docxPath, $pdfName);
                 $result['pdf'] = $pdfPath;
             }
 
@@ -94,7 +111,66 @@ if (is_post() && ($pdo ?? null) instanceof PDO && $selectedSociete) {
     }
 
     if (count($generatedFiles) > 0) {
+        $_SESSION['gen_files'][$societeId] = $generatedFiles;
         set_flash('success', count($generatedFiles) . ' document(s) genere(s).');
+    }
+}
+
+if (is_post() && isset($_POST['delete_submit']) && $societeId > 0) {
+    verify_csrf();
+    $selected = $_POST['selected_files'] ?? [];
+    $files = $_SESSION['gen_files'][$societeId] ?? [];
+
+    if (count($selected) > 0) {
+        $remaining = [];
+        $deletedCount = 0;
+        foreach ($files as $i => $file) {
+            if (in_array((string) $i, $selected, true)) {
+                if (file_exists($file['docx'])) unlink($file['docx']);
+                if (isset($file['pdf']) && file_exists($file['pdf'])) unlink($file['pdf']);
+                $deletedCount++;
+            } else {
+                $remaining[] = $file;
+            }
+        }
+        $_SESSION['gen_files'][$societeId] = $remaining;
+        set_flash('error', $deletedCount . ' document(s) supprime(s).');
+        redirect_to('generation', ['societe_id' => $societeId]);
+    }
+}
+
+if (is_post() && isset($_POST['validate_submit']) && $societeId > 0) {
+    verify_csrf();
+    $selected = $_POST['selected_files'] ?? [];
+    $files = $_SESSION['gen_files'][$societeId] ?? [];
+
+    if (count($selected) > 0) {
+        foreach ($files as $i => &$file) {
+            if (in_array((string) $i, $selected, true)) {
+                $oldDocx = $file['docx'];
+                $newName = str_replace('_Brouillon.docx', '.docx', $file['name']);
+                $newDocx = dirname($oldDocx) . DIRECTORY_SEPARATOR . $newName;
+
+                if (file_exists($oldDocx) && $oldDocx !== $newDocx) {
+                    rename($oldDocx, $newDocx);
+                    $file['docx'] = $newDocx;
+                    $file['name'] = $newName;
+                }
+
+                if (isset($file['pdf']) && file_exists($file['pdf'])) {
+                    $oldPdf = $file['pdf'];
+                    $newPdf = str_replace('_Brouillon.pdf', '.pdf', $oldPdf);
+                    if ($oldPdf !== $newPdf) {
+                        rename($oldPdf, $newPdf);
+                        $file['pdf'] = $newPdf;
+                    }
+                }
+            }
+        }
+        unset($file);
+        $_SESSION['gen_files'][$societeId] = $files;
+        set_flash('success', count($selected) . ' document(s) valide(s).');
+        redirect_to('generation', ['societe_id' => $societeId]);
     }
 }
 
@@ -209,31 +285,52 @@ foreach ($filteredTemplates as $tpl) {
         </div>
 
         <?php if ($generatedFiles): ?>
-            <div class="generated-list">
-                <?php foreach ($generatedFiles as $file): ?>
-                    <div class="generated-item">
-                        <div class="generated-item-info">
-                            <span class="mdi mdi-file-word" style="color:var(--primary);font-size:1.2rem"></span>
-                            <div>
-                                <strong><?= e($file['name']) ?></strong>
-                                <?php if (file_exists($file['docx'])): ?>
-                                    <span class="help-text"><?= number_format(filesize($file['docx']) / 1024, 1) ?> Ko</span>
+            <form method="post" class="stack" id="files-form">
+                <?= csrf_input() ?>
+                <input type="hidden" name="societe_id" value="<?= $societeId ?>">
+                <div class="section-header">
+                    <div class="table-actions">
+                        <a class="btn-icon" href="#" id="select-all-files" title="Selectionner tout"><span class="mdi mdi-check-all"></span></a>
+                        <button type="submit" class="btn-icon" name="validate_submit" value="1" title="Valider les fichiers selectionnes"><span class="mdi mdi-file-check"></span></button>
+                        <button type="submit" class="btn-icon danger" name="delete_submit" value="1" title="Supprimer les fichiers selectionnes"><span class="mdi mdi-delete"></span></button>
+                    </div>
+                </div>
+                <div class="generated-list">
+                    <?php foreach ($generatedFiles as $i => $file): ?>
+                        <div class="generated-item">
+                            <input type="checkbox" name="selected_files[]" value="<?= $i ?>" class="template-check">
+                            <div class="generated-item-info">
+                                <span class="mdi mdi-file-word" style="color:var(--primary);font-size:1.2rem"></span>
+                                <div>
+                                    <strong><?= e($file['name']) ?></strong>
+                                    <?php if (file_exists($file['docx'])): ?>
+                                        <span class="help-text"><?= number_format(filesize($file['docx']) / 1024, 1) ?> Ko</span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <div class="table-actions">
+                                <a class="btn btn-secondary" href="<?= e(str_replace(__DIR__ . '/../', '', $file['docx'])) ?>" download>
+                                    <span class="mdi mdi-download"></span> DOCX
+                                </a>
+                                <?php if ($file['pdf']): ?>
+                                    <a class="btn" href="<?= e(str_replace(__DIR__ . '/../', '', $file['pdf'])) ?>" download>
+                                        <span class="mdi mdi-file-pdf"></span> PDF
+                                    </a>
                                 <?php endif; ?>
                             </div>
                         </div>
-                        <div class="table-actions">
-                            <a class="btn btn-secondary" href="<?= e(str_replace(__DIR__ . '/../', '', $file['docx'])) ?>" download>
-                                <span class="mdi mdi-download"></span> DOCX
-                            </a>
-                            <?php if ($file['pdf']): ?>
-                                <a class="btn" href="<?= e(str_replace(__DIR__ . '/../', '', $file['pdf'])) ?>" download>
-                                    <span class="mdi mdi-file-pdf"></span> PDF
-                                </a>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            </div>
+                    <?php endforeach; ?>
+                </div>
+            </form>
+            <script>
+            document.getElementById('select-all-files')?.addEventListener('click', function(e) {
+                e.preventDefault();
+                const form = document.getElementById('files-form');
+                const checkboxes = form.querySelectorAll('input[name="selected_files[]"]');
+                const allChecked = Array.from(checkboxes).every(c => c.checked);
+                checkboxes.forEach(c => c.checked = !allChecked);
+            });
+            </script>
         <?php else: ?>
             <div class="empty-state">
                 <span class="mdi mdi-file-document-outline" style="font-size:2rem;color:var(--text-secondary)"></span>

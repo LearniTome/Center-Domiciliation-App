@@ -13,12 +13,12 @@ class DocumentRenderer
         $this->outputDir = $outputDir;
     }
 
-    public function render(array $context): string
+    public function render(array $context, string $outputName = ''): string
     {
         $xml = $this->readXml();
         $xml = $this->processLoops($xml, $context);
         $xml = $this->replaceValues($xml, $context);
-        return $this->saveDocx($xml);
+        return $this->saveDocx($xml, $outputName);
     }
 
     private function readXml(): string
@@ -388,16 +388,20 @@ class DocumentRenderer
         return $result;
     }
 
-    private function saveDocx(string $newXml): string
+    private function saveDocx(string $newXml, string $outputName = ''): string
     {
         if (!is_dir($this->outputDir)) {
             mkdir($this->outputDir, 0777, true);
         }
 
-        $outName = pathinfo($this->templatePath, PATHINFO_FILENAME);
-        $outName = preg_replace('/_Template$/', '', $outName);
-        $outName = preg_replace('/-Template$/', '', $outName);
-        $outPath = $this->outputDir . DIRECTORY_SEPARATOR . $outName . '_genere.docx';
+        if ($outputName !== '') {
+            $outPath = $this->outputDir . DIRECTORY_SEPARATOR . $outputName;
+        } else {
+            $outName = pathinfo($this->templatePath, PATHINFO_FILENAME);
+            $outName = preg_replace('/_Template$/', '', $outName);
+            $outName = preg_replace('/-Template$/', '', $outName);
+            $outPath = $this->outputDir . DIRECTORY_SEPARATOR . $outName . '_genere.docx';
+        }
 
         $tmpDir = $this->tmpDir;
         file_put_contents($tmpDir . DIRECTORY_SEPARATOR . 'word' . DIRECTORY_SEPARATOR . 'document.xml', $newXml);
@@ -441,9 +445,11 @@ class DocumentRenderer
         rmdir($dir);
     }
 
-    public function tryConvertToPdf(string $docxPath): ?string
+    public function tryConvertToPdf(string $docxPath, string $pdfName = ''): ?string
     {
-        $pdfPath = preg_replace('/\.docx$/i', '.pdf', $docxPath);
+        $pdfPath = $pdfName !== ''
+            ? $this->outputDir . DIRECTORY_SEPARATOR . $pdfName
+            : preg_replace('/\.docx$/i', '.pdf', $docxPath);
 
         if (self::isCommandAvailable('soffice')) {
             $dir = escapeshellarg(dirname($docxPath));
