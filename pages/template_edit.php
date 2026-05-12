@@ -252,7 +252,9 @@ $variables = TemplateEditor::getAvailableVariables();
             </div>
 
             <div class="editor-wrapper">
-                <div id="editor-content" class="editor-content" contenteditable="true" data-placeholder="Commencez a rediger..."><?= $htmlContent ?></div>
+                <div id="editor-content" class="editor-content" contenteditable="true" data-placeholder="Commencez a rediger...">
+                    <div class="a4-page"><?= $htmlContent ?></div>
+                </div>
             </div>
 
             <textarea id="editor-source" class="editor-source hidden" spellcheck="false"><?= e($htmlContent) ?></textarea>
@@ -357,32 +359,30 @@ $variables = TemplateEditor::getAvailableVariables();
 .toolbar-sep { width: 1px; height: 22px; background: var(--border); margin: 0 0.25rem; }
 .btn-sm { padding: 0.3rem 0.5rem; font-size: 0.8rem; }
 .editor-content {
+    background: #ccc; padding: 30px 0;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 24px; min-height: 100%;
+    outline: none; box-sizing: border-box;
+}
+.a4-page {
     width: 21cm; min-height: 29.7cm; padding: 2cm 2.5cm;
     background: white; color: #1a1a1a;
     font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; font-size: 11pt;
-    line-height: 1.5; border: 1px solid var(--border);
-    outline: none; overflow-y: auto; box-sizing: border-box;
-    margin: 0 auto; box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    line-height: 1.5; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    box-sizing: border-box; overflow: hidden;
 }
-.editor-content:empty:before {
-    content: attr(data-placeholder);
-    color: #bbb;
-    pointer-events: none;
-}
-.editor-content hr.page-break {
+.a4-page hr.page-break {
     border: 0; border-top: 2px dashed #ccc; margin: 2cm 0;
     page-break-after: always; break-after: page;
 }
-.editor-content:focus { border-color: var(--primary); }
-.editor-content h1 { font-size: 18pt; font-weight: 700; margin: 12pt 0 6pt; }
-.editor-content h2 { font-size: 16pt; font-weight: 700; margin: 10pt 0 4pt; }
-.editor-content h3 { font-size: 14pt; font-weight: 600; margin: 8pt 0 4pt; }
-.editor-content h4 { font-size: 12pt; font-weight: 600; margin: 6pt 0 3pt; }
-.editor-content p { margin: 0 0 6pt; }
-.editor-content table { width: 100%; border-collapse: collapse; margin: 6pt 0; }
-.editor-content td, .editor-content th { border: 1px solid #999; padding: 4pt; }
-.editor-content:focus { border-color: var(--primary); }
-.editor-content var {
+.a4-page h1 { font-size: 18pt; font-weight: 700; margin: 12pt 0 6pt; }
+.a4-page h2 { font-size: 16pt; font-weight: 700; margin: 10pt 0 4pt; }
+.a4-page h3 { font-size: 14pt; font-weight: 600; margin: 8pt 0 4pt; }
+.a4-page h4 { font-size: 12pt; font-weight: 600; margin: 6pt 0 3pt; }
+.a4-page p { margin: 0 0 6pt; }
+.a4-page table { width: 100%; border-collapse: collapse; margin: 6pt 0; }
+.a4-page td, .a4-page th { border: 1px solid #999; padding: 4pt; }
+.a4-page var {
     color: #0090e7; font-style: normal; font-family: 'Courier New', monospace;
     background: #e8f4fd; padding: 0 3px; border-radius: 2px;
 }
@@ -436,8 +436,9 @@ $variables = TemplateEditor::getAvailableVariables();
     .template-editor-layout { display: block !important; }
     .editor-main { border: none !important; padding: 0 !important; box-shadow: none !important; }
     .editor-wrapper { background: none !important; padding: 0 !important; max-height: none !important; box-shadow: none !important; }
-    .editor-content { max-width: none !important; box-shadow: none !important; padding: 0 !important; border: none !important; }
-    .editor-content hr.page-break { border: none; margin: 0; page-break-after: always; break-after: page; }
+    .editor-content { background: none !important; padding: 0 !important; gap: 0 !important; display: block !important; }
+    .a4-page { width: auto !important; min-height: auto !important; padding: 0 !important; box-shadow: none !important; overflow: visible !important; page-break-after: always; break-after: page; }
+    .a4-page hr.page-break { page-break-after: always; break-after: page; }
     .main { padding: 0 !important; }
     .shell { display: block !important; }
     @page { margin: 2cm; size: A4; }
@@ -612,7 +613,10 @@ function beforeSave() {
     if (!source.classList.contains('hidden')) {
         hidden.value = source.value;
     } else {
-        hidden.value = editor.innerHTML;
+        const pages = editor.querySelectorAll('.a4-page');
+        let html = '';
+        pages.forEach(p => { html += p.innerHTML; });
+        hidden.value = html;
     }
     return true;
 }
@@ -666,23 +670,57 @@ function applyBgColor(color) {
 
 function insertPageBreak() {
     const editor = document.getElementById('editor-content');
-    editor.focus();
-    const hr = document.createElement('hr');
-    hr.className = 'page-break';
+    const newPage = document.createElement('div');
+    newPage.className = 'a4-page';
     const sel = window.getSelection();
     if (sel.rangeCount) {
         const range = sel.getRangeAt(0);
-        range.deleteContents();
-        range.insertNode(hr);
-        range.setStartAfter(hr);
+        range.insertNode(newPage);
+        range.setStart(newPage, 0);
         range.collapse(true);
         sel.removeAllRanges();
         sel.addRange(range);
     } else {
-        editor.appendChild(hr);
+        editor.appendChild(newPage);
     }
     editor.dispatchEvent(new Event('input'));
+    document.getElementById('editor-content').focus();
 }
+
+function checkPaginate() {
+    const editor = document.getElementById('editor-content');
+    const pages = editor.querySelectorAll('.a4-page');
+    const last = pages[pages.length - 1];
+    if (!last) return;
+    if (last.scrollHeight > last.clientHeight + 3) {
+        const newPage = document.createElement('div');
+        newPage.className = 'a4-page';
+        const nodes = Array.from(last.childNodes);
+        let moved = false;
+        for (let i = nodes.length - 1; i >= 0; i--) {
+            const el = nodes[i];
+            const h = el.offsetHeight || 0;
+            last.removeChild(el);
+            newPage.insertBefore(el, newPage.firstChild);
+            if (last.scrollHeight <= last.clientHeight + 3) {
+                moved = true;
+                break;
+            }
+        }
+        if (last.nextSibling) {
+            editor.insertBefore(newPage, last.nextSibling);
+        } else {
+            editor.appendChild(newPage);
+        }
+    }
+}
+
+document.getElementById('editor-content')?.addEventListener('input', function() {
+    clearTimeout(this._pageTimer);
+    this._pageTimer = setTimeout(checkPaginate, 300);
+});
+
+setTimeout(checkPaginate, 100);
 
 function clearFormatting() {
     const sel = window.getSelection();
@@ -695,7 +733,9 @@ function clearFormatting() {
 
 function printEditor() {
     beforeSave();
-    const content = document.getElementById('editor-content').innerHTML;
+    const pages = document.querySelectorAll('#editor-content .a4-page');
+    let content = '';
+    pages.forEach(p => { content += '<div class="a4-print-page">' + p.innerHTML + '</div>'; });
     const printWin = window.open('', '_blank', 'width=800,height=600');
     if (!printWin) {
         window.print();
@@ -704,7 +744,7 @@ function printEditor() {
     printWin.document.write('<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">');
     printWin.document.write('<title>Editeur de template</title>');
     printWin.document.write('<style>');
-    printWin.document.write('body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; line-height: 1.5; margin: 2cm; color: #000; }');
+    printWin.document.write('body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; line-height: 1.5; margin: 0; color: #000; }');
     printWin.document.write('h1 { font-size: 18pt; font-weight: 700; margin: 12pt 0 6pt; }');
     printWin.document.write('h2 { font-size: 16pt; font-weight: 700; margin: 10pt 0 4pt; }');
     printWin.document.write('h3 { font-size: 14pt; font-weight: 600; margin: 8pt 0 4pt; }');
@@ -713,7 +753,9 @@ function printEditor() {
     printWin.document.write('table { width: 100%; border-collapse: collapse; margin: 6pt 0; }');
     printWin.document.write('td, th { border: 1px solid #999; padding: 4pt; }');
     printWin.document.write('var { color: #0090e7; font-style: normal; font-family: "Courier New", monospace; }');
-    printWin.document.write('@page { margin: 2cm; size: A4; }');
+    printWin.document.write('.a4-print-page { page-break-after: always; break-after: page; padding: 2cm; }');
+    printWin.document.write('.a4-print-page:last-child { page-break-after: auto; }');
+    printWin.document.write('@page { margin: 0; size: A4; }');
     printWin.document.write('@media print { body { margin: 0; padding: 0; } }');
     printWin.document.write('</style></head><body>');
     printWin.document.write(content);
