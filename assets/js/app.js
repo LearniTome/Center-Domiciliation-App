@@ -25,9 +25,9 @@ const testData = {
     'adresse': '123 Rue Mohammed V, Casablanca',
     'ste_adress': '123 Boulevard Hassan II',
     'tribunal': 'Casablanca',
-    'type_generation': 'Standard',
-    'procedure_creation': 'Creation',
-    'mode_depot_creation': 'Electronique',
+    'type_generation': 'creation',
+    'procedure_creation': 'normal',
+    'mode_depot_creation': 'depot_physique',
     'type_contrat': 'Domiciliation commerciale',
     'date_contrat': '2026-01-01',
     'duree_contrat_mois': '12',
@@ -87,6 +87,12 @@ document.addEventListener('click', (event) => {
             field.value = value;
         }
     });
+
+    var typeGen = form.querySelector('[name="type_generation"]');
+    if (typeGen) {
+        var evt = new Event('change', { bubbles: true });
+        typeGen.dispatchEvent(evt);
+    }
 });
 
 const associesContainer = document.querySelector('[data-associes-container]');
@@ -141,5 +147,33 @@ if (associesContainer && associeTemplate && addAssocieButton) {
 
     refreshIndices();
 }
+
+(function () {
+    var toggleProcedureFields = function (typeGen) {
+        var form = typeGen.closest('form');
+        if (!form) return;
+        var procCreation = form.querySelector('[name="procedure_creation"]');
+        var modeDepot = form.querySelector('[name="mode_depot_creation"]');
+        if (!procCreation || !modeDepot) return;
+        var isDomiciliation = typeGen.value === 'domiciliation';
+        procCreation.disabled = isDomiciliation;
+        modeDepot.disabled = isDomiciliation;
+        if (isDomiciliation) {
+            procCreation.value = '';
+            modeDepot.value = '';
+        }
+    };
+
+    document.addEventListener('change', function (e) {
+        if (e.target && e.target.matches('[name="type_generation"]')) {
+            toggleProcedureFields(e.target);
+        }
+    });
+
+    var typeGen = document.querySelector('[name="type_generation"]');
+    if (typeGen) {
+        toggleProcedureFields(typeGen);
+    }
+})();
 
 

@@ -383,6 +383,32 @@ $contratData = array_merge([
             <?= csrf_input() ?>
             <input type="hidden" name="step" value="1">
             <div class="form-grid">
+                <h3 class="section-title">Procedure</h3>
+                <label class="field">
+                    <span>Type generation</span>
+                    <select name="type_generation">
+                        <option value="">Selectionner</option>
+                        <option value="creation" <?= (string) $societeData['type_generation'] === 'creation' ? 'selected' : '' ?>>Création</option>
+                        <option value="domiciliation" <?= (string) $societeData['type_generation'] === 'domiciliation' ? 'selected' : '' ?>>Domiciliation</option>
+                    </select>
+                </label>
+                <label class="field">
+                    <span>Procedure creation</span>
+                    <select name="procedure_creation">
+                        <option value="">Selectionner</option>
+                        <option value="normal" <?= (string) $societeData['procedure_creation'] === 'normal' ? 'selected' : '' ?>>Normal</option>
+                        <option value="acceleree" <?= (string) $societeData['procedure_creation'] === 'acceleree' ? 'selected' : '' ?>>Accélérer</option>
+                    </select>
+                </label>
+                <label class="field">
+                    <span>Mode depot creation</span>
+                    <select name="mode_depot_creation">
+                        <option value="">Selectionner</option>
+                        <option value="depot_physique" <?= (string) $societeData['mode_depot_creation'] === 'depot_physique' ? 'selected' : '' ?>>Dépôt Physique</option>
+                        <option value="depot_en_ligne" <?= (string) $societeData['mode_depot_creation'] === 'depot_en_ligne' ? 'selected' : '' ?>>Dépôt En Ligne</option>
+                    </select>
+                </label>
+
                 <h3 class="section-title">Identifiants</h3>
                 <label class="field">
                     <span>Dossier domiciliation</span>
@@ -405,8 +431,12 @@ $contratData = array_merge([
                     <input name="ice" value="<?= e((string) $societeData['ice']) ?>">
                 </label>
                 <label class="field">
-                    <span>Date ICE</span>
+                    <span>Date de cert. negatif</span>
                     <input type="date" name="date_ice" value="<?= e((string) $societeData['date_ice']) ?>">
+                </label>
+                <label class="field">
+                    <span>Date exp. cert. negatif</span>
+                    <input type="date" name="date_exp_cert_neg" value="<?= e((string) $societeData['date_exp_cert_neg']) ?>">
                 </label>
                 <label class="field">
                     <span>RC</span>
@@ -429,10 +459,6 @@ $contratData = array_merge([
                 <label class="field">
                     <span>Valeur nominale</span>
                     <input type="number" step="0.01" name="valeur_nominale" value="<?= e((string) $societeData['valeur_nominale']) ?>">
-                </label>
-                <label class="field">
-                    <span>Date exp. cert. negatif</span>
-                    <input type="date" name="date_exp_cert_neg" value="<?= e((string) $societeData['date_exp_cert_neg']) ?>">
                 </label>
 
                 <h3 class="section-title">Adresse</h3>
@@ -471,20 +497,6 @@ $contratData = array_merge([
                 <label class="field">
                     <span>Telephone</span>
                     <input name="telephone" value="<?= e((string) $societeData['telephone']) ?>">
-                </label>
-
-                <h3 class="section-title">Procedure</h3>
-                <label class="field">
-                    <span>Type generation</span>
-                    <input name="type_generation" value="<?= e((string) $societeData['type_generation']) ?>">
-                </label>
-                <label class="field">
-                    <span>Procedure creation</span>
-                    <input name="procedure_creation" value="<?= e((string) $societeData['procedure_creation']) ?>">
-                </label>
-                <label class="field">
-                    <span>Mode depot creation</span>
-                    <input name="mode_depot_creation" value="<?= e((string) $societeData['mode_depot_creation']) ?>">
                 </label>
             </div>
             <div class="table-actions">

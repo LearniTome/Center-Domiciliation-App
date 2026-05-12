@@ -7,9 +7,9 @@
     "valeur_nominale": "100",
     "ste_adress": "HAY MOULAY ABDELLAH RUE 300 N 152 ETG 2 AIN CHOCK, CASABLANCA",
     "tribunal": "Casablanca",
-    "type_generation": "Standard",
-    "procedure_creation": "Creation",
-    "mode_depot_creation": "Electronique"
+    "type_generation": "creation",
+    "procedure_creation": "normal",
+    "mode_depot_creation": "depot_physique"
   },
   "associe": {
     "nationalite": "Marocaine",

@@ -57,7 +57,7 @@ if (($pdo ?? null) instanceof PDO) {
             'Denomination interne',
             'Forme juridique',
             'ICE',
-            'Date ICE',
+            'Date de cert. negatif',
             'RC',
             'IF',
             'Tribunal',
@@ -110,7 +110,7 @@ if (($pdo ?? null) instanceof PDO) {
                     <th>Denomination</th>
                     <th>Forme</th>
                     <th>ICE</th>
-                    <th>Date ICE</th>
+                    <th>Date de cert. negatif</th>
                     <th>RC</th>
                     <th>IF</th>
                     <th>Capital</th>
