@@ -190,11 +190,11 @@ $variables = TemplateEditor::getAvailableVariables();
                 </button>
                 <span class="toolbar-sep"></span>
                 <span class="color-btn">
-                    <input type="color" id="text-color" value="#000000" onchange="applyColor(this.value)" title="Couleur du texte">
+                    <input type="color" id="text-color" value="#000000" onmousedown="saveSelection()" onchange="applyColor(this.value)" title="Couleur du texte">
                     <span class="color-preview" style="background:#000000"></span>
                 </span>
                 <span class="color-btn">
-                    <input type="color" id="bg-color" value="#ffff00" onchange="applyBgColor(this.value)" title="Surbrillance">
+                    <input type="color" id="bg-color" value="#ffff00" onmousedown="saveSelection()" onchange="applyBgColor(this.value)" title="Surbrillance">
                     <span class="color-preview" style="background:#ffff00"></span>
                 </span>
                 <span class="toolbar-sep"></span>
@@ -483,11 +483,15 @@ function restoreSelection() {
 }
 
 function exec(cmd, val) {
+    restoreSelection();
+    const editor = document.getElementById('editor-content');
+    editor.focus();
     document.execCommand(cmd, false, val || null);
-    document.getElementById('editor-content').focus();
+    editor.focus();
 }
 
 function insertVar(text) {
+    restoreSelection();
     const editor = document.getElementById('editor-content');
     editor.focus();
     if (window.getSelection) {
@@ -657,15 +661,21 @@ function applyFontSize(size) {
 }
 
 function applyColor(color) {
+    restoreSelection();
+    const editor = document.getElementById('editor-content');
+    editor.focus();
     document.execCommand('foreColor', false, color);
     document.querySelector('#text-color + .color-preview').style.background = color;
-    document.getElementById('editor-content').focus();
+    editor.focus();
 }
 
 function applyBgColor(color) {
+    restoreSelection();
+    const editor = document.getElementById('editor-content');
+    editor.focus();
     document.execCommand('hiliteColor', false, color);
     document.querySelector('#bg-color + .color-preview').style.background = color;
-    document.getElementById('editor-content').focus();
+    editor.focus();
 }
 
 function insertPageBreak() {
@@ -718,6 +728,14 @@ function checkPaginate() {
 document.getElementById('editor-content')?.addEventListener('input', function() {
     clearTimeout(this._pageTimer);
     this._pageTimer = setTimeout(checkPaginate, 300);
+});
+
+document.querySelector('.editor-toolbar')?.addEventListener('mousedown', function(e) {
+    if (e.target.closest('button, .color-btn input')) saveSelection();
+});
+
+document.querySelector('.var-grid')?.addEventListener('mousedown', function(e) {
+    if (e.target.closest('.var-btn')) saveSelection();
 });
 
 setTimeout(checkPaginate, 100);
