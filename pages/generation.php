@@ -126,11 +126,19 @@ foreach ($filteredTemplates as $tpl) {
         </form>
 
         <?php if ($selectedSociete): ?>
-            <div class="info-grid">
-                <div><strong>Societe</strong><span><?= e($selectedSociete['raison_sociale']) ?></span></div>
-                <div><strong>Forme</strong><span><?= e($selectedSociete['forme_juridique']) ?></span></div>
-                <div><strong>ICE</strong><span><?= e($selectedSociete['ice'] ?: '-') ?></span></div>
-                <div><strong>Ville</strong><span><?= e($selectedSociete['ville'] ?: '-') ?></span></div>
+            <div class="societe-summary">
+                <div class="societe-summary-main">
+                    <span class="mdi mdi-domain" style="color:var(--primary);font-size:1.3rem"></span>
+                    <div>
+                        <strong><?= e($selectedSociete['raison_sociale']) ?></strong>
+                        <span class="help-text"><?= e($selectedSociete['forme_juridique'] ?: '-') ?> — <?= e($selectedSociete['ville'] ?: '-') ?></span>
+                    </div>
+                </div>
+                <div class="societe-summary-details">
+                    <span><span class="help-text">ICE</span> <?= e($selectedSociete['ice'] ?: '-') ?></span>
+                    <span><span class="help-text">RC</span> <?= e($selectedSociete['rc'] ?: '-') ?></span>
+                    <span><span class="help-text">IF</span> <?= e($selectedSociete['if_number'] ?: '-') ?></span>
+                </div>
             </div>
 
             <?php if ($filteredTemplates): ?>
@@ -143,31 +151,51 @@ foreach ($filteredTemplates as $tpl) {
                             Templates disponibles
                         </h3>
                         <div class="table-actions">
-                            <label style="font-size:0.85rem;color:var(--text-secondary);display:flex;align-items:center;gap:4px">
+                            <a class="btn-icon" href="#" id="select-all" title="Tout selectionner"><span class="mdi mdi-check-all"></span></a>
+                            <label class="pdf-toggle">
                                 <input type="checkbox" name="pdf" value="1" checked>
-                                Convertir en PDF
+                                <span class="mdi mdi-file-pdf"></span> PDF
                             </label>
                         </div>
                     </div>
 
-                    <div class="stack" style="gap:4px">
-                        <?php foreach ($filteredTemplates as $tpl): ?>
-                            <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--line);border-radius:var(--radius-sm);cursor:pointer">
-                                <input type="checkbox" name="templates[]" value="<?= e($tpl['path']) ?>" checked>
-                                <span class="mdi mdi-file-word" style="color:var(--primary)"></span>
-                                <span style="flex:1"><?= e($templatesConfig['document_types'][$tpl['doc_type']] ?? $tpl['doc_type']) ?></span>
-                                <span style="color:var(--text-secondary);font-size:0.8rem"><?= count($tpl['variables']) ?> vars</span>
-                            </label>
-                        <?php endforeach; ?>
-                    </div>
+                    <?php foreach ($templatesByType as $docType => $typeTemplates): ?>
+                        <div class="template-group">
+                            <span class="template-group-label"><?= e($templatesConfig['document_types'][$docType] ?? $docType) ?></span>
+                            <?php foreach ($typeTemplates as $tpl): ?>
+                                <label class="template-item">
+                                    <input type="checkbox" name="templates[]" value="<?= e($tpl['path']) ?>" checked class="template-check">
+                                    <span class="mdi mdi-file-word template-item-icon"></span>
+                                    <div class="template-item-body">
+                                        <span class="template-item-name"><?= e(basename($tpl['path'])) ?></span>
+                                        <span class="template-item-meta"><?= count($tpl['variables']) ?> variable(s)</span>
+                                    </div>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endforeach; ?>
 
-                    <button type="submit" class="btn">
-                        <span class="mdi mdi-file-document-outline"></span>
+                    <button type="submit" class="btn" style="margin-top:4px;padding:12px 24px">
+                        <span class="mdi mdi-file-sync"></span>
                         Generer les documents
                     </button>
                 </form>
+
+                <script>
+                document.getElementById('select-all')?.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const form = document.getElementById('gen-form');
+                    const checkboxes = form.querySelectorAll('input[name="templates[]"]');
+                    const allChecked = Array.from(checkboxes).every(c => c.checked);
+                    checkboxes.forEach(c => c.checked = !allChecked);
+                });
+                </script>
             <?php else: ?>
-                <p class="table-empty">Aucun template disponible pour cette forme juridique.</p>
+                <div class="empty-state">
+                    <span class="mdi mdi-file-document-outline" style="font-size:2rem;color:var(--text-secondary)"></span>
+                    <p class="table-empty">Aucun template disponible pour cette forme juridique.</p>
+                    <a class="btn btn-secondary" href="<?= e(app_url('templates')) ?>">Gerer les templates</a>
+                </div>
             <?php endif; ?>
         <?php endif; ?>
     </article>
@@ -181,24 +209,36 @@ foreach ($filteredTemplates as $tpl) {
         </div>
 
         <?php if ($generatedFiles): ?>
-            <?php foreach ($generatedFiles as $file): ?>
-                <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius-sm)">
-                    <span class="mdi mdi-file-word" style="color:var(--primary);font-size:1.2rem"></span>
-                    <span style="flex:1;font-size:0.9rem"><?= e($file['name']) ?></span>
-                    <div class="table-actions">
-                        <a class="btn btn-secondary" href="<?= e(str_replace(__DIR__ . '/../', '', $file['docx'])) ?>" download>
-                            <span class="mdi mdi-download"></span> DOCX
-                        </a>
-                        <?php if ($file['pdf']): ?>
-                            <a class="btn" href="<?= e(str_replace(__DIR__ . '/../', '', $file['pdf'])) ?>" download>
-                                <span class="mdi mdi-file-pdf"></span> PDF
+            <div class="generated-list">
+                <?php foreach ($generatedFiles as $file): ?>
+                    <div class="generated-item">
+                        <div class="generated-item-info">
+                            <span class="mdi mdi-file-word" style="color:var(--primary);font-size:1.2rem"></span>
+                            <div>
+                                <strong><?= e($file['name']) ?></strong>
+                                <?php if (file_exists($file['docx'])): ?>
+                                    <span class="help-text"><?= number_format(filesize($file['docx']) / 1024, 1) ?> Ko</span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <div class="table-actions">
+                            <a class="btn btn-secondary" href="<?= e(str_replace(__DIR__ . '/../', '', $file['docx'])) ?>" download>
+                                <span class="mdi mdi-download"></span> DOCX
                             </a>
-                        <?php endif; ?>
+                            <?php if ($file['pdf']): ?>
+                                <a class="btn" href="<?= e(str_replace(__DIR__ . '/../', '', $file['pdf'])) ?>" download>
+                                    <span class="mdi mdi-file-pdf"></span> PDF
+                                </a>
+                            <?php endif; ?>
+                        </div>
                     </div>
-                </div>
-            <?php endforeach; ?>
+                <?php endforeach; ?>
+            </div>
         <?php else: ?>
-            <p class="table-empty">Selectionnez une societe et lancez la generation.</p>
+            <div class="empty-state">
+                <span class="mdi mdi-file-document-outline" style="font-size:2rem;color:var(--text-secondary)"></span>
+                <p class="table-empty">Selectionnez une societe et lancez la generation.</p>
+            </div>
         <?php endif; ?>
     </article>
 </section>
