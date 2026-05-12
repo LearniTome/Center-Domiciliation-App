@@ -245,6 +245,10 @@ $variables = TemplateEditor::getAvailableVariables();
                 <button type="button" class="btn btn-secondary btn-sm" onclick="printEditor()" title="Imprimer / PDF (Ctrl+P)">
                     <span class="mdi mdi-printer"></span> PDF
                 </button>
+                <span class="toolbar-sep"></span>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="insertPageBreak()" title="Nouvelle page">
+                    <span class="mdi mdi-file-plus"></span>
+                </button>
             </div>
 
             <div class="editor-wrapper">
@@ -365,6 +369,10 @@ $variables = TemplateEditor::getAvailableVariables();
     color: #bbb;
     pointer-events: none;
 }
+.editor-content hr.page-break {
+    border: 0; border-top: 2px dashed #ccc; margin: 2cm 0;
+    page-break-after: always; break-after: page;
+}
 .editor-content:focus { border-color: var(--primary); }
 .editor-content h1 { font-size: 18pt; font-weight: 700; margin: 12pt 0 6pt; }
 .editor-content h2 { font-size: 16pt; font-weight: 700; margin: 10pt 0 4pt; }
@@ -429,6 +437,7 @@ $variables = TemplateEditor::getAvailableVariables();
     .editor-main { border: none !important; padding: 0 !important; box-shadow: none !important; }
     .editor-wrapper { background: none !important; padding: 0 !important; max-height: none !important; box-shadow: none !important; }
     .editor-content { max-width: none !important; box-shadow: none !important; padding: 0 !important; border: none !important; }
+    .editor-content hr.page-break { border: none; margin: 0; page-break-after: always; break-after: page; }
     .main { padding: 0 !important; }
     .shell { display: block !important; }
     @page { margin: 2cm; size: A4; }
@@ -653,6 +662,26 @@ function applyBgColor(color) {
     document.execCommand('hiliteColor', false, color);
     document.querySelector('#bg-color + .color-preview').style.background = color;
     document.getElementById('editor-content').focus();
+}
+
+function insertPageBreak() {
+    const editor = document.getElementById('editor-content');
+    editor.focus();
+    const hr = document.createElement('hr');
+    hr.className = 'page-break';
+    const sel = window.getSelection();
+    if (sel.rangeCount) {
+        const range = sel.getRangeAt(0);
+        range.deleteContents();
+        range.insertNode(hr);
+        range.setStartAfter(hr);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+    } else {
+        editor.appendChild(hr);
+    }
+    editor.dispatchEvent(new Event('input'));
 }
 
 function clearFormatting() {
