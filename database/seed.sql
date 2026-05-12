@@ -1,5 +1,14 @@
 USE `center_domiciliation`;
 
+-- Données de référence pour les formes juridiques
+INSERT INTO ref_formes_juridiques (forme_juridique) VALUES
+('SARL AU'),
+('SARL'),
+('Personne Physique'),
+('SA'),
+('Succurssale Etrangère'),
+('Succurssale Marocaine');
+
 -- Données de référence pour les tribunaux
 INSERT INTO ref_tribunaux (tribunal) VALUES
 ('Casablanca'),

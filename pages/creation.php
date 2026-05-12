@@ -31,6 +31,7 @@ $step = max(1, min(3, (int) ($_GET['step'] ?? 1)));
 $tribunauxOptions = fetch_reference_options($pdo ?? null, 'ref_tribunaux', 'tribunal');
 $adressesOptions = fetch_reference_options($pdo ?? null, 'ref_ste_adresses', 'ste_adresse');
 $nationalitesOptions = fetch_reference_options($pdo ?? null, 'ref_nationalites', 'nationalite');
+$formesJuridiquesOptions = fetch_reference_options($pdo ?? null, 'ref_formes_juridiques', 'forme_juridique');
 
 if (isset($_GET['reset']) && $_GET['reset'] === '1') {
     unset($_SESSION['creation_wizard']);
@@ -421,10 +422,12 @@ $contratData = array_merge([
                 <label class="field">
                     <span>Forme juridique</span>
                     <select name="forme_juridique">
-                        <?php foreach (['SARL AU', 'SARL', 'Personne Physique', 'SA', 'Succurssale Etrangère', 'Succurssale Marocaine'] as $option): ?>
+                        <option value="">Selectionner</option>
+                        <?php foreach ($formesJuridiquesOptions as $option): ?>
                             <option value="<?= e($option) ?>" <?= (string) $societeData['forme_juridique'] === $option ? 'selected' : '' ?>><?= e($option) ?></option>
                         <?php endforeach; ?>
                     </select>
+                    <a class="btn btn-secondary" href="<?= e(app_url('formes-juridiques')) ?>" target="_blank" style="margin-top:4px;font-size:0.85em">Gérer</a>
                 </label>
                 <label class="field">
                     <span>ICE</span>

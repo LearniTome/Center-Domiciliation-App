@@ -6,6 +6,7 @@ require __DIR__ . '/includes/bootstrap.php';
 
 $allowedPages = [
     'creation',
+    'formes-juridiques',
     'dashboard',
     'societe',
     'societes',
@@ -29,6 +30,7 @@ if (!in_array($page, $allowedPages, true)) {
 
 $pageTitleMap = [
     'creation' => 'Nouveau dossier',
+    'formes-juridiques' => 'Formes juridiques',
     'dashboard' => 'Tableau de bord',
     'societe' => 'Fiche societe',
     'societes' => 'Societes',

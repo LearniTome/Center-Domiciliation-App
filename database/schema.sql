@@ -136,6 +136,12 @@ CREATE TABLE IF NOT EXISTS collaborateurs (
     INDEX idx_collaborateurs_nom (nom_complet)
 );
 
+CREATE TABLE IF NOT EXISTS ref_formes_juridiques (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    forme_juridique VARCHAR(120) NOT NULL,
+    UNIQUE KEY uq_ref_formes_juridiques (forme_juridique)
+);
+
 CREATE TABLE IF NOT EXISTS ref_ste_adresses (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     ste_adresse VARCHAR(255) NOT NULL,
