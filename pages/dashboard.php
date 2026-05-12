@@ -2,18 +2,66 @@
 
 declare(strict_types=1);
 
-$stats = [
-    'Societes' => dashboard_count($pdo ?? null, 'societes'),
-    'Associes' => dashboard_count($pdo ?? null, 'associes'),
-    'Contrats' => dashboard_count($pdo ?? null, 'contrats'),
-    'Collaborateurs' => dashboard_count($pdo ?? null, 'collaborateurs'),
-];
+$pdo = $pdo ?? null;
+$isConnected = $pdo instanceof PDO;
 
-$recentSocietes = ($pdo ?? null) instanceof PDO
+// --- Stats enrichies ---
+$totalSocietes = $isConnected ? (int) $pdo->query('SELECT COUNT(*) FROM societes')->fetchColumn() : 0;
+$contratsActifs = $isConnected ? (int) $pdo->query("SELECT COUNT(*) FROM contrats WHERE statut = 'actif'")->fetchColumn() : 0;
+$contratsResilies = $isConnected ? (int) $pdo->query("SELECT COUNT(*) FROM contrats WHERE statut = 'resilie'")->fetchColumn() : 0;
+$collaborateursCount = $isConnected ? (int) $pdo->query('SELECT COUNT(*) FROM collaborateurs')->fetchColumn() : 0;
+
+$dossiersComplets = $isConnected
+    ? (int) $pdo->query('
+        SELECT COUNT(*) FROM societes s
+        WHERE EXISTS (SELECT 1 FROM associes a WHERE a.societe_id = s.id)
+        AND EXISTS (SELECT 1 FROM contrats c WHERE c.societe_id = s.id)
+    ')->fetchColumn()
+    : 0;
+
+$dossiersIncomplets = max(0, $totalSocietes - $dossiersComplets);
+
+// --- Alertes ---
+$sansAssocie = $isConnected
+    ? $pdo->query('
+        SELECT s.id, s.raison_sociale FROM societes s
+        LEFT JOIN associes a ON a.societe_id = s.id
+        WHERE a.id IS NULL
+        ORDER BY s.raison_sociale
+        LIMIT 10
+    ')->fetchAll()
+    : [];
+
+$sansContrat = $isConnected
+    ? $pdo->query('
+        SELECT s.id, s.raison_sociale FROM societes s
+        LEFT JOIN contrats c ON c.societe_id = s.id
+        WHERE c.id IS NULL
+        ORDER BY s.raison_sociale
+        LIMIT 10
+    ')->fetchAll()
+    : [];
+
+$expirants = $isConnected
+    ? $pdo->query('
+        SELECT c.id, c.type_contrat, c.date_fin, s.raison_sociale
+        FROM contrats c
+        INNER JOIN societes s ON s.id = c.societe_id
+        WHERE c.statut = "actif"
+        AND c.date_fin BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+        ORDER BY c.date_fin
+        LIMIT 10
+    ')->fetchAll()
+    : [];
+
+$hasAlerts = $sansAssocie || $sansContrat || $expirants;
+
+// --- Tableaux recents ---
+$recentSocietes = $isConnected
     ? $pdo->query('SELECT id, raison_sociale, forme_juridique, ville FROM societes ORDER BY id DESC LIMIT 5')->fetchAll()
     : [];
 
-$recentContrats = ($pdo ?? null) instanceof PDO
+$recentContrats = $isConnected
     ? $pdo->query('
         SELECT contrats.id, contrats.type_contrat, contrats.statut, societes.raison_sociale
         FROM contrats
@@ -23,7 +71,7 @@ $recentContrats = ($pdo ?? null) instanceof PDO
     ')->fetchAll()
     : [];
 
-$recentAssocies = ($pdo ?? null) instanceof PDO
+$recentAssocies = $isConnected
     ? $pdo->query('
         SELECT associes.nom_complet, associes.cin, associes.qualite_associe, associes.is_gerant, societes.raison_sociale
         FROM associes
@@ -33,7 +81,7 @@ $recentAssocies = ($pdo ?? null) instanceof PDO
     ')->fetchAll()
     : [];
 
-$recentCollaborateurs = ($pdo ?? null) instanceof PDO
+$recentCollaborateurs = $isConnected
     ? $pdo->query('
         SELECT nom_complet, collaborateur_type, fonction, statut
         FROM collaborateurs
@@ -41,12 +89,14 @@ $recentCollaborateurs = ($pdo ?? null) instanceof PDO
         LIMIT 5
     ')->fetchAll()
     : [];
+
+$pctComplets = $totalSocietes > 0 ? round(($dossiersComplets / $totalSocietes) * 100) : 0;
 ?>
 <section class="card hero-card stack">
     <div class="section-header">
         <div>
             <h2>Lancer un nouveau dossier</h2>
-            <p class="help-text">Flux guide en 3 etapes: societe, associes, puis contrat, comme dans la version Tkinter.</p>
+            <p class="help-text">Flux guide en 3 etapes: societe, associes, puis contrat.</p>
         </div>
         <a class="btn btn-secondary" href="<?= e(app_url('creation')) ?>">Creer un dossier</a>
     </div>
@@ -57,16 +107,108 @@ $recentCollaborateurs = ($pdo ?? null) instanceof PDO
     </div>
 </section>
 
-<section class="stats">
-    <?php foreach ($stats as $label => $count): ?>
-        <article class="stat">
-            <span><?= e($label) ?></span>
-            <strong><?= e((string) $count) ?></strong>
-        </article>
-    <?php endforeach; ?>
+<section class="stats compact">
+    <article class="stat">
+        <span>Societes</span>
+        <strong><?= $totalSocietes ?></strong>
+    </article>
+    <article class="stat">
+        <span>Contrats actifs</span>
+        <strong><?= $contratsActifs ?></strong>
+    </article>
+    <article class="stat">
+        <span>Contrats resilies</span>
+        <strong><?= $contratsResilies ?></strong>
+    </article>
+    <article class="stat">
+        <span>Dossiers complets</span>
+        <strong><?= $dossiersComplets ?></strong>
+        <?php if ($totalSocietes > 0): ?>
+            <div class="stat-bar"><div class="stat-bar-fill" style="width:<?= $pctComplets ?>%"></div></div>
+        <?php endif; ?>
+    </article>
+    <article class="stat">
+        <span>Dossiers incomplets</span>
+        <strong><?= $dossiersIncomplets ?></strong>
+    </article>
+    <article class="stat">
+        <span>Collaborateurs</span>
+        <strong><?= $collaborateursCount ?></strong>
+    </article>
 </section>
 
+<section class="quick-actions">
+    <a class="card quick-action" href="<?= e(app_url('template_edit', ['path' => ''])) ?>">
+        <span class="mdi mdi-file-document-edit quick-icon" style="color:var(--primary)"></span>
+        <div>
+            <strong>Editeur de template</strong>
+            <span class="help-text">Modifier les documents Word</span>
+        </div>
+    </a>
+    <a class="card quick-action" href="<?= e(app_url('generation')) ?>">
+        <span class="mdi mdi-file-document-outline quick-icon" style="color:var(--success)"></span>
+        <div>
+            <strong>Generation de documents</strong>
+            <span class="help-text">Produire les documents depuis les templates</span>
+        </div>
+    </a>
+    <a class="card quick-action" href="<?= e(app_url('configuration')) ?>">
+        <span class="mdi mdi-cog quick-icon" style="color:var(--info)"></span>
+        <div>
+            <strong>Configuration</strong>
+            <span class="help-text">Tables de reference (formes, villes, etc.)</span>
+        </div>
+    </a>
+</section>
+
+<?php if ($hasAlerts): ?>
 <section>
+    <article class="card">
+        <div class="section-header">
+            <h2><span class="mdi mdi-alert" style="color:var(--warning);margin-right:6px"></span>Alertes</h2>
+        </div>
+        <div class="alerts-list">
+            <?php if ($sansAssocie): ?>
+                <div class="alert-group">
+                    <span class="alert-label">Societes sans associe</span>
+                    <?php foreach ($sansAssocie as $s): ?>
+                        <a class="alert-item" href="<?= e(app_url('societe', ['id' => (int) $s['id']])) ?>">
+                            <span class="mdi mdi-account-remove" style="color:var(--danger)"></span>
+                            <?= e($s['raison_sociale']) ?>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($sansContrat): ?>
+                <div class="alert-group">
+                    <span class="alert-label">Societes sans contrat</span>
+                    <?php foreach ($sansContrat as $s): ?>
+                        <a class="alert-item" href="<?= e(app_url('societe', ['id' => (int) $s['id']])) ?>">
+                            <span class="mdi mdi-file-remove" style="color:var(--warning)"></span>
+                            <?= e($s['raison_sociale']) ?>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($expirants): ?>
+                <div class="alert-group">
+                    <span class="alert-label">Contrats expirant dans < 30 jours</span>
+                    <?php foreach ($expirants as $c): ?>
+                        <a class="alert-item" href="<?= e(app_url('contrats')) ?>">
+                            <span class="mdi mdi-clock-alert" style="color:var(--warning)"></span>
+                            <?= e($c['raison_sociale']) ?> — <?= e($c['type_contrat']) ?> (<?= e($c['date_fin']) ?>)
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+    </article>
+</section>
+<?php endif; ?>
+
+<section class="grid two">
     <article class="card">
         <div class="section-header">
             <div>
@@ -100,9 +242,7 @@ $recentCollaborateurs = ($pdo ?? null) instanceof PDO
             </table>
         <?php endif; ?>
     </article>
-</section>
 
-<section>
     <article class="card">
         <div class="section-header">
             <div>
@@ -127,7 +267,7 @@ $recentCollaborateurs = ($pdo ?? null) instanceof PDO
                     <tr>
                         <td><?= e($contrat['raison_sociale']) ?></td>
                         <td><?= e($contrat['type_contrat']) ?></td>
-                        <td><?= e($contrat['statut']) ?></td>
+                        <td><span class="statut-badge <?= strtolower($contrat['statut']) === 'actif' ? 'actif' : 'resilie' ?>"><?= e($contrat['statut']) ?></span></td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
@@ -136,7 +276,7 @@ $recentCollaborateurs = ($pdo ?? null) instanceof PDO
     </article>
 </section>
 
-<section>
+<section class="grid two">
     <article class="card">
         <div class="section-header">
             <div>
@@ -168,9 +308,7 @@ $recentCollaborateurs = ($pdo ?? null) instanceof PDO
             </table>
         <?php endif; ?>
     </article>
-</section>
 
-<section>
     <article class="card">
         <div class="section-header">
             <div>
@@ -195,7 +333,7 @@ $recentCollaborateurs = ($pdo ?? null) instanceof PDO
                     <tr>
                         <td><?= e($c['nom_complet']) ?></td>
                         <td><?= e($c['collaborateur_type'] ?? '-') ?></td>
-                        <td><?= e($c['statut']) ?></td>
+                        <td><span class="statut-badge <?= strtolower($c['statut']) === 'actif' ? 'actif' : 'resilie' ?>"><?= e($c['statut']) ?></span></td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>

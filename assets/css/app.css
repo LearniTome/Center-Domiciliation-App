@@ -650,6 +650,86 @@ tbody tr:hover:nth-child(even) {
     border-bottom-color: var(--primary);
 }
 
+/* Stats bar */
+.stat-bar {
+    height: 4px;
+    background: var(--line);
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+}
+.stat-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: var(--success);
+    transition: width 0.3s;
+}
+
+/* Quick actions */
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-top: 1rem;
+}
+.quick-action {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 1rem 1.25rem;
+    color: var(--text);
+    transition: border-color var(--transition), background var(--transition);
+}
+.quick-action:hover {
+    border-color: var(--text-secondary);
+    background: var(--panel-strong);
+    color: var(--text);
+}
+.quick-action strong {
+    display: block;
+    font-weight: 500;
+    font-size: 0.9rem;
+    margin-bottom: 2px;
+}
+.quick-icon {
+    font-size: 1.75rem;
+    flex-shrink: 0;
+}
+
+/* Alerts */
+.alerts-list {
+    display: grid;
+    gap: 1rem;
+}
+.alert-group {
+    display: grid;
+    gap: 6px;
+}
+.alert-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+.alert-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 0.875rem;
+    color: var(--text);
+    transition: background var(--transition);
+}
+.alert-item:hover {
+    background: var(--panel-strong);
+}
+.alert-item .mdi {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
 @media (max-width: 980px) {
     .shell,
     .grid.two,
@@ -657,6 +737,7 @@ tbody tr:hover:nth-child(even) {
     .form-grid,
     .wizard-steps,
     .stats.compact,
+    .quick-actions,
     .info-grid {
         grid-template-columns: 1fr;
     }
