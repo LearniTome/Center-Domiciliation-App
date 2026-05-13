@@ -49,11 +49,11 @@ document.querySelectorAll('[data-confirm]').forEach((element) => {
         var panel = document.createElement('div');
         panel.className = 'col-toggle-panel';
 
-        var saved = (function () {
-            try {
-                return JSON.parse(localStorage.getItem(storageKey));
-            } catch (e) { return null; }
-        })();
+        var saved = {};
+        try {
+            var stored = localStorage.getItem(storageKey);
+            if (stored) saved = JSON.parse(stored);
+        } catch (e) {}
 
         var total = headers.length;
 
@@ -63,7 +63,7 @@ document.querySelectorAll('[data-confirm]').forEach((element) => {
 
             var checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
-            var visible = saved ? saved[colKey] !== false : true;
+            var visible = saved[colKey] !== false;
             checkbox.checked = visible;
             if (!visible) {
                 th.classList.add('col-hidden');
