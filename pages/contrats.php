@@ -84,6 +84,9 @@ $contrats = ($pdo ?? null) instanceof PDO
                 <h2>Contrats</h2>
                 <p class="help-text"><?= count($contrats) ?> enregistrement(s)</p>
             </div>
+            <div class="table-actions">
+                <button class="btn-icon" type="button" data-col-toggle-btn title="Colonnes a afficher"><span class="mdi mdi-table-column"></span></button>
+            </div>
         </div>
 
         <?php if ($editRecord): ?>
@@ -203,26 +206,26 @@ $contrats = ($pdo ?? null) instanceof PDO
         <?php if (!$contrats): ?>
             <p class="table-empty">Aucun contrat pour le moment.</p>
         <?php else: ?>
-            <table>
+            <table data-col-toggle>
                 <thead>
                 <tr>
-                    <th>Societe</th>
-                    <th>Type contrat</th>
-                    <th>Date contrat</th>
-                    <th>Duree (mois)</th>
-                    <th>Type domiciliation</th>
-                    <th>Date debut</th>
-                    <th>Date fin</th>
-                    <th>Loyer mensuel TTC</th>
-                    <th>Caution</th>
-                    <th>TVA %</th>
-                    <th>Loyer mensuel HT</th>
-                    <th>Total HT</th>
-                    <th>Pack demarrage TTC</th>
-                    <th>Renouvellement</th>
-                    <th>Statut</th>
-                    <th>Creation</th>
-                    <th>Modification</th>
+                    <th data-col="societe">Societe</th>
+                    <th data-col="type-contrat">Type contrat</th>
+                    <th data-col="date-contrat">Date contrat</th>
+                    <th data-col="duree">Duree (mois)</th>
+                    <th data-col="type-domiciliation">Type domiciliation</th>
+                    <th data-col="date-debut">Date debut</th>
+                    <th data-col="date-fin">Date fin</th>
+                    <th data-col="loyer-ttc">Loyer mensuel TTC</th>
+                    <th data-col="caution">Caution</th>
+                    <th data-col="tva">TVA %</th>
+                    <th data-col="loyer-ht">Loyer mensuel HT</th>
+                    <th data-col="total-ht">Total HT</th>
+                    <th data-col="pack-demarrage">Pack demarrage TTC</th>
+                    <th data-col="renouvellement">Renouvellement</th>
+                    <th data-col="statut">Statut</th>
+                    <th data-col="creation">Creation</th>
+                    <th data-col="modification">Modification</th>
                     <th>Actions</th>
                 </tr>
                 </thead>

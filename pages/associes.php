@@ -69,6 +69,9 @@ $associes = ($pdo ?? null) instanceof PDO
                 <h2>Associes</h2>
                 <p class="help-text"><?= count($associes) ?> enregistrement(s)</p>
             </div>
+            <div class="table-actions">
+                <button class="btn-icon" type="button" data-col-toggle-btn title="Colonnes a afficher"><span class="mdi mdi-table-column"></span></button>
+            </div>
         </div>
 
         <?php if ($editRecord): ?>
@@ -164,22 +167,22 @@ $associes = ($pdo ?? null) instanceof PDO
         <?php if (!$associes): ?>
             <p class="table-empty">Aucun associe pour le moment.</p>
         <?php else: ?>
-            <table>
+            <table data-col-toggle>
                 <thead>
                 <tr>
-                    <th>Nom complet</th>
-                    <th>Societe</th>
-                    <th>CIN</th>
-                    <th>Date naissance</th>
-                    <th>Lieu naissance</th>
-                    <th>Nationalite</th>
-                    <th>Telephone</th>
-                    <th>Email</th>
-                    <th>Qualite</th>
-                    <th>Parts</th>
-                    <th>Gerant</th>
-                    <th>Creation</th>
-                    <th>Modification</th>
+                    <th data-col="nom-complet">Nom complet</th>
+                    <th data-col="societe">Societe</th>
+                    <th data-col="cin">CIN</th>
+                    <th data-col="date-naiss">Date naissance</th>
+                    <th data-col="lieu-naiss">Lieu naissance</th>
+                    <th data-col="nationalite">Nationalite</th>
+                    <th data-col="telephone">Telephone</th>
+                    <th data-col="email">Email</th>
+                    <th data-col="qualite">Qualite</th>
+                    <th data-col="parts">Parts</th>
+                    <th data-col="gerant">Gerant</th>
+                    <th data-col="creation">Creation</th>
+                    <th data-col="modification">Modification</th>
                     <th>Actions</th>
                 </tr>
                 </thead>

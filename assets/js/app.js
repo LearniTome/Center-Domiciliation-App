@@ -17,6 +17,77 @@ document.querySelectorAll('[data-confirm]').forEach((element) => {
     }
 })();
 
+(function () {
+    const tables = document.querySelectorAll('[data-col-toggle]');
+    if (!tables.length) return;
+    const pageKey = new URLSearchParams(window.location.search).get('page') || 'unknown';
+    const storageKey = 'col_visible_' + pageKey;
+
+    tables.forEach(function (table) {
+        var headers = table.querySelectorAll('thead th[data-col]');
+        if (!headers.length) return;
+
+        var container = table.closest('.card')?.querySelector('[data-col-toggle-btn]');
+        if (!container) return;
+
+        var panel = document.createElement('div');
+        panel.className = 'col-toggle-panel';
+
+        var saved = (function () {
+            try {
+                return JSON.parse(localStorage.getItem(storageKey));
+            } catch (e) { return null; }
+        })();
+
+        headers.forEach(function (th, idx) {
+            var colKey = th.getAttribute('data-col');
+            var label = th.textContent.trim();
+
+            var checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            var visible = saved ? saved[colKey] !== false : true;
+            checkbox.checked = visible;
+            if (!visible) {
+                th.classList.add('col-hidden');
+                table.querySelectorAll('tbody tr').forEach(function (row) {
+                    var cell = row.children[idx];
+                    if (cell) cell.classList.add('col-hidden');
+                });
+            }
+
+            checkbox.addEventListener('change', function () {
+                var isVisible = checkbox.checked;
+                th.classList.toggle('col-hidden', !isVisible);
+                table.querySelectorAll('tbody tr').forEach(function (row) {
+                    var cell = row.children[idx];
+                    if (cell) cell.classList.toggle('col-hidden', !isVisible);
+                });
+                saved[colKey] = isVisible;
+                try {
+                    localStorage.setItem(storageKey, JSON.stringify(saved));
+                } catch (e) {}
+            });
+
+            var wrap = document.createElement('label');
+            wrap.appendChild(checkbox);
+            wrap.appendChild(document.createTextNode(' ' + label));
+            panel.appendChild(wrap);
+        });
+
+        container.parentNode.appendChild(panel);
+        container.addEventListener('click', function (e) {
+            e.stopPropagation();
+            panel.classList.toggle('open');
+        });
+
+        document.addEventListener('click', function (e) {
+            if (!panel.contains(e.target) && e.target !== container) {
+                panel.classList.remove('open');
+            }
+        });
+    });
+})();
+
 const formatFR = (v, decimals = 2) => {
     if (v === null || v === undefined || isNaN(v)) return '';
     return Number(v).toLocaleString('fr-FR', {

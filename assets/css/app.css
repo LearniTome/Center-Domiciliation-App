@@ -587,6 +587,48 @@ tbody tr:hover:nth-child(even) {
     gap: 6px;
     flex-wrap: nowrap;
     white-space: nowrap;
+    position: relative;
+}
+
+.col-toggle-panel {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    z-index: 100;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 8px 0;
+    min-width: 200px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    display: none;
+}
+
+.col-toggle-panel.open {
+    display: block;
+}
+
+.col-toggle-panel label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--text);
+    transition: background var(--transition);
+}
+
+.col-toggle-panel label:hover {
+    background: var(--panel-strong);
+}
+
+.col-toggle-panel label input[type="checkbox"] {
+    accent-color: var(--primary);
+}
+
+.col-hidden {
+    display: none !important;
 }
 
 .inline-form {

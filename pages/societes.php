@@ -79,6 +79,7 @@ if (($pdo ?? null) instanceof PDO) {
                 <p class="help-text"><?= count($societes) ?> enregistrement(s)</p>
             </div>
             <div class="table-actions">
+                <button class="btn-icon" type="button" data-col-toggle-btn title="Colonnes a afficher"><span class="mdi mdi-table-column"></span></button>
                 <a class="btn btn-info" href="<?= e(app_url('societes', ['export' => 'csv', 'q' => $query])) ?>"><span class="mdi mdi-download"></span> Exporter CSV</a>
             </div>
         </div>
@@ -101,23 +102,23 @@ if (($pdo ?? null) instanceof PDO) {
             <p class="table-empty">Aucune societe pour le moment.</p>
         <?php else: ?>
             <div class="table-scroll">
-            <table>
+            <table data-col-toggle>
                 <thead>
                 <tr>
-                    <th>Dossier</th>
-                    <th>Raison sociale</th>
-                    <th>Forme</th>
-                    <th>ICE</th>
-                    <th>Date de cert. negatif</th>
-                    <th>RC</th>
-                    <th>IF</th>
-                    <th>Capital</th>
-                    <th>Ville</th>
-                    <th>Tribunal</th>
-                    <th>Telephone</th>
-                    <th>Email</th>
-                    <th>Creation</th>
-                    <th>Modification</th>
+                    <th data-col="dossier">Dossier</th>
+                    <th data-col="raison-sociale">Raison sociale</th>
+                    <th data-col="forme">Forme</th>
+                    <th data-col="ice">ICE</th>
+                    <th data-col="date-cert-neg">Date de cert. negatif</th>
+                    <th data-col="rc">RC</th>
+                    <th data-col="if">IF</th>
+                    <th data-col="capital">Capital</th>
+                    <th data-col="ville">Ville</th>
+                    <th data-col="tribunal">Tribunal</th>
+                    <th data-col="telephone">Telephone</th>
+                    <th data-col="email">Email</th>
+                    <th data-col="creation">Creation</th>
+                    <th data-col="modification">Modification</th>
                     <th>Actions</th>
                 </tr>
                 </thead>

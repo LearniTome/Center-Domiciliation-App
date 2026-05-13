@@ -85,6 +85,7 @@ if (($pdo ?? null) instanceof PDO) {
                 <p class="help-text"><?= count($collaborateurs) ?> enregistrement(s)</p>
             </div>
             <div class="table-actions">
+                <button class="btn-icon" type="button" data-col-toggle-btn title="Colonnes a afficher"><span class="mdi mdi-table-column"></span></button>
                 <a class="btn btn-next" href="<?= e(app_url('collaborateur')) ?>"><span class="mdi mdi-account-plus"></span> Nouveau collaborateur</a>
                 <a class="btn btn-info" href="<?= e(app_url('collaborateurs', ['export' => 'csv', 'q' => $query])) ?>"><span class="mdi mdi-download"></span> Exporter CSV</a>
             </div>
@@ -108,17 +109,17 @@ if (($pdo ?? null) instanceof PDO) {
             <p class="table-empty">Aucun collaborateur pour le moment.</p>
         <?php else: ?>
             <div class="table-scroll">
-            <table>
+            <table data-col-toggle>
                 <thead>
                 <tr>
-                    <th>Type</th>
-                    <th>Cabinet</th>
-                    <th>Nom complet</th>
-                    <th>Fonction</th>
-                    <th>ICE</th>
-                    <th>Telephone</th>
-                    <th>Statut</th>
-                    <th>Creation</th>
+                    <th data-col="type">Type</th>
+                    <th data-col="cabinet">Cabinet</th>
+                    <th data-col="nom-complet">Nom complet</th>
+                    <th data-col="fonction">Fonction</th>
+                    <th data-col="ice">ICE</th>
+                    <th data-col="telephone">Telephone</th>
+                    <th data-col="statut">Statut</th>
+                    <th data-col="creation">Creation</th>
                     <th>Actions</th>
                 </tr>
                 </thead>
