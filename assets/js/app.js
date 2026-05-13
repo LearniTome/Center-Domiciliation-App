@@ -32,7 +32,7 @@ const testData = {
     'date_contrat': '2026-01-01',
     'duree_contrat_mois': '12',
     'type_contrat_domiciliation': 'Personne Morale',
-    'type_contrat_domiciliation_autre': '',
+    'type_contrat_autre': '',
     'date_debut': '2026-01-01',
     'date_fin': '2026-12-31',
     'taux_tva_pourcent': '20',
@@ -58,7 +58,10 @@ const testData = {
     'phone': '0612345678',
     'qualite_associe': 'Associe',
     'parts': '1000',
+    'capital_detenu': '100000',
+    'part_percent': '',
     'is_gerant': '1',
+    'adresse': '123 Rue Mohammed V, Casablanca',
 };
 
 document.addEventListener('click', (event) => {
@@ -87,11 +90,14 @@ document.addEventListener('click', (event) => {
         }
     });
 
-    var typeGen = form.querySelector('[name="type_generation"]');
-    if (typeGen) {
-        var evt = new Event('change', { bubbles: true });
-        typeGen.dispatchEvent(evt);
-    }
+    form.querySelectorAll('input, select, textarea').forEach(function(field) {
+        var name = field.getAttribute('name');
+        if (!name) return;
+        var key = name.replace(/^associes\[\d+\]\[(\w+)\]$/, '$1');
+        if (testData[key] === undefined) return;
+        field.dispatchEvent(new Event('input', { bubbles: true }));
+        field.dispatchEvent(new Event('change', { bubbles: true }));
+    });
 });
 
 const associesContainer = document.querySelector('[data-associes-container]');
@@ -290,6 +296,124 @@ document.addEventListener('input', (e) => {
             updateVisibility();
         }
     });
+})();
+
+(function () {
+    const parseMoney = (v) => parseFloat(String(v).replace(',', '.')) || 0;
+
+    const updateCapitalSummary = () => {
+        const container = document.querySelector('[data-associes-container]');
+        const summary = document.querySelector('[data-associe-summary]');
+        if (!container || !summary) return;
+
+        const items = container.querySelectorAll('[data-associe-item]');
+        let totalParts = 0;
+        let totalCapital = 0;
+
+        items.forEach((item) => {
+            const parts = parseInt(item.querySelector('[data-field-name="parts"]')?.value, 10) || 0;
+            const capital = parseMoney(item.querySelector('[data-capital-input]')?.value);
+            totalParts += parts;
+            totalCapital += capital;
+        });
+
+        document.getElementById('total-parts').textContent = totalParts;
+        document.getElementById('total-capital').textContent = totalCapital.toFixed(2).replace('.', ',');
+
+        items.forEach((item) => {
+            const capital = parseMoney(item.querySelector('[data-capital-input]')?.value);
+            const percentInput = item.querySelector('[data-percent-input]');
+            if (percentInput) {
+                const pct = totalCapital > 0 ? (capital / totalCapital * 100) : 0;
+                percentInput.value = pct.toFixed(2);
+            }
+        });
+
+        const totalPct = Array.from(items).reduce((sum, item) => {
+            return sum + parseMoney(item.querySelector('[data-percent-input]')?.value);
+        }, 0);
+
+        document.getElementById('total-percent').textContent = totalPct.toFixed(2).replace('.', ',') + ' %';
+
+        const statusEl = document.getElementById('capital-status');
+        if (totalCapital > 0) {
+            const diff = Math.abs(totalPct - 100);
+            if (diff < 0.01) {
+                statusEl.textContent = 'Equilibre';
+                statusEl.style.color = 'var(--success)';
+            } else {
+                statusEl.textContent = 'Desequilibre (' + totalPct.toFixed(2) + '%)';
+                statusEl.style.color = 'var(--warning)';
+            }
+        } else {
+            statusEl.textContent = 'Incomplet';
+            statusEl.style.color = 'var(--danger)';
+        }
+    };
+
+    const toggleCapitalFields = () => {
+        const formeJur = document.querySelector('[name="forme_juridique"]')?.value || '';
+        const isSarl = /SARL/i.test(formeJur);
+        const isSarlAu = formeJur === 'SARL AU';
+        const fields = document.querySelectorAll('[data-capital-field]');
+        const summary = document.querySelector('[data-associe-summary]');
+        fields.forEach((el) => {
+            el.style.display = isSarl ? '' : 'none';
+        });
+        if (summary) {
+            summary.style.display = isSarl ? '' : 'none';
+        }
+        if (isSarl) updateCapitalSummary();
+        if (isSarlAu) {
+            const container = document.querySelector('[data-associes-container]');
+            const capital = document.getElementById('societe-capital')?.value || '';
+            const partSocial = document.getElementById('societe-part-social')?.value || '';
+            if (container) {
+                container.querySelectorAll('[data-associe-item]').forEach((item) => {
+                    const qualite = item.querySelector('[data-field-name="qualite_associe"]');
+                    const gerant = item.querySelector('[data-field-name="is_gerant"]');
+                    const capitalInput = item.querySelector('[data-field-name="capital_detenu"]');
+                    const partsInput = item.querySelector('[data-field-name="parts"]');
+                    if (qualite) qualite.value = 'Gerant';
+                    if (gerant) gerant.value = '1';
+                    if (capitalInput && capital) capitalInput.value = capital;
+                    if (partsInput && partSocial) partsInput.value = partSocial;
+                });
+            }
+        }
+    };
+
+    document.addEventListener('change', (e) => {
+        if (e.target.matches('[name="forme_juridique"]')) {
+            toggleCapitalFields();
+        }
+    });
+
+    document.addEventListener('input', (e) => {
+        if (e.target.closest('[data-capital-input]')) {
+            updateCapitalSummary();
+        }
+    });
+
+    document.addEventListener('change', (e) => {
+        if (e.target.matches('[name="forme_juridique"]')) {
+            toggleCapitalFields();
+        }
+    });
+
+    const origRefresh = window._refreshIndices;
+    const origAdd = document.querySelector('[data-associes-container]')?.__origAdd;
+    const associesContainer = document.querySelector('[data-associes-container]');
+    if (associesContainer) {
+        const observer = new MutationObserver(() => {
+            toggleCapitalFields();
+            updateCapitalSummary();
+        });
+        observer.observe(associesContainer, { childList: true });
+    }
+
+    toggleCapitalFields();
+    updateCapitalSummary();
 })();
 
 

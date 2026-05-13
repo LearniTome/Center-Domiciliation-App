@@ -12,6 +12,8 @@
     --danger-hover: #e0353d;
     --warning: #ffab00;
     --info: #8f5fe8;
+    --btn-back: #ff6b35;
+    --btn-next: #00b894;
     --font: 'Rubik', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     --radius: 8px;
     --radius-sm: 4px;
@@ -352,6 +354,25 @@ button.btn-icon.danger:hover {
     color: var(--danger);
 }
 
+.btn.btn-back {
+    background: var(--btn-back);
+    color: #fff;
+}
+.btn.btn-back:hover {
+    background: #e55a2b;
+}
+.btn.btn-next {
+    background: var(--btn-next);
+    color: #fff;
+}
+.btn.btn-next:hover {
+    background: #00a07e;
+}
+
+.btn-remove {
+    color: #c0392b !important;
+}
+
 .stack {
     display: grid;
     gap: 0.75rem;
@@ -614,6 +635,16 @@ tbody tr:hover:nth-child(even) {
 .statut-badge.resilie {
     background: rgba(252, 66, 74, 0.12);
     color: var(--danger);
+}
+
+.statut-badge.brouillon {
+    background: rgba(255, 171, 0, 0.12);
+    color: var(--warning);
+}
+
+.statut-badge.valide {
+    background: rgba(0, 210, 91, 0.12);
+    color: var(--success);
 }
 
 .table-scroll::-webkit-scrollbar {

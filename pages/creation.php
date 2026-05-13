@@ -112,6 +112,8 @@ if (is_post()) {
                     'email' => trim((string) ($associe['email'] ?? '')),
                     'qualite_associe' => trim((string) ($associe['qualite_associe'] ?? '')),
                     'parts' => trim((string) ($associe['parts'] ?? '')),
+                    'capital_detenu' => trim((string) ($associe['capital_detenu'] ?? '')),
+                    'part_percent' => trim((string) ($associe['part_percent'] ?? '')),
                     'is_gerant' => ((string) ($associe['is_gerant'] ?? '0') === '1') ? '1' : '0',
                 ];
 
@@ -224,8 +226,8 @@ if (is_post()) {
             $societeId = (int) $pdo->lastInsertId();
 
             $associeStmt = $pdo->prepare('
-                INSERT INTO associes (societe_id, civilite, nom, prenom, nom_complet, cin, date_validite_cin, date_naiss, lieu_naiss, nationalite, adresse, phone, email, qualite_associe, parts, is_gerant)
-                VALUES (:societe_id, :civilite, :nom, :prenom, :nom_complet, :cin, :date_validite_cin, :date_naiss, :lieu_naiss, :nationalite, :adresse, :phone, :email, :qualite_associe, :parts, :is_gerant)
+                INSERT INTO associes (societe_id, civilite, nom, prenom, nom_complet, cin, date_validite_cin, date_naiss, lieu_naiss, nationalite, adresse, phone, email, qualite_associe, parts, capital_detenu, part_percent, is_gerant)
+                VALUES (:societe_id, :civilite, :nom, :prenom, :nom_complet, :cin, :date_validite_cin, :date_naiss, :lieu_naiss, :nationalite, :adresse, :phone, :email, :qualite_associe, :parts, :capital_detenu, :part_percent, :is_gerant)
             ');
 
             foreach ($wizard['associes'] as $associe) {
@@ -245,6 +247,8 @@ if (is_post()) {
                     'email' => $associe['email'] ?? '',
                     'qualite_associe' => $associe['qualite_associe'] ?? '',
                     'parts' => ($associe['parts'] ?? '') !== '' ? (int) $associe['parts'] : null,
+                    'capital_detenu' => ($associe['capital_detenu'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $associe['capital_detenu']) : null,
+                    'part_percent' => ($associe['part_percent'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $associe['part_percent']) : null,
                     'is_gerant' => ((string) ($associe['is_gerant'] ?? '0') === '1') ? 1 : 0,
                 ]);
             }
@@ -253,16 +257,16 @@ if (is_post()) {
                 INSERT INTO contrats (
                     societe_id, type_contrat, date_contrat, duree_contrat_mois, type_contrat_domiciliation,
                     type_contrat_domiciliation_autre, date_debut, date_fin,
-                    taux_tva_pourcent, loyer_mensuel_ht, loyer_ttc_mois, montant_total_loyer,
+                    taux_tva_pourcent, loyer_mensuel_ht, loyer_mensuel_ttc, montant_total_ht_contrat,
                     type_renouvellement, taux_tva_renouvellement_pourcent, loyer_mensuel_ht_renouvellement,
-                    loyer_ttc_renouvellement_mois, montant_total_renouvellement,
+                    loyer_mensuel_renouvellement_ttc, montant_total_ht_renouvellement,
                     statut, notes
                 ) VALUES (
                     :societe_id, :type_contrat, :date_contrat, :duree_contrat_mois, :type_contrat_domiciliation,
                     :type_contrat_domiciliation_autre, :date_debut, :date_fin,
-                    :taux_tva_pourcent, :loyer_mensuel_ht, :loyer_ttc_mois, :montant_total_loyer,
+                    :taux_tva_pourcent, :loyer_mensuel_ht, :loyer_mensuel_ttc, :montant_total_ht_contrat,
                     :type_renouvellement, :taux_tva_renouvellement_pourcent, :loyer_mensuel_ht_renouvellement,
-                    :loyer_ttc_renouvellement_mois, :montant_total_renouvellement,
+                    :loyer_mensuel_renouvellement_ttc, :montant_total_ht_renouvellement,
                     :statut, :notes
                 )
             ');
@@ -277,13 +281,13 @@ if (is_post()) {
                 'date_fin' => ($wizard['contrat']['date_fin'] ?? '') !== '' ? $wizard['contrat']['date_fin'] : null,
                 'taux_tva_pourcent' => ($wizard['contrat']['taux_tva_pourcent'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['taux_tva_pourcent']) : null,
                 'loyer_mensuel_ht' => ($wizard['contrat']['loyer_mensuel_ht'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['loyer_mensuel_ht']) : null,
-                'loyer_ttc_mois' => ($wizard['contrat']['loyer_ttc_mois'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['loyer_ttc_mois']) : null,
-                'montant_total_loyer' => ($wizard['contrat']['montant_total_loyer'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['montant_total_loyer']) : null,
+                'loyer_mensuel_ttc' => ($wizard['contrat']['loyer_ttc_mois'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['loyer_ttc_mois']) : null,
+                'montant_total_ht_contrat' => ($wizard['contrat']['montant_total_loyer'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['montant_total_loyer']) : null,
                 'type_renouvellement' => $wizard['contrat']['type_renouvellement'] ?? '',
                 'taux_tva_renouvellement_pourcent' => ($wizard['contrat']['taux_tva_renouvellement_pourcent'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['taux_tva_renouvellement_pourcent']) : null,
                 'loyer_mensuel_ht_renouvellement' => ($wizard['contrat']['loyer_mensuel_ht_renouvellement'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['loyer_mensuel_ht_renouvellement']) : null,
-                'loyer_ttc_renouvellement_mois' => ($wizard['contrat']['loyer_ttc_renouvellement_mois'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['loyer_ttc_renouvellement_mois']) : null,
-                'montant_total_renouvellement' => ($wizard['contrat']['montant_total_renouvellement'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['montant_total_renouvellement']) : null,
+                'loyer_mensuel_renouvellement_ttc' => ($wizard['contrat']['loyer_ttc_renouvellement_mois'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['loyer_ttc_renouvellement_mois']) : null,
+                'montant_total_ht_renouvellement' => ($wizard['contrat']['montant_total_renouvellement'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['montant_total_renouvellement']) : null,
                 'statut' => $wizard['contrat']['statut'] ?? 'actif',
                 'notes' => $wizard['contrat']['notes'] ?? '',
             ]);
@@ -343,6 +347,8 @@ if (!is_array($associesData) || $associesData === []) {
         'email' => '',
         'qualite_associe' => $associeDefaults['qualite_associe'] ?? '',
         'parts' => $associeDefaults['parts'] ?? '',
+        'capital_detenu' => '',
+        'part_percent' => '',
         'is_gerant' => ($associeDefaults['is_gerant'] ?? false) ? '1' : '0',
     ]];
 }
@@ -531,19 +537,21 @@ $contratData = array_merge([
             </div>
             <div class="table-actions">
                 <button class="btn btn-secondary" type="button" data-fill-test>Remplir automatiquement</button>
-                <button type="submit" name="nav_action" value="next">Continuer</button>
+                <button class="btn btn-next" type="submit" name="nav_action" value="next">Suivant</button>
             </div>
         </form>
     <?php elseif ($step === 2): ?>
         <form method="post" class="stack">
             <?= csrf_input() ?>
             <input type="hidden" name="step" value="2">
+            <input type="hidden" id="societe-capital" value="<?= e((string) ($societeData['capital'] ?? '')) ?>">
+            <input type="hidden" id="societe-part-social" value="<?= e((string) ($societeData['part_social'] ?? '')) ?>">
             <div class="section-header">
                 <div>
                     <h2>Associes de <?= e((string) ($societeData['raison_sociale'] ?: 'la societe')) ?></h2>
                     <p class="help-text">Ajoutez autant d'associes que necessaire.</p>
                 </div>
-                <button class="btn-icon" type="button" data-add-associe title="Ajouter un associe"><span class="mdi mdi-plus"></span></button>
+                <button class="btn" type="button" data-add-associe><span class="mdi mdi-plus"></span> Ajouter un associé</button>
             </div>
 
             <div class="stack" data-associes-container>
@@ -551,7 +559,7 @@ $contratData = array_merge([
                     <div class="associe-card" data-associe-item>
                         <div class="associe-card-header">
                             <strong data-associe-title>Associe <?= $index + 1 ?></strong>
-                            <button class="btn btn-secondary" type="button" data-remove-associe>Retirer</button>
+                            <button class="btn btn-secondary btn-remove" type="button" data-remove-associe>Retirer</button>
                         </div>
                         <div class="form-grid">
                             <h3 class="section-title">Identite</h3>
@@ -635,9 +643,17 @@ $contratData = array_merge([
                                     <a href="<?= e(app_url('configuration', ['tab' => 'qualites-associe'])) ?>" target="_blank" title="Gerer les qualites" style="color:var(--primary);text-decoration:none;font-size:1.4rem;line-height:1">&plus;</a>
                                 </div>
                             </label>
-                            <label class="field">
+                            <label class="field" data-capital-field>
                                 <span>Parts</span>
                                 <input data-field-name="parts" type="number" name="associes[<?= $index ?>][parts]" value="<?= e((string) ($associe['parts'] ?? '')) ?>">
+                            </label>
+                            <label class="field" data-capital-field>
+                                <span>Capital detenu (DH)</span>
+                                <input data-field-name="capital_detenu" type="number" step="0.01" name="associes[<?= $index ?>][capital_detenu]" data-capital-input value="<?= e((string) ($associe['capital_detenu'] ?? '')) ?>">
+                            </label>
+                            <label class="field" data-capital-field>
+                                <span>% Capital social</span>
+                                <input data-field-name="part_percent" type="number" step="0.01" name="associes[<?= $index ?>][part_percent]" data-percent-input value="<?= e((string) ($associe['part_percent'] ?? '')) ?>" readonly>
                             </label>
                             <label class="field">
                                 <span>Gerant</span>
@@ -651,11 +667,37 @@ $contratData = array_merge([
                 <?php endforeach; ?>
             </div>
 
+            <div class="card" data-associe-summary style="display:none">
+                <div class="section-header">
+                    <div>
+                        <h3>Repartition du capital</h3>
+                    </div>
+                </div>
+                <div class="form-grid" style="grid-template-columns:repeat(4,1fr)">
+                    <div class="field">
+                        <span>Total parts</span>
+                        <strong id="total-parts" style="font-size:1.2rem">0</strong>
+                    </div>
+                    <div class="field">
+                        <span>Total capital detenu (DH)</span>
+                        <strong id="total-capital" style="font-size:1.2rem">0,00</strong>
+                    </div>
+                    <div class="field">
+                        <span>Total %</span>
+                        <strong id="total-percent" style="font-size:1.2rem">0,00 %</strong>
+                    </div>
+                    <div class="field">
+                        <span>Statut</span>
+                        <strong id="capital-status" style="font-size:1rem;color:var(--danger)">Incomplet</strong>
+                    </div>
+                </div>
+            </div>
+
             <template data-associe-template>
                 <div class="associe-card" data-associe-item>
                     <div class="associe-card-header">
                         <strong data-associe-title>Associe</strong>
-                        <button class="btn btn-secondary" type="button" data-remove-associe>Retirer</button>
+                        <button class="btn btn-secondary btn-remove" type="button" data-remove-associe>Retirer</button>
                     </div>
                     <div class="form-grid">
                         <h3 class="section-title">Identite</h3>
@@ -739,9 +781,17 @@ $contratData = array_merge([
                                 <a href="<?= e(app_url('configuration', ['tab' => 'qualites-associe'])) ?>" target="_blank" title="Gerer les qualites" style="color:var(--primary);text-decoration:none;font-size:1.4rem;line-height:1">&plus;</a>
                             </div>
                         </label>
-                        <label class="field">
+                        <label class="field" data-capital-field>
                             <span>Parts</span>
                             <input data-field-name="parts" type="number" value="">
+                        </label>
+                        <label class="field" data-capital-field>
+                            <span>Capital detenu (DH)</span>
+                            <input data-field-name="capital_detenu" type="number" step="0.01" data-capital-input value="">
+                        </label>
+                        <label class="field" data-capital-field>
+                            <span>% Capital social</span>
+                            <input data-field-name="part_percent" type="number" step="0.01" data-percent-input value="" readonly>
                         </label>
                         <label class="field">
                             <span>Gerant</span>
@@ -755,9 +805,9 @@ $contratData = array_merge([
             </template>
 
             <div class="table-actions">
-                <button class="btn btn-secondary" type="submit" name="nav_action" value="back">Retour</button>
+                <button class="btn btn-back" type="submit" name="nav_action" value="back">Retour</button>
                 <button class="btn btn-secondary" type="button" data-fill-test>Remplir automatiquement</button>
-                <button type="submit" name="nav_action" value="next">Continuer</button>
+                <button class="btn btn-next" type="submit" name="nav_action" value="next">Suivant</button>
             </div>
         </form>
     <?php else: ?>
@@ -883,9 +933,9 @@ $contratData = array_merge([
                 </label>
             </div>
             <div class="table-actions">
-                <button class="btn btn-secondary" type="submit" name="nav_action" value="back">Retour</button>
+                <button class="btn btn-back" type="submit" name="nav_action" value="back">Retour</button>
                 <button class="btn btn-secondary" type="button" data-fill-test>Remplir automatiquement</button>
-                <button type="submit" name="nav_action" value="finish">Creer le dossier complet</button>
+                <button class="btn btn-next" type="submit" name="nav_action" value="finish">Creer le dossier complet</button>
             </div>
         </form>
     <?php endif; ?>

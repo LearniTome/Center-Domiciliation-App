@@ -175,6 +175,52 @@ function fetch_reference_options(?PDO $pdo, string $table, string $column): arra
     return array_map(static fn (array $row): string => (string) $row[$column], $stmt->fetchAll());
 }
 
+function fetch_all_documents(?PDO $pdo, ?int $societe_id = null, ?string $q = null): array
+{
+    if (!$pdo) {
+        return [];
+    }
+
+    $sql = 'SELECT d.*, s.raison_sociale
+            FROM documents_generes d
+            JOIN societes s ON s.id = d.societe_id
+            WHERE 1=1';
+    $params = [];
+
+    if ($societe_id !== null) {
+        $sql .= ' AND d.societe_id = :societe_id';
+        $params['societe_id'] = $societe_id;
+    }
+
+    if ($q !== null && $q !== '') {
+        $sql .= ' AND (s.raison_sociale LIKE :q OR d.doc_type LIKE :q2)';
+        $params['q'] = like_term($q);
+        $params['q2'] = like_term($q);
+    }
+
+    $sql .= ' ORDER BY d.created_at DESC';
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    return $stmt->fetchAll();
+}
+
+function fetch_document(?PDO $pdo, int $id): ?array
+{
+    if (!$pdo) {
+        return null;
+    }
+
+    $sql = 'SELECT d.*, s.raison_sociale
+            FROM documents_generes d
+            JOIN societes s ON s.id = d.societe_id
+            WHERE d.id = :id LIMIT 1';
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute(['id' => $id]);
+    $record = $stmt->fetch();
+    return $record ?: null;
+}
+
 function search_term(string $key = 'q'): string
 {
     return trim((string) ($_GET[$key] ?? ''));

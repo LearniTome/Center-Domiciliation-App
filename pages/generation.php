@@ -112,6 +112,27 @@ if (is_post() && !isset($_POST['delete_submit']) && !isset($_POST['validate_subm
 
     if (count($generatedFiles) > 0) {
         $_SESSION['gen_files'][$societeId] = $generatedFiles;
+        $insertStmt = $pdo->prepare('INSERT INTO documents_generes (societe_id, template_source, doc_type, fichier_docx, fichier_pdf, taille_ko) VALUES (:societe_id, :template_source, :doc_type, :fichier_docx, :fichier_pdf, :taille_ko)');
+        foreach ($generatedFiles as $gf) {
+            $tplSource = null;
+            $docType = null;
+            foreach ($selectedPaths as $sp) {
+                if (isset($gf['docx']) && str_contains((string) $gf['docx'], pathinfo($sp, PATHINFO_FILENAME))) {
+                    $tplSource = $sp;
+                    break;
+                }
+            }
+            $parts = explode('_', basename((string) $gf['name']));
+            $docType = $parts[2] ?? null;
+            $insertStmt->execute([
+                'societe_id' => $societeId,
+                'template_source' => $tplSource,
+                'doc_type' => $docType,
+                'fichier_docx' => $gf['docx'],
+                'fichier_pdf' => $gf['pdf'] ?? null,
+                'taille_ko' => file_exists((string) $gf['docx']) ? round(filesize((string) $gf['docx']) / 1024, 1) : null,
+            ]);
+        }
         set_flash('success', count($generatedFiles) . ' document(s) genere(s).');
     }
 }

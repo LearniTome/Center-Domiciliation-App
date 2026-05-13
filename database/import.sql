@@ -60,6 +60,8 @@ CREATE TABLE IF NOT EXISTS associes (
     -- Participation
     qualite_associe VARCHAR(150) DEFAULT NULL,
     parts INT DEFAULT NULL,
+    capital_detenu DECIMAL(15,2) DEFAULT NULL,
+    part_percent DECIMAL(7,2) DEFAULT NULL,
     is_gerant TINYINT(1) NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -83,16 +85,21 @@ CREATE TABLE IF NOT EXISTS contrats (
     date_debut DATE DEFAULT NULL,
     date_fin DATE DEFAULT NULL,
     -- Loyer
+    loyer_mensuel_ttc DECIMAL(15,2) DEFAULT NULL,
+    frais_intermediaire_contrat DECIMAL(15,2) DEFAULT NULL,
+    caution_montant DECIMAL(15,2) DEFAULT NULL,
     taux_tva_pourcent DECIMAL(7,2) DEFAULT NULL,
     loyer_mensuel_ht DECIMAL(15,2) DEFAULT NULL,
-    loyer_ttc_mois DECIMAL(15,2) DEFAULT NULL,
-    montant_total_loyer DECIMAL(15,2) DEFAULT NULL,
+    montant_total_ht_contrat DECIMAL(15,2) DEFAULT NULL,
+    montant_pack_demarrage_ttc DECIMAL(15,2) DEFAULT NULL,
+    loyer_mensuel_pack_demarrage_ttc DECIMAL(15,2) DEFAULT NULL,
     -- Renouvellement
     type_renouvellement VARCHAR(120) DEFAULT NULL,
     taux_tva_renouvellement_pourcent DECIMAL(7,2) DEFAULT NULL,
     loyer_mensuel_ht_renouvellement DECIMAL(15,2) DEFAULT NULL,
-    loyer_ttc_renouvellement_mois DECIMAL(15,2) DEFAULT NULL,
-    montant_total_renouvellement DECIMAL(15,2) DEFAULT NULL,
+    montant_total_ht_renouvellement DECIMAL(15,2) DEFAULT NULL,
+    loyer_mensuel_renouvellement_ttc DECIMAL(15,2) DEFAULT NULL,
+    loyer_annuel_renouvellement_ttc DECIMAL(15,2) DEFAULT NULL,
     statut VARCHAR(80) DEFAULT 'actif',
     notes TEXT DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -175,6 +182,24 @@ CREATE TABLE IF NOT EXISTS ref_lieux_naissance (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     lieu_naissance VARCHAR(120) NOT NULL,
     UNIQUE KEY uq_ref_lieux_naissance (lieu_naissance)
+);
+
+CREATE TABLE IF NOT EXISTS documents_generes (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    societe_id INT UNSIGNED NOT NULL,
+    template_source VARCHAR(255) DEFAULT NULL,
+    doc_type VARCHAR(100) DEFAULT NULL,
+    fichier_docx VARCHAR(500) NOT NULL,
+    fichier_pdf VARCHAR(500) DEFAULT NULL,
+    taille_ko DECIMAL(10,1) DEFAULT NULL,
+    valide TINYINT(1) NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_documents_societe
+        FOREIGN KEY (societe_id) REFERENCES societes(id)
+        ON DELETE CASCADE,
+    INDEX idx_documents_societe_id (societe_id),
+    INDEX idx_documents_doc_type (doc_type),
+    INDEX idx_documents_valide (valide)
 );
 
 CREATE TABLE IF NOT EXISTS ref_qualites_associe (

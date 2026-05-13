@@ -27,7 +27,7 @@ $associes = ($pdo ?? null) instanceof PDO
 
 $contrats = ($pdo ?? null) instanceof PDO
     ? (function (PDO $pdo, int $societeId): array {
-        $stmt = $pdo->prepare('SELECT type_contrat, date_debut, date_fin, statut, montant_total_loyer FROM contrats WHERE societe_id = :societe_id ORDER BY id DESC');
+        $stmt = $pdo->prepare('SELECT type_contrat, date_debut, date_fin, statut, montant_total_ht_contrat AS montant_total_loyer FROM contrats WHERE societe_id = :societe_id ORDER BY id DESC');
         $stmt->execute(['societe_id' => $societeId]);
         return $stmt->fetchAll();
     })($pdo, $societeId)
