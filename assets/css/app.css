@@ -622,6 +622,9 @@ tbody tr:hover:nth-child(even) {
 
 .col-toggle-panel label input[type="checkbox"] {
     accent-color: var(--primary);
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
 }
 
 .col-toggle-panel label:hover {
