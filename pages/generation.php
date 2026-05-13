@@ -272,7 +272,7 @@ foreach ($filteredTemplates as $tpl) {
                         </div>
                     <?php endforeach; ?>
 
-                    <button type="submit" class="btn btn-next" style="margin-top:4px;padding:12px 24px">
+                    <button type="submit" class="btn btn-next" style="margin-top:4px">
                         <span class="mdi mdi-file-sync"></span>
                         Generer les documents
                     </button>

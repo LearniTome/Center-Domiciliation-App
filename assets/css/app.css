@@ -283,7 +283,7 @@ button[type="submit"] {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 10px 20px;
+    padding: 6px 14px;
     border-radius: var(--radius-sm);
     border: 2px solid var(--primary);
     background: transparent;
