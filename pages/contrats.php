@@ -79,6 +79,7 @@ $contrats = ($pdo ?? null) instanceof PDO
                         <td><?= e(substr($contrat['created_at'], 0, 10)) ?></td>
                         <td><?= e(substr($contrat['updated_at'], 0, 10)) ?></td>
                         <td class="table-actions">
+                            <a class="btn-icon" href="<?= e(app_url('societe', ['id' => (int) $contrat['societe_id']])) ?>" title="Modifier"><span class="mdi mdi-pencil"></span></a>
                             <form method="post">
                                 <?= csrf_input() ?>
                                 <input type="hidden" name="action" value="delete">

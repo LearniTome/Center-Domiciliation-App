@@ -135,6 +135,7 @@ if (($pdo ?? null) instanceof PDO) {
                         <td><?= e(substr($c['created_at'], 0, 10)) ?></td>
                         <td class="table-actions">
                             <a class="btn-icon" href="<?= e(app_url('collaborateur', ['id' => (int) $c['id']])) ?>" title="Voir"><span class="mdi mdi-eye"></span></a>
+                            <a class="btn-icon" href="<?= e(app_url('collaborateur', ['id' => (int) $c['id']])) ?>" title="Modifier"><span class="mdi mdi-pencil"></span></a>
                             <form method="post">
                                 <?= csrf_input() ?>
                                 <input type="hidden" name="action" value="delete">

@@ -71,6 +71,7 @@ $associes = ($pdo ?? null) instanceof PDO
                         <td><?= e(substr($associe['created_at'], 0, 10)) ?></td>
                         <td><?= e(substr($associe['updated_at'], 0, 10)) ?></td>
                         <td class="table-actions">
+                            <a class="btn-icon" href="<?= e(app_url('societe', ['id' => (int) $associe['societe_id']])) ?>" title="Modifier"><span class="mdi mdi-pencil"></span></a>
                             <form method="post">
                                 <?= csrf_input() ?>
                                 <input type="hidden" name="action" value="delete">
