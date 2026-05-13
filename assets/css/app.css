@@ -631,6 +631,30 @@ tbody tr:hover:nth-child(even) {
     background: var(--panel-strong);
 }
 
+.col-toggle-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    background: var(--primary);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 500;
+    line-height: 1;
+    transition: background 0.2s;
+}
+
+.col-toggle-count.all-visible {
+    background: var(--success);
+}
+
+.col-toggle-count.some-hidden {
+    background: var(--danger);
+}
+
 .col-hidden {
     display: none !important;
 }
