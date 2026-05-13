@@ -369,6 +369,22 @@ button.btn-icon.danger:hover {
     background: #00a07e;
 }
 
+.btn.btn-cancel {
+    background: #6c757d;
+    color: #fff;
+}
+.btn.btn-cancel:hover {
+    background: #5a6268;
+}
+
+.btn.btn-info {
+    background: var(--info);
+    color: #fff;
+}
+.btn.btn-info:hover {
+    background: #7a4fd0;
+}
+
 .btn-remove {
     color: #c0392b !important;
 }
