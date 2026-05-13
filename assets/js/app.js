@@ -23,6 +23,11 @@ document.querySelectorAll('[data-confirm]').forEach((element) => {
     const pageKey = new URLSearchParams(window.location.search).get('page') || 'unknown';
     const storageKey = 'col_visible_' + pageKey;
 
+    var updateCount = function (btn, total, visibleCount) {
+        var countEl = btn.querySelector('[data-col-count]');
+        if (countEl) countEl.textContent = visibleCount + '/' + total;
+    };
+
     tables.forEach(function (table) {
         var headers = table.querySelectorAll('thead th[data-col]');
         if (!headers.length) return;
@@ -39,6 +44,9 @@ document.querySelectorAll('[data-confirm]').forEach((element) => {
             } catch (e) { return null; }
         })();
 
+        var total = headers.length;
+        var visibleCount = 0;
+
         headers.forEach(function (th, idx) {
             var colKey = th.getAttribute('data-col');
             var label = th.textContent.trim();
@@ -47,6 +55,7 @@ document.querySelectorAll('[data-confirm]').forEach((element) => {
             checkbox.type = 'checkbox';
             var visible = saved ? saved[colKey] !== false : true;
             checkbox.checked = visible;
+            if (visible) visibleCount++;
             if (!visible) {
                 th.classList.add('col-hidden');
                 table.querySelectorAll('tbody tr').forEach(function (row) {
@@ -66,6 +75,11 @@ document.querySelectorAll('[data-confirm]').forEach((element) => {
                 try {
                     localStorage.setItem(storageKey, JSON.stringify(saved));
                 } catch (e) {}
+                var cv = 0;
+                panel.querySelectorAll('input[type="checkbox"]').forEach(function (cb) {
+                    if (cb.checked) cv++;
+                });
+                updateCount(container, total, cv);
             });
 
             var wrap = document.createElement('label');
@@ -75,6 +89,8 @@ document.querySelectorAll('[data-confirm]').forEach((element) => {
         });
 
         container.parentNode.appendChild(panel);
+        updateCount(container, total, visibleCount);
+
         container.addEventListener('click', function (e) {
             e.stopPropagation();
             panel.classList.toggle('open');

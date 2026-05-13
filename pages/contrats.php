@@ -85,7 +85,7 @@ $contrats = ($pdo ?? null) instanceof PDO
                 <p class="help-text"><?= count($contrats) ?> enregistrement(s)</p>
             </div>
             <div class="table-actions">
-                <button class="btn-icon" type="button" data-col-toggle-btn title="Colonnes a afficher"><span class="mdi mdi-table-column"></span></button>
+                <button class="btn btn-secondary" type="button" data-col-toggle-btn><span class="mdi mdi-table-column"></span> Colonnes <span class="col-toggle-count" data-col-count>0/0</span></button>
             </div>
         </div>
 
