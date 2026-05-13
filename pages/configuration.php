@@ -22,6 +22,15 @@ if (!isset($tabs[$tab])) {
 $editKey = $_GET['edit'] ?? null;
 $options = fetch_reference_options($pdo ?? null, $table, $column);
 
+// Pre-compute counts for each tab badge
+$tabCounts = [];
+if (($pdo ?? null) instanceof PDO) {
+    foreach ($tabs as $key => [$t, $c, $l]) {
+        $stmt = $pdo->query("SELECT COUNT(*) FROM {$t}");
+        $tabCounts[$key] = (int) $stmt->fetchColumn();
+    }
+}
+
 if (is_post()) {
     verify_csrf();
     $action = $_POST['action'] ?? '';
@@ -67,12 +76,17 @@ if (is_post()) {
             <h2>Configuration</h2>
             <p class="help-text">Gerer les listes de reference.</p>
         </div>
-        <a class="btn btn-secondary" href="<?= e(app_url('creation')) ?>">Retour</a>
+        <a class="btn btn-back" href="<?= e(app_url('creation')) ?>"><span class="mdi mdi-arrow-left"></span> Retour</a>
     </div>
 
     <div class="tabs" style="margin-bottom:1rem">
         <?php foreach ($tabs as $key => [$t, $c, $l]): ?>
-            <a class="tab <?= $key === $tab ? 'active' : '' ?>" href="<?= e(app_url('configuration', ['tab' => $key])) ?>"><?= e($l) ?></a>
+            <a class="tab <?= $key === $tab ? 'active' : '' ?>" href="<?= e(app_url('configuration', ['tab' => $key])) ?>">
+                <?= e($l) ?>
+                <?php if (isset($tabCounts[$key])): ?>
+                    <span style="display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--primary);color:#fff;font-size:0.65rem;margin-left:4px;line-height:1;vertical-align:middle"><?= $tabCounts[$key] ?></span>
+                <?php endif; ?>
+            </a>
         <?php endforeach; ?>
     </div>
 
@@ -82,7 +96,7 @@ if (is_post()) {
         <input type="hidden" name="tab" value="<?= e($tab) ?>">
         <div style="display:flex;gap:6px">
             <input name="<?= e($column) ?>" placeholder="Nouveau..." required style="flex:1;padding:4px 8px;font-size:0.8125rem">
-            <button type="submit" class="btn-icon" title="Ajouter"><span class="mdi mdi-plus"></span></button>
+            <button type="submit" class="btn-icon" title="Ajouter" style="border:2px solid var(--primary);border-radius:var(--radius-sm);background:transparent;color:var(--primary);width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all var(--transition)"><span class="mdi mdi-plus"></span></button>
         </div>
     </form>
 

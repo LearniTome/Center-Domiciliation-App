@@ -37,7 +37,7 @@ if (is_post()) {
             <h2>Gestion des formes juridiques</h2>
             <p class="help-text">Ajoutez ou supprimez des formes juridiques.</p>
         </div>
-        <a class="btn btn-secondary" href="<?= e(app_url('creation')) ?>">Retour</a>
+        <a class="btn btn-back" href="<?= e(app_url('creation')) ?>"><span class="mdi mdi-arrow-left"></span> Retour</a>
     </div>
 
     <form method="post" class="inline-form">
@@ -69,7 +69,7 @@ if (is_post()) {
                                 <?= csrf_input() ?>
                                 <input type="hidden" name="action" value="delete">
                                 <input type="hidden" name="forme_juridique" value="<?= e($forme) ?>">
-                                <button type="submit" class="btn btn-secondary" data-confirm="Supprimer <?= e($forme) ?> ?">Supprimer</button>
+                                <button type="submit" class="btn btn-danger" data-confirm="Supprimer <?= e($forme) ?> ?"><span class="mdi mdi-delete"></span> Supprimer</button>
                             </form>
                         </td>
                     </tr>

@@ -37,7 +37,7 @@ if (is_post()) {
             <h2>Gestion des lieux de naissance</h2>
             <p class="help-text">Ajoutez ou supprimez des lieux de naissance.</p>
         </div>
-        <a class="btn btn-secondary" href="<?= e(app_url('creation')) ?>">Retour</a>
+        <a class="btn btn-back" href="<?= e(app_url('creation')) ?>"><span class="mdi mdi-arrow-left"></span> Retour</a>
     </div>
 
     <form method="post" class="inline-form">
@@ -69,7 +69,7 @@ if (is_post()) {
                                 <?= csrf_input() ?>
                                 <input type="hidden" name="action" value="delete">
                                 <input type="hidden" name="lieu_naissance" value="<?= e($lieu) ?>">
-                                <button type="submit" class="btn btn-secondary" data-confirm="Supprimer <?= e($lieu) ?> ?">Supprimer</button>
+                                <button type="submit" class="btn btn-danger" data-confirm="Supprimer <?= e($lieu) ?> ?"><span class="mdi mdi-delete"></span> Supprimer</button>
                             </form>
                         </td>
                     </tr>
