@@ -206,6 +206,7 @@ $contrats = ($pdo ?? null) instanceof PDO
         <?php if (!$contrats): ?>
             <p class="table-empty">Aucun contrat pour le moment.</p>
         <?php else: ?>
+            <div class="table-scroll">
             <table data-col-toggle>
                 <thead>
                 <tr>

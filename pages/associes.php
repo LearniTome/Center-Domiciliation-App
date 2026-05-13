@@ -167,6 +167,7 @@ $associes = ($pdo ?? null) instanceof PDO
         <?php if (!$associes): ?>
             <p class="table-empty">Aucun associe pour le moment.</p>
         <?php else: ?>
+            <div class="table-scroll">
             <table data-col-toggle>
                 <thead>
                 <tr>
