@@ -60,8 +60,20 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - `info-grid`: Key-value display grid (used in detail pages)
 - Stats: `<section class="stats">` with `<article class="stat">` children
 - Empty state: `<p class="table-empty">Aucun(e) ...</p>`
-- Buttons: `<a class="btn">` (primary) or `<a class="btn btn-secondary">`
-- **Table action buttons**: Use `class="btn-icon"` with MDI icons only (no text). Voir → `mdi-eye`, Modifier → `mdi-pencil`, Supprimer → `mdi-delete` with `class="btn-icon danger"`
+## Button System
+- **Base**: `.btn` or `button[type="submit"]` — transparent + 2px `var(--primary)` border + hover rgba(74,108,247,0.12)
+- **Variants**: `.btn-secondary` (grey border), `.btn-danger` (red border + hover rgba(252,66,74,0.12))
+- **Wizard variants** (specificity 0,2,0): `.btn.btn-cancel` (grey), `.btn.btn-back` (orange `#ff6b35`), `.btn.btn-info` (violet `var(--info)`), `.btn.btn-next` (green `#00b894`)
+- All variants: transparent background, 2px solid border, hover rgba 12%
+- **Padding**: `6px 14px` (CSS global) — do NOT use inline `padding:` on buttons
+- **Icons**: Every button MUST have an MDI icon `<span class="mdi mdi-xxx"></span>` before the text
+- **Color by role**:
+  - Green (`.btn-next`) — primary/creation actions: Creer un dossier, Nouveau collaborateur, Nouveau dossier, Ajouter un template, Suivant, Generer les documents, Creer le dossier complet
+  - Violet (`.btn-info`) — secondary/explore actions: Voir tout, Exporter CSV, Remplir automatiquement
+  - Orange (`.btn-back`) — backward navigation: Retour, Reinitialiser
+  - Grey (`.btn-cancel`) — cancel/abort: Annuler
+  - Red (`.btn-danger`) — destructive: delete/remove icons
+- **Table action buttons**: `class="btn-icon"` with MDI icons only (no text). Voir → `mdi-eye`, Modifier → `mdi-pencil`, Supprimer → `mdi-delete` with `class="btn-icon danger"`
 - Cards: `<article class="card">` with optional `.stack` for vertical spacing
 
 ## Assets
