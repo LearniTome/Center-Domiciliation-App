@@ -390,8 +390,8 @@ $contratData = array_merge([
             <h2>Assistant de creation d'un dossier</h2>
             <p class="help-text">Parcours guide: societe, associes, puis contrat, dans un seul flux.</p>
         </div>
-        <a class="btn btn-cancel" href="<?= e(app_url('creation', ['cancel' => '1'])) ?>" data-confirm="Annuler la creation ?">Annuler</a>
-        <a class="btn btn-back" href="<?= e(app_url('creation', ['reset' => '1'])) ?>" data-confirm="Reinitialiser cet assistant ?">Reinitialiser</a>
+        <a class="btn btn-cancel" href="<?= e(app_url('creation', ['cancel' => '1'])) ?>" data-confirm="Annuler la creation ?"><span class="mdi mdi-close-circle"></span> Annuler</a>
+        <a class="btn btn-back" href="<?= e(app_url('creation', ['reset' => '1'])) ?>" data-confirm="Reinitialiser cet assistant ?"><span class="mdi mdi-restart"></span> Reinitialiser</a>
     </div>
 
     <div class="wizard-steps">
@@ -542,10 +542,11 @@ $contratData = array_merge([
                 </label>
             </div>
             <div class="table-actions">
-                <button class="btn btn-info" type="button" data-fill-test>Remplir automatiquement</button>
-                <button class="btn btn-next" type="submit" name="nav_action" value="next">Suivant</button>
+                <button class="btn btn-info" type="button" data-fill-test><span class="mdi mdi-auto-fix"></span> Remplir automatiquement</button>
+                <button class="btn btn-next" type="submit" name="nav_action" value="next"><span class="mdi mdi-arrow-right"></span> Suivant</button>
             </div>
         </form>
+
     <?php elseif ($step === 2): ?>
         <form method="post" class="stack">
             <?= csrf_input() ?>
@@ -811,9 +812,9 @@ $contratData = array_merge([
             </template>
 
             <div class="table-actions">
-                <button class="btn btn-back" type="submit" name="nav_action" value="back">Retour</button>
-                <button class="btn btn-info" type="button" data-fill-test>Remplir automatiquement</button>
-                <button class="btn btn-next" type="submit" name="nav_action" value="next">Suivant</button>
+                <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="mdi mdi-arrow-left"></span> Retour</button>
+                <button class="btn btn-info" type="button" data-fill-test><span class="mdi mdi-auto-fix"></span> Remplir automatiquement</button>
+                <button class="btn btn-next" type="submit" name="nav_action" value="next"><span class="mdi mdi-arrow-right"></span> Suivant</button>
             </div>
         </form>
     <?php else: ?>
@@ -939,9 +940,9 @@ $contratData = array_merge([
                 </label>
             </div>
             <div class="table-actions">
-                <button class="btn btn-back" type="submit" name="nav_action" value="back">Retour</button>
-                <button class="btn btn-info" type="button" data-fill-test>Remplir automatiquement</button>
-                <button class="btn btn-next" type="submit" name="nav_action" value="finish">Creer le dossier complet</button>
+                <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="mdi mdi-arrow-left"></span> Retour</button>
+                <button class="btn btn-info" type="button" data-fill-test><span class="mdi mdi-auto-fix"></span> Remplir automatiquement</button>
+                <button class="btn btn-next" type="submit" name="nav_action" value="finish"><span class="mdi mdi-check-circle"></span> Creer le dossier complet</button>
             </div>
         </form>
     <?php endif; ?>
