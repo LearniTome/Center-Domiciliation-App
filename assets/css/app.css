@@ -285,9 +285,9 @@ button[type="submit"] {
     gap: 8px;
     padding: 10px 20px;
     border-radius: var(--radius-sm);
-    border: 0;
-    background: var(--primary);
-    color: #fff;
+    border: 2px solid var(--primary);
+    background: transparent;
+    color: var(--primary);
     font-size: 0.875rem;
     font-weight: 400;
     transition: all var(--transition);
@@ -295,7 +295,7 @@ button[type="submit"] {
 
 .btn:hover,
 button[type="submit"]:hover {
-    background: var(--primary-hover);
+    background: rgba(74, 108, 247, 0.12);
 }
 
 .btn:active,
@@ -310,7 +310,7 @@ button[type="submit"]:active {
 .btn-secondary {
     background: transparent;
     color: var(--text);
-    border: 1px solid var(--line);
+    border: 2px solid var(--line);
 }
 
 .btn-secondary:hover {
@@ -319,11 +319,13 @@ button[type="submit"]:active {
 }
 
 .btn-danger {
-    background: var(--danger);
+    background: transparent;
+    color: var(--danger);
+    border-color: var(--danger);
 }
 
 .btn-danger:hover {
-    background: var(--danger-hover);
+    background: rgba(252, 66, 74, 0.12);
 }
 
 a.btn-icon,
