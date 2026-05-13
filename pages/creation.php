@@ -681,7 +681,7 @@ $contratData = array_merge([
                         <h3>Repartition du capital</h3>
                     </div>
                 </div>
-                <div class="form-grid" style="grid-template-columns:repeat(4,1fr)">
+                <div class="form-grid" style="grid-template-columns:repeat(2,1fr)">
                     <div class="field">
                         <span>Capital societe</span>
                         <strong id="ref-capital" style="font-size:1.2rem">0,00 DH</strong>
@@ -690,6 +690,8 @@ $contratData = array_merge([
                         <span>Part social societe</span>
                         <strong id="ref-parts" style="font-size:1.2rem">0</strong>
                     </div>
+                </div>
+                <div class="form-grid" style="grid-template-columns:repeat(4,1fr);margin-top:12px">
                     <div class="field">
                         <span>Total parts distribuees</span>
                         <strong id="total-parts" style="font-size:1.2rem">0</strong>
