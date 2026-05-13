@@ -390,7 +390,7 @@ document.addEventListener('input', (e) => {
         });
 
         document.getElementById('total-parts').textContent = formatFR(totalParts, 0);
-        document.getElementById('total-capital').textContent = formatFR(totalCapital);
+        document.getElementById('total-capital').textContent = formatFR(totalCapital) + ' DH';
 
         if (!updatingLock) {
             updatingLock = true;

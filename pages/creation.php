@@ -696,7 +696,7 @@ $contratData = array_merge([
                 <div class="form-grid" style="grid-template-columns:repeat(4,1fr);margin-top:12px">
                     <div class="field">
                         <span>Total capital distribue (DH)</span>
-                        <strong id="total-capital" style="font-size:1.2rem">0,00</strong>
+                        <strong id="total-capital" style="font-size:1.2rem">0,00 DH</strong>
                     </div>
                     <div class="field">
                         <span>Total parts distribuees</span>
