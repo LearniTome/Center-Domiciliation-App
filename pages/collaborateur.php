@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 $editingId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 $editingRecord = $editingId > 0 ? fetch_record($pdo ?? null, 'collaborateurs', $editingId) : null;
-$societesOptions = fetch_societes_options($pdo ?? null);
-
 $types = [
     'Expert-comptable',
     'Comptable agree',
@@ -29,7 +27,6 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
     }
 
     $payload = [
-        'societe_id' => int_value($_POST, 'societe_id'),
         'den_ste' => field_value($_POST, 'den_ste'),
         'nom_complet' => $nomComplet,
         'fonction' => field_value($_POST, 'fonction'),
@@ -55,8 +52,7 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
         $payload['id'] = $editingId;
         $stmt = $pdo->prepare('
             UPDATE collaborateurs
-            SET societe_id = :societe_id,
-                den_ste = :den_ste,
+            SET den_ste = :den_ste,
                 nom_complet = :nom_complet,
                 fonction = :fonction,
                 collaborateur_type = :collaborateur_type,
@@ -82,12 +78,12 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
     } else {
         $stmt = $pdo->prepare('
             INSERT INTO collaborateurs
-                (societe_id, den_ste, nom_complet, fonction, collaborateur_type, collaborateur_code,
+                (den_ste, nom_complet, fonction, collaborateur_type, collaborateur_code,
                  collaborateur_nom, collaborateur_ice, collaborateur_tp, collaborateur_rc, collaborateur_if,
                  collaborateur_tel_fixe, collaborateur_tel_mobile, collaborateur_adresse, collaborateur_email,
                  email, telephone, date_debut, statut, notes)
             VALUES
-                (:societe_id, :den_ste, :nom_complet, :fonction, :collaborateur_type, :collaborateur_code,
+                (:den_ste, :nom_complet, :fonction, :collaborateur_type, :collaborateur_code,
                  :collaborateur_nom, :collaborateur_ice, :collaborateur_tp, :collaborateur_rc, :collaborateur_if,
                  :collaborateur_tel_fixe, :collaborateur_tel_mobile, :collaborateur_adresse, :collaborateur_email,
                  :email, :telephone, :date_debut, :statut, :notes)
@@ -101,7 +97,6 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
 
 $formData = $editingRecord ?? [
     'id' => '',
-    'societe_id' => '',
     'den_ste' => '',
     'nom_complet' => '',
     'fonction' => '',
@@ -241,18 +236,6 @@ $formData = $editingRecord ?? [
                         <?php foreach (['actif', 'inactif', 'archive'] as $statut): ?>
                             <option value="<?= e($statut) ?>" <?= (string) $formData['statut'] === $statut ? 'selected' : '' ?>>
                                 <?= e(ucfirst($statut)) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </label>
-
-                <label class="field">
-                    <span>Lie a la societe</span>
-                    <select name="societe_id">
-                        <option value="">Aucune</option>
-                        <?php foreach ($societesOptions as $societe): ?>
-                            <option value="<?= e((string) $societe['id']) ?>" <?= (string) $formData['societe_id'] === (string) $societe['id'] ? 'selected' : '' ?>>
-                                <?= e($societe['raison_sociale']) ?>
                             </option>
                         <?php endforeach; ?>
                     </select>

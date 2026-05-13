@@ -111,7 +111,6 @@ CREATE TABLE IF NOT EXISTS contrats (
 
 CREATE TABLE IF NOT EXISTS collaborateurs (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    societe_id INT UNSIGNED DEFAULT NULL,
     den_ste VARCHAR(255) DEFAULT NULL,
     nom_complet VARCHAR(255) NOT NULL,
     fonction VARCHAR(150) DEFAULT NULL,
@@ -133,10 +132,6 @@ CREATE TABLE IF NOT EXISTS collaborateurs (
     notes TEXT DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_collaborateurs_societe
-        FOREIGN KEY (societe_id) REFERENCES societes(id)
-        ON DELETE SET NULL,
-    INDEX idx_collaborateurs_societe_id (societe_id),
     INDEX idx_collaborateurs_nom (nom_complet)
 );
 

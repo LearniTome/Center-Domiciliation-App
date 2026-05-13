@@ -32,14 +32,6 @@ $contrats = ($pdo ?? null) instanceof PDO
         return $stmt->fetchAll();
     })($pdo, $societeId)
     : [];
-
-$collaborateurs = ($pdo ?? null) instanceof PDO
-    ? (function (PDO $pdo, int $societeId): array {
-        $stmt = $pdo->prepare('SELECT id, nom_complet, fonction, collaborateur_type, collaborateur_tel_mobile, collaborateur_email, statut FROM collaborateurs WHERE societe_id = :societe_id ORDER BY id DESC');
-        $stmt->execute(['societe_id' => $societeId]);
-        return $stmt->fetchAll();
-    })($pdo, $societeId)
-    : [];
 ?>
 <section class="grid two">
     <article class="card stack">
@@ -90,10 +82,6 @@ $collaborateurs = ($pdo ?? null) instanceof PDO
             <article class="stat">
                 <span>Contrats</span>
                 <strong><?= e((string) count($contrats)) ?></strong>
-            </article>
-            <article class="stat">
-                <span>Collaborateurs</span>
-                <strong><?= e((string) count($collaborateurs)) ?></strong>
             </article>
         </section>
     </article>
@@ -165,40 +153,4 @@ $collaborateurs = ($pdo ?? null) instanceof PDO
     </article>
 </section>
 
-<section class="card">
-    <div class="section-header">
-        <div>
-            <h2>Collaborateurs lies</h2>
-        </div>
-    </div>
-    <?php if (!$collaborateurs): ?>
-        <p class="table-empty">Aucun collaborateur lie a cette societe.</p>
-    <?php else: ?>
-        <table>
-            <thead>
-            <tr>
-                <th>Type</th>
-                <th>Nom</th>
-                <th>Fonction</th>
-                <th>Email</th>
-                <th>Telephone</th>
-                <th>Statut</th>
-                <th></th>
-            </tr>
-            </thead>
-            <tbody>
-            <?php foreach ($collaborateurs as $collaborateur): ?>
-                <tr>
-                    <td><?= e($collaborateur['collaborateur_type'] ?? '-') ?></td>
-                    <td><?= e($collaborateur['nom_complet']) ?></td>
-                    <td><?= e($collaborateur['fonction']) ?></td>
-                    <td><?= e($collaborateur['collaborateur_email'] ?? '-') ?></td>
-                    <td><?= e($collaborateur['collaborateur_tel_mobile'] ?? '-') ?></td>
-                    <td><?= e($collaborateur['statut']) ?></td>
-                    <td><a class="btn-icon" href="<?= e(app_url('collaborateur', ['id' => (int) $collaborateur['id']])) ?>" title="Voir"><span class="mdi mdi-eye"></span></a></td>
-                </tr>
-            <?php endforeach; ?>
-            </tbody>
-        </table>
-    <?php endif; ?>
-</section>
+

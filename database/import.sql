@@ -111,7 +111,6 @@ CREATE TABLE IF NOT EXISTS contrats (
 
 CREATE TABLE IF NOT EXISTS collaborateurs (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    societe_id INT UNSIGNED DEFAULT NULL,
     den_ste VARCHAR(255) DEFAULT NULL,
     nom_complet VARCHAR(255) NOT NULL,
     fonction VARCHAR(150) DEFAULT NULL,
@@ -133,10 +132,6 @@ CREATE TABLE IF NOT EXISTS collaborateurs (
     notes TEXT DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_collaborateurs_societe
-        FOREIGN KEY (societe_id) REFERENCES societes(id)
-        ON DELETE SET NULL,
-    INDEX idx_collaborateurs_societe_id (societe_id),
     INDEX idx_collaborateurs_nom (nom_complet)
 );
 
@@ -467,18 +462,18 @@ INSERT INTO contrats (
 );
 
 INSERT INTO collaborateurs (
-    societe_id, den_ste, nom_complet, fonction, collaborateur_type, collaborateur_code, collaborateur_nom,
+    den_ste, nom_complet, fonction, collaborateur_type, collaborateur_code, collaborateur_nom,
     collaborateur_ice, collaborateur_tp, collaborateur_rc, collaborateur_if, collaborateur_tel_fixe,
     collaborateur_tel_mobile, collaborateur_adresse, collaborateur_email, email, telephone, date_debut, statut, notes
 ) VALUES
 (
-    1, 'Atlas Domiciliation', 'Nadia Chraibi', 'Gestion administrative', 'EXP -- Expert Comptable', 'EXP',
+    'Atlas Domiciliation', 'Nadia Chraibi', 'Gestion administrative', 'EXP -- Expert Comptable', 'EXP',
     'Nadia Chraibi', 'ICE-COL-001', 'TP001', 'RC-C001', 'IF-C001', '0522000001', '+212600000010',
     'Casablanca', 'nadia@atlas.test', 'nadia@atlas.test', '+212600000010', '2026-01-05', 'actif',
     'Suivi dossiers clients'
 ),
 (
-    NULL, NULL, 'Karim Tazi', 'Support operationnel', 'CLTD -- Client Direct', 'CLTD',
+    NULL, 'Karim Tazi', 'Support operationnel', 'CLTD -- Client Direct', 'CLTD',
     'Karim Tazi', 'ICE-COL-002', 'TP002', 'RC-C002', 'IF-C002', '0522000002', '+212600000011',
     'Casablanca', 'karim@center.test', 'karim@center.test', '+212600000011', '2026-02-01', 'actif',
     'Appui polyvalent'
