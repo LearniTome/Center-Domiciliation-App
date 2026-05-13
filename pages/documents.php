@@ -99,9 +99,9 @@ if ($exportCsv && count($documents) > 0) {
                 </option>
             <?php endforeach; ?>
         </select>
-        <button class="btn" type="submit">Filtrer</button>
+        <button class="btn" type="submit"><span class="mdi mdi-filter"></span> Filtrer</button>
         <?php if ($q !== '' || $filterSociete !== null): ?>
-            <a class="btn btn-secondary" href="<?= e(app_url('documents')) ?>">Reinitialiser</a>
+            <a class="btn btn-cancel" href="<?= e(app_url('documents')) ?>"><span class="mdi mdi-close"></span> Reinitialiser</a>
         <?php endif; ?>
     </form>
 

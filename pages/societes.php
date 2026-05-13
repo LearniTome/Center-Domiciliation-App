@@ -91,9 +91,9 @@ if (($pdo ?? null) instanceof PDO) {
                     placeholder="Rechercher par societe, ICE, forme ou ville"
                     value="<?= e($query) ?>"
                 >
-                <button type="submit">Rechercher</button>
+                <button type="submit"><span class="mdi mdi-magnify"></span> Rechercher</button>
                 <?php if ($query !== ''): ?>
-                    <a class="btn btn-secondary" href="<?= e(app_url('societes')) ?>">Effacer</a>
+                    <a class="btn btn-cancel" href="<?= e(app_url('societes')) ?>"><span class="mdi mdi-close"></span> Effacer</a>
                 <?php endif; ?>
             </div>
         </form>
