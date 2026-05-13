@@ -25,7 +25,9 @@ document.querySelectorAll('[data-confirm]').forEach((element) => {
 
     var updateCount = function (btn, total, visibleCount) {
         var countEl = btn.querySelector('[data-col-count]');
-        if (countEl) countEl.textContent = visibleCount + '/' + total;
+        if (!countEl) return;
+        countEl.textContent = visibleCount + '/' + total;
+        countEl.style.background = visibleCount === total ? 'var(--success)' : 'var(--danger)';
     };
 
     tables.forEach(function (table) {
@@ -96,6 +98,11 @@ document.querySelectorAll('[data-confirm]').forEach((element) => {
         container.addEventListener('click', function (e) {
             e.stopPropagation();
             panel.classList.toggle('open');
+            var cv = 0;
+            panel.querySelectorAll('input[type="checkbox"]').forEach(function (cb) {
+                if (cb.checked) cv++;
+            });
+            updateCount(container, total, cv);
         });
 
         document.addEventListener('click', function (e) {
