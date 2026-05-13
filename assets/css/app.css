@@ -363,11 +363,12 @@ button.btn-icon.danger:hover {
     background: rgba(255, 107, 53, 0.12);
 }
 .btn.btn-next {
-    background: var(--btn-next);
-    color: #fff;
+    background: transparent;
+    color: var(--btn-next);
+    border: 2px solid var(--btn-next);
 }
 .btn.btn-next:hover {
-    background: #00a07e;
+    background: rgba(0, 184, 148, 0.12);
 }
 
 .btn.btn-cancel {
