@@ -84,9 +84,7 @@ document.querySelectorAll('[data-confirm]').forEach((element) => {
 
             var wrap = document.createElement('label');
             wrap.appendChild(checkbox);
-            var textSpan = document.createElement('span');
-            textSpan.textContent = label;
-            wrap.appendChild(textSpan);
+            wrap.appendChild(document.createTextNode(label));
             panel.appendChild(wrap);
         });
 

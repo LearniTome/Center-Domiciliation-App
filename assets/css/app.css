@@ -609,26 +609,23 @@ tbody tr:hover:nth-child(even) {
 }
 
 .col-toggle-panel label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    display: block;
     padding: 6px 14px;
     cursor: pointer;
     font-size: 0.85rem;
     color: var(--text);
     transition: background var(--transition);
+    white-space: nowrap;
 }
 
 .col-toggle-panel label input[type="checkbox"] {
-    flex-shrink: 0;
+    vertical-align: middle;
+    margin-right: 6px;
+    accent-color: var(--primary);
 }
 
 .col-toggle-panel label:hover {
     background: var(--panel-strong);
-}
-
-.col-toggle-panel label input[type="checkbox"] {
-    accent-color: var(--primary);
 }
 
 .col-hidden {
