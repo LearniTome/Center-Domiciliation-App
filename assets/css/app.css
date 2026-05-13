@@ -625,13 +625,19 @@ tbody tr:hover:nth-child(even) {
 
 .col-toggle-panel label {
     display: flex;
+    flex-direction: row-reverse;
     align-items: center;
+    justify-content: flex-start;
     gap: 8px;
     padding: 6px 14px;
     cursor: pointer;
     font-size: 0.85rem;
     color: var(--text);
     transition: background var(--transition);
+}
+
+.col-toggle-panel label input[type="checkbox"] {
+    flex-shrink: 0;
 }
 
 .col-toggle-panel label:hover {
