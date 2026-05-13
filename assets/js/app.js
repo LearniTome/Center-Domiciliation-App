@@ -458,11 +458,15 @@ document.addEventListener('input', (e) => {
         const isSarlAu = formeJur === 'SARL AU';
         const fields = document.querySelectorAll('[data-capital-field]');
         const summary = document.querySelector('[data-associe-summary]');
+        const addBtn = document.querySelector('[data-add-associe]');
         fields.forEach((el) => {
             el.style.display = isSarl ? '' : 'none';
         });
         if (summary) {
             summary.style.display = isSarl ? '' : 'none';
+        }
+        if (addBtn) {
+            addBtn.disabled = isSarlAu;
         }
         if (isSarl) {
             repartirCapital();
