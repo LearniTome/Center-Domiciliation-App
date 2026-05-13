@@ -76,9 +76,36 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - **Table action buttons**: `class="btn-icon"` with MDI icons only (no text). Voir → `mdi-eye`, Modifier → `mdi-pencil`, Supprimer → `mdi-delete` with `class="btn-icon danger"`
 - Cards: `<article class="card">` with optional `.stack` for vertical spacing
 
+## Sidebar
+- Layout: `.shell` CSS grid `260px 1fr`, collapse via `.shell.collapsed` → `60px 1fr`
+- Toggle button in `.brand` with `[data-sidebar-toggle]` — rotates chevron icon
+- Collapsed state hides `.brand-text`, `.nav-section-label`, `[data-nav-label]`; nav links center icons only
+- Sidebar: `overflow: hidden; display: flex; flex-direction: column` — no scroll
+- `.main`: `overflow-y: auto; height: 100vh` — content scrolls independently
+
+## Column Toggle (List Tables)
+- Button `.btn-secondary` with `[data-col-toggle-btn]` + badge `.col-toggle-count` in `.table-actions`
+- Dropdown panel `.col-toggle-panel` (absolute, left-aligned) with checkboxes per column
+- Columns: `<th data-col="key">` + `table[data-col-toggle]` — matched by nth-child in JS
+- Hidden columns use `.col-hidden` (width/padding zero, opacity 0)
+- Preferences saved per page in `localStorage` key `col_visible_{page}`
+- Badge color: green (`var(--success)`) when all visible, red (`var(--danger)`) when some hidden
+- Tables wrapped in `.table-scroll` for independent horizontal scroll: `societes`, `associes`, `contrats`, `collaborateurs`
+
+## Capital Distribution (Wizard SARL)
+- Capital/parts/percentage fields shown only for SARL forms (`[data-capital-field]`)
+- `repartirCapital()`: distribue capital et parts équitablement entre associés (dernier reçoit le reste)
+- `recalcPctFromCapital()`: recalcule pourcentages depuis les capitaux saisis
+- `recalcCapitalFromPct()`: recalcule capital et parts depuis les pourcentages saisis
+- `updateCapitalSummary()`: met à jour les totaux, statut équilibre/déséquilibre
+- `updatingLock` verrou empêche la boucle récursive entre capital ↔ pourcentage
+- `toggleCapitalFields()`: affiche/masque champs selon forme juridique, désactive bouton ajout pour SARL AU
+- Summary card: 2 lignes (Capital société + Part social société | Total capital + Total parts + Total % + Statut)
+- Parsing monétaire: `parseMoney()` (virgule→point, supprime espaces) + `formatFR()` (toLocaleString fr-FR)
+
 ## Assets
-- CSS: `assets/css/app.css` — custom design system (CSS variables, no framework)
-- JS: `assets/js/app.js` — vanilla JS: confirmation dialogs (`data-confirm`), dynamic associate form cloning (`data-associe-template`, `data-add-associe`, `data-remove-associe`)
+- CSS: `assets/css/app.css` (~1116 lignes) — custom design system (CSS variables, no framework)
+- JS: `assets/js/app.js` (~638 lignes) — vanilla JS: sidebar toggle, column toggle, confirmation dialogs (`data-confirm`), dynamic associate form cloning (`data-associe-template`, `data-add-associe`, `data-remove-associe`), wizard capital distribution
 
 ## Config
 - `config/app.php`: app_name, base_url

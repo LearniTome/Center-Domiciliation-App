@@ -18,8 +18,8 @@
 | **Routing** | Front controller `index.php?page=` + allowlist (21 pages) | OK |
 | **Pages** | 21 fichiers dans `pages/` (moy. 300-949 lignes) | PHP/HTML mélangé |
 | **Couche DB** | PDO via `includes/db.php` singleton, paramètres nommés | OK |
-| **CSS** | 982 lignes, custom design system dark, variables CSS | Bon |
-| **JS** | 419 lignes vanilla : wizard, calculs loyers, auto-fill, drag-drop | OK |
+| **CSS** | ~1116 lignes, custom design system dark, variables CSS | Bon |
+| **JS** | ~638 lignes vanilla : wizard, calculs loyers, auto-fill, drag-drop, sidebar toggle, column toggle, capital SARL | OK |
 | **Templates doc** | 3 classes dans `src/` (TemplateAnalyzer, DocumentRenderer, TemplateEditor) | Redondant |
 | **CSRF** | Token + `verify_csrf()` sur tous les POST | OK |
 | **Sessions** | Flash messages, wizard creation 3 étapes | OK |
@@ -166,6 +166,11 @@
 - [x] **F-4c** Helper JS `formatFR()` + séparateur milliers sur montants — `app.js`
 - [x] **F-4d** Helper PHP `parse_money()` + `format_money()` — `functions.php`
 - [x] **F-4e** Readonly loyers `type="text"` pour afficher format fr-FR — `creation.php`
+- [x] **F-4f** Capital SARL : distribution auto capital/parts/%, édition bidirectionnelle — `app.js`, `creation.php`
+- [x] **F-4g** Colonnes toggle (afficher/masquer) avec sauvegarde localStorage — `app.js`, `societes.php`, `associes.php`, `contrats.php`, `collaborateurs.php`, `app.css`
+- [x] **F-4h** Sidebar collapse toggle + scroll contenu uniquement — `nav.php`, `app.css`, `app.js`
+- [x] **F-4i** Disable bouton Ajout associé pour SARL AU — `app.js`, `app.css`
+- [x] **F-4j** Wrap table-scroll sur associes + contrats — `associes.php`, `contrats.php`
 - [ ] **F-5** Remplacer `document.execCommand()` par Clipboard API — `template_edit.php`
 - [ ] **F-6** Autocomplete sur barres de recherche — pages listes
 - [ ] **F-7** Notifications toast au lieu de flash — `header.php`, `app.js`, `app.css`

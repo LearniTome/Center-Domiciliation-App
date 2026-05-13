@@ -51,4 +51,15 @@ Application PHP vanilla de gestion de dossiers de domiciliation d'entreprises.
 - Accès: `http://localhost/center-domiciliation-app/index.php?page=dashboard`
 
 ## Sessions précédentes
-_Cette section sera mise à jour automatiquement par le serveur de mémoire._
+
+### Session 13/05/2026
+- **Sidebar collapse**: bouton `◀` avec `[data-sidebar-toggle]` dans le header sidebar, réduit à 60px (icônes seules)
+- **Column toggle**: bouton "Colonnes" avec badge compteur dans les 4 pages listes (societes, associes, contrats, collaborateurs)
+  - Panneau déroulant avec checkboxes, sauvegarde localStorage par page
+  - Badge vert (toutes visibles) / rouge (certaines masquées)
+- **Capital SARL**: distribution automatique capital/parts/%, édition bidirectionnelle capital↔pourcentage
+  - `repartirCapital()`, `recalcPctFromCapital()`, `recalcCapitalFromPct()`, `updateCapitalSummary()`
+  - Verrou `updatingLock` anti-boucle récursive
+  - Désactivation bouton Ajout pour SARL AU
+- **Scroll content**: sidebar fixe (pas de scroll), contenu scrollable (`.main` overflow-y:auto)
+- **Table-scroll**: ajouté sur associes.php et contrats.php pour cohérence
