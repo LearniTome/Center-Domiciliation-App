@@ -30,6 +30,14 @@ document.querySelectorAll('[data-confirm]').forEach((element) => {
         countEl.style.background = visibleCount === total ? 'var(--success)' : 'var(--danger)';
     };
 
+    var refreshCount = function (panel, btn, total) {
+        var cv = 0;
+        panel.querySelectorAll('input[type="checkbox"]').forEach(function (cb) {
+            if (cb.checked) cv++;
+        });
+        updateCount(btn, total, cv);
+    };
+
     tables.forEach(function (table) {
         var headers = table.querySelectorAll('thead th[data-col]');
         if (!headers.length) return;
@@ -47,7 +55,6 @@ document.querySelectorAll('[data-confirm]').forEach((element) => {
         })();
 
         var total = headers.length;
-        var visibleCount = 0;
 
         headers.forEach(function (th, idx) {
             var colKey = th.getAttribute('data-col');
@@ -57,7 +64,6 @@ document.querySelectorAll('[data-confirm]').forEach((element) => {
             checkbox.type = 'checkbox';
             var visible = saved ? saved[colKey] !== false : true;
             checkbox.checked = visible;
-            if (visible) visibleCount++;
             if (!visible) {
                 th.classList.add('col-hidden');
                 table.querySelectorAll('tbody tr').forEach(function (row) {
@@ -65,24 +71,6 @@ document.querySelectorAll('[data-confirm]').forEach((element) => {
                     if (cell) cell.classList.add('col-hidden');
                 });
             }
-
-            checkbox.addEventListener('change', function () {
-                var isVisible = checkbox.checked;
-                th.classList.toggle('col-hidden', !isVisible);
-                table.querySelectorAll('tbody tr').forEach(function (row) {
-                    var cell = row.children[idx];
-                    if (cell) cell.classList.toggle('col-hidden', !isVisible);
-                });
-                saved[colKey] = isVisible;
-                try {
-                    localStorage.setItem(storageKey, JSON.stringify(saved));
-                } catch (e) {}
-                var cv = 0;
-                panel.querySelectorAll('input[type="checkbox"]').forEach(function (cb) {
-                    if (cb.checked) cv++;
-                });
-                updateCount(container, total, cv);
-            });
 
             var wrap = document.createElement('label');
             wrap.appendChild(checkbox);
@@ -93,16 +81,32 @@ document.querySelectorAll('[data-confirm]').forEach((element) => {
         });
 
         container.parentNode.appendChild(panel);
-        updateCount(container, total, visibleCount);
+        refreshCount(panel, container, total);
+
+        panel.addEventListener('change', function (e) {
+            var cb = e.target.closest('input[type="checkbox"]');
+            if (!cb) return;
+            var idx = Array.from(panel.querySelectorAll('input[type="checkbox"]')).indexOf(cb);
+            if (idx === -1) return;
+            var th = headers[idx];
+            var colKey = th.getAttribute('data-col');
+            var isVisible = cb.checked;
+            th.classList.toggle('col-hidden', !isVisible);
+            table.querySelectorAll('tbody tr').forEach(function (row) {
+                var cell = row.children[idx];
+                if (cell) cell.classList.toggle('col-hidden', !isVisible);
+            });
+            saved[colKey] = isVisible;
+            try {
+                localStorage.setItem(storageKey, JSON.stringify(saved));
+            } catch (e) {}
+            refreshCount(panel, container, total);
+        });
 
         container.addEventListener('click', function (e) {
             e.stopPropagation();
             panel.classList.toggle('open');
-            var cv = 0;
-            panel.querySelectorAll('input[type="checkbox"]').forEach(function (cb) {
-                if (cb.checked) cv++;
-            });
-            updateCount(container, total, cv);
+            refreshCount(panel, container, total);
         });
 
         document.addEventListener('click', function (e) {
