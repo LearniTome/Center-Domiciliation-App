@@ -98,7 +98,7 @@ $pctComplets = $totalSocietes > 0 ? round(($dossiersComplets / $totalSocietes) *
             <h2>Lancer un nouveau dossier</h2>
             <p class="help-text">Flux guide en 3 etapes: societe, associes, puis contrat.</p>
         </div>
-        <a class="btn btn-secondary" href="<?= e(app_url('creation')) ?>">Creer un dossier</a>
+        <a class="btn btn-next" href="<?= e(app_url('creation')) ?>"><span class="mdi mdi-plus-circle"></span> Creer un dossier</a>
     </div>
     <div class="stack">
         <span class="pill">Etape 1: informations societe</span>
@@ -215,7 +215,7 @@ $pctComplets = $totalSocietes > 0 ? round(($dossiersComplets / $totalSocietes) *
                 <h2>Dernieres societes</h2>
                 <p class="help-text">Acces rapide aux fiches societes creees recemment.</p>
             </div>
-            <a class="btn btn-secondary" href="<?= e(app_url('societes')) ?>">Voir tout</a>
+            <a class="btn btn-info" href="<?= e(app_url('societes')) ?>"><span class="mdi mdi-eye"></span> Voir tout</a>
         </div>
         <?php if (!$recentSocietes): ?>
             <p class="table-empty">Aucune societe disponible.</p>
@@ -249,7 +249,7 @@ $pctComplets = $totalSocietes > 0 ? round(($dossiersComplets / $totalSocietes) *
                 <h2>Derniers contrats</h2>
                 <p class="help-text">Suivi rapide des contrats les plus recents.</p>
             </div>
-            <a class="btn btn-secondary" href="<?= e(app_url('contrats')) ?>">Voir tout</a>
+            <a class="btn btn-info" href="<?= e(app_url('contrats')) ?>"><span class="mdi mdi-eye"></span> Voir tout</a>
         </div>
         <?php if (!$recentContrats): ?>
             <p class="table-empty">Aucun contrat disponible.</p>
@@ -283,7 +283,7 @@ $pctComplets = $totalSocietes > 0 ? round(($dossiersComplets / $totalSocietes) *
                 <h2>Derniers associes</h2>
                 <p class="help-text">Acces rapide aux associes recemment ajoutes.</p>
             </div>
-            <a class="btn btn-secondary" href="<?= e(app_url('associes')) ?>">Voir tout</a>
+            <a class="btn btn-info" href="<?= e(app_url('associes')) ?>"><span class="mdi mdi-eye"></span> Voir tout</a>
         </div>
         <?php if (!$recentAssocies): ?>
             <p class="table-empty">Aucun associe disponible.</p>
@@ -315,7 +315,7 @@ $pctComplets = $totalSocietes > 0 ? round(($dossiersComplets / $totalSocietes) *
                 <h2>Derniers collaborateurs</h2>
                 <p class="help-text">Experts, comptables, coursiers, etc.</p>
             </div>
-            <a class="btn btn-secondary" href="<?= e(app_url('collaborateurs')) ?>">Voir tout</a>
+            <a class="btn btn-info" href="<?= e(app_url('collaborateurs')) ?>"><span class="mdi mdi-eye"></span> Voir tout</a>
         </div>
         <?php if (!$recentCollaborateurs): ?>
             <p class="table-empty">Aucun collaborateur disponible.</p>

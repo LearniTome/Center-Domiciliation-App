@@ -66,8 +66,8 @@ $docTypes = $templatesConfig['document_types'];
                 <p class="help-text"><?= count($templates) ?> template(s) trouve(s)</p>
             </div>
             <div class="table-actions">
-                <a class="btn-icon" href="#" onclick="document.getElementById('upload-form').classList.toggle('hidden'); return false;" title="Ajouter un template"><span class="mdi mdi-plus"></span></a>
-                <a class="btn btn-secondary" href="#" onclick="document.getElementById('folder-form').classList.toggle('hidden'); return false;">Nouveau dossier</a>
+                <a class="btn btn-next" href="#" onclick="document.getElementById('upload-form').classList.toggle('hidden'); return false;"><span class="mdi mdi-plus"></span> Ajouter un template</a>
+                <a class="btn btn-next" href="#" onclick="document.getElementById('folder-form').classList.toggle('hidden'); return false;"><span class="mdi mdi-folder-plus"></span> Nouveau dossier</a>
             </div>
         </div>
 

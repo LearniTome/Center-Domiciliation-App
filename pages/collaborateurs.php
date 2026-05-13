@@ -85,8 +85,8 @@ if (($pdo ?? null) instanceof PDO) {
                 <p class="help-text"><?= count($collaborateurs) ?> enregistrement(s)</p>
             </div>
             <div class="table-actions">
-                <a class="btn" href="<?= e(app_url('collaborateur')) ?>">Nouveau collaborateur</a>
-                <a class="btn btn-secondary" href="<?= e(app_url('collaborateurs', ['export' => 'csv', 'q' => $query])) ?>">Exporter CSV</a>
+                <a class="btn btn-next" href="<?= e(app_url('collaborateur')) ?>"><span class="mdi mdi-account-plus"></span> Nouveau collaborateur</a>
+                <a class="btn btn-info" href="<?= e(app_url('collaborateurs', ['export' => 'csv', 'q' => $query])) ?>"><span class="mdi mdi-download"></span> Exporter CSV</a>
             </div>
         </div>
         <form method="get" class="stack search-bar">

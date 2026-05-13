@@ -82,7 +82,7 @@ if ($exportCsv && count($documents) > 0) {
             <p class="help-text"><?= count($documents) ?> document(s)</p>
         </div>
         <div class="table-actions">
-            <a class="btn btn-secondary" href="<?= e(app_url('documents', array_merge(['export' => 'csv'], $filterSociete ? ['societe_id' => $filterSociete] : []))) ?>">
+            <a class="btn btn-info" href="<?= e(app_url('documents', array_merge(['export' => 'csv'], $filterSociete ? ['societe_id' => $filterSociete] : []))) ?>">
                 <span class="mdi mdi-download"></span> Exporter CSV
             </a>
         </div>
