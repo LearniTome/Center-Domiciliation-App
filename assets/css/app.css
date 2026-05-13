@@ -355,11 +355,12 @@ button.btn-icon.danger:hover {
 }
 
 .btn.btn-back {
-    background: var(--btn-back);
-    color: #fff;
+    background: transparent;
+    color: var(--btn-back);
+    border: 2px solid var(--btn-back);
 }
 .btn.btn-back:hover {
-    background: #e55a2b;
+    background: rgba(255, 107, 53, 0.12);
 }
 .btn.btn-next {
     background: var(--btn-next);
@@ -370,19 +371,22 @@ button.btn-icon.danger:hover {
 }
 
 .btn.btn-cancel {
-    background: #6c757d;
-    color: #fff;
+    background: transparent;
+    color: #adb5bd;
+    border: 2px solid #6c757d;
 }
 .btn.btn-cancel:hover {
-    background: #5a6268;
+    background: rgba(108, 117, 125, 0.12);
+    color: #ced4da;
 }
 
 .btn.btn-info {
-    background: var(--info);
-    color: #fff;
+    background: transparent;
+    color: var(--info);
+    border: 2px solid var(--info);
 }
 .btn.btn-info:hover {
-    background: #7a4fd0;
+    background: rgba(143, 95, 232, 0.12);
 }
 
 .btn-remove {
