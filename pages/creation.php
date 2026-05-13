@@ -42,6 +42,12 @@ if (isset($_GET['reset']) && $_GET['reset'] === '1') {
     redirect_to('creation');
 }
 
+if (isset($_GET['cancel']) && $_GET['cancel'] === '1') {
+    unset($_SESSION['creation_wizard']);
+    set_flash('success', 'Creation annulee.');
+    redirect_to('societes');
+}
+
 if (is_post()) {
     verify_csrf();
     $postedStep = max(1, min(3, (int) ($_POST['step'] ?? $step)));
@@ -384,6 +390,7 @@ $contratData = array_merge([
             <h2>Assistant de creation d'un dossier</h2>
             <p class="help-text">Parcours guide: societe, associes, puis contrat, dans un seul flux.</p>
         </div>
+        <a class="btn btn-secondary" href="<?= e(app_url('creation', ['cancel' => '1'])) ?>" data-confirm="Annuler la creation ?">Annuler</a>
         <a class="btn btn-secondary" href="<?= e(app_url('creation', ['reset' => '1'])) ?>" data-confirm="Reinitialiser cet assistant ?">Reinitialiser</a>
     </div>
 
