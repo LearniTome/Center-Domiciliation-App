@@ -656,7 +656,15 @@ tbody tr:hover:nth-child(even) {
 }
 
 .col-hidden {
-    display: none !important;
+    width: 0 !important;
+    max-width: 0 !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    overflow: hidden !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
+    opacity: 0 !important;
 }
 
 .inline-form {
