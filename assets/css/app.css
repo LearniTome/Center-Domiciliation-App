@@ -602,22 +602,6 @@ tbody tr:hover:nth-child(even) {
     min-width: 220px;
     box-shadow: 0 4px 16px rgba(0,0,0,0.25);
     display: none;
-    direction: rtl;
-}
-
-.col-toggle-count {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 20px;
-    height: 18px;
-    padding: 0 5px;
-    border-radius: 9px;
-    background: var(--primary);
-    color: #fff;
-    font-size: 0.7rem;
-    font-weight: 500;
-    line-height: 1;
 }
 
 .col-toggle-panel.open {
