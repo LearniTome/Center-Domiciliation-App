@@ -89,8 +89,19 @@ if (is_post()) {
                 if ($nb) {
                     $pdo->prepare("UPDATE {$table} SET sort_order = :so WHERE id = :id")->execute(['so' => $nb['sort_order'], 'id' => $recordId]);
                     $pdo->prepare("UPDATE {$table} SET sort_order = :so WHERE id = :id")->execute(['so' => $curOrder, 'id' => $nb['id']]);
-                    set_flash('success', 'Ordre mis a jour.');
                 }
+            }
+        }
+        redirect_to('configuration', ['tab' => $postTab]);
+    }
+
+    if ($action === 'reorder-batch' && ($pdo ?? null) instanceof PDO) {
+        $ids = $_POST['ids'] ?? '';
+        if ($ids !== '') {
+            $idsArr = array_map('intval', explode(',', $ids));
+            $stmt = $pdo->prepare("UPDATE {$table} SET sort_order = :so WHERE id = :id");
+            foreach ($idsArr as $i => $id) {
+                $stmt->execute(['so' => ($i + 1) * 10, 'id' => $id]);
             }
         }
         redirect_to('configuration', ['tab' => $postTab]);
@@ -130,10 +141,10 @@ if (is_post()) {
     <?php if (count($rows) > 0): ?>
         <?php $firstId = (int) $rows[0]['id']; $lastId = (int) $rows[count($rows) - 1]['id']; ?>
         <div class="table-scroll">
-        <table>
+        <table id="config-table" data-csrf="<?= e(csrf_token()) ?>">
             <thead>
                 <tr>
-                    <th style="width:50px">#</th>
+                    <th style="width:32px"></th>
                     <th><?= e($label) ?></th>
                     <th style="width:100px">Date creation</th>
                     <th style="width:100px">Modification</th>
@@ -145,9 +156,9 @@ if (is_post()) {
                     $rid = (int) $row['id'];
                     $val = (string) $row[$column];
                 ?>
-                    <tr>
+                    <tr draggable="true" data-record-id="<?= $rid ?>">
                         <?php if ($editKey === $val): ?>
-                            <td style="color:var(--text-secondary);font-size:0.8rem"><?= $rid ?></td>
+                            <td style="text-align:center;color:var(--text-secondary)"><span class="mdi mdi-drag-vertical"></span></td>
                             <td>
                                 <form method="post" style="display:flex;gap:4px">
                                     <?= csrf_input() ?>
@@ -163,7 +174,7 @@ if (is_post()) {
                             <td></td>
                             <td></td>
                         <?php else: ?>
-                            <td style="color:var(--text-secondary);font-size:0.8rem"><?= $rid ?></td>
+                            <td style="text-align:center;color:var(--text-secondary);cursor:grab"><span class="mdi mdi-drag-vertical"></span></td>
                             <td><?= e($val) ?></td>
                             <td style="font-size:0.75rem;color:var(--text-secondary)"><?= $row['created_at'] ? date('d/m/Y H:i', strtotime($row['created_at'])) : '-' ?></td>
                             <td style="font-size:0.75rem;color:var(--text-secondary)"><?= $row['updated_at'] ? date('d/m/Y H:i', strtotime($row['updated_at'])) : '-' ?></td>
@@ -202,6 +213,104 @@ if (is_post()) {
             </tbody>
         </table>
         </div>
+        <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const table = document.getElementById('config-table');
+            if (!table) return;
+            const tbody = table.querySelector('tbody');
+            let dragRow = null;
+
+            tbody.addEventListener('dragstart', function (e) {
+                const tr = e.target.closest('tr');
+                if (!tr || tr.querySelector('form[style*="flex"]')) return;
+                dragRow = tr;
+                tr.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+            });
+
+            tbody.addEventListener('dragend', function (e) {
+                const tr = e.target.closest('tr');
+                if (tr) tr.classList.remove('dragging');
+                tbody.querySelectorAll('tr').forEach(r => r.classList.remove('drag-over'));
+                dragRow = null;
+            });
+
+            tbody.addEventListener('dragover', function (e) {
+                e.preventDefault();
+                const tr = e.target.closest('tr');
+                if (!tr || tr === dragRow) return;
+                tr.classList.add('drag-over');
+            });
+
+            tbody.addEventListener('dragleave', function (e) {
+                const tr = e.target.closest('tr');
+                if (tr) tr.classList.remove('drag-over');
+            });
+
+            tbody.addEventListener('drop', function (e) {
+                e.preventDefault();
+                const target = e.target.closest('tr');
+                if (!target || !dragRow || target === dragRow) return;
+                target.classList.remove('drag-over');
+
+                if (target.parentNode !== tbody || dragRow.parentNode !== tbody) return;
+
+                const rows = [...tbody.querySelectorAll('tr')].filter(r => !r.querySelector('form[style*="flex"]'));
+                const idxA = rows.indexOf(dragRow);
+                const idxB = rows.indexOf(target);
+                if (idxA === -1 || idxB === -1) return;
+
+                if (idxA < idxB) {
+                    target.parentNode.insertBefore(dragRow, target.nextSibling);
+                } else {
+                    target.parentNode.insertBefore(dragRow, target);
+                }
+
+                const ids = [...tbody.querySelectorAll('tr')]
+                    .filter(r => !r.querySelector('form[style*="flex"]'))
+                    .map(r => r.getAttribute('data-record-id'))
+                    .filter(Boolean);
+
+                const csrfToken = table.getAttribute('data-csrf');
+                const form = document.createElement('form');
+                form.method = 'post';
+                form.style.display = 'none';
+                const c = document.createElement('input');
+                c.type = 'hidden';
+                c.name = 'csrf_token';
+                c.value = csrfToken;
+                form.appendChild(c);
+                const a = document.createElement('input');
+                a.type = 'hidden';
+                a.name = 'action';
+                a.value = 'reorder-batch';
+                form.appendChild(a);
+                const t = document.createElement('input');
+                t.type = 'hidden';
+                t.name = 'tab';
+                t.value = '<?= e($tab) ?>';
+                form.appendChild(t);
+                const i = document.createElement('input');
+                i.type = 'hidden';
+                i.name = 'ids';
+                i.value = ids.join(',');
+                form.appendChild(i);
+                document.body.appendChild(form);
+                form.submit();
+            });
+        });
+        </script>
+        <style>
+        #config-table tbody tr[draggable="true"] {
+            transition: opacity 0.15s;
+        }
+        #config-table tbody tr.dragging {
+            opacity: 0.4;
+        }
+        #config-table tbody tr.drag-over {
+            border-bottom: 2px solid var(--primary);
+        }
+        </style>
     <?php else: ?>
         <p class="table-empty">Aucun(e) <?= e(mb_strtolower($label)) ?>.</p>
     <?php endif; ?>
