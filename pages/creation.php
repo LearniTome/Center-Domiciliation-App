@@ -661,7 +661,7 @@ $contratData = array_merge([
                             </label>
                             <label class="field" data-capital-field>
                                 <span>% Capital social</span>
-                                <input data-field-name="part_percent" type="number" step="0.01" name="associes[<?= $index ?>][part_percent]" data-percent-input value="<?= e((string) ($associe['part_percent'] ?? '')) ?>" readonly>
+                                <input data-field-name="part_percent" type="number" step="1" min="0" max="100" name="associes[<?= $index ?>][part_percent]" data-percent-input value="<?= e((string) ($associe['part_percent'] ?? '')) ?>">
                             </label>
                             <label class="field">
                                 <span>Gerant</span>
@@ -807,7 +807,7 @@ $contratData = array_merge([
                         </label>
                         <label class="field" data-capital-field>
                             <span>% Capital social</span>
-                            <input data-field-name="part_percent" type="number" step="0.01" data-percent-input value="" readonly>
+                            <input data-field-name="part_percent" type="number" step="1" min="0" max="100" data-percent-input value="">
                         </label>
                         <label class="field">
                             <span>Gerant</span>

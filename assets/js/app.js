@@ -309,6 +309,63 @@ document.addEventListener('input', (e) => {
 (function () {
     const parseMoney = (v) => parseFloat(String(v).replace(',', '.')) || 0;
 
+    let updatingLock = false;
+
+    const recalcPctFromCapital = (items) => {
+        const totalCapital = Array.from(items).reduce((s, it) => {
+            return s + parseMoney(it.querySelector('[data-capital-input]')?.value);
+        }, 0);
+        items.forEach((item, i) => {
+            const pctInput = item.querySelector('[data-percent-input]');
+            if (!pctInput) return;
+            const capital = parseMoney(item.querySelector('[data-capital-input]')?.value);
+            if (totalCapital > 0) {
+                const pct = Math.round(capital / totalCapital * 100);
+                pctInput.value = i === items.length - 1
+                    ? Math.max(0, 100 - Array.from(items).slice(0, -1).reduce((s, it2) => {
+                        return s + (parseInt(it2.querySelector('[data-percent-input]')?.value, 10) || 0);
+                    }, 0))
+                    : Math.min(100, Math.max(0, pct));
+            } else {
+                pctInput.value = 0;
+            }
+        });
+    };
+
+    const recalcCapitalFromPct = (items) => {
+        const refCapital = parseMoney(document.getElementById('societe-capital')?.value);
+        const refParts = parseMoney(document.getElementById('societe-part-social')?.value);
+        const total = refCapital > 0 ? refCapital : 100000;
+        items.forEach((item, i) => {
+            const capInput = item.querySelector('[data-capital-input]');
+            const partsInput = item.querySelector('[data-field-name="parts"]');
+            const pct = parseInt(item.querySelector('[data-percent-input]')?.value, 10) || 0;
+            const isLast = i === items.length - 1;
+            if (capInput) {
+                if (isLast) {
+                    const used = Array.from(items).slice(0, -1).reduce((s, it2) => {
+                        const p = parseInt(it2.querySelector('[data-percent-input]')?.value, 10) || 0;
+                        return s + Math.round(total * p / 100);
+                    }, 0);
+                    capInput.value = (total - used).toFixed(2);
+                } else {
+                    capInput.value = Math.round(total * pct / 100).toFixed(2);
+                }
+            }
+            if (partsInput && refParts > 0) {
+                if (isLast) {
+                    const used = Array.from(items).slice(0, -1).reduce((s, it2) => {
+                        const p = parseInt(it2.querySelector('[data-percent-input]')?.value, 10) || 0;
+                        return s + Math.round(refParts * p / 100);
+                    }, 0);
+                    partsInput.value = Math.max(0, refParts - used);
+                } else {
+                    partsInput.value = Math.round(refParts * pct / 100);
+                }
+            }
+        });
+    };
+
     const updateCapitalSummary = () => {
         const container = document.querySelector('[data-associes-container]');
         const summary = document.querySelector('[data-associe-summary]');
@@ -335,25 +392,22 @@ document.addEventListener('input', (e) => {
         document.getElementById('total-parts').textContent = formatFR(totalParts, 0);
         document.getElementById('total-capital').textContent = formatFR(totalCapital);
 
-        items.forEach((item) => {
-            const capital = parseMoney(item.querySelector('[data-capital-input]')?.value);
-            const percentInput = item.querySelector('[data-percent-input]');
-            if (percentInput) {
-                const pct = totalCapital > 0 ? (capital / totalCapital * 100) : 0;
-                percentInput.value = pct.toFixed(2);
-            }
-        });
+        if (!updatingLock) {
+            updatingLock = true;
+            recalcPctFromCapital(items);
+            updatingLock = false;
+        }
 
         const totalPct = Array.from(items).reduce((sum, item) => {
-            return sum + parseMoney(item.querySelector('[data-percent-input]')?.value);
+            return sum + (parseInt(item.querySelector('[data-percent-input]')?.value, 10) || 0);
         }, 0);
 
-        document.getElementById('total-percent').textContent = formatFR(totalPct) + ' %';
+        document.getElementById('total-percent').textContent = formatFR(totalPct, 0) + ' %';
 
         const statusEl = document.getElementById('capital-status');
         const partsMatch = refParts <= 0 || totalParts === refParts;
         const capitalMatch = refCapital <= 0 || Math.abs(totalCapital - refCapital) < 0.01;
-        const pctOk = Math.abs(totalPct - 100) < 0.01;
+        const pctOk = Math.abs(totalPct - 100) < 1;
 
         if (totalCapital > 0 || totalParts > 0) {
             if (pctOk && partsMatch && capitalMatch) {
@@ -361,7 +415,7 @@ document.addEventListener('input', (e) => {
                 statusEl.style.color = 'var(--success)';
             } else {
                 const issues = [];
-                if (!pctOk) issues.push(formatFR(totalPct) + ' %');
+                if (!pctOk) issues.push(formatFR(totalPct, 0) + ' %');
                 if (!partsMatch) issues.push('parts: ' + formatFR(totalParts, 0) + '/' + formatFR(refParts, 0));
                 if (!capitalMatch) issues.push('capital: ' + formatFR(totalCapital) + '/' + formatFR(refCapital));
                 statusEl.textContent = 'Desequilibre (' + issues.join(', ') + ')';
@@ -434,6 +488,20 @@ document.addEventListener('input', (e) => {
         if (e.target.closest('[data-capital-input]')) {
             updateCapitalSummary();
         }
+    });
+
+    document.addEventListener('change', (e) => {
+        const pctInput = e.target.closest('[data-percent-input]');
+        if (!pctInput) return;
+        const container = document.querySelector('[data-associes-container]');
+        if (!container) return;
+        const items = container.querySelectorAll('[data-associe-item]');
+        const idx = Array.from(items).indexOf(pctInput.closest('[data-associe-item]'));
+        if (idx === -1) return;
+        updatingLock = true;
+        recalcCapitalFromPct(items);
+        updatingLock = false;
+        updateCapitalSummary();
     });
 
     const origRefresh = window._refreshIndices;
