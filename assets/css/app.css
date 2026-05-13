@@ -50,22 +50,31 @@ a:hover {
 .shell {
     display: grid;
     grid-template-columns: 260px 1fr;
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.shell.collapsed {
+    grid-template-columns: 60px 1fr;
 }
 
 .sidebar {
-    padding: 20px;
+    padding: 16px;
     background: var(--panel);
     border-right: 1px solid var(--line);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 .brand {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     align-items: center;
-    margin-bottom: 24px;
-    padding-bottom: 20px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
     border-bottom: 1px solid var(--line);
+    min-height: 42px;
 }
 
 .brand-badge {
@@ -94,6 +103,52 @@ a:hover {
     color: var(--text-secondary);
     font-size: 0.8rem;
     margin: 2px 0 0;
+}
+
+.sidebar-toggle {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: all var(--transition);
+    flex-shrink: 0;
+}
+
+.sidebar-toggle:hover {
+    background: var(--panel-strong);
+    color: var(--text);
+}
+
+.collapsed .sidebar-toggle .mdi {
+    transform: rotate(180deg);
+}
+
+.collapsed .brand-text,
+.collapsed .nav-section-label,
+.collapsed [data-nav-label] {
+    display: none;
+}
+
+.collapsed .nav-links a {
+    justify-content: center;
+    padding: 10px 0;
+}
+
+.collapsed .nav-links a .mdi {
+    margin: 0;
+    font-size: 1.35rem;
+}
+
+.collapsed .sidebar {
+    padding: 16px 8px;
 }
 
 .nav-links {
@@ -143,6 +198,8 @@ a:hover {
 
 .main {
     padding: 1.5rem;
+    overflow-y: auto;
+    height: 100vh;
 }
 
 .page-header h1 {

@@ -28,9 +28,12 @@ $navSections = [
         <span class="brand-badge">
             <span class="mdi mdi-home-city"></span>
         </span>
-        <div>
+        <div class="brand-text">
             <strong>Center Domiciliation</strong>
         </div>
+        <button class="sidebar-toggle" data-sidebar-toggle type="button" title="Reduire la barre de navigation">
+            <span class="mdi mdi-chevron-left"></span>
+        </button>
     </div>
 
     <nav class="nav-links">
@@ -39,9 +42,9 @@ $navSections = [
                 <span class="nav-section-label"><?= e($sectionLabel) ?></span>
             <?php endif; ?>
             <?php foreach ($items as $navPage => [$label, $icon]): ?>
-                <a class="<?= $page === $navPage ? 'active' : '' ?>" href="<?= e(app_url($navPage)) ?>">
+                <a class="<?= $page === $navPage ? 'active' : '' ?>" href="<?= e(app_url($navPage)) ?>" data-nav-link>
                     <span class="mdi <?= e($icon) ?>"></span>
-                    <?= e($label) ?>
+                    <span data-nav-label><?= e($label) ?></span>
                 </a>
             <?php endforeach; ?>
         <?php endforeach; ?>

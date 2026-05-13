@@ -7,6 +7,16 @@ document.querySelectorAll('[data-confirm]').forEach((element) => {
     });
 });
 
+(function () {
+    const toggle = document.querySelector('[data-sidebar-toggle]');
+    const shell = document.querySelector('.shell');
+    if (toggle && shell) {
+        toggle.addEventListener('click', () => {
+            shell.classList.toggle('collapsed');
+        });
+    }
+})();
+
 const formatFR = (v, decimals = 2) => {
     if (v === null || v === undefined || isNaN(v)) return '';
     return Number(v).toLocaleString('fr-FR', {
