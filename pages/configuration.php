@@ -106,6 +106,17 @@ if (is_post()) {
         }
         redirect_to('configuration', ['tab' => $postTab]);
     }
+
+    if ($action === 'sort-az' && ($pdo ?? null) instanceof PDO) {
+        $stmt = $pdo->query("SELECT id FROM {$table} ORDER BY {$column} ASC");
+        $all = $stmt->fetchAll();
+        $update = $pdo->prepare("UPDATE {$table} SET sort_order = :so WHERE id = :id");
+        foreach ($all as $i => $row) {
+            $update->execute(['so' => ($i + 1) * 10, 'id' => (int) $row['id']]);
+        }
+        set_flash('success', 'Ordre alphabetique applique.');
+        redirect_to('configuration', ['tab' => $tab]);
+    }
 }
 ?>
 <section class="card stack">
@@ -114,7 +125,14 @@ if (is_post()) {
             <h2>Configuration</h2>
             <p class="help-text">Gerer les listes de reference.</p>
         </div>
-        <a class="btn btn-back" href="<?= e(app_url('creation')) ?>"><span class="mdi mdi-arrow-left"></span> Retour</a>
+        <div style="display:flex;gap:6px">
+            <form method="post" style="display:inline">
+                <?= csrf_input() ?>
+                <input type="hidden" name="action" value="sort-az">
+                <button type="submit" class="btn btn-info"><span class="mdi mdi-sort-alphabetical-ascending"></span> Trier A-Z</button>
+            </form>
+            <a class="btn btn-back" href="<?= e(app_url('creation')) ?>"><span class="mdi mdi-arrow-left"></span> Retour</a>
+        </div>
     </div>
 
     <div class="tabs" style="margin-bottom:1rem">
@@ -156,7 +174,7 @@ if (is_post()) {
                     $rid = (int) $row['id'];
                     $val = (string) $row[$column];
                 ?>
-                    <tr draggable="true" data-record-id="<?= $rid ?>">
+                    <tr <?= $editKey === $val ? '' : 'draggable="true"' ?> data-record-id="<?= $rid ?>">
                         <?php if ($editKey === $val): ?>
                             <td style="text-align:center;color:var(--text-secondary)"><span class="mdi mdi-drag-vertical"></span></td>
                             <td>
