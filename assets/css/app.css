@@ -602,6 +602,7 @@ tbody tr:hover:nth-child(even) {
     min-width: 220px;
     box-shadow: 0 4px 16px rgba(0,0,0,0.25);
     display: none;
+    direction: rtl;
 }
 
 .col-toggle-count {
@@ -625,9 +626,7 @@ tbody tr:hover:nth-child(even) {
 
 .col-toggle-panel label {
     display: flex;
-    flex-direction: row-reverse;
     align-items: center;
-    justify-content: flex-start;
     gap: 8px;
     padding: 6px 14px;
     cursor: pointer;
