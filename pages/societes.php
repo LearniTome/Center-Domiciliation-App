@@ -36,7 +36,6 @@ if (($pdo ?? null) instanceof PDO) {
                 $societe['id'],
                 $societe['raison_sociale'],
                 $societe['dossier_domiciliation'],
-                $societe['den_ste'],
                 $societe['forme_juridique'],
                 $societe['ice'],
                 $societe['date_ice'],
@@ -107,7 +106,6 @@ if (($pdo ?? null) instanceof PDO) {
                 <tr>
                     <th>Dossier</th>
                     <th>Raison sociale</th>
-                    <th>Denomination</th>
                     <th>Forme</th>
                     <th>ICE</th>
                     <th>Date de cert. negatif</th>
@@ -128,7 +126,6 @@ if (($pdo ?? null) instanceof PDO) {
                     <tr>
                         <td><?= e($societe['dossier_domiciliation'] ?? '-') ?></td>
                         <td><?= e($societe['raison_sociale']) ?></td>
-                        <td><?= e($societe['den_ste'] ?? '-') ?></td>
                         <td><?= e($societe['forme_juridique']) ?></td>
                         <td><?= e($societe['ice'] ?? '-') ?></td>
                         <td><?= e($societe['date_ice'] ?? '-') ?></td>

@@ -204,18 +204,18 @@ INSERT INTO ref_activites (activite) VALUES
 ('Tourisme');
 
 INSERT INTO societes (
-    dossier_domiciliation, raison_sociale, den_ste, forme_juridique, ice, date_ice, rc, if_number,
+    dossier_domiciliation, raison_sociale, forme_juridique, ice, date_ice, rc, if_number,
     capital, part_social, valeur_nominale, date_exp_cert_neg, adresse, ste_adress, ville, tribunal, email,
     telephone, type_generation, procedure_creation, mode_depot_creation
 ) VALUES
 (
-    'DOM-2026-001', 'Atlas Domiciliation', 'Atlas Domiciliation', 'SARL', '001122334455667', '2026-01-10',
+    'DOM-2026-001', 'Atlas Domiciliation', 'SARL', '001122334455667', '2026-01-10',
     'RC12345', 'IF778899', 100000.00, 100, 1000.00, '2026-12-31',
     '123 Boulevard Hassan II', '123 Boulevard Hassan II', 'Casablanca', 'Casablanca',
     'contact@atlas.test', '+212600000001', 'Standard', 'Creation', 'Electronique'
 ),
 (
-    'DOM-2026-002', 'Maghreb Services', 'Maghreb Services', 'SARL AU', '998877665544332', '2026-03-15',
+    'DOM-2026-002', 'Maghreb Services', 'SARL AU', '998877665544332', '2026-03-15',
     'RC54321', 'IF665544', 50000.00, 100, 500.00, '2027-03-14',
     '45 Avenue Mohammed V', '45 Avenue Mohammed V', 'Rabat', 'Casablanca',
     'admin@maghreb.test', '+212600000002', 'Standard', 'Creation', 'Physique'

@@ -9,7 +9,6 @@ CREATE TABLE IF NOT EXISTS societes (
     -- Identifiants
     dossier_domiciliation VARCHAR(120) DEFAULT NULL,
     raison_sociale VARCHAR(255) NOT NULL,
-    den_ste VARCHAR(255) DEFAULT NULL,
     -- Juridique
     forme_juridique VARCHAR(120) DEFAULT NULL,
     ice VARCHAR(100) DEFAULT NULL,
@@ -35,7 +34,6 @@ CREATE TABLE IF NOT EXISTS societes (
     mode_depot_creation VARCHAR(120) DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_societes_den_ste (den_ste),
     INDEX idx_societes_ice (ice),
     INDEX idx_societes_ville (ville)
 );

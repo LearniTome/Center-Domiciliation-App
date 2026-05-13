@@ -191,11 +191,11 @@ if (is_post()) {
 
             $societeStmt = $pdo->prepare('
                 INSERT INTO societes (
-                    dossier_domiciliation, raison_sociale, den_ste, forme_juridique, ice, date_ice, rc, if_number,
+                    dossier_domiciliation, raison_sociale, forme_juridique, ice, date_ice, rc, if_number,
                     capital, part_social, valeur_nominale, date_exp_cert_neg, ste_adress, ville, tribunal, email,
                     telephone, type_generation, procedure_creation, mode_depot_creation
                 ) VALUES (
-                    :dossier_domiciliation, :raison_sociale, :den_ste, :forme_juridique, :ice, :date_ice, :rc, :if_number,
+                    :dossier_domiciliation, :raison_sociale, :forme_juridique, :ice, :date_ice, :rc, :if_number,
                     :capital, :part_social, :valeur_nominale, :date_exp_cert_neg, :ste_adress, :ville, :tribunal, :email,
                     :telephone, :type_generation, :procedure_creation, :mode_depot_creation
                 )
@@ -203,7 +203,6 @@ if (is_post()) {
             $societeStmt->execute([
                 'dossier_domiciliation' => $wizard['societe']['dossier_domiciliation'] ?? null,
                 'raison_sociale' => $wizard['societe']['raison_sociale'] ?? '',
-                'den_ste' => ($wizard['societe']['den_ste'] ?? '') !== '' ? $wizard['societe']['den_ste'] : ($wizard['societe']['raison_sociale'] ?? ''),
                 'forme_juridique' => $wizard['societe']['forme_juridique'] ?? '',
                 'ice' => $wizard['societe']['ice'] ?? '',
                 'date_ice' => ($wizard['societe']['date_ice'] ?? '') !== '' ? $wizard['societe']['date_ice'] : null,
