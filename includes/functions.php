@@ -171,7 +171,7 @@ function fetch_reference_options(?PDO $pdo, string $table, string $column): arra
         return [];
     }
 
-    $stmt = $pdo->query("SELECT {$column} FROM {$table} ORDER BY {$column} ASC");
+    $stmt = $pdo->query("SELECT {$column} FROM {$table} ORDER BY sort_order ASC, {$column} ASC");
     return array_map(static fn (array $row): string => (string) $row[$column], $stmt->fetchAll());
 }
 

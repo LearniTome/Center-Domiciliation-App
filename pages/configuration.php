@@ -20,15 +20,15 @@ if (!isset($tabs[$tab])) {
 
 [$table, $column, $label] = $tabs[$tab];
 $editKey = $_GET['edit'] ?? null;
-$options = fetch_reference_options($pdo ?? null, $table, $column);
-
-// Pre-compute counts for each tab badge
 $tabCounts = [];
+$rows = [];
 if (($pdo ?? null) instanceof PDO) {
     foreach ($tabs as $key => [$t, $c, $l]) {
         $stmt = $pdo->query("SELECT COUNT(*) FROM {$t}");
         $tabCounts[$key] = (int) $stmt->fetchColumn();
     }
+    $stmt = $pdo->query("SELECT id, {$column}, sort_order, created_at, updated_at FROM {$table} ORDER BY sort_order ASC, {$column} ASC");
+    $rows = $stmt->fetchAll();
 }
 
 if (is_post()) {
@@ -39,8 +39,9 @@ if (is_post()) {
     if ($action === 'add' && ($pdo ?? null) instanceof PDO) {
         $value = field_value($_POST, $column);
         if ($value !== '') {
-            $stmt = $pdo->prepare("INSERT IGNORE INTO {$table} ({$column}) VALUES (:val)");
-            $stmt->execute(['val' => $value]);
+            $stmt = $pdo->prepare("INSERT IGNORE INTO {$table} ({$column}, sort_order) VALUES (:val, :so)");
+            $max = $pdo->query("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM {$table}")->fetchColumn();
+            $stmt->execute(['val' => $value, 'so' => $max]);
             set_flash('success', $label . ' ajoutee.');
         } else {
             set_flash('error', 'Le champ est obligatoire.');
@@ -49,22 +50,48 @@ if (is_post()) {
     }
 
     if ($action === 'update' && ($pdo ?? null) instanceof PDO) {
-        $oldValue = field_value($_POST, 'old_value');
+        $recordId = int_value($_POST, 'record_id');
         $newValue = field_value($_POST, $column);
-        if ($oldValue !== '' && $newValue !== '') {
-            $stmt = $pdo->prepare("UPDATE {$table} SET {$column} = :new WHERE {$column} = :old");
-            $stmt->execute(['new' => $newValue, 'old' => $oldValue]);
+        if ($recordId && $newValue !== '') {
+            $stmt = $pdo->prepare("UPDATE {$table} SET {$column} = :new WHERE id = :id");
+            $stmt->execute(['new' => $newValue, 'id' => $recordId]);
             set_flash('success', $label . ' modifiee.');
         }
         redirect_to('configuration', ['tab' => $postTab]);
     }
 
     if ($action === 'delete' && ($pdo ?? null) instanceof PDO) {
-        $value = field_value($_POST, $column);
-        if ($value !== '') {
-            $stmt = $pdo->prepare("DELETE FROM {$table} WHERE {$column} = :val");
-            $stmt->execute(['val' => $value]);
+        $recordId = int_value($_POST, 'record_id');
+        if ($recordId) {
+            $stmt = $pdo->prepare("DELETE FROM {$table} WHERE id = :id");
+            $stmt->execute(['id' => $recordId]);
             set_flash('success', $label . ' supprimee.');
+        }
+        redirect_to('configuration', ['tab' => $postTab]);
+    }
+
+    if ($action === 'reorder' && ($pdo ?? null) instanceof PDO) {
+        $recordId = int_value($_POST, 'record_id');
+        $direction = $_POST['direction'] ?? '';
+        if ($recordId && in_array($direction, ['up', 'down'], true)) {
+            $current = $pdo->prepare("SELECT id, sort_order FROM {$table} WHERE id = :id");
+            $current->execute(['id' => $recordId]);
+            $cur = $current->fetch();
+            if ($cur) {
+                $curOrder = (int) $cur['sort_order'];
+                $neighbour = $pdo->prepare(
+                    $direction === 'up'
+                        ? "SELECT id, sort_order FROM {$table} WHERE sort_order < :so ORDER BY sort_order DESC LIMIT 1"
+                        : "SELECT id, sort_order FROM {$table} WHERE sort_order > :so ORDER BY sort_order ASC LIMIT 1"
+                );
+                $neighbour->execute(['so' => $curOrder]);
+                $nb = $neighbour->fetch();
+                if ($nb) {
+                    $pdo->prepare("UPDATE {$table} SET sort_order = :so WHERE id = :id")->execute(['so' => $nb['sort_order'], 'id' => $recordId]);
+                    $pdo->prepare("UPDATE {$table} SET sort_order = :so WHERE id = :id")->execute(['so' => $curOrder, 'id' => $nb['id']]);
+                    set_flash('success', 'Ordre mis a jour.');
+                }
+            }
         }
         redirect_to('configuration', ['tab' => $postTab]);
     }
@@ -100,41 +127,72 @@ if (is_post()) {
         </div>
     </form>
 
-    <?php if (count($options) > 0): ?>
+    <?php if (count($rows) > 0): ?>
+        <?php $firstId = (int) $rows[0]['id']; $lastId = (int) $rows[count($rows) - 1]['id']; ?>
+        <div class="table-scroll">
         <table>
             <thead>
                 <tr>
+                    <th style="width:50px">#</th>
                     <th><?= e($label) ?></th>
-                    <th style="width:70px">Actions</th>
+                    <th style="width:100px">Date creation</th>
+                    <th style="width:100px">Modification</th>
+                    <th style="width:120px">Actions</th>
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($options as $value): ?>
+                <?php foreach ($rows as $row):
+                    $rid = (int) $row['id'];
+                    $val = (string) $row[$column];
+                ?>
                     <tr>
-                        <?php if ($editKey === $value): ?>
+                        <?php if ($editKey === $val): ?>
+                            <td style="color:var(--text-secondary);font-size:0.8rem"><?= $rid ?></td>
                             <td>
                                 <form method="post" style="display:flex;gap:4px">
                                     <?= csrf_input() ?>
                                     <input type="hidden" name="action" value="update">
                                     <input type="hidden" name="tab" value="<?= e($tab) ?>">
-                                    <input type="hidden" name="old_value" value="<?= e($value) ?>">
-                                    <input name="<?= e($column) ?>" value="<?= e($value) ?>" required style="flex:1;padding:2px 6px;font-size:0.8125rem">
+                                    <input type="hidden" name="record_id" value="<?= $rid ?>">
+                                    <input name="<?= e($column) ?>" value="<?= e($val) ?>" required style="flex:1;padding:2px 6px;font-size:0.8125rem">
                                     <button type="submit" class="btn-icon" title="Enregistrer"><span class="mdi mdi-check"></span></button>
                                     <a class="btn-icon" href="<?= e(app_url('configuration', ['tab' => $tab])) ?>" title="Annuler"><span class="mdi mdi-close"></span></a>
                                 </form>
                             </td>
                             <td></td>
+                            <td></td>
+                            <td></td>
                         <?php else: ?>
-                            <td><?= e($value) ?></td>
+                            <td style="color:var(--text-secondary);font-size:0.8rem"><?= $rid ?></td>
+                            <td><?= e($val) ?></td>
+                            <td style="font-size:0.75rem;color:var(--text-secondary)"><?= $row['created_at'] ? date('d/m/Y H:i', strtotime($row['created_at'])) : '-' ?></td>
+                            <td style="font-size:0.75rem;color:var(--text-secondary)"><?= $row['updated_at'] ? date('d/m/Y H:i', strtotime($row['updated_at'])) : '-' ?></td>
                             <td>
-                                <div style="display:flex;gap:2px">
-                                    <a class="btn-icon" href="<?= e(app_url('configuration', ['tab' => $tab, 'edit' => $value])) ?>" title="Modifier"><span class="mdi mdi-pencil"></span></a>
+                                <div style="display:flex;gap:2px;align-items:center">
+                                    <form method="post" style="display:inline">
+                                        <?= csrf_input() ?>
+                                        <input type="hidden" name="action" value="reorder">
+                                        <input type="hidden" name="tab" value="<?= e($tab) ?>">
+                                        <input type="hidden" name="record_id" value="<?= $rid ?>">
+                                        <input type="hidden" name="direction" value="up">
+                                        <button type="submit" class="btn-icon" title="Monter" <?= $rid === $firstId ? 'disabled style="opacity:0.3"' : '' ?>><span class="mdi mdi-chevron-up"></span></button>
+                                    </form>
+                                    <form method="post" style="display:inline">
+                                        <?= csrf_input() ?>
+                                        <input type="hidden" name="action" value="reorder">
+                                        <input type="hidden" name="tab" value="<?= e($tab) ?>">
+                                        <input type="hidden" name="record_id" value="<?= $rid ?>">
+                                        <input type="hidden" name="direction" value="down">
+                                        <button type="submit" class="btn-icon" title="Descendre" <?= $rid === $lastId ? 'disabled style="opacity:0.3"' : '' ?>><span class="mdi mdi-chevron-down"></span></button>
+                                    </form>
+                                    <span style="width:6px;display:inline-block"></span>
+                                    <a class="btn-icon" href="<?= e(app_url('configuration', ['tab' => $tab, 'edit' => $val])) ?>" title="Modifier"><span class="mdi mdi-pencil"></span></a>
                                     <form method="post" style="display:inline">
                                         <?= csrf_input() ?>
                                         <input type="hidden" name="action" value="delete">
                                         <input type="hidden" name="tab" value="<?= e($tab) ?>">
-                                        <input type="hidden" name="<?= e($column) ?>" value="<?= e($value) ?>">
-                                        <button type="submit" class="btn-icon danger" data-confirm="Supprimer <?= e($value) ?> ?" title="Supprimer"><span class="mdi mdi-delete"></span></button>
+                                        <input type="hidden" name="record_id" value="<?= $rid ?>">
+                                        <button type="submit" class="btn-icon danger" data-confirm="Supprimer <?= e($val) ?> ?" title="Supprimer"><span class="mdi mdi-delete"></span></button>
                                     </form>
                                 </div>
                             </td>
@@ -143,6 +201,7 @@ if (is_post()) {
                 <?php endforeach; ?>
             </tbody>
         </table>
+        </div>
     <?php else: ?>
         <p class="table-empty">Aucun(e) <?= e(mb_strtolower($label)) ?>.</p>
     <?php endif; ?>
