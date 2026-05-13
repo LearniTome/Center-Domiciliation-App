@@ -244,9 +244,9 @@ $contrats = ($pdo ?? null) instanceof PDO
                 <div><strong>Tribunal</strong><span><?= e($societe['tribunal'] ?: '-') ?></span></div>
                 <div><strong>Telephone</strong><span><?= e($societe['telephone'] ?: '-') ?></span></div>
                 <div><strong>Email</strong><span><?= e($societe['email'] ?: '-') ?></span></div>
-                <div><strong>Capital</strong><span><?= e($societe['capital'] !== null ? (string) $societe['capital'] : '-') ?></span></div>
-                <div><strong>Part social</strong><span><?= e($societe['part_social'] !== null ? (string) $societe['part_social'] : '-') ?></span></div>
-                <div><strong>Valeur nominale</strong><span><?= e($societe['valeur_nominale'] !== null ? (string) $societe['valeur_nominale'] : '-') ?></span></div>
+                <div><strong>Capital</strong><span><?= format_money($societe['capital'] !== null ? (float) $societe['capital'] : null) ?></span></div>
+                <div><strong>Part social</strong><span><?= format_number($societe['part_social'] !== null ? (float) $societe['part_social'] : null) ?></span></div>
+                <div><strong>Valeur nominale</strong><span><?= format_money($societe['valeur_nominale'] !== null ? (float) $societe['valeur_nominale'] : null) ?></span></div>
                 <div><strong>Date exp. cert. neg.</strong><span><?= e($societe['date_exp_cert_neg'] ?: '-') ?></span></div>
                 <div><strong>Type generation</strong><span><?= e($societe['type_generation'] ?: '-') ?></span></div>
                 <div><strong>Procedure creation</strong><span><?= e($societe['procedure_creation'] ?: '-') ?></span></div>
@@ -333,7 +333,7 @@ $contrats = ($pdo ?? null) instanceof PDO
                         <td><?= e($contrat['type_contrat']) ?></td>
                         <td><?= e(($contrat['date_debut'] ?: '-') . ' -> ' . ($contrat['date_fin'] ?: '-')) ?></td>
                         <td><?= e($contrat['statut']) ?></td>
-                        <td><?= e($contrat['montant_total_loyer'] !== null ? (string) $contrat['montant_total_loyer'] : '-') ?></td>
+                        <td><?= format_money($contrat['montant_total_loyer'] !== null ? (float) $contrat['montant_total_loyer'] : null) ?></td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>

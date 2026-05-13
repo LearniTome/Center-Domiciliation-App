@@ -7,6 +7,14 @@ document.querySelectorAll('[data-confirm]').forEach((element) => {
     });
 });
 
+const formatFR = (v, decimals = 2) => {
+    if (v === null || v === undefined || isNaN(v)) return '';
+    return Number(v).toLocaleString('fr-FR', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+    });
+};
+
 const testData = {
     'dossier_domiciliation': 'DOM-TEST-2026',
     'raison_sociale': 'TEST SARL AU',
@@ -254,8 +262,8 @@ document.addEventListener('input', (e) => {
         const ttcMois = Math.round(ht * (1 + tva / 100) * 100) / 100;
         const ttcMoisField = document.querySelector('[data-loyer-ttc-mois]');
         const totalField = document.querySelector('[data-montant-total-loyer]');
-        if (ttcMoisField) ttcMoisField.value = ttcMois.toFixed(2);
-        if (totalField) totalField.value = (ttcMois * duree).toFixed(2);
+        if (ttcMoisField) ttcMoisField.value = formatFR(ttcMois);
+        if (totalField) totalField.value = formatFR(ttcMois * duree);
     };
 
     const calculerLoyerRenouvellement = () => {
@@ -264,8 +272,8 @@ document.addEventListener('input', (e) => {
         const ttcMois = Math.round(ht * (1 + tva / 100) * 100) / 100;
         const ttcMoisField = document.querySelector('[data-loyer-ttc-renouvellement-mois]');
         const totalField = document.querySelector('[data-montant-total-renouvellement]');
-        if (ttcMoisField) ttcMoisField.value = ttcMois.toFixed(2);
-        if (totalField) totalField.value = (ttcMois * dureeMoisRenouvellement()).toFixed(2);
+        if (ttcMoisField) ttcMoisField.value = formatFR(ttcMois);
+        if (totalField) totalField.value = formatFR(ttcMois * dureeMoisRenouvellement());
     };
 
     const recalcAll = () => {
@@ -306,6 +314,13 @@ document.addEventListener('input', (e) => {
         const summary = document.querySelector('[data-associe-summary]');
         if (!container || !summary) return;
 
+        const refCapitalEl = document.getElementById('ref-capital');
+        const refPartsEl = document.getElementById('ref-parts');
+        const refCapital = parseMoney(document.getElementById('societe-capital')?.value);
+        const refParts = parseMoney(document.getElementById('societe-part-social')?.value);
+        if (refCapitalEl) refCapitalEl.textContent = formatFR(refCapital) + ' DH';
+        if (refPartsEl) refPartsEl.textContent = formatFR(refParts, 0);
+
         const items = container.querySelectorAll('[data-associe-item]');
         let totalParts = 0;
         let totalCapital = 0;
@@ -317,8 +332,8 @@ document.addEventListener('input', (e) => {
             totalCapital += capital;
         });
 
-        document.getElementById('total-parts').textContent = totalParts;
-        document.getElementById('total-capital').textContent = totalCapital.toFixed(2).replace('.', ',');
+        document.getElementById('total-parts').textContent = formatFR(totalParts, 0);
+        document.getElementById('total-capital').textContent = formatFR(totalCapital);
 
         items.forEach((item) => {
             const capital = parseMoney(item.querySelector('[data-capital-input]')?.value);
@@ -333,22 +348,54 @@ document.addEventListener('input', (e) => {
             return sum + parseMoney(item.querySelector('[data-percent-input]')?.value);
         }, 0);
 
-        document.getElementById('total-percent').textContent = totalPct.toFixed(2).replace('.', ',') + ' %';
+        document.getElementById('total-percent').textContent = formatFR(totalPct) + ' %';
 
         const statusEl = document.getElementById('capital-status');
-        if (totalCapital > 0) {
-            const diff = Math.abs(totalPct - 100);
-            if (diff < 0.01) {
+        const partsMatch = refParts <= 0 || totalParts === refParts;
+        const capitalMatch = refCapital <= 0 || Math.abs(totalCapital - refCapital) < 0.01;
+        const pctOk = Math.abs(totalPct - 100) < 0.01;
+
+        if (totalCapital > 0 || totalParts > 0) {
+            if (pctOk && partsMatch && capitalMatch) {
                 statusEl.textContent = 'Equilibre';
                 statusEl.style.color = 'var(--success)';
             } else {
-                statusEl.textContent = 'Desequilibre (' + totalPct.toFixed(2) + '%)';
+                const issues = [];
+                if (!pctOk) issues.push(formatFR(totalPct) + ' %');
+                if (!partsMatch) issues.push('parts: ' + formatFR(totalParts, 0) + '/' + formatFR(refParts, 0));
+                if (!capitalMatch) issues.push('capital: ' + formatFR(totalCapital) + '/' + formatFR(refCapital));
+                statusEl.textContent = 'Desequilibre (' + issues.join(', ') + ')';
                 statusEl.style.color = 'var(--warning)';
             }
         } else {
             statusEl.textContent = 'Incomplet';
             statusEl.style.color = 'var(--danger)';
         }
+    };
+
+    const repartirCapital = () => {
+        const container = document.querySelector('[data-associes-container]');
+        const capital = document.getElementById('societe-capital')?.value || '';
+        const partSocial = document.getElementById('societe-part-social')?.value || '';
+        if (!container) return;
+        const items = container.querySelectorAll('[data-associe-item]');
+        const count = items.length;
+        if (count === 0) return;
+        const cap = parseMoney(capital);
+        const parts = parseMoney(partSocial);
+        items.forEach((item, i) => {
+            const capitalInput = item.querySelector('[data-field-name="capital_detenu"]');
+            const partsInput = item.querySelector('[data-field-name="parts"]');
+            const isLast = i === count - 1;
+            if (capitalInput) {
+                const capVal = isLast ? cap - Math.floor(cap / count) * (count - 1) : Math.floor(cap / count);
+                capitalInput.value = capVal.toFixed(2);
+            }
+            if (partsInput) {
+                const partsVal = parts > 0 ? (isLast ? parts - Math.floor(parts / count) * (count - 1) : Math.floor(parts / count)) : 0;
+                partsInput.value = partsVal;
+            }
+        });
     };
 
     const toggleCapitalFields = () => {
@@ -363,23 +410,17 @@ document.addEventListener('input', (e) => {
         if (summary) {
             summary.style.display = isSarl ? '' : 'none';
         }
-        if (isSarl) updateCapitalSummary();
+        if (isSarl) {
+            repartirCapital();
+            updateCapitalSummary();
+        }
         if (isSarlAu) {
-            const container = document.querySelector('[data-associes-container]');
-            const capital = document.getElementById('societe-capital')?.value || '';
-            const partSocial = document.getElementById('societe-part-social')?.value || '';
-            if (container) {
-                container.querySelectorAll('[data-associe-item]').forEach((item) => {
-                    const qualite = item.querySelector('[data-field-name="qualite_associe"]');
-                    const gerant = item.querySelector('[data-field-name="is_gerant"]');
-                    const capitalInput = item.querySelector('[data-field-name="capital_detenu"]');
-                    const partsInput = item.querySelector('[data-field-name="parts"]');
-                    if (qualite) qualite.value = 'Gerant';
-                    if (gerant) gerant.value = '1';
-                    if (capitalInput && capital) capitalInput.value = capital;
-                    if (partsInput && partSocial) partsInput.value = partSocial;
-                });
-            }
+            document.querySelectorAll('[data-associe-item]').forEach((item) => {
+                const qualite = item.querySelector('[data-field-name="qualite_associe"]');
+                const gerant = item.querySelector('[data-field-name="is_gerant"]');
+                if (qualite) qualite.value = 'Gerant';
+                if (gerant) gerant.value = '1';
+            });
         }
     };
 
@@ -392,12 +433,6 @@ document.addEventListener('input', (e) => {
     document.addEventListener('input', (e) => {
         if (e.target.closest('[data-capital-input]')) {
             updateCapitalSummary();
-        }
-    });
-
-    document.addEventListener('change', (e) => {
-        if (e.target.matches('[name="forme_juridique"]')) {
-            toggleCapitalFields();
         }
     });
 

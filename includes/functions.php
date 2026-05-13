@@ -78,6 +78,11 @@ function field_value(array $source, string $key, string $default = ''): string
     return isset($source[$key]) ? trim((string) $source[$key]) : $default;
 }
 
+function parse_money(string $value): float
+{
+    return (float) str_replace([',', ' '], ['.', ''], $value);
+}
+
 function money_value(array $source, string $key): ?float
 {
     $value = field_value($source, $key);
@@ -85,7 +90,7 @@ function money_value(array $source, string $key): ?float
         return null;
     }
 
-    return (float) str_replace(',', '.', $value);
+    return parse_money($value);
 }
 
 function int_value(array $source, string $key): ?int
@@ -250,6 +255,18 @@ function export_csv(string $filename, array $headers, array $rows): never
 
     fclose($output);
     exit;
+}
+
+function format_money(?float $value, string $suffix = ' DH'): string
+{
+    if ($value === null) return '-';
+    return number_format($value, 2, ',', ' ') . $suffix;
+}
+
+function format_number(?float $value, int $decimals = 0): string
+{
+    if ($value === null) return '-';
+    return number_format($value, $decimals, ',', ' ');
 }
 
 function load_defaults(?string $key = null): array

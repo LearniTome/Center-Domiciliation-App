@@ -219,9 +219,9 @@ if (is_post()) {
                 'tribunal' => $wizard['societe']['tribunal'] ?? '',
                 'email' => $wizard['societe']['email'] ?? '',
                 'telephone' => $wizard['societe']['telephone'] ?? '',
-                'capital' => ($wizard['societe']['capital'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['societe']['capital']) : null,
+                'capital' => ($wizard['societe']['capital'] ?? '') !== '' ? parse_money((string) $wizard['societe']['capital']) : null,
                 'part_social' => ($wizard['societe']['part_social'] ?? '') !== '' ? (int) $wizard['societe']['part_social'] : null,
-                'valeur_nominale' => ($wizard['societe']['valeur_nominale'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['societe']['valeur_nominale']) : null,
+                'valeur_nominale' => ($wizard['societe']['valeur_nominale'] ?? '') !== '' ? parse_money((string) $wizard['societe']['valeur_nominale']) : null,
                 'date_exp_cert_neg' => ($wizard['societe']['date_exp_cert_neg'] ?? '') !== '' ? $wizard['societe']['date_exp_cert_neg'] : null,
                 'type_generation' => $wizard['societe']['type_generation'] ?? '',
                 'procedure_creation' => $wizard['societe']['procedure_creation'] ?? '',
@@ -252,8 +252,8 @@ if (is_post()) {
                     'email' => $associe['email'] ?? '',
                     'qualite_associe' => $associe['qualite_associe'] ?? '',
                     'parts' => ($associe['parts'] ?? '') !== '' ? (int) $associe['parts'] : null,
-                    'capital_detenu' => ($associe['capital_detenu'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $associe['capital_detenu']) : null,
-                    'part_percent' => ($associe['part_percent'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $associe['part_percent']) : null,
+                    'capital_detenu' => ($associe['capital_detenu'] ?? '') !== '' ? parse_money((string) $associe['capital_detenu']) : null,
+                    'part_percent' => ($associe['part_percent'] ?? '') !== '' ? parse_money((string) $associe['part_percent']) : null,
                     'is_gerant' => ((string) ($associe['is_gerant'] ?? '0') === '1') ? 1 : 0,
                 ]);
             }
@@ -284,15 +284,15 @@ if (is_post()) {
                 'type_contrat_domiciliation_autre' => ($wizard['contrat']['type_contrat_domiciliation_autre'] ?? '') !== '' ? $wizard['contrat']['type_contrat_domiciliation_autre'] : null,
                 'date_debut' => ($wizard['contrat']['date_debut'] ?? '') !== '' ? $wizard['contrat']['date_debut'] : null,
                 'date_fin' => ($wizard['contrat']['date_fin'] ?? '') !== '' ? $wizard['contrat']['date_fin'] : null,
-                'taux_tva_pourcent' => ($wizard['contrat']['taux_tva_pourcent'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['taux_tva_pourcent']) : null,
-                'loyer_mensuel_ht' => ($wizard['contrat']['loyer_mensuel_ht'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['loyer_mensuel_ht']) : null,
-                'loyer_mensuel_ttc' => ($wizard['contrat']['loyer_ttc_mois'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['loyer_ttc_mois']) : null,
-                'montant_total_ht_contrat' => ($wizard['contrat']['montant_total_loyer'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['montant_total_loyer']) : null,
+                'taux_tva_pourcent' => ($wizard['contrat']['taux_tva_pourcent'] ?? '') !== '' ? parse_money((string) $wizard['contrat']['taux_tva_pourcent']) : null,
+                'loyer_mensuel_ht' => ($wizard['contrat']['loyer_mensuel_ht'] ?? '') !== '' ? parse_money((string) $wizard['contrat']['loyer_mensuel_ht']) : null,
+                'loyer_mensuel_ttc' => ($wizard['contrat']['loyer_ttc_mois'] ?? '') !== '' ? parse_money((string) $wizard['contrat']['loyer_ttc_mois']) : null,
+                'montant_total_ht_contrat' => ($wizard['contrat']['montant_total_loyer'] ?? '') !== '' ? parse_money((string) $wizard['contrat']['montant_total_loyer']) : null,
                 'type_renouvellement' => $wizard['contrat']['type_renouvellement'] ?? '',
-                'taux_tva_renouvellement_pourcent' => ($wizard['contrat']['taux_tva_renouvellement_pourcent'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['taux_tva_renouvellement_pourcent']) : null,
-                'loyer_mensuel_ht_renouvellement' => ($wizard['contrat']['loyer_mensuel_ht_renouvellement'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['loyer_mensuel_ht_renouvellement']) : null,
-                'loyer_mensuel_renouvellement_ttc' => ($wizard['contrat']['loyer_ttc_renouvellement_mois'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['loyer_ttc_renouvellement_mois']) : null,
-                'montant_total_ht_renouvellement' => ($wizard['contrat']['montant_total_renouvellement'] ?? '') !== '' ? (float) str_replace(',', '.', (string) $wizard['contrat']['montant_total_renouvellement']) : null,
+                'taux_tva_renouvellement_pourcent' => ($wizard['contrat']['taux_tva_renouvellement_pourcent'] ?? '') !== '' ? parse_money((string) $wizard['contrat']['taux_tva_renouvellement_pourcent']) : null,
+                'loyer_mensuel_ht_renouvellement' => ($wizard['contrat']['loyer_mensuel_ht_renouvellement'] ?? '') !== '' ? parse_money((string) $wizard['contrat']['loyer_mensuel_ht_renouvellement']) : null,
+                'loyer_mensuel_renouvellement_ttc' => ($wizard['contrat']['loyer_ttc_renouvellement_mois'] ?? '') !== '' ? parse_money((string) $wizard['contrat']['loyer_ttc_renouvellement_mois']) : null,
+                'montant_total_ht_renouvellement' => ($wizard['contrat']['montant_total_renouvellement'] ?? '') !== '' ? parse_money((string) $wizard['contrat']['montant_total_renouvellement']) : null,
                 'statut' => $wizard['contrat']['statut'] ?? 'actif',
                 'notes' => $wizard['contrat']['notes'] ?? '',
             ]);
@@ -553,6 +553,7 @@ $contratData = array_merge([
             <input type="hidden" name="step" value="2">
             <input type="hidden" id="societe-capital" value="<?= e((string) ($societeData['capital'] ?? '')) ?>">
             <input type="hidden" id="societe-part-social" value="<?= e((string) ($societeData['part_social'] ?? '')) ?>">
+            <input type="hidden" name="forme_juridique" value="<?= e((string) ($societeData['forme_juridique'] ?? '')) ?>">
             <div class="section-header">
                 <div>
                     <h2>Associes de <?= e((string) ($societeData['raison_sociale'] ?: 'la societe')) ?></h2>
@@ -682,11 +683,19 @@ $contratData = array_merge([
                 </div>
                 <div class="form-grid" style="grid-template-columns:repeat(4,1fr)">
                     <div class="field">
-                        <span>Total parts</span>
+                        <span>Capital societe</span>
+                        <strong id="ref-capital" style="font-size:1.2rem">0,00 DH</strong>
+                    </div>
+                    <div class="field">
+                        <span>Part social societe</span>
+                        <strong id="ref-parts" style="font-size:1.2rem">0</strong>
+                    </div>
+                    <div class="field">
+                        <span>Total parts distribuees</span>
                         <strong id="total-parts" style="font-size:1.2rem">0</strong>
                     </div>
                     <div class="field">
-                        <span>Total capital detenu (DH)</span>
+                        <span>Total capital distribue (DH)</span>
                         <strong id="total-capital" style="font-size:1.2rem">0,00</strong>
                     </div>
                     <div class="field">
@@ -894,11 +903,11 @@ $contratData = array_merge([
                 </label>
                 <label class="field">
                     <span>Loyer TTC (Mois)</span>
-                    <input type="number" step="0.01" name="loyer_ttc_mois" data-loyer-ttc-mois value="<?= e((string) ($contratData['loyer_ttc_mois'] ?? '')) ?>" readonly>
+                    <input type="text" name="loyer_ttc_mois" data-loyer-ttc-mois value="<?= e((string) ($contratData['loyer_ttc_mois'] ?? '')) ?>" readonly>
                 </label>
                 <label class="field">
                     <span>Montant Total du Loyer</span>
-                    <input type="number" step="0.01" name="montant_total_loyer" data-montant-total-loyer value="<?= e((string) ($contratData['montant_total_loyer'] ?? '')) ?>" readonly>
+                    <input type="text" name="montant_total_loyer" data-montant-total-loyer value="<?= e((string) ($contratData['montant_total_loyer'] ?? '')) ?>" readonly>
                 </label>
 
                 <h3 class="section-title">Renouvellement</h3>
@@ -927,11 +936,11 @@ $contratData = array_merge([
                 </label>
                 <label class="field">
                     <span>Loyer TTC (Mois)</span>
-                    <input type="number" step="0.01" name="loyer_ttc_renouvellement_mois" data-loyer-ttc-renouvellement-mois value="<?= e((string) ($contratData['loyer_ttc_renouvellement_mois'] ?? '')) ?>" readonly>
+                    <input type="text" name="loyer_ttc_renouvellement_mois" data-loyer-ttc-renouvellement-mois value="<?= e((string) ($contratData['loyer_ttc_renouvellement_mois'] ?? '')) ?>" readonly>
                 </label>
                 <label class="field">
                     <span>Montant Total du Loyer</span>
-                    <input type="number" step="0.01" name="montant_total_renouvellement" data-montant-total-renouvellement value="<?= e((string) ($contratData['montant_total_renouvellement'] ?? '')) ?>" readonly>
+                    <input type="text" name="montant_total_renouvellement" data-montant-total-renouvellement value="<?= e((string) ($contratData['montant_total_renouvellement'] ?? '')) ?>" readonly>
                 </label>
 
                 <label class="field full">
