@@ -211,18 +211,31 @@ class TemplateAnalyzer
         $folder = basename(dirname($filePath));
 
         $parts = explode('_', $filename);
-        $prefix = count($parts) > 1 ? $parts[0] : '';
+        $prefix = '';
         $datePart = '';
         $docType = '';
 
         if (count($parts) >= 3) {
-            $datePart = $parts[1] ?? '';
-            $rest = array_slice($parts, 2);
+            if (preg_match('/^\d{4}[_-]/', $parts[0])) {
+                $datePart = $parts[0];
+                $prefix = '';
+                $rest = array_slice($parts, 1);
+            } else {
+                $prefix = $parts[0];
+                $datePart = $parts[1] ?? '';
+                $rest = array_slice($parts, 2);
+            }
             $docType = implode('_', $rest);
             $docType = preg_replace('/_Template$/', '', $docType);
             $docType = preg_replace('/-Template$/', '', $docType);
         } elseif (count($parts) === 2) {
-            $docType = str_replace('_Template', '', $parts[1]);
+            if (preg_match('/^\d{4}[_-]/', $parts[0])) {
+                $datePart = $parts[0];
+                $docType = str_replace('_Template', '', $parts[1]);
+            } else {
+                $prefix = $parts[0];
+                $docType = str_replace('_Template', '', $parts[1]);
+            }
         }
 
         return [
