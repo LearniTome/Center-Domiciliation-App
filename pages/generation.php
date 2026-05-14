@@ -86,6 +86,14 @@ if (is_post() && !isset($_POST['delete_submit']) && !isset($_POST['validate_subm
     $clientName = preg_replace('/-+/', '-', $clientName);
     $clientName = trim($clientName, '-');
 
+    $folderDate = $context['date_contrat'] ?? $today;
+    $folderName = $folderDate . '_' . $forme . '_' . $clientName;
+    $folderName = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', $folderName), '-');
+    $outputDir = __DIR__ . '/../output/' . $folderName;
+    if (!is_dir($outputDir)) {
+        mkdir($outputDir, 0777, true);
+    }
+
     foreach ($selectedPaths as $path) {
         if (!file_exists($path)) continue;
         if (!str_starts_with(realpath($path), realpath($templatesDir))) continue;
