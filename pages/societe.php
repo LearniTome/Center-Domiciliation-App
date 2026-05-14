@@ -55,7 +55,26 @@ if (is_post() && isset($_POST['validate_submit']) && ($pdo ?? null) instanceof P
     redirect_to('societe', ['id' => $societeId]);
 }
 
-if (is_post() && !isset($_POST['validate_submit']) && ($pdo ?? null) instanceof PDO) {
+if (is_post() && isset($_POST['delete_submit']) && ($pdo ?? null) instanceof PDO) {
+    verify_csrf();
+    $selected = $_POST['selected_files'] ?? [];
+    if (count($selected) > 0) {
+        $placeholders = implode(',', array_fill(0, count($selected), '?'));
+        $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf FROM documents_generes WHERE id IN ($placeholders)");
+        $stmt->execute(array_map('intval', $selected));
+        $docs = $stmt->fetchAll();
+        foreach ($docs as $doc) {
+            if (file_exists($doc['fichier_docx'])) unlink($doc['fichier_docx']);
+            if ($doc['fichier_pdf'] && file_exists($doc['fichier_pdf'])) unlink($doc['fichier_pdf']);
+        }
+        $stmt = $pdo->prepare("DELETE FROM documents_generes WHERE id IN ($placeholders)");
+        $stmt->execute(array_map('intval', $selected));
+        set_flash('error', count($selected) . ' document(s) supprime(s).');
+        redirect_to('societe', ['id' => $societeId]);
+    }
+}
+
+if (is_post() && !isset($_POST['validate_submit']) && !isset($_POST['delete_submit']) && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
     $stmt = $pdo->prepare('
         UPDATE societes SET
@@ -439,7 +458,8 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
                         <th>Document</th>
                         <th>Taille</th>
                         <th>Statut</th>
-                        <th>Date</th>
+                        <th>Date creation</th>
+                        <th>Modification</th>
                         <th class="col-actions">Actions</th>
                     </tr>
                     </thead>
@@ -456,26 +476,41 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
                                 </span>
                             </td>
                             <td><?= e(date('d/m/Y H:i', strtotime((string) $doc['created_at']))) ?></td>
-                            <td>
-                                <div class="table-actions">
-                                    <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_docx'])) ?>" download title="Telecharger DOCX">
-                                        <span class="mdi mdi-file-word"></span>
-                                    </a>
-                                    <?php if ($doc['fichier_pdf']): ?>
-                                        <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_pdf'])) ?>" download title="Telecharger PDF">
-                                            <span class="mdi mdi-file-pdf"></span>
+                            <td><span class="help-text"><?php $modifTime = file_exists($doc['fichier_docx']) ? filemtime($doc['fichier_docx']) : null; echo $modifTime ? date('d/m/Y H:i', $modifTime) : '-'; ?></span></td>
+                                <td>
+                                    <div class="table-actions">
+                                        <a class="btn-icon" href="<?= e(word_url($doc['fichier_docx'])) ?>" title="Ouvrir dans Word">
+                                            <span class="mdi mdi-file-word"></span>
                                         </a>
-                                    <?php endif; ?>
-                                </div>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
+                                        <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_docx'])) ?>" download title="Telecharger DOCX">
+                                            <span class="mdi mdi-download"></span>
+                                        </a>
+                                        <?php if ($doc['fichier_pdf']): ?>
+                                            <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_pdf'])) ?>" download title="Telecharger PDF">
+                                                <span class="mdi mdi-file-pdf"></span>
+                                            </a>
+                                        <?php endif; ?>
+                                        <?php if (!$doc['valide']): ?>
+                                            <a class="btn-icon" href="#" onclick="event.preventDefault(); document.querySelector('#docs-form input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']').checked=true; document.querySelector('button[name=\'validate_submit\']').click();" title="Valider">
+                                                <span class="mdi mdi-file-check"></span>
+                                            </a>
+                                        <?php endif; ?>
+                                        <a class="btn-icon danger" href="#" onclick="if(!confirm('Supprimer ce document ?')){event.preventDefault();return false;} event.preventDefault(); document.querySelector('#docs-form input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']').checked=true; document.querySelector('button[name=\'delete_submit\']').click();" title="Supprimer">
+                                            <span class="mdi mdi-delete"></span>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
                     </tbody>
                 </table>
             </div>
             <div class="table-actions" style="margin-top:12px">
                 <button class="btn btn-next" type="submit" name="validate_submit" value="1">
                     <span class="mdi mdi-file-check"></span> Valider la selection
+                </button>
+                <button class="btn btn-back" type="submit" name="delete_submit" value="1">
+                    <span class="mdi mdi-delete"></span> Supprimer la selection
                 </button>
             </div>
         </form>

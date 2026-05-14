@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 $q = search_term();
 $filterSociete = int_value($_GET, 'societe_id');
+$filterStatut = field_value($_GET, 'statut');
 $exportCsv = isset($_GET['export']) && $_GET['export'] === 'csv';
 
 if (is_post() && isset($_POST['delete_submit'])) {
@@ -21,7 +22,9 @@ if (is_post() && isset($_POST['delete_submit'])) {
         $stmt = $pdo->prepare("DELETE FROM documents_generes WHERE id IN ($placeholders)");
         $stmt->execute(array_map('intval', $selected));
         set_flash('error', count($selected) . ' document(s) supprime(s).');
-        redirect_to('documents', $filterSociete ? ['societe_id' => $filterSociete] : []);
+        $delParams = $filterSociete ? ['societe_id' => $filterSociete] : [];
+        if ($filterStatut) $delParams['statut'] = $filterStatut;
+        redirect_to('documents', $delParams);
     }
 }
 
@@ -58,11 +61,19 @@ if (is_post() && isset($_POST['validate_submit'])) {
         ]);
     }
     set_flash('success', count($selected) . ' document(s) valide(s).');
-    redirect_to('documents', $filterSociete ? ['societe_id' => $filterSociete] : []);
+    $valParams = $filterSociete ? ['societe_id' => $filterSociete] : [];
+    if ($filterStatut) $valParams['statut'] = $filterStatut;
+    redirect_to('documents', $valParams);
 }
 
 $societesOptions = fetch_societes_options($pdo ?? null);
-$documents = fetch_all_documents($pdo ?? null, $filterSociete, $q);
+$allDocuments = fetch_all_documents($pdo ?? null, $filterSociete, $q);
+$documents = $allDocuments;
+if ($filterStatut === 'valide') {
+    $documents = array_values(array_filter($allDocuments, fn($d) => (int) $d['valide'] === 1));
+} elseif ($filterStatut === 'brouillon') {
+    $documents = array_values(array_filter($allDocuments, fn($d) => (int) $d['valide'] === 0));
+}
 
 if ($exportCsv && count($documents) > 0) {
     $headers = ['ID', 'Societe', 'Type', 'Fichier DOCX', 'Fichier PDF', 'Taille (Ko)', 'Statut', 'Date generation'];
@@ -89,6 +100,9 @@ if ($exportCsv && count($documents) > 0) {
             <p class="help-text"><?= count($documents) ?> document(s)</p>
         </div>
         <div class="table-actions">
+            <a class="btn <?= $filterStatut === '' ? 'btn-next' : 'btn-secondary' ?>" href="<?= e(app_url('documents', array_merge(['societe_id' => $filterSociete, 'q' => $q], $filterSociete ? [] : []))) ?>">Tous</a>
+            <a class="btn <?= $filterStatut === 'valide' ? 'btn-next' : 'btn-secondary' ?>" href="<?= e(app_url('documents', array_merge(['societe_id' => $filterSociete, 'q' => $q, 'statut' => 'valide'], $filterSociete ? [] : []))) ?>">Valides</a>
+            <a class="btn <?= $filterStatut === 'brouillon' ? 'btn-next' : 'btn-secondary' ?>" href="<?= e(app_url('documents', array_merge(['societe_id' => $filterSociete, 'q' => $q, 'statut' => 'brouillon'], $filterSociete ? [] : []))) ?>">Brouillons</a>
             <a class="btn btn-info" href="<?= e(app_url('documents', array_merge(['export' => 'csv'], $filterSociete ? ['societe_id' => $filterSociete] : []))) ?>">
                 <span class="mdi mdi-download"></span> Exporter CSV
             </a>
@@ -97,6 +111,7 @@ if ($exportCsv && count($documents) > 0) {
 
     <form method="get" class="inline-form">
         <input type="hidden" name="page" value="documents">
+        <?php if ($filterStatut): ?><input type="hidden" name="statut" value="<?= e($filterStatut) ?>"><?php endif; ?>
         <input type="search" name="q" placeholder="Rechercher..." value="<?= e($q) ?>">
         <select name="societe_id">
             <option value="">Toutes les societes</option>
@@ -107,7 +122,7 @@ if ($exportCsv && count($documents) > 0) {
             <?php endforeach; ?>
         </select>
         <button class="btn" type="submit"><span class="mdi mdi-filter"></span> Filtrer</button>
-        <?php if ($q !== '' || $filterSociete !== null): ?>
+        <?php if ($q !== '' || $filterSociete !== null || $filterStatut !== ''): ?>
             <a class="btn btn-cancel" href="<?= e(app_url('documents')) ?>"><span class="mdi mdi-close"></span> Reinitialiser</a>
         <?php endif; ?>
     </form>
@@ -115,8 +130,8 @@ if ($exportCsv && count($documents) > 0) {
     <?php if (count($documents) > 0): ?>
         <form method="post" id="documents-form">
             <?= csrf_input() ?>
-            <div class="table-scroll">
-                <table>
+            <div class="table-scroll" style="overflow-x: auto">
+                <table style="white-space: nowrap">
                     <thead>
                         <tr>
                             <th class="col-check"><input type="checkbox" id="select-all"></th>
@@ -124,13 +139,15 @@ if ($exportCsv && count($documents) > 0) {
                             <th>Type</th>
                             <th>Document</th>
                             <th>Taille</th>
-                            <th>Date</th>
                             <th>Statut</th>
+                            <th>Date creation</th>
+                            <th>Modification</th>
                             <th class="col-actions">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($documents as $doc): ?>
+                            <?php $modifTime = file_exists($doc['fichier_docx']) ? filemtime($doc['fichier_docx']) : null; ?>
                             <tr>
                                 <td><input type="checkbox" name="selected_files[]" value="<?= e((string) $doc['id']) ?>"></td>
                                 <td>
@@ -139,24 +156,36 @@ if ($exportCsv && count($documents) > 0) {
                                     </a>
                                 </td>
                                 <td><?= e($doc['doc_type'] ?? '-') ?></td>
-                                <td><?= e(basename($doc['fichier_docx'])) ?></td>
+                                <td><span class="help-text"><?= e(basename($doc['fichier_docx'])) ?></span></td>
                                 <td><?= $doc['taille_ko'] ? number_format((float) $doc['taille_ko'], 1) . ' Ko' : '-' ?></td>
-                                <td><?= e(date('d/m/Y H:i', strtotime((string) $doc['created_at']))) ?></td>
                                 <td>
                                     <span class="statut-badge <?= $doc['valide'] ? 'valide' : 'brouillon' ?>">
                                         <?= $doc['valide'] ? 'Valide' : 'Brouillon' ?>
                                     </span>
                                 </td>
+                                <td><?= e(date('d/m/Y H:i', strtotime((string) $doc['created_at']))) ?></td>
+                                <td><span class="help-text"><?= $modifTime ? date('d/m/Y H:i', $modifTime) : '-' ?></span></td>
                                 <td>
                                     <div class="table-actions">
-                                        <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_docx'])) ?>" download title="Telecharger DOCX">
+                                        <a class="btn-icon" href="<?= e(word_url($doc['fichier_docx'])) ?>" title="Ouvrir dans Word">
                                             <span class="mdi mdi-file-word"></span>
+                                        </a>
+                                        <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_docx'])) ?>" download title="Telecharger DOCX">
+                                            <span class="mdi mdi-download"></span>
                                         </a>
                                         <?php if ($doc['fichier_pdf']): ?>
                                             <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_pdf'])) ?>" download title="Telecharger PDF">
                                                 <span class="mdi mdi-file-pdf"></span>
                                             </a>
                                         <?php endif; ?>
+                                        <?php if (!$doc['valide']): ?>
+                                            <a class="btn-icon" href="#" onclick="event.preventDefault(); document.querySelector('#documents-form input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']').checked=true; document.querySelector('button[name=\'validate_submit\']').click();" title="Valider">
+                                                <span class="mdi mdi-file-check"></span>
+                                            </a>
+                                        <?php endif; ?>
+                                        <a class="btn-icon danger" href="#" onclick="if(!confirm('Supprimer ce document ?')){event.preventDefault();return false;} event.preventDefault(); document.querySelector('#documents-form input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']').checked=true; document.querySelector('button[name=\'delete_submit\']').click();" title="Supprimer">
+                                            <span class="mdi mdi-delete"></span>
+                                        </a>
                                     </div>
                                 </td>
                             </tr>
