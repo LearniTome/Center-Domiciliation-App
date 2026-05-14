@@ -304,72 +304,70 @@ $collabCount = ($pdo ?? null) instanceof PDO
     </article>
 <?php endif; ?>
 
-<section class="grid two" style="margin-top:1rem">
-    <article class="card">
-        <div class="section-header">
-            <h3>Associes lies (<?= count($associes) ?>)</h3>
-            <a class="btn btn-info" href="<?= e(app_url('associes')) ?>"><span class="mdi mdi-eye"></span> Voir tout</a>
-        </div>
-        <?php if (!$associes): ?>
-            <p class="table-empty">Aucun associe lie a cette societe.</p>
-        <?php else: ?>
-            <div class="table-scroll">
-                <table>
-                    <thead>
+<article class="card">
+    <div class="section-header">
+        <h3>Associes lies (<?= count($associes) ?>)</h3>
+        <a class="btn btn-info" href="<?= e(app_url('associes')) ?>"><span class="mdi mdi-eye"></span> Voir tout</a>
+    </div>
+    <?php if (!$associes): ?>
+        <p class="table-empty">Aucun associe lie a cette societe.</p>
+    <?php else: ?>
+        <div class="table-scroll">
+            <table>
+                <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th>CIN</th>
+                    <th>Nationalite</th>
+                    <th>Qualite</th>
+                    <th>Gerant</th>
+                </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($associes as $associe): ?>
                     <tr>
-                        <th>Nom</th>
-                        <th>CIN</th>
-                        <th>Nationalite</th>
-                        <th>Qualite</th>
-                        <th>Gerant</th>
+                        <td><?= e($associe['nom_complet']) ?></td>
+                        <td><?= e($associe['cin']) ?></td>
+                        <td><?= e($associe['nationalite']) ?></td>
+                        <td><?= e($associe['qualite_associe'] ?: '-') ?></td>
+                        <td><?= (int) $associe['is_gerant'] === 1 ? 'Oui' : 'Non' ?></td>
                     </tr>
-                    </thead>
-                    <tbody>
-                    <?php foreach ($associes as $associe): ?>
-                        <tr>
-                            <td><?= e($associe['nom_complet']) ?></td>
-                            <td><?= e($associe['cin']) ?></td>
-                            <td><?= e($associe['nationalite']) ?></td>
-                            <td><?= e($associe['qualite_associe'] ?: '-') ?></td>
-                            <td><?= (int) $associe['is_gerant'] === 1 ? 'Oui' : 'Non' ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        <?php endif; ?>
-    </article>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
+</article>
 
-    <article class="card">
-        <div class="section-header">
-            <h3>Contrats lies (<?= count($contrats) ?>)</h3>
-            <a class="btn btn-info" href="<?= e(app_url('contrats')) ?>"><span class="mdi mdi-eye"></span> Voir tout</a>
-        </div>
-        <?php if (!$contrats): ?>
-            <p class="table-empty">Aucun contrat lie a cette societe.</p>
-        <?php else: ?>
-            <div class="table-scroll">
-                <table>
-                    <thead>
+<article class="card">
+    <div class="section-header">
+        <h3>Contrats lies (<?= count($contrats) ?>)</h3>
+        <a class="btn btn-info" href="<?= e(app_url('contrats')) ?>"><span class="mdi mdi-eye"></span> Voir tout</a>
+    </div>
+    <?php if (!$contrats): ?>
+        <p class="table-empty">Aucun contrat lie a cette societe.</p>
+    <?php else: ?>
+        <div class="table-scroll">
+            <table>
+                <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Periode</th>
+                    <th>Statut</th>
+                    <th>Montant Total</th>
+                </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($contrats as $contrat): ?>
                     <tr>
-                        <th>Type</th>
-                        <th>Periode</th>
-                        <th>Statut</th>
-                        <th>Montant Total</th>
+                        <td><?= e($contrat['type_contrat']) ?></td>
+                        <td><?= e(($contrat['date_debut'] ?: '-') . ' -> ' . ($contrat['date_fin'] ?: '-')) ?></td>
+                        <td><span class="statut-badge <?= strtolower($contrat['statut']) === 'actif' ? 'actif' : 'resilie' ?>"><?= e($contrat['statut']) ?></span></td>
+                        <td><?= format_money($contrat['montant_total_loyer'] !== null ? (float) $contrat['montant_total_loyer'] : null) ?></td>
                     </tr>
-                    </thead>
-                    <tbody>
-                    <?php foreach ($contrats as $contrat): ?>
-                        <tr>
-                            <td><?= e($contrat['type_contrat']) ?></td>
-                            <td><?= e(($contrat['date_debut'] ?: '-') . ' -> ' . ($contrat['date_fin'] ?: '-')) ?></td>
-                            <td><span class="statut-badge <?= strtolower($contrat['statut']) === 'actif' ? 'actif' : 'resilie' ?>"><?= e($contrat['statut']) ?></span></td>
-                            <td><?= format_money($contrat['montant_total_loyer'] !== null ? (float) $contrat['montant_total_loyer'] : null) ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        <?php endif; ?>
-    </article>
-</section>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
+</article>
