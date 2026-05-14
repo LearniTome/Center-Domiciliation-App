@@ -36,7 +36,7 @@ if (is_post() && isset($_POST['validate_submit'])) {
         redirect_to('documents', isset($_GET['societe_id']) ? ['societe_id' => (int) $_GET['societe_id']] : []);
     }
     $placeholders = implode(',', array_fill(0, count($selected), '?'));
-    $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf FROM documents_generes WHERE valide = 0 AND id IN ($placeholders)");
+    $stmt = $pdo->prepare("SELECT id, societe_id, fichier_docx, fichier_pdf, doc_type FROM documents_generes WHERE valide = 0 AND id IN ($placeholders)");
     $stmt->execute(array_map('intval', $selected));
     $docs = $stmt->fetchAll();
     $updateStmt = $pdo->prepare("UPDATE documents_generes SET valide = 1, fichier_docx = :fichier_docx, fichier_pdf = :fichier_pdf WHERE id = :id");
@@ -59,6 +59,17 @@ if (is_post() && isset($_POST['validate_submit'])) {
             'fichier_pdf' => $newPdf,
             'id' => $doc['id'],
         ]);
+    }
+    $cleanTypes = array_unique(array_map(fn($d) => $d['doc_type'] ?? '', $docs));
+    $cleanTypes = array_values(array_filter($cleanTypes, fn($v) => $v !== ''));
+    if (!empty($cleanTypes)) {
+        $typePlaceholders = implode(',', array_fill(0, count($cleanTypes), '?'));
+        $delStmt = $pdo->prepare("DELETE FROM documents_generes WHERE id NOT IN ($placeholders) AND societe_id = ? AND valide = 0 AND doc_type IN ($typePlaceholders)");
+        $societeIds = array_unique(array_map(fn($d) => (int) ($d['societe_id'] ?? 0), $docs));
+        $sid = count($societeIds) === 1 ? $societeIds[0] : 0;
+        if ($sid > 0) {
+            $delStmt->execute(array_merge(array_map('intval', $selected), [$sid], $cleanTypes));
+        }
     }
     set_flash('success', count($selected) . ' document(s) valide(s).');
     $valParams = $filterSociete ? ['societe_id' => $filterSociete] : [];
