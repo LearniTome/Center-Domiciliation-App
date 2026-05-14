@@ -684,4 +684,138 @@ class DocumentRenderer
             'JOUR' => $now->format('d'),
         ];
     }
+
+    public static function buildContextFromSession(array $wizard, ?PDO $pdo = null): array
+    {
+        $societe = $wizard['societe'] ?? [];
+        $associes = $wizard['associes'] ?? [];
+        $contrat = $wizard['contrat'] ?? [];
+
+        $denSte = $societe['raison_sociale'] ?? '';
+        $formeJur = $societe['forme_juridique'] ?? '';
+        $capital = $societe['capital'] ?? '';
+        $partSocial = $societe['part_social'] ?? '';
+        $ice = $societe['ice'] ?? '';
+        $steAdress = $societe['ste_adress'] ?? $societe['adresse'] ?? '';
+        $tribunal = $societe['tribunal'] ?? '';
+        $ville = $societe['ville'] ?? '';
+
+        $associeList = [];
+        foreach ($associes as $a) {
+            $nomComplet = $a['nom_complet'] ?? '';
+            $nomParts = explode(' ', $nomComplet, 2);
+            $prenom = count($nomParts) > 1 ? $nomParts[0] : '';
+            $nom = count($nomParts) > 1 ? $nomParts[1] : $nomComplet;
+
+            $associeList[] = [
+                'nom' => $nom,
+                'prenom' => $prenom,
+                'cin' => $a['cin'] ?? '',
+                'nationalite' => $a['nationalite'] ?? '',
+                'qualite' => $a['qualite_associe'] ?? '',
+                'parts' => $a['parts'] ?? '',
+                'est_gerant' => ((string) ($a['is_gerant'] ?? '0') === '1') ? 'Gerant' : 'Associe',
+                'civilite' => $a['civilite'] ?? 'M.',
+                'adresse' => $a['adresse'] ?? '',
+                'email' => $a['email'] ?? '',
+                'telephone' => $a['phone'] ?? '',
+                'date_naiss' => $a['date_naiss'] ?? '',
+                'lieu_naiss' => $a['lieu_naiss'] ?? '',
+                'capital_detenu' => $a['capital_detenu'] ?? '',
+            ];
+        }
+
+        $now = new DateTime();
+        $dateContrat = $contrat['date_contrat'] ?? ($contrat['date_debut'] ?? $now->format('Y-m-d'));
+        $dateDebut = $contrat['date_debut'] ?? $dateContrat;
+        $dateFin = $contrat['date_fin'] ?? '';
+        $dureeMois = $contrat['duree_contrat_mois'] ?? '';
+
+        $activitiesList = [];
+        $activitiesInline = '';
+        $activitiesBullets = '';
+        $activitiesContinuationBullets = '';
+        $activitiesCount = 0;
+
+        if ($pdo !== null) {
+            try {
+                $activitesStmt = $pdo->query('SELECT activite FROM ref_activites ORDER BY sort_order, activite');
+                $allActivities = array_map(static fn(array $row): string => $row['activite'], $activitesStmt->fetchAll());
+                $activitiesList = $allActivities;
+                $activitiesCount = count($activitiesList);
+                $activitiesInline = implode(', ', $activitiesList);
+                foreach ($activitiesList as $i => $act) {
+                    $prefix = '  \\item ';
+                    $activitiesBullets .= $prefix . $act . "\n";
+                    if ($i < $activitiesCount - 1) {
+                        $activitiesContinuationBullets .= $prefix . $act . "\n";
+                    }
+                }
+            } catch (Throwable $e) {
+            }
+        }
+
+        return [
+            'societe' => $societe,
+            'associes' => $associeList,
+            'contrat' => $contrat,
+            'activities' => $activitiesList,
+            'denomination' => $denSte,
+            'denomination_sociale' => $denSte,
+            'den_ste' => $denSte,
+            'DEN_STE' => $denSte,
+            'name' => $denSte,
+            'forme_juridique' => $formeJur,
+            'FORME_JUR' => $formeJur,
+            'ice' => $ice,
+            'ICE' => $ice,
+            'capital' => $capital,
+            'CAPITAL' => $capital,
+            'part_social' => $partSocial,
+            'PART_SOCIAL' => $partSocial,
+            'ste_adress' => $steAdress,
+            'STE_ADRESS' => $steAdress,
+            'adresse' => $steAdress,
+            'tribunal' => $tribunal,
+            'TRIBUNAL' => $tribunal,
+            'ville' => $ville,
+            'type_contrat_domiciliation' => $contrat['type_contrat_domiciliation'] ?? '',
+            'TYPE_CONTRAT_DOMICILIATION' => $contrat['type_contrat_domiciliation'] ?? '',
+            'date_contrat' => $dateContrat,
+            'DATE_CONTRAT' => $dateContrat,
+            'DTAE_CONTRAT' => $dateContrat,
+            'date_debut' => $dateDebut,
+            'DOM_DATEDEB' => $dateDebut,
+            'date_fin' => $dateFin,
+            'DOM_DATEFIN' => $dateFin,
+            'period' => $dureeMois,
+            'PERIOD_DOMCIL' => $dureeMois,
+            'DUREE_CONTRAT_MOIS' => $dureeMois,
+            'loyer_mensuel_ht' => $contrat['loyer_mensuel_ht'] ?? '',
+            'LOYER_MENSUEL_HT' => $contrat['loyer_mensuel_ht'] ?? '',
+            'taux_tva_pourcent' => $contrat['taux_tva_pourcent'] ?? '',
+            'TAUX_TVA_POURCENT' => $contrat['taux_tva_pourcent'] ?? '',
+            'ACTIVITIES' => $activitiesList,
+            'ACTIVITES' => $activitiesList,
+            'ACTIVITIES_LIST' => $activitiesList,
+            'ACTIVITES_LIST' => $activitiesList,
+            'LISTE_ACTIVITES' => $activitiesList,
+            'ACTIVITIES_INLINE' => $activitiesInline,
+            'ACTIVITES_INLINE' => $activitiesInline,
+            'ACTIVITIES_PLAIN' => $activitiesInline,
+            'ACTIVITES_PLAIN' => $activitiesInline,
+            'ACTIVITIES_BULLETS' => $activitiesBullets,
+            'ACTIVITES_PUCES' => $activitiesBullets,
+            'ACTIVITIES_CONTINUATION_BULLETS' => $activitiesContinuationBullets,
+            'ACTIVITES_CONTINUATION_PUCES' => $activitiesContinuationBullets,
+            'ACTIVITY_COUNT' => (string) $activitiesCount,
+            'activities' => $activitiesList,
+            'activites' => $activitiesList,
+            'DATE' => $now->format('d/m/Y'),
+            'DATE_LONG' => $now->format('d F Y'),
+            'ANNEE' => $now->format('Y'),
+            'MOIS' => $now->format('m'),
+            'JOUR' => $now->format('d'),
+        ];
+    }
 }

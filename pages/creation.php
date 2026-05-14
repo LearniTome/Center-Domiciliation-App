@@ -27,7 +27,7 @@ if (!isset($_SESSION['creation_wizard']) || !is_array($_SESSION['creation_wizard
 }
 
 $wizard = &$_SESSION['creation_wizard'];
-$step = max(1, min(3, (int) ($_GET['step'] ?? 1)));
+$step = max(1, min(5, (int) ($_GET['step'] ?? 1)));
 $tribunauxOptions = fetch_reference_options($pdo ?? null, 'ref_tribunaux', 'tribunal');
 $adressesOptions = fetch_reference_options($pdo ?? null, 'ref_ste_adresses', 'ste_adresse');
 $villesOptions = fetch_reference_options($pdo ?? null, 'ref_villes', 'ville');
@@ -50,7 +50,7 @@ if (isset($_GET['cancel']) && $_GET['cancel'] === '1') {
 
 if (is_post()) {
     verify_csrf();
-    $postedStep = max(1, min(3, (int) ($_POST['step'] ?? $step)));
+    $postedStep = max(1, min(5, (int) ($_POST['step'] ?? $step)));
     $navAction = $_POST['nav_action'] ?? 'next';
 
     if ($postedStep === 1) {
@@ -187,127 +187,228 @@ if (is_post()) {
             redirect_to('creation', ['step' => 3]);
         }
 
-        if (!(($pdo ?? null) instanceof PDO)) {
-            set_flash('error', 'Connexion MySQL indisponible.');
+        redirect_to('creation', ['step' => 4]);
+    }
+
+    if ($postedStep === 4) {
+        if ($navAction === 'back') {
             redirect_to('creation', ['step' => 3]);
         }
 
-        try {
-            $pdo->beginTransaction();
+        redirect_to('creation', ['step' => 5]);
+    }
 
-            $societeStmt = $pdo->prepare('
-                INSERT INTO societes (
-                    dossier_domiciliation, raison_sociale, forme_juridique, ice, date_ice, rc, if_number,
-                    capital, part_social, valeur_nominale, date_exp_cert_neg, ste_adress, ville, tribunal, email,
-                    telephone, type_generation, procedure_creation, mode_depot_creation
-                ) VALUES (
-                    :dossier_domiciliation, :raison_sociale, :forme_juridique, :ice, :date_ice, :rc, :if_number,
-                    :capital, :part_social, :valeur_nominale, :date_exp_cert_neg, :ste_adress, :ville, :tribunal, :email,
-                    :telephone, :type_generation, :procedure_creation, :mode_depot_creation
-                )
-            ');
-            $societeStmt->execute([
-                'dossier_domiciliation' => $wizard['societe']['dossier_domiciliation'] ?? null,
-                'raison_sociale' => $wizard['societe']['raison_sociale'] ?? '',
-                'forme_juridique' => $wizard['societe']['forme_juridique'] ?? '',
-                'ice' => $wizard['societe']['ice'] ?? '',
-                'date_ice' => ($wizard['societe']['date_ice'] ?? '') !== '' ? $wizard['societe']['date_ice'] : null,
-                'rc' => $wizard['societe']['rc'] ?? '',
-                'if_number' => $wizard['societe']['if_number'] ?? '',
-                'ste_adress' => $wizard['societe']['ste_adress'] ?? '',
-                'ville' => $wizard['societe']['ville'] ?? '',
-                'tribunal' => $wizard['societe']['tribunal'] ?? '',
-                'email' => $wizard['societe']['email'] ?? '',
-                'telephone' => $wizard['societe']['telephone'] ?? '',
-                'capital' => ($wizard['societe']['capital'] ?? '') !== '' ? parse_money((string) $wizard['societe']['capital']) : null,
-                'part_social' => ($wizard['societe']['part_social'] ?? '') !== '' ? (int) $wizard['societe']['part_social'] : null,
-                'valeur_nominale' => ($wizard['societe']['valeur_nominale'] ?? '') !== '' ? parse_money((string) $wizard['societe']['valeur_nominale']) : null,
-                'date_exp_cert_neg' => ($wizard['societe']['date_exp_cert_neg'] ?? '') !== '' ? $wizard['societe']['date_exp_cert_neg'] : null,
-                'type_generation' => $wizard['societe']['type_generation'] ?? '',
-                'procedure_creation' => $wizard['societe']['procedure_creation'] ?? '',
-                'mode_depot_creation' => $wizard['societe']['mode_depot_creation'] ?? '',
-            ]);
+    if ($postedStep === 5) {
+        if ($navAction === 'back') {
+            redirect_to('creation', ['step' => 4]);
+        }
 
-            $societeId = (int) $pdo->lastInsertId();
+        if ($navAction === 'generate') {
+            require_once __DIR__ . '/../src/TemplateAnalyzer.php';
+            require_once __DIR__ . '/../src/DocumentRenderer.php';
 
-            $associeStmt = $pdo->prepare('
-                INSERT INTO associes (societe_id, civilite, nom, prenom, nom_complet, cin, date_validite_cin, date_naiss, lieu_naiss, nationalite, adresse, phone, email, qualite_associe, parts, capital_detenu, part_percent, is_gerant)
-                VALUES (:societe_id, :civilite, :nom, :prenom, :nom_complet, :cin, :date_validite_cin, :date_naiss, :lieu_naiss, :nationalite, :adresse, :phone, :email, :qualite_associe, :parts, :capital_detenu, :part_percent, :is_gerant)
-            ');
+            $templatesDir = __DIR__ . '/../templates';
+            $outputDir = __DIR__ . '/../output';
+            if (!is_dir($outputDir)) {
+                mkdir($outputDir, 0777, true);
+            }
 
-            foreach ($wizard['associes'] as $associe) {
-                $associeStmt->execute([
-                    'societe_id' => $societeId,
-                    'civilite' => $associe['civilite'] ?? '',
-                    'nom' => $associe['nom'] ?? '',
-                    'prenom' => $associe['prenom'] ?? '',
-                    'nom_complet' => $associe['nom_complet'] ?? '',
-                    'cin' => $associe['cin'] ?? '',
-                    'date_validite_cin' => ($associe['date_validite_cin'] ?? '') !== '' ? $associe['date_validite_cin'] : null,
-                    'date_naiss' => ($associe['date_naiss'] ?? '') !== '' ? $associe['date_naiss'] : null,
-                    'lieu_naiss' => $associe['lieu_naiss'] ?? '',
-                    'nationalite' => $associe['nationalite'] ?? '',
-                    'adresse' => $associe['adresse'] ?? '',
-                    'phone' => $associe['phone'] ?? '',
-                    'email' => $associe['email'] ?? '',
-                    'qualite_associe' => $associe['qualite_associe'] ?? '',
-                    'parts' => ($associe['parts'] ?? '') !== '' ? (int) $associe['parts'] : null,
-                    'capital_detenu' => ($associe['capital_detenu'] ?? '') !== '' ? parse_money((string) $associe['capital_detenu']) : null,
-                    'part_percent' => ($associe['part_percent'] ?? '') !== '' ? parse_money((string) $associe['part_percent']) : null,
-                    'is_gerant' => ((string) ($associe['is_gerant'] ?? '0') === '1') ? 1 : 0,
+            $selectedPaths = $_POST['templates'] ?? [];
+            $generatePdf = isset($_POST['pdf']);
+            $forme = $wizard['societe']['forme_juridique'] ?? 'PP';
+
+            $context = DocumentRenderer::buildContextFromSession($wizard, $pdo ?? null);
+            $today = date('Y-m-d');
+            $clientName = trim(preg_replace('/[^a-zA-Z0-9-]/', '-', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $wizard['societe']['raison_sociale'] ?? 'Client')));
+            $clientName = preg_replace('/-+/', '-', $clientName);
+            $clientName = trim($clientName, '-');
+            $generatedFiles = [];
+
+            foreach ($selectedPaths as $path) {
+                if (!file_exists($path)) continue;
+                if (!str_starts_with(realpath($path), realpath($templatesDir))) continue;
+
+                try {
+                    $renderer = new DocumentRenderer($path, $outputDir);
+                    $filename = pathinfo($path, PATHINFO_FILENAME);
+                    $parts = explode('_', $filename);
+                    $docType = '';
+                    if (count($parts) >= 4) {
+                        $docType = preg_replace('/_?Template$/i', '', implode('_', array_slice($parts, 2)));
+                    } elseif (count($parts) === 3) {
+                        $docType = preg_replace('/_?Template$/i', '', $parts[1]);
+                    }
+                    $base = $forme . '_' . $today . '_' . $docType . '_' . $clientName;
+                    $outName = $base . '_Brouillon.docx';
+                    $docxPath = $renderer->render($context, $outName);
+
+                    $result = [
+                        'docx' => $docxPath,
+                        'pdf' => null,
+                        'name' => $outName,
+                    ];
+
+                    if ($generatePdf) {
+                        $pdfName = $base . '_Brouillon.pdf';
+                        $pdfPath = $renderer->tryConvertToPdf($docxPath, $pdfName);
+                        $result['pdf'] = $pdfPath;
+                    }
+
+                    $generatedFiles[] = $result;
+                } catch (\Throwable $e) {
+                    set_flash('error', 'Erreur sur ' . basename($path) . ' : ' . $e->getMessage());
+                }
+            }
+
+            if (count($generatedFiles) > 0) {
+                $_SESSION['creation_wizard']['generated_files'] = $generatedFiles;
+                set_flash('success', count($generatedFiles) . ' document(s) genere(s).');
+            }
+
+            redirect_to('creation', ['step' => 5]);
+        }
+
+        if ($navAction === 'finish') {
+            if (!(($pdo ?? null) instanceof PDO)) {
+                set_flash('error', 'Connexion MySQL indisponible.');
+                redirect_to('creation', ['step' => 5]);
+            }
+
+            try {
+                $pdo->beginTransaction();
+
+                $societeStmt = $pdo->prepare('
+                    INSERT INTO societes (
+                        dossier_domiciliation, raison_sociale, forme_juridique, ice, date_ice, rc, if_number,
+                        capital, part_social, valeur_nominale, date_exp_cert_neg, ste_adress, ville, tribunal, email,
+                        telephone, type_generation, procedure_creation, mode_depot_creation
+                    ) VALUES (
+                        :dossier_domiciliation, :raison_sociale, :forme_juridique, :ice, :date_ice, :rc, :if_number,
+                        :capital, :part_social, :valeur_nominale, :date_exp_cert_neg, :ste_adress, :ville, :tribunal, :email,
+                        :telephone, :type_generation, :procedure_creation, :mode_depot_creation
+                    )
+                ');
+                $societeStmt->execute([
+                    'dossier_domiciliation' => $wizard['societe']['dossier_domiciliation'] ?? null,
+                    'raison_sociale' => $wizard['societe']['raison_sociale'] ?? '',
+                    'forme_juridique' => $wizard['societe']['forme_juridique'] ?? '',
+                    'ice' => $wizard['societe']['ice'] ?? '',
+                    'date_ice' => ($wizard['societe']['date_ice'] ?? '') !== '' ? $wizard['societe']['date_ice'] : null,
+                    'rc' => $wizard['societe']['rc'] ?? '',
+                    'if_number' => $wizard['societe']['if_number'] ?? '',
+                    'ste_adress' => $wizard['societe']['ste_adress'] ?? '',
+                    'ville' => $wizard['societe']['ville'] ?? '',
+                    'tribunal' => $wizard['societe']['tribunal'] ?? '',
+                    'email' => $wizard['societe']['email'] ?? '',
+                    'telephone' => $wizard['societe']['telephone'] ?? '',
+                    'capital' => ($wizard['societe']['capital'] ?? '') !== '' ? parse_money((string) $wizard['societe']['capital']) : null,
+                    'part_social' => ($wizard['societe']['part_social'] ?? '') !== '' ? (int) $wizard['societe']['part_social'] : null,
+                    'valeur_nominale' => ($wizard['societe']['valeur_nominale'] ?? '') !== '' ? parse_money((string) $wizard['societe']['valeur_nominale']) : null,
+                    'date_exp_cert_neg' => ($wizard['societe']['date_exp_cert_neg'] ?? '') !== '' ? $wizard['societe']['date_exp_cert_neg'] : null,
+                    'type_generation' => $wizard['societe']['type_generation'] ?? '',
+                    'procedure_creation' => $wizard['societe']['procedure_creation'] ?? '',
+                    'mode_depot_creation' => $wizard['societe']['mode_depot_creation'] ?? '',
                 ]);
+
+                $societeId = (int) $pdo->lastInsertId();
+
+                $associeStmt = $pdo->prepare('
+                    INSERT INTO associes (societe_id, civilite, nom, prenom, nom_complet, cin, date_validite_cin, date_naiss, lieu_naiss, nationalite, adresse, phone, email, qualite_associe, parts, capital_detenu, part_percent, is_gerant)
+                    VALUES (:societe_id, :civilite, :nom, :prenom, :nom_complet, :cin, :date_validite_cin, :date_naiss, :lieu_naiss, :nationalite, :adresse, :phone, :email, :qualite_associe, :parts, :capital_detenu, :part_percent, :is_gerant)
+                ');
+
+                foreach ($wizard['associes'] as $associe) {
+                    $associeStmt->execute([
+                        'societe_id' => $societeId,
+                        'civilite' => $associe['civilite'] ?? '',
+                        'nom' => $associe['nom'] ?? '',
+                        'prenom' => $associe['prenom'] ?? '',
+                        'nom_complet' => $associe['nom_complet'] ?? '',
+                        'cin' => $associe['cin'] ?? '',
+                        'date_validite_cin' => ($associe['date_validite_cin'] ?? '') !== '' ? $associe['date_validite_cin'] : null,
+                        'date_naiss' => ($associe['date_naiss'] ?? '') !== '' ? $associe['date_naiss'] : null,
+                        'lieu_naiss' => $associe['lieu_naiss'] ?? '',
+                        'nationalite' => $associe['nationalite'] ?? '',
+                        'adresse' => $associe['adresse'] ?? '',
+                        'phone' => $associe['phone'] ?? '',
+                        'email' => $associe['email'] ?? '',
+                        'qualite_associe' => $associe['qualite_associe'] ?? '',
+                        'parts' => ($associe['parts'] ?? '') !== '' ? (int) $associe['parts'] : null,
+                        'capital_detenu' => ($associe['capital_detenu'] ?? '') !== '' ? parse_money((string) $associe['capital_detenu']) : null,
+                        'part_percent' => ($associe['part_percent'] ?? '') !== '' ? parse_money((string) $associe['part_percent']) : null,
+                        'is_gerant' => ((string) ($associe['is_gerant'] ?? '0') === '1') ? 1 : 0,
+                    ]);
+                }
+
+                $contratStmt = $pdo->prepare('
+                    INSERT INTO contrats (
+                        societe_id, type_contrat, date_contrat, duree_contrat_mois, type_contrat_domiciliation,
+                        type_contrat_domiciliation_autre, date_debut, date_fin,
+                        taux_tva_pourcent, loyer_mensuel_ht, loyer_mensuel_ttc, montant_total_ht_contrat,
+                        type_renouvellement, taux_tva_renouvellement_pourcent, loyer_mensuel_ht_renouvellement,
+                        loyer_mensuel_renouvellement_ttc, montant_total_ht_renouvellement,
+                        statut, notes
+                    ) VALUES (
+                        :societe_id, :type_contrat, :date_contrat, :duree_contrat_mois, :type_contrat_domiciliation,
+                        :type_contrat_domiciliation_autre, :date_debut, :date_fin,
+                        :taux_tva_pourcent, :loyer_mensuel_ht, :loyer_mensuel_ttc, :montant_total_ht_contrat,
+                        :type_renouvellement, :taux_tva_renouvellement_pourcent, :loyer_mensuel_ht_renouvellement,
+                        :loyer_mensuel_renouvellement_ttc, :montant_total_ht_renouvellement,
+                        :statut, :notes
+                    )
+                ');
+                $contratStmt->execute([
+                    'societe_id' => $societeId,
+                    'type_contrat' => $wizard['contrat']['type_contrat'] ?? '',
+                    'date_contrat' => ($wizard['contrat']['date_contrat'] ?? '') !== '' ? $wizard['contrat']['date_contrat'] : null,
+                    'duree_contrat_mois' => ($wizard['contrat']['duree_contrat_mois'] ?? '') !== '' ? (int) $wizard['contrat']['duree_contrat_mois'] : null,
+                    'type_contrat_domiciliation' => $wizard['contrat']['type_contrat_domiciliation'] ?? '',
+                    'type_contrat_domiciliation_autre' => ($wizard['contrat']['type_contrat_domiciliation_autre'] ?? '') !== '' ? $wizard['contrat']['type_contrat_domiciliation_autre'] : null,
+                    'date_debut' => ($wizard['contrat']['date_debut'] ?? '') !== '' ? $wizard['contrat']['date_debut'] : null,
+                    'date_fin' => ($wizard['contrat']['date_fin'] ?? '') !== '' ? $wizard['contrat']['date_fin'] : null,
+                    'taux_tva_pourcent' => ($wizard['contrat']['taux_tva_pourcent'] ?? '') !== '' ? parse_money((string) $wizard['contrat']['taux_tva_pourcent']) : null,
+                    'loyer_mensuel_ht' => ($wizard['contrat']['loyer_mensuel_ht'] ?? '') !== '' ? parse_money((string) $wizard['contrat']['loyer_mensuel_ht']) : null,
+                    'loyer_mensuel_ttc' => ($wizard['contrat']['loyer_ttc_mois'] ?? '') !== '' ? parse_money((string) $wizard['contrat']['loyer_ttc_mois']) : null,
+                    'montant_total_ht_contrat' => ($wizard['contrat']['montant_total_loyer'] ?? '') !== '' ? parse_money((string) $wizard['contrat']['montant_total_loyer']) : null,
+                    'type_renouvellement' => $wizard['contrat']['type_renouvellement'] ?? '',
+                    'taux_tva_renouvellement_pourcent' => ($wizard['contrat']['taux_tva_renouvellement_pourcent'] ?? '') !== '' ? parse_money((string) $wizard['contrat']['taux_tva_renouvellement_pourcent']) : null,
+                    'loyer_mensuel_ht_renouvellement' => ($wizard['contrat']['loyer_mensuel_ht_renouvellement'] ?? '') !== '' ? parse_money((string) $wizard['contrat']['loyer_mensuel_ht_renouvellement']) : null,
+                    'loyer_mensuel_renouvellement_ttc' => ($wizard['contrat']['loyer_ttc_renouvellement_mois'] ?? '') !== '' ? parse_money((string) $wizard['contrat']['loyer_ttc_renouvellement_mois']) : null,
+                    'montant_total_ht_renouvellement' => ($wizard['contrat']['montant_total_renouvellement'] ?? '') !== '' ? parse_money((string) $wizard['contrat']['montant_total_renouvellement']) : null,
+                    'statut' => $wizard['contrat']['statut'] ?? 'actif',
+                    'notes' => $wizard['contrat']['notes'] ?? '',
+                ]);
+
+                $generatedFiles = $wizard['generated_files'] ?? [];
+                if (count($generatedFiles) > 0) {
+                    $insertDocStmt = $pdo->prepare('INSERT INTO documents_generes (societe_id, template_source, doc_type, fichier_docx, fichier_pdf, taille_ko) VALUES (:societe_id, :template_source, :doc_type, :fichier_docx, :fichier_pdf, :taille_ko)');
+                    foreach ($generatedFiles as $gf) {
+                        $docType = null;
+                        $parts = explode('_', basename((string) $gf['name']));
+                        $docType = $parts[2] ?? null;
+                        $insertDocStmt->execute([
+                            'societe_id' => $societeId,
+                            'template_source' => null,
+                            'doc_type' => $docType,
+                            'fichier_docx' => $gf['docx'],
+                            'fichier_pdf' => $gf['pdf'] ?? null,
+                            'taille_ko' => file_exists((string) $gf['docx']) ? round(filesize((string) $gf['docx']) / 1024, 1) : null,
+                        ]);
+                    }
+                }
+
+                $pdo->commit();
+                unset($_SESSION['creation_wizard']);
+                set_flash('success', 'Le dossier a ete cree avec succes.');
+                redirect_to('societe', ['id' => $societeId]);
+            } catch (Throwable $exception) {
+                if ($pdo->inTransaction()) {
+                    $pdo->rollBack();
+                }
+
+                set_flash('error', 'Erreur lors de la creation du dossier: ' . $exception->getMessage());
+                redirect_to('creation', ['step' => 5]);
             }
-
-            $contratStmt = $pdo->prepare('
-                INSERT INTO contrats (
-                    societe_id, type_contrat, date_contrat, duree_contrat_mois, type_contrat_domiciliation,
-                    type_contrat_domiciliation_autre, date_debut, date_fin,
-                    taux_tva_pourcent, loyer_mensuel_ht, loyer_mensuel_ttc, montant_total_ht_contrat,
-                    type_renouvellement, taux_tva_renouvellement_pourcent, loyer_mensuel_ht_renouvellement,
-                    loyer_mensuel_renouvellement_ttc, montant_total_ht_renouvellement,
-                    statut, notes
-                ) VALUES (
-                    :societe_id, :type_contrat, :date_contrat, :duree_contrat_mois, :type_contrat_domiciliation,
-                    :type_contrat_domiciliation_autre, :date_debut, :date_fin,
-                    :taux_tva_pourcent, :loyer_mensuel_ht, :loyer_mensuel_ttc, :montant_total_ht_contrat,
-                    :type_renouvellement, :taux_tva_renouvellement_pourcent, :loyer_mensuel_ht_renouvellement,
-                    :loyer_mensuel_renouvellement_ttc, :montant_total_ht_renouvellement,
-                    :statut, :notes
-                )
-            ');
-            $contratStmt->execute([
-                'societe_id' => $societeId,
-                'type_contrat' => $wizard['contrat']['type_contrat'] ?? '',
-                'date_contrat' => ($wizard['contrat']['date_contrat'] ?? '') !== '' ? $wizard['contrat']['date_contrat'] : null,
-                'duree_contrat_mois' => ($wizard['contrat']['duree_contrat_mois'] ?? '') !== '' ? (int) $wizard['contrat']['duree_contrat_mois'] : null,
-                'type_contrat_domiciliation' => $wizard['contrat']['type_contrat_domiciliation'] ?? '',
-                'type_contrat_domiciliation_autre' => ($wizard['contrat']['type_contrat_domiciliation_autre'] ?? '') !== '' ? $wizard['contrat']['type_contrat_domiciliation_autre'] : null,
-                'date_debut' => ($wizard['contrat']['date_debut'] ?? '') !== '' ? $wizard['contrat']['date_debut'] : null,
-                'date_fin' => ($wizard['contrat']['date_fin'] ?? '') !== '' ? $wizard['contrat']['date_fin'] : null,
-                'taux_tva_pourcent' => ($wizard['contrat']['taux_tva_pourcent'] ?? '') !== '' ? parse_money((string) $wizard['contrat']['taux_tva_pourcent']) : null,
-                'loyer_mensuel_ht' => ($wizard['contrat']['loyer_mensuel_ht'] ?? '') !== '' ? parse_money((string) $wizard['contrat']['loyer_mensuel_ht']) : null,
-                'loyer_mensuel_ttc' => ($wizard['contrat']['loyer_ttc_mois'] ?? '') !== '' ? parse_money((string) $wizard['contrat']['loyer_ttc_mois']) : null,
-                'montant_total_ht_contrat' => ($wizard['contrat']['montant_total_loyer'] ?? '') !== '' ? parse_money((string) $wizard['contrat']['montant_total_loyer']) : null,
-                'type_renouvellement' => $wizard['contrat']['type_renouvellement'] ?? '',
-                'taux_tva_renouvellement_pourcent' => ($wizard['contrat']['taux_tva_renouvellement_pourcent'] ?? '') !== '' ? parse_money((string) $wizard['contrat']['taux_tva_renouvellement_pourcent']) : null,
-                'loyer_mensuel_ht_renouvellement' => ($wizard['contrat']['loyer_mensuel_ht_renouvellement'] ?? '') !== '' ? parse_money((string) $wizard['contrat']['loyer_mensuel_ht_renouvellement']) : null,
-                'loyer_mensuel_renouvellement_ttc' => ($wizard['contrat']['loyer_ttc_renouvellement_mois'] ?? '') !== '' ? parse_money((string) $wizard['contrat']['loyer_ttc_renouvellement_mois']) : null,
-                'montant_total_ht_renouvellement' => ($wizard['contrat']['montant_total_renouvellement'] ?? '') !== '' ? parse_money((string) $wizard['contrat']['montant_total_renouvellement']) : null,
-                'statut' => $wizard['contrat']['statut'] ?? 'actif',
-                'notes' => $wizard['contrat']['notes'] ?? '',
-            ]);
-
-            $pdo->commit();
-            unset($_SESSION['creation_wizard']);
-            set_flash('success', 'Le dossier a ete cree avec succes.');
-            redirect_to('societe', ['id' => $societeId]);
-        } catch (Throwable $exception) {
-            if ($pdo->inTransaction()) {
-                $pdo->rollBack();
-            }
-
-            set_flash('error', 'Erreur lors de la creation du dossier: ' . $exception->getMessage());
-            redirect_to('creation', ['step' => 3]);
         }
     }
 }
@@ -406,6 +507,14 @@ $contratData = array_merge([
         <div class="wizard-step <?= $step === 3 ? 'active' : '' ?>">
             <strong>Etape 3</strong>
             <span>Contrat</span>
+        </div>
+        <div class="wizard-step <?= $step === 4 ? 'active' : '' ?>">
+            <strong>Etape 4</strong>
+            <span>Recapitulatif</span>
+        </div>
+        <div class="wizard-step <?= $step === 5 ? 'active' : '' ?>">
+            <strong>Etape 5</strong>
+            <span>Generation</span>
         </div>
     </div>
 
@@ -830,7 +939,7 @@ $contratData = array_merge([
                 <button class="btn btn-next" type="submit" name="nav_action" value="next"><span class="mdi mdi-arrow-right"></span> Suivant</button>
             </div>
         </form>
-    <?php else: ?>
+    <?php elseif ($step === 3): ?>
         <form method="post" class="stack">
             <?= csrf_input() ?>
             <input type="hidden" name="step" value="3">
@@ -955,8 +1064,230 @@ $contratData = array_merge([
             <div class="table-actions">
                 <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="mdi mdi-arrow-left"></span> Retour</button>
                 <button class="btn btn-info" type="button" data-fill-test><span class="mdi mdi-auto-fix"></span> Remplir automatiquement</button>
-                <button class="btn btn-next" type="submit" name="nav_action" value="finish"><span class="mdi mdi-check-circle"></span> Creer le dossier complet</button>
+                <button class="btn btn-next" type="submit" name="nav_action" value="next"><span class="mdi mdi-arrow-right"></span> Suivant</button>
             </div>
         </form>
+    <?php elseif ($step === 4): ?>
+        <div class="stack">
+            <div class="section-header">
+                <div>
+                    <h2>Recapitulatif du dossier</h2>
+                    <p class="help-text">Verifiez les informations avant de generer les documents.</p>
+                </div>
+            </div>
+
+            <article class="card">
+                <div class="section-header">
+                    <h3>Societe</h3>
+                    <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => 1])) ?>"><span class="mdi mdi-pencil"></span> Modifier</a>
+                </div>
+                <div class="info-grid">
+                    <div><span>Raison sociale</span><strong><?= e($societeData['raison_sociale'] ?: '-') ?></strong></div>
+                    <div><span>Forme juridique</span><strong><?= e($societeData['forme_juridique'] ?: '-') ?></strong></div>
+                    <div><span>Dossier domiciliation</span><strong><?= e($societeData['dossier_domiciliation'] ?: '-') ?></strong></div>
+                    <div><span>ICE</span><strong><?= e($societeData['ice'] ?: '-') ?></strong></div>
+                    <div><span>RC</span><strong><?= e($societeData['rc'] ?: '-') ?></strong></div>
+                    <div><span>IF</span><strong><?= e($societeData['if_number'] ?: '-') ?></strong></div>
+                    <div><span>Capital</span><strong><?= e($societeData['capital'] ?: '-') ?></strong></div>
+                    <div><span>Part social</span><strong><?= e($societeData['part_social'] ?: '-') ?></strong></div>
+                    <div><span>Valeur nominale</span><strong><?= e($societeData['valeur_nominale'] ?: '-') ?></strong></div>
+                    <div><span>Adresse</span><strong><?= e($societeData['ste_adress'] ?: '-') ?></strong></div>
+                    <div><span>Ville</span><strong><?= e($societeData['ville'] ?: '-') ?></strong></div>
+                    <div><span>Tribunal</span><strong><?= e($societeData['tribunal'] ?: '-') ?></strong></div>
+                    <div><span>Email</span><strong><?= e($societeData['email'] ?: '-') ?></strong></div>
+                    <div><span>Telephone</span><strong><?= e($societeData['telephone'] ?: '-') ?></strong></div>
+                    <div><span>Type generation</span><strong><?= e($societeData['type_generation'] ?: '-') ?></strong></div>
+                    <div><span>Procedure</span><strong><?= e($societeData['procedure_creation'] ?: '-') ?></strong></div>
+                    <div><span>Mode depot</span><strong><?= e($societeData['mode_depot_creation'] ?: '-') ?></strong></div>
+                </div>
+            </article>
+
+            <article class="card">
+                <div class="section-header">
+                    <h3>Associes (<?= count($associesData) ?>)</h3>
+                    <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => 2])) ?>"><span class="mdi mdi-pencil"></span> Modifier</a>
+                </div>
+                <?php foreach ($associesData as $i => $associe): ?>
+                    <div class="info-grid" style="border-bottom:1px solid var(--border);padding-bottom:0.75rem;margin-bottom:0.75rem">
+                        <div><span>Nom complet</span><strong><?= e($associe['nom_complet'] ?: '-') ?></strong></div>
+                        <div><span>CIN</span><strong><?= e($associe['cin'] ?: '-') ?></strong></div>
+                        <div><span>Nationalite</span><strong><?= e($associe['nationalite'] ?: '-') ?></strong></div>
+                        <div><span>Date naissance</span><strong><?= e($associe['date_naiss'] ?: '-') ?></strong></div>
+                        <div><span>Lieu naissance</span><strong><?= e($associe['lieu_naiss'] ?: '-') ?></strong></div>
+                        <div><span>Qualite</span><strong><?= e($associe['qualite_associe'] ?: '-') ?></strong></div>
+                        <div><span>Parts</span><strong><?= e((string) ($associe['parts'] ?? '-')) ?></strong></div>
+                        <div><span>Capital detenu</span><strong><?= e((string) ($associe['capital_detenu'] ?? '-')) ?></strong></div>
+                        <div><span>Gerant</span><strong><?= ((string) ($associe['is_gerant'] ?? '0') === '1') ? 'Oui' : 'Non' ?></strong></div>
+                    </div>
+                <?php endforeach; ?>
+            </article>
+
+            <article class="card">
+                <div class="section-header">
+                    <h3>Contrat</h3>
+                    <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => 3])) ?>"><span class="mdi mdi-pencil"></span> Modifier</a>
+                </div>
+                <div class="info-grid">
+                    <div><span>Type contrat</span><strong><?= e($contratData['type_contrat'] ?: '-') ?></strong></div>
+                    <div><span>Type domiciliation</span><strong><?= e($contratData['type_contrat_domiciliation'] ?: '-') ?></strong></div>
+                    <div><span>Date contrat</span><strong><?= e($contratData['date_contrat'] ?: '-') ?></strong></div>
+                    <div><span>Date debut</span><strong><?= e($contratData['date_debut'] ?: '-') ?></strong></div>
+                    <div><span>Date fin</span><strong><?= e($contratData['date_fin'] ?: '-') ?></strong></div>
+                    <div><span>Duree (mois)</span><strong><?= e((string) ($contratData['duree_contrat_mois'] ?: '-')) ?></strong></div>
+                    <div><span>Loyer HT</span><strong><?= e($contratData['loyer_mensuel_ht'] ?: '-') ?></strong></div>
+                    <div><span>TVA %</span><strong><?= e((string) ($contratData['taux_tva_pourcent'] ?: '-')) ?></strong></div>
+                    <div><span>Loyer TTC/mois</span><strong><?= e($contratData['loyer_ttc_mois'] ?: '-') ?></strong></div>
+                    <div><span>Total loyer</span><strong><?= e($contratData['montant_total_loyer'] ?: '-') ?></strong></div>
+                    <div><span>Renouvellement</span><strong><?= e($contratData['type_renouvellement'] ?: '-') ?></strong></div>
+                    <div><span>Statut</span><strong><?= e($contratData['statut'] ?: '-') ?></strong></div>
+                </div>
+            </article>
+
+            <form method="post" class="table-actions" style="margin-top:1rem">
+                <?= csrf_input() ?>
+                <input type="hidden" name="step" value="4">
+                <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="mdi mdi-arrow-left"></span> Retour</button>
+                <button class="btn btn-next" type="submit" name="nav_action" value="next"><span class="mdi mdi-arrow-right"></span> Suivant</button>
+            </form>
+        </div>
+    <?php elseif ($step === 5): ?>
+        <?php
+        require_once __DIR__ . '/../src/TemplateAnalyzer.php';
+
+        $templatesConfig = require __DIR__ . '/../config/templates.php';
+        $templatesDir = __DIR__ . '/../templates';
+        $outputDir = __DIR__ . '/../output';
+
+        $legalForm = $societeData['forme_juridique'] ?? '';
+        $allTemplates = TemplateAnalyzer::scanTemplates($templatesDir);
+
+        $folderMap = [
+            'SARL-AU' => 'SARL AU',
+            'SARL' => 'SARL',
+            'SA' => 'SA',
+        ];
+        $targetFolder = $folderMap[$legalForm] ?? '';
+        $filteredTemplates = [];
+        foreach ($allTemplates as $tpl) {
+            if ($targetFolder !== '' && $tpl['folder'] === $targetFolder) {
+                $filteredTemplates[] = $tpl;
+            } elseif ($tpl['folder'] === '_Racine-Actifs') {
+                $filteredTemplates[] = $tpl;
+            }
+        }
+
+        $templatesByType = [];
+        foreach ($filteredTemplates as $tpl) {
+            $type = $tpl['doc_type'];
+            $templatesByType[$type][] = $tpl;
+        }
+
+        $generatedFiles = $wizard['generated_files'] ?? [];
+        ?>
+        <div class="stack">
+            <div class="section-header">
+                <div>
+                    <h2>Generation des documents</h2>
+                    <p class="help-text">Selectionnez les templates a generer pour <?= e($societeData['raison_sociale'] ?: 'la societe') ?>.</p>
+                </div>
+            </div>
+
+            <?php if ($filteredTemplates): ?>
+                <form method="post" class="stack" id="wizard-gen-form">
+                    <?= csrf_input() ?>
+                    <input type="hidden" name="step" value="5">
+                    <input type="hidden" name="nav_action" value="generate">
+
+                    <div class="section-header">
+                        <h3 style="margin:0;font-size:0.9rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-secondary)">
+                            Templates disponibles
+                        </h3>
+                        <div class="table-actions">
+                            <a class="btn-icon" href="#" id="select-all-wizard" title="Tout selectionner"><span class="mdi mdi-check-all"></span></a>
+                            <label class="pdf-toggle">
+                                <input type="checkbox" name="pdf" value="1" checked>
+                                <span class="mdi mdi-file-pdf"></span> PDF
+                            </label>
+                        </div>
+                    </div>
+
+                    <?php foreach ($templatesByType as $docType => $typeTemplates): ?>
+                        <div class="template-group">
+                            <span class="template-group-label"><?= e($templatesConfig['document_types'][$docType] ?? $docType) ?></span>
+                            <?php foreach ($typeTemplates as $tpl): ?>
+                                <label class="template-item">
+                                    <input type="checkbox" name="templates[]" value="<?= e($tpl['path']) ?>" checked class="template-check">
+                                    <span class="mdi mdi-file-word template-item-icon"></span>
+                                    <div class="template-item-body">
+                                        <span class="template-item-name"><?= e(basename($tpl['path'])) ?></span>
+                                        <span class="template-item-meta"><?= count($tpl['variables']) ?> variable(s)</span>
+                                    </div>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endforeach; ?>
+
+                    <div class="table-actions" style="margin-top:1rem">
+                        <button class="btn btn-next" type="submit"><span class="mdi mdi-file-sync"></span> Generer les documents</button>
+                    </div>
+                </form>
+            <?php else: ?>
+                <div class="empty-state">
+                    <span class="mdi mdi-file-document-outline" style="font-size:2rem;color:var(--text-secondary)"></span>
+                    <p class="table-empty">Aucun template disponible pour cette forme juridique.</p>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($generatedFiles): ?>
+                <article class="card stack">
+                    <div class="section-header">
+                        <h3>Documents generes</h3>
+                        <p class="help-text"><?= count($generatedFiles) ?> fichier(s) genere(s)</p>
+                    </div>
+                    <div class="generated-list">
+                        <?php foreach ($generatedFiles as $file): ?>
+                            <div class="generated-item">
+                                <div class="generated-item-info">
+                                    <span class="mdi mdi-file-word" style="color:var(--primary);font-size:1.2rem"></span>
+                                    <div>
+                                        <strong><?= e($file['name']) ?></strong>
+                                        <?php if (file_exists($file['docx'])): ?>
+                                            <span class="help-text"><?= number_format(filesize($file['docx']) / 1024, 1) ?> Ko</span>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                                <div class="table-actions">
+                                    <a class="btn btn-secondary" href="<?= e(str_replace(__DIR__ . '/../', '', $file['docx'])) ?>" download>
+                                        <span class="mdi mdi-download"></span> DOCX
+                                    </a>
+                                    <?php if ($file['pdf']): ?>
+                                        <a class="btn" href="<?= e(str_replace(__DIR__ . '/../', '', $file['pdf'])) ?>" download>
+                                            <span class="mdi mdi-file-pdf"></span> PDF
+                                        </a>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </article>
+            <?php endif; ?>
+
+            <form method="post" class="table-actions" style="margin-top:1rem">
+                <?= csrf_input() ?>
+                <input type="hidden" name="step" value="5">
+                <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="mdi mdi-arrow-left"></span> Retour</button>
+                <button class="btn btn-next" type="submit" name="nav_action" value="finish"><span class="mdi mdi-check-circle"></span> Creer le dossier complet</button>
+            </form>
+        </div>
+
+        <script>
+        document.getElementById('select-all-wizard')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            const form = document.getElementById('wizard-gen-form');
+            const checkboxes = form.querySelectorAll('input[name="templates[]"]');
+            const allChecked = Array.from(checkboxes).every(c => c.checked);
+            checkboxes.forEach(c => c.checked = !allChecked);
+        });
+        </script>
     <?php endif; ?>
 </section>
