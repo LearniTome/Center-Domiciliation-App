@@ -13,14 +13,8 @@ function word_url(string $filePath): string
     if ($baseUrl === null) {
         $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-        $docRoot = $_SERVER['DOCUMENT_ROOT'] ?? '';
-        $baseUrl = $protocol . '://' . $host;
-        if ($docRoot) {
-            $projectDir = dirname(__DIR__);
-            $relativeDocRoot = str_replace($docRoot, '', $projectDir);
-            $relativeDocRoot = str_replace('\\', '/', $relativeDocRoot);
-            $baseUrl .= rtrim($relativeDocRoot, '/');
-        }
+        $scriptDir = dirname($_SERVER['SCRIPT_NAME'] ?? '');
+        $baseUrl = $protocol . '://' . $host . rtrim($scriptDir, '/');
     }
     $projectDir = dirname(__DIR__);
     $relative = str_replace($projectDir . DIRECTORY_SEPARATOR, '', $filePath);
