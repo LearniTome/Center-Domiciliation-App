@@ -491,11 +491,11 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
                                             </a>
                                         <?php endif; ?>
                                         <?php if (!$doc['valide']): ?>
-                                            <a class="btn-icon" href="#" onclick="event.preventDefault(); document.querySelector('#docs-form input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']').checked=true; document.querySelector('button[name=\'validate_submit\']').click();" title="Valider">
+                                            <a class="btn-icon" href="#" onclick="event.preventDefault(); (function(){ var f=document.getElementById('docs-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='validate_submit'; h.value='1'; f.appendChild(h); f.submit();} })();" title="Valider">
                                                 <span class="mdi mdi-file-check"></span>
                                             </a>
                                         <?php endif; ?>
-                                        <a class="btn-icon danger" href="#" onclick="if(!confirm('Supprimer ce document ?')){event.preventDefault();return false;} event.preventDefault(); document.querySelector('#docs-form input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']').checked=true; document.querySelector('button[name=\'delete_submit\']').click();" title="Supprimer">
+                                        <a class="btn-icon danger" href="#" onclick="event.preventDefault(); if(!confirm('Supprimer ce document ?')) return; (function(){ var f=document.getElementById('docs-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='delete_submit'; h.value='1'; f.appendChild(h); f.submit();} })();" title="Supprimer">
                                             <span class="mdi mdi-delete"></span>
                                         </a>
                                     </div>
