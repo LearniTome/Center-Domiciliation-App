@@ -254,7 +254,6 @@ $totalGenerated = count($sessionFiles);
 $docxCount = $totalGenerated;
 
 ?>
-<style>.main { overflow-x: hidden; }</style>
 <section class="card stack">
     <div class="section-header">
         <div>
@@ -313,8 +312,8 @@ $docxCount = $totalGenerated;
                     </div>
                 </div>
 
-                <div class="table-scroll" style="overflow-x: auto; margin-left: -1.25rem; margin-right: 0; padding-right: 24px;">
-                    <table>
+                <div class="table-scroll" style="overflow-x: auto">
+                    <table style="white-space: nowrap">
                         <thead>
                             <tr>
                                 <th class="col-check"></th>
@@ -419,8 +418,8 @@ $docxCount = $totalGenerated;
                     </button>
                 </div>
             </div>
-            <div class="table-scroll" style="overflow-x: auto; margin-left: -1.25rem; margin-right: 0; padding-right: 24px;">
-                <table style="white-space: nowrap; min-width: 900px">
+            <div class="table-scroll" style="overflow-x: auto">
+                <table style="white-space: nowrap">
                     <thead>
                         <tr>
                             <th class="col-check"></th>
