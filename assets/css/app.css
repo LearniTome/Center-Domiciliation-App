@@ -277,6 +277,8 @@ section + section {
 .stats.small .stat { padding: 0.6rem 0.75rem; display:flex;flex-direction:column;justify-content:space-between; }
 .stats.small .stat strong { font-size: 1.1rem; margin-top: auto;padding-top:4px; }
 .stats.small .stat span { font-size: 0.7rem; }
+.stats + .card,
+.stats + section { margin-top: 1rem; }
 
 .flash {
     padding: 12px 16px;
@@ -317,7 +319,8 @@ section + section {
     margin-bottom: 16px;
 }
 
-.section-header h2 {
+.section-header h2,
+.section-header h3 {
     margin: 0;
     font-size: 1rem;
     font-weight: 500;
@@ -691,6 +694,10 @@ tbody tr:hover:nth-child(even) {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
+}
+
+.form-grid > .info-grid {
+    grid-column: 1 / -1;
 }
 
 .info-grid > div {
