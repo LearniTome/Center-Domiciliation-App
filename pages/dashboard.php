@@ -92,22 +92,11 @@ $recentCollaborateurs = $isConnected
 
 $pctComplets = $totalSocietes > 0 ? round(($dossiersComplets / $totalSocietes) * 100) : 0;
 ?>
-<section class="card hero-card stack">
-    <div class="section-header">
-        <div>
-            <h2>Lancer un nouveau dossier</h2>
-            <p class="help-text">Flux guide en 3 etapes: societe, associes, puis contrat.</p>
-        </div>
-        <a class="btn btn-next" href="<?= e(app_url('creation')) ?>"><span class="mdi mdi-plus-circle"></span> Creer un dossier</a>
-    </div>
-    <div class="stack">
-        <span class="pill">Etape 1: informations societe</span>
-        <span class="pill">Etape 2: un ou plusieurs associes</span>
-        <span class="pill">Etape 3: contrat et validation</span>
-    </div>
-</section>
+<div style="display:flex;justify-content:flex-end;margin-bottom:0.75rem">
+    <a class="btn btn-next" href="<?= e(app_url('creation')) ?>"><span class="mdi mdi-plus-circle"></span> Creer un dossier</a>
+</div>
 
-<section class="stats compact">
+<section class="stats small">
     <article class="stat">
         <span>Societes</span>
         <strong><?= $totalSocietes ?></strong>
@@ -123,9 +112,6 @@ $pctComplets = $totalSocietes > 0 ? round(($dossiersComplets / $totalSocietes) *
     <article class="stat">
         <span>Dossiers complets</span>
         <strong><?= $dossiersComplets ?></strong>
-        <?php if ($totalSocietes > 0): ?>
-            <div class="stat-bar"><div class="stat-bar-fill" style="width:<?= $pctComplets ?>%"></div></div>
-        <?php endif; ?>
     </article>
     <article class="stat">
         <span>Dossiers incomplets</span>
