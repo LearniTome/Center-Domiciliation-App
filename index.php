@@ -25,6 +25,8 @@ $allowedPages = [
     'template_edit',
     'templates',
     'documents',
+    'defaults',
+    'convert-word-pdf',
     'setup',
 ];
 
@@ -55,6 +57,8 @@ $pageTitleMap = [
     'template_edit' => 'Editeur de template',
     'templates' => 'Templates',
     'documents' => 'Documents',
+    'defaults' => 'Valeurs par defaut',
+    'convert-word-pdf' => 'Word to PDF',
     'setup' => 'Installation XAMPP',
     'not-found' => 'Page introuvable',
 ];

@@ -18,6 +18,10 @@ $navSections = [
         'generation' => ['Generation', 'mdi-file-sync'],
         'documents' => ['Documents generes', 'mdi-file-word'],
     ],
+    'Outils' => [
+        'defaults' => ['Valeurs par defaut', 'mdi-tune'],
+        'convert-word-pdf' => ['Word to PDF', 'mdi-file-pdf-box'],
+    ],
     'Systeme' => [
         'configuration' => ['Configuration', 'mdi-cog'],
     ],

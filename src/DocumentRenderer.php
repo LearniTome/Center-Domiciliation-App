@@ -385,7 +385,67 @@ class DocumentRenderer
                 $result[strtoupper((string) $key)] = $value;
             }
         }
+
+        $result = $this->applyAliases($result);
+
         return $result;
+    }
+
+    private function applyAliases(array $flat): array
+    {
+        $aliases = $this->getAliasMap();
+
+        foreach ($aliases as $oldKey => $newKey) {
+            if (array_key_exists($oldKey, $flat) && !array_key_exists($newKey, $flat)) {
+                $flat[$newKey] = $flat[$oldKey];
+            }
+            if (array_key_exists($newKey, $flat) && !array_key_exists($oldKey, $flat)) {
+                $flat[$oldKey] = $flat[$newKey];
+            }
+        }
+
+        return $flat;
+    }
+
+    private function getAliasMap(): array
+    {
+        return [
+            'DEN_STE' => 'DENOMINATION_SOCIALE',
+            'FORME_JUR' => 'FORME_JURIDIQUE',
+            'ICE' => 'NUMERO_ICE',
+            'DATE_ICE' => 'DATE_IMMATRICULATION_ICE',
+            'CAPITAL' => 'CAPITAL_SOCIAL',
+            'PART_SOCIAL' => 'NOMBRE_PARTS_SOCIALES',
+            'STE_ADRESS' => 'ADRESSE_SIEGE_SOCIAL',
+            'TRIBUNAL' => 'TRIBUNAL_COMPETENT',
+            'CIVIL' => 'CIVILITE_ASSOCIE',
+            'PRENOM' => 'PRENOM_ASSOCIE',
+            'NOM' => 'NOM_ASSOCIE',
+            'NATIONALITY' => 'NATIONALITE_ASSOCIE',
+            'CIN_NUM' => 'NUMERO_CIN_ASSOCIE',
+            'CIN_VALIDATY' => 'DATE_VALIDITE_CIN_ASSOCIE',
+            'DATE_NAISS' => 'DATE_NAISSANCE_ASSOCIE',
+            'LIEU_NAISS' => 'LIEU_NAISSANCE_ASSOCIE',
+            'ADRESSE' => 'ADRESSE_ASSOCIE',
+            'PHONE' => 'TELEPHONE_ASSOCIE',
+            'EMAIL' => 'EMAIL_ASSOCIE',
+            'PARTS' => 'NOMBRE_PARTS_ASSOCIE',
+            'CAPITAL_DETENU' => 'CAPITAL_DETENU_ASSOCIE',
+            'IS_GERANT' => 'EST_GERANT',
+            'QUALITY' => 'QUALITE_ASSOCIE',
+            'PERIOD_DOMCIL' => 'DUREE_CONTRAT_MOIS',
+            'PRIX_CONTRAT' => 'LOYER_MENSUEL_TTC',
+            'PRIX_INTERMEDIARE_CONTRAT' => 'FRAIS_INTERMEDIAIRE_CONTRAT',
+            'DOM_DATEDEB' => 'DATE_DEBUT_CONTRAT',
+            'DOM_DATEFIN' => 'DATE_FIN_CONTRAT',
+            'PACK_DEMARRAGE_MONTANT_TTC' => 'MONTANT_PACK_DEMARRAGE_TTC',
+            'PACK_DEMARRAGE_LOYER_MENSUEL_TTC' => 'LOYER_MENSUEL_PACK_DEMARRAGE_TTC',
+            'LOYER_RENOUVELLEMENT_MENSUEL_TTC' => 'LOYER_MENSUEL_RENOUVELLEMENT_TTC',
+            'LOYER_RENOUVELLEMENT_ANNUEL_TTC' => 'LOYER_ANNUEL_RENOUVELLEMENT_TTC',
+            'TVA' => 'TAUX_TVA_POURCENT',
+            'DH_HT' => 'LOYER_MENSUEL_HT',
+            'MONTANT_HT' => 'MONTANT_TOTAL_HT_CONTRAT',
+        ];
     }
 
     private function saveDocx(string $newXml, string $outputName = ''): string
@@ -487,34 +547,136 @@ class DocumentRenderer
         $stmt->execute(['id' => $societeId]);
         $contrat = $stmt->fetch() ?: [];
 
+        $activitesStmt = $pdo->prepare('SELECT activite FROM ref_activites ORDER BY sort_order, activite');
+        $activitesStmt->execute();
+        $allActivities = array_map(static fn(array $row): string => $row['activite'], $activitesStmt->fetchAll());
+
+        $societeActivities = [];
+        if (!empty($societe['activites'])) {
+            $societeActivities = array_map('trim', explode(',', (string) $societe['activites']));
+        }
+
+        $activitiesList = $societeActivities ?: $allActivities;
+        $activitiesCount = count($activitiesList);
+        $activitiesInline = implode(', ', $activitiesList);
+        $activitiesBullets = '';
+        $activitiesContinuationBullets = '';
+        foreach ($activitiesList as $i => $act) {
+            $prefix = '  \\item ';
+            $activitiesBullets .= $prefix . $act . "\n";
+            if ($i < $activitiesCount - 1) {
+                $activitiesContinuationBullets .= $prefix . $act . "\n";
+            }
+        }
+
         $associeList = [];
         foreach ($associes as $a) {
+            $cin = $a['cin'] ?? '';
+            $dateNaiss = $a['date_naiss'] ?? '';
+            $lieuNaiss = $a['lieu_naiss'] ?? '';
+            $adresse = $a['adresse'] ?? '';
+            $phone = $a['phone'] ?? '';
+            $email = $a['email'] ?? '';
+            $nationalite = $a['nationalite'] ?? '';
+            $qualite = $a['qualite_associe'] ?? '';
+            $parts = $a['parts'] ?? '';
+            $capitalDetenu = $a['capital_detenu'] ?? '';
+            $isGerant = (int) ($a['is_gerant'] ?? 0) === 1 ? 'Gerant' : 'Associe';
+
+            $nomComplet = $a['nom_complet'] ?? '';
+            $nomParts = explode(' ', $nomComplet, 2);
+            $prenom = count($nomParts) > 1 ? $nomParts[0] : '';
+            $nom = count($nomParts) > 1 ? $nomParts[1] : $nomComplet;
+
             $associeList[] = [
-                'nom' => $a['nom_complet'] ?? '',
-                'prenom' => '',
-                'cin' => $a['cin'] ?? '',
-                'nationalite' => $a['nationalite'] ?? '',
-                'qualite' => $a['qualite_associe'] ?? '',
-                'parts' => $a['parts'] ?? '',
-                'est_gerant' => (int) ($a['is_gerant'] ?? 0) === 1 ? 'Gerant' : 'Associe',
-                'civilite' => 'M.',
-                'adresse' => $a['adresse'] ?? '',
-                'email' => $a['email'] ?? '',
-                'telephone' => $a['phone'] ?? '',
-                'date_naiss' => $a['date_naiss'] ?? '',
-                'lieu_naiss' => $a['lieu_naiss'] ?? '',
+                'nom' => $nom,
+                'prenom' => $prenom,
+                'cin' => $cin,
+                'nationalite' => $nationalite,
+                'qualite' => $qualite,
+                'parts' => $parts,
+                'est_gerant' => $isGerant,
+                'civilite' => $a['civilite'] ?? 'M.',
+                'adresse' => $adresse,
+                'email' => $email,
+                'telephone' => $phone,
+                'date_naiss' => $dateNaiss,
+                'lieu_naiss' => $lieuNaiss,
+                'capital_detenu' => $capitalDetenu,
             ];
         }
 
         $now = new DateTime();
         $dateContrat = $contrat['date_contrat'] ?? ($contrat['date_debut'] ?? $now->format('Y-m-d'));
+        $dateDebut = $contrat['date_debut'] ?? $dateContrat;
         $dateFin = $contrat['date_fin'] ?? '';
+        $dureeMois = $contrat['duree_contrat_mois'] ?? '';
+
+        $denSte = $societe['raison_sociale'] ?? '';
+        $formeJur = $societe['forme_juridique'] ?? '';
+        $capital = $societe['capital'] ?? '';
+        $partSocial = $societe['part_social'] ?? '';
+        $ice = $societe['ice'] ?? '';
+        $steAdress = $societe['ste_adress'] ?? $societe['adresse'] ?? '';
+        $tribunal = $societe['tribunal'] ?? '';
+        $ville = $societe['ville'] ?? '';
 
         return [
             'societe' => $societe,
             'associes' => $associeList,
             'contrat' => $contrat,
-            'activities' => [],
+            'activities' => $activitiesList,
+            'denomination' => $denSte,
+            'denomination_sociale' => $denSte,
+            'den_ste' => $denSte,
+            'DEN_STE' => $denSte,
+            'name' => $denSte,
+            'forme_juridique' => $formeJur,
+            'FORME_JUR' => $formeJur,
+            'ice' => $ice,
+            'ICE' => $ice,
+            'capital' => $capital,
+            'CAPITAL' => $capital,
+            'part_social' => $partSocial,
+            'PART_SOCIAL' => $partSocial,
+            'ste_adress' => $steAdress,
+            'STE_ADRESS' => $steAdress,
+            'adresse' => $steAdress,
+            'tribunal' => $tribunal,
+            'TRIBUNAL' => $tribunal,
+            'ville' => $ville,
+            'type_contrat_domiciliation' => $contrat['type_contrat_domiciliation'] ?? '',
+            'TYPE_CONTRAT_DOMICILIATION' => $contrat['type_contrat_domiciliation'] ?? '',
+            'date_contrat' => $dateContrat,
+            'DATE_CONTRAT' => $dateContrat,
+            'DTAE_CONTRAT' => $dateContrat,
+            'date_debut' => $dateDebut,
+            'DOM_DATEDEB' => $dateDebut,
+            'date_fin' => $dateFin,
+            'DOM_DATEFIN' => $dateFin,
+            'period' => $dureeMois,
+            'PERIOD_DOMCIL' => $dureeMois,
+            'DUREE_CONTRAT_MOIS' => $dureeMois,
+            'loyer_mensuel_ht' => $contrat['loyer_mensuel_ht'] ?? '',
+            'LOYER_MENSUEL_HT' => $contrat['loyer_mensuel_ht'] ?? '',
+            'taux_tva_pourcent' => $contrat['taux_tva_pourcent'] ?? '',
+            'TAUX_TVA_POURCENT' => $contrat['taux_tva_pourcent'] ?? '',
+            'ACTIVITIES' => $activitiesList,
+            'ACTIVITES' => $activitiesList,
+            'ACTIVITIES_LIST' => $activitiesList,
+            'ACTIVITES_LIST' => $activitiesList,
+            'LISTE_ACTIVITES' => $activitiesList,
+            'ACTIVITIES_INLINE' => $activitiesInline,
+            'ACTIVITES_INLINE' => $activitiesInline,
+            'ACTIVITIES_PLAIN' => $activitiesInline,
+            'ACTIVITES_PLAIN' => $activitiesInline,
+            'ACTIVITIES_BULLETS' => $activitiesBullets,
+            'ACTIVITES_PUCES' => $activitiesBullets,
+            'ACTIVITIES_CONTINUATION_BULLETS' => $activitiesContinuationBullets,
+            'ACTIVITES_CONTINUATION_PUCES' => $activitiesContinuationBullets,
+            'ACTIVITY_COUNT' => (string) $activitiesCount,
+            'activities' => $activitiesList,
+            'activites' => $activitiesList,
             'DATE' => $now->format('d/m/Y'),
             'DATE_LONG' => $now->format('d F Y'),
             'ANNEE' => $now->format('Y'),

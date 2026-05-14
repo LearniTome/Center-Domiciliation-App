@@ -278,4 +278,201 @@ class TemplateAnalyzer
         }
         return $grouped;
     }
+
+    public static function getExpectedContextKeys(): array
+    {
+        return [
+            'DEN_STE', 'denomination', 'denomination_sociale', 'den_ste', 'name',
+            'FORME_JUR', 'forme_juridique',
+            'ICE', 'ice', 'NUMERO_ICE',
+            'DATE_ICE', 'date_ice',
+            'DATE_EXP_CERT_NEG', 'date_expiration_certificat_negatif',
+            'CAPITAL', 'capital', 'CAPITAL_SOCIAL',
+            'PART_SOCIAL', 'parts_social', 'NOMBRE_PARTS_SOCIALES',
+            'VALEUR_NOMINALE', 'valeur_nominale',
+            'STE_ADRESS', 'adresse', 'ADRESSE_SIEGE_SOCIAL',
+            'TRIBUNAL', 'tribunal', 'TRIBUNAL_COMPETENT',
+            'DOSSIER_DOMICILIATION', 'dossier_domiciliation',
+            'CIVIL', 'civilite', 'CIVILITE_ASSOCIE',
+            'PRENOM', 'prenom', 'PRENOM_ASSOCIE',
+            'NOM', 'nom', 'NOM_ASSOCIE',
+            'NATIONALITY', 'nationalite', 'NATIONALITE_ASSOCIE',
+            'CIN_NUM', 'num_piece', 'NUMERO_CIN_ASSOCIE',
+            'CIN_VALIDATY', 'validite_piece', 'DATE_VALIDITE_CIN_ASSOCIE',
+            'DATE_NAISS', 'date_naiss', 'DATE_NAISSANCE_ASSOCIE',
+            'LIEU_NAISS', 'lieu_naiss', 'LIEU_NAISSANCE_ASSOCIE',
+            'ADRESSE', 'ADRESSE_ASSOCIE',
+            'PHONE', 'telephone', 'TELEPHONE_ASSOCIE',
+            'EMAIL', 'email', 'EMAIL_ASSOCIE',
+            'QUALITY', 'qualite', 'QUALITE_ASSOCIE',
+            'QUALITE_GERANT', 'qualite_gerant',
+            'PARTS', 'parts', 'num_parts', 'NOMBRE_PARTS_ASSOCIE',
+            'CAPITAL_DETENU', 'capital_detenu', 'CAPITAL_DETENU_ASSOCIE',
+            'IS_GERANT', 'est_gerant', 'EST_GERANT',
+            'PERIOD_DOMCIL', 'period', 'period_domcil', 'DUREE_CONTRAT_MOIS',
+            'PRIX_CONTRAT', 'prix_mensuel', 'LOYER_MENSUEL_TTC',
+            'PRIX_INTERMEDIARE_CONTRAT', 'FRAIS_INTERMEDIAIRE_CONTRAT',
+            'DOM_DATEDEB', 'date_debut', 'DATE_DEBUT_CONTRAT',
+            'DOM_DATEFIN', 'date_fin', 'DATE_FIN_CONTRAT',
+            'TYPE_CONTRAT_DOMICILIATION', 'type_contrat_domiciliation',
+            'DATE_CONTRAT', 'date_contrat', 'DTAE_CONTRAT',
+            'TAUX_TVA_POURCENT', 'taux_tva_pourcent',
+            'LOYER_MENSUEL_HT', 'loyer_mensuel_ht',
+            'MONTANT_TOTAL_HT_CONTRAT', 'montant_total_ht_contrat',
+            'TYPE_RENOUVELLEMENT', 'type_renouvellement',
+            'TAUX_TVA_RENOUVELLEMENT_POURCENT',
+            'LOYER_MENSUEL_HT_RENOUVELLEMENT',
+            'MONTANT_PACK_DEMARRAGE_TTC', 'montant_pack_demarrage_ttc',
+            'LOYER_MENSUEL_PACK_DEMARRAGE_TTC',
+            'LOYER_MENSUEL_RENOUVELLEMENT_TTC',
+            'LOYER_ANNUEL_RENOUVELLEMENT_TTC',
+            'MODE_SIGNATURE_GERANCE', 'mode_signature_gerance',
+            'TYPE_GENERATION', 'type_generation',
+            'PROCEDURE_CREATION', 'procedure_creation',
+            'MODE_DEPOT_CREATION', 'mode_depot_creation',
+        ];
+    }
+
+    public static function inferSection(string $variableName): string
+    {
+        $name = strtoupper($variableName);
+
+        if (in_array($name, ['DATE', 'DATE_LONG', 'ANNEE', 'MOIS', 'JOUR', 'values'], true)) {
+            return 'autre';
+        }
+
+        if (str_contains($name, 'COLLAB')) {
+            return 'collaborateur';
+        }
+
+        $associeTokens = ['ASSOC', 'GERANT', 'CIN', 'NAISS', 'CIVIL', 'NATIONAL', 'QUALITE', 'PHONE', 'EMAIL'];
+        foreach ($associeTokens as $token) {
+            if (str_contains($name, $token)) {
+                return 'associe';
+            }
+        }
+
+        $contratTokens = ['CONTRAT', 'LOYER', 'RENOUV', 'TVA', 'MONTANT', 'PACK', 'DOM_', 'DTAE', 'PERIOD', 'PRIX'];
+        foreach ($contratTokens as $token) {
+            if (str_contains($name, $token)) {
+                return 'contrat';
+            }
+        }
+
+        $societeTokens = ['STE', 'SOCIETE', 'DEN', 'FORME', 'ICE', 'TRIBUNAL', 'CAPITAL', 'PART', 'ACTIVITY', 'ACTIVIT', 'VALEUR_NOMINALE', 'DOSSIER', 'PROCEDURE', 'MODE_DEPOT'];
+        foreach ($societeTokens as $token) {
+            if (str_contains($name, $token)) {
+                return 'societe';
+            }
+        }
+
+        return 'autre';
+    }
+
+    public static function analyzeCoverage(array $templates, array $contextKeys = []): array
+    {
+        if (empty($contextKeys)) {
+            $contextKeys = self::getExpectedContextKeys();
+        }
+
+        $contextKeys = array_map('strtoupper', $contextKeys);
+        $contextKeySet = array_flip($contextKeys);
+
+        $allVariables = [];
+        $variableTemplates = [];
+        $details = [];
+        $errors = [];
+
+        foreach ($templates as $tpl) {
+            $path = $tpl['path'] ?? '';
+            if (!file_exists($path)) {
+                continue;
+            }
+
+            try {
+                $variables = self::extractVariables($path);
+            } catch (Throwable $e) {
+                $errors[] = ['template' => basename($path), 'error' => $e->getMessage()];
+                continue;
+            }
+
+            foreach ($variables as $var) {
+                $varUpper = strtoupper($var);
+                $allVariables[$varUpper] = ($allVariables[$varUpper] ?? 0) + 1;
+                $variableTemplates[$varUpper][] = basename($path);
+                $details[] = [
+                    'template' => basename($path),
+                    'template_path' => $path,
+                    'variable' => $var,
+                    'occurrences' => 1,
+                    'section' => self::inferSection($var),
+                    'coverage' => isset($contextKeySet[$varUpper]) ? 'couvert' : 'non couvert',
+                    'legal_form' => $tpl['folder'] ?? 'Racine',
+                ];
+            }
+        }
+
+        $variableRows = [];
+        foreach ($allVariables as $varUpper => $count) {
+            $tpls = array_unique($variableTemplates[$varUpper] ?? []);
+            $variableRows[] = [
+                'variable' => $varUpper,
+                'occurrences' => $count,
+                'templates_count' => count($tpls),
+                'templates' => $tpls,
+                'section' => self::inferSection($varUpper),
+                'coverage' => isset($contextKeySet[$varUpper]) ? 'couvert' : 'non couvert',
+            ];
+        }
+
+        usort($variableRows, fn(array $a, array $b) => strcasecmp($a['variable'], $b['variable']));
+        usort($details, fn(array $a, array $b) => strcasecmp($a['template'], $b['template']));
+
+        $coveredCount = count(array_filter($variableRows, fn(array $r) => $r['coverage'] === 'couvert'));
+        $uncoveredCount = count($variableRows) - $coveredCount;
+
+        return [
+            'summary' => [
+                'total_templates' => count($templates),
+                'total_variables' => count($allVariables),
+                'covered_variables' => $coveredCount,
+                'uncovered_variables' => $uncoveredCount,
+            ],
+            'variables' => $variableRows,
+            'details' => $details,
+            'errors' => $errors,
+        ];
+    }
+
+    public static function exportAnalysisCsv(array $rows, string $outPath): string
+    {
+        $dir = dirname($outPath);
+        if (!is_dir($dir)) {
+            mkdir($dir, 0777, true);
+        }
+
+        $fh = fopen($outPath, 'wb');
+        if ($fh === false) {
+            throw new RuntimeException('Impossible de creer le fichier CSV.');
+        }
+
+        fwrite($fh, "\xEF\xBB\xBF");
+        fputcsv($fh, ['Variable', 'Occurrences', 'Templates', 'Section', 'Couverture'], ';');
+
+        foreach ($rows as $row) {
+            $templates = is_array($row['templates'] ?? null)
+                ? implode(', ', $row['templates'])
+                : (string) ($row['templates'] ?? '');
+            fputcsv($fh, [
+                $row['variable'] ?? '',
+                (string) ($row['occurrences'] ?? ''),
+                $templates,
+                $row['section'] ?? '',
+                $row['coverage'] ?? '',
+            ], ';');
+        }
+
+        fclose($fh);
+        return $outPath;
+    }
 }
