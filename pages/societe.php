@@ -19,7 +19,43 @@ if (!$societe) {
 
 $editing = isset($_GET['edit']) && $_GET['edit'] === '1';
 
-if (is_post() && ($pdo ?? null) instanceof PDO) {
+if (is_post() && isset($_POST['validate_submit']) && ($pdo ?? null) instanceof PDO) {
+    verify_csrf();
+    $selected = $_POST['selected_files'] ?? [];
+    if (count($selected) === 0) {
+        set_flash('error', 'Selectionnez au moins un document.');
+        redirect_to('societe', ['id' => $societeId]);
+    }
+    $placeholders = implode(',', array_fill(0, count($selected), '?'));
+    $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf FROM documents_generes WHERE valide = 0 AND id IN ($placeholders)");
+    $stmt->execute(array_map('intval', $selected));
+    $docs = $stmt->fetchAll();
+    $updateStmt = $pdo->prepare("UPDATE documents_generes SET valide = 1, fichier_docx = :fichier_docx, fichier_pdf = :fichier_pdf WHERE id = :id");
+    foreach ($docs as $doc) {
+        $oldDocx = $doc['fichier_docx'];
+        $newDocx = str_replace('_Brouillon.docx', '.docx', $oldDocx);
+        if ($oldDocx !== $newDocx && file_exists($oldDocx)) {
+            rename($oldDocx, $newDocx);
+        }
+        $newPdf = $doc['fichier_pdf'];
+        if ($newPdf !== null) {
+            $renamedPdf = str_replace('_Brouillon.pdf', '.pdf', $newPdf);
+            if ($newPdf !== $renamedPdf && file_exists($newPdf)) {
+                rename($newPdf, $renamedPdf);
+                $newPdf = $renamedPdf;
+            }
+        }
+        $updateStmt->execute([
+            'fichier_docx' => $newDocx,
+            'fichier_pdf' => $newPdf,
+            'id' => $doc['id'],
+        ]);
+    }
+    set_flash('success', count($selected) . ' document(s) valide(s).');
+    redirect_to('societe', ['id' => $societeId]);
+}
+
+if (is_post() && !isset($_POST['validate_submit']) && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
     $stmt = $pdo->prepare('
         UPDATE societes SET
@@ -96,6 +132,8 @@ $contrats = ($pdo ?? null) instanceof PDO
 $collabCount = ($pdo ?? null) instanceof PDO
     ? (int) $pdo->prepare("SELECT COUNT(*) FROM collaborateurs")->fetchColumn()
     : 0;
+
+$documents = fetch_all_documents($pdo ?? null, $societeId);
 ?>
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
     <h2 style="margin:0"><?= e($societe['raison_sociale']) ?></h2>
@@ -126,6 +164,10 @@ $collabCount = ($pdo ?? null) instanceof PDO
     <article class="stat">
         <span>Collaborateurs</span>
         <strong><?= $collabCount ?></strong>
+    </article>
+    <article class="stat">
+        <span>Documents</span>
+        <strong><?= count($documents) ?></strong>
     </article>
     <article class="stat">
         <span>Dossier</span>
@@ -369,5 +411,79 @@ $collabCount = ($pdo ?? null) instanceof PDO
                 </tbody>
             </table>
         </div>
+    <?php endif; ?>
+</article>
+
+<article class="card">
+    <div class="section-header">
+        <h3>Documents generes (<?= count($documents) ?>)</h3>
+        <div class="table-actions">
+            <a class="btn btn-info" href="<?= e(app_url('generation', ['societe_id' => $societeId])) ?>"><span class="mdi mdi-file-sync"></span> Generer documents</a>
+            <a class="btn btn-info" href="<?= e(app_url('documents', ['societe_id' => $societeId])) ?>"><span class="mdi mdi-eye"></span> Voir tout</a>
+        </div>
+    </div>
+    <?php if (!$documents): ?>
+        <div class="empty-state">
+            <span class="mdi mdi-file-document-outline" style="font-size:2rem;color:var(--text-secondary)"></span>
+            <p class="table-empty">Aucun document genere.</p>
+        </div>
+    <?php else: ?>
+        <form method="post" id="docs-form">
+            <?= csrf_input() ?>
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                    <tr>
+                        <th class="col-check"><input type="checkbox" id="select-all-docs"></th>
+                        <th>Type</th>
+                        <th>Document</th>
+                        <th>Taille</th>
+                        <th>Statut</th>
+                        <th>Date</th>
+                        <th class="col-actions">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($documents as $doc): ?>
+                        <tr>
+                            <td><input type="checkbox" name="selected_files[]" value="<?= e((string) $doc['id']) ?>"></td>
+                            <td><?= e($doc['doc_type'] ?? '-') ?></td>
+                            <td><?= e(basename($doc['fichier_docx'])) ?></td>
+                            <td><?= $doc['taille_ko'] ? number_format((float) $doc['taille_ko'], 1) . ' Ko' : '-' ?></td>
+                            <td>
+                                <span class="statut-badge <?= $doc['valide'] ? 'valide' : 'brouillon' ?>">
+                                    <?= $doc['valide'] ? 'Valide' : 'Brouillon' ?>
+                                </span>
+                            </td>
+                            <td><?= e(date('d/m/Y H:i', strtotime((string) $doc['created_at']))) ?></td>
+                            <td>
+                                <div class="table-actions">
+                                    <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_docx'])) ?>" download title="Telecharger DOCX">
+                                        <span class="mdi mdi-file-word"></span>
+                                    </a>
+                                    <?php if ($doc['fichier_pdf']): ?>
+                                        <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_pdf'])) ?>" download title="Telecharger PDF">
+                                            <span class="mdi mdi-file-pdf"></span>
+                                        </a>
+                                    <?php endif; ?>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+            <div class="table-actions" style="margin-top:12px">
+                <button class="btn btn-next" type="submit" name="validate_submit" value="1">
+                    <span class="mdi mdi-file-check"></span> Valider la selection
+                </button>
+            </div>
+        </form>
+        <script>
+        document.getElementById('select-all-docs')?.addEventListener('click', function() {
+            var checkboxes = document.querySelectorAll('#docs-form input[name="selected_files[]"]');
+            checkboxes.forEach(function(c) { c.checked = this.checked; }.bind(this));
+        });
+        </script>
     <?php endif; ?>
 </article>

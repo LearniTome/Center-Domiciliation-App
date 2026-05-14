@@ -28,30 +28,37 @@ if (is_post() && isset($_POST['delete_submit'])) {
 if (is_post() && isset($_POST['validate_submit'])) {
     verify_csrf();
     $selected = $_POST['selected_files'] ?? [];
-    if (count($selected) > 0 && ($pdo ?? null) instanceof PDO) {
-        $placeholders = implode(',', array_fill(0, count($selected), '?'));
-        $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf FROM documents_generes WHERE valide = 0 AND id IN ($placeholders)");
-        $stmt->execute(array_map('intval', $selected));
-        $docs = $stmt->fetchAll();
-        foreach ($docs as $doc) {
-            $oldDocx = $doc['fichier_docx'];
-            $newDocx = str_replace('_Brouillon.docx', '.docx', $oldDocx);
-            if (file_exists($oldDocx) && $oldDocx !== $newDocx) {
-                rename($oldDocx, $newDocx);
-            }
-            if ($doc['fichier_pdf'] && file_exists($doc['fichier_pdf'])) {
-                $oldPdf = $doc['fichier_pdf'];
-                $newPdf = str_replace('_Brouillon.pdf', '.pdf', $oldPdf);
-                if ($oldPdf !== $newPdf) {
-                    rename($oldPdf, $newPdf);
-                }
+    if (count($selected) === 0 || !($pdo ?? null) instanceof PDO) {
+        set_flash('error', 'Selectionnez au moins un document.');
+        redirect_to('documents', isset($_GET['societe_id']) ? ['societe_id' => (int) $_GET['societe_id']] : []);
+    }
+    $placeholders = implode(',', array_fill(0, count($selected), '?'));
+    $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf FROM documents_generes WHERE valide = 0 AND id IN ($placeholders)");
+    $stmt->execute(array_map('intval', $selected));
+    $docs = $stmt->fetchAll();
+    $updateStmt = $pdo->prepare("UPDATE documents_generes SET valide = 1, fichier_docx = :fichier_docx, fichier_pdf = :fichier_pdf WHERE id = :id");
+    foreach ($docs as $doc) {
+        $oldDocx = $doc['fichier_docx'];
+        $newDocx = str_replace('_Brouillon.docx', '.docx', $oldDocx);
+        if ($oldDocx !== $newDocx && file_exists($oldDocx)) {
+            rename($oldDocx, $newDocx);
+        }
+        $newPdf = $doc['fichier_pdf'];
+        if ($newPdf !== null) {
+            $renamedPdf = str_replace('_Brouillon.pdf', '.pdf', $newPdf);
+            if ($newPdf !== $renamedPdf && file_exists($newPdf)) {
+                rename($newPdf, $renamedPdf);
+                $newPdf = $renamedPdf;
             }
         }
-        $stmt = $pdo->prepare("UPDATE documents_generes SET valide = 1 WHERE id IN ($placeholders)");
-        $stmt->execute(array_map('intval', $selected));
-        set_flash('success', count($selected) . ' document(s) valide(s).');
-        redirect_to('documents', $filterSociete ? ['societe_id' => $filterSociete] : []);
+        $updateStmt->execute([
+            'fichier_docx' => $newDocx,
+            'fichier_pdf' => $newPdf,
+            'id' => $doc['id'],
+        ]);
     }
+    set_flash('success', count($selected) . ' document(s) valide(s).');
+    redirect_to('documents', $filterSociete ? ['societe_id' => $filterSociete] : []);
 }
 
 $societesOptions = fetch_societes_options($pdo ?? null);
