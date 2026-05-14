@@ -18,8 +18,9 @@ function app_url(string $page = 'dashboard', array $params = []): string
 function redirect_to(string $page, array $params = []): never
 {
     while (ob_get_level() > 0) {
-        ob_clean();
+        ob_end_clean();
     }
+    session_write_close();
     header('Location: ' . app_url($page, $params));
     exit;
 }
