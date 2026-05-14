@@ -339,9 +339,9 @@ $docxCount = $totalGenerated;
                                         <td><input type="checkbox" name="templates[]" value="<?= e($tpl['path']) ?>" checked></td>
                                         <td>
                                             <span class="mdi mdi-file-word" style="color:var(--primary);margin-right:6px"></span>
-                                            <?= e($docTypesConfig[$tpl['doc_type']] ?? $tpl['doc_type']) ?>
+                                            <?= e($tpl['doc_type']) ?>
                                         </td>
-                                        <td><span class="help-text"><?= e(($docTypesConfig[$tpl['doc_type']] ?? $tpl['doc_type']) . '.docx') ?></span></td>
+                                        <td><span class="help-text"><?= e($docTypesConfig[$tpl['doc_type']] ?? $tpl['doc_type']) ?></span></td>
                                         <td><?= count($tpl['variables']) ?></td>
                                         <td>
                                             <span class="mdi <?= $genTypeIcons[$gt] ?? 'mdi-file-document' ?>" style="color:var(--primary);margin-right:4px"></span>
