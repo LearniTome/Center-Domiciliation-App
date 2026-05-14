@@ -327,7 +327,6 @@ $docxCount = $totalGenerated;
                             <tr>
                                 <th class="col-check"></th>
                                 <th>Type de document</th>
-                                <th>Fichier source</th>
                                 <th>Champs</th>
                                 <th>Groupe</th>
                             </tr>
@@ -339,9 +338,9 @@ $docxCount = $totalGenerated;
                                         <td><input type="checkbox" name="templates[]" value="<?= e($tpl['path']) ?>" checked></td>
                                         <td>
                                             <span class="mdi mdi-file-word" style="color:var(--primary);margin-right:6px"></span>
-                                            <?= e($docTypesConfig[$tpl['doc_type']] ?? $tpl['doc_type']) ?>
+                                            <?php $tplLabel = $docTypesConfig[$tpl['doc_type']] ?? str_replace(['-', '_'], ' ', $tpl['doc_type']); ?>
+                                            <?= e(trim($tplLabel)) ?>
                                         </td>
-                                        <td><span class="help-text"><?= e(basename($tpl['path'])) ?></span></td>
                                         <td><?= count($tpl['variables']) ?></td>
                                         <td>
                                             <span class="mdi <?= $genTypeIcons[$gt] ?? 'mdi-file-document' ?>" style="color:var(--primary);margin-right:4px"></span>
