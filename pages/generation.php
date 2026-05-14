@@ -155,6 +155,7 @@ if (is_post() && !isset($_POST['delete_submit']) && !isset($_POST['validate_subm
             ]);
         }
         set_flash('success', count($generatedFiles) . ' document(s) genere(s).');
+        redirect_to('generation', ['societe_id' => $societeId]);
     }
 }
 
@@ -270,6 +271,14 @@ $docxCount = $totalGenerated;
 
 ?>
 <style>.main { overflow-x: hidden; }</style>
+<style>
+#loading-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);z-index:9999;display:none;align-items:center;justify-content:center;flex-direction:column center}
+#loading-overlay.show{display:flex}
+#loading-overlay .loader-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);padding:2.5rem 3rem;display:flex;flex-direction:column;align-items:center;gap:1rem;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+#loading-overlay .spinner{width:40px;height:40px;border:3px solid var(--line);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading-overlay p{font-size:1rem;color:var(--text-secondary);margin:0}
+</style>
 <section class="card stack">
     <div class="section-header">
         <div>
@@ -480,11 +489,11 @@ $docxCount = $totalGenerated;
                                             </a>
                                         <?php endif; ?>
                                         <?php if (!$doc['valide']): ?>
-                                            <a class="btn-icon" href="#" onclick="event.preventDefault(); (function(){ var f=document.getElementById('files-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='validate_submit'; h.value='1'; f.appendChild(h); f.submit();} })();" title="Valider">
+                                            <a class="btn-icon" href="#" onclick="event.preventDefault(); (function(){ var f=document.getElementById('files-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='validate_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Validation en cours...'); f.submit();} })();" title="Valider">
                                                 <span class="mdi mdi-file-check"></span>
                                             </a>
                                         <?php endif; ?>
-                                        <a class="btn-icon danger" href="#" onclick="event.preventDefault(); if(!confirm('Supprimer ce document ?')) return; (function(){ var f=document.getElementById('files-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='delete_submit'; h.value='1'; f.appendChild(h); f.submit();} })();" title="Supprimer">
+                                        <a class="btn-icon danger" href="#" onclick="event.preventDefault(); if(!confirm('Supprimer ce document ?')) return; (function(){ var f=document.getElementById('files-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='delete_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Suppression en cours...'); f.submit();} })();" title="Supprimer">
                                             <span class="mdi mdi-delete"></span>
                                         </a>
                                     </div>
@@ -511,3 +520,31 @@ $docxCount = $totalGenerated;
         </div>
     <?php endif; ?>
 </section>
+
+<div id="loading-overlay">
+    <div class="loader-card">
+        <div class="spinner"></div>
+        <p id="loading-text">Traitement en cours...</p>
+    </div>
+</div>
+<script>
+(function(){
+    var overlay = document.getElementById('loading-overlay');
+    var text = document.getElementById('loading-text');
+    window.showOverlay = function(msg){
+        text.textContent = msg;
+        overlay.classList.add('show');
+    };
+    document.getElementById('gen-form')?.addEventListener('submit', function(){
+        window.showOverlay('Génération en cours...');
+    });
+    document.getElementById('files-form')?.addEventListener('submit', function(e){
+        var btn = e.submitter;
+        if(btn && btn.name === 'delete_submit'){
+            window.showOverlay('Suppression en cours...');
+        } else {
+            window.showOverlay('Validation en cours...');
+        }
+    });
+})();
+</script>
