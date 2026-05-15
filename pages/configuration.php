@@ -11,6 +11,7 @@ $tabs = [
     'adresses' => ['ref_ste_adresses', 'ste_adresse', 'Adresses'],
     'qualites-associe' => ['ref_qualites_associe', 'qualite_associe', 'Qualites associe'],
     'activites' => ['ref_activites', 'activite', 'Activites'],
+    'certificat-negatif' => ['ref_nma2010', 'libelle', 'NMA2010'],
 ];
 
 $tab = $_GET['tab'] ?? 'formes-juridiques';
@@ -22,13 +23,23 @@ if (!isset($tabs[$tab])) {
 $editKey = $_GET['edit'] ?? null;
 $tabCounts = [];
 $rows = [];
+$isNmaTab = $tab === 'certificat-negatif';
 if (($pdo ?? null) instanceof PDO) {
     foreach ($tabs as $key => [$t, $c, $l]) {
-        $stmt = $pdo->query("SELECT COUNT(*) FROM {$t}");
-        $tabCounts[$key] = (int) $stmt->fetchColumn();
+        try {
+            $stmt = $pdo->query("SELECT COUNT(*) FROM {$t}");
+            $tabCounts[$key] = (int) $stmt->fetchColumn();
+        } catch (PDOException) {
+            $tabCounts[$key] = 0;
+        }
     }
-    $stmt = $pdo->query("SELECT id, {$column}, sort_order, created_at, updated_at FROM {$table} ORDER BY sort_order ASC, {$column} ASC");
-    $rows = $stmt->fetchAll();
+    try {
+        $selectCols = $isNmaTab ? "id, code, {$column}, sort_order, created_at, updated_at" : "id, {$column}, sort_order, created_at, updated_at";
+        $stmt = $pdo->query("SELECT {$selectCols} FROM {$table} ORDER BY sort_order ASC, {$column} ASC");
+        $rows = $stmt->fetchAll();
+    } catch (PDOException) {
+        $rows = [];
+    }
 }
 
 if (is_post()) {
@@ -39,9 +50,20 @@ if (is_post()) {
     if ($action === 'add' && ($pdo ?? null) instanceof PDO) {
         $value = field_value($_POST, $column);
         if ($value !== '') {
-            $stmt = $pdo->prepare("INSERT IGNORE INTO {$table} ({$column}, sort_order) VALUES (:val, :so)");
-            $max = $pdo->query("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM {$table}")->fetchColumn();
-            $stmt->execute(['val' => $value, 'so' => $max]);
+            if ($tab === 'certificat-negatif') {
+                $nmaCode = field_value($_POST, 'nma_code');
+                if ($nmaCode === '') {
+                    set_flash('error', 'Le code NMA2010 est obligatoire.');
+                    redirect_to('configuration', ['tab' => $postTab]);
+                }
+                $max = $pdo->query("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM {$table}")->fetchColumn();
+                $stmt = $pdo->prepare("INSERT IGNORE INTO {$table} (code, {$column}, sort_order) VALUES (:code, :val, :so)");
+                $stmt->execute(['code' => $nmaCode, 'val' => $value, 'so' => $max]);
+            } else {
+                $stmt = $pdo->prepare("INSERT IGNORE INTO {$table} ({$column}, sort_order) VALUES (:val, :so)");
+                $max = $pdo->query("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM {$table}")->fetchColumn();
+                $stmt->execute(['val' => $value, 'so' => $max]);
+            }
             set_flash('success', $label . ' ajoutee.');
         } else {
             set_flash('error', 'Le champ est obligatoire.');
@@ -151,6 +173,9 @@ if (is_post()) {
         <input type="hidden" name="action" value="add">
         <input type="hidden" name="tab" value="<?= e($tab) ?>">
         <div style="display:flex;gap:6px">
+            <?php if ($isNmaTab): ?>
+                <input name="nma_code" placeholder="Code..." required style="width:100px;padding:4px 8px;font-size:0.8125rem">
+            <?php endif; ?>
             <input name="<?= e($column) ?>" placeholder="Nouveau..." required style="flex:1;padding:4px 8px;font-size:0.8125rem">
             <button type="submit" class="btn-icon" title="Ajouter" style="border:2px solid var(--primary);border-radius:var(--radius-sm);background:transparent;color:var(--primary);width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all var(--transition)"><span class="mdi mdi-plus"></span></button>
         </div>
@@ -183,6 +208,9 @@ if (is_post()) {
                                     <input type="hidden" name="action" value="update">
                                     <input type="hidden" name="tab" value="<?= e($tab) ?>">
                                     <input type="hidden" name="record_id" value="<?= $rid ?>">
+                                    <?php if ($isNmaTab): ?>
+                                        <span style="padding:2px 6px;font-size:0.8125rem;color:var(--text-secondary)"><?= e((string) $row['code']) ?> -</span>
+                                    <?php endif; ?>
                                     <input name="<?= e($column) ?>" value="<?= e($val) ?>" required style="flex:1;padding:2px 6px;font-size:0.8125rem">
                                     <button type="submit" class="btn-icon" title="Enregistrer"><span class="mdi mdi-check"></span></button>
                                     <a class="btn-icon" href="<?= e(app_url('configuration', ['tab' => $tab])) ?>" title="Annuler"><span class="mdi mdi-close"></span></a>
@@ -193,7 +221,7 @@ if (is_post()) {
                             <td></td>
                         <?php else: ?>
                             <td style="text-align:center;color:var(--text-secondary);cursor:grab"><span class="mdi mdi-drag-vertical"></span></td>
-                            <td><?= e($val) ?></td>
+                            <td><?= $isNmaTab ? e((string) $row['code'] . ' - ' . $val) : e($val) ?></td>
                             <td style="font-size:0.75rem;color:var(--text-secondary)"><?= $row['created_at'] ? date('d/m/Y H:i', strtotime($row['created_at'])) : '-' ?></td>
                             <td style="font-size:0.75rem;color:var(--text-secondary)"><?= $row['updated_at'] ? date('d/m/Y H:i', strtotime($row['updated_at'])) : '-' ?></td>
                             <td>

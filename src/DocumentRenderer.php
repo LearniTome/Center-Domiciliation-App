@@ -552,8 +552,8 @@ class DocumentRenderer
         $allActivities = array_map(static fn(array $row): string => $row['activite'], $activitesStmt->fetchAll());
 
         $societeActivities = [];
-        if (!empty($societe['activites'])) {
-            $societeActivities = array_map('trim', explode(',', (string) $societe['activites']));
+        if (!empty($societe['activites_statuts'])) {
+            $societeActivities = array_map('trim', explode(',', (string) $societe['activites_statuts']));
         }
 
         $activitiesList = $societeActivities ?: $allActivities;
@@ -567,6 +567,28 @@ class DocumentRenderer
             if ($i < $activitiesCount - 1) {
                 $activitiesContinuationBullets .= $prefix . $act . "\n";
             }
+        }
+
+        $certNegCode = !empty($societe['activites_certificat_negatif']) ? (string) $societe['activites_certificat_negatif'] : '';
+        $certNegList = [];
+        if ($certNegCode !== '') {
+            try {
+                $nmaStmt = $pdo->prepare("SELECT CONCAT(code, ' - ', libelle) AS display FROM ref_nma2010 WHERE code = :code LIMIT 1");
+                $nmaStmt->execute(['code' => $certNegCode]);
+                $nmaRow = $nmaStmt->fetch();
+                $certNegList = $nmaRow ? [$nmaRow['display']] : [$certNegCode];
+            } catch (Throwable) {
+                $certNegList = [$certNegCode];
+            }
+        } else {
+            $certNegList = $allActivities;
+        }
+        $certNegCount = count($certNegList);
+        $certNegInline = implode(', ', $certNegList);
+        $certNegBullets = '';
+        foreach ($certNegList as $i => $act) {
+            $prefix = '  \\item ';
+            $certNegBullets .= $prefix . $act . "\n";
         }
 
         $associeList = [];
@@ -677,6 +699,12 @@ class DocumentRenderer
             'ACTIVITY_COUNT' => (string) $activitiesCount,
             'activities' => $activitiesList,
             'activites' => $activitiesList,
+            'activites_certificat_negatif' => $certNegList,
+            'ACTIVITES_CERT_NEG' => $certNegList,
+            'ACTIVITES_CERTIFICAT_NEGATIF' => $certNegList,
+            'ACTIVITES_CERT_NEG_INLINE' => $certNegInline,
+            'ACTIVITES_CERT_NEG_BULLETS' => $certNegBullets,
+            'CERT_NEG_COUNT' => (string) $certNegCount,
             'DATE' => $now->format('d/m/Y'),
             'DATE_LONG' => $now->format('d F Y'),
             'ANNEE' => $now->format('Y'),
@@ -755,6 +783,29 @@ class DocumentRenderer
             }
         }
 
+        $certNegCode = !empty($societe['activites_certificat_negatif']) ? (string) $societe['activites_certificat_negatif'] : '';
+        $certNegList = [];
+        $certNegInline = '';
+        $certNegBullets = '';
+        $certNegCount = 0;
+        if ($certNegCode !== '' && $pdo !== null) {
+            try {
+                $nmaStmt = $pdo->prepare("SELECT CONCAT(code, ' - ', libelle) AS display FROM ref_nma2010 WHERE code = :code LIMIT 1");
+                $nmaStmt->execute(['code' => $certNegCode]);
+                $nmaRow = $nmaStmt->fetch();
+                $certNegList = $nmaRow ? [$nmaRow['display']] : [$certNegCode];
+                $certNegCount = count($certNegList);
+                $certNegInline = implode(', ', $certNegList);
+                foreach ($certNegList as $act) {
+                    $certNegBullets .= '  \\item ' . $act . "\n";
+                }
+            } catch (Throwable) {
+                $certNegList = [$certNegCode];
+                $certNegCount = 1;
+                $certNegInline = $certNegCode;
+            }
+        }
+
         return [
             'societe' => $societe,
             'associes' => $associeList,
@@ -811,6 +862,12 @@ class DocumentRenderer
             'ACTIVITY_COUNT' => (string) $activitiesCount,
             'activities' => $activitiesList,
             'activites' => $activitiesList,
+            'activites_certificat_negatif' => $certNegList,
+            'ACTIVITES_CERT_NEG' => $certNegList,
+            'ACTIVITES_CERTIFICAT_NEGATIF' => $certNegList,
+            'ACTIVITES_CERT_NEG_INLINE' => $certNegInline,
+            'ACTIVITES_CERT_NEG_BULLETS' => $certNegBullets,
+            'CERT_NEG_COUNT' => (string) $certNegCount,
             'DATE' => $now->format('d/m/Y'),
             'DATE_LONG' => $now->format('d F Y'),
             'ANNEE' => $now->format('Y'),

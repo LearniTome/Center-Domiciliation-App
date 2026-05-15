@@ -35,6 +35,41 @@ $nationalitesOptions = fetch_reference_options($pdo ?? null, 'ref_nationalites',
 $lieuxNaissanceOptions = fetch_reference_options($pdo ?? null, 'ref_lieux_naissance', 'lieu_naissance');
 $qualitesAssocieOptions = fetch_reference_options($pdo ?? null, 'ref_qualites_associe', 'qualite_associe');
 $formesJuridiquesOptions = fetch_reference_options($pdo ?? null, 'ref_formes_juridiques', 'forme_juridique');
+$activitesOptions = fetch_reference_options($pdo ?? null, 'ref_activites', 'activite');
+$certNegOptions = fetch_nma2010_options($pdo ?? null);
+
+if (is_post() && isset($_POST['add_activite_ref']) && ($pdo ?? null) instanceof PDO) {
+    verify_csrf();
+    $newActivite = field_value($_POST, 'new_activite');
+    $type = field_value($_POST, 'type', 'statuts');
+    if ($newActivite !== '') {
+        if ($type === 'cert_neg') {
+            $nmaCode = field_value($_POST, 'nma_code');
+            if ($nmaCode === '') {
+                echo json_encode(['success' => false]);
+                exit;
+            }
+            $nmaLibelle = field_value($_POST, 'nma_libelle');
+            if ($nmaLibelle === '') {
+                $nmaLibelle = $newActivite;
+            }
+            $stmt = $pdo->prepare("INSERT IGNORE INTO ref_nma2010 (code, libelle, sort_order) VALUES (:code, :libelle, :so)");
+            $max = $pdo->query("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM ref_nma2010")->fetchColumn();
+            $stmt->execute(['code' => $nmaCode, 'libelle' => $nmaLibelle, 'so' => $max]);
+            echo json_encode(['success' => true, 'code' => $nmaCode, 'libelle' => $nmaLibelle]);
+        } else {
+            $table = 'ref_activites';
+            $column = 'activite';
+            $max = $pdo->query("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM {$table}")->fetchColumn();
+            $stmt = $pdo->prepare("INSERT IGNORE INTO {$table} ({$column}, sort_order) VALUES (:val, :so)");
+            $stmt->execute(['val' => $newActivite, 'so' => $max]);
+            echo json_encode(['success' => true, 'value' => $newActivite]);
+        }
+    } else {
+        echo json_encode(['success' => false]);
+    }
+    exit;
+}
 
 if (isset($_GET['reset']) && $_GET['reset'] === '1') {
     unset($_SESSION['creation_wizard']);
@@ -54,6 +89,12 @@ if (is_post()) {
     $navAction = $_POST['nav_action'] ?? 'next';
 
     if ($postedStep === 1) {
+        $activitesStatuts = $_POST['activites_statuts'] ?? [];
+        $allStatuts = is_array($activitesStatuts) ? array_map('trim', $activitesStatuts) : [];
+        $allStatuts = array_unique(array_filter($allStatuts));
+
+        $activitesCertNeg = field_value($_POST, 'activites_certificat_negatif');
+
         $societe = [
             'dossier_domiciliation' => field_value($_POST, 'dossier_domiciliation'),
             'raison_sociale' => field_value($_POST, 'raison_sociale'),
@@ -62,6 +103,8 @@ if (is_post()) {
             'date_ice' => field_value($_POST, 'date_ice'),
             'rc' => field_value($_POST, 'rc'),
             'if_number' => field_value($_POST, 'if_number'),
+            'activites_statuts' => implode(', ', $allStatuts),
+            'activites_certificat_negatif' => $activitesCertNeg,
             'part_social' => field_value($_POST, 'part_social'),
             'valeur_nominale' => field_value($_POST, 'valeur_nominale'),
             'date_exp_cert_neg' => field_value($_POST, 'date_exp_cert_neg'),
@@ -280,10 +323,12 @@ if (is_post()) {
                 $societeStmt = $pdo->prepare('
                     INSERT INTO societes (
                         dossier_domiciliation, raison_sociale, forme_juridique, ice, date_ice, rc, if_number,
+                        activites_statuts, activites_certificat_negatif,
                         capital, part_social, valeur_nominale, date_exp_cert_neg, ste_adress, ville, tribunal, email,
                         telephone, type_generation, procedure_creation, mode_depot_creation
                     ) VALUES (
                         :dossier_domiciliation, :raison_sociale, :forme_juridique, :ice, :date_ice, :rc, :if_number,
+                        :activites_statuts, :activites_certificat_negatif,
                         :capital, :part_social, :valeur_nominale, :date_exp_cert_neg, :ste_adress, :ville, :tribunal, :email,
                         :telephone, :type_generation, :procedure_creation, :mode_depot_creation
                     )
@@ -296,6 +341,8 @@ if (is_post()) {
                     'date_ice' => ($wizard['societe']['date_ice'] ?? '') !== '' ? $wizard['societe']['date_ice'] : null,
                     'rc' => $wizard['societe']['rc'] ?? '',
                     'if_number' => $wizard['societe']['if_number'] ?? '',
+                    'activites_statuts' => $wizard['societe']['activites_statuts'] ?? '',
+                    'activites_certificat_negatif' => $wizard['societe']['activites_certificat_negatif'] ?? '',
                     'ste_adress' => $wizard['societe']['ste_adress'] ?? '',
                     'ville' => $wizard['societe']['ville'] ?? '',
                     'tribunal' => $wizard['societe']['tribunal'] ?? '',
@@ -421,6 +468,8 @@ $societeData = array_merge([
     'date_ice' => '',
     'rc' => '',
     'if_number' => '',
+    'activites_statuts' => '',
+    'activites_certificat_negatif' => '',
     'part_social' => '',
     'valeur_nominale' => '',
     'date_exp_cert_neg' => '',
@@ -591,6 +640,77 @@ $contratData = array_merge([
                     <input name="if_number" value="<?= e((string) $societeData['if_number']) ?>">
                 </label>
 
+                <h3 class="section-title">Activite (Certificat negatif)</h3>
+                <label class="field full">
+                    <span>Activite pour le certificat negatif</span>
+                    <div style="display:flex;gap:8px;align-items:center">
+                        <select name="activites_certificat_negatif" style="flex:1" data-cert-neg-select>
+                            <option value="">Selectionner</option>
+                            <?php foreach ($certNegOptions as $row): ?>
+                                <option value="<?= e($row['code']) ?>" <?= ((string) $societeData['activites_certificat_negatif']) === $row['code'] ? 'selected' : '' ?>><?= e($row['code'] . ' - ' . $row['libelle']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <button type="button" class="btn btn-info" data-add-activite-cn style="white-space:nowrap"><span class="mdi mdi-plus-circle"></span> Nouvelle activite</button>
+                    </div>
+                </label>
+
+                <div data-statuts-section style="grid-column:1/-1">
+                <h3 class="section-title">Activites (Statuts)</h3>
+                <label class="field full">
+                    <span>Activites pour les statuts</span>
+                    <div data-activites-group="statuts">
+                        <div data-activites-container>
+                            <?php
+                            $wizStatuts = !empty($societeData['activites_statuts']) ? array_map('trim', explode(',', (string) $societeData['activites_statuts'])) : [];
+                            if ($wizStatuts):
+                                foreach ($wizStatuts as $act):
+                            ?>
+                                <div data-activite-item style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+                                    <select name="activites_statuts[]" style="flex:1">
+                                        <option value="">Selectionner</option>
+                                        <?php foreach ($activitesOptions as $opt): ?>
+                                            <option value="<?= e($opt) ?>" <?= $act === $opt ? 'selected' : '' ?>><?= e($opt) ?></option>
+                                        <?php endforeach; ?>
+                                        <?php if (!in_array($act, $activitesOptions)): ?>
+                                            <option value="<?= e($act) ?>" selected><?= e($act) ?></option>
+                                        <?php endif; ?>
+                                    </select>
+                                    <button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="mdi mdi-close"></span></button>
+                                </div>
+                            <?php
+                                endforeach;
+                            else:
+                            ?>
+                                <div data-activite-item style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+                                    <select name="activites_statuts[]" style="flex:1">
+                                        <option value="">Selectionner</option>
+                                        <?php foreach ($activitesOptions as $opt): ?>
+                                            <option value="<?= e($opt) ?>"><?= e($opt) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="mdi mdi-close"></span></button>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+                            <button type="button" class="btn" data-add-activite><span class="mdi mdi-plus"></span> Ajouter une activite</button>
+                            <button type="button" class="btn btn-info" data-add-activite-ref><span class="mdi mdi-plus-circle"></span> Nouvelle activite</button>
+                            <button type="button" class="btn btn-secondary" data-add-activites-multiple><span class="mdi mdi-plus-box-multiple"></span> Ajouter plusieurs</button>
+                        </div>
+                        <template data-activite-template>
+                            <div data-activite-item style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+                                <select name="activites_statuts[]" style="flex:1">
+                                    <option value="">Selectionner</option>
+                                    <?php foreach ($activitesOptions as $opt): ?>
+                                        <option value="<?= e($opt) ?>"><?= e($opt) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="mdi mdi-close"></span></button>
+                            </div>
+                        </template>
+                    </div>
+                </label>
+                </div>
                 <h3 class="section-title">Capital</h3>
                 <label class="field">
                     <span>Capital</span>
@@ -1096,6 +1216,8 @@ $contratData = array_merge([
                     <div><span>Tribunal</span><strong><?= e($societeData['tribunal'] ?: '-') ?></strong></div>
                     <div><span>Email</span><strong><?= e($societeData['email'] ?: '-') ?></strong></div>
                     <div><span>Telephone</span><strong><?= e($societeData['telephone'] ?: '-') ?></strong></div>
+                    <div class="full"><span>Activites (Statuts)</span><strong><?= e(!empty($societeData['activites_statuts']) ? (string) $societeData['activites_statuts'] : '-') ?></strong></div>
+                    <div class="full"><span>Activites (Cert. negatif)</span><strong><?= e(!empty($societeData['activites_certificat_negatif']) ? fetch_nma2010_display($pdo ?? null, (string) $societeData['activites_certificat_negatif']) : '-') ?></strong></div>
                     <div><span>Type generation</span><strong><?= e($societeData['type_generation'] ?: '-') ?></strong></div>
                     <div><span>Procedure</span><strong><?= e($societeData['procedure_creation'] ?: '-') ?></strong></div>
                     <div><span>Mode depot</span><strong><?= e($societeData['mode_depot_creation'] ?: '-') ?></strong></div>

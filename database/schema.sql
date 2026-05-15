@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS societes (
     date_ice DATE DEFAULT NULL,
     rc VARCHAR(100) DEFAULT NULL,
     if_number VARCHAR(100) DEFAULT NULL,
+    activites_statuts TEXT DEFAULT NULL,
+    activites_certificat_negatif TEXT DEFAULT NULL,
     -- Capital
     capital DECIMAL(15,2) DEFAULT NULL,
     part_social INT DEFAULT NULL,
@@ -178,6 +180,16 @@ CREATE TABLE IF NOT EXISTS ref_activites (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uq_ref_activites (activite)
+);
+
+CREATE TABLE IF NOT EXISTS ref_nma2010 (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(20) NOT NULL,
+    libelle VARCHAR(255) NOT NULL,
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_ref_nma2010_code (code)
 );
 
 CREATE TABLE IF NOT EXISTS ref_nationalites (

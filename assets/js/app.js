@@ -279,10 +279,14 @@ if (associesContainer && associeTemplate && addAssocieButton) {
         if (!form) return;
         var procCreation = form.querySelector('[name="procedure_creation"]');
         var modeDepot = form.querySelector('[name="mode_depot_creation"]');
+        var statutsSection = form.querySelector('[data-statuts-section]');
         if (!procCreation || !modeDepot) return;
         var isDomiciliation = typeGen.value === 'domiciliation';
         procCreation.disabled = isDomiciliation;
         modeDepot.disabled = isDomiciliation;
+        if (statutsSection) {
+            statutsSection.style.display = isDomiciliation ? 'none' : '';
+        }
         if (isDomiciliation) {
             procCreation.value = '';
             modeDepot.value = '';
@@ -323,6 +327,160 @@ document.addEventListener('input', (e) => {
     const field = e.target.closest('[data-field-name="nom"], [data-field-name="prenom"]');
     if (field) updateNomComplet(field.closest('[data-associe-item]'));
 });
+
+(function () {
+    document.querySelectorAll('[data-activites-group]').forEach(function (group) {
+        const container = group.querySelector('[data-activites-container]');
+        const template = group.querySelector('[data-activite-template]');
+        const addBtn = group.querySelector('[data-add-activite]');
+        const refBtn = group.querySelector('[data-add-activite-ref]');
+        const multipleBtn = group.querySelector('[data-add-activites-multiple]');
+        if (!container || !template) return;
+
+        const selectName = function () {
+            const firstSelect = container.querySelector('select');
+            return firstSelect ? firstSelect.getAttribute('name') : 'activites[]';
+        };
+
+        const addOptionToSelects = function (value) {
+            container.querySelectorAll('select').forEach(function (sel) {
+                const exists = Array.from(sel.options).some(function (o) { return o.value === value; });
+                if (!exists) {
+                    const opt = document.createElement('option');
+                    opt.value = value;
+                    opt.textContent = value;
+                    sel.appendChild(opt);
+                }
+            });
+        };
+
+        const createActiviteItem = function (value) {
+            const clone = template.content.firstElementChild.cloneNode(true);
+            if (value) {
+                const sel = clone.querySelector('select');
+                if (sel) {
+                    const opt = document.createElement('option');
+                    opt.value = value;
+                    opt.textContent = value;
+                    sel.appendChild(opt);
+                    sel.value = value;
+                }
+            }
+            return clone;
+        };
+
+        if (addBtn) {
+            addBtn.addEventListener('click', function () {
+                const clone = createActiviteItem();
+                if (clone) container.appendChild(clone);
+            });
+        }
+
+        if (refBtn) {
+            refBtn.addEventListener('click', function () {
+                const name = window.prompt('Saisissez le nom de la nouvelle activite:');
+                if (!name || name.trim() === '') return;
+                const form = this.closest('form');
+                if (!form) return;
+                const csrf = form.querySelector('input[name="csrf_token"]');
+                if (!csrf) return;
+                fetch(window.location.href, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        csrf_token: csrf.value,
+                        add_activite_ref: '1',
+                        new_activite: name.trim()
+                    })
+                })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data.success) {
+                        addOptionToSelects(data.value);
+                        var items = container.querySelectorAll('[data-activite-item]');
+                        if (items.length > 0) {
+                            var lastSelect = items[items.length - 1].querySelector('select');
+                            if (lastSelect) lastSelect.value = data.value;
+                        }
+                    } else {
+                        alert('Erreur lors de l\'ajout de l\'activite.');
+                    }
+                })
+                .catch(function () {
+                    alert('Erreur de communication avec le serveur.');
+                });
+            });
+        }
+
+        if (multipleBtn) {
+            multipleBtn.addEventListener('click', function () {
+                const count = window.prompt('Combien d\'activites voulez-vous ajouter ?', '2');
+                const n = parseInt(count, 10);
+                if (isNaN(n) || n < 1) return;
+                for (let i = 0; i < n; i++) {
+                    const clone = createActiviteItem();
+                    if (clone) container.appendChild(clone);
+                }
+            });
+        }
+
+        container.addEventListener('click', function (event) {
+            const removeBtn = event.target.closest('[data-remove-activite]');
+            if (!removeBtn) return;
+            const items = container.querySelectorAll('[data-activite-item]');
+            if (items.length <= 1) return;
+            const item = removeBtn.closest('[data-activite-item]');
+            if (item) item.remove();
+        });
+    });
+})();
+
+(function () {
+    document.querySelectorAll('[data-add-activite-cn]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            const code = window.prompt('Code NMA2010 (ex: 4711B):');
+            if (!code || code.trim() === '') return;
+            const label = window.prompt('Libelle (ex: Commerce de detail alimentaire):');
+            if (!label || label.trim() === '') return;
+            const form = this.closest('form');
+            if (!form) return;
+            const csrf = form.querySelector('input[name="csrf_token"]');
+            if (!csrf) return;
+            const select = form.querySelector('[data-cert-neg-select]');
+            fetch(window.location.href, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({
+                    csrf_token: csrf.value,
+                    add_activite_ref: '1',
+                    type: 'cert_neg',
+                    new_activite: label.trim(),
+                    nma_code: code.trim(),
+                    nma_libelle: label.trim()
+                })
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.success && select) {
+                    var display = data.code + ' - ' + data.libelle;
+                    var exists = Array.from(select.options).some(function (o) { return o.value === data.code; });
+                    if (!exists) {
+                        var opt = document.createElement('option');
+                        opt.value = data.code;
+                        opt.textContent = display;
+                        select.appendChild(opt);
+                    }
+                    select.value = data.code;
+                } else {
+                    alert('Erreur lors de l\'ajout de l\'activite.');
+                }
+            })
+            .catch(function () {
+                alert('Erreur de communication avec le serveur.');
+            });
+        });
+    });
+})();
 
 (function() {
     const dateDebut = document.querySelector('[data-date-debut]');

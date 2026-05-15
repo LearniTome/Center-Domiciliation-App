@@ -203,6 +203,35 @@ INSERT INTO ref_activites (activite) VALUES
 ('Assurance'),
 ('Tourisme');
 
+INSERT INTO ref_nma2010 (code, libelle) VALUES
+('A', 'AGRICULTURE, SYLVICULTURE ET PECHE'),
+('B', 'INDUSTRIES EXTRACTIVES'),
+('C', 'INDUSTRIE MANUFACTURIERE'),
+('F', 'CONSTRUCTION'),
+('G', 'COMMERCE; REPARATION D''AUTOMOBILES ET DE MOTOCYCLES'),
+('H', 'TRANSPORT ET ENTREPOSAGE'),
+('I', 'HEBERGEMENT ET RESTAURATION'),
+('J', 'INFORMATION ET COMMUNICATION'),
+('K', 'ACTIVITES FINANCIERES ET D''ASSURANCE'),
+('L', 'ACTIVITES IMMOBILIERES'),
+('M', 'ACTIVITES SPECIALISEES, SCIENTIFIQUES ET TECHNIQUES'),
+('N', 'ACTIVITES DE SERVICES ADMINISTRATIFS ET DE SOUTIEN'),
+('P', 'ENSEIGNEMENT'),
+('Q', 'SANTE HUMAINE ET ACTION SOCIALE'),
+('R', 'ARTS, SPECTACLES ET ACTIVITES RECREATIVES'),
+('S', 'AUTRES ACTIVITES DE SERVICES'),
+('46', 'Commerce de gros'),
+('47', 'Commerce de detail'),
+('49', 'Transports terrestres'),
+('56', 'Restauration'),
+('62', 'Programmation, conseil et autres activites informatiques'),
+('68', 'Activites immobilieres'),
+('69', 'Activites juridiques et comptables'),
+('70', 'Activites des sieges sociaux; conseil de gestion'),
+('85', 'Enseignement'),
+('86', 'Activites pour la sante humaine'),
+('96', 'Autres services personnels');
+
 INSERT INTO societes (
     dossier_domiciliation, raison_sociale, forme_juridique, ice, date_ice, rc, if_number,
     capital, part_social, valeur_nominale, date_exp_cert_neg, adresse, ste_adress, ville, tribunal, email,
@@ -292,6 +321,12 @@ INSERT IGNORE INTO ref_activites (activite) VALUES
 ('Marchand effectuant Import Export'),
 ('Négociant'),
 ('Conseil de Gestion');
+
+INSERT IGNORE INTO ref_nma2010 (code, libelle) VALUES
+('46', 'Commerce de gros'),
+('47', 'Commerce de detail'),
+('68', 'Activites immobilieres'),
+('70', 'Activites des sieges sociaux; conseil de gestion');
 
 INSERT IGNORE INTO ref_nationalites (nationalite) VALUES
 ('Marocaine'),

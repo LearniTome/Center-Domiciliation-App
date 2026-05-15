@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS societes (
     date_ice DATE DEFAULT NULL,
     rc VARCHAR(100) DEFAULT NULL,
     if_number VARCHAR(100) DEFAULT NULL,
+    activites_statuts TEXT DEFAULT NULL,
+    activites_certificat_negatif TEXT DEFAULT NULL,
     -- Capital
     capital DECIMAL(15,2) DEFAULT NULL,
     part_social INT DEFAULT NULL,
@@ -180,6 +182,16 @@ CREATE TABLE IF NOT EXISTS ref_activites (
     UNIQUE KEY uq_ref_activites (activite)
 );
 
+CREATE TABLE IF NOT EXISTS ref_nma2010 (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(20) NOT NULL,
+    libelle VARCHAR(255) NOT NULL,
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_ref_nma2010_code (code)
+);
+
 CREATE TABLE IF NOT EXISTS ref_nationalites (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     nationalite VARCHAR(120) NOT NULL,
@@ -229,6 +241,16 @@ CREATE TABLE IF NOT EXISTS ref_activites (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     activite VARCHAR(190) NOT NULL,
     UNIQUE KEY uq_ref_activites (activite)
+);
+
+CREATE TABLE IF NOT EXISTS ref_nma2010 (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(20) NOT NULL,
+    libelle VARCHAR(255) NOT NULL,
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_ref_nma2010_code (code)
 );
 
 CREATE TABLE IF NOT EXISTS ref_nationalites (
@@ -471,6 +493,57 @@ INSERT INTO ref_activites (activite) VALUES
 ('Assurance'),
 ('Tourisme');
 
+INSERT INTO ref_nma2010 (code, libelle) VALUES
+('A', 'AGRICULTURE, SYLVICULTURE ET PECHE'),
+('B', 'INDUSTRIES EXTRACTIVES'),
+('C', 'INDUSTRIE MANUFACTURIERE'),
+('D', 'PRODUCTION ET DISTRIBUTION D''ELECTRICITE, DE GAZ, DE VAPEUR ET D''AIR CONDITIONNE'),
+('E', 'PRODUCTION ET DISTRIBUTION D''EAU; ASSAINISSEMENT, GESTION DES DECHETS ET DEPOLLUTION'),
+('F', 'CONSTRUCTION'),
+('G', 'COMMERCE; REPARATION D''AUTOMOBILES ET DE MOTOCYCLES'),
+('H', 'TRANSPORT ET ENTREPOSAGE'),
+('I', 'HEBERGEMENT ET RESTAURATION'),
+('J', 'INFORMATION ET COMMUNICATION'),
+('K', 'ACTIVITES FINANCIERES ET D''ASSURANCE'),
+('L', 'ACTIVITES IMMOBILIERES'),
+('M', 'ACTIVITES SPECIALISEES, SCIENTIFIQUES ET TECHNIQUES'),
+('N', 'ACTIVITES DE SERVICES ADMINISTRATIFS ET DE SOUTIEN'),
+('P', 'ENSEIGNEMENT'),
+('Q', 'SANTE HUMAINE ET ACTION SOCIALE'),
+('R', 'ARTS, SPECTACLES ET ACTIVITES RECREATIVES'),
+('S', 'AUTRES ACTIVITES DE SERVICES'),
+('46', 'Commerce de gros'),
+('47', 'Commerce de detail'),
+('49', 'Transports terrestres'),
+('55', 'Hebergement'),
+('56', 'Restauration'),
+('58', 'Edition'),
+('62', 'Programmation, conseil et autres activites informatiques'),
+('68', 'Activites immobilieres'),
+('69', 'Activites juridiques et comptables'),
+('70', 'Activites des sieges sociaux; conseil de gestion'),
+('71', 'Activites d''architecture et d''ingenierie'),
+('73', 'Publicite et etudes de marche'),
+('77', 'Activites de location et location-bail'),
+('79', 'Agences de voyage'),
+('85', 'Enseignement'),
+('86', 'Activites pour la sante humaine'),
+('93', 'Activites sportives, recreatives et de loisirs'),
+('96', 'Autres services personnels'),
+('4711', 'Commerce de detail alimentaire'),
+('6201', 'Programmation informatique'),
+('6202', 'Conseil informatique'),
+('6910', 'Activites juridiques'),
+('6920', 'Activites comptables'),
+('7010', 'Activites des sieges sociaux'),
+('7022', 'Conseil pour les affaires et autres conseils de gestion'),
+('7111', 'Activites d''architecture'),
+('7112', 'Activites d''ingenierie'),
+('7311', 'Activites des agences de publicite'),
+('8299', 'Autres activites de soutien aux entreprises'),
+('9602', 'Coiffure et soins de beaute'),
+('9609', 'Autres services personnels');
+
 INSERT INTO societes (
     dossier_domiciliation, raison_sociale, forme_juridique, ice, date_ice, rc, if_number,
     capital, part_social, valeur_nominale, date_exp_cert_neg, adresse, ste_adress, ville, tribunal, email,
@@ -560,6 +633,16 @@ INSERT IGNORE INTO ref_activites (activite) VALUES
 ('Marchand effectuant Import Export'),
 ('Négociant'),
 ('Conseil de Gestion');
+
+INSERT IGNORE INTO ref_nma2010 (code, libelle) VALUES
+('F', 'CONSTRUCTION'),
+('G', 'COMMERCE; REPARATION D''AUTOMOBILES ET DE MOTOCYCLES'),
+('M', 'ACTIVITES SPECIALISEES, SCIENTIFIQUES ET TECHNIQUES'),
+('N', 'ACTIVITES DE SERVICES ADMINISTRATIFS ET DE SOUTIEN'),
+('46', 'Commerce de gros'),
+('47', 'Commerce de detail'),
+('68', 'Activites immobilieres'),
+('70', 'Activites des sieges sociaux; conseil de gestion');
 
 INSERT IGNORE INTO ref_nationalites (nationalite) VALUES
 ('Marocaine'),

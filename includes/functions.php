@@ -185,6 +185,8 @@ function fetch_reference_options(?PDO $pdo, string $table, string $column): arra
         'ref_ste_adresses' => 'ste_adresse',
         'ref_tribunaux' => 'tribunal',
         'ref_activites' => 'activite',
+        'ref_activites_certificat_negatif' => 'activite_certificat_negatif',
+        'ref_nma2010' => 'libelle',
         'ref_nationalites' => 'nationalite',
         'ref_lieux_naissance' => 'lieu_naissance',
         'ref_formes_juridiques' => 'forme_juridique',
@@ -196,8 +198,37 @@ function fetch_reference_options(?PDO $pdo, string $table, string $column): arra
         return [];
     }
 
-    $stmt = $pdo->query("SELECT {$column} FROM {$table} ORDER BY sort_order ASC, {$column} ASC");
-    return array_map(static fn (array $row): string => (string) $row[$column], $stmt->fetchAll());
+    try {
+        $stmt = $pdo->query("SELECT {$column} FROM {$table} ORDER BY sort_order ASC, {$column} ASC");
+        return array_map(static fn (array $row): string => (string) $row[$column], $stmt->fetchAll());
+    } catch (PDOException) {
+        return [];
+    }
+}
+
+function fetch_nma2010_options(?PDO $pdo): array
+{
+    if (!$pdo) {
+        return [];
+    }
+
+    try {
+        $stmt = $pdo->query("SELECT code, libelle FROM ref_nma2010 ORDER BY sort_order ASC, code ASC");
+        return $stmt->fetchAll();
+    } catch (PDOException) {
+        return [];
+    }
+}
+
+function fetch_nma2010_display(?PDO $pdo, string $code): string
+{
+    $options = fetch_nma2010_options($pdo);
+    foreach ($options as $row) {
+        if ($row['code'] === $code) {
+            return $row['code'] . ' - ' . $row['libelle'];
+        }
+    }
+    return $code;
 }
 
 function fetch_all_documents(?PDO $pdo, ?int $societe_id = null, ?string $q = null): array
