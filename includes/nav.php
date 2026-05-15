@@ -22,20 +22,14 @@ $navSections = [
         'defaults' => ['Valeurs par defaut', 'mdi-tune'],
         'convert-word-pdf' => ['Word to PDF', 'mdi-file-pdf-box'],
     ],
-    'Juridique' => [
+    'Configuration' => [
         ['page' => 'formes-juridiques', 'label' => 'Formes juridiques', 'icon' => 'mdi-file-document-outline'],
         ['page' => 'tribunaux', 'label' => 'Tribunaux', 'icon' => 'mdi-scale-balance'],
-    ],
-    'Geographique' => [
         ['page' => 'villes', 'label' => 'Villes', 'icon' => 'mdi-city'],
         ['page' => 'nationalites', 'label' => 'Nationalites', 'icon' => 'mdi-flag'],
         ['page' => 'lieux-naissance', 'label' => 'Lieux naissance', 'icon' => 'mdi-map-marker'],
         ['page' => 'adresses', 'label' => 'Adresses', 'icon' => 'mdi-home'],
-    ],
-    'Associes' => [
         ['page' => 'qualites-associe', 'label' => 'Qualites associe', 'icon' => 'mdi-account-tie'],
-    ],
-    'Activites' => [
         ['page' => 'activites', 'label' => 'Activites', 'icon' => 'mdi-briefcase'],
         ['page' => 'certificat-negatif', 'label' => 'NMA2010', 'icon' => 'mdi-file-certificate'],
     ],
