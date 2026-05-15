@@ -7,7 +7,7 @@ $societe = $societeId > 0 ? fetch_record($pdo ?? null, 'societes', $societeId) :
 $allTribunaux = fetch_tribunaux_all($pdo ?? null);
 $tribunalTypes = fetch_tribunaux_types($pdo ?? null);
 $currentTribunalType = '';
-if ($societe) {
+if ($societe && $societe['tribunal']) {
     foreach ($allTribunaux as $t) {
         if ($t['tribunal'] === $societe['tribunal'] && ($t['tribunal_type'] ?? '')) {
             $currentTribunalType = $t['tribunal_type'];
@@ -15,6 +15,10 @@ if ($societe) {
         }
     }
 }
+if (!$currentTribunalType) {
+    $currentTribunalType = in_array('Tribunal de commerce', $tribunalTypes) ? 'Tribunal de commerce' : '';
+}
+$defaultTribunal = ($societe && $societe['tribunal']) ? $societe['tribunal'] : 'Casablanca';
 
 if (is_post() && isset($_POST['add_activite_ref']) && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
@@ -442,7 +446,7 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
                     <select name="tribunal">
                         <option value="">Selectionner</option>
                         <?php foreach ($allTribunaux as $t): ?>
-                            <option value="<?= e($t['tribunal']) ?>" data-type="<?= e($t['tribunal_type'] ?? '') ?>" <?= (string) $societe['tribunal'] === $t['tribunal'] ? 'selected' : '' ?>><?= e($t['tribunal']) ?></option>
+                            <option value="<?= e($t['tribunal']) ?>" data-type="<?= e($t['tribunal_type'] ?? '') ?>" <?= $defaultTribunal === $t['tribunal'] && $currentTribunalType === ($t['tribunal_type'] ?? '') ? 'selected' : '' ?>><?= e($t['tribunal']) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </label>
