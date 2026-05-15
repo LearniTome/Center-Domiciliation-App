@@ -215,34 +215,34 @@ INSERT INTO ref_activites (activite) VALUES
 ('Assurance'),
 ('Tourisme');
 
-INSERT INTO ref_activites_ompic (code, libelle) VALUES
-('A', 'AGRICULTURE, SYLVICULTURE ET PECHE'),
-('B', 'INDUSTRIES EXTRACTIVES'),
-('C', 'INDUSTRIE MANUFACTURIERE'),
-('F', 'CONSTRUCTION'),
-('G', 'COMMERCE; REPARATION D''AUTOMOBILES ET DE MOTOCYCLES'),
-('H', 'TRANSPORT ET ENTREPOSAGE'),
-('I', 'HEBERGEMENT ET RESTAURATION'),
-('J', 'INFORMATION ET COMMUNICATION'),
-('K', 'ACTIVITES FINANCIERES ET D''ASSURANCE'),
-('L', 'ACTIVITES IMMOBILIERES'),
-('M', 'ACTIVITES SPECIALISEES, SCIENTIFIQUES ET TECHNIQUES'),
-('N', 'ACTIVITES DE SERVICES ADMINISTRATIFS ET DE SOUTIEN'),
-('P', 'ENSEIGNEMENT'),
-('Q', 'SANTE HUMAINE ET ACTION SOCIALE'),
-('R', 'ARTS, SPECTACLES ET ACTIVITES RECREATIVES'),
-('S', 'AUTRES ACTIVITES DE SERVICES'),
-('46', 'Commerce de gros'),
-('47', 'Commerce de detail'),
-('49', 'Transports terrestres'),
-('56', 'Restauration'),
-('62', 'Programmation, conseil et autres activites informatiques'),
-('68', 'Activites immobilieres'),
-('69', 'Activites juridiques et comptables'),
-('70', 'Activites des sieges sociaux; conseil de gestion'),
-('85', 'Enseignement'),
-('86', 'Activites pour la sante humaine'),
-('96', 'Autres services personnels');
+INSERT INTO ref_activites_ompic (code, libelle, sort_order) VALUES
+('A', 'AGRICULTURE, SYLVICULTURE ET PECHE', 1),
+('B', 'INDUSTRIES EXTRACTIVES', 2),
+('C', 'INDUSTRIE MANUFACTURIERE', 3),
+('F', 'CONSTRUCTION', 6),
+('G', 'COMMERCE; REPARATION D''AUTOMOBILES ET DE MOTOCYCLES', 7),
+('H', 'TRANSPORT ET ENTREPOSAGE', 8),
+('I', 'HEBERGEMENT ET RESTAURATION', 9),
+('J', 'INFORMATION ET COMMUNICATION', 10),
+('K', 'ACTIVITES FINANCIERES ET D''ASSURANCE', 11),
+('L', 'ACTIVITES IMMOBILIERES', 12),
+('M', 'ACTIVITES SPECIALISEES, SCIENTIFIQUES ET TECHNIQUES', 13),
+('N', 'ACTIVITES DE SERVICES ADMINISTRATIFS ET DE SOUTIEN', 14),
+('P', 'ENSEIGNEMENT', 15),
+('Q', 'SANTE HUMAINE ET ACTION SOCIALE', 16),
+('R', 'ARTS, SPECTACLES ET ACTIVITES RECREATIVES', 17),
+('S', 'AUTRES ACTIVITES DE SERVICES', 18),
+('46', 'Commerce de gros', 19),
+('47', 'Commerce de detail', 20),
+('49', 'Transports terrestres', 21),
+('56', 'Restauration', 23),
+('62', 'Programmation, conseil et autres activites informatiques', 25),
+('68', 'Activites immobilieres', 26),
+('69', 'Activites juridiques et comptables', 27),
+('70', 'Activites des sieges sociaux; conseil de gestion', 28),
+('85', 'Enseignement', 33),
+('86', 'Activites pour la sante humaine', 34),
+('96', 'Autres services personnels', 36);
 
 INSERT INTO societes (
     dossier_domiciliation, raison_sociale, forme_juridique, ice, date_ice, rc, if_number,
@@ -336,11 +336,11 @@ INSERT IGNORE INTO ref_activites (activite) VALUES
 ('Négociant'),
 ('Conseil de Gestion');
 
-INSERT IGNORE INTO ref_activites_ompic (code, libelle) VALUES
-('46', 'Commerce de gros'),
-('47', 'Commerce de detail'),
-('68', 'Activites immobilieres'),
-('70', 'Activites des sieges sociaux; conseil de gestion');
+INSERT IGNORE INTO ref_activites_ompic (code, libelle, sort_order) VALUES
+('46', 'Commerce de gros', 19),
+('47', 'Commerce de detail', 20),
+('68', 'Activites immobilieres', 26),
+('70', 'Activites des sieges sociaux; conseil de gestion', 28);
 
 INSERT IGNORE INTO ref_nationalites (nationalite) VALUES
 ('Marocaine'),
