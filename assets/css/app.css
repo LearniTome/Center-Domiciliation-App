@@ -127,32 +127,32 @@ a:hover {
     color: var(--text);
 }
 
-.collapsed .sidebar-toggle .mdi {
+.shell.collapsed .sidebar-toggle .mdi {
     transform: rotate(180deg);
 }
 
-.collapsed .brand-text,
-.collapsed .nav-section-toggle,
-.collapsed .nav-section-label,
-.collapsed [data-nav-label] {
+.shell.collapsed .brand-text,
+.shell.collapsed .nav-section-toggle,
+.shell.collapsed .nav-section-label,
+.shell.collapsed [data-nav-label] {
     display: none;
 }
 
-.collapsed .nav-section-items {
+.shell.collapsed .nav-section-items {
     display: grid;
 }
 
-.collapsed .nav-links a {
+.shell.collapsed .nav-links a {
     justify-content: center;
     padding: 6px 0;
 }
 
-.collapsed .nav-links a .mdi {
+.shell.collapsed .nav-links a .mdi {
     margin: 0;
     font-size: 1.2rem;
 }
 
-.collapsed .sidebar {
+.shell.collapsed .sidebar {
     padding: 10px 6px;
 }
 
