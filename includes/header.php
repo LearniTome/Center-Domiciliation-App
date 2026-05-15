@@ -17,6 +17,7 @@ declare(strict_types=1);
 <body>
 <div class="shell">
     <?php require __DIR__ . '/nav.php'; ?>
+    <script>try{var r=localStorage.getItem('nav_sections');if(r){var s=JSON.parse(r);document.querySelectorAll('[data-nav-toggle]').forEach(function(b){if(s[b.textContent.trim()]){b.closest('.nav-section').classList.add('collapsed')}})}}catch(e){}</script>
     <main class="main">
         <header class="page-header">
             <div>
