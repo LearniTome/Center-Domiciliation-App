@@ -4,14 +4,21 @@ declare(strict_types=1);
 
 $tabs = [
     'formes-juridiques' => ['ref_formes_juridiques', 'forme_juridique', 'Formes juridiques', 'mdi-file-document-outline'],
-    'villes' => ['ref_villes', 'ville', 'Villes', 'mdi-city'],
     'tribunaux' => ['ref_tribunaux', 'tribunal', 'Tribunaux', 'mdi-scale-balance'],
+    'villes' => ['ref_villes', 'ville', 'Villes', 'mdi-city'],
     'nationalites' => ['ref_nationalites', 'nationalite', 'Nationalites', 'mdi-flag'],
     'lieux-naissance' => ['ref_lieux_naissance', 'lieu_naissance', 'Lieux de naissance', 'mdi-map-marker'],
     'adresses' => ['ref_ste_adresses', 'ste_adresse', 'Adresses', 'mdi-home'],
     'qualites-associe' => ['ref_qualites_associe', 'qualite_associe', 'Qualites associe', 'mdi-account-tie'],
     'activites' => ['ref_activites', 'activite', 'Activites', 'mdi-briefcase'],
     'certificat-negatif' => ['ref_nma2010', 'libelle', 'NMA2010', 'mdi-file-certificate'],
+];
+
+$tabGroups = [
+    'Juridique' => ['mdi-gavel', ['formes-juridiques', 'tribunaux']],
+    'Geographique' => ['mdi-earth', ['villes', 'nationalites', 'lieux-naissance', 'adresses']],
+    'Associes' => ['mdi-account-group', ['qualites-associe']],
+    'Activites' => ['mdi-clipboard-list', ['activites', 'certificat-negatif']],
 ];
 
 $tab = $_GET['tab'] ?? 'formes-juridiques';
@@ -170,16 +177,23 @@ if (is_post()) {
         </div>
     </div>
 
-    <div class="tabs" style="margin-bottom:1rem">
-        <?php foreach ($tabs as $key => $tabInfo): ?>
-            <?php [$t, $c, $l, $icon] = $tabInfo; ?>
-            <a class="tab <?= $key === $tab ? 'active' : '' ?>" href="<?= e(app_url('configuration', ['tab' => $key])) ?>">
-                <span class="mdi <?= e($icon) ?>" style="margin-right:4px"></span>
-                <?= e($l) ?>
-                <?php if (isset($tabCounts[$key])): ?>
-                    <span style="display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--primary);color:#fff;font-size:0.65rem;margin-left:4px;line-height:1;vertical-align:middle"><?= $tabCounts[$key] ?></span>
-                <?php endif; ?>
-            </a>
+    <div class="tab-groups" style="margin-bottom:1rem">
+        <?php foreach ($tabGroups as $groupLabel => [$groupIcon, $groupTabs]): ?>
+            <div class="tab-group">
+                <span class="tab-group-label"><span class="mdi <?= e($groupIcon) ?>"></span> <?= e($groupLabel) ?></span>
+                <div class="tab-group-items">
+                    <?php foreach ($groupTabs as $key): ?>
+                        <?php [$t, $c, $l, $tabIcon] = $tabs[$key]; ?>
+                        <a class="tab <?= $key === $tab ? 'active' : '' ?>" href="<?= e(app_url('configuration', ['tab' => $key])) ?>">
+                            <span class="mdi <?= e($tabIcon) ?>"></span>
+                            <?= e($l) ?>
+                            <?php if (isset($tabCounts[$key])): ?>
+                                <span class="tab-badge"><?= $tabCounts[$key] ?></span>
+                            <?php endif; ?>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
         <?php endforeach; ?>
     </div>
 
@@ -413,6 +427,68 @@ if (is_post()) {
         }
         #config-table tbody tr.drag-over {
             border-bottom: 2px solid var(--primary);
+        }
+        .tab-groups {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem 1.5rem;
+        }
+        .tab-group {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .tab-group-label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.6875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-secondary);
+            padding: 4px 8px 2px;
+        }
+        .tab-group-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+        }
+        .tab-group-items .tab {
+            font-size: 0.8125rem;
+            padding: 4px 8px;
+            border-radius: var(--radius-sm);
+            text-decoration: none;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.12s;
+        }
+        .tab-group-items .tab:hover {
+            background: rgba(74,108,247,0.08);
+            color: var(--text);
+        }
+        .tab-group-items .tab.active {
+            background: var(--primary);
+            color: #fff;
+        }
+        .tab-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 5px;
+            border-radius: 9px;
+            background: var(--primary);
+            color: #fff;
+            font-size: 0.65rem;
+            line-height: 1;
+            vertical-align: middle;
+        }
+        .tab-group-items .tab.active .tab-badge {
+            background: rgba(255,255,255,0.25);
         }
         .config-empty {
             display: flex;
