@@ -2,6 +2,8 @@
     --bg: #000000;
     --panel: #191c24;
     --panel-strong: #1f2430;
+    --surface: #191c24;
+    --border: #2c2e33;
     --text: #ffffff;
     --text-secondary: #6c7293;
     --line: #2c2e33;
@@ -394,6 +396,29 @@ input,
 select,
 textarea {
     font: inherit;
+}
+
+input,
+select,
+textarea {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: var(--radius-sm);
+    padding: 4px 8px;
+    outline: none;
+    transition: border-color var(--transition);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--primary);
+}
+
+select option {
+    background: var(--panel);
+    color: var(--text);
 }
 
 .btn,
