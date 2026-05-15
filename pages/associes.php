@@ -52,14 +52,57 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
     }
 }
 
-$associes = ($pdo ?? null) instanceof PDO
-    ? $pdo->query('
-        SELECT associes.*, societes.raison_sociale
-        FROM associes
-        INNER JOIN societes ON societes.id = associes.societe_id
-        ORDER BY associes.id DESC
-    ')->fetchAll()
-    : [];
+$query = search_term();
+
+if (($pdo ?? null) instanceof PDO) {
+    if ($query !== '') {
+        $stmt = $pdo->prepare('
+            SELECT associes.*, societes.raison_sociale
+            FROM associes
+            INNER JOIN societes ON societes.id = associes.societe_id
+            WHERE associes.nom_complet LIKE :term
+               OR societes.raison_sociale LIKE :term
+               OR associes.cin LIKE :term
+            ORDER BY associes.id DESC
+        ');
+        $stmt->execute(['term' => like_term($query)]);
+        $associes = $stmt->fetchAll();
+    } else {
+        $associes = $pdo->query('
+            SELECT associes.*, societes.raison_sociale
+            FROM associes
+            INNER JOIN societes ON societes.id = associes.societe_id
+            ORDER BY associes.id DESC
+        ')->fetchAll();
+    }
+
+    if (($_GET['export'] ?? '') === 'csv') {
+        $rows = array_map(static function (array $a): array {
+            return [
+                $a['id'],
+                $a['nom_complet'],
+                $a['raison_sociale'],
+                $a['cin'],
+                $a['date_naiss'],
+                $a['lieu_naiss'],
+                $a['nationalite'],
+                $a['phone'],
+                $a['email'],
+                $a['qualite_associe'],
+                $a['parts'],
+                (int) $a['is_gerant'] === 1 ? 'Oui' : 'Non',
+            ];
+        }, $associes);
+
+        export_csv('associes.csv', [
+            'ID', 'Nom complet', 'Societe', 'CIN', 'Date naissance',
+            'Lieu naissance', 'Nationalite', 'Telephone', 'Email',
+            'Qualite', 'Parts', 'Gerant',
+        ], $rows);
+    }
+} else {
+    $associes = [];
+}
 
 ?>
 <section>
@@ -71,8 +114,19 @@ $associes = ($pdo ?? null) instanceof PDO
             </div>
             <div class="table-actions">
                 <button class="btn btn-secondary" type="button" data-col-toggle-btn><span class="mdi mdi-table-column"></span> Colonnes <span class="col-toggle-count" data-col-count>0/0</span></button>
+                <a class="btn btn-info" href="<?= e(app_url('associes', ['export' => 'csv', 'q' => $query])) ?>"><span class="mdi mdi-download"></span> Exporter CSV</a>
             </div>
         </div>
+        <form method="get" class="stack search-bar">
+            <input type="hidden" name="page" value="associes">
+            <div class="inline-form">
+                <input type="search" name="q" placeholder="Rechercher par nom, societe ou CIN" value="<?= e($query) ?>">
+                <button type="submit"><span class="mdi mdi-magnify"></span> Rechercher</button>
+                <?php if ($query !== ''): ?>
+                    <a class="btn btn-cancel" href="<?= e(app_url('associes')) ?>"><span class="mdi mdi-close"></span> Effacer</a>
+                <?php endif; ?>
+            </div>
+        </form>
 
         <?php if ($editRecord): ?>
             <form method="post" class="stack" style="margin-bottom:1rem">

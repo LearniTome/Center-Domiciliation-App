@@ -67,14 +67,59 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
     }
 }
 
-$contrats = ($pdo ?? null) instanceof PDO
-    ? $pdo->query('
-        SELECT contrats.*, societes.raison_sociale
-        FROM contrats
-        INNER JOIN societes ON societes.id = contrats.societe_id
-        ORDER BY contrats.id DESC
-    ')->fetchAll()
-    : [];
+$query = search_term();
+
+if (($pdo ?? null) instanceof PDO) {
+    if ($query !== '') {
+        $stmt = $pdo->prepare('
+            SELECT contrats.*, societes.raison_sociale
+            FROM contrats
+            INNER JOIN societes ON societes.id = contrats.societe_id
+            WHERE societes.raison_sociale LIKE :term
+               OR contrats.type_contrat LIKE :term
+               OR contrats.statut LIKE :term
+            ORDER BY contrats.id DESC
+        ');
+        $stmt->execute(['term' => like_term($query)]);
+        $contrats = $stmt->fetchAll();
+    } else {
+        $contrats = $pdo->query('
+            SELECT contrats.*, societes.raison_sociale
+            FROM contrats
+            INNER JOIN societes ON societes.id = contrats.societe_id
+            ORDER BY contrats.id DESC
+        ')->fetchAll();
+    }
+
+    if (($_GET['export'] ?? '') === 'csv') {
+        $rows = array_map(static function (array $c): array {
+            return [
+                $c['id'],
+                $c['raison_sociale'],
+                $c['type_contrat'],
+                $c['date_contrat'],
+                $c['duree_contrat_mois'],
+                $c['type_contrat_domiciliation'],
+                $c['date_debut'],
+                $c['date_fin'],
+                $c['loyer_mensuel_ttc'],
+                $c['taux_tva_pourcent'],
+                $c['loyer_mensuel_ht'],
+                $c['montant_total_ht_contrat'],
+                $c['type_renouvellement'],
+                $c['statut'],
+            ];
+        }, $contrats);
+
+        export_csv('contrats.csv', [
+            'ID', 'Societe', 'Type contrat', 'Date contrat', 'Duree (mois)',
+            'Type domiciliation', 'Date debut', 'Date fin', 'Loyer TTC/mois',
+            'TVA %', 'Loyer HT/mois', 'Total HT', 'Renouvellement', 'Statut',
+        ], $rows);
+    }
+} else {
+    $contrats = [];
+}
 
 ?>
 <section>
@@ -86,8 +131,19 @@ $contrats = ($pdo ?? null) instanceof PDO
             </div>
             <div class="table-actions">
                 <button class="btn btn-secondary" type="button" data-col-toggle-btn><span class="mdi mdi-table-column"></span> Colonnes <span class="col-toggle-count" data-col-count>0/0</span></button>
+                <a class="btn btn-info" href="<?= e(app_url('contrats', ['export' => 'csv', 'q' => $query])) ?>"><span class="mdi mdi-download"></span> Exporter CSV</a>
             </div>
         </div>
+        <form method="get" class="stack search-bar">
+            <input type="hidden" name="page" value="contrats">
+            <div class="inline-form">
+                <input type="search" name="q" placeholder="Rechercher par societe, type ou statut" value="<?= e($query) ?>">
+                <button type="submit"><span class="mdi mdi-magnify"></span> Rechercher</button>
+                <?php if ($query !== ''): ?>
+                    <a class="btn btn-cancel" href="<?= e(app_url('contrats')) ?>"><span class="mdi mdi-close"></span> Effacer</a>
+                <?php endif; ?>
+            </div>
+        </form>
 
         <?php if ($editRecord): ?>
             <form method="post" class="stack" style="margin-bottom:1rem">
