@@ -18,11 +18,41 @@ document.querySelectorAll('[data-confirm]').forEach((element) => {
 })();
 
 (function () {
+    var storageKey = 'nav_sections';
+
+    function saveState() {
+        var state = {};
+        document.querySelectorAll('.nav-section').forEach(function (s) {
+            var btn = s.querySelector('[data-nav-toggle]');
+            if (btn) {
+                state[btn.textContent.trim()] = s.classList.contains('collapsed');
+            }
+        });
+        try { localStorage.setItem(storageKey, JSON.stringify(state)); } catch (e) {}
+    }
+
+    function restoreState() {
+        try {
+            var raw = localStorage.getItem(storageKey);
+            if (!raw) return;
+            var state = JSON.parse(raw);
+            document.querySelectorAll('.nav-section').forEach(function (s) {
+                var btn = s.querySelector('[data-nav-toggle]');
+                if (btn && state[btn.textContent.trim()]) {
+                    s.classList.add('collapsed');
+                }
+            });
+        } catch (e) {}
+    }
+
+    restoreState();
+
     document.querySelectorAll('[data-nav-toggle]').forEach(function (btn) {
         btn.addEventListener('click', function () {
             var section = this.closest('.nav-section');
             if (section) {
                 section.classList.toggle('collapsed');
+                saveState();
             }
         });
     });
