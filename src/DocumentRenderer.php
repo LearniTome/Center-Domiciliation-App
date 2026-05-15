@@ -569,11 +569,11 @@ class DocumentRenderer
             }
         }
 
-        $certNegCode = !empty($societe['activites_certificat_negatif']) ? (string) $societe['activites_certificat_negatif'] : '';
+        $certNegCode = !empty($societe['activites_ompic']) ? (string) $societe['activites_ompic'] : '';
         $certNegList = [];
         if ($certNegCode !== '') {
             try {
-                $nmaStmt = $pdo->prepare("SELECT CONCAT(code, ' - ', libelle) AS display FROM ref_nma2010 WHERE code = :code LIMIT 1");
+                $nmaStmt = $pdo->prepare("SELECT CONCAT(code, ' - ', libelle) AS display FROM ref_activites_ompic WHERE code = :code LIMIT 1");
                 $nmaStmt->execute(['code' => $certNegCode]);
                 $nmaRow = $nmaStmt->fetch();
                 $certNegList = $nmaRow ? [$nmaRow['display']] : [$certNegCode];
@@ -699,7 +699,7 @@ class DocumentRenderer
             'ACTIVITY_COUNT' => (string) $activitiesCount,
             'activities' => $activitiesList,
             'activites' => $activitiesList,
-            'activites_certificat_negatif' => $certNegList,
+            'activites_ompic' => $certNegList,
             'ACTIVITES_CERT_NEG' => $certNegList,
             'ACTIVITES_CERTIFICAT_NEGATIF' => $certNegList,
             'ACTIVITES_CERT_NEG_INLINE' => $certNegInline,
@@ -783,14 +783,14 @@ class DocumentRenderer
             }
         }
 
-        $certNegCode = !empty($societe['activites_certificat_negatif']) ? (string) $societe['activites_certificat_negatif'] : '';
+        $certNegCode = !empty($societe['activites_ompic']) ? (string) $societe['activites_ompic'] : '';
         $certNegList = [];
         $certNegInline = '';
         $certNegBullets = '';
         $certNegCount = 0;
         if ($certNegCode !== '' && $pdo !== null) {
             try {
-                $nmaStmt = $pdo->prepare("SELECT CONCAT(code, ' - ', libelle) AS display FROM ref_nma2010 WHERE code = :code LIMIT 1");
+                $nmaStmt = $pdo->prepare("SELECT CONCAT(code, ' - ', libelle) AS display FROM ref_activites_ompic WHERE code = :code LIMIT 1");
                 $nmaStmt->execute(['code' => $certNegCode]);
                 $nmaRow = $nmaStmt->fetch();
                 $certNegList = $nmaRow ? [$nmaRow['display']] : [$certNegCode];
@@ -862,7 +862,7 @@ class DocumentRenderer
             'ACTIVITY_COUNT' => (string) $activitiesCount,
             'activities' => $activitiesList,
             'activites' => $activitiesList,
-            'activites_certificat_negatif' => $certNegList,
+            'activites_ompic' => $certNegList,
             'ACTIVITES_CERT_NEG' => $certNegList,
             'ACTIVITES_CERTIFICAT_NEGATIF' => $certNegList,
             'ACTIVITES_CERT_NEG_INLINE' => $certNegInline,

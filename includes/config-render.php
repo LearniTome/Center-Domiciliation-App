@@ -11,7 +11,7 @@ $tabs = [
     'adresses' => ['ref_ste_adresses', 'ste_adresse', 'Adresses', 'mdi-home'],
     'qualites-associe' => ['ref_qualites_associe', 'qualite_associe', 'Qualites associe', 'mdi-account-tie'],
     'activites' => ['ref_activites', 'activite', 'Activites', 'mdi-briefcase'],
-    'certificat-negatif' => ['ref_nma2010', 'libelle', 'NMA2010', 'mdi-file-certificate'],
+    'activites-ompic' => ['ref_activites_ompic', 'libelle', 'Activites Ompic', 'mdi-file-certificate'],
 ];
 
 if (!isset($tab) || !isset($tabs[$tab])) {
@@ -20,7 +20,7 @@ if (!isset($tab) || !isset($tabs[$tab])) {
 
 [$table, $column, $label, $tabIcon] = $tabs[$tab];
 $editKey = $_GET['edit'] ?? null;
-$isNmaTab = $tab === 'certificat-negatif';
+$isNmaTab = $tab === 'activites-ompic';
 $isTribunalTab = $tab === 'tribunaux';
 
 $rows = [];
@@ -42,10 +42,10 @@ if (is_post()) {
     if ($action === 'add' && ($pdo ?? null) instanceof PDO) {
         $value = field_value($_POST, $column);
         if ($value !== '') {
-            if ($tab === 'certificat-negatif') {
+            if ($tab === 'activites-ompic') {
                 $nmaCode = field_value($_POST, 'nma_code');
                 if ($nmaCode === '') {
-                    set_flash('error', 'Le code NMA2010 est obligatoire.');
+                    set_flash('error', 'Le code OMPIC est obligatoire.');
                     redirect_to($tab);
                 }
                 $max = $pdo->query("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM {$table}")->fetchColumn();
@@ -172,7 +172,7 @@ if (is_post()) {
                 </select>
             <?php endif; ?>
             <?php if ($isNmaTab): ?>
-                <input name="nma_code" placeholder="Code..." required style="width:100px;padding:4px 8px;font-size:0.8125rem">
+                <input name="ompic_code" placeholder="Code..." required style="width:100px;padding:4px 8px;font-size:0.8125rem">
             <?php endif; ?>
             <input name="<?= e($column) ?>" placeholder="Nouveau..." required style="flex:1;padding:4px 8px;font-size:0.8125rem;min-width:120px">
             <button type="submit" class="btn-icon" title="Ajouter" style="border:2px solid var(--primary);border-radius:var(--radius-sm);background:transparent;color:var(--primary);width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all var(--transition)"><span class="mdi mdi-plus"></span></button>

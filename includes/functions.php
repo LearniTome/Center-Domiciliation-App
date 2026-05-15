@@ -207,8 +207,7 @@ function fetch_reference_options(?PDO $pdo, string $table, string $column): arra
         'ref_ste_adresses' => 'ste_adresse',
         'ref_tribunaux' => 'tribunal',
         'ref_activites' => 'activite',
-        'ref_activites_certificat_negatif' => 'activite_certificat_negatif',
-        'ref_nma2010' => 'libelle',
+        'ref_activites_ompic' => 'libelle',
         'ref_nationalites' => 'nationalite',
         'ref_lieux_naissance' => 'lieu_naissance',
         'ref_formes_juridiques' => 'forme_juridique',
@@ -228,23 +227,23 @@ function fetch_reference_options(?PDO $pdo, string $table, string $column): arra
     }
 }
 
-function fetch_nma2010_options(?PDO $pdo): array
+function fetch_activites_ompic_options(?PDO $pdo): array
 {
     if (!$pdo) {
         return [];
     }
 
     try {
-        $stmt = $pdo->query("SELECT code, libelle FROM ref_nma2010 ORDER BY sort_order ASC, code ASC");
+        $stmt = $pdo->query("SELECT code, libelle FROM ref_activites_ompic ORDER BY sort_order ASC, code ASC");
         return $stmt->fetchAll();
     } catch (PDOException) {
         return [];
     }
 }
 
-function fetch_nma2010_display(?PDO $pdo, string $code): string
+function fetch_activites_ompic_display(?PDO $pdo, string $code): string
 {
-    $options = fetch_nma2010_options($pdo);
+    $options = fetch_activites_ompic_options($pdo);
     foreach ($options as $row) {
         if ($row['code'] === $code) {
             return $row['code'] . ' - ' . $row['libelle'];

@@ -480,7 +480,7 @@ document.addEventListener('input', (e) => {
 (function () {
     document.querySelectorAll('[data-add-activite-cn]').forEach(function (btn) {
         btn.addEventListener('click', function () {
-            const code = window.prompt('Code NMA2010 (ex: 4711B):');
+            const code = window.prompt('Code OMPIC (ex: 4711B):');
             if (!code || code.trim() === '') return;
             const label = window.prompt('Libelle (ex: Commerce de detail alimentaire):');
             if (!label || label.trim() === '') return;
@@ -488,7 +488,7 @@ document.addEventListener('input', (e) => {
             if (!form) return;
             const csrf = form.querySelector('input[name="csrf_token"]');
             if (!csrf) return;
-            const select = form.querySelector('[data-cert-neg-select]');
+            const select = form.querySelector('[data-ompic-select]');
             fetch(window.location.href, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -497,7 +497,7 @@ document.addEventListener('input', (e) => {
                     add_activite_ref: '1',
                     type: 'cert_neg',
                     new_activite: label.trim(),
-                    nma_code: code.trim(),
+                    ompic_code: code.trim(),
                     nma_libelle: label.trim()
                 })
             })

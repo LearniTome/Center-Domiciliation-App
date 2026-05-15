@@ -42,7 +42,7 @@ if (($pdo ?? null) instanceof PDO) {
                 $societe['rc'],
                 $societe['if_number'],
                 $societe['activites_statuts'] ?? '',
-                $societe['activites_certificat_negatif'] ? fetch_nma2010_display($pdo ?? null, (string) $societe['activites_certificat_negatif']) : '',
+                $societe['activites_ompic'] ? fetch_activites_ompic_display($pdo ?? null, (string) $societe['activites_ompic']) : '',
                 $societe['tribunal'],
                 $societe['ville'],
                 $societe['email'],
@@ -61,7 +61,7 @@ if (($pdo ?? null) instanceof PDO) {
             'RC',
             'IF',
             'Activites (Statuts)',
-            'Activites (Cert. negatif)',
+            'Activites (OMPIC)',
             'Tribunal',
             'Ville',
             'Email',
@@ -112,11 +112,11 @@ if (($pdo ?? null) instanceof PDO) {
                     <th data-col="raison-sociale">Raison sociale</th>
                     <th data-col="forme">Forme</th>
                     <th data-col="ice">ICE</th>
-                    <th data-col="date-cert-neg">Date de cert. negatif</th>
+                    <th data-col="date-ompic">Date cert. OMPIC</th>
                     <th data-col="rc">RC</th>
                     <th data-col="if">IF</th>
                     <th data-col="activites-statuts">Activites (Statuts)</th>
-                    <th data-col="activites-cert-neg">Activites (Cert. negatif)</th>
+                    <th data-col="activites-ompic">Activites (OMPIC)</th>
                     <th data-col="capital">Capital</th>
                     <th data-col="ville">Ville</th>
                     <th data-col="tribunal">Tribunal</th>
@@ -138,7 +138,7 @@ if (($pdo ?? null) instanceof PDO) {
                         <td><?= e($societe['rc'] ?? '-') ?></td>
                         <td><?= e($societe['if_number'] ?? '-') ?></td>
                         <td><?= e(!empty($societe['activites_statuts']) ? (string) $societe['activites_statuts'] : '-') ?></td>
-                        <td><?= e(!empty($societe['activites_certificat_negatif']) ? fetch_nma2010_display($pdo ?? null, (string) $societe['activites_certificat_negatif']) : '-') ?></td>
+                        <td><?= e(!empty($societe['activites_ompic']) ? fetch_activites_ompic_display($pdo ?? null, (string) $societe['activites_ompic']) : '-') ?></td>
                         <td><?= $societe['capital'] !== null ? e(number_format((float) $societe['capital'], 2, ',', ' ') . ' DH') : '-' ?></td>
                         <td><?= e($societe['ville']) ?></td>
                         <td><?= e($societe['tribunal'] ?? '-') ?></td>

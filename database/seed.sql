@@ -215,7 +215,7 @@ INSERT INTO ref_activites (activite) VALUES
 ('Assurance'),
 ('Tourisme');
 
-INSERT INTO ref_nma2010 (code, libelle) VALUES
+INSERT INTO ref_activites_ompic (code, libelle) VALUES
 ('A', 'AGRICULTURE, SYLVICULTURE ET PECHE'),
 ('B', 'INDUSTRIES EXTRACTIVES'),
 ('C', 'INDUSTRIE MANUFACTURIERE'),
@@ -336,7 +336,7 @@ INSERT IGNORE INTO ref_activites (activite) VALUES
 ('Négociant'),
 ('Conseil de Gestion');
 
-INSERT IGNORE INTO ref_nma2010 (code, libelle) VALUES
+INSERT IGNORE INTO ref_activites_ompic (code, libelle) VALUES
 ('46', 'Commerce de gros'),
 ('47', 'Commerce de detail'),
 ('68', 'Activites immobilieres'),

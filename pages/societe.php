@@ -27,8 +27,8 @@ if (is_post() && isset($_POST['add_activite_ref']) && ($pdo ?? null) instanceof 
     $type = field_value($_POST, 'type', 'statuts');
     if ($newActivite !== '') {
         if ($type === 'cert_neg') {
-            $nmaCode = field_value($_POST, 'nma_code');
-            if ($nmaCode === '') {
+            $ompicCode = field_value($_POST, 'ompic_code');
+            if ($ompicCode === '') {
                 echo json_encode(['success' => false]);
                 exit;
             }
@@ -36,10 +36,10 @@ if (is_post() && isset($_POST['add_activite_ref']) && ($pdo ?? null) instanceof 
             if ($nmaLibelle === '') {
                 $nmaLibelle = $newActivite;
             }
-            $stmt = $pdo->prepare("INSERT IGNORE INTO ref_nma2010 (code, libelle, sort_order) VALUES (:code, :libelle, :so)");
-            $max = $pdo->query("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM ref_nma2010")->fetchColumn();
-            $stmt->execute(['code' => $nmaCode, 'libelle' => $nmaLibelle, 'so' => $max]);
-            echo json_encode(['success' => true, 'code' => $nmaCode, 'libelle' => $nmaLibelle]);
+            $stmt = $pdo->prepare("INSERT IGNORE INTO ref_activites_ompic (code, libelle, sort_order) VALUES (:code, :libelle, :so)");
+            $max = $pdo->query("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM ref_activites_ompic")->fetchColumn();
+            $stmt->execute(['code' => $ompicCode, 'libelle' => $nmaLibelle, 'so' => $max]);
+            echo json_encode(['success' => true, 'code' => $ompicCode, 'libelle' => $nmaLibelle]);
         } else {
             $table = 'ref_activites';
             $column = 'activite';
@@ -136,7 +136,7 @@ if (is_post() && !isset($_POST['validate_submit']) && !isset($_POST['delete_subm
     $allStatuts = is_array($activitesStatuts) ? array_map('trim', $activitesStatuts) : [];
     $allStatuts = array_unique(array_filter($allStatuts));
 
-    $activitesCertNeg = field_value($_POST, 'activites_certificat_negatif');
+    $activitesOmpic = field_value($_POST, 'activites_ompic');
 
     $stmt = $pdo->prepare('
         UPDATE societes SET
@@ -148,7 +148,7 @@ if (is_post() && !isset($_POST['validate_submit']) && !isset($_POST['delete_subm
             rc = :rc,
             if_number = :if_number,
             activites_statuts = :activites_statuts,
-            activites_certificat_negatif = :activites_certificat_negatif,
+            activites_ompic = :activites_ompic,
             capital = :capital,
             part_social = :part_social,
             valeur_nominale = :valeur_nominale,
@@ -172,7 +172,7 @@ if (is_post() && !isset($_POST['validate_submit']) && !isset($_POST['delete_subm
         'rc' => field_value($_POST, 'rc'),
         'if_number' => field_value($_POST, 'if_number'),
         'activites_statuts' => implode(', ', $allStatuts),
-        'activites_certificat_negatif' => $activitesCertNeg,
+        'activites_ompic' => $activitesOmpic,
         'capital' => money_value($_POST, 'capital'),
         'part_social' => int_value($_POST, 'part_social'),
         'valeur_nominale' => money_value($_POST, 'valeur_nominale'),
@@ -196,9 +196,9 @@ if ($editing) {
     $adressesOptions = fetch_reference_options($pdo ?? null, 'ref_ste_adresses', 'ste_adresse');
     $formesJuridiquesOptions = fetch_reference_options($pdo ?? null, 'ref_formes_juridiques', 'forme_juridique');
     $activitesOptions = fetch_reference_options($pdo ?? null, 'ref_activites', 'activite');
-    $certNegOptions = fetch_nma2010_options($pdo ?? null);
+    $ompicOptions = fetch_activites_ompic_options($pdo ?? null);
     $societeActivitesStatuts = !empty($societe['activites_statuts']) ? array_map('trim', explode(',', (string) $societe['activites_statuts'])) : [];
-    $societeActivitesCertNeg = !empty($societe['activites_certificat_negatif']) ? (string) $societe['activites_certificat_negatif'] : '';
+    $societeActivitesOmpic = !empty($societe['activites_ompic']) ? (string) $societe['activites_ompic'] : '';
 }
 
 $associes = ($pdo ?? null) instanceof PDO
@@ -339,10 +339,10 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
                 <label class="field full">
                     <span>Activite pour le certificat negatif</span>
                     <div style="display:flex;gap:8px;align-items:center">
-                        <select name="activites_certificat_negatif" style="flex:1" data-cert-neg-select>
+                        <select name="activites_ompic" style="flex:1" data-ompic-select>
                             <option value="">Selectionner</option>
-                            <?php foreach ($certNegOptions as $row): ?>
-                                <option value="<?= e($row['code']) ?>" <?= $societeActivitesCertNeg === $row['code'] ? 'selected' : '' ?>><?= e($row['code'] . ' - ' . $row['libelle']) ?></option>
+                            <?php foreach ($ompicOptions as $row): ?>
+                                <option value="<?= e($row['code']) ?>" <?= $societeActivitesOmpic === $row['code'] ? 'selected' : '' ?>><?= e($row['code'] . ' - ' . $row['libelle']) ?></option>
                             <?php endforeach; ?>
                         </select>
                         <button type="button" class="btn btn-info" data-add-activite-cn style="white-space:nowrap"><span class="mdi mdi-plus-circle"></span> Nouvelle activite</button>
@@ -485,7 +485,7 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
                 <div><span>RC</span><strong><?= e($societe['rc'] ?: '-') ?></strong></div>
                 <div><span>IF</span><strong><?= e($societe['if_number'] ?: '-') ?></strong></div>
                 <div class="full"><span>Activites (Statuts)</span><strong><?= e(!empty($societe['activites_statuts']) ? (string) $societe['activites_statuts'] : '-') ?></strong></div>
-                <div class="full"><span>Activites (Cert. negatif)</span><strong><?= e(!empty($societe['activites_certificat_negatif']) ? fetch_nma2010_display($pdo ?? null, (string) $societe['activites_certificat_negatif']) : '-') ?></strong></div>
+                <div class="full"><span>Activites (OMPIC)</span><strong><?= e(!empty($societe['activites_ompic']) ? fetch_activites_ompic_display($pdo ?? null, (string) $societe['activites_ompic']) : '-') ?></strong></div>
             </div>
 
             <h3 class="section-title">Capital</h3>

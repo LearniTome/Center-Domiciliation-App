@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS societes (
     rc VARCHAR(100) DEFAULT NULL,
     if_number VARCHAR(100) DEFAULT NULL,
     activites_statuts TEXT DEFAULT NULL,
-    activites_certificat_negatif TEXT DEFAULT NULL,
+    activites_ompic TEXT DEFAULT NULL,
     -- Capital
     capital DECIMAL(15,2) DEFAULT NULL,
     part_social INT DEFAULT NULL,
@@ -183,14 +183,14 @@ CREATE TABLE IF NOT EXISTS ref_activites (
     UNIQUE KEY uq_ref_activites (activite)
 );
 
-CREATE TABLE IF NOT EXISTS ref_nma2010 (
+CREATE TABLE IF NOT EXISTS ref_activites_ompic (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(20) NOT NULL,
     libelle VARCHAR(255) NOT NULL,
     sort_order INT NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_ref_nma2010_code (code)
+    UNIQUE KEY uq_ref_activites_ompic_code (code)
 );
 
 CREATE TABLE IF NOT EXISTS ref_nationalites (
@@ -245,14 +245,14 @@ CREATE TABLE IF NOT EXISTS ref_activites (
     UNIQUE KEY uq_ref_activites (activite)
 );
 
-CREATE TABLE IF NOT EXISTS ref_nma2010 (
+CREATE TABLE IF NOT EXISTS ref_activites_ompic (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(20) NOT NULL,
     libelle VARCHAR(255) NOT NULL,
     sort_order INT NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_ref_nma2010_code (code)
+    UNIQUE KEY uq_ref_activites_ompic_code (code)
 );
 
 CREATE TABLE IF NOT EXISTS ref_nationalites (
@@ -507,7 +507,7 @@ INSERT INTO ref_activites (activite) VALUES
 ('Assurance'),
 ('Tourisme');
 
-INSERT INTO ref_nma2010 (code, libelle) VALUES
+INSERT INTO ref_activites_ompic (code, libelle) VALUES
 ('A', 'AGRICULTURE, SYLVICULTURE ET PECHE'),
 ('B', 'INDUSTRIES EXTRACTIVES'),
 ('C', 'INDUSTRIE MANUFACTURIERE'),
@@ -650,7 +650,7 @@ INSERT IGNORE INTO ref_activites (activite) VALUES
 ('Négociant'),
 ('Conseil de Gestion');
 
-INSERT IGNORE INTO ref_nma2010 (code, libelle) VALUES
+INSERT IGNORE INTO ref_activites_ompic (code, libelle) VALUES
 ('F', 'CONSTRUCTION'),
 ('G', 'COMMERCE; REPARATION D''AUTOMOBILES ET DE MOTOCYCLES'),
 ('M', 'ACTIVITES SPECIALISEES, SCIENTIFIQUES ET TECHNIQUES'),

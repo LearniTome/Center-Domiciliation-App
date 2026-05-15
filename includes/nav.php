@@ -31,7 +31,7 @@ $navSections = [
         ['page' => 'adresses', 'label' => 'Adresses', 'icon' => 'mdi-home'],
         ['page' => 'qualites-associe', 'label' => 'Qualites associe', 'icon' => 'mdi-account-tie'],
         ['page' => 'activites', 'label' => 'Activites', 'icon' => 'mdi-briefcase'],
-        ['page' => 'certificat-negatif', 'label' => 'NMA2010', 'icon' => 'mdi-file-certificate'],
+        ['page' => 'activites-ompic', 'label' => 'Activites Ompic', 'icon' => 'mdi-file-certificate'],
     ],
 ];
 ?>
