@@ -496,7 +496,7 @@ if ($societeTribunal) {
     }
 }
 if (!$currentTribunalType) {
-    $currentTribunalType = in_array('Tribunal de commerce', $tribunalTypes) ? 'Tribunal de commerce' : '';
+    $currentTribunalType = 'Tribunal de commerce';
 }
 $defaultTribunal = $societeTribunal ?: 'Casablanca';
 

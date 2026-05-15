@@ -16,7 +16,7 @@ if ($societe && $societe['tribunal']) {
     }
 }
 if (!$currentTribunalType) {
-    $currentTribunalType = in_array('Tribunal de commerce', $tribunalTypes) ? 'Tribunal de commerce' : '';
+    $currentTribunalType = 'Tribunal de commerce';
 }
 $defaultTribunal = ($societe && $societe['tribunal']) ? $societe['tribunal'] : 'Casablanca';
 

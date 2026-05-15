@@ -190,7 +190,7 @@ function fetch_tribunaux_all(?PDO $pdo): array
 {
     if (!$pdo) return [];
     try {
-        $stmt = $pdo->query("SELECT tribunal, tribunal_type FROM ref_tribunaux ORDER BY sort_order ASC, tribunal ASC");
+        $stmt = $pdo->query("SELECT tribunal, tribunal_type FROM ref_tribunaux ORDER BY FIELD(tribunal_type, 'Tribunal de commerce', 'Tribunal de Première Instance'), sort_order ASC, tribunal ASC");
         return $stmt->fetchAll();
     } catch (PDOException) {
         return [];
