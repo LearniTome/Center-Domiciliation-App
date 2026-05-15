@@ -908,21 +908,26 @@ tbody tr:hover:nth-child(even) {
     color: var(--success);
 }
 
-.table-scroll::-webkit-scrollbar {
+::-webkit-scrollbar {
+    width: 6px;
     height: 6px;
 }
 
-.table-scroll::-webkit-scrollbar-track {
+::-webkit-scrollbar-track {
     background: transparent;
 }
 
-.table-scroll::-webkit-scrollbar-thumb {
+::-webkit-scrollbar-thumb {
     background: var(--line);
     border-radius: 3px;
 }
 
-.table-scroll::-webkit-scrollbar-thumb:hover {
+::-webkit-scrollbar-thumb:hover {
     background: var(--text-secondary);
+}
+
+::-webkit-scrollbar-corner {
+    background: transparent;
 }
 
 .tabs {
