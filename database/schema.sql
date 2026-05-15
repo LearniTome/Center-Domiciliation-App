@@ -167,10 +167,11 @@ CREATE TABLE IF NOT EXISTS ref_villes (
 CREATE TABLE IF NOT EXISTS ref_tribunaux (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     tribunal VARCHAR(120) NOT NULL,
+    tribunal_type VARCHAR(60) DEFAULT NULL,
     sort_order INT NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_ref_tribunaux (tribunal)
+    UNIQUE KEY uq_ref_tribunaux (tribunal, tribunal_type)
 );
 
 CREATE TABLE IF NOT EXISTS ref_activites (

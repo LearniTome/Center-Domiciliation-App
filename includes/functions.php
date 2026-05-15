@@ -175,6 +175,28 @@ function fetch_societes_options(?PDO $pdo): array
     return $stmt->fetchAll();
 }
 
+function fetch_tribunaux_types(?PDO $pdo): array
+{
+    if (!$pdo) return [];
+    try {
+        $stmt = $pdo->query("SELECT DISTINCT tribunal_type FROM ref_tribunaux WHERE tribunal_type IS NOT NULL AND tribunal_type != '' ORDER BY tribunal_type");
+        return array_map(static fn(array $row): string => $row['tribunal_type'], $stmt->fetchAll());
+    } catch (PDOException) {
+        return [];
+    }
+}
+
+function fetch_tribunaux_all(?PDO $pdo): array
+{
+    if (!$pdo) return [];
+    try {
+        $stmt = $pdo->query("SELECT tribunal, tribunal_type FROM ref_tribunaux ORDER BY sort_order ASC, tribunal ASC");
+        return $stmt->fetchAll();
+    } catch (PDOException) {
+        return [];
+    }
+}
+
 function fetch_reference_options(?PDO $pdo, string $table, string $column): array
 {
     if (!$pdo) {

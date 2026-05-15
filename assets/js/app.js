@@ -145,6 +145,7 @@ const testData = {
     'adresse': '123 Rue Mohammed V, Casablanca',
     'ste_adress': '123 Boulevard Hassan II',
     'tribunal': 'Casablanca',
+    'tribunal_type': 'Tribunal de commerce',
     'type_generation': 'creation',
     'procedure_creation': 'normal',
     'mode_depot_creation': 'depot_physique',
@@ -482,7 +483,29 @@ document.addEventListener('input', (e) => {
     });
 })();
 
-(function() {
+(function () {
+    document.querySelectorAll('[data-tribunal-type]').forEach(function (typeSelect) {
+        var tribSelect = typeSelect.closest('.form-grid, .card')?.querySelector('[name="tribunal"]');
+        if (!tribSelect) return;
+        var filter = function () {
+            var type = typeSelect.value;
+            Array.from(tribSelect.options).forEach(function (opt) {
+                if (opt.value === '') return;
+                opt.style.display = !type || opt.getAttribute('data-type') === type ? '' : 'none';
+            });
+            if (tribSelect.value) {
+                var selected = tribSelect.options[tribSelect.selectedIndex];
+                if (selected && selected.style.display === 'none') {
+                    tribSelect.value = '';
+                }
+            }
+        };
+        typeSelect.addEventListener('change', filter);
+        filter();
+    });
+})();
+
+(function () {
     const dateDebut = document.querySelector('[data-date-debut]');
     const dureeMois = document.querySelector('[data-duree-mois]');
     const dateFin = document.querySelector('[data-date-fin]');

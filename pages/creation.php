@@ -28,7 +28,6 @@ if (!isset($_SESSION['creation_wizard']) || !is_array($_SESSION['creation_wizard
 
 $wizard = &$_SESSION['creation_wizard'];
 $step = max(1, min(5, (int) ($_GET['step'] ?? 1)));
-$tribunauxOptions = fetch_reference_options($pdo ?? null, 'ref_tribunaux', 'tribunal');
 $adressesOptions = fetch_reference_options($pdo ?? null, 'ref_ste_adresses', 'ste_adresse');
 $villesOptions = fetch_reference_options($pdo ?? null, 'ref_villes', 'ville');
 $nationalitesOptions = fetch_reference_options($pdo ?? null, 'ref_nationalites', 'nationalite');
@@ -484,6 +483,16 @@ $societeData = array_merge([
     'mode_depot_creation' => '',
 ], $wizard['societe']);
 
+$tribunalTypes = fetch_tribunaux_types($pdo ?? null);
+$allTribunaux = fetch_tribunaux_all($pdo ?? null);
+$currentTribunalType = '';
+foreach ($allTribunaux as $t) {
+    if ($t['tribunal'] === ($societeData['tribunal'] ?? '') && ($t['tribunal_type'] ?? '')) {
+        $currentTribunalType = $t['tribunal_type'];
+        break;
+    }
+}
+
 $associesData = $wizard['associes'];
 if (!is_array($associesData) || $associesData === []) {
     $associeDefaults = load_defaults('associe');
@@ -751,11 +760,20 @@ $contratData = array_merge([
                     </div>
                 </label>
                 <label class="field">
+                    <span>Type de tribunal</span>
+                    <select name="tribunal_type" data-tribunal-type>
+                        <option value="">Selectionner</option>
+                        <?php foreach ($tribunalTypes as $type): ?>
+                            <option value="<?= e($type) ?>" <?= $currentTribunalType === $type ? 'selected' : '' ?>><?= e($type) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
+                <label class="field">
                     <span>Tribunal</span>
                     <select name="tribunal">
                         <option value="">Selectionner</option>
-                        <?php foreach ($tribunauxOptions as $option): ?>
-                            <option value="<?= e($option) ?>" <?= (string) $societeData['tribunal'] === $option ? 'selected' : '' ?>><?= e($option) ?></option>
+                        <?php foreach ($allTribunaux as $t): ?>
+                            <option value="<?= e($t['tribunal']) ?>" data-type="<?= e($t['tribunal_type'] ?? '') ?>" <?= (string) $societeData['tribunal'] === $t['tribunal'] ? 'selected' : '' ?>><?= e($t['tribunal']) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </label>
@@ -1213,7 +1231,7 @@ $contratData = array_merge([
                     <div><span>Valeur nominale</span><strong><?= e($societeData['valeur_nominale'] ?: '-') ?></strong></div>
                     <div><span>Adresse</span><strong><?= e($societeData['ste_adress'] ?: '-') ?></strong></div>
                     <div><span>Ville</span><strong><?= e($societeData['ville'] ?: '-') ?></strong></div>
-                    <div><span>Tribunal</span><strong><?= e($societeData['tribunal'] ?: '-') ?></strong></div>
+                    <div><span>Tribunal</span><strong><?= e($societeData['tribunal'] ?: '-') ?><?= $currentTribunalType ? ' ('.e($currentTribunalType).')' : '' ?></strong></div>
                     <div><span>Email</span><strong><?= e($societeData['email'] ?: '-') ?></strong></div>
                     <div><span>Telephone</span><strong><?= e($societeData['telephone'] ?: '-') ?></strong></div>
                     <div class="full"><span>Activites (Statuts)</span><strong><?= e(!empty($societeData['activites_statuts']) ? (string) $societeData['activites_statuts'] : '-') ?></strong></div>

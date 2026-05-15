@@ -167,10 +167,11 @@ CREATE TABLE IF NOT EXISTS ref_villes (
 CREATE TABLE IF NOT EXISTS ref_tribunaux (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     tribunal VARCHAR(120) NOT NULL,
+    tribunal_type VARCHAR(60) DEFAULT NULL,
     sort_order INT NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_ref_tribunaux (tribunal)
+    UNIQUE KEY uq_ref_tribunaux (tribunal, tribunal_type)
 );
 
 CREATE TABLE IF NOT EXISTS ref_activites (
@@ -234,7 +235,8 @@ CREATE TABLE IF NOT EXISTS ref_villes (
 CREATE TABLE IF NOT EXISTS ref_tribunaux (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     tribunal VARCHAR(120) NOT NULL,
-    UNIQUE KEY uq_ref_tribunaux (tribunal)
+    tribunal_type VARCHAR(60) DEFAULT NULL,
+    UNIQUE KEY uq_ref_tribunaux (tribunal, tribunal_type)
 );
 
 CREATE TABLE IF NOT EXISTS ref_activites (
@@ -300,27 +302,39 @@ INSERT INTO ref_formes_juridiques (forme_juridique) VALUES
 ('Succurssale Marocaine');
 
 -- Données de référence pour les tribunaux
-INSERT INTO ref_tribunaux (tribunal) VALUES
-('Casablanca'),
-('Rabat'),
-('Marrakech'),
-('Fes'),
-('Agadir'),
-('Tangier'),
-('Meknes'),
-('Tetouan'),
-('Oujda'),
-('Beni Mellal'),
-('Khouribga'),
-('Oulad Teima'),
-('Settat'),
-('Khemisset'),
-('Tiflet'),
-('Skhirat-Temara'),
-('Sidi Kacem'),
-('Sidi Slimane'),
-('Souk El Arbaa'),
-('Taourirt');
+INSERT INTO ref_tribunaux (tribunal, tribunal_type) VALUES
+('Casablanca', 'Tribunal de commerce'),
+('Rabat', 'Tribunal de commerce'),
+('Marrakech', 'Tribunal de commerce'),
+('Fes', 'Tribunal de commerce'),
+('Agadir', 'Tribunal de commerce'),
+('Tangier', 'Tribunal de commerce'),
+('Meknes', 'Tribunal de commerce'),
+('Tetouan', 'Tribunal de commerce'),
+('Oujda', 'Tribunal de commerce'),
+('Beni Mellal', 'Tribunal de commerce'),
+('Khouribga', 'Tribunal de commerce'),
+('Settat', 'Tribunal de commerce'),
+('Casablanca', 'Tribunal de Première Instance'),
+('Rabat', 'Tribunal de Première Instance'),
+('Marrakech', 'Tribunal de Première Instance'),
+('Fes', 'Tribunal de Première Instance'),
+('Agadir', 'Tribunal de Première Instance'),
+('Tangier', 'Tribunal de Première Instance'),
+('Meknes', 'Tribunal de Première Instance'),
+('Tetouan', 'Tribunal de Première Instance'),
+('Oujda', 'Tribunal de Première Instance'),
+('Beni Mellal', 'Tribunal de Première Instance'),
+('Khouribga', 'Tribunal de Première Instance'),
+('Oulad Teima', 'Tribunal de Première Instance'),
+('Settat', 'Tribunal de Première Instance'),
+('Khemisset', 'Tribunal de Première Instance'),
+('Tiflet', 'Tribunal de Première Instance'),
+('Skhirat-Temara', 'Tribunal de Première Instance'),
+('Sidi Kacem', 'Tribunal de Première Instance'),
+('Sidi Slimane', 'Tribunal de Première Instance'),
+('Souk El Arbaa', 'Tribunal de Première Instance'),
+('Taourirt', 'Tribunal de Première Instance');
 
 -- Données de référence pour les adresses
 INSERT INTO ref_ste_adresses (ste_adresse) VALUES
@@ -623,10 +637,12 @@ INSERT IGNORE INTO ref_ste_adresses (ste_adresse) VALUES
 ('46 BD ZERKTOUNI ETG 2 APPT 6 CASABLANCA'),
 ('56 BOULEVARD MOULAY YOUSSEF 3EME ETAGE APPT 14, CASABLANCA');
 
-INSERT IGNORE INTO ref_tribunaux (tribunal) VALUES
-('Casablanca'),
-('Berrechid'),
-('Mohammedia');
+INSERT IGNORE INTO ref_tribunaux (tribunal, tribunal_type) VALUES
+('Casablanca', 'Tribunal de commerce'),
+('Berrechid', 'Tribunal de commerce'),
+('Mohammedia', 'Tribunal de commerce'),
+('Berrechid', 'Tribunal de Première Instance'),
+('Mohammedia', 'Tribunal de Première Instance');
 
 INSERT IGNORE INTO ref_activites (activite) VALUES
 ('Travaux Divers ou de Construction'),
