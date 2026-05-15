@@ -23,21 +23,21 @@ $navSections = [
         'convert-word-pdf' => ['Word to PDF', 'mdi-file-pdf-box'],
     ],
     'Juridique' => [
-        ['page' => 'configuration', 'label' => 'Formes juridiques', 'icon' => 'mdi-file-document-outline', 'params' => ['tab' => 'formes-juridiques']],
-        ['page' => 'configuration', 'label' => 'Tribunaux', 'icon' => 'mdi-scale-balance', 'params' => ['tab' => 'tribunaux']],
+        ['page' => 'formes-juridiques', 'label' => 'Formes juridiques', 'icon' => 'mdi-file-document-outline'],
+        ['page' => 'tribunaux', 'label' => 'Tribunaux', 'icon' => 'mdi-scale-balance'],
     ],
     'Geographique' => [
-        ['page' => 'configuration', 'label' => 'Villes', 'icon' => 'mdi-city', 'params' => ['tab' => 'villes']],
-        ['page' => 'configuration', 'label' => 'Nationalites', 'icon' => 'mdi-flag', 'params' => ['tab' => 'nationalites']],
-        ['page' => 'configuration', 'label' => 'Lieux naissance', 'icon' => 'mdi-map-marker', 'params' => ['tab' => 'lieux-naissance']],
-        ['page' => 'configuration', 'label' => 'Adresses', 'icon' => 'mdi-home', 'params' => ['tab' => 'adresses']],
+        ['page' => 'villes', 'label' => 'Villes', 'icon' => 'mdi-city'],
+        ['page' => 'nationalites', 'label' => 'Nationalites', 'icon' => 'mdi-flag'],
+        ['page' => 'lieux-naissance', 'label' => 'Lieux naissance', 'icon' => 'mdi-map-marker'],
+        ['page' => 'adresses', 'label' => 'Adresses', 'icon' => 'mdi-home'],
     ],
     'Associes' => [
-        ['page' => 'configuration', 'label' => 'Qualites associe', 'icon' => 'mdi-account-tie', 'params' => ['tab' => 'qualites-associe']],
+        ['page' => 'qualites-associe', 'label' => 'Qualites associe', 'icon' => 'mdi-account-tie'],
     ],
     'Activites' => [
-        ['page' => 'configuration', 'label' => 'Activites', 'icon' => 'mdi-briefcase', 'params' => ['tab' => 'activites']],
-        ['page' => 'configuration', 'label' => 'NMA2010', 'icon' => 'mdi-file-certificate', 'params' => ['tab' => 'certificat-negatif']],
+        ['page' => 'activites', 'label' => 'Activites', 'icon' => 'mdi-briefcase'],
+        ['page' => 'certificat-negatif', 'label' => 'NMA2010', 'icon' => 'mdi-file-certificate'],
     ],
 ];
 ?>
@@ -70,9 +70,8 @@ $navSections = [
                         $itemPage = $item['page'];
                         $itemLabel = $item['label'];
                         $itemIcon = $item['icon'];
-                        $itemParams = $item['params'] ?? [];
-                        $href = app_url($itemPage, $itemParams);
-                        $isActive = $page === $itemPage && (!$itemParams || ($_GET['tab'] ?? '') === ($itemParams['tab'] ?? ''));
+                        $href = app_url($itemPage);
+                        $isActive = $page === $itemPage;
                     } else {
                         $itemLabel = $item[0];
                         $itemIcon = $item[1];

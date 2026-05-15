@@ -2,5 +2,5 @@
 
 declare(strict_types=1);
 
-$tab = 'adresses';
+$tab = 'certificat-negatif';
 require __DIR__ . '/../includes/config-render.php';
