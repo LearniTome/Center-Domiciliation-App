@@ -499,6 +499,7 @@ if (!$currentTribunalType) {
     $currentTribunalType = 'Tribunal de commerce';
 }
 $defaultTribunal = $societeTribunal ?: 'Casablanca';
+$defaultVille = ($societeData['ville'] ?? '') ?: 'Casablanca';
 
 $associesData = $wizard['associes'];
 if (!is_array($associesData) || $associesData === []) {
@@ -760,7 +761,7 @@ $contratData = array_merge([
                         <select name="ville" style="flex:1">
                             <option value="">Selectionner</option>
                             <?php foreach ($villesOptions as $option): ?>
-                                <option value="<?= e($option) ?>" <?= (string) $societeData['ville'] === $option ? 'selected' : '' ?>><?= e($option) ?></option>
+                                <option value="<?= e($option) ?>" <?= $defaultVille === $option ? 'selected' : '' ?>><?= e($option) ?></option>
                             <?php endforeach; ?>
                         </select>
                         <a href="<?= e(app_url('configuration', ['tab' => 'villes'])) ?>" target="_blank" title="Gerer les villes" style="color:var(--primary);text-decoration:none;font-size:1.4rem;line-height:1">&plus;</a>

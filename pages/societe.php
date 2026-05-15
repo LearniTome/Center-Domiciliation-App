@@ -19,6 +19,7 @@ if (!$currentTribunalType) {
     $currentTribunalType = 'Tribunal de commerce';
 }
 $defaultTribunal = ($societe && $societe['tribunal']) ? $societe['tribunal'] : 'Casablanca';
+$defaultVille = ($societe && $societe['ville']) ? $societe['ville'] : 'Casablanca';
 
 if (is_post() && isset($_POST['add_activite_ref']) && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
@@ -428,7 +429,7 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
                     <select name="ville" style="flex:1">
                         <option value="">Selectionner</option>
                         <?php foreach ($villesOptions as $option): ?>
-                            <option value="<?= e($option) ?>" <?= (string) $societe['ville'] === $option ? 'selected' : '' ?>><?= e($option) ?></option>
+                            <option value="<?= e($option) ?>" <?= $defaultVille === $option ? 'selected' : '' ?>><?= e($option) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </label>
