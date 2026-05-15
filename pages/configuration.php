@@ -3,15 +3,15 @@
 declare(strict_types=1);
 
 $tabs = [
-    'formes-juridiques' => ['ref_formes_juridiques', 'forme_juridique', 'Formes juridiques'],
-    'villes' => ['ref_villes', 'ville', 'Villes'],
-    'tribunaux' => ['ref_tribunaux', 'tribunal', 'Tribunaux'],
-    'nationalites' => ['ref_nationalites', 'nationalite', 'Nationalites'],
-    'lieux-naissance' => ['ref_lieux_naissance', 'lieu_naissance', 'Lieux de naissance'],
-    'adresses' => ['ref_ste_adresses', 'ste_adresse', 'Adresses'],
-    'qualites-associe' => ['ref_qualites_associe', 'qualite_associe', 'Qualites associe'],
-    'activites' => ['ref_activites', 'activite', 'Activites'],
-    'certificat-negatif' => ['ref_nma2010', 'libelle', 'NMA2010'],
+    'formes-juridiques' => ['ref_formes_juridiques', 'forme_juridique', 'Formes juridiques', 'mdi-file-document-outline'],
+    'villes' => ['ref_villes', 'ville', 'Villes', 'mdi-city'],
+    'tribunaux' => ['ref_tribunaux', 'tribunal', 'Tribunaux', 'mdi-scale-balance'],
+    'nationalites' => ['ref_nationalites', 'nationalite', 'Nationalites', 'mdi-flag'],
+    'lieux-naissance' => ['ref_lieux_naissance', 'lieu_naissance', 'Lieux de naissance', 'mdi-map-marker'],
+    'adresses' => ['ref_ste_adresses', 'ste_adresse', 'Adresses', 'mdi-home'],
+    'qualites-associe' => ['ref_qualites_associe', 'qualite_associe', 'Qualites associe', 'mdi-account-tie'],
+    'activites' => ['ref_activites', 'activite', 'Activites', 'mdi-briefcase'],
+    'certificat-negatif' => ['ref_nma2010', 'libelle', 'NMA2010', 'mdi-file-certificate'],
 ];
 
 $tab = $_GET['tab'] ?? 'formes-juridiques';
@@ -19,7 +19,7 @@ if (!isset($tabs[$tab])) {
     $tab = 'formes-juridiques';
 }
 
-[$table, $column, $label] = $tabs[$tab];
+[$table, $column, $label, $tabIcon] = $tabs[$tab];
 $editKey = $_GET['edit'] ?? null;
 $tabCounts = [];
 $rows = [];
@@ -171,8 +171,10 @@ if (is_post()) {
     </div>
 
     <div class="tabs" style="margin-bottom:1rem">
-        <?php foreach ($tabs as $key => [$t, $c, $l]): ?>
+        <?php foreach ($tabs as $key => $tabInfo): ?>
+            <?php [$t, $c, $l, $icon] = $tabInfo; ?>
             <a class="tab <?= $key === $tab ? 'active' : '' ?>" href="<?= e(app_url('configuration', ['tab' => $key])) ?>">
+                <span class="mdi <?= e($icon) ?>" style="margin-right:4px"></span>
                 <?= e($l) ?>
                 <?php if (isset($tabCounts[$key])): ?>
                     <span style="display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--primary);color:#fff;font-size:0.65rem;margin-left:4px;line-height:1;vertical-align:middle"><?= $tabCounts[$key] ?></span>
@@ -381,8 +383,30 @@ if (is_post()) {
         });
         </script>
         <style>
+        #config-table thead {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: var(--surface);
+        }
+        #config-table thead::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: var(--primary);
+            opacity: 0.4;
+        }
+        #config-table tbody tr {
+            transition: background 0.12s;
+        }
+        #config-table tbody tr:hover {
+            background: rgba(74,108,247,0.04);
+        }
         #config-table tbody tr[draggable="true"] {
-            transition: opacity 0.15s;
+            transition: opacity 0.15s, background 0.12s;
         }
         #config-table tbody tr.dragging {
             opacity: 0.4;
@@ -390,8 +414,28 @@ if (is_post()) {
         #config-table tbody tr.drag-over {
             border-bottom: 2px solid var(--primary);
         }
+        .config-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem 1rem;
+            color: var(--text-secondary);
+            gap: 0.5rem;
+        }
+        .config-empty .mdi {
+            font-size: 2.5rem;
+            opacity: 0.3;
+        }
+        .config-empty p {
+            margin: 0;
+            font-size: 0.9375rem;
+        }
         </style>
     <?php else: ?>
-        <p class="table-empty">Aucun(e) <?= e(mb_strtolower($label)) ?>.</p>
+        <div class="config-empty">
+            <span class="mdi <?= e($tabIcon) ?>"></span>
+            <p>Aucun(e) <?= e(mb_strtolower($label)) ?> pour le moment.</p>
+        </div>
     <?php endif; ?>
 </section>
