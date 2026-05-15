@@ -18,6 +18,17 @@ document.querySelectorAll('[data-confirm]').forEach((element) => {
 })();
 
 (function () {
+    document.querySelectorAll('[data-nav-toggle]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var section = this.closest('.nav-section');
+            if (section) {
+                section.classList.toggle('collapsed');
+            }
+        });
+    });
+})();
+
+(function () {
     const tables = document.querySelectorAll('[data-col-toggle]');
     if (!tables.length) return;
     const pageKey = new URLSearchParams(window.location.search).get('page') || 'unknown';

@@ -57,7 +57,12 @@ $navSections = [
     <nav class="nav-links">
         <?php foreach ($navSections as $sectionLabel => $items): ?>
             <?php if ($sectionLabel): ?>
-                <span class="nav-section-label"><?= e($sectionLabel) ?></span>
+            <div class="nav-section">
+                <button class="nav-section-toggle" type="button" data-nav-toggle>
+                    <span class="mdi mdi-chevron-down"></span>
+                    <?= e($sectionLabel) ?>
+                </button>
+                <div class="nav-section-items">
             <?php endif; ?>
             <?php foreach ($items as $navKey => $item): ?>
                 <?php
@@ -80,6 +85,10 @@ $navSections = [
                     <span data-nav-label><?= e($itemLabel) ?></span>
                 </a>
             <?php endforeach; ?>
+            <?php if ($sectionLabel): ?>
+                </div>
+            </div>
+            <?php endif; ?>
         <?php endforeach; ?>
     </nav>
 </aside>
