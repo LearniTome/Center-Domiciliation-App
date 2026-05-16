@@ -14,6 +14,50 @@ $exported = false;
 if ($templates) {
     $analysis = TemplateAnalyzer::analyzeCoverage($templates);
 
+    if (is_post() && isset($_POST['rename'])) {
+        verify_csrf();
+        $oldName = trim($_POST['var_name'] ?? '');
+        $newName = trim($_POST['new_name'] ?? '');
+        if ($oldName !== '' && $newName !== '') {
+            $result = TemplateAnalyzer::renameVariable($oldName, $newName, $templatesDir);
+            $msg = "Variable {$oldName} renommee en {$newName} dans {$result['modified']} template(s).";
+            if (!empty($result['errors'])) {
+                $msg .= ' Erreurs: ' . implode('; ', $result['errors']);
+            }
+            set_flash('success', $msg);
+        }
+        redirect_to('analyse-couverture');
+    }
+
+    if (is_post() && isset($_POST['delete_var'])) {
+        verify_csrf();
+        $varName = trim($_POST['var_name'] ?? '');
+        if ($varName !== '') {
+            $result = TemplateAnalyzer::deleteVariable($varName, $templatesDir);
+            $msg = "Variable {$varName} supprimee de {$result['modified']} template(s).";
+            if (!empty($result['errors'])) {
+                $msg .= ' Erreurs: ' . implode('; ', $result['errors']);
+            }
+            set_flash('success', $msg);
+        }
+        redirect_to('analyse-couverture');
+    }
+
+    if (is_post() && isset($_POST['bulk_delete'])) {
+        verify_csrf();
+        $selected = $_POST['selected_vars'] ?? [];
+        if (is_array($selected) && !empty($selected)) {
+            $result = TemplateAnalyzer::deleteVariables($selected, $templatesDir);
+            $count = count($selected);
+            $msg = "{$count} variable(s) supprimee(s) de {$result['modified']} template(s).";
+            if (!empty($result['errors'])) {
+                $msg .= ' Erreurs: ' . implode('; ', $result['errors']);
+            }
+            set_flash('success', $msg);
+        }
+        redirect_to('analyse-couverture');
+    }
+
     if (is_post() && isset($_POST['export_csv'])) {
         verify_csrf();
         $csvPath = $outputDir . DIRECTORY_SEPARATOR . 'analyse_templates_' . date('Y-m-d_His') . '.csv';
@@ -31,6 +75,7 @@ if ($templates) {
         </div>
         <?php if ($analysis): ?>
         <div class="table-actions">
+            <button type="button" id="bulk-delete-btn" class="btn btn-danger"><span class="mdi mdi-delete"></span> Supprimer la sélection</button>
             <form method="post" style="display:inline">
                 <?= csrf_input() ?>
                 <button type="submit" name="export_csv" value="1" class="btn btn-info"><span class="mdi mdi-download"></span> Export CSV</button>
@@ -67,16 +112,20 @@ if ($templates) {
     <table>
         <thead>
             <tr>
+                <th style="width:32px"><input type="checkbox" id="select-all" title="Tout cocher"></th>
                 <th>Variable</th>
                 <th>Occurrences</th>
                 <th>Templates</th>
                 <th>Section</th>
                 <th>Couverture</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody>
+            <?php $contextKeys = TemplateAnalyzer::getExpectedContextKeys(); ?>
             <?php foreach ($analysis['variables'] as $v): ?>
                 <tr>
+                    <td><input type="checkbox" class="var-checkbox" value="<?= e($v['variable']) ?>"></td>
                     <td><code><?= e($v['variable']) ?></code></td>
                     <td><?= e((string) $v['occurrences']) ?></td>
                     <td><?= e((string) $v['templates_count']) ?> template(s)</td>
@@ -86,6 +135,30 @@ if ($templates) {
                             <?= e($v['coverage']) ?>
                         </span>
                     </td>
+                    <td>
+                        <div style="display:flex;gap:4px;align-items:center">
+                            <form method="post" style="display:flex;gap:4px;align-items:center" class="rename-var-form">
+                                <?= csrf_input() ?>
+                                <input type="hidden" name="var_name" value="<?= e($v['variable']) ?>">
+                                <select name="new_name" required style="max-width:140px;font-size:0.75rem;padding:2px 4px">
+                                    <option value="">Renommer en...</option>
+                                    <?php foreach ($contextKeys as $ck): ?>
+                                    <option value="<?= e($ck) ?>"><?= e($ck) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <button type="submit" name="rename" value="1" class="btn-icon" title="Renommer">
+                                    <span class="mdi mdi-rename"></span>
+                                </button>
+                            </form>
+                            <form method="post" style="display:inline" class="delete-var-form">
+                                <?= csrf_input() ?>
+                                <input type="hidden" name="var_name" value="<?= e($v['variable']) ?>">
+                                <button type="submit" name="delete_var" value="1" class="btn-icon danger" title="Supprimer">
+                                    <span class="mdi mdi-delete"></span>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
                 </tr>
             <?php endforeach; ?>
         </tbody>
@@ -93,3 +166,75 @@ if ($templates) {
     </div>
     <?php endif; ?>
 </section>
+
+<form id="bulk-delete-form" method="post" style="display:none">
+    <?= csrf_input() ?>
+</form>
+
+<div id="loading-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center">
+    <div class="loader-card">
+        <div class="spinner"></div>
+        <p id="loading-text">Traitement en cours...</p>
+    </div>
+</div>
+<script>
+(function(){
+    var overlay = document.getElementById('loading-overlay');
+    var text = document.getElementById('loading-text');
+    window.showOverlay = function(msg){
+        text.textContent = msg;
+        overlay.style.display = 'flex';
+    };
+
+    document.getElementById('select-all').addEventListener('change', function(){
+        document.querySelectorAll('.var-checkbox').forEach(function(cb){
+            cb.checked = this.checked;
+        }, this);
+    });
+
+    document.getElementById('bulk-delete-btn').addEventListener('click', function(){
+        var checked = document.querySelectorAll('.var-checkbox:checked');
+        if (checked.length === 0) {
+            alert('Selectionnez au moins une variable.');
+            return;
+        }
+        var names = [];
+        checked.forEach(function(cb){ names.push(cb.value); });
+        if (!confirm('Supprimer ' + names.length + ' variable(s) de tous les templates ?')) return;
+        var form = document.getElementById('bulk-delete-form');
+        document.querySelectorAll('#bulk-delete-form .dynamic-input').forEach(function(e){ e.remove(); });
+        names.forEach(function(name){
+            var inp = document.createElement('input');
+            inp.type = 'hidden';
+            inp.name = 'selected_vars[]';
+            inp.value = name;
+            inp.className = 'dynamic-input';
+            form.appendChild(inp);
+        });
+        var btn = document.createElement('input');
+        btn.type = 'hidden';
+        btn.name = 'bulk_delete';
+        btn.value = '1';
+        btn.className = 'dynamic-input';
+        form.appendChild(btn);
+        window.showOverlay('Suppression en cours...');
+        form.submit();
+    });
+
+    document.querySelectorAll('.delete-var-form').forEach(function(form){
+        form.addEventListener('submit', function(e){
+            var varName = form.querySelector('input[name="var_name"]').value;
+            if (!confirm('Supprimer {{ ' + varName + ' }} de tous les templates ?')) {
+                e.preventDefault();
+                return;
+            }
+            window.showOverlay('Suppression en cours...');
+        });
+    });
+    document.querySelectorAll('.rename-var-form').forEach(function(form){
+        form.addEventListener('submit', function(){
+            window.showOverlay('Renommage en cours...');
+        });
+    });
+})();
+</script>

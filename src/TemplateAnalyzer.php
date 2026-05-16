@@ -437,6 +437,235 @@ class TemplateAnalyzer
         ];
     }
 
+    public static function deleteVariable(string $variableName, string $templatesDir): array
+    {
+        $result = self::deleteVariables([$variableName], $templatesDir);
+        return [
+            'modified' => $result['modified'],
+            'errors' => $result['errors'],
+        ];
+    }
+
+    public static function deleteVariables(array $variableNames, string $templatesDir): array
+    {
+        $variableNames = array_values(array_unique(array_filter(array_map('trim', $variableNames))));
+
+        if (empty($variableNames)) {
+            return ['modified' => 0, 'errors' => ['Aucune variable valide.']];
+        }
+
+        if (!is_dir($templatesDir) || !class_exists('ZipArchive')) {
+            return ['modified' => 0, 'errors' => ['ZipArchive requis ou dossier introuvable.']];
+        }
+
+        $patterns = [];
+        foreach ($variableNames as $name) {
+            $patterns[] = '/\{\{\s*' . preg_quote($name, '/') . '\s*\}\}/i';
+        }
+
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($templatesDir, RecursiveDirectoryIterator::SKIP_DOTS)
+        );
+
+        $modified = 0;
+        $errors = [];
+
+        foreach ($iterator as $file) {
+            if ($file->getExtension() !== 'docx') {
+                continue;
+            }
+
+            $path = $file->getPathname();
+            $zip = new ZipArchive();
+
+            if ($zip->open($path) !== true) {
+                $errors[] = "Impossible d'ouvrir : " . $file->getFilename();
+                continue;
+            }
+
+            $fileModified = false;
+            $parts = ['word/document.xml'];
+
+            for ($i = 0; $i < $zip->numFiles; $i++) {
+                $name = $zip->getNameIndex($i);
+                if ($name !== false && (
+                    str_starts_with($name, 'word/header') ||
+                    str_starts_with($name, 'word/footer')
+                )) {
+                    $parts[] = $name;
+                }
+            }
+
+            $parts = array_unique($parts);
+
+            foreach ($parts as $part) {
+                $xml = $zip->getFromName($part);
+                if ($xml === false) {
+                    continue;
+                }
+
+                $newXml = $xml;
+                foreach ($patterns as $pattern) {
+                    $replaced = self::replaceInDocxXml($newXml, $pattern, '');
+                    if ($replaced !== null) {
+                        $newXml = $replaced;
+                    }
+                }
+
+                if ($newXml !== $xml) {
+                    $zip->deleteName($part);
+                    $zip->addFromString($part, $newXml);
+                    $fileModified = true;
+                }
+            }
+
+            $zip->close();
+
+            if ($fileModified) {
+                $modified++;
+            }
+        }
+
+        return ['modified' => $modified, 'errors' => $errors];
+    }
+
+    private static function replaceInDocxXml(string $xml, string $pattern, string $replacement): string
+    {
+        $doc = new DOMDocument();
+        $suppress = libxml_use_internal_errors(true);
+        $doc->loadXML($xml);
+        libxml_use_internal_errors($suppress);
+
+        $xpath = new DOMXPath($doc);
+        $xpath->registerNamespace('w', 'http://schemas.openxmlformats.org/wordprocessingml/2006/main');
+
+        $paragraphs = $xpath->query('//w:p');
+        if ($paragraphs === false || $paragraphs->length === 0) {
+            $paragraphs = $xpath->query('//*[w:p]');
+        }
+
+        $modified = false;
+
+        foreach ($paragraphs as $p) {
+            $textNodes = $xpath->query('.//w:t', $p);
+            if ($textNodes === false || $textNodes->length === 0) {
+                continue;
+            }
+
+            $combined = '';
+            foreach ($textNodes as $tn) {
+                $combined .= $tn->textContent;
+            }
+
+            if (!preg_match($pattern, $combined)) {
+                continue;
+            }
+
+            $newCombined = preg_replace($pattern, $replacement, $combined);
+            if ($newCombined === null || $newCombined === $combined) {
+                continue;
+            }
+
+            $modified = true;
+
+            if ($textNodes->length === 1) {
+                $textNodes->item(0)->textContent = $newCombined;
+                continue;
+            }
+
+            $textNodes->item(0)->textContent = $newCombined;
+            for ($i = 1; $i < $textNodes->length; $i++) {
+                $textNodes->item($i)->textContent = '';
+            }
+        }
+
+        if (!$modified) {
+            return $xml;
+        }
+
+        $result = $doc->saveXML();
+        return $result !== false ? $result : $xml;
+    }
+
+    public static function renameVariable(
+        string $oldName,
+        string $newName,
+        string $templatesDir
+    ): array {
+        $oldName = trim($oldName);
+        $newName = trim($newName);
+
+        if ($oldName === '' || $newName === '' || $oldName === $newName) {
+            return ['modified' => 0, 'errors' => ['Noms invalides ou identiques.']];
+        }
+
+        if (!is_dir($templatesDir) || !class_exists('ZipArchive')) {
+            return ['modified' => 0, 'errors' => ['ZipArchive requis ou dossier introuvable.']];
+        }
+
+        $pattern = '/\{\{\s*' . preg_quote($oldName, '/') . '\s*\}\}/i';
+        $replacement = '{{ ' . $newName . ' }}';
+
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($templatesDir, RecursiveDirectoryIterator::SKIP_DOTS)
+        );
+
+        $modified = 0;
+        $errors = [];
+
+        foreach ($iterator as $file) {
+            if ($file->getExtension() !== 'docx') {
+                continue;
+            }
+
+            $path = $file->getPathname();
+            $zip = new ZipArchive();
+
+            if ($zip->open($path) !== true) {
+                $errors[] = "Impossible d'ouvrir : " . $file->getFilename();
+                continue;
+            }
+
+            $fileModified = false;
+            $parts = ['word/document.xml'];
+
+            for ($i = 0; $i < $zip->numFiles; $i++) {
+                $name = $zip->getNameIndex($i);
+                if ($name !== false && (
+                    str_starts_with($name, 'word/header') ||
+                    str_starts_with($name, 'word/footer')
+                )) {
+                    $parts[] = $name;
+                }
+            }
+
+            $parts = array_unique($parts);
+
+            foreach ($parts as $part) {
+                $xml = $zip->getFromName($part);
+                if ($xml === false) {
+                    continue;
+                }
+
+                $newXml = self::replaceInDocxXml($xml, $pattern, $replacement);
+
+                if ($newXml !== $xml) {
+                    $zip->deleteName($part);
+                    $zip->addFromString($part, $newXml);
+                    $fileModified = true;
+                }
+            }
+
+            $zip->close();
+
+            if ($fileModified) {
+                $modified++;
+            }
+        }
+
+        return ['modified' => $modified, 'errors' => $errors];
+    }
+
     public static function exportAnalysisCsv(array $rows, string $outPath): string
     {
         $dir = dirname($outPath);
