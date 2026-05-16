@@ -341,6 +341,17 @@ function format_number(?float $value, int $decimals = 0): string
     return number_format($value, $decimals, ',', ' ');
 }
 
+function format_date(?string $value): string
+{
+    if ($value === null || $value === '') return '-';
+    try {
+        $date = new DateTime($value);
+        return $date->format('d/m/Y');
+    } catch (Exception) {
+        return $value;
+    }
+}
+
 function load_defaults(?string $key = null): array
 {
     $defaultsFile = __DIR__ . '/../config/defaults.json';

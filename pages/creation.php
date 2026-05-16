@@ -646,11 +646,11 @@ $contratData = array_merge([
                 </label>
                 <label class="field">
                     <span>Date de cert. negatif</span>
-                    <input type="date" name="societe_date_ice" value="<?= e((string) $societeData['societe_date_ice']) ?>">
+                    <input type="date" name="societe_date_ice" placeholder="01/01/2026" value="<?= e((string) $societeData['societe_date_ice']) ?>">
                 </label>
                 <label class="field">
                     <span>Date exp. cert. negatif</span>
-                    <input type="date" name="societe_date_exp_cert_neg" value="<?= e((string) $societeData['societe_date_exp_cert_neg']) ?>">
+                    <input type="date" name="societe_date_exp_cert_neg" placeholder="01/01/2026" value="<?= e((string) $societeData['societe_date_exp_cert_neg']) ?>">
                 </label>
                 <label class="field">
                     <span>RC</span>
@@ -854,7 +854,7 @@ $contratData = array_merge([
                             </label>
                             <label class="field">
                                 <span>Date validite CIN</span>
-                                <input data-field-name="date_validite_cin" type="date" name="associes[<?= $index ?>][date_validite_cin]" value="<?= e((string) ($associe['associe_date_validite_cin'] ?? '')) ?>">
+                                <input data-field-name="date_validite_cin" type="date" name="associes[<?= $index ?>][date_validite_cin]" placeholder="01/01/2026" value="<?= e((string) ($associe['associe_date_validite_cin'] ?? '')) ?>">
                             </label>
                             <label class="field">
                                 <span>Nationalite</span>
@@ -870,7 +870,7 @@ $contratData = array_merge([
                             </label>
                             <label class="field">
                                 <span>Date naissance</span>
-                                <input data-field-name="date_naiss" type="date" name="associes[<?= $index ?>][date_naiss]" value="<?= e((string) ($associe['associe_date_naissance'] ?? '')) ?>">
+                                <input data-field-name="date_naiss" type="date" name="associes[<?= $index ?>][date_naiss]" placeholder="01/01/2026" value="<?= e((string) ($associe['associe_date_naissance'] ?? '')) ?>">
                             </label>
                             <label class="field">
                                 <span>Lieu naissance</span>
@@ -1004,7 +1004,7 @@ $contratData = array_merge([
                         </label>
                         <label class="field">
                             <span>Date validite CIN</span>
-                            <input data-field-name="date_validite_cin" type="date" value="">
+                            <input data-field-name="date_validite_cin" type="date" placeholder="01/01/2026" value="">
                         </label>
                         <label class="field">
                             <span>Nationalite</span>
@@ -1020,7 +1020,7 @@ $contratData = array_merge([
                         </label>
                         <label class="field">
                             <span>Date naissance</span>
-                            <input data-field-name="date_naiss" type="date" value="">
+                            <input data-field-name="date_naiss" type="date" placeholder="01/01/2026" value="">
                         </label>
                         <label class="field">
                             <span>Lieu naissance</span>
@@ -1113,7 +1113,7 @@ $contratData = array_merge([
                 </label>
                 <label class="field">
                     <span>Date du contrat</span>
-                    <input type="date" name="contrat_date" value="<?= e((string) ($contratData['contrat_date'] ?: date('Y-m-d'))) ?>">
+                    <input type="date" name="contrat_date" placeholder="01/01/2026" value="<?= e((string) ($contratData['contrat_date'] ?: date('Y-m-d'))) ?>">
                 </label>
                 <label class="field">
                     <span>Type contrat domiciliation</span>
@@ -1128,7 +1128,7 @@ $contratData = array_merge([
                 <h3 class="section-title">Periode</h3>
                 <label class="field">
                     <span>Date de debut</span>
-                    <input type="date" name="contrat_date_debut" data-date-debut value="<?= e((string) ($contratData['contrat_date_debut'] ?: date('Y-m-d'))) ?>">
+                    <input type="date" name="contrat_date_debut" data-date-debut placeholder="01/01/2026" value="<?= e((string) ($contratData['contrat_date_debut'] ?: date('Y-m-d'))) ?>">
                 </label>
                 <label class="field">
                     <span>Duree (mois)</span>
@@ -1136,7 +1136,7 @@ $contratData = array_merge([
                 </label>
                 <label class="field">
                     <span>Date de fin</span>
-                    <input type="date" name="contrat_date_fin" data-date-fin value="<?= e((string) $contratData['contrat_date_fin']) ?>" readonly>
+                    <input type="date" name="contrat_date_fin" data-date-fin placeholder="01/01/2026" value="<?= e((string) $contratData['contrat_date_fin']) ?>" readonly>
                 </label>
                 <label class="field">
                     <span>Statut</span>
@@ -1365,7 +1365,7 @@ $contratData = array_merge([
                             <div class="item"><span class="label">Nom complet</span><span class="value"><?= e($associe['associe_nom_complet'] ?: '-') ?></span></div>
                             <div class="item"><span class="label">CIN</span><span class="value"><?= e($associe['associe_cin'] ?: '-') ?></span></div>
                             <div class="item"><span class="label">Nationalite</span><span class="value"><?= e($associe['associe_nationalite'] ?: '-') ?></span></div>
-                            <div class="item"><span class="label">Date naissance</span><span class="value"><?= e($associe['associe_date_naissance'] ?: '-') ?></span></div>
+                            <div class="item"><span class="label">Date naissance</span><span class="value"><?= format_date($associe['associe_date_naissance'] ?? null) ?></span></div>
                             <div class="item"><span class="label">Lieu naissance</span><span class="value"><?= e($associe['associe_lieu_naissance'] ?: '-') ?></span></div>
                             <div class="item"><span class="label">Qualite</span><span class="value"><?= e($associe['associe_qualite'] ?: '-') ?></span></div>
                             <div class="item"><span class="label">Gerant</span><span class="value"><?= ((string) ($associe['associe_est_gerant'] ?? '0') === '1') ? 'Oui' : 'Non' ?></span></div>
@@ -1382,9 +1382,9 @@ $contratData = array_merge([
                         <div class="item"><span class="label">Type contrat</span><span class="value"><?= e($contratData['contrat_type'] ?: '-') ?></span></div>
                         <div class="item"><span class="label">Type domiciliation</span><span class="value"><?= e($contratData['contrat_type_domiciliation'] ?: '-') ?></span></div>
                         <div class="item"><span class="label">Statut</span><span class="value"><?= e($contratData['contrat_statut'] ?: '-') ?></span></div>
-                        <div class="item"><span class="label">Date contrat</span><span class="value"><?= e($contratData['contrat_date'] ?: '-') ?></span></div>
-                        <div class="item"><span class="label">Date debut</span><span class="value"><?= e($contratData['contrat_date_debut'] ?: '-') ?></span></div>
-                        <div class="item"><span class="label">Date fin</span><span class="value"><?= e($contratData['contrat_date_fin'] ?: '-') ?></span></div>
+                        <div class="item"><span class="label">Date contrat</span><span class="value"><?= format_date($contratData['contrat_date'] ?? null) ?></span></div>
+                        <div class="item"><span class="label">Date debut</span><span class="value"><?= format_date($contratData['contrat_date_debut'] ?? null) ?></span></div>
+                        <div class="item"><span class="label">Date fin</span><span class="value"><?= format_date($contratData['contrat_date_fin'] ?? null) ?></span></div>
                         <div class="item"><span class="label">Duree</span><span class="value"><?= e((string) ($contratData['contrat_duree_mois'] ?: '-')) ?> mois</span></div>
                         <div class="item"><span class="label">Loyer HT</span><span class="value"><?= e($contratData['contrat_loyer_ht'] ?: '-') ?> DH</span></div>
                         <div class="item"><span class="label">TVA</span><span class="value"><?= e((string) ($contratData['contrat_tva_pourcent'] ?: '-')) ?>%</span></div>

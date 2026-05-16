@@ -321,11 +321,11 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
                 </label>
                 <label class="field">
                     <span>Date de cert. negatif</span>
-                    <input type="date" name="societe_date_ice" value="<?= e((string) $societe['societe_date_ice']) ?>">
+                    <input type="date" name="societe_date_ice" placeholder="01/01/2026" value="<?= e((string) $societe['societe_date_ice']) ?>">
                 </label>
                 <label class="field">
                     <span>Date exp. cert. negatif</span>
-                    <input type="date" name="societe_date_exp_cert_neg" value="<?= e((string) $societe['societe_date_exp_cert_neg']) ?>">
+                    <input type="date" name="societe_date_exp_cert_neg" placeholder="01/01/2026" value="<?= e((string) $societe['societe_date_exp_cert_neg']) ?>">
                 </label>
                 <label class="field">
                     <span>RC</span>
@@ -480,8 +480,8 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
             <div class="info-grid">
                 <div><span>Forme juridique</span><strong><?= e($societe['societe_forme_juridique'] ?: '-') ?></strong></div>
                 <div><span>ICE</span><strong><?= e($societe['societe_ice'] ?: '-') ?></strong></div>
-                <div><span>Date cert. negatif</span><strong><?= e($societe['societe_date_ice'] ?: '-') ?></strong></div>
-                <div><span>Date exp. cert. neg.</span><strong><?= e($societe['societe_date_exp_cert_neg'] ?: '-') ?></strong></div>
+                <div><span>Date cert. negatif</span><strong><?= format_date($societe['societe_date_ice'] ?? null) ?></strong></div>
+                <div><span>Date exp. cert. neg.</span><strong><?= format_date($societe['societe_date_exp_cert_neg'] ?? null) ?></strong></div>
                 <div><span>RC</span><strong><?= e($societe['societe_rc'] ?: '-') ?></strong></div>
                 <div><span>IF</span><strong><?= e($societe['societe_if'] ?: '-') ?></strong></div>
                 <div class="full"><span>Activites (Statuts)</span><strong><?= e(!empty($societe['societe_activites_statuts']) ? (string) $societe['societe_activites_statuts'] : '-') ?></strong></div>
