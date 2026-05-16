@@ -879,7 +879,6 @@ class TemplateEditor
                 'OMPIC_PUCES' => 'Activites OMPIC en puces',
                 'NB_OMPIC' => 'Nombre d\'activites OMPIC',
             ],
-            'Dates' => [
             'Activite' => [
                 'ACTIVITY1' => 'Activite 1',
                 'ACTIVITY2' => 'Activite 2',
