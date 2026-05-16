@@ -169,8 +169,7 @@ const formatFR = (v, decimals = 2) => {
 };
 
 const testData = {
-    // societe (step 1)
-    'societe_dossier': (function () { var y = new Date().getFullYear(); return 'DOM-' + y + '-001'; })(),
+    // societe (step 1) — societe_dossier exclu car genere automatiquement par PHP
     'societe_raison_sociale': 'TEST SARL AU',
     'societe_forme_juridique': 'SARL AU',
     'societe_ice': '123456789000012',
@@ -579,7 +578,7 @@ document.addEventListener('input', (e) => {
     };
 
     const dureeMoisRenouvellement = () => {
-        const type = document.querySelector('[name="type_renouvellement"]')?.value || '';
+        const type = document.querySelector('[name="contrat_type_renouvellement"]')?.value || '';
         const map = {
             'Mensuel': 1,
             'Trimestriel': 3,
@@ -625,7 +624,7 @@ document.addEventListener('input', (e) => {
 
     document.querySelector('[data-loyer-ht-renouvellement]')?.addEventListener('input', calculerLoyerRenouvellement);
     document.querySelector('[data-tva-renouvellement-pourcent]')?.addEventListener('change', calculerLoyerRenouvellement);
-    document.querySelector('[name="type_renouvellement"]')?.addEventListener('change', calculerLoyerRenouvellement);
+    document.querySelector('[name="contrat_type_renouvellement"]')?.addEventListener('change', calculerLoyerRenouvellement);
 
     recalcAll();
 
