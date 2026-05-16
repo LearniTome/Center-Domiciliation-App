@@ -1298,16 +1298,15 @@ $contratData = array_merge([
             }
             @media print {
                 body { background: #fff !important; }
+                .sidebar, .page-header, .section-header, .step-4-controls { display: none !important; }
                 .shell { display: block !important; }
-                .sidebar { display: none !important; }
                 .main { overflow: visible !important; height: auto !important; padding: 0 !important; }
+                .stack { display: block !important; }
                 .recap-a4 { box-shadow: none !important; padding: 0 !important; max-width: none !important; background: #fff !important; }
                 .recap-a4 .recap-grid .item .value { color: #222 !important; }
                 .recap-a4 .recap-grid .item .label { color: #666 !important; }
                 .recap-a4 .recap-header { border-bottom-color: #222 !important; }
                 .recap-a4 .recap-header p { color: #666 !important; }
-                .step-4-controls { display: none !important; }
-                .page-header, .section-header:first-of-type { display: none !important; }
                 .recap-a4 .recap-section { page-break-inside: avoid; }
             }
         </style>
