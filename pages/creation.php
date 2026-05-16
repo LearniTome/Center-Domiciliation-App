@@ -7,6 +7,14 @@ if (!isset($_SESSION['creation_wizard']) || !is_array($_SESSION['creation_wizard
 
     $associeDefaults = $defaults['associe'] ?? [];
 
+    $dossierNum = 1;
+    $currentYear = date('Y');
+    if (($pdo ?? null) instanceof PDO) {
+        $maxNum = $pdo->query("SELECT COALESCE(MAX(CAST(SUBSTRING_INDEX(societe_dossier, '-', -1) AS UNSIGNED)), 0) FROM societes WHERE societe_dossier LIKE 'DOM-{$currentYear}-%'")->fetchColumn();
+        $dossierNum = (int) $maxNum + 1;
+    }
+    $defaults['societe']['societe_dossier'] = sprintf('DOM-%s-%03d', $currentYear, $dossierNum);
+
     $_SESSION['creation_wizard'] = [
         'societe' => $defaults['societe'] ?? [],
         'associes' => [[
@@ -489,7 +497,7 @@ $currentTribunalType = '';
 $societeTribunal = $societeData['societe_tribunal'] ?? '';
 if ($societeTribunal) {
     foreach ($allTribunaux as $t) {
-        if ($t['societe_tribunal'] === $societeTribunal && ($t['tribunal_type'] ?? '')) {
+        if ($t['tribunal'] === $societeTribunal && ($t['tribunal_type'] ?? '')) {
             $currentTribunalType = $t['tribunal_type'];
             break;
         }
@@ -777,7 +785,7 @@ $contratData = array_merge([
                     <select name="societe_tribunal">
                         <option value="">Selectionner</option>
                         <?php foreach ($allTribunaux as $t): ?>
-                            <option value="<?= e($t['societe_tribunal']) ?>" data-type="<?= e($t['tribunal_type'] ?? '') ?>" <?= $defaultTribunal === $t['societe_tribunal'] && $currentTribunalType === ($t['tribunal_type'] ?? '') ? 'selected' : '' ?>><?= e($t['societe_tribunal']) ?></option>
+                            <option value="<?= e($t['tribunal']) ?>" data-type="<?= e($t['tribunal_type'] ?? '') ?>" <?= $defaultTribunal === $t['tribunal'] && $currentTribunalType === ($t['tribunal_type'] ?? '') ? 'selected' : '' ?>><?= e($t['tribunal']) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </label>
