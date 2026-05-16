@@ -30,88 +30,121 @@ $dbFields = [
         'rc' => 'RC',
         'if_number' => 'IF',
         'capital' => 'Capital',
-        'ville' => 'Ville',
-        'tribunal' => 'Tribunal',
-        'adresse' => 'Adresse',
-        'ste_adress' => 'Adresse siege',
+        'part_social' => 'Nombre de parts sociales',
+        'valeur_nominale' => 'Valeur nominale',
+        'ville' => 'Ville du siege',
+        'tribunal' => 'Tribunal competent',
+        'ste_adress' => 'Adresse du siege social',
         'email' => 'Email',
         'telephone' => 'Telephone',
         'dossier_domiciliation' => 'Dossier domiciliation',
+        'type_generation' => 'Type de generation',
+        'procedure_creation' => 'Procedure de creation',
+        'mode_depot_creation' => 'Mode de depot',
+        'date_ice' => 'Date immatriculation ICE',
+        'date_exp_cert_neg' => 'Date expiration certificat negatif',
     ],
     'Associe' => [
         'nom_complet' => 'Nom complet',
+        'nom' => 'Nom de famille',
+        'prenom' => 'Prenom',
+        'civilite' => 'Civilite',
         'cin' => 'CIN',
         'date_naiss' => 'Date naissance',
         'lieu_naiss' => 'Lieu naissance',
         'nationalite' => 'Nationalite',
         'adresse' => 'Adresse',
-        'phone' => 'Telephone',
+        'telephone' => 'Telephone',
         'email' => 'Email',
         'qualite_associe' => 'Qualite',
-        'parts' => 'Parts',
+        'parts' => 'Nombre de parts',
+        'capital_detenu' => 'Capital detenu',
         'is_gerant' => 'Gerant (Oui/Non)',
     ],
     'Contrat' => [
-        'type_contrat' => 'Type contrat',
+        'type_contrat_domiciliation' => 'Type de domiciliation',
         'date_contrat' => 'Date contrat',
-        'duree_contrat_mois' => 'Duree (mois)',
         'date_debut' => 'Date debut',
         'date_fin' => 'Date fin',
+        'duree_contrat_mois' => 'Duree (mois)',
         'loyer_mensuel_ttc' => 'Loyer mensuel TTC',
+        'loyer_mensuel_ht' => 'Loyer mensuel HT',
+        'taux_tva_pourcent' => 'Taux TVA %',
+        'montant_total_ht_contrat' => 'Montant total HT',
+        'frais_intermediaire_contrat' => 'Frais intermediaire',
         'caution_montant' => 'Caution',
         'statut' => 'Statut',
+        'mode_signature' => 'Mode de signature',
+        'montant_pack_demarrage_ttc' => 'Pack demarrage montant TTC',
+        'loyer_mensuel_pack_demarrage_ttc' => 'Pack demarrage loyer TTC',
+        'type_renouvellement' => 'Type de renouvellement',
+        'taux_tva_renouvellement_pourcent' => 'TVA renouvellement %',
+        'loyer_mensuel_ht_renouvellement' => 'Loyer HT renouvellement',
+        'loyer_mensuel_renouvellement_ttc' => 'Loyer TTC renouvellement',
+        'loyer_annuel_renouvellement_ttc' => 'Loyer annuel TTC renouvellement',
     ],
 ];
 
 $variableLabels = [
-    'RAISON_SOCIALE' => ['Societe', 'raison_sociale'],
-    'DENOMINATION_SOCIALE' => ['Societe', 'raison_sociale'],
-    'FORME_JURIDIQUE' => ['Societe', 'forme_juridique'],
-    'FORME_JUR' => ['Societe', 'forme_juridique'],
-    'ICE' => ['Societe', 'ice'],
-    'NUMERO_ICE' => ['Societe', 'ice'],
-    'RC' => ['Societe', 'rc'],
-    'IF' => ['Societe', 'if_number'],
-    'CAPITAL' => ['Societe', 'capital'],
-    'CAPITAL_SOCIAL' => ['Societe', 'capital'],
-    'VILLE' => ['Societe', 'ville'],
-    'TRIBUNAL' => ['Societe', 'tribunal'],
-    'TRIBUNAL_COMPETENT' => ['Societe', 'tribunal'],
-    'ADRESSE_SIEGE_SOCIAL' => ['Societe', 'ste_adress'],
-    'STE_ADRESS' => ['Societe', 'ste_adress'],
-    'EMAIL' => ['Societe', 'email'],
-    'TELEPHONE' => ['Societe', 'telephone'],
-    'DOSSIER_DOMICILIATION' => ['Societe', 'dossier_domiciliation'],
-    'NOM_COMPLET' => ['Associe', 'nom_complet'],
-    'NOM_ASSOCIE' => ['Associe', 'nom_complet'],
-    'PRENOM_ASSOCIE' => ['Associe', 'nom_complet'],
-    'CIN' => ['Associe', 'cin'],
-    'NUMERO_CIN_ASSOCIE' => ['Associe', 'cin'],
-    'DATE_NAISSANCE' => ['Associe', 'date_naiss'],
-    'DATE_NAISSANCE_ASSOCIE' => ['Associe', 'date_naiss'],
-    'LIEU_NAISSANCE' => ['Associe', 'lieu_naiss'],
-    'LIEU_NAISSANCE_ASSOCIE' => ['Associe', 'lieu_naiss'],
-    'NATIONALITE' => ['Associe', 'nationalite'],
-    'NATIONALITE_ASSOCIE' => ['Associe', 'nationalite'],
-    'ADRESSE_ASSOCIE' => ['Associe', 'adresse'],
-    'TELEPHONE_ASSOCIE' => ['Associe', 'phone'],
-    'EMAIL_ASSOCIE' => ['Associe', 'email'],
-    'QUALITE_ASSOCIE' => ['Associe', 'qualite_associe'],
-    'NOMBRE_PARTS' => ['Associe', 'parts'],
-    'NOMBRE_PARTS_ASSOCIE' => ['Associe', 'parts'],
-    'EST_GERANT' => ['Associe', 'is_gerant'],
-    'TYPE_CONTRAT' => ['Contrat', 'type_contrat'],
-    'DUREE_CONTRAT_MOIS' => ['Contrat', 'duree_contrat_mois'],
-    'DATE_DEBUT_CONTRAT' => ['Contrat', 'date_debut'],
-    'DATE_FIN_CONTRAT' => ['Contrat', 'date_fin'],
-    'LOYER_MENSUEL_TTC' => ['Contrat', 'loyer_mensuel_ttc'],
-    'CAUTION' => ['Contrat', 'caution_montant'],
-    'STATUT' => ['Contrat', 'statut'],
+    'SOCIETE_RAISON_SOCIALE' => ['Societe', 'raison_sociale'],
+    'SOCIETE_FORME_JURIDIQUE' => ['Societe', 'forme_juridique'],
+    'SOCIETE_ICE' => ['Societe', 'ice'],
+    'SOCIETE_RC' => ['Societe', 'rc'],
+    'SOCIETE_IF' => ['Societe', 'if_number'],
+    'SOCIETE_CAPITAL' => ['Societe', 'capital'],
+    'SOCIETE_PART_SOCIAL' => ['Societe', 'part_social'],
+    'SOCIETE_VALEUR_NOMINALE' => ['Societe', 'valeur_nominale'],
+    'SOCIETE_VILLE' => ['Societe', 'ville'],
+    'SOCIETE_TRIBUNAL' => ['Societe', 'tribunal'],
+    'SOCIETE_ADRESSE_SIEGE' => ['Societe', 'ste_adress'],
+    'SOCIETE_EMAIL' => ['Societe', 'email'],
+    'SOCIETE_TELEPHONE' => ['Societe', 'telephone'],
+    'SOCIETE_DOSSIER' => ['Societe', 'dossier_domiciliation'],
+    'SOCIETE_TYPE_GENERATION' => ['Societe', 'type_generation'],
+    'SOCIETE_PROCEDURE_CREATION' => ['Societe', 'procedure_creation'],
+    'SOCIETE_MODE_DEPOT' => ['Societe', 'mode_depot_creation'],
+    'SOCIETE_DATE_ICE' => ['Societe', 'date_ice'],
+    'SOCIETE_DATE_EXP_CERT_NEG' => ['Societe', 'date_exp_cert_neg'],
+    'ASSOCIE_NOM_COMPLET' => ['Associe', 'nom_complet'],
+    'ASSOCIE_NOM' => ['Associe', 'nom'],
+    'ASSOCIE_PRENOM' => ['Associe', 'prenom'],
+    'ASSOCIE_CIVILITE' => ['Associe', 'civilite'],
+    'ASSOCIE_CIN' => ['Associe', 'cin'],
+    'ASSOCIE_DATE_NAISSANCE' => ['Associe', 'date_naiss'],
+    'ASSOCIE_LIEU_NAISSANCE' => ['Associe', 'lieu_naiss'],
+    'ASSOCIE_NATIONALITE' => ['Associe', 'nationalite'],
+    'ASSOCIE_ADRESSE' => ['Associe', 'adresse'],
+    'ASSOCIE_TELEPHONE' => ['Associe', 'telephone'],
+    'ASSOCIE_EMAIL' => ['Associe', 'email'],
+    'ASSOCIE_QUALITE' => ['Associe', 'qualite_associe'],
+    'ASSOCIE_PARTS' => ['Associe', 'parts'],
+    'ASSOCIE_CAPITAL_DETENU' => ['Associe', 'capital_detenu'],
+    'ASSOCIE_EST_GERANT' => ['Associe', 'is_gerant'],
+    'CONTRAT_TYPE' => ['Contrat', 'type_contrat_domiciliation'],
+    'CONTRAT_TYPE_DOMICILIATION' => ['Contrat', 'type_contrat_domiciliation'],
+    'CONTRAT_DATE' => ['Contrat', 'date_contrat'],
+    'CONTRAT_DATE_DEBUT' => ['Contrat', 'date_debut'],
+    'CONTRAT_DATE_FIN' => ['Contrat', 'date_fin'],
+    'CONTRAT_DUREE_MOIS' => ['Contrat', 'duree_contrat_mois'],
+    'CONTRAT_LOYER_TTC' => ['Contrat', 'loyer_mensuel_ttc'],
+    'CONTRAT_LOYER_HT' => ['Contrat', 'loyer_mensuel_ht'],
+    'CONTRAT_TVA_POURCENT' => ['Contrat', 'taux_tva_pourcent'],
+    'CONTRAT_TOTAL_HT' => ['Contrat', 'montant_total_ht_contrat'],
+    'CONTRAT_FRAIS_INTERMEDIAIRE' => ['Contrat', 'frais_intermediaire_contrat'],
+    'CONTRAT_CAUTION' => ['Contrat', 'caution_montant'],
+    'CONTRAT_STATUT' => ['Contrat', 'statut'],
+    'CONTRAT_MODE_SIGNATURE' => ['Contrat', 'mode_signature'],
+    'CONTRAT_PACK_MONTANT_TTC' => ['Contrat', 'montant_pack_demarrage_ttc'],
+    'CONTRAT_PACK_LOYER_TTC' => ['Contrat', 'loyer_mensuel_pack_demarrage_ttc'],
+    'CONTRAT_TYPE_RENOUVELLEMENT' => ['Contrat', 'type_renouvellement'],
+    'CONTRAT_RENOUV_TVA_POURCENT' => ['Contrat', 'taux_tva_renouvellement_pourcent'],
+    'CONTRAT_RENOUV_LOYER_HT' => ['Contrat', 'loyer_mensuel_ht_renouvellement'],
+    'CONTRAT_RENOUV_LOYER_TTC' => ['Contrat', 'loyer_mensuel_renouvellement_ttc'],
+    'CONTRAT_RENOUV_ANNUEL_TTC' => ['Contrat', 'loyer_annuel_renouvellement_ttc'],
 ];
 
 $docTypes = $templatesConfig['document_types'];
 $legalForms = $templatesConfig['legal_forms'];
-$aliases = $templatesConfig['variable_aliases'];
 ?>
 <section class="grid two">
     <article class="card stack">
@@ -152,7 +185,6 @@ $aliases = $templatesConfig['variable_aliases'];
                 <tr>
                     <th>Variable</th>
                     <th>Mapping</th>
-                    <th>Alias</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -160,7 +192,6 @@ $aliases = $templatesConfig['variable_aliases'];
                     <?php
                     $upperVar = strtoupper($var);
                     $mapped = $variableLabels[$upperVar] ?? null;
-                    $alias = $aliases[$upperVar] ?? ($aliases[$var] ?? null);
                     ?>
                     <tr>
                         <td><code style="color:var(--primary)">{{ <?= e($var) ?> }}</code></td>
@@ -169,16 +200,9 @@ $aliases = $templatesConfig['variable_aliases'];
                                 <span style="color:var(--text-secondary);font-size:0.8rem">
                                     <?= e($mapped[0]) ?> &rarr; <?= e($mapped[1]) ?>
                                 </span>
-                            <?php elseif ($alias): ?>
-                                <span style="color:var(--warning);font-size:0.8rem">
-                                    Alias &rarr; <?= e($alias) ?>
-                                </span>
                             <?php else: ?>
                                 <span style="color:var(--danger);font-size:0.8rem">Non mappe</span>
                             <?php endif; ?>
-                        </td>
-                        <td style="color:var(--text-secondary);font-size:0.8rem">
-                            <?= $alias ? e($alias) : '-' ?>
                         </td>
                     </tr>
                 <?php endforeach; ?>

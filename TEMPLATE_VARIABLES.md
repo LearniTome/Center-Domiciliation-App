@@ -8,25 +8,25 @@ Inserez `{{ NOM_VARIABLE }}` dans vos documents Word (.docx).
 
 | Variable | Description |
 |----------|-------------|
-| `{{ RAISON_SOCIALE }}` | Raison sociale / Denomination |
-| `{{ FORME_JURIDIQUE }}` | Forme juridique (SARL, SAS, etc.) |
-| `{{ ICE }}` | Identifiant Commercial |
-| `{{ RC }}` | Registre de Commerce |
-| `{{ IF }}` | Identifiant Fiscal |
-| `{{ CAPITAL }}` | Capital social |
-| `{{ PART_SOCIAL }}` | Nombre de parts sociales |
-| `{{ VALEUR_NOMINALE }}` | Valeur nominale d'une part |
-| `{{ VILLE }}` | Ville du siege |
-| `{{ TRIBUNAL }}` | Tribunal competent |
-| `{{ ADRESSE_SIEGE }}` | Adresse du siege social |
-| `{{ EMAIL }}` | Email de contact |
-| `{{ TELEPHONE }}` | Telephone de contact |
-| `{{ DOSSIER }}` | Numero de dossier domiciliation |
-| `{{ TYPE_GENERATION }}` | Type de generation |
-| `{{ PROCEDURE_CREATION }}` | Procedure de creation |
-| `{{ MODE_DEPOT }}` | Mode de depot |
-| `{{ DATE_ICE }}` | Date d'immatriculation ICE |
-| `{{ DATE_EXP_CERT_NEG }}` | Date expiration certificat negatif |
+| `{{ SOCIETE_RAISON_SOCIALE }}` | Raison sociale / Denomination |
+| `{{ SOCIETE_FORME_JURIDIQUE }}` | Forme juridique (SARL, SAS, etc.) |
+| `{{ SOCIETE_ICE }}` | Identifiant Commercial |
+| `{{ SOCIETE_RC }}` | Registre de Commerce |
+| `{{ SOCIETE_IF }}` | Identifiant Fiscal |
+| `{{ SOCIETE_CAPITAL }}` | Capital social |
+| `{{ SOCIETE_PART_SOCIAL }}` | Nombre de parts sociales |
+| `{{ SOCIETE_VALEUR_NOMINALE }}` | Valeur nominale d'une part |
+| `{{ SOCIETE_VILLE }}` | Ville du siege |
+| `{{ SOCIETE_TRIBUNAL }}` | Tribunal competent |
+| `{{ SOCIETE_ADRESSE_SIEGE }}` | Adresse du siege social |
+| `{{ SOCIETE_EMAIL }}` | Email de contact |
+| `{{ SOCIETE_TELEPHONE }}` | Telephone de contact |
+| `{{ SOCIETE_DOSSIER }}` | Numero de dossier domiciliation |
+| `{{ SOCIETE_TYPE_GENERATION }}` | Type de generation |
+| `{{ SOCIETE_PROCEDURE_CREATION }}` | Procedure de creation |
+| `{{ SOCIETE_MODE_DEPOT }}` | Mode de depot |
+| `{{ SOCIETE_DATE_ICE }}` | Date d'immatriculation ICE |
+| `{{ SOCIETE_DATE_EXP_CERT_NEG }}` | Date expiration certificat negatif |
 
 ---
 
@@ -36,21 +36,21 @@ Ces variables utilisent le premier associe du dossier.
 
 | Variable | Description |
 |----------|-------------|
-| `{{ NOM_COMPLET }}` | Nom complet (civilite + prenom + nom) |
-| `{{ NOM }}` | Nom de famille |
-| `{{ PRENOM }}` | Prenom |
-| `{{ CIVILITE }}` | Civilite (M. / Mme) |
-| `{{ CIN }}` | Numero CIN |
-| `{{ DATE_NAISSANCE }}` | Date de naissance |
-| `{{ LIEU_NAISSANCE }}` | Lieu de naissance |
-| `{{ NATIONALITE }}` | Nationalite |
-| `{{ ADRESSE }}` | Adresse |
-| `{{ TELEPHONE }}` | Telephone |
-| `{{ EMAIL }}` | Email |
-| `{{ QUALITE }}` | Qualite (Gerant, Associe, etc.) |
-| `{{ PARTS }}` | Nombre de parts |
-| `{{ CAPITAL_DETENU }}` | Capital detenu |
-| `{{ EST_GERANT }}` | Gerant (Oui / Non) |
+| `{{ ASSOCIE_NOM_COMPLET }}` | Nom complet (civilite + prenom + nom) |
+| `{{ ASSOCIE_NOM }}` | Nom de famille |
+| `{{ ASSOCIE_PRENOM }}` | Prenom |
+| `{{ ASSOCIE_CIVILITE }}` | Civilite (M. / Mme) |
+| `{{ ASSOCIE_CIN }}` | Numero CIN |
+| `{{ ASSOCIE_DATE_NAISSANCE }}` | Date de naissance |
+| `{{ ASSOCIE_LIEU_NAISSANCE }}` | Lieu de naissance |
+| `{{ ASSOCIE_NATIONALITE }}` | Nationalite |
+| `{{ ASSOCIE_ADRESSE }}` | Adresse |
+| `{{ ASSOCIE_TELEPHONE }}` | Telephone |
+| `{{ ASSOCIE_EMAIL }}` | Email |
+| `{{ ASSOCIE_QUALITE }}` | Qualite (Gerant, Associe, etc.) |
+| `{{ ASSOCIE_PARTS }}` | Nombre de parts |
+| `{{ ASSOCIE_CAPITAL_DETENU }}` | Capital detenu |
+| `{{ ASSOCIE_EST_GERANT }}` | Gerant (Oui / Non) |
 
 ---
 
@@ -69,17 +69,18 @@ Encadrez le bloc avec `{%p for a in associes %}` ... `{%p endfor %}`.
 | `{{ a.NOM_COMPLET }}` | Nom complet |
 | `{{ a.NOM }}` | Nom de famille |
 | `{{ a.PRENOM }}` | Prenom |
+| `{{ a.CIVILITE }}` | Civilite |
 | `{{ a.CIN }}` | CIN |
+| `{{ a.DATE_NAISSANCE }}` | Date de naissance |
+| `{{ a.LIEU_NAISSANCE }}` | Lieu de naissance |
 | `{{ a.NATIONALITE }}` | Nationalite |
+| `{{ a.ADRESSE }}` | Adresse |
+| `{{ a.TELEPHONE }}` | Telephone |
+| `{{ a.EMAIL }}` | Email |
 | `{{ a.QUALITE }}` | Qualite |
 | `{{ a.PARTS }}` | Nombre de parts |
 | `{{ a.CAPITAL_DETENU }}` | Capital detenu |
 | `{{ a.EST_GERANT }}` | Gerant (Oui/Non) |
-| `{{ a.ADRESSE }}` | Adresse |
-| `{{ a.EMAIL }}` | Email |
-| `{{ a.TELEPHONE }}` | Telephone |
-| `{{ a.DATE_NAISSANCE }}` | Date de naissance |
-| `{{ a.LIEU_NAISSANCE }}` | Lieu de naissance |
 
 ---
 
@@ -87,37 +88,37 @@ Encadrez le bloc avec `{%p for a in associes %}` ... `{%p endfor %}`.
 
 | Variable | Description |
 |----------|-------------|
-| `{{ TYPE_CONTRAT }}` | Type de contrat |
-| `{{ TYPE_DOMICILIATION }}` | Type de domiciliation |
-| `{{ DATE_CONTRAT }}` | Date du contrat |
-| `{{ DATE_DEBUT }}` | Date de debut |
-| `{{ DATE_FIN }}` | Date de fin |
-| `{{ DUREE_MOIS }}` | Duree en mois |
-| `{{ LOYER_TTC }}` | Loyer mensuel TTC |
-| `{{ LOYER_HT }}` | Loyer mensuel HT |
-| `{{ TVA_POURCENT }}` | Taux TVA % |
-| `{{ TOTAL_HT }}` | Montant total HT |
-| `{{ FRAIS_INTERMEDIAIRE }}` | Frais intermediaire |
-| `{{ CAUTION }}` | Montant de la caution |
-| `{{ STATUT }}` | Statut du contrat |
-| `{{ MODE_SIGNATURE }}` | Mode de signature gerance |
+| `{{ CONTRAT_TYPE }}` | Type de contrat |
+| `{{ CONTRAT_TYPE_DOMICILIATION }}` | Type de domiciliation |
+| `{{ CONTRAT_DATE }}` | Date du contrat |
+| `{{ CONTRAT_DATE_DEBUT }}` | Date de debut |
+| `{{ CONTRAT_DATE_FIN }}` | Date de fin |
+| `{{ CONTRAT_DUREE_MOIS }}` | Duree en mois |
+| `{{ CONTRAT_LOYER_TTC }}` | Loyer mensuel TTC |
+| `{{ CONTRAT_LOYER_HT }}` | Loyer mensuel HT |
+| `{{ CONTRAT_TVA_POURCENT }}` | Taux TVA % |
+| `{{ CONTRAT_TOTAL_HT }}` | Montant total HT |
+| `{{ CONTRAT_FRAIS_INTERMEDIAIRE }}` | Frais intermediaire |
+| `{{ CONTRAT_CAUTION }}` | Montant de la caution |
+| `{{ CONTRAT_STATUT }}` | Statut du contrat |
+| `{{ CONTRAT_MODE_SIGNATURE }}` | Mode de signature gerance |
 
 ### Pack demarrage
 
 | Variable | Description |
 |----------|-------------|
-| `{{ PACK_MONTANT_TTC }}` | Montant pack demarrage TTC |
-| `{{ PACK_LOYER_TTC }}` | Loyer mensuel pack demarrage TTC |
+| `{{ CONTRAT_PACK_MONTANT_TTC }}` | Montant pack demarrage TTC |
+| `{{ CONTRAT_PACK_LOYER_TTC }}` | Loyer mensuel pack demarrage TTC |
 
 ### Renouvellement
 
 | Variable | Description |
 |----------|-------------|
-| `{{ TYPE_RENOUVELLEMENT }}` | Type de renouvellement |
-| `{{ RENOUV_TVA_POURCENT }}` | TVA renouvellement % |
-| `{{ RENOUV_LOYER_HT }}` | Loyer mensuel HT renouvellement |
-| `{{ RENOUV_LOYER_TTC }}` | Loyer mensuel TTC renouvellement |
-| `{{ RENOUV_ANNUEL_TTC }}` | Loyer annuel TTC renouvellement |
+| `{{ CONTRAT_TYPE_RENOUVELLEMENT }}` | Type de renouvellement |
+| `{{ CONTRAT_RENOUV_TVA_POURCENT }}` | TVA renouvellement % |
+| `{{ CONTRAT_RENOUV_LOYER_HT }}` | Loyer mensuel HT renouvellement |
+| `{{ CONTRAT_RENOUV_LOYER_TTC }}` | Loyer mensuel TTC renouvellement |
+| `{{ CONTRAT_RENOUV_ANNUEL_TTC }}` | Loyer annuel TTC renouvellement |
 
 ---
 
@@ -160,66 +161,4 @@ Encadrez le bloc avec `{%p for a in associes %}` ... `{%p endfor %}`.
 ## Notes
 
 - Les noms de variables sont insensibles a la casse dans le code : `{{ capital }}`, `{{ CAPITAL }}`, `{{ Capital }}` fonctionnent tous.
-- Les accolades ouvrantes `{{` doivent TOUJOURS etre collees au contenu dans le document Word (pas d'espace apres `{{` ni avant `}}`).
-
----
-
-## Anciens noms (encore fonctionnels, deconseilles)
-
-Ces alias fonctionnent toujours mais ne sont plus documentes :
-
-| Ancien nom | Remplacer par |
-|---|---|
-| `{{ CAPITAL_SOCIAL }}` | `{{ CAPITAL }}` |
-| `{{ NUMERO_ICE }}` | `{{ ICE }}` |
-| `{{ DENOMINATION_SOCIALE }}` / `{{ DEN_STE }}` / `{{ name }}` | `{{ RAISON_SOCIALE }}` |
-| `{{ FORME_JUR }}` | `{{ FORME_JURIDIQUE }}` |
-| `{{ ADRESSE_SIEGE_SOCIAL }}` / `{{ STE_ADRESS }}` / `{{ adresse }}` | `{{ ADRESSE_SIEGE }}` |
-| `{{ NUMERO_CIN_ASSOCIE }}` / `{{ CIN_NUM }}` | `{{ CIN }}` |
-| `{{ DATE_VALIDITE_CIN_ASSOCIE }}` | `{{ CIN_VALIDITE }}` |
-| `{{ DATE_NAISSANCE_ASSOCIE }}` / `{{ DATE_NAISS }}` | `{{ DATE_NAISSANCE }}` |
-| `{{ LIEU_NAISSANCE_ASSOCIE }}` / `{{ LIEU_NAISS }}` | `{{ LIEU_NAISSANCE }}` |
-| `{{ NATIONALITE_ASSOCIE }}` / `{{ NATIONALITY }}` | `{{ NATIONALITE }}` |
-| `{{ NOMBRE_PARTS }}` / `{{ NOMBRE_PARTS_ASSOCIE }}` | `{{ PARTS }}` |
-| `{{ NOMBRE_PARTS_SOCIALES }}` | `{{ PART_SOCIAL }}` |
-| `{{ CAPITAL_DETENU_ASSOCIE }}` | `{{ CAPITAL_DETENU }}` |
-| `{{ EST_GERANT }}` / `{{ IS_GERANT }}` | `{{ EST_GERANT }}` |
-| `{{ QUALITE_ASSOCIE }}` / `{{ QUALITY }}` | `{{ QUALITE }}` |
-| `{{ ADRESSE_ASSOCIE }}` | `{{ ADRESSE }}` |
-| `{{ TELEPHONE_ASSOCIE }}` / `{{ PHONE }}` | `{{ TELEPHONE }}` |
-| `{{ EMAIL_ASSOCIE }}` | `{{ EMAIL }}` |
-| `{{ TRIBUNAL_COMPETENT }}` | `{{ TRIBUNAL }}` |
-| `{{ DOSSIER_DOMICILIATION }}` | `{{ DOSSIER }}` |
-| `{{ TYPE_CONTRAT_DOMICILIATION }}` | `{{ TYPE_DOMICILIATION }}` |
-| `{{ DATE_DEBUT_CONTRAT }}` / `{{ DOM_DATEDEB }}` | `{{ DATE_DEBUT }}` |
-| `{{ DATE_FIN_CONTRAT }}` / `{{ DOM_DATEFIN }}` | `{{ DATE_FIN }}` |
-| `{{ DUREE_CONTRAT_MOIS }}` / `{{ PERIOD_DOMCIL }}` | `{{ DUREE_MOIS }}` |
-| `{{ LOYER_MENSUEL_TTC }}` / `{{ PRIX_CONTRAT }}` | `{{ LOYER_TTC }}` |
-| `{{ LOYER_MENSUEL_HT }}` / `{{ DH_HT }}` | `{{ LOYER_HT }}` |
-| `{{ TAUX_TVA_POURCENT }}` / `{{ TVA }}` | `{{ TVA_POURCENT }}` |
-| `{{ MONTANT_TOTAL_HT_CONTRAT }}` / `{{ MONTANT_HT }}` | `{{ TOTAL_HT }}` |
-| `{{ FRAIS_INTERMEDIAIRE_CONTRAT }}` / `{{ PRIX_INTERMEDIARE_CONTRAT }}` | `{{ FRAIS_INTERMEDIAIRE }}` |
-| `{{ MONTANT_PACK_DEMARRAGE_TTC }}` / `{{ PACK_DEMARRAGE_MONTANT_TTC }}` | `{{ PACK_MONTANT_TTC }}` |
-| `{{ LOYER_MENSUEL_PACK_DEMARRAGE_TTC }}` / `{{ PACK_DEMARRAGE_LOYER_MENSUEL_TTC }}` | `{{ PACK_LOYER_TTC }}` |
-| `{{ TAUX_TVA_RENOUVELLEMENT_POURCENT }}` | `{{ RENOUV_TVA_POURCENT }}` |
-| `{{ LOYER_MENSUEL_HT_RENOUVELLEMENT }}` | `{{ RENOUV_LOYER_HT }}` |
-| `{{ LOYER_MENSUEL_RENOUVELLEMENT_TTC }}` | `{{ RENOUV_LOYER_TTC }}` |
-| `{{ LOYER_ANNUEL_RENOUVELLEMENT_TTC }}` | `{{ RENOUV_ANNUEL_TTC }}` |
-| `{{ MODE_SIGNATURE_GERANCE }}` | `{{ MODE_SIGNATURE }}` |
-| `{{ PROCEDURE_CREATION }}` | `{{ PROCEDURE_CREATION }}` |
-| `{{ MODE_DEPOT_CREATION }}` | `{{ MODE_DEPOT }}` |
-| `{{ DATE_IMMATRICULATION_ICE }}` | `{{ DATE_ICE }}` |
-| `{{ date_expiration_certificat_negatif }}` | `{{ DATE_EXP_CERT_NEG }}` |
-| `{{ ACTIVITIES }}` / `{{ ACTIVITIES_LIST }}` / `{{ LISTE_ACTIVITES }}` | `{{ ACTIVITES }}` |
-| `{{ ACTIVITIES_INLINE }}` | `{{ ACTIVITES_INLINE }}` |
-| `{{ ACTIVITIES_PLAIN }}` | `{{ ACTIVITES_PLAIN }}` |
-| `{{ ACTIVITIES_BULLETS }}` / `{{ ACTIVITES_PUCES }}` | `{{ ACTIVITES_PUCES }}` |
-| `{{ ACTIVITIES_CONTINUATION_BULLETS }}` | `{{ ACTIVITES_SUITE_PUCES }}` |
-| `{{ ACTIVITY_COUNT }}` | `{{ NB_ACTIVITES }}` |
-| `{{ activites_ompic }}` / `{{ ACTIVITES_CERT_NEG }}` / `{{ ACTIVITES_CERTIFICAT_NEGATIF }}` | `{{ ACTIVITES_OMPIC }}` |
-| `{{ ACTIVITES_CERT_NEG_INLINE }}` | `{{ OMPIC_INLINE }}` |
-| `{{ ACTIVITES_CERT_NEG_BULLETS }}` | `{{ OMPIC_PUCES }}` |
-| `{{ CERT_NEG_COUNT }}` | `{{ NB_OMPIC }}` |
-| `{{ QUALITE_GERANT }}` | `{{ QUALITE }}` |
-| `{{ CIN_VALIDATY }}` / `{{ DATE_VALIDITE_CIN_ASSOCIE }}` | `{{ CIN_VALIDITE }}` |
-| `{{ DTAE_CONTRAT }}` | `{{ DATE_CONTRAT }}` |
+- Les variables en boucle (`a.*`) restent sans prefixe et ne sont pas impactees par le renommage.
