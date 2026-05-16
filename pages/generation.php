@@ -79,7 +79,7 @@ if (is_post() && !isset($_POST['delete_submit']) && !isset($_POST['validate_subm
     $selectedPaths = $_POST['templates'] ?? [];
     $generatePdf = isset($_POST['pdf']);
 
-    $context = DocumentRenderer::addLegacyAliases(DocumentRenderer::buildContextFromDb($pdo, $societeId));
+    $context = DocumentRenderer::buildContextFromDb($pdo, $societeId);
     $forme = $selectedSociete['societe_forme_juridique'] ?? 'PP';
     $today = date('Y-m-d');
     $clientName = trim(preg_replace('/[^a-zA-Z0-9-]/', '-', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $selectedSociete['societe_raison_sociale'] ?? 'Client')));

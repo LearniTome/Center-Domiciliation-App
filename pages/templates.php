@@ -6,7 +6,6 @@ require_once __DIR__ . '/../src/TemplateAnalyzer.php';
 
 $templatesConfig = require __DIR__ . '/../config/templates.php';
 $templatesDir = __DIR__ . '/../templates';
-$outputDir = __DIR__ . '/../output';
 
 if (is_post() && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
@@ -59,19 +58,7 @@ $grouped = TemplateAnalyzer::groupByFolder($templates);
 $legalForms = $templatesConfig['legal_forms'];
 $docTypes = $templatesConfig['document_types'];
 
-$showAnalysis = isset($_GET['analysis']);
-$analysis = null;
-if ($showAnalysis && $templates) {
-    $analysis = TemplateAnalyzer::analyzeCoverage($templates);
 
-    if (is_post() && isset($_POST['export_csv'])) {
-        verify_csrf();
-        $csvPath = $outputDir . DIRECTORY_SEPARATOR . 'analyse_templates_' . date('Y-m-d_His') . '.csv';
-        TemplateAnalyzer::exportAnalysisCsv($analysis['variables'], $csvPath);
-        set_flash('success', 'Analyse exportee dans output/');
-        redirect_to('templates', ['analysis' => '1']);
-    }
-}
 ?>
 <section>
     <article class="card stack">
@@ -156,77 +143,7 @@ if ($showAnalysis && $templates) {
     </article>
 </section>
 
-<?php if ($showAnalysis && $analysis): ?>
-<section class="card stack" style="margin-top:1rem">
-    <div class="section-header">
-        <div>
-            <h2>Analyse de couverture des variables</h2>
-            <p class="help-text">Variables trouvees dans les templates vs. variables disponibles dans le contexte de rendu.</p>
-        </div>
-        <div class="table-actions">
-            <form method="post" style="display:inline">
-                <?= csrf_input() ?>
-                <button type="submit" name="export_csv" value="1" class="btn btn-info"><span class="mdi mdi-download"></span> Export CSV</button>
-            </form>
-            <a class="btn btn-back" href="<?= e(app_url('templates')) ?>"><span class="mdi mdi-close"></span> Fermer</a>
-        </div>
-    </div>
 
-    <div class="stats compact">
-        <article class="stat">
-            <span>Templates</span>
-            <strong><?= $analysis['summary']['total_templates'] ?></strong>
-        </article>
-        <article class="stat">
-            <span>Variables distinctes</span>
-            <strong><?= $analysis['summary']['total_variables'] ?></strong>
-        </article>
-        <article class="stat">
-            <span>Couvertes</span>
-            <strong style="color:var(--success)"><?= $analysis['summary']['covered_variables'] ?></strong>
-        </article>
-        <article class="stat">
-            <span>Non couvertes</span>
-            <strong style="color:var(--danger)"><?= $analysis['summary']['uncovered_variables'] ?></strong>
-        </article>
-    </div>
-
-    <div class="table-scroll">
-    <table>
-        <thead>
-            <tr>
-                <th>Variable</th>
-                <th>Occurrences</th>
-                <th>Templates</th>
-                <th>Section</th>
-                <th>Couverture</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($analysis['variables'] as $v): ?>
-                <tr>
-                    <td><code><?= e($v['variable']) ?></code></td>
-                    <td><?= e((string) $v['occurrences']) ?></td>
-                    <td><?= e((string) $v['templates_count']) ?> template(s)</td>
-                    <td><span class="pill"><?= e($v['section']) ?></span></td>
-                    <td>
-                        <span class="statut-badge <?= $v['coverage'] === 'couvert' ? 'actif' : 'resilie' ?>">
-                            <?= e($v['coverage']) ?>
-                        </span>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
-    </div>
-</section>
-<?php elseif ($templates): ?>
-<section style="margin-top:0.5rem">
-    <a class="btn btn-info" href="<?= e(app_url('templates', ['analysis' => '1'])) ?>">
-        <span class="mdi mdi-chart-box-outline"></span> Analyser la couverture
-    </a>
-</section>
-<?php endif; ?>
 
 <style>
 .hidden { display: none !important; }

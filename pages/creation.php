@@ -259,7 +259,7 @@ if (is_post()) {
             $generatePdf = isset($_POST['pdf']);
             $forme = $wizard['societe']['societe_forme_juridique'] ?? 'PP';
 
-            $context = DocumentRenderer::addLegacyAliases(DocumentRenderer::buildContextFromSession($wizard, $pdo ?? null));
+            $context = DocumentRenderer::buildContextFromSession($wizard, $pdo ?? null);
             $today = date('Y-m-d');
             $clientName = trim(preg_replace('/[^a-zA-Z0-9-]/', '-', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $wizard['societe']['societe_raison_sociale'] ?? 'Client')));
             $clientName = preg_replace('/-+/', '-', $clientName);
