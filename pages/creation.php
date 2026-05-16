@@ -1220,15 +1220,15 @@ $contratData = array_merge([
     <?php elseif ($step === 4): ?>
         <style>
             .recap-a4 {
-                background: #fff;
-                box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+                background: var(--surface);
+                box-shadow: 0 2px 12px rgba(0,0,0,0.3);
                 padding: 2rem 2.5rem;
                 margin-bottom: 1.5rem;
                 max-width: 210mm;
             }
             .recap-a4 .recap-header {
-                text-align: center;
-                border-bottom: 2px solid #222;
+                text-align: left;
+                border-bottom: 2px solid var(--text);
                 padding-bottom: 1rem;
                 margin-bottom: 1.5rem;
             }
@@ -1240,7 +1240,7 @@ $contratData = array_merge([
             }
             .recap-a4 .recap-header p {
                 margin: 0.3rem 0 0;
-                color: #666;
+                color: var(--text-secondary);
                 font-size: 0.8rem;
             }
             .recap-a4 .recap-section {
@@ -1263,20 +1263,19 @@ $contratData = array_merge([
                 grid-column: 1 / -1;
             }
             .recap-a4 .recap-grid .item {
-                display: flex;
-                justify-content: space-between;
                 padding: 0.2rem 0;
-                border-bottom: 1px dotted #eee;
+                border-bottom: 1px dotted var(--border);
                 font-size: 0.8rem;
             }
             .recap-a4 .recap-grid .item .label {
-                color: #666;
-                font-weight: 500;
+                color: var(--text-secondary);
+            }
+            .recap-a4 .recap-grid .item .label::after {
+                content: " :\00a0";
             }
             .recap-a4 .recap-grid .item .value {
                 font-weight: 600;
-                color: #222;
-                text-align: right;
+                color: var(--text);
             }
             .recap-a4 .recap-associe {
                 border: 1px solid var(--border);
@@ -1302,7 +1301,11 @@ $contratData = array_merge([
                 .shell { display: block !important; }
                 .sidebar { display: none !important; }
                 .main { overflow: visible !important; height: auto !important; padding: 0 !important; }
-                .recap-a4 { box-shadow: none !important; padding: 0 !important; max-width: none !important; }
+                .recap-a4 { box-shadow: none !important; padding: 0 !important; max-width: none !important; background: #fff !important; }
+                .recap-a4 .recap-grid .item .value { color: #222 !important; }
+                .recap-a4 .recap-grid .item .label { color: #666 !important; }
+                .recap-a4 .recap-header { border-bottom-color: #222 !important; }
+                .recap-a4 .recap-header p { color: #666 !important; }
                 .step-4-controls { display: none !important; }
                 .page-header, .section-header:first-of-type { display: none !important; }
                 .recap-a4 .recap-section { page-break-inside: avoid; }
