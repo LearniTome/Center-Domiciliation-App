@@ -19,32 +19,32 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
     if ($action === 'update' && $editRecord) {
         $stmt = $pdo->prepare('
             UPDATE associes SET
-                civilite = :civilite, nom = :nom, prenom = :prenom, nom_complet = :nom_complet,
-                cin = :cin, date_validite_cin = :date_validite_cin,
-                date_naiss = :date_naiss, lieu_naiss = :lieu_naiss, nationalite = :nationalite,
-                adresse = :adresse, phone = :phone, email = :email,
-                qualite_associe = :qualite_associe, parts = :parts,
-                capital_detenu = :capital_detenu, part_percent = :part_percent, is_gerant = :is_gerant
+                associe_civilite = :associe_civilite, associe_nom = :associe_nom, associe_prenom = :associe_prenom, associe_nom_complet = :associe_nom_complet,
+                associe_cin = :associe_cin, associe_date_validite_cin = :associe_date_validite_cin,
+                associe_date_naissance = :associe_date_naissance, associe_lieu_naissance = :associe_lieu_naissance, associe_nationalite = :associe_nationalite,
+                associe_adresse = :associe_adresse, associe_telephone = :associe_telephone, associe_email = :associe_email,
+                associe_qualite = :associe_qualite, associe_parts = :associe_parts,
+                associe_capital_detenu = :associe_capital_detenu, associe_part_percent = :associe_part_percent, associe_est_gerant = :associe_est_gerant
             WHERE id = :id
         ');
         $stmt->execute([
-            'civilite' => field_value($_POST, 'civilite'),
-            'nom' => field_value($_POST, 'nom'),
-            'prenom' => field_value($_POST, 'prenom'),
-            'nom_complet' => field_value($_POST, 'nom_complet'),
-            'cin' => field_value($_POST, 'cin'),
-            'date_validite_cin' => field_value($_POST, 'date_validite_cin'),
-            'date_naiss' => field_value($_POST, 'date_naiss'),
-            'lieu_naiss' => field_value($_POST, 'lieu_naiss'),
-            'nationalite' => field_value($_POST, 'nationalite'),
-            'adresse' => field_value($_POST, 'adresse'),
-            'phone' => field_value($_POST, 'phone'),
-            'email' => field_value($_POST, 'email'),
-            'qualite_associe' => field_value($_POST, 'qualite_associe'),
-            'parts' => int_value($_POST, 'parts'),
-            'capital_detenu' => money_value($_POST, 'capital_detenu'),
-            'part_percent' => money_value($_POST, 'part_percent'),
-            'is_gerant' => (field_value($_POST, 'is_gerant') === '1') ? 1 : 0,
+            'associe_civilite' => field_value($_POST, 'associe_civilite'),
+            'associe_nom' => field_value($_POST, 'associe_nom'),
+            'associe_prenom' => field_value($_POST, 'associe_prenom'),
+            'associe_nom_complet' => field_value($_POST, 'associe_nom_complet'),
+            'associe_cin' => field_value($_POST, 'associe_cin'),
+            'associe_date_validite_cin' => field_value($_POST, 'associe_date_validite_cin'),
+            'associe_date_naissance' => field_value($_POST, 'associe_date_naissance'),
+            'associe_lieu_naissance' => field_value($_POST, 'associe_lieu_naissance'),
+            'associe_nationalite' => field_value($_POST, 'associe_nationalite'),
+            'associe_adresse' => field_value($_POST, 'associe_adresse'),
+            'associe_telephone' => field_value($_POST, 'associe_telephone'),
+            'associe_email' => field_value($_POST, 'associe_email'),
+            'associe_qualite' => field_value($_POST, 'associe_qualite'),
+            'associe_parts' => int_value($_POST, 'associe_parts'),
+            'associe_capital_detenu' => money_value($_POST, 'associe_capital_detenu'),
+            'associe_part_percent' => money_value($_POST, 'associe_part_percent'),
+            'associe_est_gerant' => (field_value($_POST, 'associe_est_gerant') === '1') ? 1 : 0,
             'id' => $editId,
         ]);
         set_flash('success', 'Associe mis a jour.');
@@ -57,19 +57,19 @@ $query = search_term();
 if (($pdo ?? null) instanceof PDO) {
     if ($query !== '') {
         $stmt = $pdo->prepare('
-            SELECT associes.*, societes.raison_sociale
+            SELECT associes.*, societes.societe_raison_sociale
             FROM associes
             INNER JOIN societes ON societes.id = associes.societe_id
-            WHERE associes.nom_complet LIKE :term
-               OR societes.raison_sociale LIKE :term
-               OR associes.cin LIKE :term
+            WHERE associes.associe_nom_complet LIKE :term
+               OR societes.societe_raison_sociale LIKE :term
+               OR associes.associe_cin LIKE :term
             ORDER BY associes.id DESC
         ');
         $stmt->execute(['term' => like_term($query)]);
         $associes = $stmt->fetchAll();
     } else {
         $associes = $pdo->query('
-            SELECT associes.*, societes.raison_sociale
+            SELECT associes.*, societes.societe_raison_sociale
             FROM associes
             INNER JOIN societes ON societes.id = associes.societe_id
             ORDER BY associes.id DESC
@@ -80,17 +80,17 @@ if (($pdo ?? null) instanceof PDO) {
         $rows = array_map(static function (array $a): array {
             return [
                 $a['id'],
-                $a['nom_complet'],
-                $a['raison_sociale'],
-                $a['cin'],
-                $a['date_naiss'],
-                $a['lieu_naiss'],
-                $a['nationalite'],
-                $a['phone'],
-                $a['email'],
-                $a['qualite_associe'],
-                $a['parts'],
-                (int) $a['is_gerant'] === 1 ? 'Oui' : 'Non',
+                $a['associe_nom_complet'],
+                $a['societe_raison_sociale'],
+                $a['associe_cin'],
+                $a['associe_date_naissance'],
+                $a['associe_lieu_naissance'],
+                $a['associe_nationalite'],
+                $a['associe_telephone'],
+                $a['associe_email'],
+                $a['associe_qualite'],
+                $a['associe_parts'],
+                (int) $a['associe_est_gerant'] === 1 ? 'Oui' : 'Non',
             ];
         }, $associes);
 
@@ -136,78 +136,78 @@ if (($pdo ?? null) instanceof PDO) {
                 <div class="form-grid">
                     <label class="field">
                         <span>Civilite</span>
-                        <select name="civilite">
+                        <select name="associe_civilite">
                             <option value="">Selectionner</option>
-                            <option value="Mr" <?= (string) $editRecord['civilite'] === 'Mr' ? 'selected' : '' ?>>Mr</option>
-                            <option value="Mme" <?= (string) $editRecord['civilite'] === 'Mme' ? 'selected' : '' ?>>Mme</option>
-                            <option value="Mlle" <?= (string) $editRecord['civilite'] === 'Mlle' ? 'selected' : '' ?>>Mlle</option>
+                            <option value="Mr" <?= (string) $editRecord['associe_civilite'] === 'Mr' ? 'selected' : '' ?>>Mr</option>
+                            <option value="Mme" <?= (string) $editRecord['associe_civilite'] === 'Mme' ? 'selected' : '' ?>>Mme</option>
+                            <option value="Mlle" <?= (string) $editRecord['associe_civilite'] === 'Mlle' ? 'selected' : '' ?>>Mlle</option>
                         </select>
                     </label>
                     <label class="field">
                         <span>Nom</span>
-                        <input name="nom" value="<?= e((string) $editRecord['nom']) ?>">
+                        <input name="associe_nom" value="<?= e((string) $editRecord['associe_nom']) ?>">
                     </label>
                     <label class="field">
                         <span>Prenom</span>
-                        <input name="prenom" value="<?= e((string) $editRecord['prenom']) ?>">
+                        <input name="associe_prenom" value="<?= e((string) $editRecord['associe_prenom']) ?>">
                     </label>
                     <label class="field">
                         <span>Nom complet</span>
-                        <input name="nom_complet" value="<?= e((string) $editRecord['nom_complet']) ?>">
+                        <input name="associe_nom_complet" value="<?= e((string) $editRecord['associe_nom_complet']) ?>">
                     </label>
                     <label class="field">
                         <span>CIN</span>
-                        <input name="cin" value="<?= e((string) $editRecord['cin']) ?>">
+                        <input name="associe_cin" value="<?= e((string) $editRecord['associe_cin']) ?>">
                     </label>
                     <label class="field">
                         <span>Date validite CIN</span>
-                        <input type="date" name="date_validite_cin" value="<?= e((string) $editRecord['date_validite_cin']) ?>">
+                        <input type="date" name="associe_date_validite_cin" value="<?= e((string) $editRecord['associe_date_validite_cin']) ?>">
                     </label>
                     <label class="field">
                         <span>Date naissance</span>
-                        <input type="date" name="date_naiss" value="<?= e((string) $editRecord['date_naiss']) ?>">
+                        <input type="date" name="associe_date_naissance" value="<?= e((string) $editRecord['associe_date_naissance']) ?>">
                     </label>
                     <label class="field">
                         <span>Lieu naissance</span>
-                        <input name="lieu_naiss" value="<?= e((string) $editRecord['lieu_naiss']) ?>">
+                        <input name="associe_lieu_naissance" value="<?= e((string) $editRecord['associe_lieu_naissance']) ?>">
                     </label>
                     <label class="field">
                         <span>Nationalite</span>
-                        <input name="nationalite" value="<?= e((string) $editRecord['nationalite']) ?>">
+                        <input name="associe_nationalite" value="<?= e((string) $editRecord['associe_nationalite']) ?>">
                     </label>
                     <label class="field">
                         <span>Telephone</span>
-                        <input name="phone" value="<?= e((string) $editRecord['phone']) ?>">
+                        <input name="associe_telephone" value="<?= e((string) $editRecord['associe_telephone']) ?>">
                     </label>
                     <label class="field">
                         <span>Email</span>
-                        <input type="email" name="email" value="<?= e((string) $editRecord['email']) ?>">
+                        <input type="email" name="associe_email" value="<?= e((string) $editRecord['associe_email']) ?>">
                     </label>
                     <label class="field full">
                         <span>Adresse</span>
-                        <textarea name="adresse"><?= e((string) $editRecord['adresse']) ?></textarea>
+                        <textarea name="associe_adresse"><?= e((string) $editRecord['associe_adresse']) ?></textarea>
                     </label>
                     <label class="field">
                         <span>Qualite associe</span>
-                        <input name="qualite_associe" value="<?= e((string) $editRecord['qualite_associe']) ?>">
+                        <input name="associe_qualite" value="<?= e((string) $editRecord['associe_qualite']) ?>">
                     </label>
                     <label class="field">
                         <span>Parts</span>
-                        <input type="number" name="parts" value="<?= e((string) $editRecord['parts']) ?>">
+                        <input type="number" name="associe_parts" value="<?= e((string) $editRecord['associe_parts']) ?>">
                     </label>
                     <label class="field">
                         <span>Capital detenu (DH)</span>
-                        <input type="number" step="0.01" name="capital_detenu" value="<?= e((string) $editRecord['capital_detenu']) ?>">
+                        <input type="number" step="0.01" name="associe_capital_detenu" value="<?= e((string) $editRecord['associe_capital_detenu']) ?>">
                     </label>
                     <label class="field">
                         <span>% Capital social</span>
-                        <input type="number" step="0.01" name="part_percent" value="<?= e((string) $editRecord['part_percent']) ?>">
+                        <input type="number" step="0.01" name="associe_part_percent" value="<?= e((string) $editRecord['associe_part_percent']) ?>">
                     </label>
                     <label class="field">
                         <span>Gerant</span>
-                        <select name="is_gerant">
-                            <option value="0" <?= (string) $editRecord['is_gerant'] === '0' ? 'selected' : '' ?>>Non</option>
-                            <option value="1" <?= (string) $editRecord['is_gerant'] === '1' ? 'selected' : '' ?>>Oui</option>
+                        <select name="associe_est_gerant">
+                            <option value="0" <?= (string) $editRecord['associe_est_gerant'] === '0' ? 'selected' : '' ?>>Non</option>
+                            <option value="1" <?= (string) $editRecord['associe_est_gerant'] === '1' ? 'selected' : '' ?>>Oui</option>
                         </select>
                     </label>
                 </div>
@@ -244,17 +244,17 @@ if (($pdo ?? null) instanceof PDO) {
                 <tbody>
                 <?php foreach ($associes as $associe): ?>
                     <tr>
-                        <td><?= e($associe['nom_complet']) ?></td>
-                        <td><?= e($associe['raison_sociale']) ?></td>
-                        <td><?= e($associe['cin'] ?? '-') ?></td>
-                        <td><?= e($associe['date_naiss'] ?? '-') ?></td>
-                        <td><?= e($associe['lieu_naiss'] ?? '-') ?></td>
-                        <td><?= e($associe['nationalite'] ?? '-') ?></td>
-                        <td><?= e($associe['phone'] ?? '-') ?></td>
-                        <td><?= e($associe['email'] ?? '-') ?></td>
-                        <td><?= e($associe['qualite_associe'] ?? '-') ?></td>
-                        <td><?= $associe['parts'] !== null ? e((string) $associe['parts']) : '-' ?></td>
-                        <td><?= (int) $associe['is_gerant'] === 1 ? 'Oui' : 'Non' ?></td>
+                        <td><?= e($associe['associe_nom_complet']) ?></td>
+                        <td><?= e($associe['societe_raison_sociale']) ?></td>
+                        <td><?= e($associe['associe_cin'] ?? '-') ?></td>
+                        <td><?= e($associe['associe_date_naissance'] ?? '-') ?></td>
+                        <td><?= e($associe['associe_lieu_naissance'] ?? '-') ?></td>
+                        <td><?= e($associe['associe_nationalite'] ?? '-') ?></td>
+                        <td><?= e($associe['associe_telephone'] ?? '-') ?></td>
+                        <td><?= e($associe['associe_email'] ?? '-') ?></td>
+                        <td><?= e($associe['associe_qualite'] ?? '-') ?></td>
+                        <td><?= $associe['associe_parts'] !== null ? e((string) $associe['associe_parts']) : '-' ?></td>
+                        <td><?= (int) $associe['associe_est_gerant'] === 1 ? 'Oui' : 'Non' ?></td>
                         <td><?= e(substr($associe['created_at'], 0, 10)) ?></td>
                         <td><?= e(substr($associe['updated_at'], 0, 10)) ?></td>
                         <td class="table-actions">

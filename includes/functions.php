@@ -171,7 +171,7 @@ function fetch_societes_options(?PDO $pdo): array
         return [];
     }
 
-    $stmt = $pdo->query('SELECT id, raison_sociale FROM societes ORDER BY raison_sociale ASC');
+    $stmt = $pdo->query('SELECT id, societe_raison_sociale FROM societes ORDER BY societe_raison_sociale ASC');
     return $stmt->fetchAll();
 }
 
@@ -258,7 +258,7 @@ function fetch_all_documents(?PDO $pdo, ?int $societe_id = null, ?string $q = nu
         return [];
     }
 
-    $sql = 'SELECT d.*, s.raison_sociale
+    $sql = 'SELECT d.*, s.societe_raison_sociale
             FROM documents_generes d
             JOIN societes s ON s.id = d.societe_id
             WHERE 1=1';
@@ -270,7 +270,7 @@ function fetch_all_documents(?PDO $pdo, ?int $societe_id = null, ?string $q = nu
     }
 
     if ($q !== null && $q !== '') {
-        $sql .= ' AND (s.raison_sociale LIKE :q OR d.doc_type LIKE :q2)';
+        $sql .= ' AND (s.societe_raison_sociale LIKE :q OR d.doc_type LIKE :q2)';
         $params['q'] = like_term($q);
         $params['q2'] = like_term($q);
     }
@@ -288,7 +288,7 @@ function fetch_document(?PDO $pdo, int $id): ?array
         return null;
     }
 
-    $sql = 'SELECT d.*, s.raison_sociale
+    $sql = 'SELECT d.*, s.societe_raison_sociale
             FROM documents_generes d
             JOIN societes s ON s.id = d.societe_id
             WHERE d.id = :id LIMIT 1';

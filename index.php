@@ -31,6 +31,7 @@ $allowedPages = [
     'templates',
     'documents',
     'defaults',
+    'analyse-couverture',
     'convert-word-pdf',
     'setup',
 ];
@@ -64,6 +65,7 @@ $pageTitleMap = [
     'template' => 'Template',
     'template_edit' => 'Editeur de template',
     'templates' => 'Templates',
+    'analyse-couverture' => 'Analyse de couverture',
     'documents' => 'Documents',
     'defaults' => 'Valeurs par defaut',
     'convert-word-pdf' => 'Word to PDF',

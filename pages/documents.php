@@ -92,7 +92,7 @@ if ($exportCsv && count($documents) > 0) {
     foreach ($documents as $d) {
         $rows[] = [
             $d['id'],
-            $d['raison_sociale'],
+            $d['societe_raison_sociale'],
             $d['doc_type'] ?? '-',
             basename($d['fichier_docx']),
             $d['fichier_pdf'] ? basename($d['fichier_pdf']) : '',
@@ -128,7 +128,7 @@ if ($exportCsv && count($documents) > 0) {
             <option value="">Toutes les societes</option>
             <?php foreach ($societesOptions as $s): ?>
                 <option value="<?= e((string) $s['id']) ?>" <?= $filterSociete === (int) $s['id'] ? 'selected' : '' ?>>
-                    <?= e($s['raison_sociale']) ?>
+                    <?= e($s['societe_raison_sociale']) ?>
                 </option>
             <?php endforeach; ?>
         </select>
@@ -163,7 +163,7 @@ if ($exportCsv && count($documents) > 0) {
                                 <td><input type="checkbox" name="selected_files[]" value="<?= e((string) $doc['id']) ?>"></td>
                                 <td>
                                     <a href="<?= e(app_url('societe', ['id' => (int) $doc['societe_id']])) ?>">
-                                        <?= e($doc['raison_sociale']) ?>
+                                        <?= e($doc['societe_raison_sociale']) ?>
                                     </a>
                                 </td>
                                 <td><?= e($doc['doc_type'] ?? '-') ?></td>

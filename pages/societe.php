@@ -7,9 +7,9 @@ $societe = $societeId > 0 ? fetch_record($pdo ?? null, 'societes', $societeId) :
 $allTribunaux = fetch_tribunaux_all($pdo ?? null);
 $tribunalTypes = fetch_tribunaux_types($pdo ?? null);
 $currentTribunalType = '';
-if ($societe && $societe['tribunal']) {
+if ($societe && $societe['societe_tribunal']) {
     foreach ($allTribunaux as $t) {
-        if ($t['tribunal'] === $societe['tribunal'] && ($t['tribunal_type'] ?? '')) {
+        if ($t['tribunal'] === $societe['societe_tribunal'] && ($t['tribunal_type'] ?? '')) {
             $currentTribunalType = $t['tribunal_type'];
             break;
         }
@@ -18,8 +18,8 @@ if ($societe && $societe['tribunal']) {
 if (!$currentTribunalType) {
     $currentTribunalType = 'Tribunal de commerce';
 }
-$defaultTribunal = ($societe && $societe['tribunal']) ? $societe['tribunal'] : 'Casablanca';
-$defaultVille = ($societe && $societe['ville']) ? $societe['ville'] : 'Casablanca';
+$defaultTribunal = ($societe && $societe['societe_tribunal']) ? $societe['societe_tribunal'] : 'Casablanca';
+$defaultVille = ($societe && $societe['societe_ville']) ? $societe['societe_ville'] : 'Casablanca';
 
 if (is_post() && isset($_POST['add_activite_ref']) && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
@@ -132,59 +132,59 @@ if (is_post() && isset($_POST['delete_submit']) && ($pdo ?? null) instanceof PDO
 
 if (is_post() && !isset($_POST['validate_submit']) && !isset($_POST['delete_submit']) && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
-    $activitesStatuts = $_POST['activites_statuts'] ?? [];
+    $activitesStatuts = $_POST['societe_activites_statuts'] ?? [];
     $allStatuts = is_array($activitesStatuts) ? array_map('trim', $activitesStatuts) : [];
     $allStatuts = array_unique(array_filter($allStatuts));
 
-    $activitesOmpic = field_value($_POST, 'activites_ompic');
+    $activitesOmpic = field_value($_POST, 'societe_activites_ompic');
 
     $stmt = $pdo->prepare('
         UPDATE societes SET
-            dossier_domiciliation = :dossier_domiciliation,
-            raison_sociale = :raison_sociale,
-            forme_juridique = :forme_juridique,
-            ice = :ice,
-            date_ice = :date_ice,
-            rc = :rc,
-            if_number = :if_number,
-            activites_statuts = :activites_statuts,
-            activites_ompic = :activites_ompic,
-            capital = :capital,
-            part_social = :part_social,
-            valeur_nominale = :valeur_nominale,
-            date_exp_cert_neg = :date_exp_cert_neg,
-            ste_adress = :ste_adress,
-            ville = :ville,
-            tribunal = :tribunal,
-            email = :email,
-            telephone = :telephone,
-            type_generation = :type_generation,
-            procedure_creation = :procedure_creation,
-            mode_depot_creation = :mode_depot_creation
+            societe_dossier = :societe_dossier,
+            societe_raison_sociale = :societe_raison_sociale,
+            societe_forme_juridique = :societe_forme_juridique,
+            societe_ice = :societe_ice,
+            societe_date_ice = :societe_date_ice,
+            societe_rc = :societe_rc,
+            societe_if = :societe_if,
+            societe_activites_statuts = :societe_activites_statuts,
+            societe_activites_ompic = :societe_activites_ompic,
+            societe_capital = :societe_capital,
+            societe_part_social = :societe_part_social,
+            societe_valeur_nominale = :societe_valeur_nominale,
+            societe_date_exp_cert_neg = :societe_date_exp_cert_neg,
+            societe_adresse_siege = :societe_adresse_siege,
+            societe_ville = :societe_ville,
+            societe_tribunal = :societe_tribunal,
+            societe_email = :societe_email,
+            societe_telephone = :societe_telephone,
+            societe_type_generation = :societe_type_generation,
+            societe_procedure_creation = :societe_procedure_creation,
+            societe_mode_depot = :societe_mode_depot
         WHERE id = :id
     ');
     $stmt->execute([
-        'dossier_domiciliation' => field_value($_POST, 'dossier_domiciliation'),
-        'raison_sociale' => field_value($_POST, 'raison_sociale'),
-        'forme_juridique' => field_value($_POST, 'forme_juridique'),
-        'ice' => field_value($_POST, 'ice'),
-        'date_ice' => field_value($_POST, 'date_ice'),
-        'rc' => field_value($_POST, 'rc'),
-        'if_number' => field_value($_POST, 'if_number'),
-        'activites_statuts' => implode(', ', $allStatuts),
-        'activites_ompic' => $activitesOmpic,
-        'capital' => money_value($_POST, 'capital'),
-        'part_social' => int_value($_POST, 'part_social'),
-        'valeur_nominale' => money_value($_POST, 'valeur_nominale'),
-        'date_exp_cert_neg' => field_value($_POST, 'date_exp_cert_neg'),
-        'ste_adress' => field_value($_POST, 'ste_adress'),
-        'ville' => field_value($_POST, 'ville'),
-        'tribunal' => field_value($_POST, 'tribunal'),
-        'email' => field_value($_POST, 'email'),
-        'telephone' => field_value($_POST, 'telephone'),
-        'type_generation' => field_value($_POST, 'type_generation'),
-        'procedure_creation' => field_value($_POST, 'procedure_creation'),
-        'mode_depot_creation' => field_value($_POST, 'mode_depot_creation'),
+        'societe_dossier' => field_value($_POST, 'societe_dossier'),
+        'societe_raison_sociale' => field_value($_POST, 'societe_raison_sociale'),
+        'societe_forme_juridique' => field_value($_POST, 'societe_forme_juridique'),
+        'societe_ice' => field_value($_POST, 'societe_ice'),
+        'societe_date_ice' => field_value($_POST, 'societe_date_ice'),
+        'societe_rc' => field_value($_POST, 'societe_rc'),
+        'societe_if' => field_value($_POST, 'societe_if'),
+        'societe_activites_statuts' => implode(', ', $allStatuts),
+        'societe_activites_ompic' => $activitesOmpic,
+        'societe_capital' => money_value($_POST, 'societe_capital'),
+        'societe_part_social' => int_value($_POST, 'societe_part_social'),
+        'societe_valeur_nominale' => money_value($_POST, 'societe_valeur_nominale'),
+        'societe_date_exp_cert_neg' => field_value($_POST, 'societe_date_exp_cert_neg'),
+        'societe_adresse_siege' => field_value($_POST, 'societe_adresse_siege'),
+        'societe_ville' => field_value($_POST, 'societe_ville'),
+        'societe_tribunal' => field_value($_POST, 'societe_tribunal'),
+        'societe_email' => field_value($_POST, 'societe_email'),
+        'societe_telephone' => field_value($_POST, 'societe_telephone'),
+        'societe_type_generation' => field_value($_POST, 'societe_type_generation'),
+        'societe_procedure_creation' => field_value($_POST, 'societe_procedure_creation'),
+        'societe_mode_depot' => field_value($_POST, 'societe_mode_depot'),
         'id' => $societeId,
     ]);
     set_flash('success', 'Societe mise a jour.');
@@ -194,16 +194,16 @@ if (is_post() && !isset($_POST['validate_submit']) && !isset($_POST['delete_subm
 if ($editing) {
     $villesOptions = fetch_reference_options($pdo ?? null, 'ref_villes', 'ville');
     $adressesOptions = fetch_reference_options($pdo ?? null, 'ref_ste_adresses', 'ste_adresse');
-    $formesJuridiquesOptions = fetch_reference_options($pdo ?? null, 'ref_formes_juridiques', 'forme_juridique');
+    $formesJuridiquesOptions = fetch_reference_options($pdo ?? null, 'ref_formes_juridiques', 'societe_forme_juridique');
     $activitesOptions = fetch_reference_options($pdo ?? null, 'ref_activites', 'activite');
     $ompicOptions = fetch_activites_ompic_options($pdo ?? null);
-    $societeActivitesStatuts = !empty($societe['activites_statuts']) ? array_map('trim', explode(',', (string) $societe['activites_statuts'])) : [];
-    $societeActivitesOmpic = !empty($societe['activites_ompic']) ? (string) $societe['activites_ompic'] : '';
+    $societeActivitesStatuts = !empty($societe['societe_activites_statuts']) ? array_map('trim', explode(',', (string) $societe['societe_activites_statuts'])) : [];
+    $societeActivitesOmpic = !empty($societe['societe_activites_ompic']) ? (string) $societe['societe_activites_ompic'] : '';
 }
 
 $associes = ($pdo ?? null) instanceof PDO
     ? (function (PDO $pdo, int $societeId): array {
-        $stmt = $pdo->prepare('SELECT nom_complet, cin, nationalite, qualite_associe, parts, is_gerant FROM associes WHERE societe_id = :societe_id ORDER BY id DESC');
+        $stmt = $pdo->prepare('SELECT associe_nom_complet, associe_cin, associe_nationalite, associe_qualite, associe_parts, associe_est_gerant FROM associes WHERE societe_id = :societe_id ORDER BY id DESC');
         $stmt->execute(['societe_id' => $societeId]);
         return $stmt->fetchAll();
     })($pdo, $societeId)
@@ -211,7 +211,7 @@ $associes = ($pdo ?? null) instanceof PDO
 
 $contrats = ($pdo ?? null) instanceof PDO
     ? (function (PDO $pdo, int $societeId): array {
-        $stmt = $pdo->prepare('SELECT id, type_contrat, date_debut, date_fin, statut, montant_total_ht_contrat AS montant_total_loyer FROM contrats WHERE societe_id = :societe_id ORDER BY id DESC');
+        $stmt = $pdo->prepare('SELECT id, contrat_type, contrat_date_debut, contrat_date_fin, contrat_statut, contrat_total_ht AS montant_total_loyer FROM contrats WHERE societe_id = :societe_id ORDER BY id DESC');
         $stmt->execute(['societe_id' => $societeId]);
         return $stmt->fetchAll();
     })($pdo, $societeId)
@@ -224,7 +224,7 @@ $collabCount = ($pdo ?? null) instanceof PDO
 $documents = fetch_all_documents($pdo ?? null, $societeId);
 ?>
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
-    <h2 style="margin:0"><?= e($societe['raison_sociale']) ?></h2>
+    <h2 style="margin:0"><?= e($societe['societe_raison_sociale']) ?></h2>
     <div class="table-actions">
         <?php if ($editing): ?>
             <a class="btn btn-secondary" href="<?= e(app_url('societe', ['id' => $societeId])) ?>"><span class="mdi mdi-close"></span> Annuler</a>
@@ -239,7 +239,7 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
 <section class="stats small" style="margin-bottom:1rem">
     <article class="stat">
         <span>Societe</span>
-        <strong><?= e($societe['forme_juridique'] ?: '-') ?></strong>
+        <strong><?= e($societe['societe_forme_juridique'] ?: '-') ?></strong>
     </article>
     <article class="stat">
         <span>Associes</span>
@@ -259,11 +259,11 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
     </article>
     <article class="stat">
         <span>Dossier</span>
-        <strong><?= e($societe['dossier_domiciliation'] ?: '-') ?></strong>
+        <strong><?= e($societe['societe_dossier'] ?: '-') ?></strong>
     </article>
     <article class="stat">
         <span>Ville</span>
-        <strong><?= e($societe['ville'] ?: '-') ?></strong>
+        <strong><?= e($societe['societe_ville'] ?: '-') ?></strong>
     </article>
 </section>
 
@@ -275,71 +275,71 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
                 <h3 class="section-title">Procedure</h3>
                 <label class="field">
                     <span>Type generation</span>
-                    <select name="type_generation">
+                    <select name="societe_type_generation">
                         <option value="">Selectionner</option>
-                        <option value="creation" <?= (string) $societe['type_generation'] === 'creation' ? 'selected' : '' ?>>Creation</option>
-                        <option value="domiciliation" <?= (string) $societe['type_generation'] === 'domiciliation' ? 'selected' : '' ?>>Domiciliation</option>
+                        <option value="creation" <?= (string) $societe['societe_type_generation'] === 'creation' ? 'selected' : '' ?>>Creation</option>
+                        <option value="domiciliation" <?= (string) $societe['societe_type_generation'] === 'domiciliation' ? 'selected' : '' ?>>Domiciliation</option>
                     </select>
                 </label>
                 <label class="field">
                     <span>Procedure creation</span>
-                    <select name="procedure_creation">
+                    <select name="societe_procedure_creation">
                         <option value="">Selectionner</option>
-                        <option value="normal" <?= (string) $societe['procedure_creation'] === 'normal' ? 'selected' : '' ?>>Normal</option>
-                        <option value="acceleree" <?= (string) $societe['procedure_creation'] === 'acceleree' ? 'selected' : '' ?>>Acceleree</option>
+                        <option value="normal" <?= (string) $societe['societe_procedure_creation'] === 'normal' ? 'selected' : '' ?>>Normal</option>
+                        <option value="acceleree" <?= (string) $societe['societe_procedure_creation'] === 'acceleree' ? 'selected' : '' ?>>Acceleree</option>
                     </select>
                 </label>
                 <label class="field">
                     <span>Mode depot creation</span>
-                    <select name="mode_depot_creation">
+                    <select name="societe_mode_depot">
                         <option value="">Selectionner</option>
-                        <option value="depot_physique" <?= (string) $societe['mode_depot_creation'] === 'depot_physique' ? 'selected' : '' ?>>Depot Physique</option>
-                        <option value="depot_en_ligne" <?= (string) $societe['mode_depot_creation'] === 'depot_en_ligne' ? 'selected' : '' ?>>Depot En Ligne</option>
+                        <option value="depot_physique" <?= (string) $societe['societe_mode_depot'] === 'depot_physique' ? 'selected' : '' ?>>Depot Physique</option>
+                        <option value="depot_en_ligne" <?= (string) $societe['societe_mode_depot'] === 'depot_en_ligne' ? 'selected' : '' ?>>Depot En Ligne</option>
                     </select>
                 </label>
                 <h3 class="section-title">Identifiants</h3>
                 <label class="field">
                     <span>Dossier domiciliation</span>
-                    <input name="dossier_domiciliation" value="<?= e((string) $societe['dossier_domiciliation']) ?>">
+                    <input name="societe_dossier" value="<?= e((string) $societe['societe_dossier']) ?>">
                 </label>
                 <label class="field">
                     <span>Raison sociale</span>
-                    <input name="raison_sociale" required value="<?= e((string) $societe['raison_sociale']) ?>">
+                    <input name="societe_raison_sociale" required value="<?= e((string) $societe['societe_raison_sociale']) ?>">
                 </label>
                 <label class="field">
                     <span>Forme juridique</span>
-                    <select name="forme_juridique" style="flex:1">
+                    <select name="societe_forme_juridique" style="flex:1">
                         <option value="">Selectionner</option>
                         <?php foreach ($formesJuridiquesOptions as $option): ?>
-                            <option value="<?= e($option) ?>" <?= (string) $societe['forme_juridique'] === $option ? 'selected' : '' ?>><?= e($option) ?></option>
+                            <option value="<?= e($option) ?>" <?= (string) $societe['societe_forme_juridique'] === $option ? 'selected' : '' ?>><?= e($option) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </label>
                 <label class="field">
                     <span>ICE</span>
-                    <input name="ice" value="<?= e((string) $societe['ice']) ?>">
+                    <input name="societe_ice" value="<?= e((string) $societe['societe_ice']) ?>">
                 </label>
                 <label class="field">
                     <span>Date de cert. negatif</span>
-                    <input type="date" name="date_ice" value="<?= e((string) $societe['date_ice']) ?>">
+                    <input type="date" name="societe_date_ice" value="<?= e((string) $societe['societe_date_ice']) ?>">
                 </label>
                 <label class="field">
                     <span>Date exp. cert. negatif</span>
-                    <input type="date" name="date_exp_cert_neg" value="<?= e((string) $societe['date_exp_cert_neg']) ?>">
+                    <input type="date" name="societe_date_exp_cert_neg" value="<?= e((string) $societe['societe_date_exp_cert_neg']) ?>">
                 </label>
                 <label class="field">
                     <span>RC</span>
-                    <input name="rc" value="<?= e((string) $societe['rc']) ?>">
+                    <input name="societe_rc" value="<?= e((string) $societe['societe_rc']) ?>">
                 </label>
                 <label class="field">
                     <span>IF</span>
-                    <input name="if_number" value="<?= e((string) $societe['if_number']) ?>">
+                    <input name="societe_if" value="<?= e((string) $societe['societe_if']) ?>">
                 </label>
                 <h3 class="section-title">Activite (Certificat negatif)</h3>
                 <label class="field full">
                     <span>Activite pour le certificat negatif</span>
                     <div style="display:flex;gap:8px;align-items:center">
-                        <select name="activites_ompic" style="flex:1" data-ompic-select>
+                        <select name="societe_activites_ompic" style="flex:1" data-ompic-select>
                             <option value="">Selectionner</option>
                             <?php foreach ($ompicOptions as $row): ?>
                                 <option value="<?= e($row['code']) ?>" <?= $societeActivitesOmpic === $row['code'] ? 'selected' : '' ?>><?= e($row['code'] . ' - ' . $row['libelle']) ?></option>
@@ -358,7 +358,7 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
                             <?php if (!empty($societeActivitesStatuts)): ?>
                                 <?php foreach ($societeActivitesStatuts as $act): ?>
                                     <div data-activite-item style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
-                                        <select name="activites_statuts[]" style="flex:1">
+                                        <select name="societe_activites_statuts[]" style="flex:1">
                                             <option value="">Selectionner</option>
                                             <?php foreach ($activitesOptions as $opt): ?>
                                                 <option value="<?= e($opt) ?>" <?= $act === $opt ? 'selected' : '' ?>><?= e($opt) ?></option>
@@ -372,7 +372,7 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <div data-activite-item style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
-                                    <select name="activites_statuts[]" style="flex:1">
+                                    <select name="societe_activites_statuts[]" style="flex:1">
                                         <option value="">Selectionner</option>
                                         <?php foreach ($activitesOptions as $opt): ?>
                                             <option value="<?= e($opt) ?>"><?= e($opt) ?></option>
@@ -389,7 +389,7 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
                         </div>
                         <template data-activite-template>
                             <div data-activite-item style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
-                                <select name="activites_statuts[]" style="flex:1">
+                                <select name="societe_activites_statuts[]" style="flex:1">
                                     <option value="">Selectionner</option>
                                     <?php foreach ($activitesOptions as $opt): ?>
                                         <option value="<?= e($opt) ?>"><?= e($opt) ?></option>
@@ -404,29 +404,29 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
                 <h3 class="section-title">Capital</h3>
                 <label class="field">
                     <span>Capital</span>
-                    <input type="number" step="0.01" name="capital" value="<?= e((string) ($societe['capital'] ?? '')) ?>">
+                    <input type="number" step="0.01" name="societe_capital" value="<?= e((string) ($societe['societe_capital'] ?? '')) ?>">
                 </label>
                 <label class="field">
                     <span>Part social</span>
-                    <input type="number" name="part_social" value="<?= e((string) ($societe['part_social'] ?? '')) ?>">
+                    <input type="number" name="societe_part_social" value="<?= e((string) ($societe['societe_part_social'] ?? '')) ?>">
                 </label>
                 <label class="field">
                     <span>Valeur nominale</span>
-                    <input type="number" step="0.01" name="valeur_nominale" value="<?= e((string) ($societe['valeur_nominale'] ?? '')) ?>">
+                    <input type="number" step="0.01" name="societe_valeur_nominale" value="<?= e((string) ($societe['societe_valeur_nominale'] ?? '')) ?>">
                 </label>
                 <h3 class="section-title">Adresse</h3>
                 <label class="field full">
                     <span>Adresse de reference</span>
-                    <select name="ste_adress" style="flex:1">
+                    <select name="societe_adresse_siege" style="flex:1">
                         <option value="">Selectionner</option>
                         <?php foreach ($adressesOptions as $option): ?>
-                            <option value="<?= e($option) ?>" <?= (string) $societe['ste_adress'] === $option ? 'selected' : '' ?>><?= e($option) ?></option>
+                            <option value="<?= e($option) ?>" <?= (string) $societe['societe_adresse_siege'] === $option ? 'selected' : '' ?>><?= e($option) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </label>
                 <label class="field">
                     <span>Ville</span>
-                    <select name="ville" style="flex:1">
+                    <select name="societe_ville" style="flex:1">
                         <option value="">Selectionner</option>
                         <?php foreach ($villesOptions as $option): ?>
                             <option value="<?= e($option) ?>" <?= $defaultVille === $option ? 'selected' : '' ?>><?= e($option) ?></option>
@@ -444,7 +444,7 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
                 </label>
                 <label class="field">
                     <span>Tribunal</span>
-                    <select name="tribunal">
+                    <select name="societe_tribunal">
                         <option value="">Selectionner</option>
                         <?php foreach ($allTribunaux as $t): ?>
                             <option value="<?= e($t['tribunal']) ?>" data-type="<?= e($t['tribunal_type'] ?? '') ?>" <?= $defaultTribunal === $t['tribunal'] && $currentTribunalType === ($t['tribunal_type'] ?? '') ? 'selected' : '' ?>><?= e($t['tribunal']) ?></option>
@@ -454,11 +454,11 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
                 <h3 class="section-title">Contact</h3>
                 <label class="field">
                     <span>Email</span>
-                    <input type="email" name="email" value="<?= e((string) $societe['email']) ?>">
+                    <input type="email" name="societe_email" value="<?= e((string) $societe['societe_email']) ?>">
                 </label>
                 <label class="field">
                     <span>Telephone</span>
-                    <input name="telephone" value="<?= e((string) $societe['telephone']) ?>">
+                    <input name="societe_telephone" value="<?= e((string) $societe['societe_telephone']) ?>">
                 </label>
             </div>
             <div>
@@ -471,41 +471,41 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
         <div class="form-grid">
             <h3 class="section-title">Procedure</h3>
             <div class="info-grid">
-                <div><span>Type generation</span><strong><?= e($societe['type_generation'] ?: '-') ?></strong></div>
-                <div><span>Procedure creation</span><strong><?= e($societe['procedure_creation'] ?: '-') ?></strong></div>
-                <div class="full"><span>Mode depot creation</span><strong><?= e($societe['mode_depot_creation'] ?: '-') ?></strong></div>
+                <div><span>Type generation</span><strong><?= e($societe['societe_type_generation'] ?: '-') ?></strong></div>
+                <div><span>Procedure creation</span><strong><?= e($societe['societe_procedure_creation'] ?: '-') ?></strong></div>
+                <div class="full"><span>Mode depot creation</span><strong><?= e($societe['societe_mode_depot'] ?: '-') ?></strong></div>
             </div>
 
             <h3 class="section-title">Identifiants</h3>
             <div class="info-grid">
-                <div><span>Forme juridique</span><strong><?= e($societe['forme_juridique'] ?: '-') ?></strong></div>
-                <div><span>ICE</span><strong><?= e($societe['ice'] ?: '-') ?></strong></div>
-                <div><span>Date cert. negatif</span><strong><?= e($societe['date_ice'] ?: '-') ?></strong></div>
-                <div><span>Date exp. cert. neg.</span><strong><?= e($societe['date_exp_cert_neg'] ?: '-') ?></strong></div>
-                <div><span>RC</span><strong><?= e($societe['rc'] ?: '-') ?></strong></div>
-                <div><span>IF</span><strong><?= e($societe['if_number'] ?: '-') ?></strong></div>
-                <div class="full"><span>Activites (Statuts)</span><strong><?= e(!empty($societe['activites_statuts']) ? (string) $societe['activites_statuts'] : '-') ?></strong></div>
-                <div class="full"><span>Activites (OMPIC)</span><strong><?= e(!empty($societe['activites_ompic']) ? fetch_activites_ompic_display($pdo ?? null, (string) $societe['activites_ompic']) : '-') ?></strong></div>
+                <div><span>Forme juridique</span><strong><?= e($societe['societe_forme_juridique'] ?: '-') ?></strong></div>
+                <div><span>ICE</span><strong><?= e($societe['societe_ice'] ?: '-') ?></strong></div>
+                <div><span>Date cert. negatif</span><strong><?= e($societe['societe_date_ice'] ?: '-') ?></strong></div>
+                <div><span>Date exp. cert. neg.</span><strong><?= e($societe['societe_date_exp_cert_neg'] ?: '-') ?></strong></div>
+                <div><span>RC</span><strong><?= e($societe['societe_rc'] ?: '-') ?></strong></div>
+                <div><span>IF</span><strong><?= e($societe['societe_if'] ?: '-') ?></strong></div>
+                <div class="full"><span>Activites (Statuts)</span><strong><?= e(!empty($societe['societe_activites_statuts']) ? (string) $societe['societe_activites_statuts'] : '-') ?></strong></div>
+                <div class="full"><span>Activites (OMPIC)</span><strong><?= e(!empty($societe['societe_activites_ompic']) ? fetch_activites_ompic_display($pdo ?? null, (string) $societe['societe_activites_ompic']) : '-') ?></strong></div>
             </div>
 
             <h3 class="section-title">Capital</h3>
             <div class="info-grid">
-                <div><span>Capital</span><strong><?= format_money($societe['capital'] !== null ? (float) $societe['capital'] : null) ?></strong></div>
-                <div><span>Part social</span><strong><?= format_number($societe['part_social'] !== null ? (float) $societe['part_social'] : null) ?></strong></div>
-                <div><span>Valeur nominale</span><strong><?= format_money($societe['valeur_nominale'] !== null ? (float) $societe['valeur_nominale'] : null) ?></strong></div>
+                <div><span>Capital</span><strong><?= format_money($societe['societe_capital'] !== null ? (float) $societe['societe_capital'] : null) ?></strong></div>
+                <div><span>Part social</span><strong><?= format_number($societe['societe_part_social'] !== null ? (float) $societe['societe_part_social'] : null) ?></strong></div>
+                <div><span>Valeur nominale</span><strong><?= format_money($societe['societe_valeur_nominale'] !== null ? (float) $societe['societe_valeur_nominale'] : null) ?></strong></div>
             </div>
 
             <h3 class="section-title">Adresse</h3>
             <div class="info-grid">
-                <div class="full"><span>Adresse reference</span><strong><?= e($societe['ste_adress'] ?: '-') ?></strong></div>
-                <div><span>Ville</span><strong><?= e($societe['ville'] ?: '-') ?></strong></div>
-                <div><span>Tribunal</span><strong><?= e($societe['tribunal'] ?: '-') ?><?= $currentTribunalType ? ' ('.e($currentTribunalType).')' : '' ?></strong></div>
+                <div class="full"><span>Adresse reference</span><strong><?= e($societe['societe_adresse_siege'] ?: '-') ?></strong></div>
+                <div><span>Ville</span><strong><?= e($societe['societe_ville'] ?: '-') ?></strong></div>
+                <div><span>Tribunal</span><strong><?= e($societe['societe_tribunal'] ?: '-') ?><?= $currentTribunalType ? ' ('.e($currentTribunalType).')' : '' ?></strong></div>
             </div>
 
             <h3 class="section-title">Contact</h3>
             <div class="info-grid">
-                <div><span>Email</span><strong><?= e($societe['email'] ?: '-') ?></strong></div>
-                <div><span>Telephone</span><strong><?= e($societe['telephone'] ?: '-') ?></strong></div>
+                <div><span>Email</span><strong><?= e($societe['societe_email'] ?: '-') ?></strong></div>
+                <div><span>Telephone</span><strong><?= e($societe['societe_telephone'] ?: '-') ?></strong></div>
             </div>
         </div>
     </article>
@@ -533,11 +533,11 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
                 <tbody>
                 <?php foreach ($associes as $associe): ?>
                     <tr>
-                        <td><?= e($associe['nom_complet']) ?></td>
-                        <td><?= e($associe['cin']) ?></td>
-                        <td><?= e($associe['nationalite']) ?></td>
-                        <td><?= e($associe['qualite_associe'] ?: '-') ?></td>
-                        <td><?= (int) $associe['is_gerant'] === 1 ? 'Oui' : 'Non' ?></td>
+                        <td><?= e($associe['associe_nom_complet']) ?></td>
+                        <td><?= e($associe['associe_cin']) ?></td>
+                        <td><?= e($associe['associe_nationalite']) ?></td>
+                        <td><?= e($associe['associe_qualite'] ?: '-') ?></td>
+                        <td><?= (int) $associe['associe_est_gerant'] === 1 ? 'Oui' : 'Non' ?></td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
@@ -567,9 +567,9 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
                 <tbody>
                 <?php foreach ($contrats as $contrat): ?>
                     <tr>
-                        <td><?= e($contrat['type_contrat']) ?></td>
-                        <td><?= e(($contrat['date_debut'] ?: '-') . ' -> ' . ($contrat['date_fin'] ?: '-')) ?></td>
-                        <td><span class="statut-badge <?= strtolower($contrat['statut']) === 'actif' ? 'actif' : 'resilie' ?>"><?= e($contrat['statut']) ?></span></td>
+                        <td><?= e($contrat['contrat_type']) ?></td>
+                        <td><?= e(($contrat['contrat_date_debut'] ?: '-') . ' -> ' . ($contrat['contrat_date_fin'] ?: '-')) ?></td>
+                        <td><span class="statut-badge <?= strtolower($contrat['contrat_statut']) === 'actif' ? 'actif' : 'resilie' ?>"><?= e($contrat['contrat_statut']) ?></span></td>
                         <td><?= format_money($contrat['montant_total_loyer'] !== null ? (float) $contrat['montant_total_loyer'] : null) ?></td>
                     </tr>
                 <?php endforeach; ?>

@@ -19,6 +19,7 @@ $navSections = [
         'documents' => ['Documents generes', 'mdi-file-word'],
     ],
     'Outils' => [
+        'analyse-couverture' => ['Analyse couverture', 'mdi-chart-box-outline'],
         'defaults' => ['Valeurs par defaut', 'mdi-tune'],
         'convert-word-pdf' => ['Word to PDF', 'mdi-file-pdf-box'],
     ],

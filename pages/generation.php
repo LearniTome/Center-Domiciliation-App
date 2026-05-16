@@ -22,7 +22,7 @@ $selectedSociete = null;
 if ($societeId > 0) {
     $selectedSociete = fetch_record($pdo ?? null, 'societes', $societeId);
     if ($selectedSociete) {
-        $legalForm = $selectedSociete['forme_juridique'] ?? '';
+        $legalForm = $selectedSociete['societe_forme_juridique'] ?? '';
     }
 }
 
@@ -79,14 +79,14 @@ if (is_post() && !isset($_POST['delete_submit']) && !isset($_POST['validate_subm
     $selectedPaths = $_POST['templates'] ?? [];
     $generatePdf = isset($_POST['pdf']);
 
-    $context = DocumentRenderer::buildContextFromDb($pdo, $societeId);
-    $forme = $selectedSociete['forme_juridique'] ?? 'PP';
+    $context = DocumentRenderer::addLegacyAliases(DocumentRenderer::buildContextFromDb($pdo, $societeId));
+    $forme = $selectedSociete['societe_forme_juridique'] ?? 'PP';
     $today = date('Y-m-d');
-    $clientName = trim(preg_replace('/[^a-zA-Z0-9-]/', '-', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $selectedSociete['raison_sociale'] ?? 'Client')));
+    $clientName = trim(preg_replace('/[^a-zA-Z0-9-]/', '-', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $selectedSociete['societe_raison_sociale'] ?? 'Client')));
     $clientName = preg_replace('/-+/', '-', $clientName);
     $clientName = trim($clientName, '-');
 
-    $folderDate = $context['date_contrat'] ?? $today;
+    $folderDate = $context['contrat_date'] ?? $today;
     $folderName = $folderDate . '_' . $forme . '_' . $clientName;
     $folderName = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', $folderName), '-');
     $outputDir = __DIR__ . '/../output/' . $folderName;
@@ -293,7 +293,7 @@ $docxCount = $totalGenerated;
             <option value="">Choisir une societe...</option>
             <?php foreach ($societesOptions as $s): ?>
                 <option value="<?= e((string) $s['id']) ?>" <?= $societeId === (int) $s['id'] ? 'selected' : '' ?>>
-                    <?= e($s['raison_sociale']) ?>
+                    <?= e($s['societe_raison_sociale']) ?>
                 </option>
             <?php endforeach; ?>
         </select>
@@ -307,14 +307,14 @@ $docxCount = $totalGenerated;
             <div class="societe-summary-main">
                 <span class="mdi mdi-domain" style="color:var(--primary);font-size:1.3rem"></span>
                 <div>
-                    <strong><?= e($selectedSociete['raison_sociale']) ?></strong>
-                    <span class="help-text"><?= e($selectedSociete['forme_juridique'] ?: '-') ?> — <?= e($selectedSociete['ville'] ?: '-') ?></span>
+                    <strong><?= e($selectedSociete['societe_raison_sociale']) ?></strong>
+                    <span class="help-text"><?= e($selectedSociete['societe_forme_juridique'] ?: '-') ?> — <?= e($selectedSociete['societe_ville'] ?: '-') ?></span>
                 </div>
             </div>
             <div class="societe-summary-details">
-                <span><span class="help-text">ICE</span> <?= e($selectedSociete['ice'] ?: '-') ?></span>
-                <span><span class="help-text">RC</span> <?= e($selectedSociete['rc'] ?: '-') ?></span>
-                <span><span class="help-text">IF</span> <?= e($selectedSociete['if_number'] ?: '-') ?></span>
+                <span><span class="help-text">ICE</span> <?= e($selectedSociete['societe_ice'] ?: '-') ?></span>
+                <span><span class="help-text">RC</span> <?= e($selectedSociete['societe_rc'] ?: '-') ?></span>
+                <span><span class="help-text">IF</span> <?= e($selectedSociete['societe_if'] ?: '-') ?></span>
             </div>
         </div>
 

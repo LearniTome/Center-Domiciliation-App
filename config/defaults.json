@@ -1,32 +1,32 @@
 {
   "societe": {
-    "dossier_domiciliation": "DOM-2026",
-    "forme_juridique": "SARL AU",
-    "capital": "100000",
-    "part_social": "1000",
-    "valeur_nominale": "100",
-    "ste_adress": "HAY MOULAY ABDELLAH RUE 300 N 152 ETG 2 AIN CHOCK, CASABLANCA",
-    "tribunal": "Casablanca",
+    "societe_dossier": "DOM-2026",
+    "societe_forme_juridique": "SARL AU",
+    "societe_capital": "100000",
+    "societe_part_social": "1000",
+    "societe_valeur_nominale": "100",
+    "societe_adresse_siege": "HAY MOULAY ABDELLAH RUE 300 N 152 ETG 2 AIN CHOCK, CASABLANCA",
+    "societe_tribunal": "Casablanca",
     "type_generation": "creation",
     "procedure_creation": "normal",
     "mode_depot_creation": "depot_physique"
   },
   "associe": {
-    "nationalite": "Marocaine",
-    "parts": "100",
-    "is_gerant": false,
-    "qualite_associe": "Associé"
+    "associe_nationalite": "Marocaine",
+    "associe_parts": "100",
+    "associe_est_gerant": false,
+    "associe_qualite": "Associé"
   },
   "contrat": {
-    "type_contrat": "Domiciliation commerciale",
-    "type_contrat_domiciliation": "Personne Morale",
-    "duree_contrat_mois": "12",
-    "type_renouvellement": "Annuel",
-    "taux_tva_pourcent": "20",
-    "loyer_mensuel_ht": "83.33",
-    "taux_tva_renouvellement_pourcent": "20",
-    "loyer_mensuel_ht_renouvellement": "166.67",
-    "statut": "actif"
+    "contrat_type": "Domiciliation commerciale",
+    "contrat_type_domiciliation": "Personne Morale",
+    "contrat_duree_mois": "12",
+    "contrat_type_renouvellement": "Annuel",
+    "contrat_tva_pourcent": "20",
+    "contrat_loyer_ht": "83.33",
+    "contrat_renouv_tva_pourcent": "20",
+    "contrat_renouv_loyer_ht": "166.67",
+    "contrat_statut": "actif"
   },
   "collaborateur": {
     "collaborateur_type": "CLTD -- Client Direct",

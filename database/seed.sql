@@ -245,9 +245,9 @@ INSERT INTO ref_activites_ompic (code, libelle, sort_order) VALUES
 ('96', 'Autres services personnels', 36);
 
 INSERT INTO societes (
-    dossier_domiciliation, raison_sociale, forme_juridique, ice, date_ice, rc, if_number,
-    capital, part_social, valeur_nominale, date_exp_cert_neg, adresse, ste_adress, ville, tribunal, email,
-    telephone, type_generation, procedure_creation, mode_depot_creation
+    societe_dossier, societe_raison_sociale, societe_forme_juridique, societe_ice, societe_date_ice, societe_rc, societe_if,
+    societe_capital, societe_part_social, societe_valeur_nominale, societe_date_exp_cert_neg, societe_adresse, societe_adresse_siege, societe_ville, societe_tribunal, societe_email,
+    societe_telephone, societe_type_generation, societe_procedure_creation, societe_mode_depot
 ) VALUES
 (
     'DOM-2026-001', 'Atlas Domiciliation', 'SARL', '001122334455667', '2026-01-10',
@@ -263,8 +263,8 @@ INSERT INTO societes (
 );
 
 INSERT INTO associes (
-    societe_id, nom_complet, cin, date_naiss, lieu_naiss, nationalite, adresse, phone, email,
-    qualite_associe, parts, is_gerant
+    societe_id, associe_nom_complet, associe_cin, associe_date_naissance, associe_lieu_naissance, associe_nationalite, associe_adresse, associe_telephone, associe_email,
+    associe_qualite, associe_parts, associe_est_gerant
 ) VALUES
 (
     1, 'Youssef El Idrissi', 'BK123456', '1990-01-01', 'Casablanca', 'Marocaine', 'Casablanca',
@@ -280,12 +280,12 @@ INSERT INTO associes (
 );
 
 INSERT INTO contrats (
-    societe_id, type_contrat, date_contrat, duree_contrat_mois, type_contrat_domiciliation,
-    type_contrat_domiciliation_autre, date_debut, date_fin,
-    loyer_mensuel_ttc, frais_intermediaire_contrat, caution_montant, taux_tva_pourcent, loyer_mensuel_ht,
-    montant_total_ht_contrat, montant_pack_demarrage_ttc, loyer_mensuel_pack_demarrage_ttc, type_renouvellement,
-    taux_tva_renouvellement_pourcent, loyer_mensuel_ht_renouvellement, montant_total_ht_renouvellement,
-    loyer_mensuel_renouvellement_ttc, loyer_annuel_renouvellement_ttc, statut, notes
+    societe_id, contrat_type, contrat_date, contrat_duree_mois, contrat_type_domiciliation,
+    contrat_type_domiciliation_autre, contrat_date_debut, contrat_date_fin,
+    contrat_loyer_ttc, contrat_frais_intermediaire, contrat_caution, contrat_tva_pourcent, contrat_loyer_ht,
+    contrat_total_ht, contrat_pack_montant_ttc, contrat_pack_loyer_ttc, contrat_type_renouvellement,
+    contrat_renouv_tva_pourcent, contrat_renouv_loyer_ht, contrat_renouv_total_ht,
+    contrat_renouv_loyer_ttc, contrat_renouv_annuel_ttc, contrat_statut, contrat_notes
 ) VALUES
 (
     1, 'Domiciliation commerciale', '2026-01-01', 12, 'Personne Morale', NULL,

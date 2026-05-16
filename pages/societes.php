@@ -21,7 +21,7 @@ if (($pdo ?? null) instanceof PDO) {
         $stmt = $pdo->prepare('
             SELECT *
             FROM societes
-            WHERE raison_sociale LIKE :term OR forme_juridique LIKE :term OR ice LIKE :term OR ville LIKE :term
+            WHERE societe_raison_sociale LIKE :term OR societe_forme_juridique LIKE :term OR societe_ice LIKE :term OR societe_ville LIKE :term
             ORDER BY id DESC
         ');
         $stmt->execute(['term' => like_term($query)]);
@@ -34,20 +34,20 @@ if (($pdo ?? null) instanceof PDO) {
         $rows = array_map(static function (array $societe): array {
             return [
                 $societe['id'],
-                $societe['raison_sociale'],
-                $societe['dossier_domiciliation'],
-                $societe['forme_juridique'],
-                $societe['ice'],
-                $societe['date_ice'],
-                $societe['rc'],
-                $societe['if_number'],
-                $societe['activites_statuts'] ?? '',
-                $societe['activites_ompic'] ? fetch_activites_ompic_display($pdo ?? null, (string) $societe['activites_ompic']) : '',
-                $societe['tribunal'],
-                $societe['ville'],
-                $societe['email'],
-                $societe['telephone'],
-                $societe['capital'],
+                $societe['societe_raison_sociale'],
+                $societe['societe_dossier'],
+                $societe['societe_forme_juridique'],
+                $societe['societe_ice'],
+                $societe['societe_date_ice'],
+                $societe['societe_rc'],
+                $societe['societe_if'],
+                $societe['societe_activites_statuts'] ?? '',
+                $societe['societe_activites_ompic'] ? fetch_activites_ompic_display($pdo ?? null, (string) $societe['societe_activites_ompic']) : '',
+                $societe['societe_tribunal'],
+                $societe['societe_ville'],
+                $societe['societe_email'],
+                $societe['societe_telephone'],
+                $societe['societe_capital'],
             ];
         }, $societes);
 
@@ -130,20 +130,20 @@ if (($pdo ?? null) instanceof PDO) {
                 <tbody>
                 <?php foreach ($societes as $societe): ?>
                     <tr>
-                        <td><?= e($societe['dossier_domiciliation'] ?? '-') ?></td>
-                        <td><?= e($societe['raison_sociale']) ?></td>
-                        <td><?= e($societe['forme_juridique']) ?></td>
-                        <td><?= e($societe['ice'] ?? '-') ?></td>
-                        <td><?= e($societe['date_ice'] ?? '-') ?></td>
-                        <td><?= e($societe['rc'] ?? '-') ?></td>
-                        <td><?= e($societe['if_number'] ?? '-') ?></td>
-                        <td><?= e(!empty($societe['activites_statuts']) ? (string) $societe['activites_statuts'] : '-') ?></td>
-                        <td><?= e(!empty($societe['activites_ompic']) ? fetch_activites_ompic_display($pdo ?? null, (string) $societe['activites_ompic']) : '-') ?></td>
-                        <td><?= $societe['capital'] !== null ? e(number_format((float) $societe['capital'], 2, ',', ' ') . ' DH') : '-' ?></td>
-                        <td><?= e($societe['ville']) ?></td>
-                        <td><?= e($societe['tribunal'] ?? '-') ?></td>
-                        <td><?= e($societe['telephone']) ?></td>
-                        <td><?= e($societe['email'] ?? '-') ?></td>
+                        <td><?= e($societe['societe_dossier'] ?? '-') ?></td>
+                        <td><?= e($societe['societe_raison_sociale']) ?></td>
+                        <td><?= e($societe['societe_forme_juridique']) ?></td>
+                        <td><?= e($societe['societe_ice'] ?? '-') ?></td>
+                        <td><?= e($societe['societe_date_ice'] ?? '-') ?></td>
+                        <td><?= e($societe['societe_rc'] ?? '-') ?></td>
+                        <td><?= e($societe['societe_if'] ?? '-') ?></td>
+                        <td><?= e(!empty($societe['societe_activites_statuts']) ? (string) $societe['societe_activites_statuts'] : '-') ?></td>
+                        <td><?= e(!empty($societe['societe_activites_ompic']) ? fetch_activites_ompic_display($pdo ?? null, (string) $societe['societe_activites_ompic']) : '-') ?></td>
+                        <td><?= $societe['societe_capital'] !== null ? e(number_format((float) $societe['societe_capital'], 2, ',', ' ') . ' DH') : '-' ?></td>
+                        <td><?= e($societe['societe_ville']) ?></td>
+                        <td><?= e($societe['societe_tribunal'] ?? '-') ?></td>
+                        <td><?= e($societe['societe_telephone']) ?></td>
+                        <td><?= e($societe['societe_email'] ?? '-') ?></td>
                         <td><?= e(substr($societe['created_at'], 0, 10)) ?></td>
                         <td><?= e(substr($societe['updated_at'], 0, 10)) ?></td>
                         <td class="table-actions">

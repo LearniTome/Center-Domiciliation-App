@@ -7,8 +7,8 @@ $isConnected = $pdo instanceof PDO;
 
 // --- Stats enrichies ---
 $totalSocietes = $isConnected ? (int) $pdo->query('SELECT COUNT(*) FROM societes')->fetchColumn() : 0;
-$contratsActifs = $isConnected ? (int) $pdo->query("SELECT COUNT(*) FROM contrats WHERE statut = 'actif'")->fetchColumn() : 0;
-$contratsResilies = $isConnected ? (int) $pdo->query("SELECT COUNT(*) FROM contrats WHERE statut = 'resilie'")->fetchColumn() : 0;
+$contratsActifs = $isConnected ? (int) $pdo->query("SELECT COUNT(*) FROM contrats WHERE contrat_statut = 'actif'")->fetchColumn() : 0;
+$contratsResilies = $isConnected ? (int) $pdo->query("SELECT COUNT(*) FROM contrats WHERE contrat_statut = 'resilie'")->fetchColumn() : 0;
 $collaborateursCount = $isConnected ? (int) $pdo->query('SELECT COUNT(*) FROM collaborateurs')->fetchColumn() : 0;
 
 $dossiersComplets = $isConnected
@@ -24,32 +24,32 @@ $dossiersIncomplets = max(0, $totalSocietes - $dossiersComplets);
 // --- Alertes ---
 $sansAssocie = $isConnected
     ? $pdo->query('
-        SELECT s.id, s.raison_sociale FROM societes s
+        SELECT s.id, s.societe_raison_sociale FROM societes s
         LEFT JOIN associes a ON a.societe_id = s.id
         WHERE a.id IS NULL
-        ORDER BY s.raison_sociale
+        ORDER BY s.societe_raison_sociale
         LIMIT 10
     ')->fetchAll()
     : [];
 
 $sansContrat = $isConnected
     ? $pdo->query('
-        SELECT s.id, s.raison_sociale FROM societes s
+        SELECT s.id, s.societe_raison_sociale FROM societes s
         LEFT JOIN contrats c ON c.societe_id = s.id
         WHERE c.id IS NULL
-        ORDER BY s.raison_sociale
+        ORDER BY s.societe_raison_sociale
         LIMIT 10
     ')->fetchAll()
     : [];
 
 $expirants = $isConnected
     ? $pdo->query('
-        SELECT c.id, c.type_contrat, c.date_fin, s.raison_sociale
+        SELECT c.id, c.contrat_type, c.contrat_date_fin, s.societe_raison_sociale
         FROM contrats c
         INNER JOIN societes s ON s.id = c.societe_id
-        WHERE c.statut = "actif"
-        AND c.date_fin BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
-        ORDER BY c.date_fin
+        WHERE c.contrat_statut = "actif"
+        AND c.contrat_date_fin BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+        ORDER BY c.contrat_date_fin
         LIMIT 10
     ')->fetchAll()
     : [];
@@ -58,12 +58,12 @@ $hasAlerts = $sansAssocie || $sansContrat || $expirants;
 
 // --- Tableaux recents ---
 $recentSocietes = $isConnected
-    ? $pdo->query('SELECT id, raison_sociale, forme_juridique, ville FROM societes ORDER BY id DESC LIMIT 5')->fetchAll()
+    ? $pdo->query('SELECT id, societe_raison_sociale, societe_forme_juridique, societe_ville FROM societes ORDER BY id DESC LIMIT 5')->fetchAll()
     : [];
 
 $recentContrats = $isConnected
     ? $pdo->query('
-        SELECT contrats.id, contrats.type_contrat, contrats.statut, societes.raison_sociale
+        SELECT contrats.id, contrats.contrat_type, contrats.contrat_statut, societes.societe_raison_sociale
         FROM contrats
         INNER JOIN societes ON societes.id = contrats.societe_id
         ORDER BY contrats.id DESC
@@ -73,7 +73,7 @@ $recentContrats = $isConnected
 
 $recentAssocies = $isConnected
     ? $pdo->query('
-        SELECT associes.nom_complet, associes.cin, associes.qualite_associe, associes.is_gerant, societes.raison_sociale
+        SELECT associes.associe_nom_complet, associes.associe_cin, associes.associe_qualite, associes.associe_est_gerant, societes.societe_raison_sociale
         FROM associes
         INNER JOIN societes ON societes.id = associes.societe_id
         ORDER BY associes.id DESC
@@ -142,7 +142,7 @@ $pctComplets = $totalSocietes > 0 ? round(($dossiersComplets / $totalSocietes) *
         <span class="mdi mdi-cog quick-icon" style="color:var(--info)"></span>
         <div>
             <strong>Configuration</strong>
-            <span class="help-text">Tables de reference (formes, villes, etc.)</span>
+            <span class="help-text">Tables de reference (formes, societe_villes, etc.)</span>
         </div>
     </a>
 </section>
@@ -160,7 +160,7 @@ $pctComplets = $totalSocietes > 0 ? round(($dossiersComplets / $totalSocietes) *
                     <?php foreach ($sansAssocie as $s): ?>
                         <a class="alert-item" href="<?= e(app_url('societe', ['id' => (int) $s['id']])) ?>">
                             <span class="mdi mdi-account-remove" style="color:var(--danger)"></span>
-                            <?= e($s['raison_sociale']) ?>
+                            <?= e($s['societe_raison_sociale']) ?>
                         </a>
                     <?php endforeach; ?>
                 </div>
@@ -172,7 +172,7 @@ $pctComplets = $totalSocietes > 0 ? round(($dossiersComplets / $totalSocietes) *
                     <?php foreach ($sansContrat as $s): ?>
                         <a class="alert-item" href="<?= e(app_url('societe', ['id' => (int) $s['id']])) ?>">
                             <span class="mdi mdi-file-remove" style="color:var(--warning)"></span>
-                            <?= e($s['raison_sociale']) ?>
+                            <?= e($s['societe_raison_sociale']) ?>
                         </a>
                     <?php endforeach; ?>
                 </div>
@@ -184,7 +184,7 @@ $pctComplets = $totalSocietes > 0 ? round(($dossiersComplets / $totalSocietes) *
                     <?php foreach ($expirants as $c): ?>
                         <a class="alert-item" href="<?= e(app_url('contrats')) ?>">
                             <span class="mdi mdi-clock-alert" style="color:var(--warning)"></span>
-                            <?= e($c['raison_sociale']) ?> — <?= e($c['type_contrat']) ?> (<?= e($c['date_fin']) ?>)
+                            <?= e($c['societe_raison_sociale']) ?> — <?= e($c['contrat_type']) ?> (<?= e($c['contrat_date_fin']) ?>)
                         </a>
                     <?php endforeach; ?>
                 </div>
@@ -218,9 +218,9 @@ $pctComplets = $totalSocietes > 0 ? round(($dossiersComplets / $totalSocietes) *
                 <tbody>
                 <?php foreach ($recentSocietes as $societe): ?>
                     <tr>
-                        <td><?= e($societe['raison_sociale']) ?></td>
-                        <td><?= e($societe['forme_juridique']) ?></td>
-                        <td><?= e($societe['ville']) ?></td>
+                        <td><?= e($societe['societe_raison_sociale']) ?></td>
+                        <td><?= e($societe['societe_forme_juridique']) ?></td>
+                        <td><?= e($societe['societe_ville']) ?></td>
                         <td><a class="btn-icon" href="<?= e(app_url('societe', ['id' => (int) $societe['id']])) ?>" title="Ouvrir"><span class="mdi mdi-eye"></span></a></td>
                     </tr>
                 <?php endforeach; ?>
@@ -251,9 +251,9 @@ $pctComplets = $totalSocietes > 0 ? round(($dossiersComplets / $totalSocietes) *
                 <tbody>
                 <?php foreach ($recentContrats as $contrat): ?>
                     <tr>
-                        <td><?= e($contrat['raison_sociale']) ?></td>
-                        <td><?= e($contrat['type_contrat']) ?></td>
-                        <td><span class="statut-badge <?= strtolower($contrat['statut']) === 'actif' ? 'actif' : 'resilie' ?>"><?= e($contrat['statut']) ?></span></td>
+                        <td><?= e($contrat['societe_raison_sociale']) ?></td>
+                        <td><?= e($contrat['contrat_type']) ?></td>
+                        <td><span class="statut-badge <?= strtolower($contrat['contrat_statut']) === 'actif' ? 'actif' : 'resilie' ?>"><?= e($contrat['contrat_statut']) ?></span></td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
@@ -285,9 +285,9 @@ $pctComplets = $totalSocietes > 0 ? round(($dossiersComplets / $totalSocietes) *
                 <tbody>
                 <?php foreach ($recentAssocies as $associe): ?>
                     <tr>
-                        <td><?= e($associe['nom_complet']) ?></td>
-                        <td><?= e($associe['raison_sociale']) ?></td>
-                        <td><?= e($associe['qualite_associe'] ?: '-') ?></td>
+                        <td><?= e($associe['associe_nom_complet']) ?></td>
+                        <td><?= e($associe['societe_raison_sociale']) ?></td>
+                        <td><?= e($associe['associe_qualite'] ?: '-') ?></td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
@@ -319,9 +319,8 @@ $pctComplets = $totalSocietes > 0 ? round(($dossiersComplets / $totalSocietes) *
                     <tr>
                         <td><?= e($c['nom_complet']) ?></td>
                         <td><?= e($c['collaborateur_type'] ?? '-') ?></td>
-                        <td><span class="statut-badge <?= strtolower($c['statut']) === 'actif' ? 'actif' : 'resilie' ?>"><?= e($c['statut']) ?></span></td>
-                    </tr>
-                <?php endforeach; ?>
+<td><span class="statut-badge <?= strtolower($c['statut']) === 'actif' ? 'actif' : 'resilie' ?>"><?= e($c['statut']) ?></span></td>
+                    <?php endforeach; ?>
                 </tbody>
             </table>
         <?php endif; ?>
