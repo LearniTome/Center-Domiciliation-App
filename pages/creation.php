@@ -1218,6 +1218,97 @@ $contratData = array_merge([
             </div>
         </form>
     <?php elseif ($step === 4): ?>
+        <style>
+            .recap-a4 {
+                background: #fff;
+                box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+                padding: 2rem 2.5rem;
+                margin-bottom: 1.5rem;
+                max-width: 210mm;
+            }
+            .recap-a4 .recap-header {
+                text-align: center;
+                border-bottom: 2px solid #222;
+                padding-bottom: 1rem;
+                margin-bottom: 1.5rem;
+            }
+            .recap-a4 .recap-header h2 {
+                margin: 0;
+                font-size: 1.3rem;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
+            .recap-a4 .recap-header p {
+                margin: 0.3rem 0 0;
+                color: #666;
+                font-size: 0.8rem;
+            }
+            .recap-a4 .recap-section {
+                margin-bottom: 1.5rem;
+                page-break-inside: avoid;
+            }
+            .recap-a4 .recap-section h3 {
+                font-size: 0.95rem;
+                color: var(--primary);
+                border-bottom: 1px solid var(--border);
+                padding-bottom: 0.35rem;
+                margin: 0 0 0.6rem;
+            }
+            .recap-a4 .recap-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 0.3rem 1.5rem;
+            }
+            .recap-a4 .recap-grid .full {
+                grid-column: 1 / -1;
+            }
+            .recap-a4 .recap-grid .item {
+                display: flex;
+                justify-content: space-between;
+                padding: 0.2rem 0;
+                border-bottom: 1px dotted #eee;
+                font-size: 0.8rem;
+            }
+            .recap-a4 .recap-grid .item .label {
+                color: #666;
+                font-weight: 500;
+            }
+            .recap-a4 .recap-grid .item .value {
+                font-weight: 600;
+                color: #222;
+                text-align: right;
+            }
+            .recap-a4 .recap-associe {
+                border: 1px solid var(--border);
+                border-radius: 6px;
+                padding: 0.6rem 0.8rem;
+                margin-bottom: 0.5rem;
+            }
+            .recap-a4 .recap-associe .associe-num {
+                font-size: 0.7rem;
+                color: var(--primary);
+                font-weight: 600;
+                margin-bottom: 0.3rem;
+            }
+            .recap-a4 .recap-associe .recap-grid {
+                gap: 0.1rem 1rem;
+            }
+            .recap-a4 .recap-associe .recap-grid .item {
+                padding: 0.1rem 0;
+                font-size: 0.75rem;
+            }
+            @media print {
+                body { background: #fff !important; }
+                .shell { display: block !important; }
+                .sidebar { display: none !important; }
+                .main { overflow: visible !important; height: auto !important; padding: 0 !important; }
+                .recap-a4 { box-shadow: none !important; padding: 0 !important; max-width: none !important; }
+                .step-4-controls { display: none !important; }
+                .page-header, .section-header:first-of-type { display: none !important; }
+                .recap-a4 .recap-section { page-break-inside: avoid; }
+            }
+        </style>
+
         <div class="stack">
             <div class="section-header">
                 <div>
@@ -1226,76 +1317,83 @@ $contratData = array_merge([
                 </div>
             </div>
 
-            <article class="card">
-                <div class="section-header">
+            <div class="step-4-controls table-actions" style="margin-bottom:0.75rem">
+                <button class="btn btn-info" onclick="window.print()"><span class="mdi mdi-printer"></span> Imprimer</button>
+                <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => 1])) ?>"><span class="mdi mdi-pencil"></span> Modifier societe</a>
+                <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => 2])) ?>"><span class="mdi mdi-pencil"></span> Modifier associes</a>
+                <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => 3])) ?>"><span class="mdi mdi-pencil"></span> Modifier contrat</a>
+            </div>
+
+            <div class="recap-a4">
+                <div class="recap-header">
+                    <h2>Recapitulatif du dossier de domiciliation</h2>
+                    <p>Dossier n° <?= e($societeData['societe_dossier'] ?: '-') ?> — Genere le <?= date('d/m/Y') ?></p>
+                </div>
+
+                <div class="recap-section">
                     <h3>Societe</h3>
-                    <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => 1])) ?>"><span class="mdi mdi-pencil"></span> Modifier</a>
-                </div>
-                <div class="info-grid">
-                    <div><span>Raison sociale</span><strong><?= e($societeData['societe_raison_sociale'] ?: '-') ?></strong></div>
-                    <div><span>Forme juridique</span><strong><?= e($societeData['societe_forme_juridique'] ?: '-') ?></strong></div>
-                    <div><span>Dossier domiciliation</span><strong><?= e($societeData['societe_dossier'] ?: '-') ?></strong></div>
-                    <div><span>ICE</span><strong><?= e($societeData['societe_ice'] ?: '-') ?></strong></div>
-                    <div><span>RC</span><strong><?= e($societeData['societe_rc'] ?: '-') ?></strong></div>
-                    <div><span>IF</span><strong><?= e($societeData['societe_if'] ?: '-') ?></strong></div>
-                    <div><span>Capital</span><strong><?= e($societeData['societe_capital'] ?: '-') ?></strong></div>
-                    <div><span>Part social</span><strong><?= e($societeData['societe_part_social'] ?: '-') ?></strong></div>
-                    <div><span>Valeur nominale</span><strong><?= e($societeData['societe_valeur_nominale'] ?: '-') ?></strong></div>
-                    <div><span>Adresse</span><strong><?= e($societeData['societe_adresse_siege'] ?: '-') ?></strong></div>
-                    <div><span>Ville</span><strong><?= e($societeData['societe_ville'] ?: '-') ?></strong></div>
-                    <div><span>Tribunal</span><strong><?= e($societeData['societe_tribunal'] ?: '-') ?><?= $currentTribunalType ? ' ('.e($currentTribunalType).')' : '' ?></strong></div>
-                    <div><span>Email</span><strong><?= e($societeData['societe_email'] ?: '-') ?></strong></div>
-                    <div><span>Telephone</span><strong><?= e($societeData['societe_telephone'] ?: '-') ?></strong></div>
-                    <div class="full"><span>Activites (Statuts)</span><strong><?= e(!empty($societeData['societe_activites_statuts']) ? (string) $societeData['societe_activites_statuts'] : '-') ?></strong></div>
-                    <div class="full"><span>Activites (OMPIC)</span><strong><?= e(!empty($societeData['societe_activites_ompic']) ? fetch_activites_ompic_display($pdo ?? null, (string) $societeData['societe_activites_ompic']) : '-') ?></strong></div>
-                    <div><span>Type generation</span><strong><?= e($societeData['type_generation'] ?: '-') ?></strong></div>
-                    <div><span>Procedure</span><strong><?= e($societeData['procedure_creation'] ?: '-') ?></strong></div>
-                    <div><span>Mode depot</span><strong><?= e($societeData['mode_depot_creation'] ?: '-') ?></strong></div>
-                </div>
-            </article>
-
-            <article class="card">
-                <div class="section-header">
-                    <h3>Associes (<?= count($associesData) ?>)</h3>
-                    <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => 2])) ?>"><span class="mdi mdi-pencil"></span> Modifier</a>
-                </div>
-                <?php foreach ($associesData as $i => $associe): ?>
-                    <div class="info-grid" style="border-bottom:1px solid var(--border);padding-bottom:0.75rem;margin-bottom:0.75rem">
-                        <div><span>Nom complet</span><strong><?= e($associe['associe_nom_complet'] ?: '-') ?></strong></div>
-                        <div><span>CIN</span><strong><?= e($associe['associe_cin'] ?: '-') ?></strong></div>
-                        <div><span>Nationalite</span><strong><?= e($associe['associe_nationalite'] ?: '-') ?></strong></div>
-                        <div><span>Date naissance</span><strong><?= e($associe['associe_date_naissance'] ?: '-') ?></strong></div>
-                        <div><span>Lieu naissance</span><strong><?= e($associe['associe_lieu_naissance'] ?: '-') ?></strong></div>
-                        <div><span>Qualite</span><strong><?= e($associe['associe_qualite'] ?: '-') ?></strong></div>
-                        <div><span>Parts</span><strong><?= e((string) ($associe['associe_parts'] ?? '-')) ?></strong></div>
-                        <div><span>Capital detenu</span><strong><?= e((string) ($associe['associe_capital_detenu'] ?? '-')) ?></strong></div>
-                        <div><span>Gerant</span><strong><?= ((string) ($associe['associe_est_gerant'] ?? '0') === '1') ? 'Oui' : 'Non' ?></strong></div>
+                    <div class="recap-grid">
+                        <div class="item"><span class="label">Raison sociale</span><span class="value"><?= e($societeData['societe_raison_sociale'] ?: '-') ?></span></div>
+                        <div class="item"><span class="label">Forme juridique</span><span class="value"><?= e($societeData['societe_forme_juridique'] ?: '-') ?></span></div>
+                        <div class="item"><span class="label">ICE</span><span class="value"><?= e($societeData['societe_ice'] ?: '-') ?></span></div>
+                        <div class="item"><span class="label">RC</span><span class="value"><?= e($societeData['societe_rc'] ?: '-') ?></span></div>
+                        <div class="item"><span class="label">IF</span><span class="value"><?= e($societeData['societe_if'] ?: '-') ?></span></div>
+                        <div class="item"><span class="label">Capital</span><span class="value"><?= e($societeData['societe_capital'] ?: '-') ?> DH</span></div>
+                        <div class="item"><span class="label">Part social</span><span class="value"><?= e($societeData['societe_part_social'] ?: '-') ?></span></div>
+                        <div class="item"><span class="label">Valeur nominale</span><span class="value"><?= e($societeData['societe_valeur_nominale'] ?: '-') ?> DH</span></div>
+                        <div class="item full"><span class="label">Adresse</span><span class="value"><?= e($societeData['societe_adresse_siege'] ?: '-') ?></span></div>
+                        <div class="item"><span class="label">Ville</span><span class="value"><?= e($societeData['societe_ville'] ?: '-') ?></span></div>
+                        <div class="item"><span class="label">Tribunal</span><span class="value"><?= e($societeData['societe_tribunal'] ?: '-') ?><?= $currentTribunalType ? ' ('.e($currentTribunalType).')' : '' ?></span></div>
+                        <div class="item"><span class="label">Email</span><span class="value"><?= e($societeData['societe_email'] ?: '-') ?></span></div>
+                        <div class="item"><span class="label">Telephone</span><span class="value"><?= e($societeData['societe_telephone'] ?: '-') ?></span></div>
+                        <div class="item full"><span class="label">Activites (Statuts)</span><span class="value"><?= e(!empty($societeData['societe_activites_statuts']) ? (string) $societeData['societe_activites_statuts'] : '-') ?></span></div>
+                        <div class="item full"><span class="label">Activites (OMPIC)</span><span class="value"><?= e(!empty($societeData['societe_activites_ompic']) ? fetch_activites_ompic_display($pdo ?? null, (string) $societeData['societe_activites_ompic']) : '-') ?></span></div>
+                        <div class="item"><span class="label">Type generation</span><span class="value"><?= e($societeData['type_generation'] ?: '-') ?></span></div>
+                        <div class="item"><span class="label">Procedure</span><span class="value"><?= e($societeData['procedure_creation'] ?: '-') ?></span></div>
+                        <div class="item"><span class="label">Mode depot</span><span class="value"><?= e($societeData['mode_depot_creation'] ?: '-') ?></span></div>
                     </div>
-                <?php endforeach; ?>
-            </article>
+                </div>
 
-            <article class="card">
-                <div class="section-header">
+                <div class="recap-section">
+                    <h3>Associes (<?= count($associesData) ?>)</h3>
+                    <?php foreach ($associesData as $i => $associe): ?>
+                    <div class="recap-associe">
+                        <div class="associe-num">Associe n°<?= $i + 1 ?></div>
+                        <div class="recap-grid">
+                            <div class="item"><span class="label">Nom complet</span><span class="value"><?= e($associe['associe_nom_complet'] ?: '-') ?></span></div>
+                            <div class="item"><span class="label">CIN</span><span class="value"><?= e($associe['associe_cin'] ?: '-') ?></span></div>
+                            <div class="item"><span class="label">Nationalite</span><span class="value"><?= e($associe['associe_nationalite'] ?: '-') ?></span></div>
+                            <div class="item"><span class="label">Date naissance</span><span class="value"><?= e($associe['associe_date_naissance'] ?: '-') ?></span></div>
+                            <div class="item"><span class="label">Lieu naissance</span><span class="value"><?= e($associe['associe_lieu_naissance'] ?: '-') ?></span></div>
+                            <div class="item"><span class="label">Qualite</span><span class="value"><?= e($associe['associe_qualite'] ?: '-') ?></span></div>
+                            <div class="item"><span class="label">Gerant</span><span class="value"><?= ((string) ($associe['associe_est_gerant'] ?? '0') === '1') ? 'Oui' : 'Non' ?></span></div>
+                            <div class="item"><span class="label">Parts</span><span class="value"><?= e((string) ($associe['associe_parts'] ?? '-')) ?></span></div>
+                            <div class="item"><span class="label">Capital detenu</span><span class="value"><?= e((string) ($associe['associe_capital_detenu'] ?? '-')) ?> DH</span></div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <div class="recap-section">
                     <h3>Contrat</h3>
-                    <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => 3])) ?>"><span class="mdi mdi-pencil"></span> Modifier</a>
+                    <div class="recap-grid">
+                        <div class="item"><span class="label">Type contrat</span><span class="value"><?= e($contratData['contrat_type'] ?: '-') ?></span></div>
+                        <div class="item"><span class="label">Type domiciliation</span><span class="value"><?= e($contratData['contrat_type_domiciliation'] ?: '-') ?></span></div>
+                        <div class="item"><span class="label">Statut</span><span class="value"><?= e($contratData['contrat_statut'] ?: '-') ?></span></div>
+                        <div class="item"><span class="label">Date contrat</span><span class="value"><?= e($contratData['contrat_date'] ?: '-') ?></span></div>
+                        <div class="item"><span class="label">Date debut</span><span class="value"><?= e($contratData['contrat_date_debut'] ?: '-') ?></span></div>
+                        <div class="item"><span class="label">Date fin</span><span class="value"><?= e($contratData['contrat_date_fin'] ?: '-') ?></span></div>
+                        <div class="item"><span class="label">Duree</span><span class="value"><?= e((string) ($contratData['contrat_duree_mois'] ?: '-')) ?> mois</span></div>
+                        <div class="item"><span class="label">Loyer HT</span><span class="value"><?= e($contratData['contrat_loyer_ht'] ?: '-') ?> DH</span></div>
+                        <div class="item"><span class="label">TVA</span><span class="value"><?= e((string) ($contratData['contrat_tva_pourcent'] ?: '-')) ?>%</span></div>
+                        <div class="item"><span class="label">Loyer TTC/mois</span><span class="value"><?= e($contratData['contrat_loyer_ttc'] ?: '-') ?> DH</span></div>
+                        <div class="item"><span class="label">Total loyer</span><span class="value"><?= e($contratData['contrat_total_ht'] ?: '-') ?> DH</span></div>
+                        <div class="item"><span class="label">Renouvellement</span><span class="value"><?= e($contratData['contrat_type_renouvellement'] ?: '-') ?></span></div>
+                    </div>
                 </div>
-                <div class="info-grid">
-                    <div><span>Type contrat</span><strong><?= e($contratData['contrat_type'] ?: '-') ?></strong></div>
-                    <div><span>Type domiciliation</span><strong><?= e($contratData['contrat_type_domiciliation'] ?: '-') ?></strong></div>
-                    <div><span>Date contrat</span><strong><?= e($contratData['contrat_date'] ?: '-') ?></strong></div>
-                    <div><span>Date debut</span><strong><?= e($contratData['contrat_date_debut'] ?: '-') ?></strong></div>
-                    <div><span>Date fin</span><strong><?= e($contratData['contrat_date_fin'] ?: '-') ?></strong></div>
-                    <div><span>Duree (mois)</span><strong><?= e((string) ($contratData['contrat_duree_mois'] ?: '-')) ?></strong></div>
-                    <div><span>Loyer HT</span><strong><?= e($contratData['contrat_loyer_ht'] ?: '-') ?></strong></div>
-                    <div><span>TVA %</span><strong><?= e((string) ($contratData['contrat_tva_pourcent'] ?: '-')) ?></strong></div>
-                    <div><span>Loyer TTC/mois</span><strong><?= e($contratData['contrat_loyer_ttc'] ?: '-') ?></strong></div>
-                    <div><span>Total loyer</span><strong><?= e($contratData['contrat_total_ht'] ?: '-') ?></strong></div>
-                    <div><span>Renouvellement</span><strong><?= e($contratData['contrat_type_renouvellement'] ?: '-') ?></strong></div>
-                    <div><span>Statut</span><strong><?= e($contratData['contrat_statut'] ?: '-') ?></strong></div>
-                </div>
-            </article>
+            </div>
 
-            <form method="post" class="table-actions" style="margin-top:1rem">
+            <form method="post" class="step-4-controls table-actions" style="margin-top:1rem">
                 <?= csrf_input() ?>
                 <input type="hidden" name="step" value="4">
                 <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="mdi mdi-arrow-left"></span> Retour</button>
