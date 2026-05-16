@@ -460,7 +460,8 @@ class TemplateAnalyzer
 
         $patterns = [];
         foreach ($variableNames as $name) {
-            $patterns[] = '/\{\{\s*' . preg_quote($name, '/') . '\s*\}\}/i';
+            $escaped = str_replace('_', '[\s_]*', preg_quote($name, '/'));
+            $patterns[] = '/\{\{\s*' . $escaped . '\s*\}\}/iu';
         }
 
         $iterator = new RecursiveIteratorIterator(
@@ -603,7 +604,8 @@ class TemplateAnalyzer
             return ['modified' => 0, 'errors' => ['ZipArchive requis ou dossier introuvable.']];
         }
 
-        $pattern = '/\{\{\s*' . preg_quote($oldName, '/') . '\s*\}\}/i';
+        $escaped = str_replace('_', '[\s_]*', preg_quote($oldName, '/'));
+        $pattern = '/\{\{\s*' . $escaped . '\s*\}\}/iu';
         $replacement = '{{ ' . $newName . ' }}';
 
         $iterator = new RecursiveIteratorIterator(

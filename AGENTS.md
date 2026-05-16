@@ -107,7 +107,35 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - CSS: `assets/css/app.css` (~1116 lignes) — custom design system (CSS variables, no framework)
 - JS: `assets/js/app.js` (~638 lignes) — vanilla JS: sidebar toggle, column toggle, confirmation dialogs (`data-confirm`), dynamic associate form cloning (`data-associe-template`, `data-add-associe`, `data-remove-associe`), wizard capital distribution
 
-## Config
-- `config/app.php`: app_name, base_url
-- `config/database.php`: MySQL connection settings
-- `config/defaults.json`: Form field defaults for wizard (societe, associe, contrat, collaborateur sections)
+## TemplateAnalyzer (src/TemplateAnalyzer.php)
+- Static class for .docx template analysis and modification
+- **extractVariables(path)**: Reads `word/document.xml` via ZipArchive, strips XML tags, regex `{{ VAR }}`
+- **scanTemplates(dir)**: Recursively finds `.docx` files, returns array with filename/date/doc_type/variables
+- **analyzeCoverage(templates)**: Cross-references template variables against `getExpectedContextKeys()`, returns `summary` + `variables[].{variable,occurrences,section,coverage,templates}` + `details[]`
+- **renameVariable(old, new, dir)**: Renames `{{ OLD }}` → `{{ NEW }}` in all .docx files. Returns `['modified' => int, 'errors' => []]`
+- **deleteVariable(name, dir)** / **deleteVariables(names, dir)**: Removes `{{ NAME }}` from all .docx files
+- **replaceInDocxXml(xml, pattern, replacement)**: DOMDocument + XPath `//w:p` → concat all `<w:t>` text → `preg_replace` → put result in first `<w:t>`, clear others
+- **getExpectedContextKeys()**: Returns flat array of canonical variable names (SOCIETE_*, ASSOCIE_*, CONTRAT_*, ACTIVITES_*, DATE)
+- **inferSection(name)**: Maps a variable name to `societe|associe|contrat|collaborateur|autre`
+- **extractTemplateInfo(path)**: Parses filename parts (prefix_date_docType_Template.docx) into structured array
+- **groupByFolder(templates)**: Groups templates by parent folder name
+
+## Analyse de Couverture (pages/analyse-couverture.php)
+- Page: `index.php?page=analyse-couverture`
+- Reads templates from `templates/`, outputs analysis table + stats summary (total/couvert/non couvert)
+- **Per-row actions** (all variables): Rename dropdown (all context keys) + delete button
+- **Bulk actions** (checkbox-select): "Renommer la sélection" (sequential prompt per var) + "Supprimer la sélection" (confirm → loader overlay)
+- **Loader overlay**: `#loading-overlay` (fixed, rgba(0,0,0,0.6), spinner + message)
+- **CSRF + redirect-after-POST** on all actions
+
+## DOCX Manipulation Gotchas
+- **Underscore split**: `{{ CIVILITE_ASSOCIE }}` can be split across `<w:t>` as `{{ CIVILITE` + ` ` + `ASSOCIE }}`. Always use `[\s_]*` in regex patterns, not literal `_`.
+- **Headers/footers**: Always scan `word/header*.xml` and `word/footer*.xml` too, not just `word/document.xml`
+- **ZipArchive**: Must be enabled in `C:\xampp\php\php.ini` (`extension=zip`) + Apache restart
+
+## XAMPP Debugging
+- PHP binary: `C:\xampp\php\php.exe`
+- Error log: `C:\xampp\php\logs\php_error_log` or Apache `error.log`
+- Quick test: create `_debug.php`, run via `php.exe _debug.php` (runs outside Apache, good for testing TemplateAnalyzer)
+- No `composer.json`, no autoloader — use `require_once` for classes
+- No lint/typecheck commands available (vanilla PHP project)

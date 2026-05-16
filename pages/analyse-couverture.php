@@ -43,6 +43,35 @@ if ($templates) {
         redirect_to('analyse-couverture');
     }
 
+    if (is_post() && isset($_POST['bulk_rename'])) {
+        verify_csrf();
+        $oldNames = $_POST['old_names'] ?? [];
+        $newNames = $_POST['new_names'] ?? [];
+        if (is_array($oldNames) && is_array($newNames)) {
+            $total = 0;
+            $errors = [];
+            foreach ($oldNames as $i => $old) {
+                $new = $newNames[$i] ?? '';
+                $old = trim($old);
+                $new = trim($new);
+                if ($old !== '' && $new !== '' && $old !== $new) {
+                    $result = TemplateAnalyzer::renameVariable($old, $new, $templatesDir);
+                    $total += $result['modified'];
+                    if (!empty($result['errors'])) {
+                        $errors = array_merge($errors, $result['errors']);
+                    }
+                }
+            }
+            $count = count($oldNames);
+            $msg = "{$count} variable(s) renommee(s) dans {$total} template(s).";
+            if (!empty($errors)) {
+                $msg .= ' Erreurs: ' . implode('; ', $errors);
+            }
+            set_flash('success', $msg);
+        }
+        redirect_to('analyse-couverture');
+    }
+
     if (is_post() && isset($_POST['bulk_delete'])) {
         verify_csrf();
         $selected = $_POST['selected_vars'] ?? [];
@@ -75,6 +104,7 @@ if ($templates) {
         </div>
         <?php if ($analysis): ?>
         <div class="table-actions">
+            <button type="button" id="bulk-rename-btn" class="btn btn-info"><span class="mdi mdi-rename"></span> Renommer la sélection</button>
             <button type="button" id="bulk-delete-btn" class="btn btn-danger"><span class="mdi mdi-delete"></span> Supprimer la sélection</button>
             <form method="post" style="display:inline">
                 <?= csrf_input() ?>
@@ -170,6 +200,9 @@ if ($templates) {
 <form id="bulk-delete-form" method="post" style="display:none">
     <?= csrf_input() ?>
 </form>
+<form id="bulk-rename-form" method="post" style="display:none">
+    <?= csrf_input() ?>
+</form>
 
 <div id="loading-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center">
     <div class="loader-card">
@@ -190,6 +223,54 @@ if ($templates) {
         document.querySelectorAll('.var-checkbox').forEach(function(cb){
             cb.checked = this.checked;
         }, this);
+    });
+
+    document.getElementById('bulk-rename-btn').addEventListener('click', function(){
+        var checked = document.querySelectorAll('.var-checkbox:checked');
+        if (checked.length === 0) {
+            alert('Selectionnez au moins une variable.');
+            return;
+        }
+        var pairs = [];
+        var cancelled = false;
+        checked.forEach(function(cb){
+            if (cancelled) return;
+            var oldName = cb.value;
+            var newName = prompt('Renommer {{ ' + oldName + ' }} en :', '');
+            if (newName === null) {
+                cancelled = true;
+                return;
+            }
+            newName = newName.trim().toUpperCase();
+            if (newName !== '' && newName !== oldName) {
+                pairs.push({old: oldName, new: newName});
+            }
+        });
+        if (cancelled || pairs.length === 0) return;
+        var form = document.getElementById('bulk-rename-form');
+        document.querySelectorAll('#bulk-rename-form .dynamic-input').forEach(function(e){ e.remove(); });
+        pairs.forEach(function(p){
+            var inpOld = document.createElement('input');
+            inpOld.type = 'hidden';
+            inpOld.name = 'old_names[]';
+            inpOld.value = p.old;
+            inpOld.className = 'dynamic-input';
+            form.appendChild(inpOld);
+            var inpNew = document.createElement('input');
+            inpNew.type = 'hidden';
+            inpNew.name = 'new_names[]';
+            inpNew.value = p.new;
+            inpNew.className = 'dynamic-input';
+            form.appendChild(inpNew);
+        });
+        var btn = document.createElement('input');
+        btn.type = 'hidden';
+        btn.name = 'bulk_rename';
+        btn.value = '1';
+        btn.className = 'dynamic-input';
+        form.appendChild(btn);
+        window.showOverlay('Renommage en cours...');
+        form.submit();
     });
 
     document.getElementById('bulk-delete-btn').addEventListener('click', function(){
