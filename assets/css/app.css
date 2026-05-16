@@ -1479,37 +1479,194 @@ tbody tr:hover:nth-child(even) {
 }
 
 @media (max-width: 980px) {
-    .shell,
-    .grid.two,
-    .stats,
-    .form-grid,
-    .wizard-steps,
-    .stats.compact,
-    .quick-actions,
-    .quick-actions.extra,
-    .info-grid {
-        grid-template-columns: 1fr;
-    }
-    .template-item {
-        padding: 8px 10px;
-        gap: 8px;
-    }
+     .shell,
+     .grid.two,
+     .stats,
+     .form-grid,
+     .wizard-steps,
+     .stats.compact,
+     .quick-actions,
+     .quick-actions.extra,
+     .info-grid {
+         grid-template-columns: 1fr;
+     }
+     .template-item {
+         padding: 8px 10px;
+         gap: 8px;
+     }
 
-    .sidebar {
-        border-right: 0;
-        border-bottom: 1px solid var(--line);
-    }
+     .sidebar {
+         border-right: 0;
+         border-bottom: 1px solid var(--line);
+     }
 
-    .table-scroll {
-        margin: 0 -1rem;
-        padding: 0 1rem;
-    }
+     .table-scroll {
+         margin: 0 -1rem;
+         padding: 0 1rem;
+     }
 
-    .card {
-        padding: 1rem;
-    }
+     .card {
+         padding: 1rem;
+     }
 
-    .main {
-        padding: 1rem;
-    }
+     .main {
+         padding: 1rem;
+     }
+}
+
+@media print {
+     /* Hide navigation and UI elements */
+     .shell {
+         display: block;
+         height: auto;
+     }
+     .sidebar,
+     .table-actions,
+     .btn,
+     button,
+     .section-header .table-actions,
+     .wizard-steps,
+     [data-sidebar-toggle],
+     .col-toggle-panel,
+     [data-col-toggle-btn],
+     .mdi,
+     form {
+         display: none !important;
+     }
+
+     /* Adjust main content for print */
+     .main {
+         padding: 0;
+         height: auto;
+         overflow: visible;
+     }
+
+     /* Hide dynamic elements */
+     .flash,
+     .empty-state,
+     #loading-overlay {
+         display: none !important;
+     }
+
+     /* Print-friendly styles */
+     body {
+         background: white;
+         color: #000;
+     }
+
+     .card,
+     article {
+         background: white;
+         border: 1px solid #ccc;
+         page-break-inside: avoid;
+         margin-bottom: 1rem;
+     }
+
+     /* Section header - show title but hide actions */
+     .section-header {
+         display: block;
+     }
+
+     .section-header h2,
+     .section-header h3 {
+         margin-bottom: 1rem;
+     }
+
+     /* Show tables in print */
+     table {
+         width: 100%;
+         border-collapse: collapse;
+         page-break-inside: avoid;
+     }
+
+     th,
+     td {
+         border: 1px solid #999;
+         padding: 8px;
+         text-align: left;
+         color: #000;
+         background: white;
+     }
+
+     th {
+         background: #f0f0f0 !important;
+         font-weight: bold;
+     }
+
+     .table-scroll {
+         overflow: visible;
+         margin: 0;
+         padding: 0;
+     }
+
+     /* Info grids print */
+     .info-grid {
+         display: grid;
+         grid-template-columns: repeat(2, 1fr);
+         gap: 1rem;
+     }
+
+     .info-grid > div {
+         border: 1px solid #ccc;
+         padding: 10px;
+         background: white;
+     }
+
+     /* Stats in print */
+     .stats {
+         display: grid;
+         grid-template-columns: repeat(4, 1fr);
+         gap: 1rem;
+         margin-bottom: 1.5rem;
+     }
+
+     .stat {
+         border: 1px solid #ccc;
+         padding: 1rem;
+         background: white;
+     }
+
+     .stat strong {
+         color: #000;
+     }
+
+     .stat span {
+         color: #666;
+     }
+
+     /* Badges and badges */
+     .statut-badge {
+         border: 1px solid #999;
+         background: white !important;
+         color: #000 !important;
+         padding: 4px 8px;
+     }
+
+     /* Hide elements not needed in print */
+     .col-check,
+     [data-confirm],
+     .pdf-toggle {
+         display: none !important;
+     }
+
+     /* Form grid for print */
+     .form-grid {
+         display: grid;
+         grid-template-columns: 1fr;
+     }
+
+     /* Links in print */
+     a {
+         color: #000;
+         text-decoration: none;
+     }
+
+     /* Page break rules */
+     article.card {
+         page-break-inside: avoid;
+     }
+
+     h1, h2, h3 {
+         page-break-after: avoid;
+     }
 }
