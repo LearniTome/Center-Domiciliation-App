@@ -1632,6 +1632,17 @@ $contratData = array_merge([
         .step-violet table th,.step-violet table td{border-color:color-mix(in srgb,var(--info) 30%,transparent)}
         .step-card.done .step-card-header h3{color:var(--success)}
         .step-card.active .step-card-header h3{color:var(--primary)}
+        .step-card{transition:border-color .4s ease,box-shadow .4s ease,transform .3s ease,opacity .4s ease}
+        .step-card.active{box-shadow:0 0 20px color-mix(in srgb,var(--primary) 25%,transparent),0 4px 12px rgba(0,0,0,.08)}
+        .step-card.active .step-num{animation:pulse-glow 2s ease-in-out infinite}
+        .step-card.done{box-shadow:0 0 16px color-mix(in srgb,var(--success) 20%,transparent)}
+        .step-card.done .step-num{animation:pop-done .5s ease}
+        .step-violet{box-shadow:0 0 20px color-mix(in srgb,var(--info) 25%,transparent)!important}
+        .step-card.disabled{opacity:.45;filter:grayscale(.3)}
+        @keyframes pulse-glow{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--primary) 40%,transparent)}50%{box-shadow:0 0 0 8px color-mix(in srgb,var(--primary) 0%,transparent)}}
+        .step-violet .step-num{animation:pulse-glow-violet 2s ease-in-out infinite!important}
+        @keyframes pulse-glow-violet{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--info) 40%,transparent)}50%{box-shadow:0 0 0 8px color-mix(in srgb,var(--info) 0%,transparent)}}
+        @keyframes pop-done{0%{transform:scale(1)}50%{transform:scale(1.2)}100%{transform:scale(1)}}
         </style>
         <div id="gen-loading-overlay">
             <div class="loader-card">
