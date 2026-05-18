@@ -1584,6 +1584,30 @@ $contratData = array_merge([
             const allChecked = Array.from(checkboxes).every(c => c.checked);
             checkboxes.forEach(c => c.checked = !allChecked);
         });
+
+        document.getElementById('wizard-gen-form')?.addEventListener('submit', function() {
+            window.showGenOverlay();
+        });
+
+        window.showGenOverlay = function() {
+            var overlay = document.getElementById('gen-loading-overlay');
+            if (overlay) overlay.classList.add('show');
+        };
         </script>
+
+        <style>
+        #gen-loading-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);z-index:9999;display:none;align-items:center;justify-content:center}
+        #gen-loading-overlay.show{display:flex}
+        #gen-loading-overlay .loader-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);padding:2.5rem 3rem;display:flex;flex-direction:column;align-items:center;gap:1rem;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+        #gen-loading-overlay .spinner{width:40px;height:40px;border:3px solid var(--line);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        #gen-loading-overlay p{font-size:1rem;color:var(--text-secondary);margin:0}
+        </style>
+        <div id="gen-loading-overlay">
+            <div class="loader-card">
+                <div class="spinner"></div>
+                <p>Generation des documents en cours...</p>
+            </div>
+        </div>
     <?php endif; ?>
 </section>
