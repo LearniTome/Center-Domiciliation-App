@@ -842,11 +842,21 @@ tbody tr:hover:nth-child(even) {
     border: 1px solid var(--line);
     border-radius: var(--radius-sm);
     background: var(--panel);
-    transition: border-color var(--transition);
+    transition: border-color .3s ease, opacity .3s ease, box-shadow .3s ease;
 }
 
 .wizard-step.active {
-    border-color: var(--primary);
+    border-color: var(--info);
+    box-shadow: 0 0 14px color-mix(in srgb, var(--info) 20%, transparent);
+}
+
+.wizard-step.done {
+    border-color: var(--success);
+}
+
+.wizard-step.waiting {
+    border-color: #e74c3c;
+    opacity: .7;
 }
 
 .wizard-step strong {
