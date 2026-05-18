@@ -388,7 +388,7 @@ if (is_post()) {
             require_once __DIR__ . '/../src/DocumentRenderer.php';
 
             $templatesDir = __DIR__ . '/../templates';
-            $outputDir = __DIR__ . '/../output';
+            $outputDir = __DIR__ . '/../dossiers_dom';
             if (!is_dir($outputDir)) {
                 mkdir($outputDir, 0777, true);
             }
@@ -1412,7 +1412,7 @@ $contratData = array_merge([
 
         $templatesConfig = require __DIR__ . '/../config/templates.php';
         $templatesDir = __DIR__ . '/../templates';
-        $outputDir = __DIR__ . '/../output';
+        $outputDir = __DIR__ . '/../dossiers_dom';
 
         $legalForm = $societeData['societe_forme_juridique'] ?? '';
         $allTemplates = TemplateAnalyzer::scanTemplates($templatesDir);

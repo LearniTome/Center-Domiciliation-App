@@ -5,7 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../src/TemplateAnalyzer.php';
 
 $templatesDir = __DIR__ . '/../templates';
-$outputDir = __DIR__ . '/../output';
+$outputDir = __DIR__ . '/../dossiers_dom';
 
 $templates = TemplateAnalyzer::scanTemplates($templatesDir);
 $analysis = null;

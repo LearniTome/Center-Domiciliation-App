@@ -131,7 +131,7 @@ function pdf_create_zip(array $pdfPaths, string $zipPath): bool
 }
 
 $templatesDir = __DIR__ . '/../templates';
-$outputDir = __DIR__ . '/../output';
+$outputDir = __DIR__ . '/../dossiers_dom';
 
 $engineName = pdf_detect_engine();
 $engineLabels = ['word' => 'Microsoft Word', 'libreoffice' => 'LibreOffice'];
@@ -325,12 +325,14 @@ foreach (['templates' => $templatesDir, 'output' => $outputDir, 'uploaded' => $u
 $outputSubdirs = [];
 if (is_dir($outputDir)) {
     $it = new DirectoryIterator($outputDir);
+    $dirs = [];
     foreach ($it as $f) {
         if ($f->isDir() && !$f->isDot() && $f->getBasename() !== '_uploaded_convert' && $f->getBasename() !== '_zip_tmp') {
-            $outputSubdirs[] = $f->getBasename();
+            $dirs[] = ['name' => $f->getBasename(), 'mtime' => $f->getMTime()];
         }
     }
-    sort($outputSubdirs);
+    usort($dirs, fn($a, $b) => $b['mtime'] - $a['mtime']);
+    $outputSubdirs = array_map(fn($d) => $d['name'], $dirs);
 }
 
 $recentConversions = [];
@@ -466,7 +468,7 @@ if (is_dir($outputDir)) {
                     </label>
                     <label style="display:flex;align-items:center;gap:6px;white-space:nowrap">
                         <input type="checkbox" name="recursive" value="1" checked id="recursive-check">
-                        Recursif
+                        Sous-dossiers
                     </label>
                     <label style="display:flex;align-items:center;gap:6px;flex:1" id="folder-select-label">
                         <span class="mdi mdi-folder-multiple"></span>

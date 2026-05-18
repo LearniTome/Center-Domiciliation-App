@@ -7,7 +7,7 @@ require_once __DIR__ . '/../src/DocumentRenderer.php';
 
 $templatesConfig = require __DIR__ . '/../config/templates.php';
 $templatesDir = __DIR__ . '/../templates';
-$outputDir = __DIR__ . '/../output';
+$outputDir = __DIR__ . '/../dossiers_dom';
 
 if (!is_dir($outputDir)) {
     mkdir($outputDir, 0777, true);
@@ -89,7 +89,7 @@ if (is_post() && !isset($_POST['delete_submit']) && !isset($_POST['validate_subm
     $folderDate = $context['contrat_date'] ?? $today;
     $folderName = $folderDate . '_' . $forme . '_' . $clientName;
     $folderName = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', $folderName), '-');
-    $outputDir = __DIR__ . '/../output/' . $folderName;
+    $outputDir = __DIR__ . '/../dossiers_dom/' . $folderName;
     if (!is_dir($outputDir)) {
         mkdir($outputDir, 0777, true);
     }
