@@ -1488,41 +1488,52 @@ $contratData = array_merge([
                     <?php if (!$dossierCreated): ?>
                         <p class="help-text" style="margin:12px 0 0;font-style:italic">Creez d'abord le dossier pour acceder aux templates.</p>
                     <?php elseif ($filteredTemplates): ?>
-                        <form method="post" class="stack" id="wizard-gen-form" style="gap:4px;margin-top:8px">
+                        <form method="post" class="stack" id="wizard-gen-form" style="gap:8px;margin-top:8px">
                             <?= csrf_input() ?>
                             <input type="hidden" name="step" value="5">
                             <input type="hidden" name="nav_action" value="generate">
 
-                            <div class="section-header" style="margin-bottom:0">
-                                <h3 style="margin:0;font-size:0.9rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-secondary)">
-                                    Templates disponibles
-                                </h3>
-                                <div class="table-actions">
-                                    <a class="btn-icon" href="#" id="select-all-wizard" title="Tout selectionner"><span class="mdi mdi-check-all"></span></a>
-                                    <label class="pdf-toggle">
-                                        <input type="checkbox" name="pdf" value="1" checked>
-                                        <span class="mdi mdi-file-pdf"></span> PDF
-                                    </label>
-                                </div>
+                            <div style="display:flex;align-items:center;gap:8px">
+                                <label class="pdf-toggle" style="margin:0">
+                                    <input type="checkbox" name="pdf" value="1" checked>
+                                    <span class="mdi mdi-file-pdf"></span> PDF
+                                </label>
+                                <a class="btn-icon" href="#" id="select-all-wizard" title="Tout selectionner"><span class="mdi mdi-check-all"></span></a>
                             </div>
 
-                            <?php foreach ($templatesByType as $docType => $typeTemplates): ?>
-                                <div class="template-group">
-                                    <span class="template-group-label"><?= e($templatesConfig['document_types'][$docType] ?? $docType) ?></span>
-                                    <?php foreach ($typeTemplates as $tpl): ?>
-                                        <label class="template-item">
-                                            <input type="checkbox" name="templates[]" value="<?= e($tpl['path']) ?>" checked class="template-check">
-                                            <span class="mdi mdi-file-word template-item-icon"></span>
-                                            <div class="template-item-body">
-                                                <span class="template-item-name"><?= e(basename($tpl['path'])) ?></span>
-                                                <span class="template-item-meta"><?= count($tpl['variables']) ?> variable(s)</span>
-                                            </div>
-                                        </label>
-                                    <?php endforeach; ?>
-                                </div>
-                            <?php endforeach; ?>
+                            <div class="table-scroll" style="overflow-x:auto">
+                                <table style="white-space:nowrap">
+                                    <thead>
+                                        <tr>
+                                            <th class="col-check"></th>
+                                            <th>Type</th>
+                                            <th>Template</th>
+                                            <th>Variables</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($templatesByType as $docType => $typeTemplates): ?>
+                                            <?php $typeLabel = $templatesConfig['document_types'][$docType] ?? $docType; ?>
+                                            <?php $tplCount = count($typeTemplates); ?>
+                                            <?php foreach ($typeTemplates as $i => $tpl): ?>
+                                                <tr>
+                                                    <td><input type="checkbox" name="templates[]" value="<?= e($tpl['path']) ?>" checked class="template-check"></td>
+                                                    <?php if ($i === 0): ?>
+                                                        <td rowspan="<?= $tplCount ?>" style="vertical-align:middle"><?= e($typeLabel) ?></td>
+                                                    <?php endif; ?>
+                                                    <td>
+                                                        <span class="mdi mdi-file-word" style="color:var(--primary);vertical-align:middle;margin-right:4px"></span>
+                                                        <?= e(basename($tpl['path'])) ?>
+                                                    </td>
+                                                    <td><span class="help-text"><?= count($tpl['variables']) ?> variable(s)</span></td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
 
-                            <div class="table-actions" style="margin-top:8px">
+                            <div style="display:flex;justify-content:flex-end;margin-top:4px">
                                 <button class="btn btn-next" type="submit"><span class="mdi mdi-file-sync"></span> Generer les documents</button>
                             </div>
                         </form>
