@@ -252,7 +252,7 @@ function fetch_activites_ompic_display(?PDO $pdo, string $code): string
     return $code;
 }
 
-function fetch_all_documents(?PDO $pdo, ?int $societe_id = null, ?string $q = null): array
+function fetch_all_documents(?PDO $pdo, ?int $societe_id = null, ?string $q = null, ?string $doc_type = null): array
 {
     if (!$pdo) {
         return [];
@@ -275,11 +275,25 @@ function fetch_all_documents(?PDO $pdo, ?int $societe_id = null, ?string $q = nu
         $params['q2'] = like_term($q);
     }
 
+    if ($doc_type !== null && $doc_type !== '') {
+        $sql .= ' AND d.doc_type = :doc_type';
+        $params['doc_type'] = $doc_type;
+    }
+
     $sql .= ' ORDER BY d.created_at DESC';
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
     return $stmt->fetchAll();
+}
+
+function fetch_all_doc_types(?PDO $pdo): array
+{
+    if (!$pdo) {
+        return [];
+    }
+    $stmt = $pdo->query("SELECT DISTINCT doc_type FROM documents_generes WHERE doc_type IS NOT NULL AND doc_type != '' ORDER BY doc_type");
+    return $stmt->fetchAll(\PDO::FETCH_COLUMN);
 }
 
 function fetch_document(?PDO $pdo, int $id): ?array

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 $q = search_term();
 $filterSociete = int_value($_GET, 'societe_id');
+$filterDocType = field_value($_GET, 'doc_type');
 $filterStatut = field_value($_GET, 'statut');
 $exportCsv = isset($_GET['export']) && $_GET['export'] === 'csv';
 
@@ -23,6 +24,7 @@ if (is_post() && isset($_POST['delete_submit'])) {
         $stmt->execute(array_map('intval', $selected));
         set_flash('error', count($selected) . ' document(s) supprime(s).');
         $delParams = $filterSociete ? ['societe_id' => $filterSociete] : [];
+        if ($filterDocType) $delParams['doc_type'] = $filterDocType;
         if ($filterStatut) $delParams['statut'] = $filterStatut;
         redirect_to('documents', $delParams);
     }
@@ -33,7 +35,9 @@ if (is_post() && isset($_POST['validate_submit'])) {
     $selected = $_POST['selected_files'] ?? [];
     if (count($selected) === 0 || !($pdo ?? null) instanceof PDO) {
         set_flash('error', 'Selectionnez au moins un document.');
-        redirect_to('documents', isset($_GET['societe_id']) ? ['societe_id' => (int) $_GET['societe_id']] : []);
+        $backParams = isset($_GET['societe_id']) ? ['societe_id' => (int) $_GET['societe_id']] : [];
+        if ($filterDocType) $backParams['doc_type'] = $filterDocType;
+        redirect_to('documents', $backParams);
     }
     $placeholders = implode(',', array_fill(0, count($selected), '?'));
     $stmt = $pdo->prepare("SELECT id, societe_id, fichier_docx, fichier_pdf, doc_type FROM documents_generes WHERE valide = 0 AND id IN ($placeholders)");
@@ -73,12 +77,14 @@ if (is_post() && isset($_POST['validate_submit'])) {
     }
     set_flash('success', count($selected) . ' document(s) valide(s).');
     $valParams = $filterSociete ? ['societe_id' => $filterSociete] : [];
+    if ($filterDocType) $valParams['doc_type'] = $filterDocType;
     if ($filterStatut) $valParams['statut'] = $filterStatut;
     redirect_to('documents', $valParams);
 }
 
 $societesOptions = fetch_societes_options($pdo ?? null);
-$allDocuments = fetch_all_documents($pdo ?? null, $filterSociete, $q);
+$docTypes = fetch_all_doc_types($pdo ?? null);
+$allDocuments = fetch_all_documents($pdo ?? null, $filterSociete, $q, $filterDocType);
 $documents = $allDocuments;
 if ($filterStatut === 'valide') {
     $documents = array_values(array_filter($allDocuments, fn($d) => (int) $d['valide'] === 1));
@@ -111,20 +117,20 @@ if ($exportCsv && count($documents) > 0) {
             <p class="help-text"><?= count($documents) ?> document(s)</p>
         </div>
         <div class="table-actions">
-            <a class="btn <?= $filterStatut === '' ? 'btn-next' : 'btn-secondary' ?>" href="<?= e(app_url('documents', array_merge(['societe_id' => $filterSociete, 'q' => $q], $filterSociete ? [] : []))) ?>">Tous</a>
-            <a class="btn <?= $filterStatut === 'valide' ? 'btn-next' : 'btn-secondary' ?>" href="<?= e(app_url('documents', array_merge(['societe_id' => $filterSociete, 'q' => $q, 'statut' => 'valide'], $filterSociete ? [] : []))) ?>">Valides</a>
-            <a class="btn <?= $filterStatut === 'brouillon' ? 'btn-next' : 'btn-secondary' ?>" href="<?= e(app_url('documents', array_merge(['societe_id' => $filterSociete, 'q' => $q, 'statut' => 'brouillon'], $filterSociete ? [] : []))) ?>">Brouillons</a>
-            <a class="btn btn-info" href="<?= e(app_url('documents', array_merge(['export' => 'csv'], $filterSociete ? ['societe_id' => $filterSociete] : []))) ?>">
+            <a class="btn <?= $filterStatut === '' ? 'btn-next' : 'btn-secondary' ?>" href="<?= e(app_url('documents', array_filter(['societe_id' => $filterSociete, 'doc_type' => $filterDocType, 'q' => $q], fn($v) => $v !== null && $v !== ''))) ?>">Tous</a>
+            <a class="btn <?= $filterStatut === 'valide' ? 'btn-next' : 'btn-secondary' ?>" href="<?= e(app_url('documents', array_filter(['societe_id' => $filterSociete, 'doc_type' => $filterDocType, 'q' => $q, 'statut' => 'valide'], fn($v) => $v !== null && $v !== ''))) ?>">Valides</a>
+            <a class="btn <?= $filterStatut === 'brouillon' ? 'btn-next' : 'btn-secondary' ?>" href="<?= e(app_url('documents', array_filter(['societe_id' => $filterSociete, 'doc_type' => $filterDocType, 'q' => $q, 'statut' => 'brouillon'], fn($v) => $v !== null && $v !== ''))) ?>">Brouillons</a>
+            <a class="btn btn-info" href="<?= e(app_url('documents', array_filter(['export' => 'csv', 'societe_id' => $filterSociete, 'doc_type' => $filterDocType], fn($v) => $v !== null && $v !== ''))) ?>">
                 <span class="mdi mdi-download"></span> Exporter CSV
             </a>
         </div>
     </div>
 
-    <form method="get" class="inline-form">
+    <form method="get" class="inline-form" id="documents-filter-form">
         <input type="hidden" name="page" value="documents">
-        <?php if ($filterStatut): ?><input type="hidden" name="statut" value="<?= e($filterStatut) ?>"><?php endif; ?>
+        <input type="hidden" name="statut" value="<?= e($filterStatut) ?>">
         <input type="search" name="q" placeholder="Rechercher..." value="<?= e($q) ?>">
-        <select name="societe_id">
+        <select name="societe_id" onchange="this.form.submit()">
             <option value="">Toutes les societes</option>
             <?php foreach ($societesOptions as $s): ?>
                 <option value="<?= e((string) $s['id']) ?>" <?= $filterSociete === (int) $s['id'] ? 'selected' : '' ?>>
@@ -132,8 +138,15 @@ if ($exportCsv && count($documents) > 0) {
                 </option>
             <?php endforeach; ?>
         </select>
-        <button class="btn" type="submit"><span class="mdi mdi-filter"></span> Filtrer</button>
-        <?php if ($q !== '' || $filterSociete !== null || $filterStatut !== ''): ?>
+        <select name="doc_type" onchange="this.form.submit()">
+            <option value="">Tous les types</option>
+            <?php foreach ($docTypes as $dt): ?>
+                <option value="<?= e($dt) ?>" <?= $filterDocType === $dt ? 'selected' : '' ?>>
+                    <?= e($dt) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+        <?php if ($q !== '' || $filterSociete !== null || $filterDocType !== '' || $filterStatut !== ''): ?>
             <a class="btn btn-cancel" href="<?= e(app_url('documents')) ?>"><span class="mdi mdi-close"></span> Reinitialiser</a>
         <?php endif; ?>
     </form>
