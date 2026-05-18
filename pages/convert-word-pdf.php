@@ -322,6 +322,17 @@ foreach (['templates' => $templatesDir, 'output' => $outputDir, 'uploaded' => $u
     sort($scanFiles[$key]);
 }
 
+$outputSubdirs = [];
+if (is_dir($outputDir)) {
+    $it = new DirectoryIterator($outputDir);
+    foreach ($it as $f) {
+        if ($f->isDir() && !$f->isDot() && $f->getBasename() !== '_uploaded_convert' && $f->getBasename() !== '_zip_tmp') {
+            $outputSubdirs[] = $f->getBasename();
+        }
+    }
+    sort($outputSubdirs);
+}
+
 $recentConversions = [];
 if (is_dir($outputDir)) {
     $pdfFiles = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($outputDir, RecursiveDirectoryIterator::SKIP_DOTS));
@@ -456,6 +467,15 @@ if (is_dir($outputDir)) {
                     <label style="display:flex;align-items:center;gap:6px;white-space:nowrap">
                         <input type="checkbox" name="recursive" value="1" checked id="recursive-check">
                         Recursif
+                    </label>
+                    <label style="display:flex;align-items:center;gap:6px;flex:1" id="folder-select-label">
+                        <span class="mdi mdi-folder-multiple"></span>
+                        <select name="subfolder" style="flex:1" id="subfolder-select">
+                            <option value="">Tous les dossiers</option>
+                            <?php foreach ($outputSubdirs as $sd): ?>
+                                <option value="<?= e($sd) ?>"><?= e($sd) ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </label>
                 </div>
 
@@ -737,11 +757,41 @@ if (is_dir($outputDir)) {
     const browseCount = document.getElementById('browse-count');
 
     if (sourceSelect && browseList) {
+        var subfolderSelect = document.getElementById('subfolder-select');
+        var folderLabel = document.getElementById('folder-select-label');
+
         function updateBrowseList() {
             var source = sourceSelect.value;
             var recursive = document.getElementById('recursive-check').checked;
+            var subfolder = subfolderSelect ? subfolderSelect.value : '';
             var allFiles = <?= json_encode($scanFiles, JSON_UNESCAPED_UNICODE) ?>;
             var files = allFiles[source] || [];
+
+            if (folderLabel) {
+                folderLabel.style.display = source === 'output' ? 'flex' : 'none';
+            }
+
+            var dirs = <?= json_encode(['output' => str_replace('\\', '/', $outputDir)], JSON_UNESCAPED_UNICODE) ?>;
+            var baseDir = dirs[source] || '';
+            if (baseDir) baseDir = baseDir.replace(/\\/g, '/') + '/';
+
+            if (subfolder && baseDir) {
+                var subPath = baseDir + subfolder.replace(/\\/g, '/') + '/';
+                files = files.filter(function(f) {
+                    var fp = String(f.path).replace(/\\/g, '/');
+                    if (recursive) {
+                        return fp.indexOf(subPath) === 0;
+                    }
+                    return fp.indexOf(subPath) === 0 && fp.indexOf('/', subPath.length) === -1;
+                });
+            } else if (!recursive && baseDir) {
+                files = files.filter(function(f) {
+                    var fp = String(f.path).replace(/\\/g, '/');
+                    var rel = fp.substring(baseDir.length);
+                    return rel.indexOf('/') === -1;
+                });
+            }
+
             browseCount.textContent = files.length;
             browseList.setAttribute('data-source', source);
             browseList.innerHTML = '';
@@ -764,6 +814,7 @@ if (is_dir($outputDir)) {
         }
         sourceSelect.addEventListener('change', updateBrowseList);
         document.getElementById('recursive-check').addEventListener('change', updateBrowseList);
+        if (subfolderSelect) subfolderSelect.addEventListener('change', updateBrowseList);
         updateBrowseList();
     }
 
