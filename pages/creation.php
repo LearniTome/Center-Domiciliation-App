@@ -1630,6 +1630,8 @@ $contratData = array_merge([
         .step-violet-title{color:var(--info)}
         .step-violet table{border-color:var(--info)}
         .step-violet table th,.step-violet table td{border-color:color-mix(in srgb,var(--info) 30%,transparent)}
+        .step-card.done .step-card-header h3{color:var(--success)}
+        .step-card.active .step-card-header h3{color:var(--primary)}
         </style>
         <div id="gen-loading-overlay">
             <div class="loader-card">
