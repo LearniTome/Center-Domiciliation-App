@@ -1476,49 +1476,6 @@ $contratData = array_merge([
                     <?php endif; ?>
                 </div>
 
-                <?php if ($generatedFiles): ?>
-                    <article class="card stack">
-                        <div class="section-header">
-                            <h3>Documents generes</h3>
-                            <p class="help-text"><?= count($generatedFiles) ?> fichier(s) genere(s)</p>
-                        </div>
-                        <div class="table-scroll" style="overflow-x:auto">
-                            <table style="white-space:nowrap">
-                                <thead>
-                                    <tr>
-                                        <th>Fichier</th>
-                                        <th>Taille</th>
-                                        <th class="col-actions">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($generatedFiles as $file): ?>
-                                        <tr>
-                                            <td>
-                                                <span class="mdi mdi-file-word" style="color:var(--primary);vertical-align:middle;margin-right:6px"></span>
-                                                <?= e($file['name']) ?>
-                                            </td>
-                                            <td><?php if (file_exists($file['docx'])): ?><?= number_format(filesize($file['docx']) / 1024, 1) ?> Ko<?php else: ?>-<?php endif; ?></td>
-                                            <td>
-                                                <div class="table-actions">
-                                                    <a class="btn btn-secondary" href="<?= e(str_replace(__DIR__ . '/../', '', $file['docx'])) ?>" download>
-                                                        <span class="mdi mdi-download"></span> DOCX
-                                                    </a>
-                                                    <?php if ($file['pdf']): ?>
-                                                        <a class="btn" href="<?= e(str_replace(__DIR__ . '/../', '', $file['pdf'])) ?>" download>
-                                                            <span class="mdi mdi-file-pdf"></span> PDF
-                                                        </a>
-                                                    <?php endif; ?>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </article>
-                <?php endif; ?>
-
                 <div class="step-card <?= $dossierCreated ? 'active' : 'disabled' ?>">
                     <div class="step-card-header">
                         <span class="step-num">2</span>
@@ -1577,6 +1534,49 @@ $contratData = array_merge([
                     <?php endif; ?>
                 </div>
             </div>
+
+            <?php if ($generatedFiles): ?>
+                <article class="card stack">
+                    <div class="section-header">
+                        <h3>Documents generes</h3>
+                        <p class="help-text"><?= count($generatedFiles) ?> fichier(s) genere(s)</p>
+                    </div>
+                    <div class="table-scroll" style="overflow-x:auto">
+                        <table style="white-space:nowrap">
+                            <thead>
+                                <tr>
+                                    <th>Fichier</th>
+                                    <th>Taille</th>
+                                    <th class="col-actions">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($generatedFiles as $file): ?>
+                                    <tr>
+                                        <td>
+                                            <span class="mdi mdi-file-word" style="color:var(--primary);vertical-align:middle;margin-right:6px"></span>
+                                            <?= e($file['name']) ?>
+                                        </td>
+                                        <td><?php if (file_exists($file['docx'])): ?><?= number_format(filesize($file['docx']) / 1024, 1) ?> Ko<?php else: ?>-<?php endif; ?></td>
+                                        <td>
+                                            <div class="table-actions">
+                                                <a class="btn btn-secondary" href="<?= e(str_replace(__DIR__ . '/../', '', $file['docx'])) ?>" download>
+                                                    <span class="mdi mdi-download"></span> DOCX
+                                                </a>
+                                                <?php if ($file['pdf']): ?>
+                                                    <a class="btn" href="<?= e(str_replace(__DIR__ . '/../', '', $file['pdf'])) ?>" download>
+                                                        <span class="mdi mdi-file-pdf"></span> PDF
+                                                    </a>
+                                                <?php endif; ?>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+            <?php endif; ?>
 
             <form method="post" class="table-actions" style="margin-top:1rem">
                 <?= csrf_input() ?>
