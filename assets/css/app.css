@@ -1152,6 +1152,70 @@ tbody tr:hover:nth-child(even) {
     white-space: nowrap;
 }
 
+.two-step-flow {
+    display: grid;
+    gap: 12px;
+}
+.step-card {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    transition: border-color var(--transition), opacity var(--transition);
+}
+.step-card.disabled {
+    opacity: 0.5;
+}
+.step-card.active {
+    border-color: var(--primary);
+}
+.step-card.done {
+    border-color: var(--success);
+}
+.step-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+.step-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    background: var(--line);
+    color: var(--text-secondary);
+}
+.step-card.active .step-num {
+    background: var(--primary);
+    color: #fff;
+}
+.step-card.done .step-num {
+    background: var(--success);
+    color: #fff;
+}
+.step-card-header h3 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+.step-card-header .help-text {
+    margin: 2px 0 0;
+    font-size: 0.8rem;
+}
+.step-badge {
+    margin-left: auto;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--success);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
 .template-gen-group {
     display: grid;
     gap: 6px;

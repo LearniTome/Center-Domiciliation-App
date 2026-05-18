@@ -133,7 +133,7 @@ if (($pdo ?? null) instanceof PDO) {
                         <td><?= e($c['collaborateur_ice'] ?? '-') ?></td>
                         <td><?= e($c['collaborateur_tel_mobile'] ?: $c['collaborateur_tel_fixe'] ?: $c['telephone'] ?: '-') ?></td>
                         <td><?= e($c['statut']) ?></td>
-                        <td><?= e(substr($c['created_at'], 0, 10)) ?></td>
+                        <td><?= e(date('d/m/Y', strtotime((string) $c['created_at']))) ?></td>
                         <td class="table-actions">
                             <a class="btn-icon" href="<?= e(app_url('collaborateur', ['id' => (int) $c['id']])) ?>" title="Modifier"><span class="mdi mdi-pencil"></span></a>
                             <form method="post">

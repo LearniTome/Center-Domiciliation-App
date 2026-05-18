@@ -568,7 +568,7 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
                 <?php foreach ($contrats as $contrat): ?>
                     <tr>
                         <td><?= e($contrat['contrat_type']) ?></td>
-                        <td><?= e(($contrat['contrat_date_debut'] ?: '-') . ' -> ' . ($contrat['contrat_date_fin'] ?: '-')) ?></td>
+                        <td><?= e(format_date($contrat['contrat_date_debut'] ?? null) . ' -> ' . format_date($contrat['contrat_date_fin'] ?? null)) ?></td>
                         <td><span class="statut-badge <?= strtolower($contrat['contrat_statut']) === 'actif' ? 'actif' : 'resilie' ?>"><?= e($contrat['contrat_statut']) ?></span></td>
                         <td><?= format_money($contrat['montant_total_loyer'] !== null ? (float) $contrat['montant_total_loyer'] : null) ?></td>
                     </tr>

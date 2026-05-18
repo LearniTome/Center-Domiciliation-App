@@ -134,7 +134,7 @@ if (($pdo ?? null) instanceof PDO) {
                         <td><?= e($societe['societe_raison_sociale']) ?></td>
                         <td><?= e($societe['societe_forme_juridique']) ?></td>
                         <td><?= e($societe['societe_ice'] ?? '-') ?></td>
-                        <td><?= e($societe['societe_date_ice'] ?? '-') ?></td>
+                        <td><?= e(format_date($societe['societe_date_ice'] ?? null)) ?></td>
                         <td><?= e($societe['societe_rc'] ?? '-') ?></td>
                         <td><?= e($societe['societe_if'] ?? '-') ?></td>
                         <td><?= e(!empty($societe['societe_activites_statuts']) ? (string) $societe['societe_activites_statuts'] : '-') ?></td>
@@ -144,8 +144,8 @@ if (($pdo ?? null) instanceof PDO) {
                         <td><?= e($societe['societe_tribunal'] ?? '-') ?></td>
                         <td><?= e($societe['societe_telephone']) ?></td>
                         <td><?= e($societe['societe_email'] ?? '-') ?></td>
-                        <td><?= e(substr($societe['created_at'], 0, 10)) ?></td>
-                        <td><?= e(substr($societe['updated_at'], 0, 10)) ?></td>
+                        <td><?= e(date('d/m/Y', strtotime((string) $societe['created_at']))) ?></td>
+                        <td><?= e(date('d/m/Y', strtotime((string) $societe['updated_at']))) ?></td>
                         <td class="table-actions">
                             <a class="btn-icon" href="<?= e(app_url('societe', ['id' => (int) $societe['id']])) ?>" title="Voir"><span class="mdi mdi-eye"></span></a>
                             <a class="btn-icon" href="<?= e(app_url('societe', ['id' => (int) $societe['id'], 'edit' => '1'])) ?>" title="Modifier"><span class="mdi mdi-pencil"></span></a>

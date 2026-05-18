@@ -273,7 +273,7 @@ $formData = $editingRecord ?? [
                 <div><strong>Telephone</strong><span><?= e($formData['collaborateur_tel_mobile'] ?: $formData['collaborateur_tel_fixe'] ?: $formData['telephone'] ?: '-') ?></span></div>
                 <div class="full"><strong>Adresse</strong><span><?= e($formData['collaborateur_adresse'] ?: '-') ?></span></div>
                 <div><strong>Statut</strong><span><?= e($formData['statut'] ?: '-') ?></span></div>
-                <div><strong>Date debut</strong><span><?= e($formData['date_debut'] ?: '-') ?></span></div>
+                <div><strong>Date debut</strong><span><?= e(format_date($formData['date_debut'] ?? null)) ?></span></div>
             </div>
 
             <?php if ($formData['notes']): ?>

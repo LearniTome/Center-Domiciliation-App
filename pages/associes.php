@@ -247,7 +247,7 @@ if (($pdo ?? null) instanceof PDO) {
                         <td><?= e($associe['associe_nom_complet']) ?></td>
                         <td><?= e($associe['societe_raison_sociale']) ?></td>
                         <td><?= e($associe['associe_cin'] ?? '-') ?></td>
-                        <td><?= e($associe['associe_date_naissance'] ?? '-') ?></td>
+                        <td><?= e(format_date($associe['associe_date_naissance'] ?? null)) ?></td>
                         <td><?= e($associe['associe_lieu_naissance'] ?? '-') ?></td>
                         <td><?= e($associe['associe_nationalite'] ?? '-') ?></td>
                         <td><?= e($associe['associe_telephone'] ?? '-') ?></td>
@@ -255,8 +255,8 @@ if (($pdo ?? null) instanceof PDO) {
                         <td><?= e($associe['associe_qualite'] ?? '-') ?></td>
                         <td><?= $associe['associe_parts'] !== null ? e((string) $associe['associe_parts']) : '-' ?></td>
                         <td><?= (int) $associe['associe_est_gerant'] === 1 ? 'Oui' : 'Non' ?></td>
-                        <td><?= e(substr($associe['created_at'], 0, 10)) ?></td>
-                        <td><?= e(substr($associe['updated_at'], 0, 10)) ?></td>
+                        <td><?= e(date('d/m/Y', strtotime((string) $associe['created_at']))) ?></td>
+                        <td><?= e(date('d/m/Y', strtotime((string) $associe['updated_at']))) ?></td>
                         <td class="table-actions">
                             <a class="btn-icon" href="<?= e(app_url('associes', ['edit' => (int) $associe['id']])) ?>" title="Modifier"><span class="mdi mdi-pencil"></span></a>
                             <form method="post">

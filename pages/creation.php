@@ -647,11 +647,11 @@ $contratData = array_merge([
                 </label>
                 <label class="field">
                     <span>Date de cert. negatif</span>
-                    <input type="date" name="societe_date_ice" placeholder="01/01/2026" value="<?= e((string) $societeData['societe_date_ice']) ?>">
+                    <input type="date" name="societe_date_ice" placeholder="18/05/2026" value="<?= e((string) $societeData['societe_date_ice']) ?>">
                 </label>
                 <label class="field">
                     <span>Date exp. cert. negatif</span>
-                    <input type="date" name="societe_date_exp_cert_neg" placeholder="01/01/2026" value="<?= e((string) $societeData['societe_date_exp_cert_neg']) ?>">
+                    <input type="date" name="societe_date_exp_cert_neg" placeholder="18/05/2026" value="<?= e((string) $societeData['societe_date_exp_cert_neg']) ?>">
                 </label>
                 <label class="field">
                     <span>RC</span>
@@ -855,7 +855,7 @@ $contratData = array_merge([
                             </label>
                             <label class="field">
                                 <span>Date validite CIN</span>
-                                <input data-field-name="date_validite_cin" type="date" name="associes[<?= $index ?>][date_validite_cin]" placeholder="01/01/2026" value="<?= e((string) ($associe['associe_date_validite_cin'] ?? '')) ?>">
+                                <input data-field-name="date_validite_cin" type="date" name="associes[<?= $index ?>][date_validite_cin]" placeholder="18/05/2026" value="<?= e((string) ($associe['associe_date_validite_cin'] ?? '')) ?>">
                             </label>
                             <label class="field">
                                 <span>Nationalite</span>
@@ -871,7 +871,7 @@ $contratData = array_merge([
                             </label>
                             <label class="field">
                                 <span>Date naissance</span>
-                                <input data-field-name="date_naiss" type="date" name="associes[<?= $index ?>][date_naiss]" placeholder="01/01/2026" value="<?= e((string) ($associe['associe_date_naissance'] ?? '')) ?>">
+                                <input data-field-name="date_naiss" type="date" name="associes[<?= $index ?>][date_naiss]" placeholder="18/05/2026" value="<?= e((string) ($associe['associe_date_naissance'] ?? '')) ?>">
                             </label>
                             <label class="field">
                                 <span>Lieu naissance</span>
@@ -1005,7 +1005,7 @@ $contratData = array_merge([
                         </label>
                         <label class="field">
                             <span>Date validite CIN</span>
-                            <input data-field-name="date_validite_cin" type="date" placeholder="01/01/2026" value="">
+                            <input data-field-name="date_validite_cin" type="date" placeholder="18/05/2026" value="">
                         </label>
                         <label class="field">
                             <span>Nationalite</span>
@@ -1021,7 +1021,7 @@ $contratData = array_merge([
                         </label>
                         <label class="field">
                             <span>Date naissance</span>
-                            <input data-field-name="date_naiss" type="date" placeholder="01/01/2026" value="">
+                            <input data-field-name="date_naiss" type="date" placeholder="18/05/2026" value="">
                         </label>
                         <label class="field">
                             <span>Lieu naissance</span>
@@ -1114,7 +1114,7 @@ $contratData = array_merge([
                 </label>
                 <label class="field">
                     <span>Date du contrat</span>
-                    <input type="date" name="contrat_date" placeholder="01/01/2026" value="<?= e((string) ($contratData['contrat_date'] ?: date('Y-m-d'))) ?>">
+                    <input type="date" name="contrat_date" placeholder="18/05/2026" value="<?= e((string) ($contratData['contrat_date'] ?: '2026-05-18')) ?>">
                 </label>
                 <label class="field">
                     <span>Type contrat domiciliation</span>
@@ -1129,7 +1129,7 @@ $contratData = array_merge([
                 <h3 class="section-title">Periode</h3>
                 <label class="field">
                     <span>Date de debut</span>
-                    <input type="date" name="contrat_date_debut" data-date-debut placeholder="01/01/2026" value="<?= e((string) ($contratData['contrat_date_debut'] ?: date('Y-m-d'))) ?>">
+                    <input type="date" name="contrat_date_debut" data-date-debut placeholder="18/05/2026" value="<?= e((string) ($contratData['contrat_date_debut'] ?: '2026-05-18')) ?>">
                 </label>
                 <label class="field">
                     <span>Duree (mois)</span>
@@ -1137,7 +1137,7 @@ $contratData = array_merge([
                 </label>
                 <label class="field">
                     <span>Date de fin</span>
-                    <input type="date" name="contrat_date_fin" data-date-fin placeholder="01/01/2026" value="<?= e((string) $contratData['contrat_date_fin']) ?>" readonly>
+                    <input type="date" name="contrat_date_fin" data-date-fin placeholder="18/05/2026" value="<?= e((string) $contratData['contrat_date_fin']) ?>" readonly>
                 </label>
                 <label class="field">
                     <span>Statut</span>
@@ -1330,7 +1330,7 @@ $contratData = array_merge([
             <div class="recap-a4">
                 <div class="recap-header">
                     <h2>Recapitulatif du dossier de domiciliation</h2>
-                    <p>Dossier n° <?= e($societeData['societe_dossier'] ?: '-') ?> — Genere le <?= date('d/m/Y') ?></p>
+                    <p>Dossier n° <?= e($societeData['societe_dossier'] ?: '-') ?> — Genere le 18/05/2026</p>
                 </div>
 
                 <div class="recap-section">
@@ -1453,112 +1453,120 @@ $contratData = array_merge([
                 <?php endif; ?>
             </div>
 
-            <?php if (!$dossierCreated): ?>
-                <article class="card stack">
-                    <div class="section-header">
+            <div class="two-step-flow">
+                <div class="step-card <?= $dossierCreated ? 'done' : '' ?>">
+                    <div class="step-card-header">
+                        <span class="step-num">1</span>
                         <div>
-                            <h3>1. Creer le dossier</h3>
+                            <h3>Creer le dossier</h3>
                             <p class="help-text">Enregistrez la societe, les associes et le contrat en base de donnees.</p>
                         </div>
+                        <?php if ($dossierCreated): ?>
+                            <span class="step-badge">Fait</span>
+                        <?php endif; ?>
                     </div>
-                    <form method="post" class="table-actions">
-                        <?= csrf_input() ?>
-                        <input type="hidden" name="step" value="5">
-                        <button class="btn btn-next" type="submit" name="nav_action" value="create_dossier">
-                            <span class="mdi mdi-folder-plus"></span> Creer le dossier
-                        </button>
-                    </form>
-                </article>
-            <?php endif; ?>
-
-            <?php if ($dossierCreated): ?>
-                <div class="card" style="border-left:4px solid var(--success);padding:1rem;margin-bottom:1rem">
-                    <p style="margin:0;display:flex;align-items:center;gap:8px">
-                        <span class="mdi mdi-check-circle" style="color:var(--success);font-size:1.3rem"></span>
-                        <strong>Dossier cree</strong> &mdash; n° <?= e($wizard['societe']['societe_dossier'] ?? '') ?>
-                        (ID: <?= $societeId ?>)
-                    </p>
+                    <?php if (!$dossierCreated): ?>
+                        <form method="post" class="table-actions" style="margin-top:8px">
+                            <?= csrf_input() ?>
+                            <input type="hidden" name="step" value="5">
+                            <button class="btn btn-next" type="submit" name="nav_action" value="create_dossier">
+                                <span class="mdi mdi-folder-plus"></span> Creer le dossier
+                            </button>
+                        </form>
+                    <?php endif; ?>
                 </div>
 
-                <?php if ($filteredTemplates): ?>
-                    <form method="post" class="stack" id="wizard-gen-form" style="gap:4px">
-                        <?= csrf_input() ?>
-                        <input type="hidden" name="step" value="5">
-                        <input type="hidden" name="nav_action" value="generate">
-
-                        <div class="section-header" style="margin-bottom:0">
-                            <h3 style="margin:0;font-size:0.9rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-secondary)">
-                                2. Templates disponibles
-                            </h3>
-                            <div class="table-actions">
-                                <a class="btn-icon" href="#" id="select-all-wizard" title="Tout selectionner"><span class="mdi mdi-check-all"></span></a>
-                                <label class="pdf-toggle">
-                                    <input type="checkbox" name="pdf" value="1" checked>
-                                    <span class="mdi mdi-file-pdf"></span> PDF
-                                </label>
-                            </div>
+                <div class="step-card <?= $dossierCreated ? 'active' : 'disabled' ?>">
+                    <div class="step-card-header">
+                        <span class="step-num">2</span>
+                        <div>
+                            <h3>Generer les documents</h3>
+                            <p class="help-text">Selectionnez les templates a generer pour <?= e($societeData['societe_raison_sociale'] ?: 'la societe') ?>.</p>
                         </div>
-
-                        <?php foreach ($templatesByType as $docType => $typeTemplates): ?>
-                            <div class="template-group">
-                                <span class="template-group-label"><?= e($templatesConfig['document_types'][$docType] ?? $docType) ?></span>
-                                <?php foreach ($typeTemplates as $tpl): ?>
-                                    <label class="template-item">
-                                        <input type="checkbox" name="templates[]" value="<?= e($tpl['path']) ?>" checked class="template-check">
-                                        <span class="mdi mdi-file-word template-item-icon"></span>
-                                        <div class="template-item-body">
-                                            <span class="template-item-name"><?= e(basename($tpl['path'])) ?></span>
-                                            <span class="template-item-meta"><?= count($tpl['variables']) ?> variable(s)</span>
-                                        </div>
-                                    </label>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php endforeach; ?>
-
-                        <div class="table-actions" style="margin-top:1rem">
-                            <button class="btn btn-next" type="submit"><span class="mdi mdi-file-sync"></span> Generer les documents</button>
-                        </div>
-                    </form>
-                <?php else: ?>
-                    <div class="empty-state">
-                        <span class="mdi mdi-file-document-outline" style="font-size:2rem;color:var(--text-secondary)"></span>
-                        <p class="table-empty">Aucun template disponible pour cette forme juridique.</p>
                     </div>
-                <?php endif; ?>
 
-                <?php if ($generatedFiles): ?>
-                    <article class="card stack">
-                        <div class="section-header">
-                            <h3>Documents generes</h3>
-                            <p class="help-text"><?= count($generatedFiles) ?> fichier(s) genere(s)</p>
+                    <?php if (!$dossierCreated): ?>
+                        <p class="help-text" style="margin:12px 0 0;font-style:italic">Creez d'abord le dossier pour acceder aux templates.</p>
+                    <?php elseif ($filteredTemplates): ?>
+                        <form method="post" class="stack" id="wizard-gen-form" style="gap:4px;margin-top:8px">
+                            <?= csrf_input() ?>
+                            <input type="hidden" name="step" value="5">
+                            <input type="hidden" name="nav_action" value="generate">
+
+                            <div class="section-header" style="margin-bottom:0">
+                                <h3 style="margin:0;font-size:0.9rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-secondary)">
+                                    Templates disponibles
+                                </h3>
+                                <div class="table-actions">
+                                    <a class="btn-icon" href="#" id="select-all-wizard" title="Tout selectionner"><span class="mdi mdi-check-all"></span></a>
+                                    <label class="pdf-toggle">
+                                        <input type="checkbox" name="pdf" value="1" checked>
+                                        <span class="mdi mdi-file-pdf"></span> PDF
+                                    </label>
+                                </div>
+                            </div>
+
+                            <?php foreach ($templatesByType as $docType => $typeTemplates): ?>
+                                <div class="template-group">
+                                    <span class="template-group-label"><?= e($templatesConfig['document_types'][$docType] ?? $docType) ?></span>
+                                    <?php foreach ($typeTemplates as $tpl): ?>
+                                        <label class="template-item">
+                                            <input type="checkbox" name="templates[]" value="<?= e($tpl['path']) ?>" checked class="template-check">
+                                            <span class="mdi mdi-file-word template-item-icon"></span>
+                                            <div class="template-item-body">
+                                                <span class="template-item-name"><?= e(basename($tpl['path'])) ?></span>
+                                                <span class="template-item-meta"><?= count($tpl['variables']) ?> variable(s)</span>
+                                            </div>
+                                        </label>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endforeach; ?>
+
+                            <div class="table-actions" style="margin-top:8px">
+                                <button class="btn btn-next" type="submit"><span class="mdi mdi-file-sync"></span> Generer les documents</button>
+                            </div>
+                        </form>
+                    <?php else: ?>
+                        <div class="empty-state" style="margin-top:8px">
+                            <span class="mdi mdi-file-document-outline" style="font-size:2rem;color:var(--text-secondary)"></span>
+                            <p class="table-empty">Aucun template disponible pour cette forme juridique.</p>
                         </div>
-                        <div class="generated-list">
-                            <?php foreach ($generatedFiles as $file): ?>
-                                <div class="generated-item">
-                                    <div class="generated-item-info">
-                                        <span class="mdi mdi-file-word" style="color:var(--primary);font-size:1.2rem"></span>
-                                        <div>
-                                            <strong><?= e($file['name']) ?></strong>
-                                            <?php if (file_exists($file['docx'])): ?>
-                                                <span class="help-text"><?= number_format(filesize($file['docx']) / 1024, 1) ?> Ko</span>
-                                            <?php endif; ?>
-                                        </div>
-                                    </div>
-                                    <div class="table-actions">
-                                        <a class="btn btn-secondary" href="<?= e(str_replace(__DIR__ . '/../', '', $file['docx'])) ?>" download>
-                                            <span class="mdi mdi-download"></span> DOCX
-                                        </a>
-                                        <?php if ($file['pdf']): ?>
-                                            <a class="btn" href="<?= e(str_replace(__DIR__ . '/../', '', $file['pdf'])) ?>" download>
-                                                <span class="mdi mdi-file-pdf"></span> PDF
-                                            </a>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <?php if ($generatedFiles): ?>
+                <article class="card stack">
+                    <div class="section-header">
+                        <h3>Documents generes</h3>
+                        <p class="help-text"><?= count($generatedFiles) ?> fichier(s) genere(s)</p>
+                    </div>
+                    <div class="generated-list">
+                        <?php foreach ($generatedFiles as $file): ?>
+                            <div class="generated-item">
+                                <div class="generated-item-info">
+                                    <span class="mdi mdi-file-word" style="color:var(--primary);font-size:1.2rem"></span>
+                                    <div>
+                                        <strong><?= e($file['name']) ?></strong>
+                                        <?php if (file_exists($file['docx'])): ?>
+                                            <span class="help-text"><?= number_format(filesize($file['docx']) / 1024, 1) ?> Ko</span>
                                         <?php endif; ?>
                                     </div>
                                 </div>
-                            <?php endforeach; ?>
-                        </div>
-                    </article>
-                <?php endif; ?>
+                                <div class="table-actions">
+                                    <a class="btn btn-secondary" href="<?= e(str_replace(__DIR__ . '/../', '', $file['docx'])) ?>" download>
+                                        <span class="mdi mdi-download"></span> DOCX
+                                    </a>
+                                    <?php if ($file['pdf']): ?>
+                                        <a class="btn" href="<?= e(str_replace(__DIR__ . '/../', '', $file['pdf'])) ?>" download>
+                                            <span class="mdi mdi-file-pdf"></span> PDF
+                                        </a>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </article>
             <?php endif; ?>
 
             <form method="post" class="table-actions" style="margin-top:1rem">

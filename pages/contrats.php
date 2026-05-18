@@ -291,11 +291,11 @@ if (($pdo ?? null) instanceof PDO) {
                     <tr>
                         <td><?= e($contrat['societe_raison_sociale']) ?></td>
                         <td><?= e($contrat['contrat_type']) ?></td>
-                        <td><?= e($contrat['contrat_date'] ?? '-') ?></td>
-                        <td><?= $contrat['contrat_duree_mois'] !== null ? e((string) $contrat['contrat_duree_mois']) : '-' ?></td>
-                        <td><?= e($contrat['contrat_type_domiciliation'] ?? '-') ?></td>
-                        <td><?= e($contrat['contrat_date_debut'] ?: '-') ?></td>
-                        <td><?= e($contrat['contrat_date_fin'] ?: '-') ?></td>
+<td><?= e(format_date($contrat['contrat_date'] ?? null)) ?></td>
+                        <td><?= e($contrat['type_domiciliation'] ?? '-') ?></td>
+                        <td><?= e((string) ($contrat['contrat_duree_mois'] ?? '-')) ?></td>
+                        <td><?= e(format_date($contrat['contrat_date_debut'] ?? null)) ?></td>
+                        <td><?= e(format_date($contrat['contrat_date_fin'] ?? null)) ?></td>
                         <td><?= $contrat['contrat_loyer_ttc'] !== null ? e(number_format((float) $contrat['contrat_loyer_ttc'], 2, ',', ' ') . ' DH') : '-' ?></td>
                         <td><?= $contrat['contrat_caution'] !== null ? e(number_format((float) $contrat['contrat_caution'], 2, ',', ' ') . ' DH') : '-' ?></td>
                         <td><?= $contrat['contrat_tva_pourcent'] !== null ? e(number_format((float) $contrat['contrat_tva_pourcent'], 2, ',', ' ') . ' %') : '-' ?></td>
@@ -304,8 +304,8 @@ if (($pdo ?? null) instanceof PDO) {
                         <td><?= $contrat['contrat_pack_montant_ttc'] !== null ? e(number_format((float) $contrat['contrat_pack_montant_ttc'], 2, ',', ' ') . ' DH') : '-' ?></td>
                         <td><?= e($contrat['contrat_type_renouvellement'] ?? '-') ?></td>
                         <td><?= e($contrat['contrat_statut']) ?></td>
-                        <td><?= e(substr($contrat['created_at'], 0, 10)) ?></td>
-                        <td><?= e(substr($contrat['updated_at'], 0, 10)) ?></td>
+                        <td><?= e(date('d/m/Y', strtotime((string) $contrat['created_at']))) ?></td>
+                        <td><?= e(date('d/m/Y', strtotime((string) $contrat['updated_at']))) ?></td>
                         <td class="table-actions">
                             <a class="btn-icon" href="<?= e(app_url('contrats', ['edit' => (int) $contrat['id']])) ?>" title="Modifier"><span class="mdi mdi-pencil"></span></a>
                             <form method="post">

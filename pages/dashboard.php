@@ -344,7 +344,7 @@ if ($isConnected) {
                     <?php foreach ($expirants as $c): ?>
                         <a class="alert-item" href="<?= e(app_url('contrats')) ?>">
                             <span class="mdi mdi-clock-alert" style="color:var(--warning)"></span>
-                            <?= e($c['societe_raison_sociale']) ?> — <?= e($c['contrat_type']) ?> (<?= e($c['contrat_date_fin']) ?>)
+                            <?= e($c['societe_raison_sociale']) ?> — <?= e($c['contrat_type']) ?> (<?= e(format_date($c['contrat_date_fin'] ?? null)) ?>)
                         </a>
                     <?php endforeach; ?>
                 </div>
@@ -373,7 +373,7 @@ if ($isConnected) {
                         <strong><?= e($e['societe_raison_sociale']) ?></strong>
                         <span><?= e($e['contrat_type']) ?></span>
                     </div>
-                    <span class="timeline-date"><?= e($e['contrat_date_fin']) ?> (J-<?= $j ?>)</span>
+                    <span class="timeline-date"><?= e(format_date($e['contrat_date_fin'] ?? null)) ?> (J-<?= $j ?>)</span>
                 </div>
             <?php endforeach; ?>
         </div>
