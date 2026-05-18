@@ -1547,11 +1547,11 @@ $contratData = array_merge([
             </div>
 
             <?php if ($generatedFiles): ?>
-                <div class="step-card active" style="margin-top:16px">
+                <div class="step-card active step-violet" style="margin-top:16px">
                     <div class="step-card-header">
                         <span class="step-num">3</span>
                         <div>
-                            <h3>Documents generes</h3>
+                            <h3 class="step-violet-title">Documents generes</h3>
                             <p class="help-text"><?= count($generatedFiles) ?> fichier(s) genere(s)</p>
                         </div>
                     </div>
@@ -1625,6 +1625,11 @@ $contratData = array_merge([
         #gen-loading-overlay .spinner{width:40px;height:40px;border:3px solid var(--line);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
         @keyframes spin{to{transform:rotate(360deg)}}
         #gen-loading-overlay p{font-size:1rem;color:var(--text-secondary);margin:0}
+        .step-violet{border-color:var(--info)!important}
+        .step-violet .step-num{background:var(--info)!important;color:#fff!important}
+        .step-violet-title{color:var(--info)}
+        .step-violet table{border-color:var(--info)}
+        .step-violet table th,.step-violet table td{border-color:color-mix(in srgb,var(--info) 30%,transparent)}
         </style>
         <div id="gen-loading-overlay">
             <div class="loader-card">
