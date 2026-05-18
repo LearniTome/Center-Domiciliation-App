@@ -470,6 +470,30 @@ class DocumentRenderer
             }
         }
 
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            try {
+                $absPath = realpath($docxPath);
+                if ($absPath !== false) {
+                    $word = new COM('Word.Application');
+                    $word->Visible = false;
+                    $word->DisplayAlerts = false;
+                    $doc = $word->Documents->Open($absPath);
+                    $doc->SaveAs($pdfPath, 17);
+                    $doc->Close(false);
+                    $word->Quit(false);
+                    unset($doc, $word);
+                    if (file_exists($pdfPath)) {
+                        return $pdfPath;
+                    }
+                }
+            } catch (\Throwable $e) {
+                if (isset($word)) {
+                    try { $word->Quit(false); } catch (\Throwable $ignore) {}
+                    unset($word);
+                }
+            }
+        }
+
         return null;
     }
 

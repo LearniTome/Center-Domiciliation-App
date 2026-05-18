@@ -16,6 +16,21 @@ function pdf_detect_engine(bool $force = false): ?string
         $where = shell_exec('where winword 2>NUL');
         if ($where !== null && $where !== '') {
             $engine = 'word';
+        } else {
+            $wordPaths = [
+                'C:\Program Files\Microsoft Office\root\Office16\WINWORD.EXE',
+                'C:\Program Files (x86)\Microsoft Office\root\Office16\WINWORD.EXE',
+                'C:\Program Files\Microsoft Office\Office16\WINWORD.EXE',
+                'C:\Program Files (x86)\Microsoft Office\Office16\WINWORD.EXE',
+                'C:\Program Files\Microsoft Office\Office15\WINWORD.EXE',
+                'C:\Program Files (x86)\Microsoft Office\Office15\WINWORD.EXE',
+            ];
+            foreach ($wordPaths as $p) {
+                if (file_exists($p)) {
+                    $engine = 'word';
+                    break;
+                }
+            }
         }
     }
 
