@@ -1454,7 +1454,7 @@ $contratData = array_merge([
             </div>
 
             <div class="two-step-flow">
-                <div class="step-card <?= $dossierCreated ? 'done' : '' ?>">
+                <div class="step-card <?= $dossierCreated ? 'done' : 'active-violet' ?>">
                     <div class="step-card-header">
                         <span class="step-num">1</span>
                         <div>
@@ -1476,7 +1476,7 @@ $contratData = array_merge([
                     <?php endif; ?>
                 </div>
 
-                <div class="step-card <?= $dossierCreated ? 'active' : 'disabled' ?>">
+                <div class="step-card <?= $dossierCreated ? ($generatedFiles ? 'done' : 'active-violet') : 'waiting' ?>">
                     <div class="step-card-header">
                         <span class="step-num">2</span>
                         <div>
@@ -1547,11 +1547,11 @@ $contratData = array_merge([
             </div>
 
             <?php if ($generatedFiles): ?>
-                <div class="step-card active step-violet" style="margin-top:16px">
+                <div class="step-card done" style="margin-top:16px">
                     <div class="step-card-header">
                         <span class="step-num">3</span>
                         <div>
-                            <h3 class="step-violet-title">Documents generes</h3>
+                            <h3>Documents generes</h3>
                             <p class="help-text"><?= count($generatedFiles) ?> fichier(s) genere(s)</p>
                         </div>
                     </div>
@@ -1625,24 +1625,25 @@ $contratData = array_merge([
         #gen-loading-overlay .spinner{width:40px;height:40px;border:3px solid var(--line);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
         @keyframes spin{to{transform:rotate(360deg)}}
         #gen-loading-overlay p{font-size:1rem;color:var(--text-secondary);margin:0}
-        .step-violet{border-color:var(--info)!important}
-        .step-violet .step-num{background:var(--info)!important;color:#fff!important}
-        .step-violet-title{color:var(--info)}
-        .step-violet table{border-color:var(--info)}
-        .step-violet table th,.step-violet table td{border-color:color-mix(in srgb,var(--info) 30%,transparent)}
-        .step-card.done .step-card-header h3{color:var(--success)}
-        .step-card.active .step-card-header h3{color:var(--primary)}
+        :root{--violet:var(--info);--rouge:#e74c3c}
         .step-card{transition:border-color .4s ease,box-shadow .4s ease,transform .3s ease,opacity .4s ease}
-        .step-card.active{box-shadow:0 0 20px color-mix(in srgb,var(--primary) 25%,transparent),0 4px 12px rgba(0,0,0,.08)}
-        .step-card.active .step-num{animation:pulse-glow 2s ease-in-out infinite}
+        .step-card.done{border-color:var(--success)!important}
+        .step-card.done .step-num{background:var(--success)!important;color:#fff!important;animation:pop-done .5s ease}
+        .step-card.done .step-card-header h3{color:var(--success)}
         .step-card.done{box-shadow:0 0 16px color-mix(in srgb,var(--success) 20%,transparent)}
-        .step-card.done .step-num{animation:pop-done .5s ease}
-        .step-violet{box-shadow:0 0 20px color-mix(in srgb,var(--info) 25%,transparent)!important}
-        .step-card.disabled{opacity:.45;filter:grayscale(.3)}
-        @keyframes pulse-glow{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--primary) 40%,transparent)}50%{box-shadow:0 0 0 8px color-mix(in srgb,var(--primary) 0%,transparent)}}
-        .step-violet .step-num{animation:pulse-glow-violet 2s ease-in-out infinite!important}
-        @keyframes pulse-glow-violet{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--info) 40%,transparent)}50%{box-shadow:0 0 0 8px color-mix(in srgb,var(--info) 0%,transparent)}}
-        @keyframes pop-done{0%{transform:scale(1)}50%{transform:scale(1.2)}100%{transform:scale(1)}}
+        .step-card.done table{border-color:var(--success)}
+        .step-card.done table th,.step-card.done table td{border-color:color-mix(in srgb,var(--success) 30%,transparent)}
+        .step-card.active-violet{border-color:var(--violet)!important}
+        .step-card.active-violet .step-num{background:var(--violet)!important;color:#fff!important;animation:pulse-glow 2s ease-in-out infinite}
+        .step-card.active-violet .step-card-header h3{color:var(--violet)}
+        .step-card.active-violet{box-shadow:0 0 20px color-mix(in srgb,var(--violet) 25%,transparent),0 4px 12px rgba(0,0,0,.08)}
+        .step-card.waiting{border-color:var(--rouge)!important}
+        .step-card.waiting .step-num{background:var(--rouge)!important;color:#fff!important}
+        .step-card.waiting .step-card-header h3{color:var(--rouge)}
+        .step-card.waiting{box-shadow:0 0 12px color-mix(in srgb,var(--rouge) 15%,transparent)}
+        .step-card.waiting{opacity:.7}
+        @keyframes pulse-glow{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--violet) 40%,transparent)}50%{box-shadow:0 0 0 8px color-mix(in srgb,var(--violet) 0%,transparent)}}
+        @keyframes pop-done{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
         </style>
         <div id="gen-loading-overlay">
             <div class="loader-card">
