@@ -1547,12 +1547,15 @@ $contratData = array_merge([
             </div>
 
             <?php if ($generatedFiles): ?>
-                <article class="card stack">
-                    <div class="section-header">
-                        <h3>Documents generes</h3>
-                        <p class="help-text"><?= count($generatedFiles) ?> fichier(s) genere(s)</p>
+                <div class="step-card active" style="margin-top:16px">
+                    <div class="step-card-header">
+                        <span class="step-num">3</span>
+                        <div>
+                            <h3>Documents generes</h3>
+                            <p class="help-text"><?= count($generatedFiles) ?> fichier(s) genere(s)</p>
+                        </div>
                     </div>
-                    <div class="table-scroll" style="overflow-x:auto">
+                    <div class="table-scroll" style="overflow-x:auto;margin-top:8px">
                         <table style="white-space:nowrap">
                             <thead>
                                 <tr>
@@ -1586,7 +1589,7 @@ $contratData = array_merge([
                             </tbody>
                         </table>
                     </div>
-                </article>
+                </div>
             <?php endif; ?>
 
             <form method="post" class="table-actions" style="margin-top:1rem">
