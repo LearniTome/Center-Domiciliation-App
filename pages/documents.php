@@ -162,7 +162,7 @@ if ($exportCsv && count($documents) > 0) {
                             <tr>
                                 <td><input type="checkbox" name="selected_files[]" value="<?= e((string) $doc['id']) ?>"></td>
                                 <td>
-                                    <a href="<?= e(app_url('societe', ['id' => (int) $doc['societe_id']])) ?>">
+                                    <a href="<?= e(app_url('documents', ['societe_id' => (int) $doc['societe_id']])) ?>">
                                         <?= e($doc['societe_raison_sociale']) ?>
                                     </a>
                                 </td>
@@ -217,6 +217,9 @@ if ($exportCsv && count($documents) > 0) {
         document.getElementById('select-all')?.addEventListener('click', function() {
             const checkboxes = document.querySelectorAll('#documents-form input[name="selected_files[]"]');
             checkboxes.forEach(c => c.checked = this.checked);
+        });
+        document.querySelector('select[name="societe_id"]')?.addEventListener('change', function() {
+            this.form.submit();
         });
         </script>
     <?php else: ?>
