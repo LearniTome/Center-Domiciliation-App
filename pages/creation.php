@@ -253,72 +253,7 @@ if (is_post()) {
             redirect_to('creation', ['step' => 4]);
         }
 
-        if ($navAction === 'generate') {
-            require_once __DIR__ . '/../src/TemplateAnalyzer.php';
-            require_once __DIR__ . '/../src/DocumentRenderer.php';
-
-            $templatesDir = __DIR__ . '/../templates';
-            $outputDir = __DIR__ . '/../output';
-            if (!is_dir($outputDir)) {
-                mkdir($outputDir, 0777, true);
-            }
-
-            $selectedPaths = $_POST['templates'] ?? [];
-            $generatePdf = isset($_POST['pdf']);
-            $forme = $wizard['societe']['societe_forme_juridique'] ?? 'PP';
-
-            $context = DocumentRenderer::buildContextFromSession($wizard, $pdo ?? null);
-            $today = date('Y-m-d');
-            $clientName = trim(preg_replace('/[^a-zA-Z0-9-]/', '-', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $wizard['societe']['societe_raison_sociale'] ?? 'Client')));
-            $clientName = preg_replace('/-+/', '-', $clientName);
-            $clientName = trim($clientName, '-');
-            $generatedFiles = [];
-
-            foreach ($selectedPaths as $path) {
-                if (!file_exists($path)) continue;
-                if (!str_starts_with(realpath($path), realpath($templatesDir))) continue;
-
-                try {
-                    $renderer = new DocumentRenderer($path, $outputDir);
-                    $filename = pathinfo($path, PATHINFO_FILENAME);
-                    $parts = explode('_', $filename);
-                    $docType = '';
-                    if (count($parts) >= 4) {
-                        $docType = preg_replace('/_?Template$/i', '', implode('_', array_slice($parts, 2)));
-                    } elseif (count($parts) === 3) {
-                        $docType = preg_replace('/_?Template$/i', '', $parts[1]);
-                    }
-                    $base = $forme . '_' . $today . '_' . $docType . '_' . $clientName;
-                    $outName = $base . '_Brouillon.docx';
-                    $docxPath = $renderer->render($context, $outName);
-
-                    $result = [
-                        'docx' => $docxPath,
-                        'pdf' => null,
-                        'name' => $outName,
-                    ];
-
-                    if ($generatePdf) {
-                        $pdfName = $base . '_Brouillon.pdf';
-                        $pdfPath = $renderer->tryConvertToPdf($docxPath, $pdfName);
-                        $result['pdf'] = $pdfPath;
-                    }
-
-                    $generatedFiles[] = $result;
-                } catch (\Throwable $e) {
-                    set_flash('error', 'Erreur sur ' . basename($path) . ' : ' . $e->getMessage());
-                }
-            }
-
-            if (count($generatedFiles) > 0) {
-                $_SESSION['creation_wizard']['generated_files'] = $generatedFiles;
-                set_flash('success', count($generatedFiles) . ' document(s) genere(s).');
-            }
-
-            redirect_to('creation', ['step' => 5]);
-        }
-
-        if ($navAction === 'finish') {
+        if ($navAction === 'create_dossier') {
             if (!(($pdo ?? null) instanceof PDO)) {
                 set_flash('error', 'Connexion MySQL indisponible.');
                 redirect_to('creation', ['step' => 5]);
@@ -433,11 +368,85 @@ if (is_post()) {
                     'contrat_notes' => $wizard['contrat']['contrat_notes'] ?? '',
                 ]);
 
-                $generatedFiles = $wizard['generated_files'] ?? [];
-                if (count($generatedFiles) > 0) {
+                $pdo->commit();
+
+                $_SESSION['creation_wizard']['societe_id'] = $societeId;
+                set_flash('success', 'Le dossier a ete cree avec succes.');
+                redirect_to('creation', ['step' => 5]);
+            } catch (Throwable $exception) {
+                if ($pdo->inTransaction()) {
+                    $pdo->rollBack();
+                }
+
+                set_flash('error', 'Erreur lors de la creation du dossier: ' . $exception->getMessage());
+                redirect_to('creation', ['step' => 5]);
+            }
+        }
+
+        if ($navAction === 'generate') {
+            require_once __DIR__ . '/../src/TemplateAnalyzer.php';
+            require_once __DIR__ . '/../src/DocumentRenderer.php';
+
+            $templatesDir = __DIR__ . '/../templates';
+            $outputDir = __DIR__ . '/../output';
+            if (!is_dir($outputDir)) {
+                mkdir($outputDir, 0777, true);
+            }
+
+            $selectedPaths = $_POST['templates'] ?? [];
+            $generatePdf = isset($_POST['pdf']);
+            $forme = $wizard['societe']['societe_forme_juridique'] ?? 'PP';
+
+            $context = DocumentRenderer::buildContextFromSession($wizard, $pdo ?? null);
+            $today = date('Y-m-d');
+            $clientName = trim(preg_replace('/[^a-zA-Z0-9-]/', '-', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $wizard['societe']['societe_raison_sociale'] ?? 'Client')));
+            $clientName = preg_replace('/-+/', '-', $clientName);
+            $clientName = trim($clientName, '-');
+            $generatedFiles = [];
+
+            foreach ($selectedPaths as $path) {
+                if (!file_exists($path)) continue;
+                if (!str_starts_with(realpath($path), realpath($templatesDir))) continue;
+
+                try {
+                    $renderer = new DocumentRenderer($path, $outputDir);
+                    $filename = pathinfo($path, PATHINFO_FILENAME);
+                    $parts = explode('_', $filename);
+                    $docType = '';
+                    if (count($parts) >= 4) {
+                        $docType = preg_replace('/_?Template$/i', '', implode('_', array_slice($parts, 2)));
+                    } elseif (count($parts) === 3) {
+                        $docType = preg_replace('/_?Template$/i', '', $parts[1]);
+                    }
+                    $base = $forme . '_' . $today . '_' . $docType . '_' . $clientName;
+                    $outName = $base . '_Brouillon.docx';
+                    $docxPath = $renderer->render($context, $outName);
+
+                    $result = [
+                        'docx' => $docxPath,
+                        'pdf' => null,
+                        'name' => $outName,
+                    ];
+
+                    if ($generatePdf) {
+                        $pdfName = $base . '_Brouillon.pdf';
+                        $pdfPath = $renderer->tryConvertToPdf($docxPath, $pdfName);
+                        $result['pdf'] = $pdfPath;
+                    }
+
+                    $generatedFiles[] = $result;
+                } catch (\Throwable $e) {
+                    set_flash('error', 'Erreur sur ' . basename($path) . ' : ' . $e->getMessage());
+                }
+            }
+
+            if (count($generatedFiles) > 0) {
+                $_SESSION['creation_wizard']['generated_files'] = $generatedFiles;
+
+                $societeId = $wizard['societe_id'] ?? null;
+                if ($societeId && ($pdo ?? null) instanceof PDO) {
                     $insertDocStmt = $pdo->prepare('INSERT INTO documents_generes (societe_id, template_source, doc_type, fichier_docx, fichier_pdf, taille_ko) VALUES (:societe_id, :template_source, :doc_type, :fichier_docx, :fichier_pdf, :taille_ko)');
                     foreach ($generatedFiles as $gf) {
-                        $docType = null;
                         $parts = explode('_', basename((string) $gf['name']));
                         $docType = $parts[2] ?? null;
                         $insertDocStmt->execute([
@@ -451,18 +460,10 @@ if (is_post()) {
                     }
                 }
 
-                $pdo->commit();
-                unset($_SESSION['creation_wizard']);
-                set_flash('success', 'Le dossier a ete cree avec succes.');
-                redirect_to('societe', ['id' => $societeId]);
-            } catch (Throwable $exception) {
-                if ($pdo->inTransaction()) {
-                    $pdo->rollBack();
-                }
-
-                set_flash('error', 'Erreur lors de la creation du dossier: ' . $exception->getMessage());
-                redirect_to('creation', ['step' => 5]);
+                set_flash('success', count($generatedFiles) . ' document(s) genere(s).');
             }
+
+            redirect_to('creation', ['step' => 5]);
         }
     }
 }
@@ -1404,6 +1405,9 @@ $contratData = array_merge([
         </div>
     <?php elseif ($step === 5): ?>
         <?php
+        $dossierCreated = isset($wizard['societe_id']);
+        $societeId = $wizard['societe_id'] ?? null;
+
         require_once __DIR__ . '/../src/TemplateAnalyzer.php';
 
         $templatesConfig = require __DIR__ . '/../config/templates.php';
@@ -1439,96 +1443,128 @@ $contratData = array_merge([
         <div class="stack">
             <div class="section-header">
                 <div>
-                    <h2>Generation des documents</h2>
-                    <p class="help-text">Selectionnez les templates a generer pour <?= e($societeData['societe_raison_sociale'] ?: 'la societe') ?>.</p>
+                    <h2>Etape 5 — Generation des documents</h2>
+                    <p class="help-text">Creez d'abord le dossier, puis generez les documents.</p>
                 </div>
+                <?php if ($dossierCreated): ?>
+                    <a class="btn btn-secondary" href="<?= e(app_url('societe', ['id' => $societeId])) ?>">
+                        <span class="mdi mdi-eye"></span> Voir le dossier
+                    </a>
+                <?php endif; ?>
             </div>
 
-            <?php if ($filteredTemplates): ?>
-                <form method="post" class="stack" id="wizard-gen-form">
-                    <?= csrf_input() ?>
-                    <input type="hidden" name="step" value="5">
-                    <input type="hidden" name="nav_action" value="generate">
-
-                    <div class="section-header">
-                        <h3 style="margin:0;font-size:0.9rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-secondary)">
-                            Templates disponibles
-                        </h3>
-                        <div class="table-actions">
-                            <a class="btn-icon" href="#" id="select-all-wizard" title="Tout selectionner"><span class="mdi mdi-check-all"></span></a>
-                            <label class="pdf-toggle">
-                                <input type="checkbox" name="pdf" value="1" checked>
-                                <span class="mdi mdi-file-pdf"></span> PDF
-                            </label>
-                        </div>
-                    </div>
-
-                    <?php foreach ($templatesByType as $docType => $typeTemplates): ?>
-                        <div class="template-group">
-                            <span class="template-group-label"><?= e($templatesConfig['document_types'][$docType] ?? $docType) ?></span>
-                            <?php foreach ($typeTemplates as $tpl): ?>
-                                <label class="template-item">
-                                    <input type="checkbox" name="templates[]" value="<?= e($tpl['path']) ?>" checked class="template-check">
-                                    <span class="mdi mdi-file-word template-item-icon"></span>
-                                    <div class="template-item-body">
-                                        <span class="template-item-name"><?= e(basename($tpl['path'])) ?></span>
-                                        <span class="template-item-meta"><?= count($tpl['variables']) ?> variable(s)</span>
-                                    </div>
-                                </label>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php endforeach; ?>
-
-                    <div class="table-actions" style="margin-top:1rem">
-                        <button class="btn btn-next" type="submit"><span class="mdi mdi-file-sync"></span> Generer les documents</button>
-                    </div>
-                </form>
-            <?php else: ?>
-                <div class="empty-state">
-                    <span class="mdi mdi-file-document-outline" style="font-size:2rem;color:var(--text-secondary)"></span>
-                    <p class="table-empty">Aucun template disponible pour cette forme juridique.</p>
-                </div>
-            <?php endif; ?>
-
-            <?php if ($generatedFiles): ?>
+            <?php if (!$dossierCreated): ?>
                 <article class="card stack">
                     <div class="section-header">
-                        <h3>Documents generes</h3>
-                        <p class="help-text"><?= count($generatedFiles) ?> fichier(s) genere(s)</p>
+                        <div>
+                            <h3>1. Creer le dossier</h3>
+                            <p class="help-text">Enregistrez la societe, les associes et le contrat en base de donnees.</p>
+                        </div>
                     </div>
-                    <div class="generated-list">
-                        <?php foreach ($generatedFiles as $file): ?>
-                            <div class="generated-item">
-                                <div class="generated-item-info">
-                                    <span class="mdi mdi-file-word" style="color:var(--primary);font-size:1.2rem"></span>
-                                    <div>
-                                        <strong><?= e($file['name']) ?></strong>
-                                        <?php if (file_exists($file['docx'])): ?>
-                                            <span class="help-text"><?= number_format(filesize($file['docx']) / 1024, 1) ?> Ko</span>
+                    <form method="post" class="table-actions">
+                        <?= csrf_input() ?>
+                        <input type="hidden" name="step" value="5">
+                        <button class="btn btn-next" type="submit" name="nav_action" value="create_dossier">
+                            <span class="mdi mdi-folder-plus"></span> Creer le dossier
+                        </button>
+                    </form>
+                </article>
+            <?php endif; ?>
+
+            <?php if ($dossierCreated): ?>
+                <div class="card" style="border-left:4px solid var(--success);padding:1rem;margin-bottom:1rem">
+                    <p style="margin:0;display:flex;align-items:center;gap:8px">
+                        <span class="mdi mdi-check-circle" style="color:var(--success);font-size:1.3rem"></span>
+                        <strong>Dossier cree</strong> &mdash; n° <?= e($wizard['societe']['societe_dossier'] ?? '') ?>
+                        (ID: <?= $societeId ?>)
+                    </p>
+                </div>
+
+                <?php if ($filteredTemplates): ?>
+                    <form method="post" class="stack" id="wizard-gen-form" style="gap:4px">
+                        <?= csrf_input() ?>
+                        <input type="hidden" name="step" value="5">
+                        <input type="hidden" name="nav_action" value="generate">
+
+                        <div class="section-header" style="margin-bottom:0">
+                            <h3 style="margin:0;font-size:0.9rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-secondary)">
+                                2. Templates disponibles
+                            </h3>
+                            <div class="table-actions">
+                                <a class="btn-icon" href="#" id="select-all-wizard" title="Tout selectionner"><span class="mdi mdi-check-all"></span></a>
+                                <label class="pdf-toggle">
+                                    <input type="checkbox" name="pdf" value="1" checked>
+                                    <span class="mdi mdi-file-pdf"></span> PDF
+                                </label>
+                            </div>
+                        </div>
+
+                        <?php foreach ($templatesByType as $docType => $typeTemplates): ?>
+                            <div class="template-group">
+                                <span class="template-group-label"><?= e($templatesConfig['document_types'][$docType] ?? $docType) ?></span>
+                                <?php foreach ($typeTemplates as $tpl): ?>
+                                    <label class="template-item">
+                                        <input type="checkbox" name="templates[]" value="<?= e($tpl['path']) ?>" checked class="template-check">
+                                        <span class="mdi mdi-file-word template-item-icon"></span>
+                                        <div class="template-item-body">
+                                            <span class="template-item-name"><?= e(basename($tpl['path'])) ?></span>
+                                            <span class="template-item-meta"><?= count($tpl['variables']) ?> variable(s)</span>
+                                        </div>
+                                    </label>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endforeach; ?>
+
+                        <div class="table-actions" style="margin-top:1rem">
+                            <button class="btn btn-next" type="submit"><span class="mdi mdi-file-sync"></span> Generer les documents</button>
+                        </div>
+                    </form>
+                <?php else: ?>
+                    <div class="empty-state">
+                        <span class="mdi mdi-file-document-outline" style="font-size:2rem;color:var(--text-secondary)"></span>
+                        <p class="table-empty">Aucun template disponible pour cette forme juridique.</p>
+                    </div>
+                <?php endif; ?>
+
+                <?php if ($generatedFiles): ?>
+                    <article class="card stack">
+                        <div class="section-header">
+                            <h3>Documents generes</h3>
+                            <p class="help-text"><?= count($generatedFiles) ?> fichier(s) genere(s)</p>
+                        </div>
+                        <div class="generated-list">
+                            <?php foreach ($generatedFiles as $file): ?>
+                                <div class="generated-item">
+                                    <div class="generated-item-info">
+                                        <span class="mdi mdi-file-word" style="color:var(--primary);font-size:1.2rem"></span>
+                                        <div>
+                                            <strong><?= e($file['name']) ?></strong>
+                                            <?php if (file_exists($file['docx'])): ?>
+                                                <span class="help-text"><?= number_format(filesize($file['docx']) / 1024, 1) ?> Ko</span>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                    <div class="table-actions">
+                                        <a class="btn btn-secondary" href="<?= e(str_replace(__DIR__ . '/../', '', $file['docx'])) ?>" download>
+                                            <span class="mdi mdi-download"></span> DOCX
+                                        </a>
+                                        <?php if ($file['pdf']): ?>
+                                            <a class="btn" href="<?= e(str_replace(__DIR__ . '/../', '', $file['pdf'])) ?>" download>
+                                                <span class="mdi mdi-file-pdf"></span> PDF
+                                            </a>
                                         <?php endif; ?>
                                     </div>
                                 </div>
-                                <div class="table-actions">
-                                    <a class="btn btn-secondary" href="<?= e(str_replace(__DIR__ . '/../', '', $file['docx'])) ?>" download>
-                                        <span class="mdi mdi-download"></span> DOCX
-                                    </a>
-                                    <?php if ($file['pdf']): ?>
-                                        <a class="btn" href="<?= e(str_replace(__DIR__ . '/../', '', $file['pdf'])) ?>" download>
-                                            <span class="mdi mdi-file-pdf"></span> PDF
-                                        </a>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                </article>
+                            <?php endforeach; ?>
+                        </div>
+                    </article>
+                <?php endif; ?>
             <?php endif; ?>
 
             <form method="post" class="table-actions" style="margin-top:1rem">
                 <?= csrf_input() ?>
                 <input type="hidden" name="step" value="5">
                 <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="mdi mdi-arrow-left"></span> Retour</button>
-                <button class="btn btn-next" type="submit" name="nav_action" value="finish"><span class="mdi mdi-check-circle"></span> Creer le dossier complet</button>
             </form>
         </div>
 

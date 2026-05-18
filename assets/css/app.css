@@ -1089,11 +1089,11 @@ tbody tr:hover:nth-child(even) {
 
 .template-group {
     display: grid;
-    gap: 6px;
+    gap: 4px;
 }
 .template-group + .template-group {
-    margin-top: 16px;
-    padding-top: 16px;
+    margin-top: 6px;
+    padding-top: 6px;
     border-top: 1px solid var(--line);
 }
 .template-group-label {
@@ -1107,40 +1107,39 @@ tbody tr:hover:nth-child(even) {
 .template-item {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 10px 14px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
+    gap: 8px;
+    padding: 3px 8px;
+    border-radius: 4px;
     cursor: pointer;
-    transition: border-color var(--transition), background var(--transition), box-shadow var(--transition);
+    transition: background var(--transition);
 }
 .template-item:hover {
-    border-color: var(--primary);
     background: var(--panel-strong);
 }
 .template-item:has(.template-check:checked) {
-    border-color: var(--primary);
     background: rgba(0, 144, 231, 0.06);
 }
 .template-check {
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     accent-color: var(--primary);
     flex-shrink: 0;
+    margin: 0;
 }
 .template-item-icon {
-    font-size: 1.3rem;
-    color: var(--primary);
+    font-size: 1rem;
+    color: var(--text-secondary);
     flex-shrink: 0;
 }
 .template-item-body {
     flex: 1;
-    display: grid;
-    gap: 2px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     min-width: 0;
 }
 .template-item-name {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 500;
     color: var(--text);
     white-space: nowrap;
@@ -1148,8 +1147,9 @@ tbody tr:hover:nth-child(even) {
     text-overflow: ellipsis;
 }
 .template-item-meta {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: var(--text-secondary);
+    white-space: nowrap;
 }
 
 .template-gen-group {
