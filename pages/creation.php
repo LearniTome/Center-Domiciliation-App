@@ -1541,30 +1541,39 @@ $contratData = array_merge([
                         <h3>Documents generes</h3>
                         <p class="help-text"><?= count($generatedFiles) ?> fichier(s) genere(s)</p>
                     </div>
-                    <div class="generated-list">
-                        <?php foreach ($generatedFiles as $file): ?>
-                            <div class="generated-item">
-                                <div class="generated-item-info">
-                                    <span class="mdi mdi-file-word" style="color:var(--primary);font-size:1.2rem"></span>
-                                    <div>
-                                        <strong><?= e($file['name']) ?></strong>
-                                        <?php if (file_exists($file['docx'])): ?>
-                                            <span class="help-text"><?= number_format(filesize($file['docx']) / 1024, 1) ?> Ko</span>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-                                <div class="table-actions">
-                                    <a class="btn btn-secondary" href="<?= e(str_replace(__DIR__ . '/../', '', $file['docx'])) ?>" download>
-                                        <span class="mdi mdi-download"></span> DOCX
-                                    </a>
-                                    <?php if ($file['pdf']): ?>
-                                        <a class="btn" href="<?= e(str_replace(__DIR__ . '/../', '', $file['pdf'])) ?>" download>
-                                            <span class="mdi mdi-file-pdf"></span> PDF
-                                        </a>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
+                    <div class="table-scroll" style="overflow-x:auto">
+                        <table style="white-space:nowrap">
+                            <thead>
+                                <tr>
+                                    <th>Fichier</th>
+                                    <th>Taille</th>
+                                    <th class="col-actions">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($generatedFiles as $file): ?>
+                                    <tr>
+                                        <td>
+                                            <span class="mdi mdi-file-word" style="color:var(--primary);vertical-align:middle;margin-right:6px"></span>
+                                            <?= e($file['name']) ?>
+                                        </td>
+                                        <td><?php if (file_exists($file['docx'])): ?><?= number_format(filesize($file['docx']) / 1024, 1) ?> Ko<?php else: ?>-<?php endif; ?></td>
+                                        <td>
+                                            <div class="table-actions">
+                                                <a class="btn btn-secondary" href="<?= e(str_replace(__DIR__ . '/../', '', $file['docx'])) ?>" download>
+                                                    <span class="mdi mdi-download"></span> DOCX
+                                                </a>
+                                                <?php if ($file['pdf']): ?>
+                                                    <a class="btn" href="<?= e(str_replace(__DIR__ . '/../', '', $file['pdf'])) ?>" download>
+                                                        <span class="mdi mdi-file-pdf"></span> PDF
+                                                    </a>
+                                                <?php endif; ?>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
                     </div>
                 </article>
             <?php endif; ?>
