@@ -205,10 +205,6 @@ if ($isConnected) {
     ")->fetchAll();
 }
 ?>
-<div style="display:flex;justify-content:flex-end;margin-bottom:0.75rem">
-    <a class="btn btn-next" href="<?= e(app_url('creation')) ?>"><span class="mdi mdi-plus-circle"></span> Creer un dossier</a>
-</div>
-
 <!-- Stats row -->
 <section class="stats small">
     <article class="stat primary">
