@@ -698,7 +698,7 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
                 $allValides = count($documents) > 0 && count(array_filter($documents, fn($d) => !$d['valide'])) === 0;
                 ?>
                 <?php if ($allValides): ?>
-                    <button class="btn btn-back" type="submit" name="restore_submit" value="1">
+                    <button class="btn btn-info" type="submit" name="restore_submit" value="1">
                         <span class="mdi mdi-file-undo"></span> Restaurer en brouillons
                     </button>
                 <?php else: ?>
