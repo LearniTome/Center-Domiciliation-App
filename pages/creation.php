@@ -538,6 +538,13 @@ if (is_post()) {
             }
             exit;
         }
+
+        if ($navAction === 'terminer') {
+            $societeId = $wizard['societe_id'] ?? null;
+            unset($_SESSION['creation_wizard']);
+            set_flash('success', 'Dossier cree avec succes.');
+            redirect_to('societe', ['id' => (string) $societeId]);
+        }
     }
 }
 
@@ -1677,6 +1684,7 @@ $contratData = array_merge([
             <form method="post" class="table-actions" style="margin-top:1rem">
                 <?= csrf_input() ?>
                 <input type="hidden" name="step" value="5">
+                <button class="btn btn-next" type="submit" name="nav_action" value="terminer"><span class="mdi mdi-check-circle"></span> Terminer</button>
                 <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="mdi mdi-arrow-left"></span> Retour</button>
             </form>
         </div>
