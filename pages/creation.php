@@ -1341,8 +1341,7 @@ $contratData = array_merge([
                         <div class="item"><span class="label">Raison sociale</span><span class="value"><?= e($societeData['societe_raison_sociale'] ?: '-') ?></span></div>
                         <div class="item"><span class="label">Forme juridique</span><span class="value"><?= e($societeData['societe_forme_juridique'] ?: '-') ?></span></div>
                         <div class="item"><span class="label">ICE</span><span class="value"><?= e($societeData['societe_ice'] ?: '-') ?></span></div>
-                        <div class="item"><span class="label">RC</span><span class="value"><?= e($societeData['societe_rc'] ?: '-') ?></span></div>
-                        <div class="item"><span class="label">IF</span><span class="value"><?= e($societeData['societe_if'] ?: '-') ?></span></div>
+
                         <div class="item"><span class="label">Capital</span><span class="value"><?= e($societeData['societe_capital'] ?: '-') ?> DH</span></div>
                         <div class="item"><span class="label">Part social</span><span class="value"><?= e($societeData['societe_part_social'] ?: '-') ?></span></div>
                         <div class="item"><span class="label">Valeur nominale</span><span class="value"><?= e($societeData['societe_valeur_nominale'] ?: '-') ?> DH</span></div>
@@ -1367,7 +1366,7 @@ $contratData = array_merge([
                         <div class="recap-grid">
                             <div class="item"><span class="label">Nom complet</span><span class="value"><?= e($associe['associe_nom_complet'] ?: '-') ?></span></div>
                             <div class="item"><span class="label">CIN</span><span class="value"><?= e($associe['associe_cin'] ?: '-') ?></span></div>
-                            <div class="item"><span class="label">Nationalite</span><span class="value"><?= e($associe['associe_nationalite'] ?: '-') ?></span></div>
+                            <div class="item"><span class="label">Nationalite</span><span class="value"><?= e((string) ($associe['associe_nationalite'] ?? '-')) ?></span></div>
                             <div class="item"><span class="label">Date naissance</span><span class="value"><?= format_date($associe['associe_date_naissance'] ?? null) ?></span></div>
                             <div class="item"><span class="label">Lieu naissance</span><span class="value"><?= e($associe['associe_lieu_naissance'] ?: '-') ?></span></div>
                             <div class="item"><span class="label">Qualite</span><span class="value"><?= e($associe['associe_qualite'] ?: '-') ?></span></div>
@@ -1384,13 +1383,11 @@ $contratData = array_merge([
                     <div class="recap-grid">
                         <div class="item"><span class="label">Type contrat</span><span class="value"><?= e($contratData['contrat_type'] ?: '-') ?></span></div>
                         <div class="item"><span class="label">Type domiciliation</span><span class="value"><?= e($contratData['contrat_type_domiciliation'] ?: '-') ?></span></div>
-                        <div class="item"><span class="label">Statut</span><span class="value"><?= e($contratData['contrat_statut'] ?: '-') ?></span></div>
                         <div class="item"><span class="label">Date contrat</span><span class="value"><?= format_date($contratData['contrat_date'] ?? null) ?></span></div>
                         <div class="item"><span class="label">Date debut</span><span class="value"><?= format_date($contratData['contrat_date_debut'] ?? null) ?></span></div>
                         <div class="item"><span class="label">Date fin</span><span class="value"><?= format_date($contratData['contrat_date_fin'] ?? null) ?></span></div>
                         <div class="item"><span class="label">Duree</span><span class="value"><?= e((string) ($contratData['contrat_duree_mois'] ?: '-')) ?> mois</span></div>
                         <div class="item"><span class="label">Loyer HT</span><span class="value"><?= e($contratData['contrat_loyer_ht'] ?: '-') ?> DH</span></div>
-                        <div class="item"><span class="label">TVA</span><span class="value"><?= e((string) ($contratData['contrat_tva_pourcent'] ?: '-')) ?>%</span></div>
                         <div class="item"><span class="label">Loyer TTC/mois</span><span class="value"><?= e($contratData['contrat_loyer_ttc'] ?: '-') ?> DH</span></div>
                         <div class="item"><span class="label">Total loyer</span><span class="value"><?= e($contratData['contrat_total_ht'] ?: '-') ?> DH</span></div>
                         <div class="item"><span class="label">Renouvellement</span><span class="value"><?= e($contratData['contrat_type_renouvellement'] ?: '-') ?></span></div>
