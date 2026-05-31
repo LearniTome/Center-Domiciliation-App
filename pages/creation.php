@@ -1311,6 +1311,17 @@ $contratData = array_merge([
                 .recap-a4 .recap-header p { color: #666 !important; }
                 .recap-a4 .recap-section { page-break-inside: avoid; }
             }
+            .recap-a4.recap-pdf-mode { background: #fff !important; box-shadow: none !important; }
+            .recap-a4.recap-pdf-mode .recap-grid .item .value { color: #222 !important; }
+            .recap-a4.recap-pdf-mode .recap-grid .item .label { color: #555 !important; }
+            .recap-a4.recap-pdf-mode .recap-header { border-bottom-color: #222 !important; }
+            .recap-a4.recap-pdf-mode .recap-header p { color: #666 !important; }
+            .recap-a4.recap-pdf-mode .recap-section h3 { color: #1a4b8c !important; }
+            .recap-a4.recap-pdf-mode .recap-associe .associe-num { color: #1a4b8c !important; }
+            .recap-a4.recap-pdf-mode .recap-associe { border-color: #ccc !important; }
+            .recap-a4.recap-pdf-mode .recap-grid .item { border-bottom-color: #ddd !important; }
+            .recap-a4.recap-pdf-mode .recap-section h3 { border-bottom-color: #ccc !important; }
+            .recap-a4.recap-pdf-mode .recap-header h2 { color: #1a4b8c !important; }
         </style>
 
         <div class="stack">
@@ -1323,7 +1334,7 @@ $contratData = array_merge([
 
             <div class="step-4-controls table-actions" style="margin-bottom:0.75rem">
                 <button class="btn btn-info" onclick="window.print()"><span class="mdi mdi-printer"></span> Imprimer</button>
-                <button class="btn btn-info" id="btn-pdf-recap"><span class="mdi mdi-file-pdf"></span> Sauvegarder PDF</button>
+                <button class="btn btn-info" id="btn-pdf-recap" data-forme="<?= e($societeData['societe_forme_juridique'] ?? '') ?>"><span class="mdi mdi-file-pdf"></span> Sauvegarder PDF</button>
                 <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => 1])) ?>"><span class="mdi mdi-pencil"></span> Modifier societe</a>
                 <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => 2])) ?>"><span class="mdi mdi-pencil"></span> Modifier associes</a>
                 <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => 3])) ?>"><span class="mdi mdi-pencil"></span> Modifier contrat</a>
@@ -1657,16 +1668,29 @@ $contratData = array_merge([
     document.getElementById('btn-pdf-recap')?.addEventListener('click', function () {
         var element = document.querySelector('.recap-a4');
         if (!element) return;
+
+        var forme = this.getAttribute('data-forme') || '';
+        var prefixMap = { 'SARL AU': 'SARL-AU', 'SARL': 'SARL', 'SA': 'SA', 'Personne Physique': 'PP' };
+        var prefix = prefixMap[forme] || 'DOSSIER';
+        var now = new Date();
+        var yyyy = now.getFullYear();
+        var mm = String(now.getMonth() + 1).padStart(2, '0');
+        var filename = prefix + '_' + yyyy + '-' + mm + '_Recapitulatif-Dossier_Final.pdf';
+
         this.disabled = true;
         this.innerHTML = '<span class="mdi mdi-loading mdi-spin"></span> Generation...';
+
+        element.classList.add('recap-pdf-mode');
+
         var opt = {
             margin:       10,
-            filename:     'recapitulatif-dossier.pdf',
+            filename:     filename,
             image:        { type: 'jpeg', quality: 0.98 },
             html2canvas:  { scale: 2, useCORS: true },
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
         html2pdf().set(opt).from(element).save().then(function () {
+            element.classList.remove('recap-pdf-mode');
             document.getElementById('btn-pdf-recap').disabled = false;
             document.getElementById('btn-pdf-recap').innerHTML = '<span class="mdi mdi-file-pdf"></span> Sauvegarder PDF';
         });
