@@ -1587,6 +1587,47 @@ tbody tr:hover:nth-child(even) {
     font-weight: 600;
 }
 
+/* Template picker (editor home) */
+.template-picker {
+    display: grid;
+    gap: 1.25rem;
+}
+.picker-group {
+    display: grid;
+    gap: 6px;
+}
+.picker-group-title {
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--primary);
+}
+.picker-files {
+    display: grid;
+    gap: 4px;
+}
+.picker-file {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    color: var(--text);
+    transition: background var(--transition);
+}
+.picker-file:hover {
+    background: var(--panel-strong);
+    color: var(--text);
+}
+.picker-file .mdi {
+    color: var(--primary);
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
 /* Validation stats in dashboard */
 .validation-stats {
     display: flex;

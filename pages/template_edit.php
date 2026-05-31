@@ -7,16 +7,55 @@ require_once __DIR__ . '/../src/TemplateEditor.php';
 $templatesDir = __DIR__ . '/../templates';
 $templatePath = isset($_GET['path']) ? realpath((string) $_GET['path']) : '';
 
+$folderLabels = require __DIR__ . '/../config/templates.php';
+$folderLabels = $folderLabels['folder_labels'];
+
+$templateDirs = array_filter(glob($templatesDir . '/*', GLOB_ONLYDIR), fn($d) => basename($d)[0] !== '_');
+$racineDir = $templatesDir . '/_Racine-Actifs';
+
 if ($templatePath === '' || !str_starts_with($templatePath, realpath($templatesDir)) || !file_exists($templatePath)) {
-    $firstDocx = glob($templatesDir . '/*/*.docx');
-    if (!empty($firstDocx)) {
-        redirect_to('template_edit', ['path' => $firstDocx[0]]);
-    }
     ?>
     <section class="card stack">
-        <h2>Template introuvable</h2>
-        <p>Le fichier demande n'existe pas ou n'est pas accessible.</p>
-        <a class="btn" href="<?= e(app_url('templates')) ?>">Retour aux templates</a>
+        <h2>Editeur de template</h2>
+        <p class="help-text" style="margin-bottom:1rem">Selectionnez un dossier et un template a editer.</p>
+        <div class="template-picker">
+            <?php foreach ($templateDirs as $dir):
+                $folderName = basename($dir);
+                $label = $folderLabels[$folderName] ?? $folderName;
+                $files = glob($dir . '/*.docx');
+                if (empty($files)) continue;
+            ?>
+            <div class="picker-group">
+                <h3 class="picker-group-title"><?= e($label) ?></h3>
+                <div class="picker-files">
+                    <?php foreach ($files as $f): ?>
+                    <a class="picker-file" href="<?= e(app_url('template_edit', ['path' => $f])) ?>">
+                        <span class="mdi mdi-file-document-outline"></span>
+                        <?= e(basename($f)) ?>
+                    </a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endforeach; ?>
+            <?php if (is_dir($racineDir)):
+                $racineFiles = glob($racineDir . '/*.docx');
+                if (!empty($racineFiles)):
+            ?>
+            <div class="picker-group">
+                <h3 class="picker-group-title"><?= e($folderLabels['_Racine-Actifs'] ?? 'Racine Actifs') ?></h3>
+                <div class="picker-files">
+                    <?php foreach ($racineFiles as $f): ?>
+                    <a class="picker-file" href="<?= e(app_url('template_edit', ['path' => $f])) ?>">
+                        <span class="mdi mdi-file-document-outline"></span>
+                        <?= e(basename($f)) ?>
+                    </a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+                <?php endif; ?>
+            <?php endif; ?>
+        </div>
+        <a class="btn btn-back" href="<?= e(app_url('templates')) ?>"><span class="mdi mdi-arrow-left"></span> Retour</a>
     </section>
     <?php
     return;
