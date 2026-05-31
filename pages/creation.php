@@ -466,6 +466,78 @@ if (is_post()) {
 
             redirect_to('creation', ['step' => 5]);
         }
+
+        if ($navAction === 'generate_single') {
+            header('Content-Type: application/json');
+            try {
+                require_once __DIR__ . '/../src/TemplateAnalyzer.php';
+                require_once __DIR__ . '/../src/DocumentRenderer.php';
+
+                $templatesDir = __DIR__ . '/../templates';
+                $outputDir = __DIR__ . '/../dossiers_dom';
+                if (!is_dir($outputDir)) mkdir($outputDir, 0777, true);
+
+                $path = $_POST['template_path'] ?? '';
+                $generatePdf = isset($_POST['pdf']);
+
+                $realTpl = realpath($templatesDir);
+                if (!file_exists($path) || !str_starts_with(realpath($path), $realTpl)) {
+                    throw new \RuntimeException('Template invalide ou introuvable');
+                }
+
+                $context = DocumentRenderer::buildContextFromSession($wizard, $pdo ?? null);
+                $today = date('Y-m-d');
+                $clientName = trim(preg_replace('/[^a-zA-Z0-9-]/', '-', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $wizard['societe']['societe_raison_sociale'] ?? 'Client')));
+                $clientName = preg_replace('/-+/', '-', $clientName);
+                $clientName = trim($clientName, '-');
+                $forme = $wizard['societe']['societe_forme_juridique'] ?? 'PP';
+
+                $renderer = new DocumentRenderer($path, $outputDir);
+                $filename = pathinfo($path, PATHINFO_FILENAME);
+                $parts = explode('_', $filename);
+                $docType = '';
+                if (count($parts) >= 4) {
+                    $docType = preg_replace('/_?Template$/i', '', implode('_', array_slice($parts, 2)));
+                } elseif (count($parts) === 3) {
+                    $docType = preg_replace('/_?Template$/i', '', $parts[1]);
+                }
+                $base = $forme . '_' . $today . '_' . $docType . '_' . $clientName;
+                $outName = $base . '_Brouillon.docx';
+                $docxPath = $renderer->render($context, $outName);
+
+                $pdfPath = null;
+                if ($generatePdf) {
+                    $pdfName = $base . '_Brouillon.pdf';
+                    $pdfPath = $renderer->tryConvertToPdf($docxPath, $pdfName);
+                }
+
+                $result = ['docx' => $docxPath, 'pdf' => $pdfPath, 'name' => $outName];
+                if (!isset($_SESSION['creation_wizard']['generated_files'])) {
+                    $_SESSION['creation_wizard']['generated_files'] = [];
+                }
+                $_SESSION['creation_wizard']['generated_files'][] = $result;
+
+                $societeId = $wizard['societe_id'] ?? null;
+                if ($societeId && ($pdo ?? null) instanceof PDO) {
+                    $p2 = explode('_', $outName);
+                    $dt = $p2[2] ?? null;
+                    $ins = $pdo->prepare('INSERT INTO documents_generes (societe_id, template_source, doc_type, fichier_docx, fichier_pdf, taille_ko) VALUES (:societe_id, :template_source, :doc_type, :fichier_docx, :fichier_pdf, :taille_ko)');
+                    $ins->execute([
+                        'societe_id' => $societeId,
+                        'template_source' => basename($path),
+                        'doc_type' => $dt,
+                        'fichier_docx' => $docxPath,
+                        'fichier_pdf' => $pdfPath,
+                        'taille_ko' => file_exists($docxPath) ? round(filesize($docxPath) / 1024, 1) : null,
+                    ]);
+                }
+
+                echo json_encode(['success' => true, 'name' => basename((string) $docxPath)]);
+            } catch (\Throwable $e) {
+                echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            }
+            exit;
+        }
     }
 }
 
@@ -1618,23 +1690,66 @@ $contratData = array_merge([
             checkboxes.forEach(c => c.checked = !allChecked);
         });
 
-        document.getElementById('wizard-gen-form')?.addEventListener('submit', function() {
-            window.showGenOverlay();
-        });
-
-        window.showGenOverlay = function() {
+        document.getElementById('wizard-gen-form')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var form = this;
+            var checkboxes = Array.from(form.querySelectorAll('.template-check:checked'));
+            if (checkboxes.length === 0) return;
+            var generatePdf = form.querySelector('[name="pdf"]')?.checked || false;
+            var csrf = form.querySelector('[name="csrf_token"]')?.value || '';
             var overlay = document.getElementById('gen-loading-overlay');
+            var progressFill = overlay?.querySelector('.gen-progress-fill');
+            var progressText = overlay?.querySelector('.gen-progress-text');
+            var statusText = overlay?.querySelector('.gen-status-text');
+            var total = checkboxes.length;
+            var done = 0;
             if (overlay) overlay.classList.add('show');
-        };
+            var next = function () {
+                if (done >= total) {
+                    window.location.reload();
+                    return;
+                }
+                var cb = checkboxes[done];
+                var path = cb.value;
+                var pct = Math.round((done / total) * 100);
+                if (progressFill) progressFill.style.width = pct + '%';
+                if (progressText) progressText.textContent = done + '/' + total + ' documents';
+                if (statusText) statusText.textContent = 'Generation de : ' + path.split(/[\\/]/).pop();
+                var fd = new FormData();
+                fd.append('csrf_token', csrf);
+                fd.append('step', '5');
+                fd.append('nav_action', 'generate_single');
+                fd.append('template_path', path);
+                fd.append('pdf', generatePdf ? '1' : '');
+                fetch(window.location.href, { method: 'POST', body: fd }).then(function (r) {
+                    return r.json();
+                }).then(function (data) {
+                    done++;
+                    if (!data.success) {
+                        if (statusText) statusText.textContent = 'Erreur: ' + (data.error || 'inconnue');
+                    }
+                    next();
+                }).catch(function (err) {
+                    done++;
+                    if (statusText) statusText.textContent = 'Erreur: ' + err.message;
+                    next();
+                });
+            };
+            next();
+        });
         </script>
 
         <style>
         #gen-loading-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);z-index:9999;display:none;align-items:center;justify-content:center}
         #gen-loading-overlay.show{display:flex}
-        #gen-loading-overlay .loader-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);padding:2.5rem 3rem;display:flex;flex-direction:column;align-items:center;gap:1rem;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+        #gen-loading-overlay .loader-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);padding:2.5rem 3rem;display:flex;flex-direction:column;align-items:center;gap:1rem;box-shadow:0 8px 32px rgba(0,0,0,.5);min-width:400px}
         #gen-loading-overlay .spinner{width:40px;height:40px;border:3px solid var(--line);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
         @keyframes spin{to{transform:rotate(360deg)}}
         #gen-loading-overlay p{font-size:1rem;color:var(--text-secondary);margin:0}
+        #gen-loading-overlay .gen-progress-bar{width:100%;height:10px;background:var(--line);border-radius:5px;overflow:hidden}
+        #gen-loading-overlay .gen-progress-fill{height:100%;width:0%;background:var(--primary);border-radius:5px;transition:width .3s ease}
+        #gen-loading-overlay .gen-progress-text{font-size:1.1rem;font-weight:700;color:var(--text)}
+        #gen-loading-overlay .gen-status-text{font-size:.85rem;color:var(--text-secondary);text-align:center;word-break:break-all;max-width:360px}
         :root{--violet:var(--info);--rouge:#e74c3c}
         .step-card{transition:border-color .4s ease,box-shadow .4s ease,transform .3s ease,opacity .4s ease}
         .step-card.done{border-color:var(--success)!important}
@@ -1659,7 +1774,9 @@ $contratData = array_merge([
         <div id="gen-loading-overlay">
             <div class="loader-card">
                 <div class="spinner"></div>
-                <p>Generation des documents en cours...</p>
+                <div class="gen-progress-text">0/0 documents</div>
+                <div class="gen-progress-bar"><div class="gen-progress-fill"></div></div>
+                <p class="gen-status-text">Preparation...</p>
             </div>
         </div>
     <?php endif; ?>
