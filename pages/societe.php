@@ -232,7 +232,7 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
             <a class="btn btn-secondary" href="<?= e(app_url('societe', ['id' => $societeId])) ?>"><span class="mdi mdi-close"></span> Annuler</a>
         <?php else: ?>
             <a class="btn btn-secondary" href="<?= e(app_url('societe', ['id' => $societeId, 'edit' => '1'])) ?>"><span class="mdi mdi-pencil"></span> Modifier</a>
-            <a class="btn btn-info" href="<?= e(app_url('generation', ['societe_id' => $societeId])) ?>"><span class="mdi mdi-file-sync"></span> Generer documents</a>
+            <a class="btn btn-info" href="<?= e(app_url('generation', ['societe_id' => $societeId])) ?>"><span class="mdi mdi-file-sync"></span> <?= count($documents) > 0 ? 'Regenerer documents' : 'Generer documents' ?></a>
         <?php endif; ?>
         <a class="btn btn-secondary" href="<?= e(app_url('societes')) ?>"><span class="mdi mdi-arrow-left"></span> Retour</a>
     </div>
@@ -585,7 +585,7 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
     <div class="section-header">
         <h3>Documents generes (<?= count($documents) ?>)</h3>
         <div class="table-actions">
-            <a class="btn btn-info" href="<?= e(app_url('generation', ['societe_id' => $societeId])) ?>"><span class="mdi mdi-file-sync"></span> Generer documents</a>
+            <a class="btn btn-info" href="<?= e(app_url('generation', ['societe_id' => $societeId])) ?>"><span class="mdi mdi-file-sync"></span> <?= count($documents) > 0 ? 'Regenerer documents' : 'Generer documents' ?></a>
             <a class="btn btn-info" href="<?= e(app_url('documents', ['societe_id' => $societeId])) ?>"><span class="mdi mdi-eye"></span> Voir tout</a>
         </div>
     </div>
