@@ -8,6 +8,10 @@ $templatesDir = __DIR__ . '/../templates';
 $templatePath = isset($_GET['path']) ? realpath((string) $_GET['path']) : '';
 
 if ($templatePath === '' || !str_starts_with($templatePath, realpath($templatesDir)) || !file_exists($templatePath)) {
+    $firstDocx = glob($templatesDir . '/*/*.docx');
+    if (!empty($firstDocx)) {
+        redirect_to('template_edit', ['path' => $firstDocx[0]]);
+    }
     ?>
     <section class="card stack">
         <h2>Template introuvable</h2>
