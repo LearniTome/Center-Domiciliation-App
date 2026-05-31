@@ -174,6 +174,7 @@ $variables = TemplateEditor::getAvailableVariables();
                 <p class="help-text"><?= e($folderLabels[$folder] ?? $folder) ?> &mdash; <?= e($filename) ?></p>
             </div>
             <div class="table-actions">
+                <a class="btn btn-back" href="<?= e(app_url('template_edit')) ?>"><span class="mdi mdi-arrow-left"></span> Retour</a>
                 <a class="btn-icon" href="<?= e(app_url('template', ['path' => $templatePath])) ?>" title="Fermer"><span class="mdi mdi-close"></span></a>
             </div>
         </div>
