@@ -106,23 +106,9 @@ foreach ($displayFolders as $folder) {
                 <p class="help-text"><?= count($templates) ?> template(s) trouve(s)</p>
             </div>
             <div class="table-actions">
-                <a class="btn btn-next" href="#" onclick="document.getElementById('upload-form').classList.toggle('hidden'); return false;"><span class="mdi mdi-plus"></span> Ajouter un template</a>
                 <a class="btn btn-next" href="#" onclick="document.getElementById('folder-form').classList.toggle('hidden'); return false;"><span class="mdi mdi-folder-plus"></span> Nouveau dossier</a>
+                <a class="btn btn-next" href="#" onclick="document.getElementById('upload-form').classList.toggle('hidden'); return false;"><span class="mdi mdi-plus"></span> Ajouter un template</a>
             </div>
-        </div>
-
-        <div id="upload-form" class="stack hidden">
-            <form method="post" enctype="multipart/form-data" class="inline-form">
-                <?= csrf_input() ?>
-                <input type="hidden" name="action" value="upload">
-                <input type="file" name="template_file" accept=".docx" required>
-                <select name="folder">
-                    <?php foreach ($templateFolders as $folder): ?>
-                        <option value="<?= e($folder) ?>"><?= e($folderLabels[$folder] ?? $folder) ?></option>
-                    <?php endforeach; ?>
-                </select>
-                <button type="submit" class="btn">Uploader</button>
-            </form>
         </div>
 
         <div id="folder-form" class="stack hidden">
@@ -131,6 +117,20 @@ foreach ($displayFolders as $folder) {
                 <input type="hidden" name="action" value="create_folder">
                 <input type="text" name="folder_name" placeholder="Nom du dossier (ex: SARL)" required>
                 <button type="submit" class="btn">Creer</button>
+            </form>
+        </div>
+
+        <div id="upload-form" class="stack hidden">
+            <form method="post" enctype="multipart/form-data" class="inline-form">
+                <?= csrf_input() ?>
+                <input type="hidden" name="action" value="upload">
+                <input type="file" name="template_file" accept=".docx" required>
+                <select name="folder">
+                    <?php foreach ($displayFolders as $folder): ?>
+                        <option value="<?= e($folder) ?>"><?= e($folderLabels[$folder] ?? $folder) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <button type="submit" class="btn">Uploader</button>
             </form>
         </div>
 
