@@ -15,6 +15,7 @@ $navSections = [
     ],
     'Templates de documents' => [
         'templates' => ['Templates', 'mdi-file-document-edit'],
+        'template_edit' => ['Editeur de template', 'mdi-pencil'],
         'generation' => ['Generateur de dossiers', 'mdi-file-sync'],
         'documents' => ['Documents generes', 'mdi-file-word'],
     ],
