@@ -186,9 +186,9 @@ const testData = {
     'societe_adresse_siege': 'HAY MOULAY ABDELLAH RUE 300 N 152 ETG 2 AIN CHOCK, CASABLANCA',
     'societe_tribunal': 'Casablanca',
     'tribunal_type': 'Tribunal de commerce',
-    'type_generation': 'creation',
-    'procedure_creation': 'normal',
-    'mode_depot_creation': 'depot_physique',
+    'societe_type_generation': 'creation',
+    'societe_procedure_creation': 'normal',
+    'societe_mode_depot': 'depot_physique',
     // contrat (step 3)
     'contrat_type': 'Domiciliation commerciale',
     'contrat_date': '2026-01-01',
@@ -321,8 +321,8 @@ if (associesContainer && associeTemplate && addAssocieButton) {
     var toggleProcedureFields = function (typeGen) {
         var form = typeGen.closest('form');
         if (!form) return;
-        var procCreation = form.querySelector('[name="procedure_creation"]');
-        var modeDepot = form.querySelector('[name="mode_depot_creation"]');
+        var procCreation = form.querySelector('[name="societe_procedure_creation"]');
+        var modeDepot = form.querySelector('[name="societe_mode_depot"]');
         var statutsSection = form.querySelector('[data-statuts-section]');
         if (!procCreation || !modeDepot) return;
         var isDomiciliation = typeGen.value === 'domiciliation';
@@ -338,12 +338,12 @@ if (associesContainer && associeTemplate && addAssocieButton) {
     };
 
     document.addEventListener('change', function (e) {
-        if (e.target && e.target.matches('[name="type_generation"]')) {
+        if (e.target && e.target.matches('[name="societe_type_generation"]')) {
             toggleProcedureFields(e.target);
         }
     });
 
-    var typeGen = document.querySelector('[name="type_generation"]');
+    var typeGen = document.querySelector('[name="societe_type_generation"]');
     if (typeGen) {
         toggleProcedureFields(typeGen);
     }
