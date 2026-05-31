@@ -58,6 +58,44 @@ $grouped = TemplateAnalyzer::groupByFolder($templates);
 $legalForms = $templatesConfig['legal_forms'];
 $docTypes = $templatesConfig['document_types'];
 
+$templateFolders = [];
+if (is_dir($templatesDir)) {
+    $items = scandir($templatesDir);
+    foreach ($items as $item) {
+        if ($item === '.' || $item === '..') continue;
+        if (is_dir($templatesDir . DIRECTORY_SEPARATOR . $item)) {
+            $templateFolders[] = $item;
+        }
+    }
+    sort($templateFolders);
+}
+
+$folderLabels = $legalForms;
+
+$displayFolders = ['_Racine-Actifs'];
+if (($pdo ?? null) instanceof PDO) {
+    $stmt = $pdo->query("SELECT forme_juridique, template_folder FROM ref_formes_juridiques ORDER BY id");
+    $allForms = $stmt->fetchAll();
+    foreach ($allForms as $form) {
+        $name = (string) $form['forme_juridique'];
+        $tf = (string) ($form['template_folder'] ?? '');
+        $key = $tf !== '' ? $tf : $name;
+        if (!in_array($key, $displayFolders, true)) {
+            $displayFolders[] = $key;
+        }
+        if (!isset($folderLabels[$key])) {
+            $folderLabels[$key] = $name;
+        }
+    }
+}
+
+// Ensure folder exists on disk for display (create if missing)
+foreach ($displayFolders as $folder) {
+    $path = $templatesDir . DIRECTORY_SEPARATOR . $folder;
+    if (!is_dir($path)) {
+        @mkdir($path, 0777, true);
+    }
+}
 
 ?>
 <section>
@@ -79,8 +117,8 @@ $docTypes = $templatesConfig['document_types'];
                 <input type="hidden" name="action" value="upload">
                 <input type="file" name="template_file" accept=".docx" required>
                 <select name="folder">
-                    <?php foreach ($legalForms as $key => $label): ?>
-                        <option value="<?= e($key) ?>"><?= e($label) ?></option>
+                    <?php foreach ($templateFolders as $folder): ?>
+                        <option value="<?= e($folder) ?>"><?= e($folderLabels[$folder] ?? $folder) ?></option>
                     <?php endforeach; ?>
                 </select>
                 <button type="submit" class="btn">Uploader</button>
@@ -96,14 +134,27 @@ $docTypes = $templatesConfig['document_types'];
             </form>
         </div>
 
-        <?php if (!$templates): ?>
-            <p class="table-empty">Aucun template trouve. Ajoutez des fichiers .docx.</p>
-        <?php else: ?>
-            <?php foreach ($grouped as $folder => $items): ?>
+        <?php if ($displayFolders): ?>
+            <?php
+            $nonEmpty = [];
+            $empty = [];
+            foreach ($displayFolders as $folder) {
+                $items = $grouped[$folder] ?? [];
+                if ($items) {
+                    $nonEmpty[] = $folder;
+                } else {
+                    $empty[] = $folder;
+                }
+            }
+            $sortedFolders = array_merge($nonEmpty, $empty);
+            ?>
+            <?php foreach ($sortedFolders as $folder): ?>
+                <?php $items = $grouped[$folder] ?? []; ?>
                 <h3 style="color:var(--text-secondary);font-size:0.85rem;text-transform:uppercase;letter-spacing:0.04em;margin:1rem 0 0.5rem">
-                    <?= e($legalForms[$folder] ?? $folder) ?>
+                    <?= e($folderLabels[$folder] ?? $folder) ?>
                     <span style="font-weight:400">(<?= count($items) ?>)</span>
                 </h3>
+                <?php if ($items): ?>
                 <div class="table-scroll">
                 <table>
                     <thead>
@@ -138,7 +189,12 @@ $docTypes = $templatesConfig['document_types'];
                     </tbody>
                 </table>
                 </div>
+                <?php else: ?>
+                    <p class="table-empty">Aucun template dans ce dossier. Utilisez le bouton "Ajouter un template" pour en ajouter.</p>
+                <?php endif; ?>
             <?php endforeach; ?>
+        <?php else: ?>
+            <p class="table-empty">Aucun dossier de templates trouve. Creez un dossier dans <code>templates/</code> ou utilisez la page Configuration.</p>
         <?php endif; ?>
     </article>
 </section>
