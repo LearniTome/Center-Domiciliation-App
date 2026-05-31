@@ -35,6 +35,9 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - `fetch_reference_options(?PDO, string table, string column): array`
 - `export_csv(string filename, array headers, array rows): never`
 - `load_defaults(?string key): array`
+- `fetch_legal_form_template_folder(?PDO, string formeJuridique): string` — lit `template_folder` depuis `ref_formes_juridiques`
+- `fetch_formes_juridiques_with_folders(?PDO): array` — toutes les formes avec leur dossier template
+- `ensure_template_folder(string folderName): bool` — crée `templates/<folder>/` si inexistant
 
 ## URL Patterns
 - List page: `index.php?page=societes`
@@ -45,12 +48,19 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - Host: `127.0.0.1:3306`, DB: `center_domiciliation`, user: `root`, pass: empty
 - Schema: `database/schema.sql` (tables + ref tables), seed: `database/seed.sql`
 - Core tables: `societes`, `associes`, `contrats`, `collaborateurs`
-- Ref tables: `ref_tribunaux`, `ref_ste_adresses`, `ref_nationalites`, `ref_lieux_naissance`, `ref_activites`
+- Ref tables: `ref_tribunaux`, `ref_ste_adresses`, `ref_nationalites`, `ref_lieux_naissance`, `ref_activites`, `ref_formes_juridiques`
 - Import: `mysql -u root center_domiciliation < database/import.sql`
+- Migration DB existante (ajout colonne `template_folder`):
+  ```sql
+  ALTER TABLE ref_formes_juridiques ADD COLUMN template_folder VARCHAR(120) DEFAULT '' NOT NULL AFTER forme_juridique;
+  UPDATE ref_formes_juridiques SET template_folder = 'SARL AU' WHERE forme_juridique = 'SARL AU';
+  UPDATE ref_formes_juridiques SET template_folder = 'SARL' WHERE forme_juridique = 'SARL';
+  UPDATE ref_formes_juridiques SET template_folder = 'SA' WHERE forme_juridique = 'SA';
+  ```
 
 ## Page Patterns
 - **List pages** (`societes`, `associes`, `contrats`): Table with search bar, CSV export link, delete button per row, "Voir" link to detail page
-- **Configuration** (`configuration.php`): Unified page with tabs for all 8 reference tables (formes-juridiques, villes, tribunaux, nationalites, lieux-naissance, adresses, qualites-associe, activites). Add/edit/delete inline.
+- **Configuration** (`configuration.php`): Unified page with tabs for all 8 reference tables (formes-juridiques, villes, tribunaux, nationalites, lieux-naissance, adresses, qualites-associe, activites). Add/edit/delete inline. L'onglet `formes-juridiques` affiche une colonne **Dossier Templates** pour lier chaque forme juridique à un dossier dans `templates/`. Si le dossier n'existe pas, il est créé automatiquement lors de l'ajout ou la modification.
 - **Wizard** (`creation.php`): 3-step session-based wizard with JS dynamic associate forms
 - **Detail page** (`societe.php`): Single record view with related data tables (associates, contracts, collaborators inline)
 
