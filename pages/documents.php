@@ -112,10 +112,7 @@ if ($exportCsv && count($documents) > 0) {
 ?>
 <section class="card">
     <div class="section-header">
-        <div>
-            <h2>Tous les documents generes</h2>
-            <p class="help-text"><?= count($documents) ?> document(s)</p>
-        </div>
+        <span class="page-count"><?= count($documents) ?> document(s)</span>
         <div class="table-actions">
             <a class="btn <?= $filterStatut === '' ? 'btn-next' : 'btn-secondary' ?>" href="<?= e(app_url('documents', array_filter(['societe_id' => $filterSociete, 'doc_type' => $filterDocType, 'q' => $q], fn($v) => $v !== null && $v !== ''))) ?>">Tous</a>
             <a class="btn <?= $filterStatut === 'valide' ? 'btn-next' : 'btn-secondary' ?>" href="<?= e(app_url('documents', array_filter(['societe_id' => $filterSociete, 'doc_type' => $filterDocType, 'q' => $q, 'statut' => 'valide'], fn($v) => $v !== null && $v !== ''))) ?>">Valides</a>
@@ -155,17 +152,17 @@ if ($exportCsv && count($documents) > 0) {
         <form method="post" id="documents-form">
             <?= csrf_input() ?>
             <div class="table-scroll" style="overflow-x: auto">
-                <table style="white-space: nowrap">
+                <table data-sortable style="white-space: nowrap">
                     <thead>
                         <tr>
-                            <th class="col-check"><input type="checkbox" id="select-all"></th>
-                            <th>Societe</th>
-                            <th>Type</th>
-                            <th>Document</th>
-                            <th>Taille</th>
-                            <th>Statut</th>
-                            <th>Date creation</th>
-                            <th>Modification</th>
+                            <th class="col-check"></th>
+                            <th data-col="societe">Societe</th>
+                            <th data-col="type">Type</th>
+                            <th data-col="document">Document</th>
+                            <th data-col="taille">Taille</th>
+                            <th data-col="statut">Statut</th>
+                            <th data-col="date-creation">Date creation</th>
+                            <th data-col="modification">Modification</th>
                             <th class="col-actions">Actions</th>
                         </tr>
                     </thead>

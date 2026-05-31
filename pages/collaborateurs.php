@@ -80,10 +80,7 @@ if (($pdo ?? null) instanceof PDO) {
 <section>
     <article class="card">
         <div class="section-header">
-            <div>
-                <h2>Collaborateurs</h2>
-                <p class="help-text"><?= count($collaborateurs) ?> enregistrement(s)</p>
-            </div>
+            <span class="page-count"><?= count($collaborateurs) ?> enregistrement(s)</span>
             <div class="table-actions">
                 <button class="btn btn-secondary" type="button" data-col-toggle-btn><span class="mdi mdi-table-column"></span> Colonnes <span class="col-toggle-count" data-col-count>0/0</span></button>
                 <a class="btn btn-next" href="<?= e(app_url('collaborateur')) ?>"><span class="mdi mdi-account-plus"></span> Nouveau collaborateur</a>
@@ -109,7 +106,7 @@ if (($pdo ?? null) instanceof PDO) {
             <p class="table-empty">Aucun collaborateur pour le moment.</p>
         <?php else: ?>
             <div class="table-scroll">
-            <table data-col-toggle>
+            <table data-col-toggle data-sortable>
                 <thead>
                 <tr>
                     <th data-col="type">Type</th>

@@ -22,6 +22,7 @@ declare(strict_types=1);
         <header class="page-header">
             <div>
                 <h1><?= e($pageTitle) ?></h1>
+                <span class="page-count-bar"></span>
             </div>
         </header>
 

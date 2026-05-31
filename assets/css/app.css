@@ -134,10 +134,14 @@ a:hover {
 }
 
 .shell.collapsed .brand-text,
+.shell.collapsed .brand .sidebar-toggle,
 .shell.collapsed .nav-section-toggle,
 .shell.collapsed .nav-section-label,
 .shell.collapsed [data-nav-label] {
     display: none;
+}
+.shell.collapsed .brand {
+    justify-content: center;
 }
 
 .shell.collapsed .nav-section-items {
@@ -255,11 +259,35 @@ a:hover {
     height: 100vh;
 }
 
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+.page-header > div {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
 .page-header h1 {
-    margin: 4px 0 20px;
+    margin: 0;
     font-size: 1.5rem;
     font-weight: 500;
     color: var(--text);
+    white-space: nowrap;
+}
+.page-count-bar {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.page-count-bar .page-count {
+    font-style: italic;
 }
 
 .eyebrow {
@@ -276,8 +304,27 @@ a:hover {
 
 .grid.two {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
     gap: 1.25rem;
+}
+
+.grid.two > .card {
+    margin-top: 0 !important;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+}
+
+.stats.compact {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.stats.small {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.6rem;
 }
 
 .grid.two > .card {
@@ -380,10 +427,12 @@ article.card + article.card {
 
 .section-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
     gap: 12px;
     margin-bottom: 20px;
+}
+.section-header .table-actions {
+    margin-left: auto;
 }
 
 .section-header h2,
@@ -394,6 +443,9 @@ article.card + article.card {
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .section-header .help-text {
@@ -563,13 +615,14 @@ button.btn-icon.danger:hover {
 }
 
 .stack {
-    display: grid;
+    display: flex;
+    flex-direction: column;
     gap: 1.25rem;
 }
 
 .form-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 16px;
 }
 
@@ -666,6 +719,15 @@ th {
     top: 0;
     background: var(--panel);
     z-index: 1;
+}
+
+th[data-col] {
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.15s;
+}
+th[data-col]:hover {
+    color: var(--text);
 }
 
 tbody tr:last-child td {
@@ -782,7 +844,7 @@ tbody tr:hover:nth-child(even) {
 
 .info-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 14px;
 }
 
@@ -832,7 +894,7 @@ tbody tr:hover:nth-child(even) {
 
 .wizard-steps {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
     gap: 10px;
     margin-bottom: 20px;
 }
@@ -1525,6 +1587,32 @@ tbody tr:hover:nth-child(even) {
     font-weight: 600;
 }
 
+/* Validation stats in dashboard */
+.validation-stats {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+.validation-stat {
+    flex: 1;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--panel);
+}
+.validation-stat span {
+    color: var(--text-secondary);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.validation-stat strong {
+    display: block;
+    font-size: 1.1rem;
+    margin-top: 4px;
+    font-weight: 500;
+}
+
 /* Stat color variants */
 .stat.success strong { color: var(--success); }
 .stat.danger strong { color: var(--danger); }
@@ -1553,15 +1641,7 @@ tbody tr:hover:nth-child(even) {
 }
 
 @media (max-width: 980px) {
-     .shell,
-     .grid.two,
-     .stats,
-     .form-grid,
-     .wizard-steps,
-     .stats.compact,
-     .quick-actions,
-     .quick-actions.extra,
-     .info-grid {
+     .shell {
          grid-template-columns: 1fr;
      }
      .template-item {
@@ -1586,7 +1666,7 @@ tbody tr:hover:nth-child(even) {
      .main {
          padding: 1rem;
      }
-}
+ }
 
 @media print {
      /* Hide navigation and UI elements */

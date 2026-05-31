@@ -14,14 +14,14 @@ $navSections = [
         'collaborateurs' => ['Collaborateurs', 'mdi-briefcase'],
     ],
     'Templates de documents' => [
-        'templates' => ['Liste des templates', 'mdi-file-document-edit'],
-        'generation' => ['Generation', 'mdi-file-sync'],
+        'templates' => ['Templates', 'mdi-file-document-edit'],
+        'generation' => ['Generateur de dossiers', 'mdi-file-sync'],
         'documents' => ['Documents generes', 'mdi-file-word'],
     ],
     'Outils' => [
-        'analyse-couverture' => ['Analyse couverture', 'mdi-chart-box-outline'],
+        'analyse-couverture' => ['Analyse de couverture', 'mdi-chart-box-outline'],
         'defaults' => ['Valeurs par defaut', 'mdi-tune'],
-        'variables' => ['Variables', 'mdi-variable'],
+        'variables' => ['Gestion des variables', 'mdi-variable'],
         'convert-word-pdf' => ['Word to PDF', 'mdi-file-pdf-box'],
     ],
     'Configuration' => [
@@ -29,7 +29,7 @@ $navSections = [
         ['page' => 'tribunaux', 'label' => 'Tribunaux', 'icon' => 'mdi-scale-balance'],
         ['page' => 'villes', 'label' => 'Villes', 'icon' => 'mdi-city'],
         ['page' => 'nationalites', 'label' => 'Nationalites', 'icon' => 'mdi-flag'],
-        ['page' => 'lieux-naissance', 'label' => 'Lieux naissance', 'icon' => 'mdi-map-marker'],
+        ['page' => 'lieux-naissance', 'label' => 'Lieux de naissance', 'icon' => 'mdi-map-marker'],
         ['page' => 'adresses', 'label' => 'Adresses', 'icon' => 'mdi-home'],
         ['page' => 'qualites-associe', 'label' => 'Qualites associe', 'icon' => 'mdi-account-tie'],
         ['page' => 'activites', 'label' => 'Activites', 'icon' => 'mdi-briefcase'],

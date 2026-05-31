@@ -99,7 +99,6 @@ $currentLabels = $fieldLabels[$currentSection] ?? [];
 <section class="card stack">
     <div class="section-header">
         <div>
-            <h2>Valeurs par defaut</h2>
             <p class="help-text">Personnaliser les valeurs pre-remplies dans les formulaires.</p>
         </div>
         <div style="display:flex;gap:6px">

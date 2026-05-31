@@ -639,7 +639,6 @@ $contratData = array_merge([
 <section class="card stack">
     <div class="section-header">
         <div>
-            <h2>Assistant de creation d'un dossier</h2>
             <p class="help-text">Parcours guide: societe, associes, puis contrat, dans un seul flux.</p>
         </div>
         <a class="btn btn-cancel" href="<?= e(app_url('creation', ['cancel' => '1'])) ?>" data-confirm="Annuler la creation ?"><span class="mdi mdi-close-circle"></span> Annuler</a>
@@ -1510,13 +1509,24 @@ $contratData = array_merge([
         if ($targetFolder !== '') {
             ensure_template_folder($targetFolder);
         }
+        $useRacine = ($_GET['use_racine'] ?? '') === '1';
         $filteredTemplates = [];
+        $racineTemplates = [];
         foreach ($allTemplates as $tpl) {
-            if ($targetFolder !== '' && $tpl['folder'] === $targetFolder) {
-                $filteredTemplates[] = $tpl;
-            } elseif ($tpl['folder'] === '_Racine-Actifs') {
-                $filteredTemplates[] = $tpl;
+            if ($tpl['folder'] === '_Racine-Actifs') {
+                $racineTemplates[] = $tpl;
             }
+        }
+        if ($targetFolder !== '' && !$useRacine) {
+            foreach ($allTemplates as $tpl) {
+                if ($tpl['folder'] === $targetFolder) {
+                    $filteredTemplates[] = $tpl;
+                }
+            }
+        } elseif ($targetFolder !== '' && $useRacine) {
+            $filteredTemplates = $racineTemplates;
+        } else {
+            $filteredTemplates = $racineTemplates;
         }
 
         $templatesByType = [];
@@ -1621,9 +1631,23 @@ $contratData = array_merge([
                             </div>
 
                             <div style="display:flex;justify-content:flex-end;margin-top:4px">
+                                <?php if ($generatedFiles): ?>
+                                <button class="btn btn-next" type="submit" data-confirm="ATTENTION : Les documents existants seront ecrases. Voulez-vous continuer ?"><span class="mdi mdi-file-sync"></span> Regenerer les documents</button>
+                                <?php else: ?>
                                 <button class="btn btn-next" type="submit"><span class="mdi mdi-file-sync"></span> Generer les documents</button>
+                                <?php endif; ?>
                             </div>
                         </form>
+                    <?php elseif ($targetFolder !== '' && !$useRacine): ?>
+                        <div class="empty-state" style="margin-top:8px">
+                            <span class="mdi mdi-file-document-outline" style="font-size:2rem;color:var(--text-secondary)"></span>
+                            <p class="table-empty">Aucun template dans le dossier <strong><?= e($targetFolder) ?></strong> pour cette forme juridique.</p>
+                            <?php if ($racineTemplates): ?>
+                            <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => $step, 'use_racine' => 1])) ?>" style="margin-top:8px">
+                                <span class="mdi mdi-folder-open"></span> Utiliser les templates Racine par defaut (<?= count($racineTemplates) ?>)
+                            </a>
+                            <?php endif; ?>
+                        </div>
                     <?php else: ?>
                         <div class="empty-state" style="margin-top:8px">
                             <span class="mdi mdi-file-document-outline" style="font-size:2rem;color:var(--text-secondary)"></span>

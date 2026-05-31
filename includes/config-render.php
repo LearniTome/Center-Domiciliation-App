@@ -163,7 +163,6 @@ if (is_post()) {
 <section class="card stack">
     <div class="section-header">
         <div>
-            <h2><?= e($label) ?></h2>
             <p class="help-text">Gerer les <?= e(mb_strtolower($label)) ?>.</p>
         </div>
         <div style="display:flex;gap:6px">

@@ -233,7 +233,7 @@ if ($isConnected) {
         <small style="font-size:0.65rem;color:var(--text-secondary)">Principal: <?= e($collabMainType) ?></small>
         <?php endif; ?>
     </article>
-    <article class="stat" style="grid-column:span 2">
+    <article class="stat">
         <span>Dossiers complets</span>
         <strong><?= $dossiersComplets ?>/<?= $totalSocietes ?></strong>
         <div class="progress-bar">
@@ -280,12 +280,13 @@ if ($isConnected) {
     </a>
 </section>
 
-<?php if ($hasAlerts): ?>
-<section>
+<?php if ($hasAlerts || $echeances): ?>
+<section class="grid two">
+    <?php if ($hasAlerts): ?>
     <article class="card">
         <div class="section-header">
             <h2>
-                <span class="mdi mdi-alert" style="color:var(--warning);margin-right:6px"></span>Alertes
+                <span class="mdi mdi-alert" style="color:var(--warning)"></span> Alertes
                 <span class="alert-badge"><?= $alerteCount ?></span>
             </h2>
         </div>
@@ -336,7 +337,7 @@ if ($isConnected) {
             <?php endif; ?>
             <?php if ($expirants): ?>
                 <div class="alert-group">
-                    <span class="alert-label">Contrats expirant dans < 30 jours</span>
+                    <span class="alert-label">Contrats expirant dans &lt; 30 jours</span>
                     <?php foreach ($expirants as $c): ?>
                         <a class="alert-item" href="<?= e(app_url('contrats')) ?>">
                             <span class="mdi mdi-clock-alert" style="color:var(--warning)"></span>
@@ -347,14 +348,11 @@ if ($isConnected) {
             <?php endif; ?>
         </div>
     </article>
-</section>
-<?php endif; ?>
-
-<?php if ($echeances): ?>
-<section>
+    <?php endif; ?>
+    <?php if ($echeances): ?>
     <article class="card">
         <div class="section-header">
-            <h2><span class="mdi mdi-calendar-clock" style="margin-right:6px;color:var(--warning)"></span>Echeances (90 jours)</h2>
+            <h2><span class="mdi mdi-calendar-clock" style="color:var(--warning)"></span> Echeances (90 jours)</h2>
             <a class="btn btn-info" href="<?= e(app_url('contrats')) ?>"><span class="mdi mdi-eye"></span> Voir tout</a>
         </div>
         <div class="timeline-list">
@@ -374,11 +372,11 @@ if ($isConnected) {
             <?php endforeach; ?>
         </div>
     </article>
+    <?php endif; ?>
 </section>
 <?php endif; ?>
 
-<!-- Activity feed -->
-<section>
+<section class="grid two">
     <article class="card">
         <div class="section-header">
             <h2>Activite recente</h2>
@@ -404,13 +402,10 @@ if ($isConnected) {
             </div>
         <?php endif; ?>
     </article>
-</section>
 
-<!-- Documents generes -->
-<section>
     <article class="card">
         <div class="section-header">
-            <h2><span class="mdi mdi-file-document-check" style="margin-right:6px;color:var(--success)"></span>Derniers documents generes</h2>
+            <h2><span class="mdi mdi-file-document-check" style="color:var(--success)"></span> Derniers documents generes</h2>
             <a class="btn btn-info" href="<?= e(app_url('documents')) ?>"><span class="mdi mdi-eye"></span> Voir tout</a>
         </div>
         <?php if (!$documentsRecents): ?>
@@ -437,23 +432,23 @@ if ($isConnected) {
     </article>
 </section>
 
-<!-- Validation documents -->
-<?php if ($isConnected): ?>
-<section>
+<section class="grid two">
+    <!-- Validation documents -->
+    <?php if ($isConnected): ?>
     <article class="card">
         <div class="section-header">
-            <h2><span class="mdi mdi-check-circle" style="margin-right:6px;color:var(--primary)"></span>Validation des documents</h2>
+            <h2><span class="mdi mdi-check-circle" style="color:var(--primary)"></span> Validation des documents</h2>
             <a class="btn btn-info" href="<?= e(app_url('documents')) ?>"><span class="mdi mdi-eye"></span> Gerer</a>
         </div>
-        <div class="stats small" style="grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1rem">
-            <article class="stat">
+        <div class="validation-stats">
+            <div class="validation-stat">
                 <span>Valides</span>
                 <strong style="color:var(--success)"><?= $docsValides ?></strong>
-            </article>
-            <article class="stat">
+            </div>
+            <div class="validation-stat">
                 <span>En attente</span>
                 <strong style="color:var(--warning)"><?= $docsEnAttente ?></strong>
-            </article>
+            </div>
         </div>
         <?php if ($docsAVerifier): ?>
         <div class="activity-feed">
@@ -471,12 +466,9 @@ if ($isConnected) {
         <p class="table-empty">Tous les documents sont valides.</p>
         <?php endif; ?>
     </article>
-</section>
-<?php endif; ?>
+    <?php endif; ?>
 
-<!-- Repartition -->
-<section class="grid two">
-    <article class="card">
+    <article class="card stack">
         <div class="section-header">
             <h2>Formes juridiques</h2>
         </div>
@@ -498,10 +490,8 @@ if ($isConnected) {
                 </tbody>
             </table>
         <?php endif; ?>
-    </article>
 
-    <article class="card">
-        <div class="section-header">
+        <div class="section-header" style="margin-top:1.25rem">
             <h2>Types de contrat</h2>
         </div>
         <?php if (!$repartitionContrats): ?>

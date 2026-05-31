@@ -356,7 +356,6 @@ if (is_dir($outputDir)) {
     <article class="card stack">
         <div class="section-header">
             <div>
-                <h2>Word to PDF</h2>
                 <p class="help-text">Convertissez vos fichiers .docx en PDF avec le moteur disponible.</p>
             </div>
             <div class="table-actions">

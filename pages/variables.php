@@ -73,7 +73,6 @@ $filter = $_GET['filter'] ?? 'all';
 <section class="card stack">
     <div class="section-header">
         <div>
-            <h2>Gestion des variables</h2>
             <p class="help-text">Mapper les variables des templates vers les variables de l'application</p>
         </div>
         <div class="table-actions">

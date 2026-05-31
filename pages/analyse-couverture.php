@@ -99,7 +99,6 @@ if ($templates) {
 <section class="card stack">
     <div class="section-header">
         <div>
-            <h2>Analyse de couverture des variables</h2>
             <p class="help-text">Variables trouvees dans les templates vs. variables disponibles dans le contexte de rendu.</p>
         </div>
         <?php if ($analysis): ?>

@@ -125,10 +125,7 @@ if (($pdo ?? null) instanceof PDO) {
 <section>
     <article class="card">
         <div class="section-header">
-            <div>
-                <h2>Contrats</h2>
-                <p class="help-text"><?= count($contrats) ?> enregistrement(s)</p>
-            </div>
+            <span class="page-count"><?= count($contrats) ?> enregistrement(s)</span>
             <div class="table-actions">
                 <button class="btn btn-secondary" type="button" data-col-toggle-btn><span class="mdi mdi-table-column"></span> Colonnes <span class="col-toggle-count" data-col-count>0/0</span></button>
                 <a class="btn btn-info" href="<?= e(app_url('contrats', ['export' => 'csv', 'q' => $query])) ?>"><span class="mdi mdi-download"></span> Exporter CSV</a>
@@ -263,7 +260,7 @@ if (($pdo ?? null) instanceof PDO) {
             <p class="table-empty">Aucun contrat pour le moment.</p>
         <?php else: ?>
             <div class="table-scroll">
-            <table data-col-toggle>
+            <table data-col-toggle data-sortable>
                 <thead>
                 <tr>
                     <th data-col="societe">Societe</th>

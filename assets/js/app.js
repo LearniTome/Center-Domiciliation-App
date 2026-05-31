@@ -8,13 +8,17 @@ document.querySelectorAll('[data-confirm]').forEach((element) => {
 });
 
 (function () {
-    const toggle = document.querySelector('[data-sidebar-toggle]');
     const shell = document.querySelector('.shell');
-    if (toggle && shell) {
-        toggle.addEventListener('click', () => {
-            shell.classList.toggle('collapsed');
-        });
-    }
+    const toggleTrigger = selector => {
+        const el = document.querySelector(selector);
+        if (el && shell) {
+            el.addEventListener('click', () => {
+                shell.classList.toggle('collapsed');
+            });
+        }
+    };
+    toggleTrigger('[data-sidebar-toggle]');
+    toggleTrigger('.brand-badge');
 })();
 
 (function () {
@@ -857,6 +861,75 @@ document.addEventListener('input', (e) => {
 
     toggleCapitalFields();
     updateCapitalSummary();
+})();
+
+(function () {
+    document.querySelectorAll('table[data-sortable]').forEach(function (table) {
+        var thead = table.querySelector('thead');
+        if (!thead) return;
+        var ths = thead.querySelectorAll('th[data-col]');
+        var tbody = table.querySelector('tbody');
+        if (!tbody) return;
+
+        ths.forEach(function (th) {
+            th.style.cursor = 'pointer';
+            th.style.userSelect = 'none';
+
+            var icon = document.createElement('span');
+            icon.className = 'mdi mdi-sort-variant';
+            icon.style.marginLeft = '4px';
+            icon.style.fontSize = '0.85rem';
+            icon.style.opacity = '0.35';
+            icon.style.verticalAlign = 'middle';
+            th.appendChild(icon);
+
+            th.addEventListener('click', function () {
+                var key = th.getAttribute('data-col');
+                var order = th.getAttribute('data-order') || 'none';
+
+                ths.forEach(function (other) {
+                    other.removeAttribute('data-order');
+                    var ic = other.querySelector('.mdi');
+                    if (ic) { ic.className = 'mdi mdi-sort-variant'; ic.style.opacity = '0.35'; }
+                });
+
+                var newOrder = order === 'asc' ? 'desc' : 'asc';
+                th.setAttribute('data-order', newOrder);
+                icon.className = 'mdi ' + (newOrder === 'asc' ? 'mdi-sort-ascending' : 'mdi-sort-descending');
+                icon.style.opacity = '1';
+
+                var rows = Array.from(tbody.querySelectorAll('tr'));
+                var colIdx = Array.from(th.parentNode.children).indexOf(th);
+
+                rows.sort(function (a, b) {
+                    var aTd = a.children[colIdx];
+                    var bTd = b.children[colIdx];
+                    if (!aTd || !bTd) return 0;
+                    var aVal = aTd.textContent.trim();
+                    var bVal = bTd.textContent.trim();
+
+                    var aNum = parseFloat(aVal.replace(/[^\d.,-]/g, '').replace(',', '.'));
+                    var bNum = parseFloat(bVal.replace(/[^\d.,-]/g, '').replace(',', '.'));
+                    var isNum = !isNaN(aNum) && !isNaN(bNum);
+
+                    var cmp = isNum ? aNum - bNum : aVal.localeCompare(bVal, 'fr', { numeric: true });
+                    return newOrder === 'asc' ? cmp : -cmp;
+                });
+
+                rows.forEach(function (row) { tbody.appendChild(row); });
+            });
+        });
+    });
+})();
+
+(function () {
+    var bar = document.querySelector('.page-count-bar');
+    var counts = document.querySelectorAll('.page-count');
+    if (bar && counts.length) {
+        counts.forEach(function (el) {
+            bar.appendChild(el);
+        });
+    }
 })();
 
 

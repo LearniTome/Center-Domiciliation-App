@@ -267,7 +267,6 @@ $totalGenerated = count($sessionFiles);
 $docxCount = $totalGenerated;
 
 ?>
-<style>.main { overflow-x: hidden; }</style>
 <style>
 #loading-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);z-index:9999;display:none;align-items:center;justify-content:center;flex-direction:column center}
 #loading-overlay.show{display:flex}
@@ -279,7 +278,6 @@ $docxCount = $totalGenerated;
 <section class="card stack">
     <div class="section-header">
         <div>
-            <h2>Generateur de dossiers</h2>
             <p class="help-text">Selectionnez une societe puis les templates a generer.</p>
         </div>
     </div>
@@ -334,15 +332,15 @@ $docxCount = $totalGenerated;
                     </div>
                 </div>
 
-                <div class="table-scroll" style="overflow-x: auto; margin-left: -1.25rem; margin-right: 0; padding-right: 24px;">
-                    <table style="white-space: nowrap">
+                <div class="table-scroll">
+                    <table data-sortable style="white-space: nowrap">
                         <thead>
                             <tr>
                                 <th class="col-check"></th>
-                                <th>Type de document</th>
-                                <th>Fichier</th>
-                                <th>Champs</th>
-                                <th>Groupe</th>
+                                <th data-col="type">Type de document</th>
+                                <th data-col="fichier">Fichier</th>
+                                <th data-col="champs">Champs</th>
+                                <th data-col="groupe">Groupe</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -440,17 +438,17 @@ $docxCount = $totalGenerated;
                     </button>
                 </div>
             </div>
-            <div class="table-scroll" style="overflow-x: auto; margin-left: -1.25rem; margin-right: 0; padding-right: 24px;">
-                <table style="white-space: nowrap">
+            <div class="table-scroll">
+                <table data-sortable style="white-space: nowrap">
                     <thead>
                         <tr>
                             <th class="col-check"></th>
-                            <th>Type de document</th>
-                            <th>Fichier</th>
-                            <th>Taille</th>
-                            <th>Statut</th>
-                            <th>Date creation</th>
-                            <th>Modification</th>
+                            <th data-col="type">Type de document</th>
+                            <th data-col="fichier">Fichier</th>
+                            <th data-col="taille">Taille</th>
+                            <th data-col="statut">Statut</th>
+                            <th data-col="date-creation">Date creation</th>
+                            <th data-col="modification">Modification</th>
                             <th class="col-actions">Actions</th>
                         </tr>
                     </thead>

@@ -191,10 +191,7 @@ $sortedFolders = array_merge($nonEmpty, $empty);
 <section>
     <article class="card stack">
         <div class="section-header">
-            <div>
-                <h2>Templates de documents</h2>
-                <p class="help-text"><?= count($templates) ?> template(s) trouve(s)</p>
-            </div>
+            <span class="page-count"><?= count($templates) ?> template(s) trouve(s)</span>
             <div class="table-actions">
                 <a class="btn btn-next" href="#" onclick="document.getElementById('folder-form').classList.toggle('hidden'); return false;"><span class="mdi mdi-folder-plus"></span> Nouveau dossier</a>
                 <a class="btn btn-next" href="#" onclick="document.getElementById('upload-form').classList.toggle('hidden'); return false;"><span class="mdi mdi-plus"></span> Ajouter un template</a>
@@ -279,14 +276,14 @@ $sortedFolders = array_merge($nonEmpty, $empty);
                     <div class="accordion-panel" <?= $hasItems ? '' : 'hidden' ?>>
                         <?php if ($hasItems): ?>
                         <div class="table-scroll">
-                        <table>
+                        <table data-sortable>
                             <thead>
                             <tr>
-                                <th>Document</th>
-                                <th>Fichier</th>
-                                <th>Variables</th>
-                                <th>Taille</th>
-                                <th>Modifie</th>
+                                <th data-col="document">Document</th>
+                                <th data-col="fichier">Fichier</th>
+                                <th data-col="variables">Variables</th>
+                                <th data-col="taille">Taille</th>
+                                <th data-col="modifie">Modifie</th>
                                 <th>Actions</th>
                             </tr>
                             </thead>

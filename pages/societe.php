@@ -558,14 +558,14 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
         <p class="table-empty">Aucun associe lie a cette societe.</p>
     <?php else: ?>
         <div class="table-scroll">
-            <table>
+            <table data-sortable>
                 <thead>
                 <tr>
-                    <th>Nom</th>
-                    <th>CIN</th>
-                    <th>Nationalite</th>
-                    <th>Qualite</th>
-                    <th>Gerant</th>
+                    <th data-col="nom">Nom</th>
+                    <th data-col="cin">CIN</th>
+                    <th data-col="nationalite">Nationalite</th>
+                    <th data-col="qualite">Qualite</th>
+                    <th data-col="gerant">Gerant</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -593,13 +593,13 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
         <p class="table-empty">Aucun contrat lie a cette societe.</p>
     <?php else: ?>
         <div class="table-scroll">
-            <table>
+            <table data-sortable>
                 <thead>
                 <tr>
-                    <th>Type</th>
-                    <th>Periode</th>
-                    <th>Statut</th>
-                    <th>Montant Total</th>
+                    <th data-col="type">Type</th>
+                    <th data-col="periode">Periode</th>
+                    <th data-col="statut">Statut</th>
+                    <th data-col="montant">Montant Total</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -634,19 +634,19 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
         <form method="post" id="docs-form">
             <?= csrf_input() ?>
             <div class="table-scroll">
-                <table>
-                    <thead>
-                    <tr>
-                        <th class="col-check"><input type="checkbox" id="select-all-docs"></th>
-                        <th>Type</th>
-                        <th>Document</th>
-                        <th>Taille</th>
-                        <th>Statut</th>
-                        <th>Date creation</th>
-                        <th>Modification</th>
-                        <th class="col-actions">Actions</th>
-                    </tr>
-                    </thead>
+            <table data-sortable>
+                <thead>
+                <tr>
+                    <th class="col-check"></th>
+                    <th data-col="type">Type</th>
+                    <th data-col="document">Document</th>
+                    <th data-col="taille">Taille</th>
+                    <th data-col="statut">Statut</th>
+                    <th data-col="date-creation">Date creation</th>
+                    <th data-col="modification">Modification</th>
+                    <th class="col-actions">Actions</th>
+                </tr>
+                </thead>
                     <tbody>
                     <?php foreach ($documents as $doc): ?>
                         <tr>
