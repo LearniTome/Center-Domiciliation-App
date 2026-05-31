@@ -7,9 +7,8 @@ require_once __DIR__ . '/../src/TemplateAnalyzer.php';
 $templatesConfig = require __DIR__ . '/../config/templates.php';
 $templatesDir = __DIR__ . '/../templates';
 
-$legalForms = $templatesConfig['legal_forms'];
+$folderLabels = $templatesConfig['folder_labels'];
 $docTypes = $templatesConfig['document_types'];
-$folderLabels = $legalForms;
 
 $displayFolders = ['_Racine-Actifs'];
 if (($pdo ?? null) instanceof PDO) {

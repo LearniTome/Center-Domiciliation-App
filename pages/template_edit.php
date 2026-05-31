@@ -21,7 +21,7 @@ if ($templatePath === '' || !str_starts_with($templatePath, realpath($templatesD
 $filename = basename($templatePath);
 $folder = basename(dirname($templatePath));
 $templatesConfig = require __DIR__ . '/../config/templates.php';
-$legalForms = $templatesConfig['legal_forms'];
+$folderLabels = $templatesConfig['folder_labels'];
 $docTypes = $templatesConfig['document_types'];
 
 $info = pathinfo($filename, PATHINFO_FILENAME);
@@ -128,7 +128,7 @@ $variables = TemplateEditor::getAvailableVariables();
         <div class="section-header">
             <div>
                 <h2><?= e($docTypes[$docType] ?? $docType ?: 'Editeur de template') ?></h2>
-                <p class="help-text"><?= e($legalForms[$folder] ?? $folder) ?> &mdash; <?= e($filename) ?></p>
+                <p class="help-text"><?= e($folderLabels[$folder] ?? $folder) ?> &mdash; <?= e($filename) ?></p>
             </div>
             <div class="table-actions">
                 <a class="btn-icon" href="<?= e(app_url('template', ['path' => $templatePath])) ?>" title="Fermer"><span class="mdi mdi-close"></span></a>
