@@ -140,6 +140,7 @@ CREATE TABLE IF NOT EXISTS collaborateurs (
 CREATE TABLE IF NOT EXISTS ref_formes_juridiques (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     forme_juridique VARCHAR(120) NOT NULL,
+    template_folder VARCHAR(120) DEFAULT '' NOT NULL,
     sort_order INT NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -293,13 +294,13 @@ CREATE TABLE IF NOT EXISTS ref_qualites_associe (
 USE `center_domiciliation`;
 
 -- Données de référence pour les formes juridiques
-INSERT INTO ref_formes_juridiques (forme_juridique) VALUES
-('SARL AU'),
-('SARL'),
-('Personne Physique'),
-('SA'),
-('Succurssale Etrangère'),
-('Succurssale Marocaine');
+INSERT INTO ref_formes_juridiques (forme_juridique, template_folder) VALUES
+('SARL AU', 'SARL AU'),
+('SARL', 'SARL'),
+('Personne Physique', ''),
+('SA', 'SA'),
+('Succurssale Etrangère', ''),
+('Succurssale Marocaine', '');
 
 -- Données de référence pour les tribunaux
 INSERT INTO ref_tribunaux (tribunal, tribunal_type) VALUES

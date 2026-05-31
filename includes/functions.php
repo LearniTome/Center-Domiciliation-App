@@ -387,3 +387,48 @@ function load_defaults(?string $key = null): array
     
     return $defaults;
 }
+
+function fetch_legal_form_template_folder(?PDO $pdo, string $formeJuridique): string
+{
+    if (!$pdo || $formeJuridique === '') {
+        return '';
+    }
+
+    try {
+        $stmt = $pdo->prepare("SELECT template_folder FROM ref_formes_juridiques WHERE forme_juridique = :fj LIMIT 1");
+        $stmt->execute(['fj' => $formeJuridique]);
+        $row = $stmt->fetch();
+        return $row ? (string) ($row['template_folder'] ?? '') : '';
+    } catch (PDOException) {
+        return '';
+    }
+}
+
+function fetch_formes_juridiques_with_folders(?PDO $pdo): array
+{
+    if (!$pdo) {
+        return [];
+    }
+
+    try {
+        $stmt = $pdo->query("SELECT forme_juridique, template_folder FROM ref_formes_juridiques ORDER BY sort_order ASC, forme_juridique ASC");
+        return $stmt->fetchAll();
+    } catch (PDOException) {
+        return [];
+    }
+}
+
+function ensure_template_folder(string $folderName): bool
+{
+    if ($folderName === '') {
+        return false;
+    }
+
+    $dir = __DIR__ . '/../templates/' . $folderName;
+
+    if (is_dir($dir)) {
+        return true;
+    }
+
+    return mkdir($dir, 0777, true);
+}

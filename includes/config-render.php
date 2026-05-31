@@ -22,11 +22,12 @@ if (!isset($tab) || !isset($tabs[$tab])) {
 $editKey = $_GET['edit'] ?? null;
 $isNmaTab = $tab === 'activites-ompic';
 $isTribunalTab = $tab === 'tribunaux';
+$isFormeJuridiqueTab = $tab === 'formes-juridiques';
 
 $rows = [];
 if (($pdo ?? null) instanceof PDO) {
     try {
-        $selectCols = $isNmaTab ? "id, code, {$column}, sort_order, created_at, updated_at" : ($isTribunalTab ? "id, tribunal_type, {$column}, sort_order, created_at, updated_at" : "id, {$column}, sort_order, created_at, updated_at");
+        $selectCols = $isNmaTab ? "id, code, {$column}, sort_order, created_at, updated_at" : ($isTribunalTab ? "id, tribunal_type, {$column}, sort_order, created_at, updated_at" : ($isFormeJuridiqueTab ? "id, {$column}, template_folder, sort_order, created_at, updated_at" : "id, {$column}, sort_order, created_at, updated_at"));
         $orderBy = $isTribunalTab ? "FIELD(tribunal_type, 'Tribunal de commerce', 'Tribunal de Première Instance'), sort_order ASC, {$column} ASC" : "sort_order ASC, {$column} ASC";
         $stmt = $pdo->query("SELECT {$selectCols} FROM {$table} ORDER BY {$orderBy}");
         $rows = $stmt->fetchAll();
@@ -56,6 +57,14 @@ if (is_post()) {
                 $max = $pdo->query("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM {$table}")->fetchColumn();
                 $stmt = $pdo->prepare("INSERT IGNORE INTO {$table} (tribunal, tribunal_type, sort_order) VALUES (:tribunal, :type, :so)");
                 $stmt->execute(['tribunal' => $value, 'type' => $tribunalType, 'so' => $max]);
+            } elseif ($tab === 'formes-juridiques') {
+                $templateFolder = field_value($_POST, 'template_folder');
+                if ($templateFolder !== '') {
+                    ensure_template_folder($templateFolder);
+                }
+                $max = $pdo->query("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM {$table}")->fetchColumn();
+                $stmt = $pdo->prepare("INSERT IGNORE INTO {$table} ({$column}, template_folder, sort_order) VALUES (:val, :tf, :so)");
+                $stmt->execute(['val' => $value, 'tf' => $templateFolder, 'so' => $max]);
             } else {
                 $stmt = $pdo->prepare("INSERT IGNORE INTO {$table} ({$column}, sort_order) VALUES (:val, :so)");
                 $max = $pdo->query("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM {$table}")->fetchColumn();
@@ -76,6 +85,13 @@ if (is_post()) {
                 $newType = field_value($_POST, 'tribunal_type');
                 $stmt = $pdo->prepare("UPDATE {$table} SET {$column} = :new, tribunal_type = :type WHERE id = :id");
                 $stmt->execute(['new' => $newValue, 'type' => $newType, 'id' => $recordId]);
+            } elseif ($tab === 'formes-juridiques') {
+                $newTemplateFolder = field_value($_POST, 'template_folder');
+                if ($newTemplateFolder !== '') {
+                    ensure_template_folder($newTemplateFolder);
+                }
+                $stmt = $pdo->prepare("UPDATE {$table} SET {$column} = :new, template_folder = :tf WHERE id = :id");
+                $stmt->execute(['new' => $newValue, 'tf' => $newTemplateFolder, 'id' => $recordId]);
             } else {
                 $stmt = $pdo->prepare("UPDATE {$table} SET {$column} = :new WHERE id = :id");
                 $stmt->execute(['new' => $newValue, 'id' => $recordId]);
@@ -171,6 +187,9 @@ if (is_post()) {
                     <option value="Tribunal de Première Instance">Tribunal de Première Instance</option>
                 </select>
             <?php endif; ?>
+            <?php if ($isFormeJuridiqueTab): ?>
+                <input name="template_folder" placeholder="Dossier Templates..." style="width:140px;padding:4px 8px;font-size:0.8125rem">
+            <?php endif; ?>
             <?php if ($isNmaTab): ?>
                 <input name="ompic_code" placeholder="Code..." required style="width:100px;padding:4px 8px;font-size:0.8125rem">
             <?php endif; ?>
@@ -189,6 +208,9 @@ if (is_post()) {
                     <?php if ($isTribunalTab): ?>
                         <th>Type</th>
                     <?php endif; ?>
+                    <?php if ($isFormeJuridiqueTab): ?>
+                        <th>Dossier Templates</th>
+                    <?php endif; ?>
                     <th><?= e($label) ?></th>
                     <th style="width:100px">Date creation</th>
                     <th style="width:100px">Modification</th>
@@ -200,11 +222,12 @@ if (is_post()) {
                     $rid = (int) $row['id'];
                     $val = (string) $row[$column];
                     $typeVal = $isTribunalTab ? ((string) ($row['tribunal_type'] ?? '')) : '';
+                    $tfVal = $isFormeJuridiqueTab ? ((string) ($row['template_folder'] ?? '')) : '';
                 ?>
                     <tr <?= $editKey === $val ? '' : 'draggable="true"' ?> data-record-id="<?= $rid ?>">
                         <?php if ($editKey === $val): ?>
                             <td style="text-align:center;color:var(--text-secondary)"><span class="mdi mdi-drag-vertical"></span></td>
-                            <td <?= $isTribunalTab ? 'colspan="2"' : '' ?>>
+                            <td <?= $isTribunalTab || $isFormeJuridiqueTab ? 'colspan="2"' : '' ?>>
                                 <form method="post" style="display:flex;gap:4px">
                                     <?= csrf_input() ?>
                                     <input type="hidden" name="action" value="update">
@@ -214,6 +237,9 @@ if (is_post()) {
                                             <option value="Tribunal de commerce" <?= $typeVal === 'Tribunal de commerce' ? 'selected' : '' ?>>Tribunal de commerce</option>
                                             <option value="Tribunal de Première Instance" <?= $typeVal === 'Tribunal de Première Instance' ? 'selected' : '' ?>>Tribunal de Première Instance</option>
                                         </select>
+                                    <?php endif; ?>
+                                    <?php if ($isFormeJuridiqueTab): ?>
+                                        <input name="template_folder" value="<?= e($tfVal) ?>" placeholder="Dossier Templates..." style="width:140px;padding:2px 6px;font-size:0.8125rem">
                                     <?php endif; ?>
                                     <?php if ($isNmaTab): ?>
                                         <span style="padding:2px 6px;font-size:0.8125rem;color:var(--text-secondary)"><?= e((string) $row['code']) ?> -</span>
@@ -231,6 +257,9 @@ if (is_post()) {
                             <td style="text-align:center;color:var(--text-secondary);cursor:grab"><span class="mdi mdi-drag-vertical"></span></td>
                             <?php if ($isTribunalTab): ?>
                                 <td><?= e($typeVal ?: '-') ?></td>
+                            <?php endif; ?>
+                            <?php if ($isFormeJuridiqueTab): ?>
+                                <td><?= e($tfVal ?: '-') ?></td>
                             <?php endif; ?>
                             <td><?= $isNmaTab ? e((string) $row['code'] . ' - ' . $val) : e($val) ?></td>
                             <td style="font-size:0.75rem;color:var(--text-secondary)"><?= $row['created_at'] ? date('d/m/Y H:i', strtotime($row['created_at'])) : '-' ?></td>

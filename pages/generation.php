@@ -28,15 +28,12 @@ if ($societeId > 0) {
 
 $allTemplates = TemplateAnalyzer::scanTemplates($templatesDir);
 
-function filterTemplatesByLegalForm(array $templates, string $form): array
+function filterTemplatesByLegalForm(array $templates, string $form, ?PDO $pdo = null): array
 {
-    $folderMap = [
-        'SARL-AU' => 'SARL AU',
-        'SARL' => 'SARL',
-        'SA' => 'SA',
-    ];
-
-    $targetFolder = $folderMap[$form] ?? '';
+    $targetFolder = ($form !== '') ? fetch_legal_form_template_folder($pdo, $form) : '';
+    if ($targetFolder !== '') {
+        ensure_template_folder($targetFolder);
+    }
     $matched = [];
     $generic = [];
 
@@ -55,7 +52,7 @@ $filteredTemplates = [];
 $context = [];
 
 if ($selectedSociete) {
-    $filteredTemplates = filterTemplatesByLegalForm($allTemplates, $legalForm);
+    $filteredTemplates = filterTemplatesByLegalForm($allTemplates, $legalForm, $pdo ?? null);
 }
 
 $sessionFiles = $_SESSION['gen_files'][$societeId] ?? [];

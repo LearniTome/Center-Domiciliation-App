@@ -1506,12 +1506,10 @@ $contratData = array_merge([
         $legalForm = $societeData['societe_forme_juridique'] ?? '';
         $allTemplates = TemplateAnalyzer::scanTemplates($templatesDir);
 
-        $folderMap = [
-            'SARL-AU' => 'SARL AU',
-            'SARL' => 'SARL',
-            'SA' => 'SA',
-        ];
-        $targetFolder = $folderMap[$legalForm] ?? '';
+        $targetFolder = ($legalForm !== '') ? fetch_legal_form_template_folder($pdo ?? null, $legalForm) : '';
+        if ($targetFolder !== '') {
+            ensure_template_folder($targetFolder);
+        }
         $filteredTemplates = [];
         foreach ($allTemplates as $tpl) {
             if ($targetFolder !== '' && $tpl['folder'] === $targetFolder) {
