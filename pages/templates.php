@@ -7,6 +7,27 @@ require_once __DIR__ . '/../src/TemplateAnalyzer.php';
 $templatesConfig = require __DIR__ . '/../config/templates.php';
 $templatesDir = __DIR__ . '/../templates';
 
+$legalForms = $templatesConfig['legal_forms'];
+$docTypes = $templatesConfig['document_types'];
+$folderLabels = $legalForms;
+
+$displayFolders = ['_Racine-Actifs'];
+if (($pdo ?? null) instanceof PDO) {
+    $stmt = $pdo->query("SELECT forme_juridique, template_folder FROM ref_formes_juridiques ORDER BY id");
+    $allForms = $stmt->fetchAll();
+    foreach ($allForms as $form) {
+        $name = (string) $form['forme_juridique'];
+        $tf = (string) ($form['template_folder'] ?? '');
+        $key = $tf !== '' ? $tf : $name;
+        if (!in_array($key, $displayFolders, true)) {
+            $displayFolders[] = $key;
+        }
+        if (!isset($folderLabels[$key])) {
+            $folderLabels[$key] = $name;
+        }
+    }
+}
+
 if (is_post() && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
     $action = $_POST['action'] ?? '';
@@ -51,12 +72,78 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
         }
         redirect_to('templates');
     }
+
+    if ($action === 'copy_templates') {
+        $source = field_value($_POST, 'source_folder');
+        $dest = field_value($_POST, 'dest_folder');
+        if ($source !== '' && $dest !== '' && $source !== $dest) {
+            $sourceDir = $templatesDir . DIRECTORY_SEPARATOR . $source;
+            $destDir = $templatesDir . DIRECTORY_SEPARATOR . $dest;
+            if (is_dir($sourceDir)) {
+                if (!is_dir($destDir)) {
+                    mkdir($destDir, 0777, true);
+                }
+                $count = 0;
+                $files = glob($sourceDir . DIRECTORY_SEPARATOR . '*.docx');
+                foreach ($files as $file) {
+                    $filename = basename($file);
+                    $destFile = $destDir . DIRECTORY_SEPARATOR . $filename;
+                    if (!file_exists($destFile)) {
+                        copy($file, $destFile);
+                        $count++;
+                    }
+                }
+                set_flash('success', "$count template(s) copie(s) de " . ($folderLabels[$source] ?? $source) . " vers " . ($folderLabels[$dest] ?? $dest) . ".");
+            } else {
+                set_flash('error', 'Dossier source introuvable.');
+            }
+        }
+        redirect_to('templates');
+    }
+
+    if ($action === 'backup_templates') {
+        $folder = field_value($_POST, 'backup_folder');
+        $backupDir = __DIR__ . '/../backups';
+        if (!is_dir($backupDir)) {
+            mkdir($backupDir, 0777, true);
+        }
+        $dateStr = date('Ymd_His');
+        $zipName = $folder === '_ALL_' ? "tous_templates_$dateStr.zip" : "templates_${folder}_$dateStr.zip";
+        $zipPath = $backupDir . DIRECTORY_SEPARATOR . $zipName;
+
+        $zip = new ZipArchive();
+        if ($zip->open($zipPath, ZipArchive::CREATE) === true) {
+            $added = 0;
+            if ($folder === '_ALL_') {
+                $dirs = $displayFolders;
+            } else {
+                $dirs = [$folder];
+            }
+            foreach ($dirs as $d) {
+                $dPath = $templatesDir . DIRECTORY_SEPARATOR . $d;
+                if (!is_dir($dPath)) continue;
+                $files = glob($dPath . DIRECTORY_SEPARATOR . '*.docx');
+                foreach ($files as $f) {
+                    $zip->addFile($f, $d . '/' . basename($f));
+                    $added++;
+                }
+            }
+            $zip->close();
+            if ($added > 0) {
+                set_flash('success', "Sauvegarde creee : <a href=\"backups/$zipName\">$zipName</a> ($added template(s)).");
+            } else {
+                unlink($zipPath);
+                set_flash('error', 'Aucun template a sauvegarder.');
+            }
+        } else {
+            set_flash('error', 'Erreur lors de la creation de l\'archive.');
+        }
+        redirect_to('templates');
+    }
 }
 
 $templates = TemplateAnalyzer::scanTemplates($templatesDir);
 $grouped = TemplateAnalyzer::groupByFolder($templates);
-$legalForms = $templatesConfig['legal_forms'];
-$docTypes = $templatesConfig['document_types'];
 
 $templateFolders = [];
 if (is_dir($templatesDir)) {
@@ -70,25 +157,6 @@ if (is_dir($templatesDir)) {
     sort($templateFolders);
 }
 
-$folderLabels = $legalForms;
-
-$displayFolders = ['_Racine-Actifs'];
-if (($pdo ?? null) instanceof PDO) {
-    $stmt = $pdo->query("SELECT forme_juridique, template_folder FROM ref_formes_juridiques ORDER BY id");
-    $allForms = $stmt->fetchAll();
-    foreach ($allForms as $form) {
-        $name = (string) $form['forme_juridique'];
-        $tf = (string) ($form['template_folder'] ?? '');
-        $key = $tf !== '' ? $tf : $name;
-        if (!in_array($key, $displayFolders, true)) {
-            $displayFolders[] = $key;
-        }
-        if (!isset($folderLabels[$key])) {
-            $folderLabels[$key] = $name;
-        }
-    }
-}
-
 // Ensure folder exists on disk for display (create if missing)
 foreach ($displayFolders as $folder) {
     $path = $templatesDir . DIRECTORY_SEPARATOR . $folder;
@@ -96,6 +164,19 @@ foreach ($displayFolders as $folder) {
         @mkdir($path, 0777, true);
     }
 }
+
+$sortedFolders = [];
+$nonEmpty = [];
+$empty = [];
+foreach ($displayFolders as $folder) {
+    $items = $grouped[$folder] ?? [];
+    if ($items) {
+        $nonEmpty[] = $folder;
+    } else {
+        $empty[] = $folder;
+    }
+}
+$sortedFolders = array_merge($nonEmpty, $empty);
 
 ?>
 <section>
@@ -108,6 +189,8 @@ foreach ($displayFolders as $folder) {
             <div class="table-actions">
                 <a class="btn btn-next" href="#" onclick="document.getElementById('folder-form').classList.toggle('hidden'); return false;"><span class="mdi mdi-folder-plus"></span> Nouveau dossier</a>
                 <a class="btn btn-next" href="#" onclick="document.getElementById('upload-form').classList.toggle('hidden'); return false;"><span class="mdi mdi-plus"></span> Ajouter un template</a>
+                <a class="btn btn-info" href="#" onclick="document.getElementById('copy-form').classList.toggle('hidden'); return false;"><span class="mdi mdi-content-copy"></span> Copier</a>
+                <a class="btn" href="#" onclick="document.getElementById('backup-form').classList.toggle('hidden'); return false;"><span class="mdi mdi-download"></span> Backup</a>
             </div>
         </div>
 
@@ -134,20 +217,45 @@ foreach ($displayFolders as $folder) {
             </form>
         </div>
 
+        <div id="copy-form" class="stack hidden">
+            <form method="post" class="inline-form">
+                <?= csrf_input() ?>
+                <input type="hidden" name="action" value="copy_templates">
+                <select name="source_folder" required>
+                    <option value="">-- Depuis --</option>
+                    <?php foreach ($sortedFolders as $folder): ?>
+                        <?php $cnt = count($grouped[$folder] ?? []); ?>
+                        <?php if ($cnt > 0): ?>
+                            <option value="<?= e($folder) ?>"><?= e($folderLabels[$folder] ?? $folder) ?> (<?= $cnt ?>)</option>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                </select>
+                <span class="mdi mdi-arrow-right"></span>
+                <select name="dest_folder" required>
+                    <option value="">-- Vers --</option>
+                    <?php foreach ($displayFolders as $folder): ?>
+                        <option value="<?= e($folder) ?>"><?= e($folderLabels[$folder] ?? $folder) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <button type="submit" class="btn btn-info">Copier les templates</button>
+            </form>
+        </div>
+
+        <div id="backup-form" class="stack hidden">
+            <form method="post" class="inline-form">
+                <?= csrf_input() ?>
+                <input type="hidden" name="action" value="backup_templates">
+                <select name="backup_folder" required>
+                    <option value="_ALL_">Tous les dossiers</option>
+                    <?php foreach ($displayFolders as $folder): ?>
+                        <option value="<?= e($folder) ?>"><?= e($folderLabels[$folder] ?? $folder) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <button type="submit" class="btn">Creer l'archive ZIP</button>
+            </form>
+        </div>
+
         <?php if ($displayFolders): ?>
-            <?php
-            $nonEmpty = [];
-            $empty = [];
-            foreach ($displayFolders as $folder) {
-                $items = $grouped[$folder] ?? [];
-                if ($items) {
-                    $nonEmpty[] = $folder;
-                } else {
-                    $empty[] = $folder;
-                }
-            }
-            $sortedFolders = array_merge($nonEmpty, $empty);
-            ?>
             <?php foreach ($sortedFolders as $folder): ?>
                 <?php $items = $grouped[$folder] ?? []; ?>
                 <?php $hasItems = (bool) $items; ?>
