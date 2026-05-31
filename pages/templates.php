@@ -150,48 +150,56 @@ foreach ($displayFolders as $folder) {
             ?>
             <?php foreach ($sortedFolders as $folder): ?>
                 <?php $items = $grouped[$folder] ?? []; ?>
-                <h3 style="color:var(--text-secondary);font-size:0.85rem;text-transform:uppercase;letter-spacing:0.04em;margin:1rem 0 0.5rem">
-                    <?= e($folderLabels[$folder] ?? $folder) ?>
-                    <span style="font-weight:400">(<?= count($items) ?>)</span>
-                </h3>
-                <?php if ($items): ?>
-                <div class="table-scroll">
-                <table>
-                    <thead>
-                    <tr>
-                        <th>Document</th>
-                        <th>Fichier</th>
-                        <th>Variables</th>
-                        <th>Taille</th>
-                        <th>Modifie</th>
-                        <th>Actions</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <?php foreach ($items as $tpl): ?>
-                        <tr>
-                            <td><?= e($docTypes[$tpl['doc_type']] ?? $tpl['doc_type']) ?></td>
-                            <td><?= e(basename($tpl['path'])) ?></td>
-                            <td><?= e((string) count($tpl['variables'])) ?> vars</td>
-                            <td><?= e(number_format($tpl['size'] / 1024, 1)) ?> KB</td>
-                            <td><?= e(date('d/m/Y H:i', $tpl['modified'])) ?></td>
-                            <td class="table-actions">
-                                <a class="btn-icon" href="<?= e(app_url('template', ['path' => $tpl['path']])) ?>" title="Voir"><span class="mdi mdi-eye"></span></a>
-                                <form method="post">
-                                    <?= csrf_input() ?>
-                                    <input type="hidden" name="action" value="delete">
-                                    <input type="hidden" name="path" value="<?= e($tpl['path']) ?>">
-                                    <button class="btn-icon danger" type="submit" data-confirm="Supprimer ce template ?" title="Supprimer"><span class="mdi mdi-delete"></span></button>
-                                </form>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                    </tbody>
-                </table>
+                <?php $hasItems = (bool) $items; ?>
+                <div class="accordion-item">
+                    <h3 class="accordion-header">
+                        <button type="button" class="accordion-trigger" aria-expanded="<?= $hasItems ? 'true' : 'false' ?>" onclick="toggleAccordion(this)">
+                            <span class="accordion-label"><?= e($folderLabels[$folder] ?? $folder) ?></span>
+                            <span class="accordion-count"><?= count($items) ?></span>
+                            <span class="mdi mdi-chevron-down accordion-chevron"></span>
+                        </button>
+                    </h3>
+                    <div class="accordion-panel" <?= $hasItems ? '' : 'hidden' ?>>
+                        <?php if ($hasItems): ?>
+                        <div class="table-scroll">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>Document</th>
+                                <th>Fichier</th>
+                                <th>Variables</th>
+                                <th>Taille</th>
+                                <th>Modifie</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <?php foreach ($items as $tpl): ?>
+                                <tr>
+                                    <td><?= e($docTypes[$tpl['doc_type']] ?? $tpl['doc_type']) ?></td>
+                                    <td><?= e(basename($tpl['path'])) ?></td>
+                                    <td><?= e((string) count($tpl['variables'])) ?> vars</td>
+                                    <td><?= e(number_format($tpl['size'] / 1024, 1)) ?> KB</td>
+                                    <td><?= e(date('d/m/Y H:i', $tpl['modified'])) ?></td>
+                                    <td class="table-actions">
+                                        <a class="btn-icon" href="<?= e(app_url('template', ['path' => $tpl['path']])) ?>" title="Voir"><span class="mdi mdi-eye"></span></a>
+                                        <form method="post">
+                                            <?= csrf_input() ?>
+                                            <input type="hidden" name="action" value="delete">
+                                            <input type="hidden" name="path" value="<?= e($tpl['path']) ?>">
+                                            <button class="btn-icon danger" type="submit" data-confirm="Supprimer ce template ?" title="Supprimer"><span class="mdi mdi-delete"></span></button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                        </div>
+                        <?php else: ?>
+                            <p class="table-empty" style="margin:0">Aucun template dans ce dossier.</p>
+                        <?php endif; ?>
+                    </div>
                 </div>
-                <?php else: ?>
-                    <p class="table-empty">Aucun template dans ce dossier. Utilisez le bouton "Ajouter un template" pour en ajouter.</p>
-                <?php endif; ?>
             <?php endforeach; ?>
         <?php else: ?>
             <p class="table-empty">Aucun dossier de templates trouve. Creez un dossier dans <code>templates/</code> ou utilisez la page Configuration.</p>
@@ -203,9 +211,108 @@ foreach ($displayFolders as $folder) {
 
 <style>
 .hidden { display: none !important; }
+
+.accordion-item {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    overflow: hidden;
+}
+
+.accordion-header {
+    margin: 0;
+}
+
+.accordion-trigger {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 16px;
+    border: none;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    transition: background 0.15s;
+}
+
+.accordion-trigger:hover {
+    filter: brightness(1.2);
+}
+
+.accordion-trigger[aria-expanded="true"] {
+    background: rgba(0, 144, 231, 0.07);
+}
+
+.accordion-trigger[aria-expanded="false"] {
+    background: rgba(255, 107, 53, 0.06);
+}
+
+.accordion-label {
+    flex: 1;
+    text-align: left;
+}
+
+.accordion-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    border-radius: 11px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: normal;
+    color: #fff;
+}
+
+.accordion-item:has(.accordion-trigger[aria-expanded="true"]) .accordion-count {
+    background: var(--primary);
+}
+
+.accordion-item:has(.accordion-trigger[aria-expanded="false"]) .accordion-count {
+    background: #ff6b35;
+}
+
+.accordion-chevron {
+    font-size: 1.2rem;
+    transition: transform 0.2s;
+    color: var(--text-muted);
+}
+
+.accordion-trigger[aria-expanded="true"] .accordion-chevron {
+    transform: rotate(0deg);
+}
+
+.accordion-trigger[aria-expanded="false"] .accordion-chevron {
+    transform: rotate(-90deg);
+}
+
+.accordion-panel {
+    border-top: 1px solid var(--border);
+    padding: 16px;
+}
+
+.accordion-panel[hidden] {
+    display: none;
+}
 </style>
 <script>
 document.querySelectorAll('[id$="-form"]').forEach(function(el) {
     el.classList.add('hidden');
 });
+
+function toggleAccordion(btn) {
+    var expanded = btn.getAttribute('aria-expanded') === 'true';
+    btn.setAttribute('aria-expanded', String(!expanded));
+    var panel = btn.closest('.accordion-item').querySelector('.accordion-panel');
+    if (panel) {
+        panel.hidden = expanded;
+    }
+}
 </script>
