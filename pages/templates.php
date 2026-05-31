@@ -139,7 +139,7 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
             }
             $zip->close();
             if ($added > 0) {
-                set_flash('success', "Sauvegarde creee : <a href=\"backups/$zipName\">$zipName</a> ($added template(s)).");
+                set_flash('success', "Sauvegarde creee : $zipName ($added template(s)).");
             } else {
                 unlink($zipPath);
                 set_flash('error', 'Aucun template a sauvegarder.');
