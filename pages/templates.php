@@ -83,11 +83,21 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
                 if (!is_dir($destDir)) {
                     mkdir($destDir, 0777, true);
                 }
+                $destPrefix = $dest;
+                $destPrefix = str_replace(' ', '-', $destPrefix);
+                $destPrefix = strtoupper($destPrefix);
+
                 $count = 0;
                 $files = glob($sourceDir . DIRECTORY_SEPARATOR . '*.docx');
                 foreach ($files as $file) {
                     $filename = basename($file);
-                    $destFile = $destDir . DIRECTORY_SEPARATOR . $filename;
+                    $base = preg_replace('/^.+?(\d{4}-\d{2}_)/', '$1', $filename);
+                    if ($dest === '_Racine-Actifs') {
+                        $newName = $base;
+                    } else {
+                        $newName = $destPrefix . '_' . $base;
+                    }
+                    $destFile = $destDir . DIRECTORY_SEPARATOR . $newName;
                     if (!file_exists($destFile)) {
                         copy($file, $destFile);
                         $count++;
