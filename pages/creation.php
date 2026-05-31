@@ -1544,7 +1544,7 @@ $contratData = array_merge([
                             </div>
 
                             <div style="display:flex;justify-content:flex-end;margin-top:4px">
-                                <button class="btn btn-next" type="submit" style="display:none"><span class="mdi mdi-file-sync"></span> Generer les documents</button>
+                                <button class="btn btn-next" type="submit"><span class="mdi mdi-file-sync"></span> Generer les documents</button>
                             </div>
                         </form>
                     <?php else: ?>
