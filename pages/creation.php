@@ -1334,7 +1334,7 @@ $contratData = array_merge([
 
             <div class="step-4-controls table-actions" style="margin-bottom:0.75rem">
                 <button class="btn btn-info" onclick="window.print()"><span class="mdi mdi-printer"></span> Imprimer</button>
-                <button class="btn btn-info" id="btn-pdf-recap" data-forme="<?= e($societeData['societe_forme_juridique'] ?? '') ?>"><span class="mdi mdi-file-pdf"></span> Sauvegarder PDF</button>
+                <button class="btn btn-info" id="btn-pdf-recap" data-forme="<?= e($societeData['societe_forme_juridique'] ?? '') ?>" data-raison="<?= e($societeData['societe_raison_sociale'] ?? '') ?>"><span class="mdi mdi-file-pdf"></span> Sauvegarder PDF</button>
                 <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => 1])) ?>"><span class="mdi mdi-pencil"></span> Modifier societe</a>
                 <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => 2])) ?>"><span class="mdi mdi-pencil"></span> Modifier associes</a>
                 <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => 3])) ?>"><span class="mdi mdi-pencil"></span> Modifier contrat</a>
@@ -1670,12 +1670,14 @@ $contratData = array_merge([
         if (!element) return;
 
         var forme = this.getAttribute('data-forme') || '';
+        var raison = this.getAttribute('data-raison') || 'Dossier';
+        var raisonSlug = raison.replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'Dossier';
         var prefixMap = { 'SARL AU': 'SARL-AU', 'SARL': 'SARL', 'SA': 'SA', 'Personne Physique': 'PP' };
         var prefix = prefixMap[forme] || 'DOSSIER';
         var now = new Date();
         var yyyy = now.getFullYear();
         var mm = String(now.getMonth() + 1).padStart(2, '0');
-        var filename = prefix + '_' + yyyy + '-' + mm + '_Recapitulatif-Dossier_Final.pdf';
+        var filename = prefix + '_' + yyyy + '-' + mm + '_Recapitulatif-' + raisonSlug + '.pdf';
 
         this.disabled = true;
         this.innerHTML = '<span class="mdi mdi-loading mdi-spin"></span> Generation...';
