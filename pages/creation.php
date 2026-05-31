@@ -536,7 +536,7 @@ if (!is_array($associesData) || $associesData === []) {
 }
 
 $contratData = array_merge([
-    'contrat_type' => '',
+    'contrat_type' => 'Domiciliation simple',
     'contrat_type_autre' => '',
     'contrat_date' => '',
     'contrat_duree_mois' => '',
@@ -1323,6 +1323,7 @@ $contratData = array_merge([
 
             <div class="step-4-controls table-actions" style="margin-bottom:0.75rem">
                 <button class="btn btn-info" onclick="window.print()"><span class="mdi mdi-printer"></span> Imprimer</button>
+                <button class="btn btn-info" id="btn-pdf-recap"><span class="mdi mdi-file-pdf"></span> Sauvegarder PDF</button>
                 <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => 1])) ?>"><span class="mdi mdi-pencil"></span> Modifier societe</a>
                 <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => 2])) ?>"><span class="mdi mdi-pencil"></span> Modifier associes</a>
                 <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => 3])) ?>"><span class="mdi mdi-pencil"></span> Modifier contrat</a>
@@ -1481,7 +1482,7 @@ $contratData = array_merge([
                     <div class="step-card-header">
                         <span class="step-num">2</span>
                         <div>
-                            <h3>Generer les documents</h3>
+                            <h3 style="display:none">Generer les documents</h3>
                             <p class="help-text">Selectionnez les templates a generer pour <?= e($societeData['societe_raison_sociale'] ?: 'la societe') ?>.</p>
                         </div>
                     </div>
@@ -1535,7 +1536,7 @@ $contratData = array_merge([
                             </div>
 
                             <div style="display:flex;justify-content:flex-end;margin-top:4px">
-                                <button class="btn btn-next" type="submit"><span class="mdi mdi-file-sync"></span> Generer les documents</button>
+                                <button class="btn btn-next" type="submit" style="display:none"><span class="mdi mdi-file-sync"></span> Generer les documents</button>
                             </div>
                         </form>
                     <?php else: ?>
@@ -1654,4 +1655,24 @@ $contratData = array_merge([
             </div>
         </div>
     <?php endif; ?>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script>
+    document.getElementById('btn-pdf-recap')?.addEventListener('click', function () {
+        var element = document.querySelector('.recap-a4');
+        if (!element) return;
+        this.disabled = true;
+        this.innerHTML = '<span class="mdi mdi-loading mdi-spin"></span> Generation...';
+        var opt = {
+            margin:       10,
+            filename:     'recapitulatif-dossier.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(element).save().then(function () {
+            document.getElementById('btn-pdf-recap').disabled = false;
+            document.getElementById('btn-pdf-recap').innerHTML = '<span class="mdi mdi-file-pdf"></span> Sauvegarder PDF';
+        });
+    });
+    </script>
 </section>
