@@ -173,6 +173,8 @@ Pas de champ de donnees metier.
 | `pdf` | Generer PDF | checkbox | Convertit le DOCX en PDF via LibreOffice |
 | `nav_action` | Action | hidden | `generate` (previsualisation) ou `finish` (sauvegarde en base) |
 
+**Filtrage par forme juridique :** les templates affiches sont ceux du dossier `templates/<template_folder>/` (colonne `template_folder` de `ref_formes_juridiques`) ainsi que les templates generiques `templates/_Racine-Actifs/`. Le dossier est cree automatiquement dans `templates/` si inexistant lors de l'ajout/modification dans Configuration > Formes juridiques.
+
 Action **Creer le dossier complet** (`nav_action=finish`) : insere en base (table `societes`, `associes`, `contrats`, `documents_generes`) et redirige vers la fiche societe.
 
 ---

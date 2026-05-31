@@ -173,3 +173,4 @@ Encadrez le bloc avec `{%p for a in associes %}` ... `{%p endfor %}`.
 - Les noms de variables sont insensibles a la casse dans le code : `{{ capital }}`, `{{ CAPITAL }}`, `{{ Capital }}` ne fonctionnent plus. Utilisez exclusivement les noms ci-dessus.
 - Les variables en boucle (`a.*`) restent sans prefixe et ne sont pas impactees par le renommage.
 - La colonne **Champ creation** correspond au `name=""` du formulaire dans l'Assistant de creation (`pages/creation.php`). Les champs calcules par le JS sont marques `(calcule)`. Les champs sans champ dedie sont marques `—`.
+- **Filtrage des templates :** chaque forme juridique est liee a un dossier `templates/<template_folder/>` via la colonne `template_folder` de `ref_formes_juridiques` (Configuration > Formes juridiques). Seuls les templates de ce dossier et du dossier generique `_Racine-Actifs/` sont proposes a l'etape 5.
