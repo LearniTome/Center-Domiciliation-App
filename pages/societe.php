@@ -130,7 +130,43 @@ if (is_post() && isset($_POST['delete_submit']) && ($pdo ?? null) instanceof PDO
     }
 }
 
-if (is_post() && !isset($_POST['validate_submit']) && !isset($_POST['delete_submit']) && ($pdo ?? null) instanceof PDO) {
+if (is_post() && isset($_POST['restore_submit']) && ($pdo ?? null) instanceof PDO) {
+    verify_csrf();
+    $selected = $_POST['selected_files'] ?? [];
+    if (count($selected) === 0) {
+        set_flash('error', 'Selectionnez au moins un document.');
+        redirect_to('societe', ['id' => $societeId]);
+    }
+    $placeholders = implode(',', array_fill(0, count($selected), '?'));
+    $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf FROM documents_generes WHERE valide = 1 AND id IN ($placeholders)");
+    $stmt->execute(array_map('intval', $selected));
+    $docs = $stmt->fetchAll();
+    $updateStmt = $pdo->prepare("UPDATE documents_generes SET valide = 0, fichier_docx = :fichier_docx, fichier_pdf = :fichier_pdf WHERE id = :id");
+    foreach ($docs as $doc) {
+        $oldDocx = $doc['fichier_docx'];
+        $newDocx = preg_replace('/\.docx$/i', '_Brouillon.docx', $oldDocx);
+        if ($oldDocx !== $newDocx && file_exists($oldDocx)) {
+            rename($oldDocx, $newDocx);
+        }
+        $newPdf = $doc['fichier_pdf'];
+        if ($newPdf !== null) {
+            $renamedPdf = preg_replace('/\.pdf$/i', '_Brouillon.pdf', $newPdf);
+            if ($newPdf !== $renamedPdf && file_exists($newPdf)) {
+                rename($newPdf, $renamedPdf);
+                $newPdf = $renamedPdf;
+            }
+        }
+        $updateStmt->execute([
+            'fichier_docx' => $newDocx,
+            'fichier_pdf' => $newPdf,
+            'id' => $doc['id'],
+        ]);
+    }
+    set_flash('success', count($selected) . ' document(s) restaure(s) en brouillon.');
+    redirect_to('societe', ['id' => $societeId]);
+}
+
+if (is_post() && !isset($_POST['validate_submit']) && !isset($_POST['delete_submit']) && !isset($_POST['restore_submit']) && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
     $activitesStatuts = $_POST['societe_activites_statuts'] ?? [];
     $allStatuts = is_array($activitesStatuts) ? array_map('trim', $activitesStatuts) : [];
@@ -642,6 +678,10 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
                                             <a class="btn-icon" href="#" onclick="event.preventDefault(); (function(){ var f=document.getElementById('docs-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='validate_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Validation en cours...'); f.submit();} })();" title="Valider">
                                                 <span class="mdi mdi-file-check"></span>
                                             </a>
+                                        <?php else: ?>
+                                            <a class="btn-icon" href="#" onclick="event.preventDefault(); (function(){ var f=document.getElementById('docs-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='restore_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Restauration en cours...'); f.submit();} })();" title="Restaurer en brouillon">
+                                                <span class="mdi mdi-file-undo"></span>
+                                            </a>
                                         <?php endif; ?>
                                         <a class="btn-icon danger" href="#" onclick="event.preventDefault(); if(!confirm('Supprimer ce document ?')) return; (function(){ var f=document.getElementById('docs-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='delete_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Suppression en cours...'); f.submit();} })();" title="Supprimer">
                                             <span class="mdi mdi-delete"></span>
@@ -654,9 +694,18 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
                 </table>
             </div>
             <div class="table-actions" style="margin-top:12px">
-                <button class="btn btn-next" type="submit" name="validate_submit" value="1">
-                    <span class="mdi mdi-file-check"></span> Valider la selection
-                </button>
+                <?php
+                $allValides = count($documents) > 0 && count(array_filter($documents, fn($d) => !$d['valide'])) === 0;
+                ?>
+                <?php if ($allValides): ?>
+                    <button class="btn btn-back" type="submit" name="restore_submit" value="1">
+                        <span class="mdi mdi-file-undo"></span> Restaurer en brouillons
+                    </button>
+                <?php else: ?>
+                    <button class="btn btn-next" type="submit" name="validate_submit" value="1">
+                        <span class="mdi mdi-file-check"></span> Valider la selection
+                    </button>
+                <?php endif; ?>
                 <button class="btn btn-back" type="submit" name="delete_submit" value="1">
                     <span class="mdi mdi-delete"></span> Supprimer la selection
                 </button>
