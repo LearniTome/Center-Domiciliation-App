@@ -121,9 +121,9 @@ if (is_post()) {
             'societe_email' => field_value($_POST, 'societe_email'),
             'societe_telephone' => field_value($_POST, 'societe_telephone'),
             'societe_capital' => field_value($_POST, 'societe_capital'),
-            'type_generation' => field_value($_POST, 'type_generation'),
-            'procedure_creation' => field_value($_POST, 'procedure_creation'),
-            'mode_depot_creation' => field_value($_POST, 'mode_depot_creation'),
+            'societe_type_generation' => field_value($_POST, 'societe_type_generation'),
+            'societe_procedure_creation' => field_value($_POST, 'societe_procedure_creation'),
+            'societe_mode_depot' => field_value($_POST, 'societe_mode_depot'),
         ];
 
         $wizard['societe'] = $societe;
@@ -161,16 +161,15 @@ if (is_post()) {
                     'associe_cin' => trim((string) ($associe['cin'] ?? '')),
                     'associe_date_validite_cin' => trim((string) ($associe['date_validite_cin'] ?? '')),
                     'associe_adresse' => trim((string) ($associe['adresse'] ?? '')),
-                    'associe_date_naissance' => trim((string) ($associe['date_naiss'] ?? '')),
-                    'associe_lieu_naissance' => trim((string) ($associe['lieu_naiss'] ?? '')),
-                    'associe_nationalite' => trim((string) ($associe['nationalite'] ?? '')),
-                    'associe_telephone' => trim((string) ($associe['phone'] ?? '')),
-                    'associe_email' => trim((string) ($associe['societe_email'] ?? '')),
-                    'associe_qualite' => trim((string) ($associe['qualite_associe'] ?? '')),
+                    'associe_date_naissance' => trim((string) ($associe['date_naissance'] ?? '')),
+                    'associe_lieu_naissance' => trim((string) ($associe['lieu_naissance'] ?? '')),
+                    'associe_telephone' => trim((string) ($associe['telephone'] ?? '')),
+                    'associe_email' => trim((string) ($associe['email'] ?? '')),
+                    'associe_qualite' => trim((string) ($associe['qualite'] ?? '')),
                     'associe_parts' => trim((string) ($associe['parts'] ?? '')),
                     'associe_capital_detenu' => trim((string) ($associe['capital_detenu'] ?? '')),
                     'associe_part_percent' => trim((string) ($associe['part_percent'] ?? '')),
-                    'associe_est_gerant' => ((string) ($associe['is_gerant'] ?? '0') === '1') ? '1' : '0',
+                    'associe_est_gerant' => ((string) ($associe['est_gerant'] ?? '0') === '1') ? '1' : '0',
                 ];
 
                 $isEmpty = $item['associe_nom_complet'] === ''
@@ -294,9 +293,9 @@ if (is_post()) {
                     'societe_part_social' => ($wizard['societe']['societe_part_social'] ?? '') !== '' ? (int) $wizard['societe']['societe_part_social'] : null,
                     'societe_valeur_nominale' => ($wizard['societe']['societe_valeur_nominale'] ?? '') !== '' ? parse_money((string) $wizard['societe']['societe_valeur_nominale']) : null,
                     'societe_date_exp_cert_neg' => ($wizard['societe']['societe_date_exp_cert_neg'] ?? '') !== '' ? $wizard['societe']['societe_date_exp_cert_neg'] : null,
-                    'societe_type_generation' => $wizard['societe']['type_generation'] ?? '',
-                    'societe_procedure_creation' => $wizard['societe']['procedure_creation'] ?? '',
-                    'societe_mode_depot' => $wizard['societe']['mode_depot_creation'] ?? '',
+                    'societe_type_generation' => $wizard['societe']['societe_type_generation'] ?? '',
+                    'societe_procedure_creation' => $wizard['societe']['societe_procedure_creation'] ?? '',
+                    'societe_mode_depot' => $wizard['societe']['societe_mode_depot'] ?? '',
                 ]);
 
                 $societeId = (int) $pdo->lastInsertId();
@@ -487,9 +486,9 @@ $societeData = array_merge([
     'societe_email' => '',
     'societe_telephone' => '',
     'societe_capital' => '',
-    'type_generation' => '',
-    'procedure_creation' => '',
-    'mode_depot_creation' => '',
+    'societe_type_generation' => '',
+    'societe_procedure_creation' => '',
+    'societe_mode_depot' => '',
 ], $wizard['societe']);
 
 $tribunalTypes = fetch_tribunaux_types($pdo ?? null);
@@ -597,26 +596,26 @@ $contratData = array_merge([
                 <h3 class="section-title">Procedure</h3>
                 <label class="field">
                     <span>Type generation</span>
-                    <select name="type_generation">
+                    <select name="societe_type_generation">
                         <option value="">Selectionner</option>
-                        <option value="creation" <?= (string) $societeData['type_generation'] === 'creation' ? 'selected' : '' ?>>Création</option>
-                        <option value="domiciliation" <?= (string) $societeData['type_generation'] === 'domiciliation' ? 'selected' : '' ?>>Domiciliation</option>
+                        <option value="creation" <?= (string) $societeData['societe_type_generation'] === 'creation' ? 'selected' : '' ?>>Création</option>
+                        <option value="domiciliation" <?= (string) $societeData['societe_type_generation'] === 'domiciliation' ? 'selected' : '' ?>>Domiciliation</option>
                     </select>
                 </label>
                 <label class="field">
                     <span>Procedure creation</span>
-                    <select name="procedure_creation">
+                    <select name="societe_procedure_creation">
                         <option value="">Selectionner</option>
-                        <option value="normal" <?= (string) $societeData['procedure_creation'] === 'normal' ? 'selected' : '' ?>>Normal</option>
-                        <option value="acceleree" <?= (string) $societeData['procedure_creation'] === 'acceleree' ? 'selected' : '' ?>>Accélérer</option>
+                        <option value="normal" <?= (string) $societeData['societe_procedure_creation'] === 'normal' ? 'selected' : '' ?>>Normal</option>
+                        <option value="acceleree" <?= (string) $societeData['societe_procedure_creation'] === 'acceleree' ? 'selected' : '' ?>>Accélérer</option>
                     </select>
                 </label>
                 <label class="field">
                     <span>Mode depot creation</span>
-                    <select name="mode_depot_creation">
+                    <select name="societe_mode_depot">
                         <option value="">Selectionner</option>
-                        <option value="depot_physique" <?= (string) $societeData['mode_depot_creation'] === 'depot_physique' ? 'selected' : '' ?>>Dépôt Physique</option>
-                        <option value="depot_en_ligne" <?= (string) $societeData['mode_depot_creation'] === 'depot_en_ligne' ? 'selected' : '' ?>>Dépôt En Ligne</option>
+                        <option value="depot_physique" <?= (string) $societeData['societe_mode_depot'] === 'depot_physique' ? 'selected' : '' ?>>Dépôt Physique</option>
+                        <option value="depot_en_ligne" <?= (string) $societeData['societe_mode_depot'] === 'depot_en_ligne' ? 'selected' : '' ?>>Dépôt En Ligne</option>
                     </select>
                 </label>
 
@@ -871,12 +870,12 @@ $contratData = array_merge([
                             </label>
                             <label class="field">
                                 <span>Date naissance</span>
-                                <input data-field-name="date_naiss" type="date" name="associes[<?= $index ?>][date_naiss]" placeholder="18/05/2026" value="<?= e((string) ($associe['associe_date_naissance'] ?? '')) ?>">
+                                <input data-field-name="date_naissance" type="date" name="associes[<?= $index ?>][date_naissance]" placeholder="18/05/2026" value="<?= e((string) ($associe['associe_date_naissance'] ?? '')) ?>">
                             </label>
                             <label class="field">
                                 <span>Lieu naissance</span>
                                 <div style="display:flex;gap:8px;align-items:center">
-                                    <select data-field-name="lieu_naiss" name="associes[<?= $index ?>][lieu_naiss]" style="flex:1">
+                                    <select data-field-name="lieu_naissance" name="associes[<?= $index ?>][lieu_naissance]" style="flex:1">
                                         <option value="">Selectionner</option>
                                         <?php foreach ($lieuxNaissanceOptions as $option): ?>
                                             <option value="<?= e($option) ?>" <?= (string) ($associe['associe_lieu_naissance'] ?? '') === $option ? 'selected' : '' ?>><?= e($option) ?></option>
@@ -888,7 +887,7 @@ $contratData = array_merge([
                             <h3 class="section-title">Contact</h3>
                             <label class="field">
                                 <span>Telephone</span>
-                                <input data-field-name="phone" name="associes[<?= $index ?>][phone]" value="<?= e((string) ($associe['associe_telephone'] ?? '')) ?>">
+                                <input data-field-name="telephone" name="associes[<?= $index ?>][telephone]" value="<?= e((string) ($associe['associe_telephone'] ?? '')) ?>">
                             </label>
                             <label class="field">
                                 <span>Email</span>
@@ -902,7 +901,7 @@ $contratData = array_merge([
                             <label class="field">
                                 <span>Qualite associe</span>
                                 <div style="display:flex;gap:8px;align-items:center">
-                                    <select data-field-name="qualite_associe" name="associes[<?= $index ?>][qualite_associe]" style="flex:1">
+                                    <select data-field-name="qualite" name="associes[<?= $index ?>][qualite]" style="flex:1">
                                         <option value="">Selectionner</option>
                                         <?php foreach ($qualitesAssocieOptions as $option): ?>
                                             <option value="<?= e($option) ?>" <?= (string) ($associe['associe_qualite'] ?? '') === $option ? 'selected' : '' ?>><?= e($option) ?></option>
@@ -925,7 +924,7 @@ $contratData = array_merge([
                             </label>
                             <label class="field">
                                 <span>Gerant</span>
-                                <select data-field-name="is_gerant" name="associes[<?= $index ?>][is_gerant]">
+                                <select data-field-name="est_gerant" name="associes[<?= $index ?>][est_gerant]">
                                     <option value="0" <?= (string) ($associe['associe_est_gerant'] ?? '0') === '0' ? 'selected' : '' ?>>Non</option>
                                     <option value="1" <?= (string) ($associe['associe_est_gerant'] ?? '0') === '1' ? 'selected' : '' ?>>Oui</option>
                                 </select>
@@ -1021,12 +1020,12 @@ $contratData = array_merge([
                         </label>
                         <label class="field">
                             <span>Date naissance</span>
-                            <input data-field-name="date_naiss" type="date" placeholder="18/05/2026" value="">
+                            <input data-field-name="date_naissance" type="date" placeholder="18/05/2026" value="">
                         </label>
                         <label class="field">
                             <span>Lieu naissance</span>
                             <div style="display:flex;gap:8px;align-items:center">
-                                <select data-field-name="lieu_naiss" style="flex:1">
+                                <select data-field-name="lieu_naissance" style="flex:1">
                                     <option value="">Selectionner</option>
                                     <?php foreach ($lieuxNaissanceOptions as $option): ?>
                                         <option value="<?= e($option) ?>"><?= e($option) ?></option>
@@ -1038,7 +1037,7 @@ $contratData = array_merge([
                         <h3 class="section-title">Contact</h3>
                         <label class="field">
                             <span>Telephone</span>
-                            <input data-field-name="phone" value="">
+                            <input data-field-name="telephone" value="">
                         </label>
                         <label class="field">
                             <span>Email</span>
@@ -1052,7 +1051,7 @@ $contratData = array_merge([
                         <label class="field">
                             <span>Qualite associe</span>
                             <div style="display:flex;gap:8px;align-items:center">
-                                <select data-field-name="qualite_associe" style="flex:1">
+                                <select data-field-name="qualite" style="flex:1">
                                     <option value="">Selectionner</option>
                                     <?php foreach ($qualitesAssocieOptions as $option): ?>
                                         <option value="<?= e($option) ?>"><?= e($option) ?></option>
@@ -1075,7 +1074,7 @@ $contratData = array_merge([
                         </label>
                         <label class="field">
                             <span>Gerant</span>
-                            <select data-field-name="is_gerant">
+                            <select data-field-name="est_gerant">
                                 <option value="0" selected>Non</option>
                                 <option value="1">Oui</option>
                             </select>
@@ -1351,9 +1350,9 @@ $contratData = array_merge([
                         <div class="item"><span class="label">Telephone</span><span class="value"><?= e($societeData['societe_telephone'] ?: '-') ?></span></div>
                         <div class="item full"><span class="label">Activites (Statuts)</span><span class="value"><?= e(!empty($societeData['societe_activites_statuts']) ? (string) $societeData['societe_activites_statuts'] : '-') ?></span></div>
                         <div class="item full"><span class="label">Activites (OMPIC)</span><span class="value"><?= e(!empty($societeData['societe_activites_ompic']) ? fetch_activites_ompic_display($pdo ?? null, (string) $societeData['societe_activites_ompic']) : '-') ?></span></div>
-                        <div class="item"><span class="label">Type generation</span><span class="value"><?= e($societeData['type_generation'] ?: '-') ?></span></div>
-                        <div class="item"><span class="label">Procedure</span><span class="value"><?= e($societeData['procedure_creation'] ?: '-') ?></span></div>
-                        <div class="item"><span class="label">Mode depot</span><span class="value"><?= e($societeData['mode_depot_creation'] ?: '-') ?></span></div>
+                        <div class="item"><span class="label">Type generation</span><span class="value"><?= e($societeData['societe_type_generation'] ?: '-') ?></span></div>
+                        <div class="item"><span class="label">Procedure</span><span class="value"><?= e($societeData['societe_procedure_creation'] ?: '-') ?></span></div>
+                        <div class="item"><span class="label">Mode depot</span><span class="value"><?= e($societeData['societe_mode_depot'] ?: '-') ?></span></div>
                     </div>
                 </div>
 

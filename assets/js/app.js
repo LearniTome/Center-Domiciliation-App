@@ -215,17 +215,17 @@ const testData = {
     'nom_complet': 'Mr Ahmed BENANI',
     'cin': 'AB123456',
     'date_validite_cin': '2028-05-15',
-    'date_naiss': '1990-05-15',
-    'lieu_naiss': 'Casablanca',
+    'date_naissance': '1990-05-15',
+    'lieu_naissance': 'Casablanca',
     'nationalite': 'Marocaine',
-    'phone': '0612345678',
+    'telephone': '0612345678',
     'email': 'ahmed.benani@test.ma',
     'adresse': '123 Rue Mohammed V, Casablanca',
-    'qualite_associe': 'Associe',
+    'qualite': 'Associe',
     'parts': '1000',
     'capital_detenu': '100000',
     'part_percent': '',
-    'is_gerant': '1',
+    'est_gerant': '1',
 };
 
 document.addEventListener('click', (event) => {
@@ -810,8 +810,8 @@ document.addEventListener('input', (e) => {
         }
         if (isSarlAu) {
             document.querySelectorAll('[data-associe-item]').forEach((item) => {
-                const qualite = item.querySelector('[data-field-name="qualite_associe"]');
-                const gerant = item.querySelector('[data-field-name="is_gerant"]');
+                const qualite = item.querySelector('[data-field-name="qualite"]');
+                const gerant = item.querySelector('[data-field-name="est_gerant"]');
                 if (qualite) qualite.value = 'Gerant';
                 if (gerant) gerant.value = '1';
             });

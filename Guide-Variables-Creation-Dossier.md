@@ -17,9 +17,9 @@ Tous les champs du formulaire de creation de dossier (`pages/creation.php`), eta
 
 | Champ name | Libellé | Type | Valeurs possibles | Variable template | Col DB |
 |---|---|---|---|---|---|
-| `type_generation` | Type generation | select | `creation`, `domiciliation` | `SOCIETE_TYPE_GENERATION` | `societe_type_generation` |
-| `procedure_creation` | Procedure creation | select | `normal`, `acceleree` | `SOCIETE_PROCEDURE_CREATION` | `societe_procedure_creation` |
-| `mode_depot_creation` | Mode depot creation | select | `depot_physique`, `depot_en_ligne` | `SOCIETE_MODE_DEPOT` | `societe_mode_depot` |
+| `societe_type_generation` | Type generation | select | `creation`, `domiciliation` | `SOCIETE_TYPE_GENERATION` | `societe_type_generation` |
+| `societe_procedure_creation` | Procedure creation | select | `normal`, `acceleree` | `SOCIETE_PROCEDURE_CREATION` | `societe_procedure_creation` |
+| `societe_mode_depot` | Mode depot creation | select | `depot_physique`, `depot_en_ligne` | `SOCIETE_MODE_DEPOT` | `societe_mode_depot` |
 
 ### Identifiants
 
@@ -80,28 +80,28 @@ Chaque associe est dans un bloc `associes[INDEX][...]`. Le template du premier a
 | `associes[][prenom]` | Prenom | text | `Jean` | `ASSOCIE_PRENOM` | `a.PRENOM` | `associe_prenom` |
 | `associes[][nom_complet]` | Nom complet | hidden (calcule) | `Mr Jean DUPONT` | `ASSOCIE_NOM_COMPLET` | `a.NOM_COMPLET` | `associe_nom_complet` |
 | `associes[][cin]` | N CIN/Sejour/Passport | text | `BH584028` | `ASSOCIE_CIN` | `a.CIN` | `associe_cin` |
-| `associes[][date_validite_cin]` | Date validite CIN | date | `2030-01-01` | `ASSOCIE_DATE_VALIDITE_CIN` | — | `associe_date_validite_cin` |
+| `associes[][date_validite_cin]` | Date validite CIN | date | `2030-01-01` | `ASSOCIE_DATE_VALIDITE_CIN` | `a.DATE_VALIDITE_CIN` | `associe_date_validite_cin` |
 | `associes[][nationalite]` | Nationalite | select | `ref_nationalites` | `ASSOCIE_NATIONALITE` | `a.NATIONALITE` | `associe_nationalite` |
-| `associes[][date_naiss]` | Date naissance | date | `1990-01-15` | `ASSOCIE_DATE_NAISSANCE` | `a.DATE_NAISSANCE` | `associe_date_naissance` |
-| `associes[][lieu_naiss]` | Lieu naissance | select | `ref_lieux_naissance` | `ASSOCIE_LIEU_NAISSANCE` | `a.LIEU_NAISSANCE` | `associe_lieu_naissance` |
+| `associes[][date_naissance]` | Date naissance | date | `1990-01-15` | `ASSOCIE_DATE_NAISSANCE` | `a.DATE_NAISSANCE` | `associe_date_naissance` |
+| `associes[][lieu_naissance]` | Lieu naissance | select | `ref_lieux_naissance` | `ASSOCIE_LIEU_NAISSANCE` | `a.LIEU_NAISSANCE` | `associe_lieu_naissance` |
 
 ### Contact
 
 | Champ name | Libellé | Type | Variable template (hors boucle) | Variable template (boucle `a.`) | Col DB |
 |---|---|---|---|---|---|
-| `associes[][phone]` | Telephone | text | `ASSOCIE_TELEPHONE` | `a.TELEPHONE` | `associe_telephone` |
-| `associes[][societe_email]` | Email | email | `ASSOCIE_EMAIL` | `a.EMAIL` | `associe_email` |
+| `associes[][telephone]` | Telephone | text | `ASSOCIE_TELEPHONE` | `a.TELEPHONE` | `associe_telephone` |
+| `associes[][email]` | Email | email | `ASSOCIE_EMAIL` | `a.EMAIL` | `associe_email` |
 | `associes[][adresse]` | Adresse | textarea | `ASSOCIE_ADRESSE` | `a.ADRESSE` | `associe_adresse` |
 
 ### Participation
 
 | Champ name | Libellé | Type | Exemple | Variable template (hors boucle) | Variable template (boucle `a.`) | Col DB |
 |---|---|---|---|---|---|---|
-| `associes[][qualite_associe]` | Qualite associe | select | `ref_qualites_associe` | `ASSOCIE_QUALITE` | `a.QUALITE` | `associe_qualite` |
+| `associes[][qualite]` | Qualite associe | select | `ref_qualites_associe` | `ASSOCIE_QUALITE` | `a.QUALITE` | `associe_qualite` |
 | `associes[][parts]` | Parts | number (SARL) | `100` | `ASSOCIE_PARTS` | `a.PARTS` | `associe_parts` |
 | `associes[][capital_detenu]` | Capital detenu (DH) | number (SARL) | `50000` | `ASSOCIE_CAPITAL_DETENU` | `a.CAPITAL_DETENU` | `associe_capital_detenu` |
 | `associes[][part_percent]` | % Capital social | number (SARL) | `50` | — | — | `associe_part_percent` |
-| `associes[][is_gerant]` | Gerant | select | `Oui`, `Non` | `ASSOCIE_EST_GERANT` | `a.EST_GERANT` | `associe_est_gerant` |
+| `associes[][est_gerant]` | Gerant | select | `Oui`, `Non` | `ASSOCIE_EST_GERANT` | `a.EST_GERANT` | `associe_est_gerant` |
 
 ---
 
