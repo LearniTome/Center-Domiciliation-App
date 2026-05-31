@@ -6,8 +6,8 @@ $societeId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 $societe = $societeId > 0 ? fetch_record($pdo ?? null, 'societes', $societeId) : null;
 $allTribunaux = fetch_tribunaux_all($pdo ?? null);
 $tribunalTypes = fetch_tribunaux_types($pdo ?? null);
-$currentTribunalType = '';
-if ($societe && $societe['societe_tribunal']) {
+$currentTribunalType = $societe['societe_tribunal_type'] ?? '';
+if (!$currentTribunalType && $societe && $societe['societe_tribunal']) {
     foreach ($allTribunaux as $t) {
         if ($t['tribunal'] === $societe['societe_tribunal'] && ($t['tribunal_type'] ?? '')) {
             $currentTribunalType = $t['tribunal_type'];
@@ -160,7 +160,8 @@ if (is_post() && !isset($_POST['validate_submit']) && !isset($_POST['delete_subm
             societe_telephone = :societe_telephone,
             societe_type_generation = :societe_type_generation,
             societe_procedure_creation = :societe_procedure_creation,
-            societe_mode_depot = :societe_mode_depot
+            societe_mode_depot = :societe_mode_depot,
+            societe_tribunal_type = :societe_tribunal_type
         WHERE id = :id
     ');
     $stmt->execute([
@@ -185,6 +186,7 @@ if (is_post() && !isset($_POST['validate_submit']) && !isset($_POST['delete_subm
         'societe_type_generation' => field_value($_POST, 'societe_type_generation'),
         'societe_procedure_creation' => field_value($_POST, 'societe_procedure_creation'),
         'societe_mode_depot' => field_value($_POST, 'societe_mode_depot'),
+        'societe_tribunal_type' => field_value($_POST, 'tribunal_type'),
         'id' => $societeId,
     ]);
     set_flash('success', 'Societe mise a jour.');

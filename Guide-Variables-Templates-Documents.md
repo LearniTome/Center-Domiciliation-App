@@ -24,6 +24,7 @@ Inserez `{{ NOM_VARIABLE }}` dans vos documents Word (.docx).
 | `SOCIETE_VALEUR_NOMINALE` | Valeur nominale | `societe_valeur_nominale` | `societe_valeur_nominale` | Creation (Statuts) |
 | `SOCIETE_VILLE` | Ville du siege | `societe_ville` | `societe_ville` | Creation (Statuts, Annonce-Legale) |
 | `SOCIETE_TRIBUNAL` | Tribunal competent | `societe_tribunal` | `societe_tribunal` | Creation (Depot-Legal, Declaration-RC) |
+| `SOCIETE_TRIBUNAL_TYPE` | Type de tribunal | `societe_tribunal_type` | `tribunal_type` | Creation (Depot-Legal, Declaration-RC) |
 | `SOCIETE_ADRESSE_SIEGE` | Adresse du siege social | `societe_adresse_siege` | `societe_adresse_siege` | Creation + Domiciliation |
 | `SOCIETE_EMAIL` | Email | `societe_email` | `societe_email` | Creation + Domiciliation |
 | `SOCIETE_TELEPHONE` | Telephone | `societe_telephone` | `societe_telephone` | Creation + Domiciliation |

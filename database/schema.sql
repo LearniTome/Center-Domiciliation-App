@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS societes (
     societe_adresse_siege TEXT DEFAULT NULL,
     societe_ville VARCHAR(120) DEFAULT NULL,
     societe_tribunal VARCHAR(120) DEFAULT NULL,
+    societe_tribunal_type VARCHAR(60) DEFAULT NULL,
     societe_email VARCHAR(190) DEFAULT NULL,
     societe_telephone VARCHAR(60) DEFAULT NULL,
     societe_type_generation VARCHAR(120) DEFAULT NULL,

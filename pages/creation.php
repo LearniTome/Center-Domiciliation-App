@@ -124,6 +124,7 @@ if (is_post()) {
             'societe_type_generation' => field_value($_POST, 'societe_type_generation'),
             'societe_procedure_creation' => field_value($_POST, 'societe_procedure_creation'),
             'societe_mode_depot' => field_value($_POST, 'societe_mode_depot'),
+            'societe_tribunal_type' => field_value($_POST, 'tribunal_type'),
         ];
 
         $wizard['societe'] = $societe;
@@ -266,12 +267,12 @@ if (is_post()) {
                         societe_dossier, societe_raison_sociale, societe_forme_juridique, societe_ice, societe_date_ice, societe_rc, societe_if,
                         societe_activites_statuts, societe_activites_ompic,
                         societe_capital, societe_part_social, societe_valeur_nominale, societe_date_exp_cert_neg, societe_adresse_siege, societe_ville, societe_tribunal, societe_email,
-                        societe_telephone, societe_type_generation, societe_procedure_creation, societe_mode_depot
+                        societe_telephone, societe_type_generation, societe_procedure_creation, societe_mode_depot, societe_tribunal_type
                     ) VALUES (
                         :societe_dossier, :societe_raison_sociale, :societe_forme_juridique, :societe_ice, :societe_date_ice, :societe_rc, :societe_if,
                         :societe_activites_statuts, :societe_activites_ompic,
                         :societe_capital, :societe_part_social, :societe_valeur_nominale, :societe_date_exp_cert_neg, :societe_adresse_siege, :societe_ville, :societe_tribunal, :societe_email,
-                        :societe_telephone, :societe_type_generation, :societe_procedure_creation, :societe_mode_depot
+                        :societe_telephone, :societe_type_generation, :societe_procedure_creation, :societe_mode_depot, :societe_tribunal_type
                     )
                 ');
                 $societeStmt->execute([
@@ -296,6 +297,7 @@ if (is_post()) {
                     'societe_type_generation' => $wizard['societe']['societe_type_generation'] ?? '',
                     'societe_procedure_creation' => $wizard['societe']['societe_procedure_creation'] ?? '',
                     'societe_mode_depot' => $wizard['societe']['societe_mode_depot'] ?? '',
+                    'societe_tribunal_type' => $wizard['societe']['societe_tribunal_type'] ?? '',
                 ]);
 
                 $societeId = (int) $pdo->lastInsertId();
@@ -493,9 +495,9 @@ $societeData = array_merge([
 
 $tribunalTypes = fetch_tribunaux_types($pdo ?? null);
 $allTribunaux = fetch_tribunaux_all($pdo ?? null);
-$currentTribunalType = '';
+$currentTribunalType = $societeData['societe_tribunal_type'] ?? '';
 $societeTribunal = $societeData['societe_tribunal'] ?? '';
-if ($societeTribunal) {
+if (!$currentTribunalType && $societeTribunal) {
     foreach ($allTribunaux as $t) {
         if ($t['tribunal'] === $societeTribunal && ($t['tribunal_type'] ?? '')) {
             $currentTribunalType = $t['tribunal_type'];

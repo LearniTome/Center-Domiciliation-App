@@ -55,7 +55,7 @@ Tous les champs du formulaire de creation de dossier (`pages/creation.php`), eta
 |---|---|---|---|---|---|
 | `societe_adresse_siege` | Adresse de reference | select | `ref_ste_adresses` | `SOCIETE_ADRESSE_SIEGE` | `societe_adresse_siege` |
 | `societe_ville` | Ville | select | `ref_villes` | `SOCIETE_VILLE` | `societe_ville` |
-| `tribunal_type` | Type de tribunal | select | `ref_tribunaux.type`, ex: Tribunal de commerce | — | — |
+| `tribunal_type` | Type de tribunal | select | `ref_tribunaux.type`, ex: Tribunal de commerce | `SOCIETE_TRIBUNAL_TYPE` | `societe_tribunal_type` |
 | `societe_tribunal` | Tribunal | select | `ref_tribunaux.nom`, ex: Casablanca | `SOCIETE_TRIBUNAL` | `societe_tribunal` |
 
 ### Contact

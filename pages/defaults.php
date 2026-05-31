@@ -68,6 +68,7 @@ $fieldLabels = [
         'societe_type_generation' => 'Type de generation',
         'societe_procedure_creation' => 'Procedure de creation',
         'societe_mode_depot' => 'Mode de depot',
+        'societe_tribunal_type' => 'Type de tribunal',
     ],
     'associe' => [
         'associe_nationalite' => 'Nationalite',
