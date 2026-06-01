@@ -9,11 +9,15 @@ document.querySelectorAll('[data-confirm]').forEach((element) => {
 
 (function () {
     const shell = document.querySelector('.shell');
+    const saveSidebarState = () => {
+        try { localStorage.setItem('sidebar_collapsed', shell.classList.contains('collapsed') ? '1' : '0'); } catch (e) {}
+    };
     const toggleTrigger = selector => {
         const el = document.querySelector(selector);
         if (el && shell) {
             el.addEventListener('click', () => {
                 shell.classList.toggle('collapsed');
+                saveSidebarState();
             });
         }
     };

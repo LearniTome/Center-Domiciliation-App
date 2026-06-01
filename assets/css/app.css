@@ -181,7 +181,7 @@ a:hover {
 }
 
 .nav-links a:hover {
-    background: var(--panel-strong);
+    background: rgba(0, 210, 91, 0.12);
     color: var(--text);
 }
 
