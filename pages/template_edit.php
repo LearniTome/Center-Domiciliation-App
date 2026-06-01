@@ -16,8 +16,15 @@ $racineDir = $templatesDir . '/_Racine-Actifs';
 if ($templatePath === '' || !str_starts_with($templatePath, realpath($templatesDir)) || !file_exists($templatePath)) {
     ?>
     <section class="card stack">
-        <h2>Editeur de template</h2>
-        <p class="help-text" style="margin-bottom:1rem">Selectionnez un dossier et un template a editer.</p>
+        <div class="section-header">
+            <div class="section-header-info">
+                <span class="mdi mdi-file-document-edit" style="font-size:1.4rem;color:var(--primary)"></span>
+                <div>
+                    <h2 style="margin:0;font-size:1rem;font-weight:500">Selectionnez un template</h2>
+                    <p class="help-text" style="margin:2px 0 0;font-size:0.8rem">Choisissez un dossier puis un fichier .docx a editer</p>
+                </div>
+            </div>
+        </div>
         <div class="template-picker">
             <?php foreach ($templateDirs as $dir):
                 $folderName = basename($dir);
