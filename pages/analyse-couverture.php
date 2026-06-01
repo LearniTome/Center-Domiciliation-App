@@ -180,17 +180,19 @@ if ($templates) {
         </tbody>
     </table>
     </div>
-    <div class="table-actions" style="margin-top:12px">
-        <div style="margin-right:auto"></div>
-        <button type="button" id="bulk-rename-btn" class="btn btn-info"><span class="mdi mdi-rename"></span> Renommer la sélection</button>
-        <button type="button" id="bulk-delete-btn" class="btn btn-danger"><span class="mdi mdi-delete"></span> Supprimer la sélection</button>
-        <form method="post" style="display:inline">
-            <?= csrf_input() ?>
-            <button type="submit" name="export_csv" value="1" class="btn btn-info"><span class="mdi mdi-download"></span> Export CSV</button>
-        </form>
-    </div>
     <?php endif; ?>
 </section>
+<?php if ($analysis): ?>
+<div class="table-actions" style="margin-top:12px">
+    <div style="margin-right:auto"></div>
+    <button type="button" id="bulk-rename-btn" class="btn btn-info"><span class="mdi mdi-rename"></span> Renommer la sélection</button>
+    <button type="button" id="bulk-delete-btn" class="btn btn-danger"><span class="mdi mdi-delete"></span> Supprimer la sélection</button>
+    <form method="post" style="display:inline">
+        <?= csrf_input() ?>
+        <button type="submit" name="export_csv" value="1" class="btn btn-info"><span class="mdi mdi-download"></span> Export CSV</button>
+    </form>
+</div>
+<?php endif; ?>
 
 <form id="bulk-delete-form" method="post" style="display:none">
     <?= csrf_input() ?>
