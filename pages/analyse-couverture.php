@@ -96,6 +96,27 @@ if ($templates) {
         set_flash('success', 'Analyse exportee dans output/');
         redirect_to('analyse-couverture');
     }
+
+    if (is_post() && isset($_POST['ai_suggest'])) {
+        verify_csrf();
+        if (ClaudeService::isAvailable()) {
+            $result = ClaudeService::analyzeTemplates($analysis['variables']);
+            $_SESSION['ai_analysis_suggestions'] = $result;
+            if ($result !== null) {
+                set_flash('success', 'Suggestions IA generees.');
+            } else {
+                set_flash('error', "Erreur lors de la generation des suggestions IA.");
+            }
+        } else {
+            set_flash('error', "L'assistant IA n'est pas disponible. Configurez la cle API dans config/ai.local.php.");
+        }
+        redirect_to('analyse-couverture');
+    }
+}
+
+$aiSuggestions = $_SESSION['ai_analysis_suggestions'] ?? null;
+if ($aiSuggestions !== null) {
+    unset($_SESSION['ai_analysis_suggestions']);
 }
 ?>
 <section class="card stack">
@@ -119,6 +140,24 @@ if ($templates) {
         </div>
         <?php endif; ?>
     </div>
+
+    <?php if ($aiSuggestions && isset($aiSuggestions['suggestions'])): ?>
+        <div class="card" style="margin-bottom:1rem;padding:12px">
+            <div class="section-header">
+                <h4><span class="mdi mdi-robot" style="color:var(--info)"></span> Suggestions IA</h4>
+            </div>
+            <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px">
+            <?php foreach ($aiSuggestions['suggestions'] as $suggestion): ?>
+                <div style="display:flex;align-items:baseline;gap:8px;font-size:0.85rem;padding:4px 0;border-bottom:1px solid var(--line)">
+                    <code style="background:var(--panel-strong);padding:2px 6px;border-radius:3px"><?= e($suggestion['variable'] ?? '') ?></code>
+                    <span style="color:var(--text-secondary)">→</span>
+                    <span><?= e($suggestion['suggestion'] ?? '') ?></span>
+                    <span class="badge" style="background:<?= ($suggestion['action'] ?? '') === 'rename' ? 'var(--warning)' : (($suggestion['action'] ?? '') === 'delete' ? 'var(--danger)' : 'var(--success)') ?>;color:#fff;padding:1px 8px;border-radius:10px;font-size:0.65rem"><?= e($suggestion['action'] ?? '') ?></span>
+                </div>
+            <?php endforeach; ?>
+            </div>
+        </div>
+    <?php endif; ?>
 
     <?php if (!$templates): ?>
         <p class="table-empty">Aucun template trouve. Ajoutez des fichiers .docx sur la page Templates.</p>
@@ -193,6 +232,10 @@ if ($templates) {
     <form method="post" style="display:inline">
         <?= csrf_input() ?>
         <button type="submit" name="export_csv" value="1" class="btn btn-info"><span class="mdi mdi-download"></span> Export CSV</button>
+    </form>
+    <form method="post" style="display:inline">
+        <?= csrf_input() ?>
+        <button type="submit" name="ai_suggest" value="1" class="btn btn-info"><span class="mdi mdi-robot"></span> Suggérer avec IA</button>
     </form>
 </div>
 <?php endif; ?>

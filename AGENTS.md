@@ -152,6 +152,23 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - **security** — CSRF/XSS/injection/fichiers à chaque nouvelle fonctionnalité
 - **manual-test** — checklist pré-commit (PHP lint, navigation, formulaires, UI, DB)
 
+## Claude AI Integration
+- **ClaudeService** (`src/ClaudeService.php`): Static class with cURL to Anthropic API
+  - `ask()`: generic prompt → response (session-cached)
+  - `autoFill()`: suggests realistic values for wizard form fields
+  - `analyzeTemplates()`: suggests improvements for template variables (rename/delete/keep)
+  - `generateClause()`: generates legal clauses (objet social, mentions légales, siège social)
+  - `validateDossier()`: checks completeness/coherence of dossier data
+  - `chat()`: multi-turn conversational assistant
+- **Config**: `config/ai.php` (defaults) + `config/ai.local.php` (gitignored, for API key)
+- **Available**: Check `ClaudeService::isAvailable()` — returns false if no API key
+- **Cache**: Responses cached in `$_SESSION['_claude_cache']` with configurable TTL
+
+### AI Features by Page
+- **Wizard** (`creation.php`): "Remplir avec IA" button on steps 1-3 (stores suggestions in session, rendered as `data-apply-ai-fill` on button → JS fills fields). Step 5: "Valider avec IA" button (shows validation points), clause generation (3 types: objet social, mentions legales, siege social)
+- **Analyse de couverture** (`analyse-couverture.php`): "Suggérer avec IA" button → shows suggestions card with variable/action badges (rename/delete/keep)
+- **Assistant IA** (`ai-assistant.php`): Multi-turn chat with Claude, history stored in session
+
 ## Analyse de Couverture (pages/analyse-couverture.php)
 - Page: `index.php?page=analyse-couverture`
 - Reads templates from `templates/`, outputs analysis table

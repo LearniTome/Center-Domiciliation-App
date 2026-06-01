@@ -50,6 +50,7 @@ a:hover {
 }
 
 .shell {
+    position: relative;
     display: grid;
     grid-template-columns: 260px 1fr;
     height: 100vh;
@@ -64,7 +65,8 @@ a:hover {
     padding: 10px;
     background: var(--panel);
     border-right: 1px solid var(--line);
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
 }
@@ -108,18 +110,22 @@ a:hover {
 }
 
 .sidebar-toggle {
-    margin-left: auto;
+    position: absolute;
+    left: 260px;
+    top: 50%;
+    z-index: 100;
+    transform: translate(-50%, -50%);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
-    border: none;
-    background: transparent;
+    border: 2px solid var(--line);
+    background: var(--panel);
     color: var(--text-secondary);
     cursor: pointer;
-    font-size: 1.1rem;
+    font-size: 0.9rem;
     transition: all var(--transition);
     flex-shrink: 0;
 }
@@ -127,23 +133,52 @@ a:hover {
 .sidebar-toggle:hover {
     background: var(--panel-strong);
     color: var(--text);
+    border-color: var(--primary);
 }
 
-.shell.collapsed .sidebar-toggle .mdi {
-    transform: rotate(180deg);
+.shell.collapsed .sidebar-toggle {
+    left: 60px;
+}
+
+.nav-toggle-all {
+    display: flex;
+    gap: 4px;
+    padding: 8px 10px;
+    justify-content: flex-end;
+}
+.nav-toggle-all button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all var(--transition);
+}
+.nav-toggle-all button:hover {
+    background: var(--panel-strong);
+    color: var(--text);
+    border-color: var(--primary);
 }
 
 .shell.collapsed .brand-text,
-.shell.collapsed .brand .sidebar-toggle,
 .shell.collapsed .nav-section-toggle,
 .shell.collapsed .nav-section-label,
-.shell.collapsed [data-nav-label] {
+.shell.collapsed [data-nav-label],
+.shell.collapsed .nav-toggle-all {
     display: none;
 }
 .shell.collapsed .brand {
     justify-content: center;
 }
-
+.shell.collapsed .brand-badge {
+    cursor: pointer;
+}
 .shell.collapsed .nav-section-items {
     display: grid;
 }

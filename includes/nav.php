@@ -24,6 +24,7 @@ $navSections = [
         'defaults' => ['Valeurs par defaut', 'mdi-tune'],
         'variables' => ['Gestion des variables', 'mdi-variable'],
         'convert-word-pdf' => ['Word to PDF', 'mdi-file-pdf-box'],
+        'ai-assistant' => ['Assistant IA', 'mdi-robot'],
     ],
     'Configuration' => [
         ['page' => 'formes-juridiques', 'label' => 'Formes juridiques', 'icon' => 'mdi-file-document-outline'],
@@ -46,8 +47,14 @@ $navSections = [
         <div class="brand-text">
             <strong>Center Domiciliation</strong>
         </div>
-        <button class="sidebar-toggle" data-sidebar-toggle type="button" title="Reduire la barre de navigation">
-            <span class="mdi mdi-chevron-left"></span>
+    </div>
+
+    <div class="nav-toggle-all">
+        <button type="button" title="Tout réduire" data-collapse-all>
+            <span class="mdi mdi-collapse-all"></span>
+        </button>
+        <button type="button" title="Tout déployer" data-expand-all>
+            <span class="mdi mdi-expand-all"></span>
         </button>
     </div>
 

@@ -128,6 +128,16 @@ if (is_post()) {
         ];
 
         $wizard['societe'] = $societe;
+        if ($navAction === 'ai_fill') {
+            if (ClaudeService::isAvailable()) {
+                $suggestions = ClaudeService::autoFill($societe);
+                $_SESSION['creation_wizard']['ai_suggestions'] = ['step1' => $suggestions];
+            } else {
+                set_flash('error', "L'assistant IA n'est pas disponible. Configurez la cle API dans config/ai.local.php.");
+            }
+            redirect_to('creation', ['step' => 1]);
+        }
+
         if ($societe['societe_raison_sociale'] === '') {
             set_flash('error', 'La raison sociale est obligatoire.');
             redirect_to('creation', ['step' => 1]);
@@ -187,6 +197,16 @@ if (is_post()) {
 
         $wizard['associes'] = count($normalizedAssocies) > 0 ? $normalizedAssocies : $wizard['associes'];
 
+        if ($navAction === 'ai_fill') {
+            if (ClaudeService::isAvailable()) {
+                $suggestions = ClaudeService::autoFill(current($normalizedAssocies) ?: []);
+                $_SESSION['creation_wizard']['ai_suggestions'] = ['step2' => $suggestions];
+            } else {
+                set_flash('error', "L'assistant IA n'est pas disponible. Configurez la cle API dans config/ai.local.php.");
+            }
+            redirect_to('creation', ['step' => 2]);
+        }
+
         if ($navAction === 'back') {
             redirect_to('creation', ['step' => 1]);
         }
@@ -227,6 +247,16 @@ if (is_post()) {
         ];
 
         $wizard['contrat'] = $contrat;
+
+        if ($navAction === 'ai_fill') {
+            if (ClaudeService::isAvailable()) {
+                $suggestions = ClaudeService::autoFill($contrat);
+                $_SESSION['creation_wizard']['ai_suggestions'] = ['step3' => $suggestions];
+            } else {
+                set_flash('error', "L'assistant IA n'est pas disponible. Configurez la cle API dans config/ai.local.php.");
+            }
+            redirect_to('creation', ['step' => 3]);
+        }
 
         if ($navAction === 'back') {
             redirect_to('creation', ['step' => 2]);
@@ -539,6 +569,36 @@ if (is_post()) {
             exit;
         }
 
+        if ($navAction === 'generate_clause') {
+            $type = $_POST['clause_type'] ?? '';
+            if ($type !== '' && ClaudeService::isAvailable()) {
+                $dossierData = $wizard['societe'] ?? [];
+                $dossierData['forme_juridique'] = $dossierData['societe_forme_juridique'] ?? '';
+                $result = ClaudeService::generateClause($dossierData, $type);
+                $_SESSION['creation_wizard']['clause_result'] = ['type' => $type, 'text' => $result ?? 'Erreur lors de la generation.'];
+            } elseif ($type === '') {
+                set_flash('error', 'Type de clause non specifie.');
+            } else {
+                set_flash('error', "L'assistant IA n'est pas disponible.");
+            }
+            redirect_to('creation', ['step' => 5]);
+        }
+
+        if ($navAction === 'validate') {
+            if (ClaudeService::isAvailable()) {
+                $dossierData = [
+                    'societe' => $wizard['societe'] ?? [],
+                    'associes' => $wizard['associes'] ?? [],
+                    'contrat' => $wizard['contrat'] ?? [],
+                ];
+                $result = ClaudeService::validateDossier($dossierData);
+                $_SESSION['creation_wizard']['validation_result'] = $result;
+            } else {
+                set_flash('error', "L'assistant IA n'est pas disponible.");
+            }
+            redirect_to('creation', ['step' => 5]);
+        }
+
         if ($navAction === 'terminer') {
             $societeId = $wizard['societe_id'] ?? null;
             unset($_SESSION['creation_wizard']);
@@ -668,10 +728,22 @@ $contratData = array_merge([
         </div>
     </div>
 
-    <?php if ($step === 1): ?>
-        <form method="post" class="stack">
+    <?php
+$aiSuggestions = $_SESSION['creation_wizard']['ai_suggestions'] ?? null;
+if ($aiSuggestions !== null) {
+    unset($_SESSION['creation_wizard']['ai_suggestions']);
+}
+?>
+<?php if ($step === 1): ?>
+        <form method="post" class="stack" id="wizard-step1">
             <?= csrf_input() ?>
             <input type="hidden" name="step" value="1">
+            <?php if ($aiSuggestions && isset($aiSuggestions['step1'])): ?>
+            <div class="flash flash-info" style="margin-bottom:12px">
+                <span class="mdi mdi-robot"></span>
+                Suggestions IA disponibles. <button type="button" class="btn btn-info" style="padding:2px 10px;font-size:0.8rem" data-apply-ai-fill="<?= e(json_encode($aiSuggestions['step1'], JSON_UNESCAPED_UNICODE)) ?>"><span class="mdi mdi-auto-fix"></span> Appliquer les suggestions</button>
+            </div>
+            <?php endif; ?>
             <div class="form-grid">
                 <h3 class="section-title">Procedure</h3>
                 <label class="field">
@@ -882,6 +954,7 @@ $contratData = array_merge([
             </div>
             <div class="table-actions">
                 <button class="btn btn-info" type="button" data-fill-test><span class="mdi mdi-auto-fix"></span> Remplir automatiquement</button>
+                <button class="btn btn-info" type="submit" name="nav_action" value="ai_fill" form="wizard-step1"><span class="mdi mdi-robot"></span> Remplir avec IA</button>
                 <button class="btn btn-next" type="submit" name="nav_action" value="next"><span class="mdi mdi-arrow-right"></span> Suivant</button>
             </div>
         </form>
@@ -893,6 +966,12 @@ $contratData = array_merge([
             <input type="hidden" id="societe-capital" value="<?= e((string) ($societeData['societe_capital'] ?? '')) ?>">
             <input type="hidden" id="societe-part-social" value="<?= e((string) ($societeData['societe_part_social'] ?? '')) ?>">
             <input type="hidden" name="forme_juridique" value="<?= e((string) ($societeData['societe_forme_juridique'] ?? '')) ?>">
+            <?php if ($aiSuggestions && isset($aiSuggestions['step2'])): ?>
+            <div class="flash flash-info" style="margin-bottom:12px">
+                <span class="mdi mdi-robot"></span>
+                Suggestions IA disponibles. <button type="button" class="btn btn-info" style="padding:2px 10px;font-size:0.8rem" data-apply-ai-fill="<?= e(json_encode($aiSuggestions['step2'], JSON_UNESCAPED_UNICODE)) ?>"><span class="mdi mdi-auto-fix"></span> Appliquer les suggestions</button>
+            </div>
+            <?php endif; ?>
             <div class="section-header">
                 <div>
                     <h2>Associes de <?= e((string) ($societeData['societe_raison_sociale'] ?: 'la societe')) ?></h2>
@@ -1166,6 +1245,7 @@ $contratData = array_merge([
             <div class="table-actions">
                 <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="mdi mdi-arrow-left"></span> Retour</button>
                 <button class="btn btn-info" type="button" data-fill-test><span class="mdi mdi-auto-fix"></span> Remplir automatiquement</button>
+                <button class="btn btn-info" type="submit" name="nav_action" value="ai_fill"><span class="mdi mdi-robot"></span> Remplir avec IA</button>
                 <button class="btn btn-next" type="submit" name="nav_action" value="next"><span class="mdi mdi-arrow-right"></span> Suivant</button>
             </div>
         </form>
@@ -1173,6 +1253,12 @@ $contratData = array_merge([
         <form method="post" class="stack">
             <?= csrf_input() ?>
             <input type="hidden" name="step" value="3">
+            <?php if ($aiSuggestions && isset($aiSuggestions['step3'])): ?>
+            <div class="flash flash-info" style="margin-bottom:12px">
+                <span class="mdi mdi-robot"></span>
+                Suggestions IA disponibles. <button type="button" class="btn btn-info" style="padding:2px 10px;font-size:0.8rem" data-apply-ai-fill="<?= e(json_encode($aiSuggestions['step3'], JSON_UNESCAPED_UNICODE)) ?>"><span class="mdi mdi-auto-fix"></span> Appliquer les suggestions</button>
+            </div>
+            <?php endif; ?>
             <div class="form-grid">
                 <h3 class="section-title">Type de contrat</h3>
                 <label class="field">
@@ -1293,7 +1379,8 @@ $contratData = array_merge([
             </div>
             <div class="table-actions">
                 <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="mdi mdi-arrow-left"></span> Retour</button>
-                <button class="btn btn-info" type="button" data-fill-test><span class="mdi mdi-auto-fix"></span> Remplir automatiquement</button>
+                <button class="btn btn-info" type="button" data-fill-test><span class="mdi mdi-auto-fill"></span> Remplir automatiquement</button>
+                <button class="btn btn-info" type="submit" name="nav_action" value="ai_fill"><span class="mdi mdi-robot"></span> Remplir avec IA</button>
                 <button class="btn btn-next" type="submit" name="nav_action" value="next"><span class="mdi mdi-arrow-right"></span> Suivant</button>
             </div>
         </form>
@@ -1460,14 +1547,54 @@ $contratData = array_merge([
                             <span class="step-badge">Fait</span>
                         <?php endif; ?>
                     </div>
+                    <?php
+                    $validationResult = $_SESSION['creation_wizard']['validation_result'] ?? null;
+                    $clauseResult = $_SESSION['creation_wizard']['clause_result'] ?? null;
+                    if ($validationResult) {
+                        unset($_SESSION['creation_wizard']['validation_result']);
+                    }
+                    if ($clauseResult) {
+                        unset($_SESSION['creation_wizard']['clause_result']);
+                    }
+                    ?>
                     <?php if (!$dossierCreated): ?>
-                        <form method="post" class="table-actions" style="margin-top:8px">
-                            <?= csrf_input() ?>
-                            <input type="hidden" name="step" value="5">
-                            <button class="btn btn-next" type="submit" name="nav_action" value="create_dossier">
-                                <span class="mdi mdi-folder-plus"></span> Creer le dossier
-                            </button>
-                        </form>
+                        <div class="table-actions" style="margin-top:8px;flex-wrap:wrap">
+                            <form method="post" style="display:inline">
+                                <?= csrf_input() ?>
+                                <input type="hidden" name="step" value="5">
+                                <button class="btn btn-next" type="submit" name="nav_action" value="create_dossier">
+                                    <span class="mdi mdi-folder-plus"></span> Creer le dossier
+                                </button>
+                            </form>
+                            <form method="post" style="display:inline">
+                                <?= csrf_input() ?>
+                                <input type="hidden" name="step" value="5">
+                                <button class="btn btn-info" type="submit" name="nav_action" value="validate">
+                                    <span class="mdi mdi-robot"></span> Valider avec IA
+                                </button>
+                            </form>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if ($validationResult && is_array($validationResult)): ?>
+                        <div class="card" style="margin-top:12px;padding:12px">
+                            <div class="section-header">
+                                <h4><span class="mdi mdi-robot" style="color:var(--info)"></span> Validation IA</h4>
+                                <span style="font-weight:600;color:<?= ($validationResult['valide'] ?? false) ? 'var(--success)' : 'var(--danger)' ?>">
+                                    <?= ($validationResult['valide'] ?? false) ? 'Dossier valide' : 'Dossier Non valide' ?>
+                                </span>
+                            </div>
+                            <?php if (isset($validationResult['points']) && is_array($validationResult['points'])): ?>
+                                <ul style="margin:8px 0 0;padding-left:1rem">
+                                <?php foreach ($validationResult['points'] as $point): ?>
+                                    <?php $ptype = $point['type'] ?? 'info'; ?>
+                                    <li style="color:<?= $ptype === 'error' ? 'var(--danger)' : ($ptype === 'warning' ? 'var(--warning)' : 'var(--text)') ?>">
+                                        <?= e($point['message'] ?? '') ?>
+                                    </li>
+                                <?php endforeach; ?>
+                                </ul>
+                            <?php endif; ?>
+                        </div>
                     <?php endif; ?>
                 </div>
 
@@ -1555,10 +1682,50 @@ $contratData = array_merge([
                 </div>
             </div>
 
+            <?php if ($dossierCreated): ?>
+                <div class="step-card <?= $clauseResult ? 'done' : 'active' ?>" style="margin-top:16px">
+                    <div class="step-card-header">
+                        <span class="step-num">3</span>
+                        <div>
+                            <h3>Clauses juridiques</h3>
+                            <p class="help-text">Generez des clauses juridiques avec l'assistant IA.</p>
+                        </div>
+                    </div>
+                    <div class="table-actions" style="margin-top:8px">
+                        <form method="post" style="display:inline">
+                            <?= csrf_input() ?>
+                            <input type="hidden" name="step" value="5">
+                            <input type="hidden" name="clause_type" value="objet_social">
+                            <button class="btn btn-info" type="submit" name="nav_action" value="generate_clause"><span class="mdi mdi-robot"></span> Objet social</button>
+                        </form>
+                        <form method="post" style="display:inline">
+                            <?= csrf_input() ?>
+                            <input type="hidden" name="step" value="5">
+                            <input type="hidden" name="clause_type" value="mention_legale">
+                            <button class="btn btn-info" type="submit" name="nav_action" value="generate_clause"><span class="mdi mdi-robot"></span> Mentions legales</button>
+                        </form>
+                        <form method="post" style="display:inline">
+                            <?= csrf_input() ?>
+                            <input type="hidden" name="step" value="5">
+                            <input type="hidden" name="clause_type" value="clause_siege">
+                            <button class="btn btn-info" type="submit" name="nav_action" value="generate_clause"><span class="mdi mdi-robot"></span> Siege social</button>
+                        </form>
+                    </div>
+                    <?php if ($clauseResult): ?>
+                        <div class="card" style="margin-top:12px;padding:12px">
+                            <div class="section-header">
+                                <h4><span class="mdi mdi-file-document" style="color:var(--info)"></span> <?= e(ucfirst(str_replace('_', ' ', $clauseResult['type']))) ?></h4>
+                            </div>
+                            <div style="margin-top:8px;padding:12px;background:var(--panel-strong);border-radius:6px;font-size:0.9rem;line-height:1.6;white-space:pre-wrap"><?= e($clauseResult['text']) ?></div>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+
             <?php if ($generatedFiles): ?>
                 <div class="step-card done" style="margin-top:16px">
                     <div class="step-card-header">
-                        <span class="step-num">3</span>
+                        <span class="step-num">4</span>
                         <div>
                             <h3>Documents generes</h3>
                             <p class="help-text"><?= count($generatedFiles) ?> fichier(s) genere(s)</p>

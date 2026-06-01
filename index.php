@@ -34,6 +34,7 @@ $allowedPages = [
     'analyse-couverture',
     'variables',
     'convert-word-pdf',
+    'ai-assistant',
     'setup',
 ];
 
@@ -68,6 +69,7 @@ $pageTitleMap = [
     'templates' => 'Templates',
     'analyse-couverture' => 'Analyse de couverture',
     'variables' => 'Gestion des variables',
+    'ai-assistant' => 'Assistant IA',
     'documents' => 'Documents generes',
     'defaults' => 'Valeurs par defaut',
     'convert-word-pdf' => 'Word to PDF',

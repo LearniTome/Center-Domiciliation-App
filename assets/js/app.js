@@ -12,21 +12,30 @@ document.querySelectorAll('[data-confirm]').forEach((element) => {
     const saveSidebarState = () => {
         try { localStorage.setItem('sidebar_collapsed', shell.classList.contains('collapsed') ? '1' : '0'); } catch (e) {}
     };
+    const updateToggleTitle = () => {
+        const btn = document.querySelector('[data-sidebar-toggle]');
+        if (btn) {
+            const isCollapsed = shell.classList.contains('collapsed');
+            btn.title = isCollapsed ? 'Developper la barre de navigation' : 'Reduire la barre de navigation';
+            btn.querySelector('.mdi').classList.toggle('mdi-chevron-right', isCollapsed);
+            btn.querySelector('.mdi').classList.toggle('mdi-chevron-left', !isCollapsed);
+        }
+    };
     const toggleTrigger = selector => {
         const el = document.querySelector(selector);
         if (el && shell) {
             el.addEventListener('click', () => {
                 shell.classList.toggle('collapsed');
                 saveSidebarState();
+                updateToggleTitle();
             });
         }
     };
     toggleTrigger('[data-sidebar-toggle]');
     toggleTrigger('.brand-badge');
+    updateToggleTitle();
 })();
-
-
-
+(function () {
     function saveState() {
         var state = {};
         document.querySelectorAll('.nav-section').forEach(function (s) {
@@ -35,12 +44,12 @@ document.querySelectorAll('[data-confirm]').forEach((element) => {
                 state[btn.textContent.trim()] = s.classList.contains('collapsed');
             }
         });
-        try { localStorage.setItem(storageKey, JSON.stringify(state)); } catch (e) {}
+        try { localStorage.setItem('nav_sections', JSON.stringify(state)); } catch (e) {}
     }
 
     function restoreState() {
         try {
-            var raw = localStorage.getItem(storageKey);
+            var raw = localStorage.getItem('nav_sections');
             if (!raw) return;
             var state = JSON.parse(raw);
             document.querySelectorAll('.nav-section').forEach(function (s) {
@@ -62,6 +71,20 @@ document.querySelectorAll('[data-confirm]').forEach((element) => {
                 saveState();
             }
         });
+    });
+
+    document.querySelector('[data-collapse-all]')?.addEventListener('click', function () {
+        document.querySelectorAll('.nav-section:not(.collapsed)').forEach(function (s) {
+            s.classList.add('collapsed');
+        });
+        saveState();
+    });
+
+    document.querySelector('[data-expand-all]')?.addEventListener('click', function () {
+        document.querySelectorAll('.nav-section.collapsed').forEach(function (s) {
+            s.classList.remove('collapsed');
+        });
+        saveState();
     });
 })();
 
@@ -934,5 +957,50 @@ document.addEventListener('input', (e) => {
         });
     }
 })();
+
+document.addEventListener('click', function (event) {
+    var btn = event.target.closest('[data-apply-ai-fill]');
+    if (!btn) return;
+    event.preventDefault();
+
+    var suggestionsStr = btn.getAttribute('data-apply-ai-fill');
+    if (!suggestionsStr) return;
+
+    var suggestions;
+    try {
+        suggestions = JSON.parse(suggestionsStr);
+    } catch (e) {
+        return;
+    }
+
+    var form = btn.closest('form');
+    if (!form) return;
+
+    form.querySelectorAll('input, select, textarea').forEach(function (field) {
+        var name = field.getAttribute('name');
+        if (!name) return;
+
+        var value = suggestions[name] !== undefined ? suggestions[name] : suggestions[name.replace(/^associes\[\d+\]\[(\w+)\]$/, '$1')];
+        if (value === undefined) return;
+
+        if (field.tagName === 'SELECT') {
+            var option = Array.from(field.options).find(function (opt) { return String(opt.value) === String(value); });
+            if (option) field.value = value;
+        } else if (field.type === 'checkbox' || field.type === 'radio') {
+            field.checked = String(field.value) === String(value);
+        } else {
+            field.value = value;
+        }
+    });
+
+    form.querySelectorAll('input, select, textarea').forEach(function (field) {
+        var name = field.getAttribute('name');
+        if (!name) return;
+        var key = name.replace(/^associes\[\d+\]\[(\w+)\]$/, '$1');
+        if (suggestions[key] === undefined && suggestions[name] === undefined) return;
+        field.dispatchEvent(new Event('input', { bubbles: true }));
+        field.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+});
 
 

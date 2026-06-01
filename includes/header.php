@@ -17,8 +17,11 @@ declare(strict_types=1);
 <body>
 <div class="shell">
     <?php require __DIR__ . '/nav.php'; ?>
+    <button class="sidebar-toggle" data-sidebar-toggle type="button" title="Reduire la barre de navigation">
+        <span class="mdi mdi-chevron-left"></span>
+    </button>
     <script>try{var r=localStorage.getItem('nav_sections');if(r){var s=JSON.parse(r);document.querySelectorAll('[data-nav-toggle]').forEach(function(b){if(s[b.textContent.trim()]){b.closest('.nav-section').classList.add('collapsed')}})}}catch(e){}
-    try{var a=localStorage.getItem('sidebar_collapsed');if(a==='1'){document.querySelector('.shell').classList.add('collapsed')}else if(a===null){document.querySelector('.shell').classList.add('collapsed');localStorage.setItem('sidebar_collapsed','1')}}catch(e){}
+    try{var a=localStorage.getItem('sidebar_collapsed');if(a==='1'){document.querySelector('.shell').classList.add('collapsed')}}catch(e){}
     </script>
     <main class="main">
         <header class="page-header">
