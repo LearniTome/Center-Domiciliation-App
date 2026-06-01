@@ -750,17 +750,19 @@ $docTypeLabels = [
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($uploadedDocsList as $ud): ?>
+                <?php foreach ($uploadedDocsList as $ud):
+                    $relativePath = str_replace('\\', '/', str_replace(__DIR__ . '/../', '', $ud['filepath']));
+                ?>
                 <tr>
                     <td><?= e($docTypeLabels[$ud['doc_type']] ?? $ud['doc_type']) ?></td>
                     <td><?= e($ud['filename_original']) ?></td>
                     <td><?= e($ud['taille_ko'] ? number_format((float)$ud['taille_ko'], 1, ',', ' ') . ' Ko' : '-') ?></td>
                     <td><?= e(date('d/m/Y H:i', strtotime($ud['uploaded_at']))) ?></td>
                     <td>
-                        <a href="<?= e(str_replace(__DIR__ . '/../', '', $ud['filepath'])) ?>" class="btn-icon" title="Voir" data-view-doc>
+                        <a href="<?= e($relativePath) ?>" class="btn-icon" title="Voir" data-view-doc>
                             <span class="mdi mdi-eye"></span>
                         </a>
-                        <a href="<?= e(str_replace(__DIR__ . '/../', '', $ud['filepath'])) ?>" class="btn-icon" download title="Telecharger">
+                        <a href="<?= e($relativePath) ?>" class="btn-icon" download title="Telecharger">
                             <span class="mdi mdi-download"></span>
                         </a>
                     </td>
