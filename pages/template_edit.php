@@ -25,42 +25,59 @@ if ($templatePath === '' || !str_starts_with($templatePath, realpath($templatesD
                 </div>
             </div>
         </div>
-        <div class="template-picker">
-            <?php foreach ($templateDirs as $dir):
-                $folderName = basename($dir);
-                $label = $folderLabels[$folderName] ?? $folderName;
-                $files = glob($dir . '/*.docx');
-                if (empty($files)) continue;
-            ?>
-            <div class="picker-group">
-                <h3 class="picker-group-title"><?= e($label) ?></h3>
-                <div class="picker-files">
-                    <?php foreach ($files as $f): ?>
-                    <a class="picker-file" href="<?= e(app_url('template_edit', ['path' => $f])) ?>">
-                        <span class="mdi mdi-file-document-outline"></span>
-                        <?= e(basename($f)) ?>
-                    </a>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-            <?php endforeach; ?>
-            <?php if (is_dir($racineDir)):
-                $racineFiles = glob($racineDir . '/*.docx');
-                if (!empty($racineFiles)):
-            ?>
-            <div class="picker-group">
-                <h3 class="picker-group-title"><?= e($folderLabels['_Racine-Actifs'] ?? 'Racine Actifs') ?></h3>
-                <div class="picker-files">
-                    <?php foreach ($racineFiles as $f): ?>
-                    <a class="picker-file" href="<?= e(app_url('template_edit', ['path' => $f])) ?>">
-                        <span class="mdi mdi-file-document-outline"></span>
-                        <?= e(basename($f)) ?>
-                    </a>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-                <?php endif; ?>
-            <?php endif; ?>
+        <div class="table-scroll">
+            <table data-col-toggle>
+                <thead>
+                    <tr>
+                        <th data-col="dossier">Dossier</th>
+                        <th data-col="fichier">Fichier</th>
+                        <th data-col="action" style="width:80px">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($templateDirs as $dir):
+                        $folderName = basename($dir);
+                        $label = $folderLabels[$folderName] ?? $folderName;
+                        $files = glob($dir . '/*.docx');
+                        if (empty($files)) continue;
+                        $first = true;
+                        foreach ($files as $f):
+                    ?>
+                    <tr>
+                        <td><?= $first ? e($label) : '' ?></td>
+                        <td><?= e(basename($f)) ?></td>
+                        <td>
+                            <a class="btn-icon" href="<?= e(app_url('template_edit', ['path' => $f])) ?>" title="Editer">
+                                <span class="mdi mdi-pencil"></span>
+                            </a>
+                        </td>
+                    </tr>
+                    <?php
+                            $first = false;
+                        endforeach;
+                    endforeach; ?>
+                    <?php if (is_dir($racineDir)):
+                        $racineFiles = glob($racineDir . '/*.docx');
+                        if (!empty($racineFiles)):
+                        $first = true;
+                        foreach ($racineFiles as $f):
+                    ?>
+                    <tr>
+                        <td><?= $first ? e($folderLabels['_Racine-Actifs'] ?? 'Racine Actifs') : '' ?></td>
+                        <td><?= e(basename($f)) ?></td>
+                        <td>
+                            <a class="btn-icon" href="<?= e(app_url('template_edit', ['path' => $f])) ?>" title="Editer">
+                                <span class="mdi mdi-pencil"></span>
+                            </a>
+                        </td>
+                    </tr>
+                    <?php
+                            $first = false;
+                        endforeach;
+                        endif;
+                    endif; ?>
+                </tbody>
+            </table>
         </div>
         <div class="section-header" style="margin-top:0.5rem">
             <div></div>
