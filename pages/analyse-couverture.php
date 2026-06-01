@@ -231,21 +231,20 @@ if ($templates) {
             return;
         }
         var pairs = [];
-        var cancelled = false;
         checked.forEach(function(cb){
-            if (cancelled) return;
             var oldName = cb.value;
-            var newName = prompt('Renommer {{ ' + oldName + ' }} en :', '');
-            if (newName === null) {
-                cancelled = true;
-                return;
-            }
-            newName = newName.trim().toUpperCase();
+            var select = cb.closest('tr').querySelector('select[name="new_name"]');
+            if (!select) return;
+            var newName = select.value;
             if (newName !== '' && newName !== oldName) {
                 pairs.push({old: oldName, new: newName});
             }
         });
-        if (cancelled || pairs.length === 0) return;
+        if (pairs.length === 0) {
+            alert('Selectionnez au moins une variable avec un nouveau nom dans la liste deroulante.');
+            return;
+        }
+        if (!confirm('Confirmer le renommage de ' + pairs.length + ' variable(s) ?')) return;
         var form = document.getElementById('bulk-rename-form');
         document.querySelectorAll('#bulk-rename-form .dynamic-input').forEach(function(e){ e.remove(); });
         pairs.forEach(function(p){
