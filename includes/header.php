@@ -24,6 +24,9 @@ declare(strict_types=1);
         <header class="page-header">
             <div>
                 <h1><?= e($pageTitle) ?></h1>
+                <?php if (isset($pageSubtitle)): ?>
+                <p class="page-subtitle"><?= e($pageSubtitle) ?></p>
+                <?php endif; ?>
                 <span class="page-count-bar"></span>
             </div>
         </header>

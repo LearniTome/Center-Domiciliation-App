@@ -1713,6 +1713,10 @@ tr[data-coverage], .row-mapped {
     content-visibility: auto;
     contain-intrinsic-size: 48px;
 }
+.page-subtitle {
+    margin: 2px 0 0; font-size: 0.78rem; color: var(--text-secondary);
+    line-height: 1.4;
+}
 .action-dropdown {
     position: absolute; top: 100%; right: 0; z-index: 10;
     background: var(--card-bg); border: 1px solid var(--line);

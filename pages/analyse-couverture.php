@@ -7,6 +7,8 @@ require_once __DIR__ . '/../src/TemplateAnalyzer.php';
 $templatesDir = __DIR__ . '/../templates';
 $outputDir = __DIR__ . '/../dossiers_dom';
 
+$pageSubtitle = 'Variables trouvees dans les templates vs. variables disponibles dans le contexte de rendu.';
+
 $templates = TemplateAnalyzer::scanTemplates($templatesDir);
 $analysis = null;
 $exported = false;
@@ -98,9 +100,6 @@ if ($templates) {
 ?>
 <section class="card stack">
     <div class="section-header">
-        <div>
-            <p class="help-text">Variables trouvees dans les templates vs. variables disponibles dans le contexte de rendu.</p>
-        </div>
         <?php
     $activeFilter = $_GET['filter'] ?? 'all';
     if ($analysis):
