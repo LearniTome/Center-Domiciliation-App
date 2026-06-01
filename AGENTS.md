@@ -141,9 +141,12 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 
 ## Analyse de Couverture (pages/analyse-couverture.php)
 - Page: `index.php?page=analyse-couverture`
-- Reads templates from `templates/`, outputs analysis table + stats summary (total/couvert/non couvert)
+- Reads templates from `templates/`, outputs analysis table
+- **Filtres**: Tous / Couvertes / Non couvertes (liens de navigation, pas JS pur)
+- **Recherche textuelle**: champ `#var-search` filtre les lignes par nom de variable en direct
 - **Per-row actions** (all variables): Rename dropdown (all context keys) + delete button
-- **Bulk actions** (checkbox-select): "Renommer la sélection" (sequential prompt per var) + "Supprimer la sélection" (confirm → loader overlay)
+- **Bulk actions** (checkbox-select): "Inverser la sélection", "Renommer la sélection" (lit le dropdown de chaque ligne + confirmation unique), "Supprimer la sélection" (confirm → loader overlay)
+- **Tooltip templates**: survol de la colonne "Templates" → `title` avec la liste des fichiers
 - **Loader overlay**: `#loading-overlay` (fixed, rgba(0,0,0,0.6), spinner + message)
 - **CSRF + redirect-after-POST** on all actions
 - **Table sorting**: `data-sortable` + `data-col` on `<th>` (asc/desc on Variable, Occurrences, Templates, Section, Couverture)
