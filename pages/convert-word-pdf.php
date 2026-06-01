@@ -660,46 +660,7 @@ if (is_dir($outputDir)) {
     </article>
 </section>
 
-<style>
-.engine-badge {
-    display:inline-flex;align-items:center;gap:5px;
-    padding:4px 12px;border-radius:20px;font-size:0.75rem;font-weight:600;
-    background:rgba(255,255,255,0.05);border:1px solid var(--border);
-}
-.engine-badge.active { border-color:var(--success);color:var(--success); }
-.engine-badge:not(.active) { border-color:var(--danger);color:var(--danger); }
 
-.drop-zone {
-    position:relative;border:2px dashed var(--border);
-    border-radius:12px;padding:2rem;text-align:center;
-    cursor:pointer;transition:all var(--transition);
-    background:rgba(255,255,255,0.02);
-}
-.drop-zone:hover, .drop-zone.drag-over { border-color:var(--primary);background:rgba(74,108,247,0.05); }
-.drop-zone-input {
-    position:absolute;inset:0;opacity:0;cursor:pointer;
-}
-
-.file-list { display:flex;flex-direction:column;gap:2px;margin-top:0.25rem; }
-.file-item {
-    display:flex;align-items:center;gap:8px;
-    padding:6px 10px;border-radius:6px;
-    background:rgba(255,255,255,0.03);border:1px solid var(--border);
-    font-size:0.85rem;
-}
-.file-item.selected { border-color:var(--success);background:rgba(0,184,148,0.05); }
-.file-item input[type="checkbox"] { width:14px;height:14px;margin:0;flex-shrink:0;cursor:pointer; }
-.file-item-name { flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
-.file-item-size { font-size:0.75rem;color:var(--text-secondary);white-space:nowrap;flex-shrink:0; }
-
-.browser-header {
-    display:flex;align-items:center;justify-content:space-between;
-    margin-bottom:0.25rem;padding:0 2px;
-}
-
-.convert-tabs .btn.active { background:rgba(0,184,148,0.12) !important;border-color:var(--success) !important;color:var(--success) !important; }
-.convert-panel { transition:opacity 0.2s; }
-</style>
 
 <script>
 (function() {

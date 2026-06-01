@@ -156,35 +156,4 @@ $currentLabels = $fieldLabels[$currentSection] ?? [];
     <?php endif; ?>
 </section>
 
-<style>
-.defaults-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 0.75rem;
-}
-.defaults-field {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-}
-.defaults-field label {
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-.defaults-field input {
-    padding: 6px 8px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    font-size: 0.875rem;
-    background: var(--bg);
-    color: var(--text);
-    transition: border-color var(--transition);
-}
-.defaults-field input:focus {
-    outline: none;
-    border-color: var(--primary);
-}
-</style>
+

@@ -1298,109 +1298,7 @@ $contratData = array_merge([
             </div>
         </form>
     <?php elseif ($step === 4): ?>
-        <style>
-            .recap-a4 {
-                background: var(--surface);
-                box-shadow: 0 2px 12px rgba(0,0,0,0.3);
-                padding: 2rem 2.5rem;
-                margin-bottom: 1.5rem;
-                max-width: 210mm;
-            }
-            .recap-a4 .recap-header {
-                text-align: left;
-                border-bottom: 2px solid var(--text);
-                padding-bottom: 1rem;
-                margin-bottom: 1.5rem;
-            }
-            .recap-a4 .recap-header h2 {
-                margin: 0;
-                font-size: 1.3rem;
-                text-transform: uppercase;
-                letter-spacing: 1px;
-            }
-            .recap-a4 .recap-header p {
-                margin: 0.3rem 0 0;
-                color: var(--text-secondary);
-                font-size: 0.8rem;
-            }
-            .recap-a4 .recap-section {
-                margin-bottom: 1.5rem;
-                page-break-inside: avoid;
-            }
-            .recap-a4 .recap-section h3 {
-                font-size: 0.95rem;
-                color: var(--primary);
-                border-bottom: 1px solid var(--border);
-                padding-bottom: 0.35rem;
-                margin: 0 0 0.6rem;
-            }
-            .recap-a4 .recap-grid {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 0.3rem 1.5rem;
-            }
-            .recap-a4 .recap-grid .full {
-                grid-column: 1 / -1;
-            }
-            .recap-a4 .recap-grid .item {
-                padding: 0.2rem 0;
-                border-bottom: 1px dotted var(--border);
-                font-size: 0.8rem;
-            }
-            .recap-a4 .recap-grid .item .label {
-                color: var(--text-secondary);
-            }
-            .recap-a4 .recap-grid .item .label::after {
-                content: " :\00a0";
-            }
-            .recap-a4 .recap-grid .item .value {
-                font-weight: 600;
-                color: var(--text);
-            }
-            .recap-a4 .recap-associe {
-                border: 1px solid var(--border);
-                border-radius: 6px;
-                padding: 0.6rem 0.8rem;
-                margin-bottom: 0.5rem;
-            }
-            .recap-a4 .recap-associe .associe-num {
-                font-size: 0.7rem;
-                color: var(--primary);
-                font-weight: 600;
-                margin-bottom: 0.3rem;
-            }
-            .recap-a4 .recap-associe .recap-grid {
-                gap: 0.1rem 1rem;
-            }
-            .recap-a4 .recap-associe .recap-grid .item {
-                padding: 0.1rem 0;
-                font-size: 0.75rem;
-            }
-            @media print {
-                body { background: #fff !important; }
-                .sidebar, .page-header, .section-header, .step-4-controls { display: none !important; }
-                .shell { display: block !important; }
-                .main { overflow: visible !important; height: auto !important; padding: 0 !important; }
-                .stack { display: block !important; }
-                .recap-a4 { box-shadow: none !important; padding: 0 !important; max-width: none !important; background: #fff !important; }
-                .recap-a4 .recap-grid .item .value { color: #222 !important; }
-                .recap-a4 .recap-grid .item .label { color: #666 !important; }
-                .recap-a4 .recap-header { border-bottom-color: #222 !important; }
-                .recap-a4 .recap-header p { color: #666 !important; }
-                .recap-a4 .recap-section { page-break-inside: avoid; }
-            }
-            .recap-a4.recap-pdf-mode { background: #fff !important; box-shadow: none !important; }
-            .recap-a4.recap-pdf-mode .recap-grid .item .value { color: #222 !important; }
-            .recap-a4.recap-pdf-mode .recap-grid .item .label { color: #555 !important; }
-            .recap-a4.recap-pdf-mode .recap-header { border-bottom-color: #222 !important; }
-            .recap-a4.recap-pdf-mode .recap-header p { color: #666 !important; }
-            .recap-a4.recap-pdf-mode .recap-section h3 { color: #1a4b8c !important; }
-            .recap-a4.recap-pdf-mode .recap-associe .associe-num { color: #1a4b8c !important; }
-            .recap-a4.recap-pdf-mode .recap-associe { border-color: #ccc !important; }
-            .recap-a4.recap-pdf-mode .recap-grid .item { border-bottom-color: #ddd !important; }
-            .recap-a4.recap-pdf-mode .recap-section h3 { border-bottom-color: #ccc !important; }
-            .recap-a4.recap-pdf-mode .recap-header h2 { color: #1a4b8c !important; }
-        </style>
+
 
         <div class="stack">
             <div class="section-header">
@@ -1769,38 +1667,7 @@ $contratData = array_merge([
         });
         </script>
 
-        <style>
-        #gen-loading-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);z-index:9999;display:none;align-items:center;justify-content:center}
-        #gen-loading-overlay.show{display:flex}
-        #gen-loading-overlay .loader-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);padding:2.5rem 3rem;display:flex;flex-direction:column;align-items:center;gap:1rem;box-shadow:0 8px 32px rgba(0,0,0,.5);min-width:400px}
-        #gen-loading-overlay .spinner{width:40px;height:40px;border:3px solid var(--line);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
-        @keyframes spin{to{transform:rotate(360deg)}}
-        #gen-loading-overlay p{font-size:1rem;color:var(--text-secondary);margin:0}
-        #gen-loading-overlay .gen-progress-bar{width:100%;height:10px;background:var(--line);border-radius:5px;overflow:hidden}
-        #gen-loading-overlay .gen-progress-fill{height:100%;width:0%;background:var(--primary);border-radius:5px;transition:width .3s ease}
-        #gen-loading-overlay .gen-progress-text{font-size:1.1rem;font-weight:700;color:var(--text)}
-        #gen-loading-overlay .gen-status-text{font-size:.85rem;color:var(--text-secondary);text-align:center;word-break:break-all;max-width:360px}
-        :root{--violet:var(--info);--rouge:#e74c3c}
-        .step-card{transition:border-color .4s ease,box-shadow .4s ease,transform .3s ease,opacity .4s ease}
-        .step-card.done{border-color:var(--success)!important}
-        .step-card.done .step-num{background:var(--success)!important;color:#fff!important;animation:pop-done .5s ease}
-        .step-card.done .step-card-header h3{color:var(--success)}
-        .step-card.done{box-shadow:0 0 16px color-mix(in srgb,var(--success) 20%,transparent)}
-        .step-card.done table{border-color:var(--success)}
-        .step-card.done table th,.step-card.done table td{border-color:color-mix(in srgb,var(--success) 30%,transparent)}
-        .step-card.active{border-color:var(--violet)!important}
-        .step-card.active .step-num{background:var(--violet)!important;color:#fff!important;animation:pulse-glow 2s ease-in-out infinite}
-        .step-card.active .step-card-header h3{color:var(--violet)}
-        .step-card.active{box-shadow:0 0 20px color-mix(in srgb,var(--violet) 25%,transparent),0 4px 12px rgba(0,0,0,.08)}
-        .step-card.active table{border-color:var(--violet)}
-        .step-card.active table th,.step-card.active table td{border-color:color-mix(in srgb,var(--violet) 30%,transparent)}
-        .step-card.waiting{border-color:var(--rouge)!important}
-        .step-card.waiting .step-num{background:var(--rouge)!important;color:#fff!important}
-        .step-card.waiting .step-card-header h3{color:var(--rouge)}
-        .step-card.waiting{box-shadow:0 0 12px color-mix(in srgb,var(--rouge) 15%,transparent);opacity:.7}
-        @keyframes pulse-glow{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--violet) 40%,transparent)}50%{box-shadow:0 0 0 8px color-mix(in srgb,var(--violet) 0%,transparent)}}
-        @keyframes pop-done{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
-        </style>
+
         <div id="gen-loading-overlay">
             <div class="loader-card">
                 <div class="spinner"></div>
