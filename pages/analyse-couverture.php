@@ -131,25 +131,6 @@ if ($templates) {
     <?php elseif (!$analysis): ?>
         <p class="table-empty">Impossible d analyser les templates.</p>
     <?php else: ?>
-    <div class="stats compact">
-        <article class="stat">
-            <span>Templates</span>
-            <strong><?= $analysis['summary']['total_templates'] ?></strong>
-        </article>
-        <article class="stat">
-            <span>Variables distinctes</span>
-            <strong><?= $analysis['summary']['total_variables'] ?></strong>
-        </article>
-        <article class="stat">
-            <span>Couvertes</span>
-            <strong style="color:var(--success)"><?= $analysis['summary']['covered_variables'] ?></strong>
-        </article>
-        <article class="stat">
-            <span>Non couvertes</span>
-            <strong style="color:var(--danger)"><?= $analysis['summary']['uncovered_variables'] ?></strong>
-        </article>
-    </div>
-
     <div class="table-scroll">
     <table>
         <thead>
