@@ -186,6 +186,11 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - **Headers/footers**: Always scan `word/header*.xml` and `word/footer*.xml` too, not just `word/document.xml`
 - **ZipArchive**: Must be enabled in `C:\xampp\php\php.ini` (`extension=zip`) + Apache restart
 
+## Root Directory Cleanliness
+- **No `.txt` or `.png` files in root** — place documentation text files in `docs/`, screenshots in `docs/screenshots/`
+- Root should only contain: `index.php`, `run.ps1`, `opencode.json`, `AGENTS.md`, `CLAUDE.md`, `.gitignore`, and directories
+- `.gitignore` already blocks `/*.txt` and `/*.png` from root to prevent accidental commits
+
 ## XAMPP Debugging
 - PHP binary: `C:\xampp\php\php.exe`
 - Error log: `C:\xampp\php\logs\php_error_log` or Apache `error.log`
