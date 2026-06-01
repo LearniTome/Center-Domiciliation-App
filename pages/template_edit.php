@@ -308,23 +308,19 @@ $variables = TemplateEditor::getAvailableVariables();
             </div>
 
             <div class="editor-actions">
-                <div>
-                    <button type="submit" class="btn-icon" onclick="return beforeSave()" title="Enregistrer">
-                        <span class="mdi mdi-content-save"></span>
-                    </button>
-                    <button type="button" class="btn-icon" onclick="showSaveAs()" title="Enregistrer sous...">
-                        <span class="mdi mdi-content-save-outline"></span>
-                    </button>
-                </div>
-                <div>
-                    <button type="button" class="btn-icon" onclick="if(confirm('Creer un nouveau template vierge ?'))document.getElementById('blank-form').submit();" title="Nouveau vierge">
-                        <span class="mdi mdi-file-plus"></span>
-                    </button>
-                </div>
+                <button type="submit" class="btn btn-next" onclick="return beforeSave()">
+                    <span class="mdi mdi-content-save"></span> Enregistrer
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="showSaveAs()">
+                    <span class="mdi mdi-content-save-outline"></span> Enregistrer sous
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="if(confirm('Creer un nouveau template vierge ?'))document.getElementById('blank-form').submit();">
+                    <span class="mdi mdi-file-plus"></span> Nouveau vierge
+                </button>
             </div>
         </form>
 
-        <div id="table-dialog" class="table-dialog hidden">
+        <div id="table-dialog" class="table-dialog hidden" style="margin-bottom:0.75rem">
             <div class="card stack">
                 <h4>Insérer un tableau</h4>
                 <div class="inline-form">
@@ -336,13 +332,22 @@ $variables = TemplateEditor::getAvailableVariables();
             </div>
         </div>
 
-        <form method="post" id="save-as-form" class="hidden inline-form" style="margin-top:0.5rem">
-            <?= csrf_input() ?>
-            <input type="hidden" name="action" value="save_as">
-            <input type="hidden" name="content_html" id="content-html-saveas">
-            <input type="text" name="new_name" placeholder="Nom du fichier (ex: Mon_Template.docx)" required class="input-full">
-            <button type="submit" class="btn" onclick="document.getElementById('content-html-saveas').value=document.getElementById('editor-content').innerHTML">Creer</button>
-            <button type="button" class="btn btn-secondary" onclick="document.getElementById('save-as-form').classList.add('hidden')">Annuler</button>
+        <form method="post" id="save-as-form" class="hidden" style="margin-bottom:0.75rem">
+            <div class="card stack">
+                <h4>Enregistrer sous</h4>
+                <?= csrf_input() ?>
+                <input type="hidden" name="action" value="save_as">
+                <input type="hidden" name="content_html" id="content-html-saveas">
+                <div class="inline-form" style="flex-wrap:wrap">
+                    <input type="text" name="new_name" placeholder="Nom du fichier (ex: Mon_Template.docx)" required style="flex:1;min-width:200px;padding:6px 10px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-family:inherit">
+                    <button type="submit" class="btn btn-next" onclick="document.getElementById('content-html-saveas').value=document.getElementById('editor-content').innerHTML">
+                        <span class="mdi mdi-content-save"></span> Creer
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('save-as-form').classList.add('hidden')">
+                        <span class="mdi mdi-close"></span> Annuler
+                    </button>
+                </div>
+            </div>
         </form>
 
         <form method="post" id="blank-form" class="hidden">
@@ -367,43 +372,44 @@ $variables = TemplateEditor::getAvailableVariables();
     overflow-y: auto;
 }
 .editor-sidebar::-webkit-scrollbar { width: 4px; }
-.editor-sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.editor-sidebar::-webkit-scrollbar-thumb { background: var(--line); border-radius: 2px; }
 .variable-search { margin-bottom: 0.75rem; }
 .input-full {
-    width: 100%; padding: 0.5rem; background: var(--bg); border: 1px solid var(--border);
-    border-radius: 4px; color: var(--text); font-family: inherit; font-size: 0.85rem; box-sizing: border-box;
+    width: 100%; padding: 0.5rem; background: var(--bg); border: 1px solid var(--line);
+    border-radius: var(--radius-sm); color: var(--text); font-family: inherit; font-size: 0.85rem; box-sizing: border-box;
 }
 .input-full:focus { outline: none; border-color: var(--primary); }
 .var-category { margin-bottom: 0.25rem; }
 .var-category-title {
     font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em;
     color: var(--text-secondary); cursor: pointer; padding: 0.35rem 0;
-    display: flex; align-items: center; gap: 0.35rem; user-select: none;
+    display: flex; align-items: center; gap: 0.35rem; user-select: none; transition: color .15s;
 }
-.var-category-title .mdi { font-size: 1rem; }
+.var-category-title:hover { color: var(--text); }
+.var-category-title .mdi { font-size: 1rem; transition: transform .15s; }
 .var-category-title .var-count {
-    margin-left: auto; font-size: 0.7rem; color: var(--text-muted);
-    background: var(--panel); padding: 0 0.4rem; border-radius: 8px;
+    margin-left: auto; font-size: 0.65rem; color: var(--text-secondary);
+    background: var(--panel-strong); padding: 0 0.4rem; border-radius: 8px; line-height: 1.5;
 }
 .var-list { display: flex; flex-direction: column; gap: 2px; margin-bottom: 0.5rem; }
 .var-btn {
     display: flex; flex-direction: column; align-items: flex-start;
     padding: 0.3rem 0.5rem; background: transparent; border: 1px solid transparent;
-    border-radius: 4px; cursor: pointer; text-align: left; transition: all 0.15s;
+    border-radius: var(--radius-sm); cursor: pointer; text-align: left; transition: all 0.15s;
 }
-.var-btn:hover { background: var(--panel-hover); border-color: var(--border); }
+.var-btn:hover { background: var(--panel-strong); border-color: var(--line); }
 .var-btn code { font-size: 0.78rem; color: var(--primary); font-family: 'Courier New', monospace; }
-.var-btn small { font-size: 0.68rem; color: var(--text-muted); }
+.var-btn small { font-size: 0.68rem; color: var(--text-secondary); }
 .editor-main { min-height: 400px; }
 .editor-toolbar {
     display: flex; align-items: center; gap: 0.25rem;
-    padding: 0.5rem; background: var(--bg); border: 1px solid var(--border);
-    border-bottom: none; border-radius: 4px 4px 0 0; flex-wrap: wrap;
+    padding: 0.5rem; background: var(--bg); border: 1px solid var(--line);
+    border-bottom: none; border-radius: var(--radius-sm) var(--radius-sm) 0 0; flex-wrap: wrap;
 }
-.toolbar-sep { width: 1px; height: 22px; background: var(--border); margin: 0 0.25rem; }
-.btn-sm { padding: 0.3rem 0.5rem; font-size: 0.8rem; }
+.toolbar-sep { width: 1px; height: 22px; background: var(--line); margin: 0 0.25rem; flex-shrink: 0; }
+.btn-sm { padding: 0.3rem 0.5rem; font-size: 0.8rem; border-radius: var(--radius-sm); }
 .editor-content {
-    background: #ccc; padding: 30px 0;
+    background: var(--panel-strong); padding: 30px 0;
     display: flex; flex-direction: column; align-items: center;
     gap: 24px; min-height: 100%;
     outline: none; box-sizing: border-box;
@@ -412,7 +418,7 @@ $variables = TemplateEditor::getAvailableVariables();
     width: 21cm; min-height: 29.7cm; padding: 2cm 2.5cm;
     background: white; color: #1a1a1a;
     font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; font-size: 11pt;
-    line-height: 1.5; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    line-height: 1.5; box-shadow: 0 2px 10px rgba(0,0,0,0.25);
     box-sizing: border-box; overflow: hidden;
 }
 .a4-page hr.page-break {
@@ -432,44 +438,44 @@ $variables = TemplateEditor::getAvailableVariables();
 }
 .editor-source {
     width: 100%; min-height: 400px; padding: 1rem;
-    background: #1a1a2e; color: #e0e0e0;
+    background: var(--bg); color: var(--text);
     font-family: 'Courier New', monospace; font-size: 0.8rem;
-    line-height: 1.5; border: 1px solid var(--border);
+    line-height: 1.5; border: 1px solid var(--line);
     resize: vertical; box-sizing: border-box; tab-size: 2;
 }
 .editor-preview {
     width: 100%; min-height: 400px; padding: 2cm 2.5cm;
-    background: white; border: 1px solid var(--border);
-    border-radius: 0 0 4px 4px; color: #1a1a1a;
+    background: white; border: 1px solid var(--line);
+    border-radius: 0 0 var(--radius-sm) var(--radius-sm); color: #1a1a1a;
     font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; font-size: 11pt;
     line-height: 1.5; overflow-y: auto; box-sizing: border-box;
-    max-width: 21cm; margin: 0 auto; box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    max-width: 21cm; margin: 0 auto; box-shadow: 0 2px 12px rgba(0,0,0,0.2);
 }
 .editor-preview var {
     color: #0090e7; font-style: normal; font-family: 'Courier New', monospace;
     background: #e8f4fd; padding: 0 2px; border-radius: 2px;
 }
 .editor-wrapper {
-    background: #666; padding: 1.5rem 1rem;
-    border-radius: 0 0 4px 4px; overflow-y: auto;
+    background: var(--panel-strong); padding: 1.5rem 1rem;
+    border-radius: 0 0 var(--radius-sm) var(--radius-sm); overflow-y: auto;
     max-height: calc(100vh - 280px); min-height: 400px;
 }
 .editor-toolbar select {
-    padding: 0.25rem 0.4rem; background: var(--bg); border: 1px solid var(--border);
-    border-radius: 4px; color: var(--text); font-size: 0.78rem; cursor: pointer;
+    padding: 0.25rem 0.4rem; background: var(--bg); border: 1px solid var(--line);
+    border-radius: var(--radius-sm); color: var(--text); font-size: 0.78rem; cursor: pointer;
     font-family: inherit; max-width: 140px;
 }
 .editor-toolbar select:focus { outline: none; border-color: var(--primary); }
 .editor-toolbar input[type="color"] {
-    width: 28px; height: 28px; padding: 2px; border: 1px solid var(--border);
-    border-radius: 4px; background: transparent; cursor: pointer; vertical-align: middle;
+    width: 28px; height: 28px; padding: 2px; border: 1px solid var(--line);
+    border-radius: var(--radius-sm); background: transparent; cursor: pointer; vertical-align: middle;
 }
 .editor-toolbar input[type="color"]:hover { border-color: var(--text-secondary); }
 .editor-toolbar .color-btn {
     position: relative; display: inline-flex; align-items: center; gap: 2px;
 }
 .editor-toolbar .color-btn .color-preview {
-    width: 12px; height: 12px; border-radius: 2px; border: 1px solid var(--border);
+    width: 12px; height: 12px; border-radius: 2px; border: 1px solid var(--line);
     display: inline-block;
 }
 @media print {
@@ -488,10 +494,9 @@ $variables = TemplateEditor::getAvailableVariables();
     @page { margin: 2cm; size: A4; }
 }
 .editor-actions {
-    display: flex; justify-content: space-between; align-items: center;
-    margin-top: 0.75rem; gap: 0.5rem; flex-wrap: wrap;
+    display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+    margin-top: 0.75rem;
 }
-.editor-actions > div { display: flex; gap: 0.5rem; align-items: center; }
 .table-dialog {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
@@ -500,7 +505,7 @@ $variables = TemplateEditor::getAvailableVariables();
 .table-dialog .card { padding: 1.5rem; min-width: 350px; }
 .table-dialog .inline-form { display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap; margin-top: 0.75rem; }
 .table-dialog label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; color: var(--text-secondary); }
-.table-dialog input { padding: 0.4rem; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); }
+.table-dialog input { padding: 0.4rem; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-sm); color: var(--text); }
 .hidden { display: none !important; }
 @media (max-width: 900px) {
     .template-editor-layout { grid-template-columns: 1fr; }

@@ -327,7 +327,7 @@ $sortedFolders = array_merge($nonEmpty, $empty);
 .hidden { display: none !important; }
 
 .accordion-item {
-    border: 1px solid var(--border);
+    border: 1px solid var(--line);
     border-radius: 8px;
     margin-bottom: 8px;
     overflow: hidden;
@@ -396,7 +396,7 @@ $sortedFolders = array_merge($nonEmpty, $empty);
 .accordion-chevron {
     font-size: 1.2rem;
     transition: transform 0.2s;
-    color: var(--text-muted);
+    color: var(--text-secondary);
 }
 
 .accordion-trigger[aria-expanded="true"] .accordion-chevron {
@@ -408,7 +408,7 @@ $sortedFolders = array_merge($nonEmpty, $empty);
 }
 
 .accordion-panel {
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--line);
     padding: 16px;
 }
 

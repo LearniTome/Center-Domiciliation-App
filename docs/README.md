@@ -25,7 +25,8 @@ Application PHP compatible XAMPP pour la gestion des dossiers de domiciliation :
 ├── index.php              # Point d'entree unique (front controller ?page=)
 ├── assets/
 │   ├── css/app.css        # Design system personnalise (CSS variables)
-│   └── js/app.js          # Vanilla JS : confirmations, formulaires dynamiques
+│   ├── js/app.js          # Vanilla JS : confirmations, formulaires dynamiques
+│   └── img/               # Captures d'ecran
 ├── config/
 │   ├── app.php            # Nom de l'app, URL de base
 │   ├── database.php       # Acces MySQL (host, port, user, password)
@@ -76,7 +77,11 @@ Application PHP compatible XAMPP pour la gestion des dossiers de domiciliation :
 │   ├── setup.php          # Instructions XAMPP
 │   └── not-found.php      # Page 404
 ├── docs/setup/XAMPP_SETUP.md  # Documentation complete XAMPP
-└── AGENTS.md              # Guide pour l'agent OpenCode
+├── scripts/               # Utilitaires (renommage variables, debug)
+├── docs/                  # Documentation
+│   ├── README.md
+│   └── AGENTS.md          # Guide pour l'agent OpenCode
+└── run.ps1                # Lanceur XAMPP
 ```
 
 ## Pages disponibles

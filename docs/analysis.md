@@ -29,8 +29,9 @@
 
 ```
 ├── index.php              # Front controller (21 pages)
-├── AGENTS.md              # Instructions projet
-├── CLAUDE.md              # Mémoire projet
+├── docs/AGENTS.md         # Instructions projet
+├── docs/CLAUDE.md         # Mémoire projet
+├── run.ps1                # Lanceur XAMPP
 ├── opencode.json          # Config MCP memory
 ├── config/
 │   ├── app.php            # app_name, base_url

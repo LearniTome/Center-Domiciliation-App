@@ -103,7 +103,7 @@ $filter = $_GET['filter'] ?? 'all';
         <a class="btn <?= $filter === 'all' ? 'btn-next' : '' ?>" href="?page=variables&filter=all">Tous</a>
         <a class="btn <?= $filter === 'unmapped' ? 'btn-next' : '' ?>" href="?page=variables&filter=unmapped">Non mappes <span class="badge" style="background:var(--danger);color:#fff;padding:1px 8px;border-radius:10px;font-size:0.7rem"><?= $unmappedCount ?></span></a>
         <a class="btn <?= $filter === 'mapped' ? 'btn-next' : '' ?>" href="?page=variables&filter=mapped">Mappes <span class="badge" style="background:var(--success);color:#fff;padding:1px 8px;border-radius:10px;font-size:0.7rem"><?= $mappedCount ?></span></a>
-        <input type="text" id="var-search" placeholder="Rechercher une variable..." style="margin-left:auto;padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:0.8rem;min-width:200px">
+        <input type="text" id="var-search" placeholder="Rechercher une variable..." style="margin-left:auto;padding:6px 10px;background:var(--bg);border:1px solid var(--line);border-radius:var(--radius-sm);color:var(--text);font-size:0.8rem;min-width:200px">
     </div>
 
     <?php if (!$totalCount): ?>
@@ -266,13 +266,13 @@ $filter = $_GET['filter'] ?? 'all';
     border-color: var(--primary);
 }
 #var-search::placeholder {
-    color: var(--text-muted);
+    color: var(--text-secondary);
 }
 .table-scroll {
     max-height: 480px;
     overflow-y: auto;
-    border: 1px solid var(--border);
-    border-radius: 6px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
 }
 .row-mapped { opacity: 0.55; }
 .row-mapped select:disabled, .row-mapped input:disabled {
@@ -296,8 +296,8 @@ $filter = $_GET['filter'] ?? 'all';
     right: 0;
     z-index: 10;
     background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 6px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
     padding: 4px;
     min-width: 200px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
@@ -312,7 +312,7 @@ $filter = $_GET['filter'] ?? 'all';
     white-space: nowrap;
 }
 .action-link:hover {
-    background: var(--panel-hover);
+    background: var(--panel-strong);
 }
 .action-dropdown.hidden {
     display: none;
