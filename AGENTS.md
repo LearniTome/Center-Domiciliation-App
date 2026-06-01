@@ -47,7 +47,7 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 ## Database (MySQL via PDO)
 - Host: `127.0.0.1:3306`, DB: `center_domiciliation`, user: `root`, pass: empty
 - Schema: `database/schema.sql` (tables + ref tables), seed: `database/seed.sql`
-- Core tables: `societes`, `associes`, `contrats`, `collaborateurs`
+- Core tables: `societes`, `associes`, `contrats`, `collaborateurs`, `uploaded_docs`
 - Ref tables: `ref_tribunaux`, `ref_ste_adresses`, `ref_nationalites`, `ref_lieux_naissance`, `ref_activites`, `ref_formes_juridiques`
 - Import: `mysql -u root center_domiciliation < database/import.sql`
 - Migration DB existante (ajout colonne `template_folder`):
@@ -61,7 +61,7 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 ## Page Patterns
 - **List pages** (`societes`, `associes`, `contrats`): Table with search bar, CSV export link, delete button per row, "Voir" link to detail page
 - **Configuration** (`configuration.php`): Unified page with tabs for all 8 reference tables (formes-juridiques, villes, tribunaux, nationalites, lieux-naissance, adresses, qualites-associe, activites). Add/edit/delete inline. L'onglet `formes-juridiques` affiche une colonne **Dossier Templates** pour lier chaque forme juridique à un dossier dans `templates/`. Si le dossier n'existe pas, il est créé automatiquement lors de l'ajout ou la modification.
-- **Wizard** (`creation.php`): 3-step session-based wizard with JS dynamic associate forms
+- **Wizard** (`creation.php`): 6-step session-based wizard (Societe, Associes, Contrat, Recapitulatif, Documents, Generation) with JS dynamic associate forms. Step 5 "Documents" requires uploading Certificat Negatif (PDF) and CIN des Gerants (PDF/image) before generation.
 - **Detail page** (`societe.php`): Single record view with related data tables (associates, contracts, collaborators inline)
 
 ## Template Patterns

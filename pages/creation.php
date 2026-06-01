@@ -31,11 +31,12 @@ if (!isset($_SESSION['creation_wizard']) || !is_array($_SESSION['creation_wizard
             'associe_est_gerant' => ($associeDefaults['associe_est_gerant'] ?? false) ? '1' : '0',
         ]],
         'contrat' => $defaults['contrat'] ?? [],
+        'uploaded_docs' => [],
     ];
 }
 
 $wizard = &$_SESSION['creation_wizard'];
-$step = max(1, min(5, (int) ($_GET['step'] ?? 1)));
+$step = max(1, min(6, (int) ($_GET['step'] ?? 1)));
 $adressesOptions = fetch_reference_options($pdo ?? null, 'ref_ste_adresses', 'ste_adresse');
 $villesOptions = fetch_reference_options($pdo ?? null, 'ref_villes', 'ville');
 $nationalitesOptions = fetch_reference_options($pdo ?? null, 'ref_nationalites', 'nationalite');
@@ -78,13 +79,27 @@ if (is_post() && isset($_POST['add_activite_ref']) && ($pdo ?? null) instanceof 
     exit;
 }
 
+function _cleanup_tmp_uploads(): void
+{
+    $tmpDir = __DIR__ . '/../uploads/tmp/' . session_id();
+    if (is_dir($tmpDir)) {
+        $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($tmpDir, RecursiveDirectoryIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST);
+        foreach ($files as $f) {
+            $f->isDir() ? rmdir((string) $f) : unlink((string) $f);
+        }
+        rmdir($tmpDir);
+    }
+}
+
 if (isset($_GET['reset']) && $_GET['reset'] === '1') {
+    _cleanup_tmp_uploads();
     unset($_SESSION['creation_wizard']);
     set_flash('success', 'Assistant reinitialise.');
     redirect_to('creation');
 }
 
 if (isset($_GET['cancel']) && $_GET['cancel'] === '1') {
+    _cleanup_tmp_uploads();
     unset($_SESSION['creation_wizard']);
     set_flash('success', 'Creation annulee.');
     redirect_to('societes');
@@ -92,7 +107,7 @@ if (isset($_GET['cancel']) && $_GET['cancel'] === '1') {
 
 if (is_post()) {
     verify_csrf();
-    $postedStep = max(1, min(5, (int) ($_POST['step'] ?? $step)));
+    $postedStep = max(1, min(6, (int) ($_POST['step'] ?? $step)));
     $navAction = $_POST['nav_action'] ?? 'next';
 
     if ($postedStep === 1) {
@@ -283,10 +298,61 @@ if (is_post()) {
             redirect_to('creation', ['step' => 4]);
         }
 
+        $uploadDir = __DIR__ . '/../uploads';
+        $tmpDir = $uploadDir . '/tmp/' . session_id();
+        if (!is_dir($tmpDir)) {
+            mkdir($tmpDir, 0777, true);
+        }
+
+        $uploadedDocs = $wizard['uploaded_docs'] ?? [];
+
+        if (!empty($_FILES['certificat_negatif']['name']) && $_FILES['certificat_negatif']['error'] === UPLOAD_ERR_OK) {
+            $ext = pathinfo($_FILES['certificat_negatif']['name'], PATHINFO_EXTENSION);
+            $stored = 'certificat_negatif_' . date('Ymd_His') . '.' . $ext;
+            $dest = $tmpDir . '/' . $stored;
+            if (move_uploaded_file($_FILES['certificat_negatif']['tmp_name'], $dest)) {
+                $uploadedDocs['certificat_negatif'] = [
+                    'original' => $_FILES['certificat_negatif']['name'],
+                    'stored' => $stored,
+                    'path' => $dest,
+                    'taille_ko' => round(filesize($dest) / 1024, 1),
+                ];
+            }
+        }
+
+        if (!empty($_FILES['cin_gerants']['name'][0]) && is_array($_FILES['cin_gerants']['name'])) {
+            $files = $_FILES['cin_gerants'];
+            $associeIndexes = $_POST['cin_associe_index'] ?? [];
+            foreach ($files['name'] as $idx => $name) {
+                if ($name === '' || $files['error'][$idx] !== UPLOAD_ERR_OK) continue;
+                $ext = pathinfo($name, PATHINFO_EXTENSION);
+                $stored = 'cin_gerant_' . $idx . '_' . date('Ymd_His') . '.' . $ext;
+                $dest = $tmpDir . '/' . $stored;
+                if (move_uploaded_file($files['tmp_name'][$idx], $dest)) {
+                    $associeIdx = $associeIndexes[$idx] ?? $idx;
+                    $uploadedDocs['cin_gerants'][$associeIdx] = [
+                        'original' => $name,
+                        'stored' => $stored,
+                        'path' => $dest,
+                        'taille_ko' => round(filesize($dest) / 1024, 1),
+                    ];
+                }
+            }
+        }
+
+        $wizard['uploaded_docs'] = $uploadedDocs;
+        redirect_to('creation', ['step' => 6]);
+    }
+
+    if ($postedStep === 6) {
+        if ($navAction === 'back') {
+            redirect_to('creation', ['step' => 5]);
+        }
+
         if ($navAction === 'create_dossier') {
             if (!(($pdo ?? null) instanceof PDO)) {
                 set_flash('error', 'Connexion MySQL indisponible.');
-                redirect_to('creation', ['step' => 5]);
+                redirect_to('creation', ['step' => 6]);
             }
 
             try {
@@ -402,15 +468,75 @@ if (is_post()) {
                 $pdo->commit();
 
                 $_SESSION['creation_wizard']['societe_id'] = $societeId;
+
+                $uploadedDocs = $wizard['uploaded_docs'] ?? [];
+                if ($uploadedDocs !== [] && ($pdo ?? null) instanceof PDO) {
+                    $dossierUploadDir = __DIR__ . '/../uploads/dossiers/' . $societeId;
+                    if (!is_dir($dossierUploadDir)) {
+                        mkdir($dossierUploadDir, 0777, true);
+                    }
+
+                    $insertDocStmt = $pdo->prepare('
+                        INSERT INTO uploaded_docs (societe_id, doc_type, associe_idx, filename_original, filename_stored, filepath, taille_ko)
+                        VALUES (:societe_id, :doc_type, :associe_idx, :filename_original, :filename_stored, :filepath, :taille_ko)
+                    ');
+
+                    $socName = trim(preg_replace('/[^a-zA-Z0-9-]/', '_', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $wizard['societe']['societe_raison_sociale'] ?? 'Societe')));
+                    $socName = preg_replace('/_+/', '_', $socName);
+                    $socName = trim($socName, '_');
+                    $dateStr = date('Y-m-d');
+
+                    if (isset($uploadedDocs['certificat_negatif'])) {
+                        $cn = $uploadedDocs['certificat_negatif'];
+                        $ext = pathinfo($cn['original'], PATHINFO_EXTENSION);
+                        $newFilename = $dateStr . '_CN_' . $socName . '.' . $ext;
+                        $newPath = $dossierUploadDir . '/' . $newFilename;
+                        if (file_exists($cn['path'])) {
+                            rename($cn['path'], $newPath);
+                            $insertDocStmt->execute([
+                                'societe_id' => $societeId,
+                                'doc_type' => 'certificat_negatif',
+                                'associe_idx' => null,
+                                'filename_original' => $newFilename,
+                                'filename_stored' => $newFilename,
+                                'filepath' => $newPath,
+                                'taille_ko' => $cn['taille_ko'],
+                            ]);
+                        }
+                    }
+
+                    if (isset($uploadedDocs['cin_gerants']) && is_array($uploadedDocs['cin_gerants'])) {
+                        foreach ($uploadedDocs['cin_gerants'] as $associeIdx => $cin) {
+                            $ext = pathinfo($cin['original'], PATHINFO_EXTENSION);
+                            $nom = trim(preg_replace('/[^a-zA-Z0-9-]/', '', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $wizard['associes'][$associeIdx]['associe_nom'] ?? 'Nom')));
+                            $prenom = trim(preg_replace('/[^a-zA-Z0-9-]/', '', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $wizard['associes'][$associeIdx]['associe_prenom'] ?? 'Prenom')));
+                            $newFilename = $dateStr . '_CIN_' . $nom . '_' . $prenom . '_' . $socName . '.' . $ext;
+                            $newPath = $dossierUploadDir . '/' . $newFilename;
+                            if (file_exists($cin['path'])) {
+                                rename($cin['path'], $newPath);
+                                $insertDocStmt->execute([
+                                    'societe_id' => $societeId,
+                                    'doc_type' => 'cin_gerant',
+                                    'associe_idx' => (int) $associeIdx,
+                                    'filename_original' => $newFilename,
+                                    'filename_stored' => $newFilename,
+                                    'filepath' => $newPath,
+                                    'taille_ko' => $cin['taille_ko'],
+                                ]);
+                            }
+                        }
+                    }
+                }
+
                 set_flash('success', 'Le dossier a ete cree avec succes.');
-                redirect_to('creation', ['step' => 5]);
+                redirect_to('creation', ['step' => 6]);
             } catch (Throwable $exception) {
                 if ($pdo->inTransaction()) {
                     $pdo->rollBack();
                 }
 
                 set_flash('error', 'Erreur lors de la creation du dossier: ' . $exception->getMessage());
-                redirect_to('creation', ['step' => 5]);
+                redirect_to('creation', ['step' => 6]);
             }
         }
 
@@ -494,7 +620,7 @@ if (is_post()) {
                 set_flash('success', count($generatedFiles) . ' document(s) genere(s).');
             }
 
-            redirect_to('creation', ['step' => 5]);
+            redirect_to('creation', ['step' => 6]);
         }
 
         if ($navAction === 'generate_single') {
@@ -581,7 +707,7 @@ if (is_post()) {
             } else {
                 set_flash('error', "L'assistant IA n'est pas disponible.");
             }
-            redirect_to('creation', ['step' => 5]);
+            redirect_to('creation', ['step' => 6]);
         }
 
         if ($navAction === 'validate') {
@@ -596,11 +722,12 @@ if (is_post()) {
             } else {
                 set_flash('error', "L'assistant IA n'est pas disponible.");
             }
-            redirect_to('creation', ['step' => 5]);
+            redirect_to('creation', ['step' => 6]);
         }
 
         if ($navAction === 'terminer') {
             $societeId = $wizard['societe_id'] ?? null;
+            _cleanup_tmp_uploads();
             unset($_SESSION['creation_wizard']);
             set_flash('success', 'Dossier cree avec succes.');
             redirect_to('societe', ['id' => (string) $societeId]);
@@ -724,6 +851,10 @@ $contratData = array_merge([
         </div>
         <div class="wizard-step <?= $step > 5 ? 'done' : ($step === 5 ? 'active' : 'waiting') ?>">
             <strong>Etape 5</strong>
+            <span>Documents</span>
+        </div>
+        <div class="wizard-step <?= $step > 6 ? 'done' : ($step === 6 ? 'active' : 'waiting') ?>">
+            <strong>Etape 6</strong>
             <span>Generation</span>
         </div>
     </div>
@@ -1478,6 +1609,89 @@ if ($aiSuggestions !== null) {
         </div>
     <?php elseif ($step === 5): ?>
         <?php
+        $formeJuridique = $societeData['societe_forme_juridique'] ?? '';
+        $gerants = array_filter($associesData, fn($a) => ((string) ($a['associe_est_gerant'] ?? '0') === '1'));
+        $isSarlAu = str_starts_with($formeJuridique, 'SARL AU');
+        $uploadedDocs = $wizard['uploaded_docs'] ?? [];
+        $hasCn = isset($uploadedDocs['certificat_negatif']);
+        $hasCin = isset($uploadedDocs['cin_gerants']);
+        ?>
+        <div class="stack">
+            <div class="section-header">
+                <div>
+                    <h2>Etape 5 — Documents a uploader</h2>
+                    <p class="help-text">Fournissez les documents necessaires avant la generation.</p>
+                </div>
+            </div>
+
+            <form method="post" class="stack" enctype="multipart/form-data">
+                <?= csrf_input() ?>
+                <input type="hidden" name="step" value="5">
+                <input type="hidden" name="nav_action" value="next">
+
+                <article class="card">
+                    <div class="section-header">
+                        <div>
+                            <h3><span class="mdi mdi-file-certificate"></span> Certificat Negatif</h3>
+                            <p class="help-text">Document delivre par l'OMPIC (format PDF).</p>
+                        </div>
+                        <?php if ($hasCn): ?>
+                            <span class="step-badge" style="color:var(--success)"><span class="mdi mdi-check-circle"></span> Telecharge</span>
+                        <?php endif; ?>
+                    </div>
+                    <label class="field" style="margin-top:8px">
+                        <span>Fichier</span>
+                        <input type="file" name="certificat_negatif" accept=".pdf" <?= $hasCn ? '' : 'required' ?>>
+                        <?php if ($hasCn): ?>
+                            <small style="color:var(--success)"><?= e($uploadedDocs['certificat_negatif']['original']) ?> deja uploade.</small>
+                        <?php endif; ?>
+                    </label>
+                </article>
+
+                <article class="card">
+                    <div class="section-header">
+                        <div>
+                            <h3><span class="mdi mdi-card-account-details"></span> CIN des Gerants</h3>
+                            <p class="help-text">
+                                <?= $isSarlAu ? 'SARL AU : un seul CIN requis.' : 'SARL : CIN de tous les gerants.' ?>
+                            </p>
+                        </div>
+                        <?php if ($hasCin): ?>
+                            <span class="step-badge" style="color:var(--success)"><span class="mdi mdi-check-circle"></span> Telecharge(s)</span>
+                        <?php endif; ?>
+                    </div>
+
+                    <?php if (count($gerants) === 0): ?>
+                        <p class="help-text" style="margin-top:8px;color:var(--warning)">
+                            <span class="mdi mdi-alert"></span> Aucun gerant designe dans les associes. Veuillez revenir a l'etape 2.
+                        </p>
+                    <?php else: ?>
+                        <div class="stack" style="margin-top:8px;gap:12px">
+                        <?php foreach ($gerants as $idx => $gerant):
+                            $nomGerant = $gerant['associe_nom_complet'] ?: ('Gerant ' . ($idx + 1));
+                        ?>
+                            <label class="field">
+                                <span><?= e('CIN de ' . $nomGerant) ?></span>
+                                <input type="file" name="cin_gerants[]" accept=".pdf,.jpg,.jpeg,.png" <?= isset($uploadedDocs['cin_gerants'][$idx]) ? '' : 'required' ?>>
+                                <input type="hidden" name="cin_associe_index[]" value="<?= $idx ?>">
+                                <?php if (isset($uploadedDocs['cin_gerants'][$idx])): ?>
+                                    <small style="color:var(--success)"><?= e($uploadedDocs['cin_gerants'][$idx]['original']) ?> deja uploade.</small>
+                                <?php endif; ?>
+                            </label>
+                        <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </article>
+
+                <div class="table-actions" style="margin-top:1rem">
+                    <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="mdi mdi-arrow-left"></span> Retour</button>
+                    <button class="btn btn-next" type="submit" name="nav_action" value="next" <?= count($gerants) === 0 ? 'disabled' : '' ?>><span class="mdi mdi-arrow-right"></span> Suivant</button>
+                </div>
+            </form>
+        </div>
+
+    <?php elseif ($step === 6): ?>
+        <?php
         $dossierCreated = isset($wizard['societe_id']);
         $societeId = $wizard['societe_id'] ?? null;
 
@@ -1525,7 +1739,7 @@ if ($aiSuggestions !== null) {
         <div class="stack">
             <div class="section-header">
                 <div>
-                    <h2>Etape 5 — Generation des documents</h2>
+                    <h2>Etape 6 — Generation des documents</h2>
                     <p class="help-text">Creez d'abord le dossier, puis generez les documents.</p>
                 </div>
                 <?php if ($dossierCreated): ?>
@@ -1561,14 +1775,14 @@ if ($aiSuggestions !== null) {
                         <div class="table-actions" style="margin-top:8px;flex-wrap:wrap">
                             <form method="post" style="display:inline">
                                 <?= csrf_input() ?>
-                                <input type="hidden" name="step" value="5">
+                                <input type="hidden" name="step" value="6">
                                 <button class="btn btn-next" type="submit" name="nav_action" value="create_dossier">
                                     <span class="mdi mdi-folder-plus"></span> Creer le dossier
                                 </button>
                             </form>
                             <form method="post" style="display:inline">
                                 <?= csrf_input() ?>
-                                <input type="hidden" name="step" value="5">
+                                <input type="hidden" name="step" value="6">
                                 <button class="btn btn-info" type="submit" name="nav_action" value="validate">
                                     <span class="mdi mdi-robot"></span> Valider avec IA
                                 </button>
@@ -1612,7 +1826,7 @@ if ($aiSuggestions !== null) {
                     <?php elseif ($filteredTemplates): ?>
                         <form method="post" class="stack" id="wizard-gen-form" style="gap:8px;margin-top:8px">
                             <?= csrf_input() ?>
-                            <input type="hidden" name="step" value="5">
+                            <input type="hidden" name="step" value="6">
                             <input type="hidden" name="nav_action" value="generate">
 
                             <div style="display:flex;align-items:center;gap:8px">
@@ -1694,19 +1908,19 @@ if ($aiSuggestions !== null) {
                     <div class="table-actions" style="margin-top:8px">
                         <form method="post" style="display:inline">
                             <?= csrf_input() ?>
-                            <input type="hidden" name="step" value="5">
+                            <input type="hidden" name="step" value="6">
                             <input type="hidden" name="clause_type" value="objet_social">
                             <button class="btn btn-info" type="submit" name="nav_action" value="generate_clause"><span class="mdi mdi-robot"></span> Objet social</button>
                         </form>
                         <form method="post" style="display:inline">
                             <?= csrf_input() ?>
-                            <input type="hidden" name="step" value="5">
+                            <input type="hidden" name="step" value="6">
                             <input type="hidden" name="clause_type" value="mention_legale">
                             <button class="btn btn-info" type="submit" name="nav_action" value="generate_clause"><span class="mdi mdi-robot"></span> Mentions legales</button>
                         </form>
                         <form method="post" style="display:inline">
                             <?= csrf_input() ?>
-                            <input type="hidden" name="step" value="5">
+                            <input type="hidden" name="step" value="6">
                             <input type="hidden" name="clause_type" value="clause_siege">
                             <button class="btn btn-info" type="submit" name="nav_action" value="generate_clause"><span class="mdi mdi-robot"></span> Siege social</button>
                         </form>
@@ -1770,7 +1984,7 @@ if ($aiSuggestions !== null) {
 
             <form method="post" class="table-actions" style="margin-top:1rem">
                 <?= csrf_input() ?>
-                <input type="hidden" name="step" value="5">
+                <input type="hidden" name="step" value="6">
                 <button class="btn btn-next" type="submit" name="nav_action" value="terminer"><span class="mdi mdi-check-circle"></span> Terminer</button>
                 <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="mdi mdi-arrow-left"></span> Retour</button>
             </form>
@@ -1812,7 +2026,7 @@ if ($aiSuggestions !== null) {
                 if (statusText) statusText.textContent = 'Generation de : ' + path.split(/[\\/]/).pop();
                 var fd = new FormData();
                 fd.append('csrf_token', csrf);
-                fd.append('step', '5');
+                fd.append('step', '6');
                 fd.append('nav_action', 'generate_single');
                 fd.append('template_path', path);
                 fd.append('pdf', generatePdf ? '1' : '');

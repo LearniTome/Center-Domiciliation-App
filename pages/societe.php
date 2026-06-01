@@ -260,6 +260,19 @@ $collabCount = ($pdo ?? null) instanceof PDO
     : 0;
 
 $documents = fetch_all_documents($pdo ?? null, $societeId);
+
+$uploadedDocsList = ($pdo ?? null) instanceof PDO
+    ? (function (PDO $pdo, int $societeId): array {
+        $stmt = $pdo->prepare('SELECT id, doc_type, associe_idx, filename_original, filename_stored, filepath, taille_ko, uploaded_at FROM uploaded_docs WHERE societe_id = :societe_id ORDER BY uploaded_at DESC');
+        $stmt->execute(['societe_id' => $societeId]);
+        return $stmt->fetchAll();
+    })($pdo, $societeId)
+    : [];
+
+$docTypeLabels = [
+    'certificat_negatif' => 'Certificat Negatif',
+    'cin_gerant' => 'CIN Gerant',
+];
 ?>
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
     <h2 style="margin:0"><?= e($societe['societe_raison_sociale']) ?></h2>
@@ -720,6 +733,41 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
     <?php endif; ?>
 </article>
 
+<?php if (!empty($uploadedDocsList)): ?>
+<article class="card">
+    <div class="section-header">
+        <h2>Documents uploades</h2>
+    </div>
+    <div class="table-scroll">
+        <table data-sortable>
+            <thead>
+                <tr>
+                    <th data-col="doc_type">Type</th>
+                    <th data-col="filename">Fichier</th>
+                    <th data-col="taille">Taille</th>
+                    <th data-col="uploaded_at">Date d'upload</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($uploadedDocsList as $ud): ?>
+                <tr>
+                    <td><?= e($docTypeLabels[$ud['doc_type']] ?? $ud['doc_type']) ?></td>
+                    <td><?= e($ud['filename_original']) ?></td>
+                    <td><?= e($ud['taille_ko'] ? number_format((float)$ud['taille_ko'], 1, ',', ' ') . ' Ko' : '-') ?></td>
+                    <td><?= e(date('d/m/Y H:i', strtotime($ud['uploaded_at']))) ?></td>
+                    <td>
+                        <a href="<?= e(str_replace(__DIR__ . '/../', '', $ud['filepath'])) ?>" class="btn-icon" download title="Telecharger">
+                            <span class="mdi mdi-download"></span>
+                        </a>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</article>
+<?php endif; ?>
 
 <div id="loading-overlay">
     <div class="loader-card">

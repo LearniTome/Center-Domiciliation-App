@@ -286,6 +286,23 @@ CREATE TABLE IF NOT EXISTS documents_generes (
     INDEX idx_documents_valide (valide)
 );
 
+CREATE TABLE IF NOT EXISTS uploaded_docs (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    societe_id INT UNSIGNED NOT NULL,
+    doc_type VARCHAR(50) NOT NULL COMMENT 'certificat_negatif or cin_gerant',
+    associe_idx INT UNSIGNED DEFAULT NULL COMMENT 'Index in associes array for cin_gerant',
+    filename_original VARCHAR(255) NOT NULL,
+    filename_stored VARCHAR(255) NOT NULL,
+    filepath VARCHAR(500) NOT NULL,
+    taille_ko DECIMAL(10,1) DEFAULT NULL,
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_uploaded_docs_societe
+        FOREIGN KEY (societe_id) REFERENCES societes(id)
+        ON DELETE CASCADE,
+    INDEX idx_uploaded_docs_societe_id (societe_id),
+    INDEX idx_uploaded_docs_type (doc_type)
+);
+
 CREATE TABLE IF NOT EXISTS ref_qualites_associe (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     qualite_associe VARCHAR(150) NOT NULL,
