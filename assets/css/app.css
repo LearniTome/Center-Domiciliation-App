@@ -1588,6 +1588,18 @@ tbody tr:hover:nth-child(even) {
 }
 
 /* Template picker (editor home) */
+.picker-tables {
+    display: grid;
+    gap: 1.25rem;
+}
+.picker-table-title {
+    margin: 0 0 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--primary);
+}
 /* Validation stats in dashboard */
 .validation-stats {
     display: flex;
