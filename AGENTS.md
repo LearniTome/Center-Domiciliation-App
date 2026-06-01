@@ -122,6 +122,11 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - The sort function auto-detects numeric vs text by parsing cell content
 - When adding a new table to any page, ALWAYS add `data-sortable` + `data-col` on `<th>`
 
+## page-header (includes/header.php)
+- `<h1>` rend `$pageTitle` (défini dans `index.php` ou la page)
+- Sous-titre optionnel : définir `$pageSubtitle` dans la page, rendu automatiquement en `<p class="page-subtitle">`
+- Messages flash : `$flash` (array `type`/`message`) ou `$dbError` pour les erreurs MySQL
+
 ## Assets
 - CSS: `assets/css/app.css` — custom design system (CSS variables, no framework)
 - JS: `assets/js/app.js` — vanilla JS: sidebar toggle, column toggle, table sorting, confirmation dialogs (`data-confirm`), dynamic associate form cloning (`data-associe-template`, `data-add-associe`, `data-remove-associe`), wizard capital distribution
@@ -138,6 +143,13 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - **inferSection(name)**: Maps a variable name to `societe|associe|contrat|collaborateur|autre`
 - **extractTemplateInfo(path)**: Parses filename parts (prefix_date_docType_Template.docx) into structured array
 - **groupByFolder(templates)**: Groups templates by parent folder name
+
+## OpenCode Skills (.opencode/skills/)
+- **ui-design** — charte CSS (couleurs, boutons, layout, tableaux) pour toute nouvelle page
+- **database** — migrations MySQL, schema, seed, requêtes PDO
+- **docx-template** — manipulation .docx (TemplateAnalyzer, ZipArchive, variables)
+- **security** — CSRF/XSS/injection/fichiers à chaque nouvelle fonctionnalité
+- **manual-test** — checklist pré-commit (PHP lint, navigation, formulaires, UI, DB)
 
 ## Analyse de Couverture (pages/analyse-couverture.php)
 - Page: `index.php?page=analyse-couverture`
