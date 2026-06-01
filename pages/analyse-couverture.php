@@ -218,7 +218,9 @@ if ($templates) {
 
     document.getElementById('select-all').addEventListener('change', function(){
         document.querySelectorAll('.var-checkbox').forEach(function(cb){
-            cb.checked = this.checked;
+            if (cb.closest('tr').style.display !== 'none') {
+                cb.checked = this.checked;
+            }
         }, this);
     });
 
@@ -320,7 +322,6 @@ if ($templates) {
         document.querySelectorAll('tr[data-coverage]').forEach(function(row){
             row.style.display = row.getAttribute('data-coverage') === activeFilter ? '' : 'none';
         });
-        document.getElementById('select-all').disabled = true;
     }
 })();
 </script>
