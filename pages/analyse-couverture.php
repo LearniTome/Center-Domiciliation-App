@@ -125,15 +125,15 @@ if ($templates) {
         <p class="table-empty">Impossible d analyser les templates.</p>
     <?php else: ?>
     <div class="table-scroll">
-    <table>
+    <table data-sortable>
         <thead>
             <tr>
                 <th style="width:32px"><input type="checkbox" id="select-all" title="Tout cocher"></th>
-                <th>Variable</th>
-                <th>Occurrences</th>
-                <th>Templates</th>
-                <th>Section</th>
-                <th>Couverture</th>
+                <th data-col="Variable">Variable</th>
+                <th data-col="Occurrences">Occurrences</th>
+                <th data-col="Templates">Templates</th>
+                <th data-col="Section">Section</th>
+                <th data-col="Couverture">Couverture</th>
                 <th>Action</th>
             </tr>
         </thead>

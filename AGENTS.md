@@ -113,9 +113,18 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - Summary card: 2 lignes (Capital société + Part social société | Total capital + Total parts + Total % + Statut)
 - Parsing monétaire: `parseMoney()` (virgule→point, supprime espaces) + `formatFR()` (toLocaleString fr-FR)
 
+## Table Sorting
+- **Every data table** must have `data-sortable` on `<table>` and `data-col` on each sortable `<th>`
+- Sorting is handled automatically by `app.js` — click header to toggle asc/desc, MDI indicators
+- Non-sortable columns (checkbox, actions) omit `data-col`
+- CSS: `th[data-col]` styled in `app.css`
+- JS: IIFE runs on all `table[data-sortable]` on page load in `app.js`
+- The sort function auto-detects numeric vs text by parsing cell content
+- When adding a new table to any page, ALWAYS add `data-sortable` + `data-col` on `<th>`
+
 ## Assets
-- CSS: `assets/css/app.css` (~1116 lignes) — custom design system (CSS variables, no framework)
-- JS: `assets/js/app.js` (~638 lignes) — vanilla JS: sidebar toggle, column toggle, confirmation dialogs (`data-confirm`), dynamic associate form cloning (`data-associe-template`, `data-add-associe`, `data-remove-associe`), wizard capital distribution
+- CSS: `assets/css/app.css` — custom design system (CSS variables, no framework)
+- JS: `assets/js/app.js` — vanilla JS: sidebar toggle, column toggle, table sorting, confirmation dialogs (`data-confirm`), dynamic associate form cloning (`data-associe-template`, `data-add-associe`, `data-remove-associe`), wizard capital distribution
 
 ## TemplateAnalyzer (src/TemplateAnalyzer.php)
 - Static class for .docx template analysis and modification
@@ -137,6 +146,7 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - **Bulk actions** (checkbox-select): "Renommer la sélection" (sequential prompt per var) + "Supprimer la sélection" (confirm → loader overlay)
 - **Loader overlay**: `#loading-overlay` (fixed, rgba(0,0,0,0.6), spinner + message)
 - **CSRF + redirect-after-POST** on all actions
+- **Table sorting**: `data-sortable` + `data-col` on `<th>` (asc/desc on Variable, Occurrences, Templates, Section, Couverture)
 
 ## DOCX Manipulation Gotchas
 - **Underscore split**: `{{ CIVILITE_ASSOCIE }}` can be split across `<w:t>` as `{{ CIVILITE` + ` ` + `ASSOCIE }}`. Always use `[\s_]*` in regex patterns, not literal `_`.

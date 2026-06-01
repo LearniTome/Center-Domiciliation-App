@@ -25,8 +25,7 @@ document.querySelectorAll('[data-confirm]').forEach((element) => {
     toggleTrigger('.brand-badge');
 })();
 
-(function () {
-    var storageKey = 'nav_sections';
+
 
     function saveState() {
         var state = {};
