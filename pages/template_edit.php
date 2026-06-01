@@ -36,6 +36,7 @@ if ($templatePath === '' || !str_starts_with($templatePath, realpath($templatesD
             $files = glob($dir . '/*.docx');
             $allFolders[] = ['name' => $folderName, 'label' => $folderLabels[$folderName] ?? $folderName, 'files' => $files];
         }
+        usort($allFolders, fn($a, $b) => (empty($a['files']) <=> empty($b['files'])));
         ?>
         <div class="picker-tables">
             <?php foreach ($allFolders as $group): ?>
