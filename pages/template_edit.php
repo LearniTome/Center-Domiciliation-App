@@ -29,16 +29,12 @@ if ($templatePath === '' || !str_starts_with($templatePath, realpath($templatesD
         $allFolders = [];
         if (is_dir($racineDir)) {
             $racineFiles = glob($racineDir . '/*.docx');
-            if (!empty($racineFiles)) {
-                $allFolders[] = ['name' => '_Racine-Actifs', 'label' => $folderLabels['_Racine-Actifs'] ?? 'Toutes formes', 'files' => $racineFiles];
-            }
+            $allFolders[] = ['name' => '_Racine-Actifs', 'label' => $folderLabels['_Racine-Actifs'] ?? 'Toutes formes', 'files' => $racineFiles];
         }
         foreach ($templateDirs as $dir) {
             $folderName = basename($dir);
             $files = glob($dir . '/*.docx');
-            if (!empty($files)) {
-                $allFolders[] = ['name' => $folderName, 'label' => $folderLabels[$folderName] ?? $folderName, 'files' => $files];
-            }
+            $allFolders[] = ['name' => $folderName, 'label' => $folderLabels[$folderName] ?? $folderName, 'files' => $files];
         }
         ?>
         <div class="picker-tables">
@@ -54,6 +50,11 @@ if ($templatePath === '' || !str_starts_with($templatePath, realpath($templatesD
                             </tr>
                         </thead>
                         <tbody>
+                            <?php if (empty($group['files'])): ?>
+                            <tr>
+                                <td colspan="2" style="color:var(--text-secondary);font-style:italic">Aucun template dans ce dossier</td>
+                            </tr>
+                            <?php else: ?>
                             <?php foreach ($group['files'] as $f): ?>
                             <tr>
                                 <td><?= e(basename($f)) ?></td>
@@ -64,6 +65,7 @@ if ($templatePath === '' || !str_starts_with($templatePath, realpath($templatesD
                                 </td>
                             </tr>
                             <?php endforeach; ?>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
