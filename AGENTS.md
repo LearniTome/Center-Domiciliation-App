@@ -145,6 +145,7 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - **groupByFolder(templates)**: Groups templates by parent folder name
 
 ## OpenCode Skills (.opencode/skills/)
+- **awesome-design** — design system complet (charte CSS, boutons, layout, animations, responsive)
 - **ui-design** — charte CSS (couleurs, boutons, layout, tableaux) pour toute nouvelle page
 - **database** — migrations MySQL, schema, seed, requêtes PDO
 - **docx-template** — manipulation .docx (TemplateAnalyzer, ZipArchive, variables)
