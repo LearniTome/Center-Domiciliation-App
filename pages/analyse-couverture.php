@@ -113,8 +113,8 @@ if ($templates) {
             <div class="filter-bar" style="display:flex;gap:6px;align-items:center;margin-right:auto">
                 <span style="font-size:0.78rem;color:var(--text-secondary)">Filtrer :</span>
                 <a class="<?= $filterBtnClass('all') ?>" href="?page=analyse-couverture" data-filter="all">Tous <span class="badge" style="background:var(--text-secondary);color:#fff;padding:1px 7px;border-radius:10px;font-size:0.65rem"><?= $total ?></span></a>
-                <a class="<?= $filterBtnClass('covered') ?>" href="?page=analyse-couverture&filter=covered" data-filter="covered">Couvertes <span class="badge" style="background:var(--success);color:#fff;padding:1px 7px;border-radius:10px;font-size:0.65rem"><?= $covered ?></span></a>
-                <a class="<?= $filterBtnClass('uncovered') ?>" href="?page=analyse-couverture&filter=uncovered" data-filter="uncovered">Non couvertes <span class="badge" style="background:var(--danger);color:#fff;padding:1px 7px;border-radius:10px;font-size:0.65rem"><?= $uncovered ?></span></a>
+                <a class="<?= $filterBtnClass('couvert') ?>" href="?page=analyse-couverture&filter=couvert" data-filter="couvert">Couvertes <span class="badge" style="background:var(--success);color:#fff;padding:1px 7px;border-radius:10px;font-size:0.65rem"><?= $covered ?></span></a>
+                <a class="<?= $filterBtnClass('non couvert') ?>" href="<?= e(app_url('analyse-couverture', ['filter' => 'non couvert'])) ?>" data-filter="non couvert">Non couvertes <span class="badge" style="background:var(--danger);color:#fff;padding:1px 7px;border-radius:10px;font-size:0.65rem"><?= $uncovered ?></span></a>
             </div>
             <button type="button" id="bulk-rename-btn" class="btn btn-info"><span class="mdi mdi-rename"></span> Renommer la sélection</button>
             <button type="button" id="bulk-delete-btn" class="btn btn-danger"><span class="mdi mdi-delete"></span> Supprimer la sélection</button>
