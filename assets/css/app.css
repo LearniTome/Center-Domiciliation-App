@@ -1683,16 +1683,34 @@ tbody tr:hover:nth-child(even) {
 
 @media (max-width: 980px) {
      .shell {
+         grid-template-columns: 60px 1fr;
+     }
+     .shell:not(.collapsed) {
          grid-template-columns: 1fr;
      }
+     .shell:not(.collapsed) .sidebar {
+         position: fixed;
+         top: 0;
+         left: 0;
+         width: 260px;
+         height: 100vh;
+         z-index: 100;
+         border-right: 1px solid var(--line);
+     }
+     .shell:not(.collapsed) .main::after {
+         content: '';
+         position: fixed;
+         inset: 0;
+         background: rgba(0,0,0,0.5);
+         z-index: 99;
+     }
+     .shell.collapsed .sidebar {
+         border-right: 0;
+     }
+
      .template-item {
          padding: 8px 10px;
          gap: 8px;
-     }
-
-     .sidebar {
-         border-right: 0;
-         border-bottom: 1px solid var(--line);
      }
 
      .table-scroll {
