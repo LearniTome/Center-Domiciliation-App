@@ -757,6 +757,9 @@ $docTypeLabels = [
                     <td><?= e($ud['taille_ko'] ? number_format((float)$ud['taille_ko'], 1, ',', ' ') . ' Ko' : '-') ?></td>
                     <td><?= e(date('d/m/Y H:i', strtotime($ud['uploaded_at']))) ?></td>
                     <td>
+                        <a href="<?= e(str_replace(__DIR__ . '/../', '', $ud['filepath'])) ?>" class="btn-icon" title="Voir" data-view-doc>
+                            <span class="mdi mdi-eye"></span>
+                        </a>
                         <a href="<?= e(str_replace(__DIR__ . '/../', '', $ud['filepath'])) ?>" class="btn-icon" download title="Telecharger">
                             <span class="mdi mdi-download"></span>
                         </a>
@@ -789,6 +792,87 @@ $docTypeLabels = [
             window.showOverlay('Suppression en cours...');
         } else {
             window.showOverlay('Validation en cours...');
+        }
+    });
+})();
+</script>
+
+<div id="doc-viewer-modal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span class="modal-title">Document</span>
+            <button class="btn-icon" id="modal-close" title="Fermer">
+                <span class="mdi mdi-close"></span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <iframe id="doc-iframe" src="" frameborder="0"></iframe>
+        </div>
+    </div>
+</div>
+<style>
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+.modal-overlay.show {
+    display: flex;
+}
+.modal-content {
+    background: #fff;
+    border-radius: 8px;
+    width: 90vw;
+    height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    border-bottom: 1px solid #e0e0e0;
+}
+.modal-title {
+    font-weight: 600;
+    font-size: 16px;
+}
+.modal-body {
+    flex: 1;
+    padding: 0;
+}
+.modal-body iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+</style>
+<script>
+(function(){
+    var modal = document.getElementById('doc-viewer-modal');
+    var iframe = document.getElementById('doc-iframe');
+    var closeBtn = document.getElementById('modal-close');
+    document.querySelectorAll('[data-view-doc]').forEach(function(link){
+        link.addEventListener('click', function(e){
+            e.preventDefault();
+            iframe.src = this.href;
+            modal.classList.add('show');
+        });
+    });
+    closeBtn.addEventListener('click', function(){
+        modal.classList.remove('show');
+        iframe.src = '';
+    });
+    modal.addEventListener('click', function(e){
+        if(e.target === modal){
+            modal.classList.remove('show');
+            iframe.src = '';
         }
     });
 })();
