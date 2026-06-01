@@ -11,7 +11,7 @@ Utilise cette skill quand tu crées ou modifies une page/interface dans ce proje
 
 ## Principes généraux
 - Framework CSS : custom (variables CSS dans `assets/css/app.css`), zéro librairie externe
-- Icônes : Material Design Icons via CDN (`<span class="mdi mdi-xxx"></span>`)
+- Icônes : Material Symbols Outlined via Google Fonts (`<span class="material-symbols-outlined">icon_name</span>`)
 - Polices : Rubik (Google Fonts)
 - Langue : français uniquement
 

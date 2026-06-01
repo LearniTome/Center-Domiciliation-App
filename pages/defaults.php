@@ -105,9 +105,9 @@ $currentLabels = $fieldLabels[$currentSection] ?? [];
             <form method="post" style="display:inline" onsubmit="return confirm('Reinitialiser toutes les sections ?')">
                 <?= csrf_input() ?>
                 <input type="hidden" name="action" value="reset-all">
-                <button type="submit" class="btn btn-cancel"><span class="mdi mdi-restore"></span> Tout reinitialiser</button>
+                <button type="submit" class="btn btn-cancel"><span class="material-symbols-outlined">restore</span> Tout reinitialiser</button>
             </form>
-            <a class="btn btn-back" href="<?= e(app_url('configuration')) ?>"><span class="mdi mdi-arrow-left"></span> Retour</a>
+            <a class="btn btn-back" href="<?= e(app_url('configuration')) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
         </div>
     </div>
 
@@ -145,9 +145,9 @@ $currentLabels = $fieldLabels[$currentSection] ?? [];
             </div>
 
             <div style="display:flex;gap:6px;margin-top:0.5rem">
-                <button type="submit" class="btn btn-next"><span class="mdi mdi-content-save"></span> Enregistrer</button>
+                <button type="submit" class="btn btn-next"><span class="material-symbols-outlined">save</span> Enregistrer</button>
                 <button type="submit" class="btn btn-cancel" formaction="<?= e(app_url('defaults', ['tab' => $currentSection])) ?>" formmethod="post" name="action" value="reset" onclick="return confirm('Reinitialiser cette section ?')">
-                    <span class="mdi mdi-restore"></span> Reinitialiser
+                    <span class="material-symbols-outlined">restore</span> Reinitialiser
                 </button>
             </div>
         </form>

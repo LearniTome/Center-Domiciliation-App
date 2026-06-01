@@ -169,9 +169,9 @@ if (is_post()) {
             <form method="post" style="display:inline">
                 <?= csrf_input() ?>
                 <input type="hidden" name="action" value="sort-az">
-                <button type="submit" class="btn btn-info"><span class="mdi mdi-sort-alphabetical-ascending"></span> Trier A-Z</button>
+                <button type="submit" class="btn btn-info"><span class="material-symbols-outlined">sort_by_alpha</span> Trier A-Z</button>
             </form>
-            <a class="btn btn-back" href="<?= e(app_url('creation')) ?>"><span class="mdi mdi-arrow-left"></span> Retour</a>
+            <a class="btn btn-back" href="<?= e(app_url('creation')) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
         </div>
     </div>
 
@@ -193,7 +193,7 @@ if (is_post()) {
                 <input name="ompic_code" placeholder="Code..." required style="width:100px;padding:4px 8px;font-size:0.8125rem">
             <?php endif; ?>
             <input name="<?= e($column) ?>" placeholder="Nouveau..." required style="flex:1;padding:4px 8px;font-size:0.8125rem;min-width:120px">
-            <button type="submit" class="btn-icon" title="Ajouter" style="border:2px solid var(--primary);border-radius:var(--radius-sm);background:transparent;color:var(--primary);width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all var(--transition)"><span class="mdi mdi-plus"></span></button>
+            <button type="submit" class="btn-icon" title="Ajouter" style="border:2px solid var(--primary);border-radius:var(--radius-sm);background:transparent;color:var(--primary);width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all var(--transition)"><span class="material-symbols-outlined">add</span></button>
         </div>
     </form>
 
@@ -225,7 +225,7 @@ if (is_post()) {
                 ?>
                     <tr <?= $editKey === $val ? '' : 'draggable="true"' ?> data-record-id="<?= $rid ?>">
                         <?php if ($editKey === $val): ?>
-                            <td style="text-align:center;color:var(--text-secondary)"><span class="mdi mdi-drag-vertical"></span></td>
+                            <td style="text-align:center;color:var(--text-secondary)"><span class="material-symbols-outlined">drag_indicator</span></td>
                             <td <?= $isTribunalTab || $isFormeJuridiqueTab ? 'colspan="2"' : '' ?>>
                                 <form method="post" style="display:flex;gap:4px">
                                     <?= csrf_input() ?>
@@ -244,8 +244,8 @@ if (is_post()) {
                                         <span style="padding:2px 6px;font-size:0.8125rem;color:var(--text-secondary)"><?= e((string) $row['code']) ?> -</span>
                                     <?php endif; ?>
                                     <input name="<?= e($column) ?>" value="<?= e($val) ?>" required style="flex:1;padding:2px 6px;font-size:0.8125rem">
-                                    <button type="submit" class="btn-icon" title="Enregistrer"><span class="mdi mdi-check"></span></button>
-                                    <a class="btn-icon" href="<?= e(app_url($tab)) ?>" title="Annuler"><span class="mdi mdi-close"></span></a>
+                                    <button type="submit" class="btn-icon" title="Enregistrer"><span class="material-symbols-outlined">check</span></button>
+                                    <a class="btn-icon" href="<?= e(app_url($tab)) ?>" title="Annuler"><span class="material-symbols-outlined">close</span></a>
                                 </form>
                             </td>
                             <td></td>
@@ -253,7 +253,7 @@ if (is_post()) {
                             <td></td>
                             <?php if ($isTribunalTab): ?><td></td><?php endif; ?>
                         <?php else: ?>
-                            <td style="text-align:center;color:var(--text-secondary);cursor:grab"><span class="mdi mdi-drag-vertical"></span></td>
+                            <td style="text-align:center;color:var(--text-secondary);cursor:grab"><span class="material-symbols-outlined">drag_indicator</span></td>
                             <?php if ($isTribunalTab): ?>
                                 <td><?= e($typeVal ?: '-') ?></td>
                             <?php endif; ?>
@@ -270,22 +270,22 @@ if (is_post()) {
                                         <input type="hidden" name="action" value="reorder">
                                         <input type="hidden" name="record_id" value="<?= $rid ?>">
                                         <input type="hidden" name="direction" value="up">
-                                        <button type="submit" class="btn-icon" title="Monter" <?= $rid === $firstId ? 'disabled style="opacity:0.3"' : '' ?>><span class="mdi mdi-chevron-up"></span></button>
+                                        <button type="submit" class="btn-icon" title="Monter" <?= $rid === $firstId ? 'disabled style="opacity:0.3"' : '' ?>><span class="material-symbols-outlined">expand_less</span></button>
                                     </form>
                                     <form method="post" style="display:inline">
                                         <?= csrf_input() ?>
                                         <input type="hidden" name="action" value="reorder">
                                         <input type="hidden" name="record_id" value="<?= $rid ?>">
                                         <input type="hidden" name="direction" value="down">
-                                        <button type="submit" class="btn-icon" title="Descendre" <?= $rid === $lastId ? 'disabled style="opacity:0.3"' : '' ?>><span class="mdi mdi-chevron-down"></span></button>
+                                        <button type="submit" class="btn-icon" title="Descendre" <?= $rid === $lastId ? 'disabled style="opacity:0.3"' : '' ?>><span class="material-symbols-outlined">expand_more</span></button>
                                     </form>
                                     <span style="width:6px;display:inline-block"></span>
-                                    <a class="btn-icon" href="<?= e(app_url($tab, ['edit' => $val])) ?>" title="Modifier"><span class="mdi mdi-pencil"></span></a>
+                                    <a class="btn-icon" href="<?= e(app_url($tab, ['edit' => $val])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
                                     <form method="post" style="display:inline">
                                         <?= csrf_input() ?>
                                         <input type="hidden" name="action" value="delete">
                                         <input type="hidden" name="record_id" value="<?= $rid ?>">
-                                        <button type="submit" class="btn-icon danger" data-confirm="Supprimer <?= e($val) ?> ?" title="Supprimer"><span class="mdi mdi-delete"></span></button>
+                                        <button type="submit" class="btn-icon danger" data-confirm="Supprimer <?= e($val) ?> ?" title="Supprimer"><span class="material-symbols-outlined">delete</span></button>
                                     </form>
                                 </div>
                             </td>

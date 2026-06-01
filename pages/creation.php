@@ -828,8 +828,8 @@ $contratData = array_merge([
         <div>
             <p class="help-text">Parcours guide: societe, associes, puis contrat, dans un seul flux.</p>
         </div>
-        <a class="btn btn-cancel" href="<?= e(app_url('creation', ['cancel' => '1'])) ?>" data-confirm="Annuler la creation ?"><span class="mdi mdi-close-circle"></span> Annuler</a>
-        <a class="btn btn-back" href="<?= e(app_url('creation', ['reset' => '1'])) ?>" data-confirm="Reinitialiser cet assistant ?"><span class="mdi mdi-restart"></span> Reinitialiser</a>
+        <a class="btn btn-cancel" href="<?= e(app_url('creation', ['cancel' => '1'])) ?>" data-confirm="Annuler la creation ?"><span class="material-symbols-outlined">cancel</span> Annuler</a>
+        <a class="btn btn-back" href="<?= e(app_url('creation', ['reset' => '1'])) ?>" data-confirm="Reinitialiser cet assistant ?"><span class="material-symbols-outlined">restart_alt</span> Reinitialiser</a>
     </div>
 
     <div class="wizard-steps" id="wizard-steps-top">
@@ -871,8 +871,8 @@ if ($aiSuggestions !== null) {
             <input type="hidden" name="step" value="1">
             <?php if ($aiSuggestions && isset($aiSuggestions['step1'])): ?>
             <div class="flash flash-info" style="margin-bottom:12px">
-                <span class="mdi mdi-robot"></span>
-                Suggestions IA disponibles. <button type="button" class="btn btn-info" style="padding:2px 10px;font-size:0.8rem" data-apply-ai-fill="<?= e(json_encode($aiSuggestions['step1'], JSON_UNESCAPED_UNICODE)) ?>"><span class="mdi mdi-auto-fix"></span> Appliquer les suggestions</button>
+                <span class="material-symbols-outlined">smart_toy</span>
+                Suggestions IA disponibles. <button type="button" class="btn btn-info" style="padding:2px 10px;font-size:0.8rem" data-apply-ai-fill="<?= e(json_encode($aiSuggestions['step1'], JSON_UNESCAPED_UNICODE)) ?>"><span class="material-symbols-outlined">auto_fix</span> Appliquer les suggestions</button>
             </div>
             <?php endif; ?>
             <div class="form-grid">
@@ -954,7 +954,7 @@ if ($aiSuggestions !== null) {
                                 <option value="<?= e($row['code']) ?>" <?= ((string) $societeData['societe_activites_ompic']) === $row['code'] ? 'selected' : '' ?>><?= e($row['code'] . ' - ' . $row['libelle']) ?></option>
                             <?php endforeach; ?>
                         </select>
-                        <button type="button" class="btn btn-info" data-add-activite-cn style="white-space:nowrap"><span class="mdi mdi-plus-circle"></span> Nouvelle activite</button>
+                        <button type="button" class="btn btn-info" data-add-activite-cn style="white-space:nowrap"><span class="material-symbols-outlined">add_circle</span> Nouvelle activite</button>
                     </div>
                 </label>
 
@@ -979,7 +979,7 @@ if ($aiSuggestions !== null) {
                                             <option value="<?= e($act) ?>" selected><?= e($act) ?></option>
                                         <?php endif; ?>
                                     </select>
-                                    <button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="mdi mdi-close"></span></button>
+                                    <button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="material-symbols-outlined">close</span></button>
                                 </div>
                             <?php
                                 endforeach;
@@ -992,14 +992,14 @@ if ($aiSuggestions !== null) {
                                             <option value="<?= e($opt) ?>"><?= e($opt) ?></option>
                                         <?php endforeach; ?>
                                     </select>
-                                    <button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="mdi mdi-close"></span></button>
+                                    <button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="material-symbols-outlined">close</span></button>
                                 </div>
                             <?php endif; ?>
                         </div>
                         <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-                            <button type="button" class="btn" data-add-activite><span class="mdi mdi-plus"></span> Ajouter une activite</button>
-                            <button type="button" class="btn btn-info" data-add-activite-ref><span class="mdi mdi-plus-circle"></span> Nouvelle activite</button>
-                            <button type="button" class="btn btn-secondary" data-add-activites-multiple><span class="mdi mdi-plus-box-multiple"></span> Ajouter plusieurs</button>
+                            <button type="button" class="btn" data-add-activite><span class="material-symbols-outlined">add</span> Ajouter une activite</button>
+                            <button type="button" class="btn btn-info" data-add-activite-ref><span class="material-symbols-outlined">add_circle</span> Nouvelle activite</button>
+                            <button type="button" class="btn btn-secondary" data-add-activites-multiple><span class="material-symbols-outlined">add_box</span> Ajouter plusieurs</button>
                         </div>
                         <template data-activite-template>
                             <div data-activite-item style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
@@ -1009,7 +1009,7 @@ if ($aiSuggestions !== null) {
                                         <option value="<?= e($opt) ?>"><?= e($opt) ?></option>
                                     <?php endforeach; ?>
                                 </select>
-                                <button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="mdi mdi-close"></span></button>
+                                <button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="material-symbols-outlined">close</span></button>
                             </div>
                         </template>
                     </div>
@@ -1084,9 +1084,9 @@ if ($aiSuggestions !== null) {
                 </label>
             </div>
             <div class="table-actions">
-                <button class="btn btn-info" type="button" data-fill-test><span class="mdi mdi-auto-fix"></span> Remplir automatiquement</button>
-                <button class="btn btn-info" type="submit" name="nav_action" value="ai_fill" form="wizard-step1"><span class="mdi mdi-robot"></span> Remplir avec IA</button>
-                <button class="btn btn-next" type="submit" name="nav_action" value="next"><span class="mdi mdi-arrow-right"></span> Suivant</button>
+                <button class="btn btn-info" type="button" data-fill-test><span class="material-symbols-outlined">auto_fix</span> Remplir automatiquement</button>
+                <button class="btn btn-info" type="submit" name="nav_action" value="ai_fill" form="wizard-step1"><span class="material-symbols-outlined">smart_toy</span> Remplir avec IA</button>
+                <button class="btn btn-next" type="submit" name="nav_action" value="next"><span class="material-symbols-outlined">arrow_forward</span> Suivant</button>
             </div>
         </form>
 
@@ -1099,8 +1099,8 @@ if ($aiSuggestions !== null) {
             <input type="hidden" name="forme_juridique" value="<?= e((string) ($societeData['societe_forme_juridique'] ?? '')) ?>">
             <?php if ($aiSuggestions && isset($aiSuggestions['step2'])): ?>
             <div class="flash flash-info" style="margin-bottom:12px">
-                <span class="mdi mdi-robot"></span>
-                Suggestions IA disponibles. <button type="button" class="btn btn-info" style="padding:2px 10px;font-size:0.8rem" data-apply-ai-fill="<?= e(json_encode($aiSuggestions['step2'], JSON_UNESCAPED_UNICODE)) ?>"><span class="mdi mdi-auto-fix"></span> Appliquer les suggestions</button>
+                <span class="material-symbols-outlined">smart_toy</span>
+                Suggestions IA disponibles. <button type="button" class="btn btn-info" style="padding:2px 10px;font-size:0.8rem" data-apply-ai-fill="<?= e(json_encode($aiSuggestions['step2'], JSON_UNESCAPED_UNICODE)) ?>"><span class="material-symbols-outlined">auto_fix</span> Appliquer les suggestions</button>
             </div>
             <?php endif; ?>
             <div class="section-header">
@@ -1108,7 +1108,7 @@ if ($aiSuggestions !== null) {
                     <h2>Associes de <?= e((string) ($societeData['societe_raison_sociale'] ?: 'la societe')) ?></h2>
                     <p class="help-text">Ajoutez autant d'associes que necessaire.</p>
                 </div>
-                <button class="btn" type="button" data-add-associe><span class="mdi mdi-plus"></span> Ajouter un associé</button>
+                <button class="btn" type="button" data-add-associe><span class="material-symbols-outlined">add</span> Ajouter un associé</button>
             </div>
 
             <div class="stack" data-associes-container>
@@ -1374,10 +1374,10 @@ if ($aiSuggestions !== null) {
             </template>
 
             <div class="table-actions">
-                <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="mdi mdi-arrow-left"></span> Retour</button>
-                <button class="btn btn-info" type="button" data-fill-test><span class="mdi mdi-auto-fix"></span> Remplir automatiquement</button>
-                <button class="btn btn-info" type="submit" name="nav_action" value="ai_fill"><span class="mdi mdi-robot"></span> Remplir avec IA</button>
-                <button class="btn btn-next" type="submit" name="nav_action" value="next"><span class="mdi mdi-arrow-right"></span> Suivant</button>
+                <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="material-symbols-outlined">arrow_back</span> Retour</button>
+                <button class="btn btn-info" type="button" data-fill-test><span class="material-symbols-outlined">auto_fix</span> Remplir automatiquement</button>
+                <button class="btn btn-info" type="submit" name="nav_action" value="ai_fill"><span class="material-symbols-outlined">smart_toy</span> Remplir avec IA</button>
+                <button class="btn btn-next" type="submit" name="nav_action" value="next"><span class="material-symbols-outlined">arrow_forward</span> Suivant</button>
             </div>
         </form>
     <?php elseif ($step === 3): ?>
@@ -1386,8 +1386,8 @@ if ($aiSuggestions !== null) {
             <input type="hidden" name="step" value="3">
             <?php if ($aiSuggestions && isset($aiSuggestions['step3'])): ?>
             <div class="flash flash-info" style="margin-bottom:12px">
-                <span class="mdi mdi-robot"></span>
-                Suggestions IA disponibles. <button type="button" class="btn btn-info" style="padding:2px 10px;font-size:0.8rem" data-apply-ai-fill="<?= e(json_encode($aiSuggestions['step3'], JSON_UNESCAPED_UNICODE)) ?>"><span class="mdi mdi-auto-fix"></span> Appliquer les suggestions</button>
+                <span class="material-symbols-outlined">smart_toy</span>
+                Suggestions IA disponibles. <button type="button" class="btn btn-info" style="padding:2px 10px;font-size:0.8rem" data-apply-ai-fill="<?= e(json_encode($aiSuggestions['step3'], JSON_UNESCAPED_UNICODE)) ?>"><span class="material-symbols-outlined">auto_fix</span> Appliquer les suggestions</button>
             </div>
             <?php endif; ?>
             <div class="form-grid">
@@ -1509,10 +1509,10 @@ if ($aiSuggestions !== null) {
                 </label>
             </div>
             <div class="table-actions">
-                <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="mdi mdi-arrow-left"></span> Retour</button>
-                <button class="btn btn-info" type="button" data-fill-test><span class="mdi mdi-auto-fill"></span> Remplir automatiquement</button>
-                <button class="btn btn-info" type="submit" name="nav_action" value="ai_fill"><span class="mdi mdi-robot"></span> Remplir avec IA</button>
-                <button class="btn btn-next" type="submit" name="nav_action" value="next"><span class="mdi mdi-arrow-right"></span> Suivant</button>
+                <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="material-symbols-outlined">arrow_back</span> Retour</button>
+                <button class="btn btn-info" type="button" data-fill-test><span class="material-symbols-outlined">auto_fix</span> Remplir automatiquement</button>
+                <button class="btn btn-info" type="submit" name="nav_action" value="ai_fill"><span class="material-symbols-outlined">smart_toy</span> Remplir avec IA</button>
+                <button class="btn btn-next" type="submit" name="nav_action" value="next"><span class="material-symbols-outlined">arrow_forward</span> Suivant</button>
             </div>
         </form>
     <?php elseif ($step === 4): ?>
@@ -1527,11 +1527,11 @@ if ($aiSuggestions !== null) {
             </div>
 
             <div class="step-4-controls table-actions" style="margin-bottom:0.75rem">
-                <button class="btn btn-info" onclick="window.print()"><span class="mdi mdi-printer"></span> Imprimer</button>
-                <button class="btn btn-info" id="btn-pdf-recap" data-forme="<?= e($societeData['societe_forme_juridique'] ?? '') ?>" data-raison="<?= e($societeData['societe_raison_sociale'] ?? '') ?>"><span class="mdi mdi-file-pdf"></span> Sauvegarder PDF</button>
-                <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => 1])) ?>"><span class="mdi mdi-pencil"></span> Modifier societe</a>
-                <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => 2])) ?>"><span class="mdi mdi-pencil"></span> Modifier associes</a>
-                <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => 3])) ?>"><span class="mdi mdi-pencil"></span> Modifier contrat</a>
+                <button class="btn btn-info" onclick="window.print()"><span class="material-symbols-outlined">print</span> Imprimer</button>
+                <button class="btn btn-info" id="btn-pdf-recap" data-forme="<?= e($societeData['societe_forme_juridique'] ?? '') ?>" data-raison="<?= e($societeData['societe_raison_sociale'] ?? '') ?>"><span class="material-symbols-outlined">picture_as_pdf</span> Sauvegarder PDF</button>
+                <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => 1])) ?>"><span class="material-symbols-outlined">edit</span> Modifier societe</a>
+                <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => 2])) ?>"><span class="material-symbols-outlined">edit</span> Modifier associes</a>
+                <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => 3])) ?>"><span class="material-symbols-outlined">edit</span> Modifier contrat</a>
             </div>
 
             <div class="recap-a4">
@@ -1603,8 +1603,8 @@ if ($aiSuggestions !== null) {
             <form method="post" class="step-4-controls table-actions" style="margin-top:1rem">
                 <?= csrf_input() ?>
                 <input type="hidden" name="step" value="4">
-                <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="mdi mdi-arrow-left"></span> Retour</button>
-                <button class="btn btn-next" type="submit" name="nav_action" value="next"><span class="mdi mdi-arrow-right"></span> Suivant</button>
+                <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="material-symbols-outlined">arrow_back</span> Retour</button>
+                <button class="btn btn-next" type="submit" name="nav_action" value="next"><span class="material-symbols-outlined">arrow_forward</span> Suivant</button>
             </form>
         </div>
     <?php elseif ($step === 5): ?>
@@ -1632,11 +1632,11 @@ if ($aiSuggestions !== null) {
                 <article class="card">
                     <div class="section-header">
                         <div>
-                            <h3><span class="mdi mdi-file-certificate"></span> Certificat Negatif</h3>
+                            <h3><span class="material-symbols-outlined">verified</span> Certificat Negatif</h3>
                             <p class="help-text">Document delivre par l'OMPIC (format PDF).</p>
                         </div>
                         <?php if ($hasCn): ?>
-                            <span class="step-badge" style="color:var(--success)"><span class="mdi mdi-check-circle"></span> Telecharge</span>
+                            <span class="step-badge" style="color:var(--success)"><span class="material-symbols-outlined">check_circle</span> Telecharge</span>
                         <?php endif; ?>
                     </div>
                     <label class="field" style="margin-top:8px">
@@ -1651,19 +1651,19 @@ if ($aiSuggestions !== null) {
                 <article class="card">
                     <div class="section-header">
                         <div>
-                            <h3><span class="mdi mdi-card-account-details"></span> CIN des Gerants</h3>
+                            <h3><span class="material-symbols-outlined">badge</span> CIN des Gerants</h3>
                             <p class="help-text">
                                 <?= $isSarlAu ? 'SARL AU : un seul CIN requis.' : 'SARL : CIN de tous les gerants.' ?>
                             </p>
                         </div>
                         <?php if ($hasCin): ?>
-                            <span class="step-badge" style="color:var(--success)"><span class="mdi mdi-check-circle"></span> Telecharge(s)</span>
+                            <span class="step-badge" style="color:var(--success)"><span class="material-symbols-outlined">check_circle</span> Telecharge(s)</span>
                         <?php endif; ?>
                     </div>
 
                     <?php if (count($gerants) === 0): ?>
                         <p class="help-text" style="margin-top:8px;color:var(--warning)">
-                            <span class="mdi mdi-alert"></span> Aucun gerant designe dans les associes. Veuillez revenir a l'etape 2.
+                            <span class="material-symbols-outlined">warning</span> Aucun gerant designe dans les associes. Veuillez revenir a l'etape 2.
                         </p>
                     <?php else: ?>
                         <div class="stack" style="margin-top:8px;gap:12px">
@@ -1684,8 +1684,8 @@ if ($aiSuggestions !== null) {
                 </article>
 
                 <div class="table-actions" style="margin-top:1rem">
-                    <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="mdi mdi-arrow-left"></span> Retour</button>
-                    <button class="btn btn-next" type="submit" name="nav_action" value="next" <?= count($gerants) === 0 ? 'disabled' : '' ?>><span class="mdi mdi-arrow-right"></span> Suivant</button>
+                    <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="material-symbols-outlined">arrow_back</span> Retour</button>
+                    <button class="btn btn-next" type="submit" name="nav_action" value="next" <?= count($gerants) === 0 ? 'disabled' : '' ?>><span class="material-symbols-outlined">arrow_forward</span> Suivant</button>
                 </div>
             </form>
         </div>
@@ -1744,7 +1744,7 @@ if ($aiSuggestions !== null) {
                 </div>
                 <?php if ($dossierCreated): ?>
                     <a class="btn btn-secondary" href="<?= e(app_url('societe', ['id' => $societeId])) ?>">
-                        <span class="mdi mdi-eye"></span> Voir le dossier
+                        <span class="material-symbols-outlined">visibility</span> Voir le dossier
                     </a>
                 <?php endif; ?>
             </div>
@@ -1777,14 +1777,14 @@ if ($aiSuggestions !== null) {
                                 <?= csrf_input() ?>
                                 <input type="hidden" name="step" value="6">
                                 <button class="btn btn-next" type="submit" name="nav_action" value="create_dossier">
-                                    <span class="mdi mdi-folder-plus"></span> Creer le dossier
+                                    <span class="material-symbols-outlined">create_new_folder</span> Creer le dossier
                                 </button>
                             </form>
                             <form method="post" style="display:inline">
                                 <?= csrf_input() ?>
                                 <input type="hidden" name="step" value="6">
                                 <button class="btn btn-info" type="submit" name="nav_action" value="validate">
-                                    <span class="mdi mdi-robot"></span> Valider avec IA
+                                    <span class="material-symbols-outlined">smart_toy</span> Valider avec IA
                                 </button>
                             </form>
                         </div>
@@ -1793,7 +1793,7 @@ if ($aiSuggestions !== null) {
                     <?php if ($validationResult && is_array($validationResult)): ?>
                         <div class="card" style="margin-top:12px;padding:12px">
                             <div class="section-header">
-                                <h4><span class="mdi mdi-robot" style="color:var(--info)"></span> Validation IA</h4>
+                                <h4><span class="material-symbols-outlined" style="color:var(--info)">smart_toy</span> Validation IA</h4>
                                 <span style="font-weight:600;color:<?= ($validationResult['valide'] ?? false) ? 'var(--success)' : 'var(--danger)' ?>">
                                     <?= ($validationResult['valide'] ?? false) ? 'Dossier valide' : 'Dossier Non valide' ?>
                                 </span>
@@ -1832,9 +1832,9 @@ if ($aiSuggestions !== null) {
                             <div style="display:flex;align-items:center;gap:8px">
                                 <label class="pdf-toggle" style="margin:0">
                                     <input type="checkbox" name="pdf" value="1" checked>
-                                    <span class="mdi mdi-file-pdf"></span> PDF
+                                    <span class="material-symbols-outlined">picture_as_pdf</span> PDF
                                 </label>
-                                <a class="btn-icon" href="#" id="select-all-wizard" title="Tout selectionner"><span class="mdi mdi-check-all"></span></a>
+                                <a class="btn-icon" href="#" id="select-all-wizard" title="Tout selectionner"><span class="material-symbols-outlined">select_all</span></a>
                             </div>
 
                             <div class="table-scroll" style="overflow-x:auto">
@@ -1858,7 +1858,7 @@ if ($aiSuggestions !== null) {
                                                         <td rowspan="<?= $tplCount ?>" style="vertical-align:middle"><?= e($typeLabel) ?></td>
                                                     <?php endif; ?>
                                                     <td>
-                                                        <span class="mdi mdi-file-word" style="color:var(--primary);vertical-align:middle;margin-right:4px"></span>
+                                                        <span class="material-symbols-outlined" style="color:var(--primary);vertical-align:middle;margin-right:4px">article</span>
                                                         <?= e(basename($tpl['path'])) ?>
                                                     </td>
                                                     <td><span class="help-text"><?= count($tpl['variables']) ?> variable(s)</span></td>
@@ -1871,25 +1871,25 @@ if ($aiSuggestions !== null) {
 
                             <div style="display:flex;justify-content:flex-end;margin-top:4px">
                                 <?php if ($generatedFiles): ?>
-                                <button class="btn btn-next" type="submit" data-confirm="ATTENTION : Les documents existants seront ecrases. Voulez-vous continuer ?"><span class="mdi mdi-file-sync"></span> Regenerer les documents</button>
+                                <button class="btn btn-next" type="submit" data-confirm="ATTENTION : Les documents existants seront ecrases. Voulez-vous continuer ?"><span class="material-symbols-outlined">sync</span> Regenerer les documents</button>
                                 <?php else: ?>
-                                <button class="btn btn-next" type="submit"><span class="mdi mdi-file-sync"></span> Generer les documents</button>
+                                <button class="btn btn-next" type="submit"><span class="material-symbols-outlined">sync</span> Generer les documents</button>
                                 <?php endif; ?>
                             </div>
                         </form>
                     <?php elseif ($targetFolder !== '' && !$useRacine): ?>
                         <div class="empty-state" style="margin-top:8px">
-                            <span class="mdi mdi-file-document-outline" style="font-size:2rem;color:var(--text-secondary)"></span>
+                            <span class="material-symbols-outlined" style="font-size:2rem;color:var(--text-secondary)">description</span>
                             <p class="table-empty">Aucun template dans le dossier <strong><?= e($targetFolder) ?></strong> pour cette forme juridique.</p>
                             <?php if ($racineTemplates): ?>
                             <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => $step, 'use_racine' => 1])) ?>" style="margin-top:8px">
-                                <span class="mdi mdi-folder-open"></span> Utiliser les templates Racine par defaut (<?= count($racineTemplates) ?>)
+                                <span class="material-symbols-outlined">folder_open</span> Utiliser les templates Racine par defaut (<?= count($racineTemplates) ?>)
                             </a>
                             <?php endif; ?>
                         </div>
                     <?php else: ?>
                         <div class="empty-state" style="margin-top:8px">
-                            <span class="mdi mdi-file-document-outline" style="font-size:2rem;color:var(--text-secondary)"></span>
+                            <span class="material-symbols-outlined" style="font-size:2rem;color:var(--text-secondary)">description</span>
                             <p class="table-empty">Aucun template disponible pour cette forme juridique.</p>
                         </div>
                     <?php endif; ?>
@@ -1910,25 +1910,25 @@ if ($aiSuggestions !== null) {
                             <?= csrf_input() ?>
                             <input type="hidden" name="step" value="6">
                             <input type="hidden" name="clause_type" value="objet_social">
-                            <button class="btn btn-info" type="submit" name="nav_action" value="generate_clause"><span class="mdi mdi-robot"></span> Objet social</button>
+                            <button class="btn btn-info" type="submit" name="nav_action" value="generate_clause"><span class="material-symbols-outlined">smart_toy</span> Objet social</button>
                         </form>
                         <form method="post" style="display:inline">
                             <?= csrf_input() ?>
                             <input type="hidden" name="step" value="6">
                             <input type="hidden" name="clause_type" value="mention_legale">
-                            <button class="btn btn-info" type="submit" name="nav_action" value="generate_clause"><span class="mdi mdi-robot"></span> Mentions legales</button>
+                            <button class="btn btn-info" type="submit" name="nav_action" value="generate_clause"><span class="material-symbols-outlined">smart_toy</span> Mentions legales</button>
                         </form>
                         <form method="post" style="display:inline">
                             <?= csrf_input() ?>
                             <input type="hidden" name="step" value="6">
                             <input type="hidden" name="clause_type" value="clause_siege">
-                            <button class="btn btn-info" type="submit" name="nav_action" value="generate_clause"><span class="mdi mdi-robot"></span> Siege social</button>
+                            <button class="btn btn-info" type="submit" name="nav_action" value="generate_clause"><span class="material-symbols-outlined">smart_toy</span> Siege social</button>
                         </form>
                     </div>
                     <?php if ($clauseResult): ?>
                         <div class="card" style="margin-top:12px;padding:12px">
                             <div class="section-header">
-                                <h4><span class="mdi mdi-file-document" style="color:var(--info)"></span> <?= e(ucfirst(str_replace('_', ' ', $clauseResult['type']))) ?></h4>
+                                <h4><span class="material-symbols-outlined" style="color:var(--info)">description</span> <?= e(ucfirst(str_replace('_', ' ', $clauseResult['type']))) ?></h4>
                             </div>
                             <div style="margin-top:8px;padding:12px;background:var(--panel-strong);border-radius:6px;font-size:0.9rem;line-height:1.6;white-space:pre-wrap"><?= e($clauseResult['text']) ?></div>
                         </div>
@@ -1958,18 +1958,18 @@ if ($aiSuggestions !== null) {
                                 <?php foreach ($generatedFiles as $file): ?>
                                     <tr>
                                         <td>
-                                            <span class="mdi mdi-file-word" style="color:var(--primary);vertical-align:middle;margin-right:6px"></span>
+                                            <span class="material-symbols-outlined" style="color:var(--primary);vertical-align:middle;margin-right:6px">article</span>
                                             <?= e($file['name']) ?>
                                         </td>
                                         <td><?php if (file_exists($file['docx'])): ?><?= number_format(filesize($file['docx']) / 1024, 1) ?> Ko<?php else: ?>-<?php endif; ?></td>
                                         <td>
                                             <div class="table-actions">
                                                 <a class="btn btn-secondary" href="<?= e(str_replace(__DIR__ . '/../', '', $file['docx'])) ?>" download>
-                                                    <span class="mdi mdi-download"></span> DOCX
+                                                    <span class="material-symbols-outlined">download</span> DOCX
                                                 </a>
                                                 <?php if ($file['pdf']): ?>
                                                     <a class="btn" href="<?= e(str_replace(__DIR__ . '/../', '', $file['pdf'])) ?>" download>
-                                                        <span class="mdi mdi-file-pdf"></span> PDF
+                                                        <span class="material-symbols-outlined">picture_as_pdf</span> PDF
                                                     </a>
                                                 <?php endif; ?>
                                             </div>
@@ -1985,8 +1985,8 @@ if ($aiSuggestions !== null) {
             <form method="post" class="table-actions" style="margin-top:1rem">
                 <?= csrf_input() ?>
                 <input type="hidden" name="step" value="6">
-                <button class="btn btn-next" type="submit" name="nav_action" value="terminer"><span class="mdi mdi-check-circle"></span> Terminer</button>
-                <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="mdi mdi-arrow-left"></span> Retour</button>
+                <button class="btn btn-next" type="submit" name="nav_action" value="terminer"><span class="material-symbols-outlined">check_circle</span> Terminer</button>
+                <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="material-symbols-outlined">arrow_back</span> Retour</button>
             </form>
         </div>
 
@@ -2075,7 +2075,7 @@ if ($aiSuggestions !== null) {
         var filename = prefix + '_' + yyyy + '-' + mm + '_Recapitulatif-' + raisonSlug + '.pdf';
 
         this.disabled = true;
-        this.innerHTML = '<span class="mdi mdi-loading mdi-spin"></span> Generation...';
+        this.innerHTML = '<span class="material-symbols-outlined spin">sync</span> Generation...';
 
         element.classList.add('recap-pdf-mode');
 
@@ -2089,7 +2089,7 @@ if ($aiSuggestions !== null) {
         html2pdf().set(opt).from(element).save().then(function () {
             element.classList.remove('recap-pdf-mode');
             document.getElementById('btn-pdf-recap').disabled = false;
-            document.getElementById('btn-pdf-recap').innerHTML = '<span class="mdi mdi-file-pdf"></span> Sauvegarder PDF';
+            document.getElementById('btn-pdf-recap').innerHTML = '<span class="material-symbols-outlined">picture_as_pdf</span> Sauvegarder PDF';
         });
     });
     </script>

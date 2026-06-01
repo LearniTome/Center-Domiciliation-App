@@ -82,9 +82,9 @@ if (($pdo ?? null) instanceof PDO) {
         <div class="section-header">
             <span class="page-count"><?= count($collaborateurs) ?> enregistrement(s)</span>
             <div class="table-actions">
-                <button class="btn btn-secondary" type="button" data-col-toggle-btn><span class="mdi mdi-table-column"></span> Colonnes <span class="col-toggle-count" data-col-count>0/0</span></button>
-                <a class="btn btn-next" href="<?= e(app_url('collaborateur')) ?>"><span class="mdi mdi-account-plus"></span> Nouveau collaborateur</a>
-                <a class="btn btn-info" href="<?= e(app_url('collaborateurs', ['export' => 'csv', 'q' => $query])) ?>"><span class="mdi mdi-download"></span> Exporter CSV</a>
+                <button class="btn btn-secondary" type="button" data-col-toggle-btn><span class="material-symbols-outlined">view_column</span> Colonnes <span class="col-toggle-count" data-col-count>0/0</span></button>
+                <a class="btn btn-next" href="<?= e(app_url('collaborateur')) ?>"><span class="material-symbols-outlined">person_add</span> Nouveau collaborateur</a>
+                <a class="btn btn-info" href="<?= e(app_url('collaborateurs', ['export' => 'csv', 'q' => $query])) ?>"><span class="material-symbols-outlined">download</span> Exporter CSV</a>
             </div>
         </div>
         <form method="get" class="stack search-bar">
@@ -96,9 +96,9 @@ if (($pdo ?? null) instanceof PDO) {
                     placeholder="Rechercher par nom, type, ICE ou cabinet"
                     value="<?= e($query) ?>"
                 >
-                <button type="submit"><span class="mdi mdi-magnify"></span> Rechercher</button>
+                <button type="submit"><span class="material-symbols-outlined">search</span> Rechercher</button>
                 <?php if ($query !== ''): ?>
-                    <a class="btn btn-cancel" href="<?= e(app_url('collaborateurs')) ?>"><span class="mdi mdi-close"></span> Effacer</a>
+                    <a class="btn btn-cancel" href="<?= e(app_url('collaborateurs')) ?>"><span class="material-symbols-outlined">close</span> Effacer</a>
                 <?php endif; ?>
             </div>
         </form>
@@ -132,12 +132,12 @@ if (($pdo ?? null) instanceof PDO) {
                         <td><?= e($c['statut']) ?></td>
                         <td><?= e(date('d/m/Y', strtotime((string) $c['created_at']))) ?></td>
                         <td class="table-actions">
-                            <a class="btn-icon" href="<?= e(app_url('collaborateur', ['id' => (int) $c['id']])) ?>" title="Modifier"><span class="mdi mdi-pencil"></span></a>
+                            <a class="btn-icon" href="<?= e(app_url('collaborateur', ['id' => (int) $c['id']])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
                             <form method="post">
                                 <?= csrf_input() ?>
                                 <input type="hidden" name="action" value="delete">
                                 <input type="hidden" name="id" value="<?= e((string) $c['id']) ?>">
-                                <button class="btn-icon danger" type="submit" data-confirm="Supprimer ce collaborateur ?" title="Supprimer"><span class="mdi mdi-delete"></span></button>
+                                <button class="btn-icon danger" type="submit" data-confirm="Supprimer ce collaborateur ?" title="Supprimer"><span class="material-symbols-outlined">delete</span></button>
                             </form>
                         </td>
                     </tr>

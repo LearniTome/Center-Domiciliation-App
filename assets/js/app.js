@@ -902,7 +902,8 @@ document.addEventListener('input', (e) => {
             th.style.userSelect = 'none';
 
             var icon = document.createElement('span');
-            icon.className = 'mdi mdi-sort-variant';
+            icon.className = 'material-symbols-outlined';
+            icon.textContent = 'unfold_more';
             icon.style.marginLeft = '4px';
             icon.style.fontSize = '0.85rem';
             icon.style.opacity = '0.35';
@@ -915,13 +916,14 @@ document.addEventListener('input', (e) => {
 
                 ths.forEach(function (other) {
                     other.removeAttribute('data-order');
-                    var ic = other.querySelector('.mdi');
-                    if (ic) { ic.className = 'mdi mdi-sort-variant'; ic.style.opacity = '0.35'; }
+                    var ic = other.querySelector('.material-symbols-outlined');
+                    if (ic) { ic.className = 'material-symbols-outlined'; ic.textContent = 'unfold_more'; ic.style.opacity = '0.35'; }
                 });
 
                 var newOrder = order === 'asc' ? 'desc' : 'asc';
                 th.setAttribute('data-order', newOrder);
-                icon.className = 'mdi ' + (newOrder === 'asc' ? 'mdi-sort-ascending' : 'mdi-sort-descending');
+                icon.className = 'material-symbols-outlined';
+                icon.textContent = newOrder === 'asc' ? 'arrow_upward' : 'arrow_downward';
                 icon.style.opacity = '1';
 
                 var rows = Array.from(tbody.querySelectorAll('tr'));

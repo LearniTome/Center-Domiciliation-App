@@ -118,7 +118,7 @@ if ($exportCsv && count($documents) > 0) {
             <a class="btn <?= $filterStatut === 'valide' ? 'btn-next' : 'btn-secondary' ?>" href="<?= e(app_url('documents', array_filter(['societe_id' => $filterSociete, 'doc_type' => $filterDocType, 'q' => $q, 'statut' => 'valide'], fn($v) => $v !== null && $v !== ''))) ?>">Valides</a>
             <a class="btn <?= $filterStatut === 'brouillon' ? 'btn-next' : 'btn-secondary' ?>" href="<?= e(app_url('documents', array_filter(['societe_id' => $filterSociete, 'doc_type' => $filterDocType, 'q' => $q, 'statut' => 'brouillon'], fn($v) => $v !== null && $v !== ''))) ?>">Brouillons</a>
             <a class="btn btn-info" href="<?= e(app_url('documents', array_filter(['export' => 'csv', 'societe_id' => $filterSociete, 'doc_type' => $filterDocType], fn($v) => $v !== null && $v !== ''))) ?>">
-                <span class="mdi mdi-download"></span> Exporter CSV
+                <span class="material-symbols-outlined">download</span> Exporter CSV
             </a>
         </div>
     </div>
@@ -144,7 +144,7 @@ if ($exportCsv && count($documents) > 0) {
             <?php endforeach; ?>
         </select>
         <?php if ($q !== '' || $filterSociete !== null || $filterDocType !== '' || $filterStatut !== ''): ?>
-            <a class="btn btn-cancel" href="<?= e(app_url('documents')) ?>"><span class="mdi mdi-close"></span> Reinitialiser</a>
+            <a class="btn btn-cancel" href="<?= e(app_url('documents')) ?>"><span class="material-symbols-outlined">close</span> Reinitialiser</a>
         <?php endif; ?>
     </form>
 
@@ -189,23 +189,23 @@ if ($exportCsv && count($documents) > 0) {
                                 <td>
                                     <div class="table-actions">
                                         <a class="btn-icon" href="<?= e(word_url($doc['fichier_docx'])) ?>" title="Ouvrir dans Word">
-                                            <span class="mdi mdi-file-word"></span>
+                                            <span class="material-symbols-outlined">article</span>
                                         </a>
                                         <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_docx'])) ?>" download title="Telecharger DOCX">
-                                            <span class="mdi mdi-download"></span>
+                                            <span class="material-symbols-outlined">download</span>
                                         </a>
                                         <?php if ($doc['fichier_pdf']): ?>
                                             <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_pdf'])) ?>" download title="Telecharger PDF">
-                                                <span class="mdi mdi-file-pdf"></span>
+                                                <span class="material-symbols-outlined">picture_as_pdf</span>
                                             </a>
                                         <?php endif; ?>
                                         <?php if (!$doc['valide']): ?>
                                             <a class="btn-icon" href="#" onclick="event.preventDefault(); (function(){ var f=document.getElementById('documents-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='validate_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Validation en cours...'); f.submit();} })();" title="Valider">
-                                                <span class="mdi mdi-file-check"></span>
+                                                <span class="material-symbols-outlined">task_alt</span>
                                             </a>
                                         <?php endif; ?>
                                         <a class="btn-icon danger" href="#" onclick="event.preventDefault(); if(!confirm('Supprimer ce document ?')) return; (function(){ var f=document.getElementById('documents-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='delete_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Suppression en cours...'); f.submit();} })();" title="Supprimer">
-                                            <span class="mdi mdi-delete"></span>
+                                            <span class="material-symbols-outlined">delete</span>
                                         </a>
                                     </div>
                                 </td>
@@ -216,10 +216,10 @@ if ($exportCsv && count($documents) > 0) {
             </div>
             <div class="table-actions table-actions-top">
                 <button class="btn btn-next" type="submit" name="validate_submit" value="1">
-                    <span class="mdi mdi-file-check"></span> Valider la selection
+                    <span class="material-symbols-outlined">task_alt</span> Valider la selection
                 </button>
                 <button class="btn btn-back" type="submit" name="delete_submit" value="1">
-                    <span class="mdi mdi-delete"></span> Supprimer la selection
+                    <span class="material-symbols-outlined">delete</span> Supprimer la selection
                 </button>
             </div>
         </form>
@@ -231,7 +231,7 @@ if ($exportCsv && count($documents) > 0) {
         </script>
     <?php else: ?>
         <div class="empty-state">
-            <span class="mdi mdi-file-document-outline"></span>
+            <span class="material-symbols-outlined">description</span>
             <p class="table-empty">Aucun document genere.</p>
             <a class="btn" href="<?= e(app_url('generation')) ?>">Generer des documents</a>
         </div>

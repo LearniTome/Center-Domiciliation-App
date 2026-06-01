@@ -76,7 +76,7 @@ $filter = $_GET['filter'] ?? 'all';
             <p class="help-text">Mapper les variables des templates vers les variables de l'application</p>
         </div>
         <div class="table-actions">
-            <button type="button" id="apply-btn" class="btn btn-next" disabled><span class="mdi mdi-check-all"></span> Appliquer la selection</button>
+            <button type="button" id="apply-btn" class="btn btn-next" disabled><span class="material-symbols-outlined">select_all</span> Appliquer la selection</button>
         </div>
     </div>
 
@@ -159,11 +159,11 @@ $filter = $_GET['filter'] ?? 'all';
                         <td>
                             <?php if ($firstTpl): ?>
                             <div class="action-links">
-                                <a class="btn-icon" href="<?= e(app_url('template', ['path' => $firstTpl])) ?>" title="Voir le template"><span class="mdi mdi-eye"></span></a>
+                                <a class="btn-icon" href="<?= e(app_url('template', ['path' => $firstTpl])) ?>" title="Voir le template"><span class="material-symbols-outlined">visibility</span></a>
                                 <?php if ($tplCount > 1): ?>
                                 <div class="action-more">
                                     <button type="button" class="btn-icon toggle-dropdown" title="Tous les templates">
-                                        <span class="mdi mdi-dots-horizontal"></span>
+                                        <span class="material-symbols-outlined">more_horiz</span>
                                     </button>
                                     <div class="action-dropdown hidden">
                                         <?php foreach ($tplPaths as $tplPath): ?>

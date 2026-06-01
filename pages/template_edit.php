@@ -18,7 +18,7 @@ if ($templatePath === '' || !str_starts_with($templatePath, realpath($templatesD
     <section class="card stack">
         <div class="section-header">
             <div class="section-header-info">
-                <span class="mdi mdi-file-document-edit mdi-leading"></span>
+                <span class="material-symbols-outlined icon-leading">edit_note</span>
                 <div>
                     <h2>Selectionnez un template</h2>
                     <p class="help-text">Choisissez un dossier puis un fichier .docx a editer</p>
@@ -61,7 +61,7 @@ if ($templatePath === '' || !str_starts_with($templatePath, realpath($templatesD
                                 <td><?= e(basename($f)) ?></td>
                                 <td>
                                     <a class="btn-icon" href="<?= e(app_url('template_edit', ['path' => $f])) ?>" title="Editer">
-                                        <span class="mdi mdi-pencil"></span>
+                                        <span class="material-symbols-outlined">edit</span>
                                     </a>
                                 </td>
                             </tr>
@@ -76,7 +76,7 @@ if ($templatePath === '' || !str_starts_with($templatePath, realpath($templatesD
         <div class="section-header picker-actions">
             <div></div>
             <div class="table-actions">
-                <a class="btn btn-back" href="<?= e(app_url('templates')) ?>"><span class="mdi mdi-arrow-left"></span> Retour</a>
+                <a class="btn btn-back" href="<?= e(app_url('templates')) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
             </div>
         </div>
     </section>
@@ -173,7 +173,7 @@ $variables = TemplateEditor::getAvailableVariables();
             <?php foreach ($variables as $category => $vars): ?>
                 <div class="var-category">
                     <h4 class="var-category-title" onclick="toggleCategory(this)">
-                        <span class="mdi mdi-chevron-down"></span>
+                        <span class="material-symbols-outlined">expand_more</span>
                         <?= e($category) ?>
                         <span class="var-count"><?= count($vars) ?></span>
                     </h4>
@@ -198,10 +198,10 @@ $variables = TemplateEditor::getAvailableVariables();
             </div>
             <div class="table-actions">
                 <a class="btn btn-back" href="<?= e(app_url('template', ['path' => $templatePath])) ?>" title="Retour aux infos template">
-                    <span class="mdi mdi-arrow-left"></span> Retour
+                    <span class="material-symbols-outlined">arrow_back</span> Retour
                 </a>
                 <a class="btn-icon" href="<?= e(app_url('template_edit')) ?>" title="Changer de template">
-                    <span class="mdi mdi-file-document-edit"></span>
+                    <span class="material-symbols-outlined">edit_note</span>
                 </a>
             </div>
         </div>
@@ -251,13 +251,13 @@ $variables = TemplateEditor::getAvailableVariables();
                 </select>
                 <span class="toolbar-sep"></span>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="exec('bold')" title="Gras (Ctrl+B)">
-                    <span class="mdi mdi-format-bold"></span>
+                    <span class="material-symbols-outlined">format_bold</span>
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="exec('italic')" title="Italique (Ctrl+I)">
-                    <span class="mdi mdi-format-italic"></span>
+                    <span class="material-symbols-outlined">format_italic</span>
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="exec('underline')" title="Souligne (Ctrl+U)">
-                    <span class="mdi mdi-format-underline"></span>
+                    <span class="material-symbols-outlined">format_underline</span>
                 </button>
                 <span class="toolbar-sep"></span>
                 <span class="color-btn">
@@ -270,55 +270,55 @@ $variables = TemplateEditor::getAvailableVariables();
                 </span>
                 <span class="toolbar-sep"></span>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="exec('justifyleft')" title="Aligner a gauche">
-                    <span class="mdi mdi-format-align-left"></span>
+                    <span class="material-symbols-outlined">format_align_left</span>
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="exec('justifycenter')" title="Centrer">
-                    <span class="mdi mdi-format-align-center"></span>
+                    <span class="material-symbols-outlined">format_align_center</span>
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="exec('justifyright')" title="Aligner a droite">
-                    <span class="mdi mdi-format-align-right"></span>
+                    <span class="material-symbols-outlined">format_align_right</span>
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="exec('justifyfull')" title="Justifier">
-                    <span class="mdi mdi-format-align-justify"></span>
+                    <span class="material-symbols-outlined">format_align_justify</span>
                 </button>
                 <span class="toolbar-sep"></span>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="exec('insertorderedlist')" title="Liste numerotee">
-                    <span class="mdi mdi-format-list-numbered"></span>
+                    <span class="material-symbols-outlined">format_list_numbered</span>
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="exec('insertunorderedlist')" title="Liste a puces">
-                    <span class="mdi mdi-format-list-bulleted"></span>
+                    <span class="material-symbols-outlined">format_list_bulleted</span>
                 </button>
                 <span class="toolbar-sep"></span>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="showTableDialog()" title="Insérer un tableau">
-                    <span class="mdi mdi-table"></span>
+                    <span class="material-symbols-outlined">table</span>
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="exec('inserthorizontalrule')" title="Ligne horizontale">
-                    <span class="mdi mdi-minus"></span>
+                    <span class="material-symbols-outlined">remove</span>
                 </button>
                 <span class="toolbar-sep"></span>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="exec('undo')" title="Annuler">
-                    <span class="mdi mdi-undo"></span>
+                    <span class="material-symbols-outlined">undo</span>
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="exec('redo')" title="Retablir">
-                    <span class="mdi mdi-redo"></span>
+                    <span class="material-symbols-outlined">redo</span>
                 </button>
                 <span class="toolbar-sep"></span>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="toggleSource()" title="Code source">
-                    <span class="mdi mdi-code-tags"></span>
+                    <span class="material-symbols-outlined">code</span>
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="togglePreview()" title="Aperçu">
-                    <span class="mdi mdi-eye"></span> Aperçu
+                    <span class="material-symbols-outlined">visibility</span> Aperçu
                 </button>
                 <span class="toolbar-sep"></span>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="clearFormatting()" title="Effacer la mise en forme">
-                    <span class="mdi mdi-format-clear"></span>
+                    <span class="material-symbols-outlined">format_clear</span>
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="printEditor()" title="Imprimer / PDF (Ctrl+P)">
-                    <span class="mdi mdi-printer"></span> PDF
+                    <span class="material-symbols-outlined">print</span> PDF
                 </button>
                 <span class="toolbar-sep"></span>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="insertPageBreak()" title="Nouvelle page">
-                    <span class="mdi mdi-file-plus"></span>
+                    <span class="material-symbols-outlined">note_add</span>
                 </button>
             </div>
 
@@ -336,13 +336,13 @@ $variables = TemplateEditor::getAvailableVariables();
 
             <div class="editor-actions">
                 <button type="submit" class="btn btn-next" onclick="return beforeSave()">
-                    <span class="mdi mdi-content-save"></span> Enregistrer
+                    <span class="material-symbols-outlined">save</span> Enregistrer
                 </button>
                 <button type="button" class="btn btn-secondary" onclick="showSaveAs()">
-                    <span class="mdi mdi-content-save-outline"></span> Enregistrer sous
+                    <span class="material-symbols-outlined">save</span> Enregistrer sous
                 </button>
                 <button type="button" class="btn btn-secondary" onclick="if(confirm('Creer un nouveau template vierge ?'))document.getElementById('blank-form').submit();">
-                    <span class="mdi mdi-file-plus"></span> Nouveau vierge
+                    <span class="material-symbols-outlined">note_add</span> Nouveau vierge
                 </button>
             </div>
         </form>
@@ -368,10 +368,10 @@ $variables = TemplateEditor::getAvailableVariables();
                 <div class="inline-form">
                     <input type="text" name="new_name" placeholder="Nom du fichier (ex: Mon_Template.docx)" required class="input-flex">
                     <button type="submit" class="btn btn-next" onclick="document.getElementById('content-html-saveas').value=document.getElementById('editor-content').innerHTML">
-                        <span class="mdi mdi-content-save"></span> Creer
+                        <span class="material-symbols-outlined">save</span> Creer
                     </button>
                     <button type="button" class="btn btn-secondary" onclick="document.getElementById('save-as-form').classList.add('hidden')">
-                        <span class="mdi mdi-close"></span> Annuler
+                        <span class="material-symbols-outlined">close</span> Annuler
                     </button>
                 </div>
             </div>
@@ -433,13 +433,13 @@ function insertVar(text) {
 
 function toggleCategory(titleEl) {
     const list = titleEl.nextElementSibling;
-    const icon = titleEl.querySelector('.mdi');
+    const icon = titleEl.querySelector('.material-symbols-outlined');
     if (list.style.display === 'none') {
         list.style.display = 'flex';
-        icon.classList.replace('mdi-chevron-right', 'mdi-chevron-down');
+        icon.textContent = 'expand_more';
     } else {
         list.style.display = 'none';
-        icon.classList.replace('mdi-chevron-down', 'mdi-chevron-right');
+        icon.textContent = 'chevron_right';
     }
 }
 

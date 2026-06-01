@@ -278,12 +278,12 @@ $docTypeLabels = [
     <h2><?= e($societe['societe_raison_sociale']) ?></h2>
     <div class="table-actions">
         <?php if ($editing): ?>
-            <a class="btn btn-secondary" href="<?= e(app_url('societe', ['id' => $societeId])) ?>"><span class="mdi mdi-close"></span> Annuler</a>
+            <a class="btn btn-secondary" href="<?= e(app_url('societe', ['id' => $societeId])) ?>"><span class="material-symbols-outlined">close</span> Annuler</a>
         <?php else: ?>
-            <a class="btn btn-secondary" href="<?= e(app_url('societe', ['id' => $societeId, 'edit' => '1'])) ?>"><span class="mdi mdi-pencil"></span> Modifier</a>
-            <a class="btn btn-info" href="<?= e(app_url('generation', ['societe_id' => $societeId])) ?>"><span class="mdi mdi-file-sync"></span> <?= count($documents) > 0 ? 'Regenerer documents' : 'Generer documents' ?></a>
+            <a class="btn btn-secondary" href="<?= e(app_url('societe', ['id' => $societeId, 'edit' => '1'])) ?>"><span class="material-symbols-outlined">edit</span> Modifier</a>
+            <a class="btn btn-info" href="<?= e(app_url('generation', ['societe_id' => $societeId])) ?>"><span class="material-symbols-outlined">sync</span> <?= count($documents) > 0 ? 'Regenerer documents' : 'Generer documents' ?></a>
         <?php endif; ?>
-        <a class="btn btn-secondary" href="<?= e(app_url('societes')) ?>"><span class="mdi mdi-arrow-left"></span> Retour</a>
+        <a class="btn btn-secondary" href="<?= e(app_url('societes')) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
     </div>
 </div>
 
@@ -396,7 +396,7 @@ $docTypeLabels = [
                                 <option value="<?= e($row['code']) ?>" <?= $societeActivitesOmpic === $row['code'] ? 'selected' : '' ?>><?= e($row['code'] . ' - ' . $row['libelle']) ?></option>
                             <?php endforeach; ?>
                         </select>
-                        <button type="button" class="btn btn-info btn-nowrap" data-add-activite-cn><span class="mdi mdi-plus-circle"></span> Nouvelle activite</button>
+                        <button type="button" class="btn btn-info btn-nowrap" data-add-activite-cn><span class="material-symbols-outlined">add_circle</span> Nouvelle activite</button>
                     </div>
                 </label>
 
@@ -418,7 +418,7 @@ $docTypeLabels = [
                                                 <option value="<?= e($act) ?>" selected><?= e($act) ?></option>
                                             <?php endif; ?>
                                         </select>
-                                        <button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="mdi mdi-close"></span></button>
+                                        <button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="material-symbols-outlined">close</span></button>
                                     </div>
                                 <?php endforeach; ?>
                             <?php else: ?>
@@ -429,14 +429,14 @@ $docTypeLabels = [
                                             <option value="<?= e($opt) ?>"><?= e($opt) ?></option>
                                         <?php endforeach; ?>
                                     </select>
-                                    <button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="mdi mdi-close"></span></button>
+                                    <button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="material-symbols-outlined">close</span></button>
                                 </div>
                             <?php endif; ?>
                         </div>
                         <div class="flex-row-wrap">
-                            <button type="button" class="btn" data-add-activite><span class="mdi mdi-plus"></span> Ajouter une activite</button>
-                            <button type="button" class="btn btn-info" data-add-activite-ref><span class="mdi mdi-plus-circle"></span> Nouvelle activite</button>
-                            <button type="button" class="btn btn-secondary" data-add-activites-multiple><span class="mdi mdi-plus-box-multiple"></span> Ajouter plusieurs</button>
+                            <button type="button" class="btn" data-add-activite><span class="material-symbols-outlined">add</span> Ajouter une activite</button>
+                            <button type="button" class="btn btn-info" data-add-activite-ref><span class="material-symbols-outlined">add_circle</span> Nouvelle activite</button>
+                            <button type="button" class="btn btn-secondary" data-add-activites-multiple><span class="material-symbols-outlined">add_box</span> Ajouter plusieurs</button>
                         </div>
                         <template data-activite-template>
                             <div data-activite-item class="flex-row flex-row-mb">
@@ -446,7 +446,7 @@ $docTypeLabels = [
                                         <option value="<?= e($opt) ?>"><?= e($opt) ?></option>
                                     <?php endforeach; ?>
                                 </select>
-                                <button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="mdi mdi-close"></span></button>
+                                <button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="material-symbols-outlined">close</span></button>
                             </div>
                         </template>
                     </div>
@@ -513,7 +513,7 @@ $docTypeLabels = [
                 </label>
             </div>
             <div>
-                <button class="btn btn-next" type="submit"><span class="mdi mdi-check"></span> Enregistrer</button>
+                <button class="btn btn-next" type="submit"><span class="material-symbols-outlined">check</span> Enregistrer</button>
             </div>
         </form>
     </section>
@@ -565,7 +565,7 @@ $docTypeLabels = [
 <article class="card">
     <div class="section-header">
         <h3>Associes lies (<?= count($associes) ?>)</h3>
-        <a class="btn btn-info" href="<?= e(app_url('associes')) ?>"><span class="mdi mdi-eye"></span> Voir tout</a>
+        <a class="btn btn-info" href="<?= e(app_url('associes')) ?>"><span class="material-symbols-outlined">visibility</span> Voir tout</a>
     </div>
     <?php if (!$associes): ?>
         <p class="table-empty">Aucun associe lie a cette societe.</p>
@@ -600,7 +600,7 @@ $docTypeLabels = [
 <article class="card">
     <div class="section-header">
         <h3>Contrats lies (<?= count($contrats) ?>)</h3>
-        <a class="btn btn-info" href="<?= e(app_url('contrats')) ?>"><span class="mdi mdi-eye"></span> Voir tout</a>
+        <a class="btn btn-info" href="<?= e(app_url('contrats')) ?>"><span class="material-symbols-outlined">visibility</span> Voir tout</a>
     </div>
     <?php if (!$contrats): ?>
         <p class="table-empty">Aucun contrat lie a cette societe.</p>
@@ -634,13 +634,13 @@ $docTypeLabels = [
     <div class="section-header">
         <h3>Documents generes (<?= count($documents) ?>)</h3>
         <div class="table-actions">
-            <a class="btn btn-info" href="<?= e(app_url('generation', ['societe_id' => $societeId])) ?>"><span class="mdi mdi-file-sync"></span> <?= count($documents) > 0 ? 'Regenerer documents' : 'Generer documents' ?></a>
-            <a class="btn btn-info" href="<?= e(app_url('documents', ['societe_id' => $societeId])) ?>"><span class="mdi mdi-eye"></span> Voir tout</a>
+            <a class="btn btn-info" href="<?= e(app_url('generation', ['societe_id' => $societeId])) ?>"><span class="material-symbols-outlined">sync</span> <?= count($documents) > 0 ? 'Regenerer documents' : 'Generer documents' ?></a>
+            <a class="btn btn-info" href="<?= e(app_url('documents', ['societe_id' => $societeId])) ?>"><span class="material-symbols-outlined">visibility</span> Voir tout</a>
         </div>
     </div>
     <?php if (!$documents): ?>
         <div class="empty-state">
-            <span class="mdi mdi-file-document-outline"></span>
+            <span class="material-symbols-outlined">description</span>
             <p class="table-empty">Aucun document genere.</p>
         </div>
     <?php else: ?>
@@ -677,27 +677,27 @@ $docTypeLabels = [
                                 <td>
                                     <div class="table-actions">
                                         <a class="btn-icon" href="<?= e(word_url($doc['fichier_docx'])) ?>" title="Ouvrir dans Word">
-                                            <span class="mdi mdi-file-word"></span>
+                                            <span class="material-symbols-outlined">article</span>
                                         </a>
                                         <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_docx'])) ?>" download title="Telecharger DOCX">
-                                            <span class="mdi mdi-download"></span>
+                                            <span class="material-symbols-outlined">download</span>
                                         </a>
                                         <?php if ($doc['fichier_pdf']): ?>
                                             <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_pdf'])) ?>" download title="Telecharger PDF">
-                                                <span class="mdi mdi-file-pdf"></span>
+                                                <span class="material-symbols-outlined">picture_as_pdf</span>
                                             </a>
                                         <?php endif; ?>
                                         <?php if (!$doc['valide']): ?>
                                             <a class="btn-icon" href="#" onclick="event.preventDefault(); (function(){ var f=document.getElementById('docs-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='validate_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Validation en cours...'); f.submit();} })();" title="Valider">
-                                                <span class="mdi mdi-file-check"></span>
+                                                <span class="material-symbols-outlined">task_alt</span>
                                             </a>
                                         <?php else: ?>
                                             <a class="btn-icon" href="#" onclick="event.preventDefault(); (function(){ var f=document.getElementById('docs-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='restore_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Restauration en cours...'); f.submit();} })();" title="Restaurer en brouillon">
-                                                <span class="mdi mdi-file-undo"></span>
+                                                <span class="material-symbols-outlined">restore</span>
                                             </a>
                                         <?php endif; ?>
                                         <a class="btn-icon danger" href="#" onclick="event.preventDefault(); if(!confirm('Supprimer ce document ?')) return; (function(){ var f=document.getElementById('docs-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='delete_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Suppression en cours...'); f.submit();} })();" title="Supprimer">
-                                            <span class="mdi mdi-delete"></span>
+                                            <span class="material-symbols-outlined">delete</span>
                                         </a>
                                     </div>
                                 </td>
@@ -713,15 +713,15 @@ $docTypeLabels = [
                 ?>
                 <?php if ($allValides): ?>
                     <button class="btn btn-info" type="submit" name="restore_submit" value="1">
-                        <span class="mdi mdi-file-undo"></span> Restaurer en brouillons
+                        <span class="material-symbols-outlined">restore</span> Restaurer en brouillons
                     </button>
                 <?php else: ?>
                     <button class="btn btn-next" type="submit" name="validate_submit" value="1">
-                        <span class="mdi mdi-file-check"></span> Valider la selection
+                        <span class="material-symbols-outlined">task_alt</span> Valider la selection
                     </button>
                 <?php endif; ?>
                 <button class="btn btn-back" type="submit" name="delete_submit" value="1">
-                    <span class="mdi mdi-delete"></span> Supprimer la selection
+                    <span class="material-symbols-outlined">delete</span> Supprimer la selection
                 </button>
             </div>
         </form>
@@ -754,19 +754,19 @@ $docTypeLabels = [
                 <?php foreach ($uploadedDocsList as $ud):
                     $relativePath = str_replace('\\', '/', str_replace(__DIR__ . '/../', '', $ud['filepath']));
                     $ext = strtolower(pathinfo($ud['filename_original'], PATHINFO_EXTENSION));
-                    $fileIcon = $ext === 'pdf' ? 'mdi-file-pdf-box' : (in_array($ext, ['jpg','jpeg','png','gif','webp']) ? 'mdi-file-image' : 'mdi-file');
+                    $fileIcon = $ext === 'pdf' ? 'picture_as_pdf' : (in_array($ext, ['jpg','jpeg','png','gif','webp']) ? 'image' : 'description');
                 ?>
                 <tr>
                     <td><?= e($docTypeLabels[$ud['doc_type']] ?? $ud['doc_type']) ?></td>
-                    <td><span class="mdi <?= $fileIcon ?> icon-text-gap"></span><?= e($ud['filename_original']) ?></td>
+                    <td><span class="material-symbols-outlined icon-text-gap"><?= $fileIcon ?></span><?= e($ud['filename_original']) ?></td>
                     <td><?= e($ud['taille_ko'] ? number_format((float)$ud['taille_ko'], 1, ',', ' ') . ' Ko' : '-') ?></td>
                     <td><?= e(date('d/m/Y H:i', strtotime($ud['uploaded_at']))) ?></td>
                     <td>
                         <a href="<?= e($relativePath) ?>" class="btn-icon" title="Voir" data-view-doc>
-                            <span class="mdi mdi-eye"></span>
+                            <span class="material-symbols-outlined">visibility</span>
                         </a>
                         <a href="<?= e($relativePath) ?>" class="btn-icon" download title="Telecharger">
-                            <span class="mdi mdi-download"></span>
+                            <span class="material-symbols-outlined">download</span>
                         </a>
                     </td>
                 </tr>
@@ -807,7 +807,7 @@ $docTypeLabels = [
         <div class="modal-header">
             <span class="modal-title">Document</span>
             <button class="btn-icon" id="modal-close" title="Fermer">
-                <span class="mdi mdi-close"></span>
+                <span class="material-symbols-outlined">close</span>
             </button>
         </div>
         <div class="modal-body">

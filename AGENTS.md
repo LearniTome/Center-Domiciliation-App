@@ -76,7 +76,7 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - **Wizard variants** (specificity 0,2,0): `.btn.btn-cancel` (grey), `.btn.btn-back` (orange `#ff6b35`), `.btn.btn-info` (violet `var(--info)`), `.btn.btn-next` (green `#00b894`)
 - All variants: transparent background, 2px solid border, hover rgba 12%
 - **Padding**: `6px 14px` (CSS global) — do NOT use inline `padding:` on buttons
-- **Icons**: Every button MUST have an MDI icon `<span class="mdi mdi-xxx"></span>` before the text
+- **Icons**: Every button MUST have a Material Symbol `<span class="material-symbols-outlined">icon_name</span>` before the text
 - **Color by role**:
   - Green (`.btn-next`) — primary/creation actions: Creer un dossier, Nouveau collaborateur, Nouveau dossier, Ajouter un template, Suivant, Generer les documents, Creer le dossier complet
   - Violet (`.btn-info`) — secondary/explore actions: Voir tout, Exporter CSV, Remplir automatiquement

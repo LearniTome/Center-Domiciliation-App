@@ -42,7 +42,7 @@ $navSections = [
 <aside class="sidebar">
     <div class="brand">
         <span class="brand-badge">
-            <span class="mdi mdi-home-city"></span>
+            <span class="material-symbols-outlined">location_city</span>
         </span>
         <div class="brand-text">
             <strong>Center Domiciliation</strong>
@@ -51,10 +51,10 @@ $navSections = [
 
     <div class="nav-toggle-all">
         <button type="button" title="Tout réduire" data-collapse-all>
-            <span class="mdi mdi-collapse-all"></span>
+            <span class="material-symbols-outlined">collapse_all</span>
         </button>
         <button type="button" title="Tout déployer" data-expand-all>
-            <span class="mdi mdi-expand-all"></span>
+            <span class="material-symbols-outlined">expand_all</span>
         </button>
     </div>
 
@@ -63,7 +63,7 @@ $navSections = [
             <?php if ($sectionLabel): ?>
             <div class="nav-section">
                 <button class="nav-section-toggle" type="button" data-nav-toggle>
-                    <span class="mdi mdi-chevron-down"></span>
+                    <span class="material-symbols-outlined">expand_more</span>
                     <?= e($sectionLabel) ?>
                 </button>
                 <div class="nav-section-items">

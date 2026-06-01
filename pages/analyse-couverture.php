@@ -144,7 +144,7 @@ if ($aiSuggestions !== null) {
     <?php if ($aiSuggestions && isset($aiSuggestions['suggestions'])): ?>
         <div class="card ai-suggestions-card">
             <div class="section-header">
-                <h4><span class="mdi mdi-robot text-info"></span> Suggestions IA</h4>
+                <h4><span class="material-symbols-outlined text-info">smart_toy</span> Suggestions IA</h4>
             </div>
             <div class="ai-suggestions-list">
             <?php foreach ($aiSuggestions['suggestions'] as $suggestion): ?>
@@ -210,14 +210,14 @@ if ($aiSuggestions !== null) {
                                     <?php endforeach; ?>
                                 </select>
                                 <button type="submit" name="rename" value="1" class="btn-icon" title="Renommer">
-                                    <span class="mdi mdi-rename"></span>
+                                    <span class="material-symbols-outlined">drive_file_rename_outline</span>
                                 </button>
                             </form>
                             <form method="post" class="inline-form delete-var-form">
                                 <?= csrf_input() ?>
                                 <input type="hidden" name="var_name" value="<?= e($v['variable']) ?>">
                                 <button type="submit" name="delete_var" value="1" class="btn-icon danger" title="Supprimer">
-                                    <span class="mdi mdi-delete"></span>
+                                    <span class="material-symbols-outlined">delete</span>
                                 </button>
                             </form>
                         </div>
@@ -232,17 +232,17 @@ if ($aiSuggestions !== null) {
 <?php if ($analysis): ?>
 <div class="table-actions bulk-actions-bar">
     <div class="bulk-actions-left">
-        <button type="button" id="invert-select-btn" class="btn btn-secondary"><span class="mdi mdi-select-inverse"></span> Inverser la sélection</button>
+        <button type="button" id="invert-select-btn" class="btn btn-secondary"><span class="material-symbols-outlined">deselect</span> Inverser la sélection</button>
     </div>
-    <button type="button" id="bulk-rename-btn" class="btn btn-info"><span class="mdi mdi-rename"></span> Renommer la sélection</button>
-    <button type="button" id="bulk-delete-btn" class="btn btn-danger"><span class="mdi mdi-delete"></span> Supprimer la sélection</button>
+    <button type="button" id="bulk-rename-btn" class="btn btn-info"><span class="material-symbols-outlined">drive_file_rename_outline</span> Renommer la sélection</button>
+    <button type="button" id="bulk-delete-btn" class="btn btn-danger"><span class="material-symbols-outlined">delete</span> Supprimer la sélection</button>
     <form method="post" class="inline-form">
         <?= csrf_input() ?>
-        <button type="submit" name="export_csv" value="1" class="btn btn-info"><span class="mdi mdi-download"></span> Export CSV</button>
+        <button type="submit" name="export_csv" value="1" class="btn btn-info"><span class="material-symbols-outlined">download</span> Export CSV</button>
     </form>
     <form method="post" class="inline-form">
         <?= csrf_input() ?>
-        <button type="submit" name="ai_suggest" value="1" class="btn btn-info"><span class="mdi mdi-robot"></span> Suggérer avec IA</button>
+        <button type="submit" name="ai_suggest" value="1" class="btn btn-info"><span class="material-symbols-outlined">smart_toy</span> Suggérer avec IA</button>
     </form>
 </div>
 <?php endif; ?>

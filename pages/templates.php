@@ -193,10 +193,10 @@ $sortedFolders = array_merge($nonEmpty, $empty);
         <div class="section-header">
             <span class="page-count"><?= count($templates) ?> template(s) trouve(s)</span>
             <div class="table-actions">
-                <a class="btn btn-next" href="#" onclick="document.getElementById('folder-form').classList.toggle('hidden'); return false;"><span class="mdi mdi-folder-plus"></span> Nouveau dossier</a>
-                <a class="btn btn-next" href="#" onclick="document.getElementById('upload-form').classList.toggle('hidden'); return false;"><span class="mdi mdi-plus"></span> Ajouter un template</a>
-                <a class="btn btn-info" href="#" onclick="document.getElementById('copy-form').classList.toggle('hidden'); return false;"><span class="mdi mdi-content-copy"></span> Copier</a>
-                <a class="btn" href="#" onclick="document.getElementById('backup-form').classList.toggle('hidden'); return false;"><span class="mdi mdi-download"></span> Backup</a>
+                <a class="btn btn-next" href="#" onclick="document.getElementById('folder-form').classList.toggle('hidden'); return false;"><span class="material-symbols-outlined">create_new_folder</span> Nouveau dossier</a>
+                <a class="btn btn-next" href="#" onclick="document.getElementById('upload-form').classList.toggle('hidden'); return false;"><span class="material-symbols-outlined">add</span> Ajouter un template</a>
+                <a class="btn btn-info" href="#" onclick="document.getElementById('copy-form').classList.toggle('hidden'); return false;"><span class="material-symbols-outlined">content_copy</span> Copier</a>
+                <a class="btn" href="#" onclick="document.getElementById('backup-form').classList.toggle('hidden'); return false;"><span class="material-symbols-outlined">download</span> Backup</a>
             </div>
         </div>
 
@@ -236,7 +236,7 @@ $sortedFolders = array_merge($nonEmpty, $empty);
                         <?php endif; ?>
                     <?php endforeach; ?>
                 </select>
-                <span class="mdi mdi-arrow-right"></span>
+                <span class="material-symbols-outlined">arrow_forward</span>
                 <select name="dest_folder" required>
                     <option value="">-- Vers --</option>
                     <?php foreach ($displayFolders as $folder): ?>
@@ -270,7 +270,7 @@ $sortedFolders = array_merge($nonEmpty, $empty);
                         <button type="button" class="accordion-trigger" aria-expanded="<?= $hasItems ? 'true' : 'false' ?>" onclick="toggleAccordion(this)">
                             <span class="accordion-label"><?= e($folderLabels[$folder] ?? $folder) ?></span>
                             <span class="accordion-count"><?= count($items) ?></span>
-                            <span class="mdi mdi-chevron-down accordion-chevron"></span>
+                            <span class="material-symbols-outlined accordion-chevron">expand_more</span>
                         </button>
                     </h3>
                     <div class="accordion-panel" <?= $hasItems ? '' : 'hidden' ?>>
@@ -296,12 +296,12 @@ $sortedFolders = array_merge($nonEmpty, $empty);
                                     <td><?= e(number_format($tpl['size'] / 1024, 1)) ?> KB</td>
                                     <td><?= e(date('d/m/Y H:i', $tpl['modified'])) ?></td>
                                     <td class="table-actions">
-                                        <a class="btn-icon" href="<?= e(app_url('template', ['path' => $tpl['path']])) ?>" title="Voir"><span class="mdi mdi-eye"></span></a>
+                                        <a class="btn-icon" href="<?= e(app_url('template', ['path' => $tpl['path']])) ?>" title="Voir"><span class="material-symbols-outlined">visibility</span></a>
                                         <form method="post">
                                             <?= csrf_input() ?>
                                             <input type="hidden" name="action" value="delete">
                                             <input type="hidden" name="path" value="<?= e($tpl['path']) ?>">
-                                            <button class="btn-icon danger" type="submit" data-confirm="Supprimer ce template ?" title="Supprimer"><span class="mdi mdi-delete"></span></button>
+                                            <button class="btn-icon danger" type="submit" data-confirm="Supprimer ce template ?" title="Supprimer"><span class="material-symbols-outlined">delete</span></button>
                                         </form>
                                     </td>
                                 </tr>

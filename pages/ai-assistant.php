@@ -35,7 +35,7 @@ if (is_post() && isset($_POST['clear'])) {
         <div class="table-actions">
             <form method="post" style="display:inline">
                 <?= csrf_input() ?>
-                <button type="submit" name="clear" value="1" class="btn btn-cancel"><span class="mdi mdi-delete-outline"></span> Effacer l'historique</button>
+                <button type="submit" name="clear" value="1" class="btn btn-cancel"><span class="material-symbols-outlined">delete</span> Effacer l'historique</button>
             </form>
         </div>
     </div>
@@ -43,14 +43,14 @@ if (is_post() && isset($_POST['clear'])) {
     <div class="chat-box" style="max-height:500px;overflow-y:auto;border:1px solid var(--line);border-radius:var(--radius-sm);padding:1rem;margin-bottom:1rem;display:flex;flex-direction:column;gap:1rem">
         <?php if (empty($messages)): ?>
             <p class="table-empty" style="padding:2rem;text-align:center">
-                <span class="mdi mdi-robot" style="font-size:3rem;display:block;margin-bottom:0.5rem;color:var(--text-secondary)"></span>
+                <span class="material-symbols-outlined" style="font-size:3rem;display:block;margin-bottom:0.5rem;color:var(--text-secondary)">smart_toy</span>
                 Posez votre premiere question.<br>
                 <small style="color:var(--text-secondary)">Ex: "Quels sont les documents necessaires pour creer une SARL ?"</small>
             </p>
         <?php else: ?>
             <?php foreach ($messages as $m): ?>
                 <div class="chat-msg <?= $m['role'] ?>" style="display:flex;gap:10px;align-items:flex-start">
-                    <span class="mdi <?= $m['role'] === 'user' ? 'mdi-account-circle' : 'mdi-robot' ?>" style="font-size:1.5rem;color:<?= $m['role'] === 'user' ? 'var(--primary)' : 'var(--success)' ?>;flex-shrink:0"></span>
+                    <span class="material-symbols-outlined" style="font-size:1.5rem;color:<?= $m['role'] === 'user' ? 'var(--primary)' : 'var(--success)' ?>;flex-shrink:0"><?= $m['role'] === 'user' ? 'account_circle' : 'smart_toy' ?></span>
                     <div class="chat-bubble" style="background:var(--panel-strong);padding:10px 14px;border-radius:8px;line-height:1.6;font-size:0.9rem;white-space:pre-wrap;word-break:break-word">
                         <?= e($m['content']) ?>
                     </div>
@@ -63,6 +63,6 @@ if (is_post() && isset($_POST['clear'])) {
         <?= csrf_input() ?>
         <input type="text" name="question" placeholder="Posez votre question..." required autofocus
             style="flex:1;padding:10px 14px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--text);font-size:0.9rem">
-        <button type="submit" name="ask" value="1" class="btn btn-next"><span class="mdi mdi-send"></span> Envoyer</button>
+        <button type="submit" name="ask" value="1" class="btn btn-next"><span class="material-symbols-outlined">send</span> Envoyer</button>
     </form>
 </section>
