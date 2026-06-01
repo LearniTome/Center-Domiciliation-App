@@ -27,17 +27,17 @@ if ($templatePath === '' || !str_starts_with($templatePath, realpath($templatesD
         </div>
         <?php
         $allFolders = [];
+        if (is_dir($racineDir)) {
+            $racineFiles = glob($racineDir . '/*.docx');
+            if (!empty($racineFiles)) {
+                $allFolders[] = ['name' => '_Racine-Actifs', 'label' => $folderLabels['_Racine-Actifs'] ?? 'Toutes formes', 'files' => $racineFiles];
+            }
+        }
         foreach ($templateDirs as $dir) {
             $folderName = basename($dir);
             $files = glob($dir . '/*.docx');
             if (!empty($files)) {
                 $allFolders[] = ['name' => $folderName, 'label' => $folderLabels[$folderName] ?? $folderName, 'files' => $files];
-            }
-        }
-        if (is_dir($racineDir)) {
-            $racineFiles = glob($racineDir . '/*.docx');
-            if (!empty($racineFiles)) {
-                $allFolders[] = ['name' => '_Racine-Actifs', 'label' => $folderLabels['_Racine-Actifs'] ?? 'Racine Actifs', 'files' => $racineFiles];
             }
         }
         ?>
