@@ -114,6 +114,7 @@ if ($templates) {
                 <a class="<?= $filterBtnClass('all') ?>" href="?page=analyse-couverture" data-filter="all">Tous <span class="badge" style="background:var(--text-secondary);color:#fff;padding:1px 7px;border-radius:10px;font-size:0.65rem"><?= $total ?></span></a>
                 <a class="<?= $filterBtnClass('couvert') ?>" href="?page=analyse-couverture&filter=couvert" data-filter="couvert">Couvertes <span class="badge" style="background:var(--success);color:#fff;padding:1px 7px;border-radius:10px;font-size:0.65rem"><?= $covered ?></span></a>
                 <a class="<?= $filterBtnClass('non couvert') ?>" href="<?= e(app_url('analyse-couverture', ['filter' => 'non couvert'])) ?>" data-filter="non couvert">Non couvertes <span class="badge" style="background:var(--danger);color:#fff;padding:1px 7px;border-radius:10px;font-size:0.65rem"><?= $uncovered ?></span></a>
+                <input type="text" id="var-search" placeholder="Rechercher une variable..." style="padding:4px 8px;font-size:0.78rem;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--text);width:200px;margin-left:6px">
             </div>
         </div>
         <?php endif; ?>
@@ -144,7 +145,7 @@ if ($templates) {
                     <td><input type="checkbox" class="var-checkbox" value="<?= e($v['variable']) ?>"></td>
                     <td><code><?= e($v['variable']) ?></code></td>
                     <td><?= e((string) $v['occurrences']) ?></td>
-                    <td><?= e((string) $v['templates_count']) ?> template(s)</td>
+                    <td title="<?= e(implode(', ', $v['templates'])) ?>"><?= e((string) $v['templates_count']) ?> template(s)</td>
                     <td><span class="pill"><?= e($v['section']) ?></span></td>
                     <td>
                         <span class="statut-badge <?= $v['coverage'] === 'couvert' ? 'actif' : 'resilie' ?>">
@@ -184,7 +185,9 @@ if ($templates) {
 </section>
 <?php if ($analysis): ?>
 <div class="table-actions" style="margin-top:12px">
-    <div style="margin-right:auto"></div>
+    <div style="margin-right:auto">
+        <button type="button" id="invert-select-btn" class="btn btn-secondary"><span class="mdi mdi-select-inverse"></span> Inverser la sélection</button>
+    </div>
     <button type="button" id="bulk-rename-btn" class="btn btn-info"><span class="mdi mdi-rename"></span> Renommer la sélection</button>
     <button type="button" id="bulk-delete-btn" class="btn btn-danger"><span class="mdi mdi-delete"></span> Supprimer la sélection</button>
     <form method="post" style="display:inline">
@@ -216,12 +219,49 @@ if ($templates) {
         overlay.style.display = 'flex';
     };
 
+    var searchInput = document.getElementById('var-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', function(){
+            var q = this.value.toUpperCase();
+            document.querySelectorAll('tr[data-coverage]').forEach(function(row){
+                var code = row.querySelector('code');
+                if (code) {
+                    var match = code.textContent.toUpperCase().indexOf(q) !== -1;
+                    row.style.display = match ? '' : 'none';
+                }
+            });
+        });
+    }
+
     document.getElementById('select-all').addEventListener('change', function(){
         document.querySelectorAll('.var-checkbox').forEach(function(cb){
             if (cb.closest('tr').style.display !== 'none') {
                 cb.checked = this.checked;
             }
         }, this);
+    });
+
+    document.getElementById('invert-select-btn').addEventListener('click', function(){
+        document.querySelectorAll('.var-checkbox').forEach(function(cb){
+            if (cb.closest('tr').style.display !== 'none') {
+                cb.checked = !cb.checked;
+            }
+        });
+    });
+
+    document.querySelectorAll('select[name="new_name"]').forEach(function(sel){
+        sel.addEventListener('change', function(){
+            var oldName = this.closest('form').querySelector('input[name="var_name"]').value;
+            var newName = this.value;
+            if (newName !== '' && newName !== oldName) {
+                if (confirm('Renommer {{ ' + oldName + ' }} en {{ ' + newName + ' }} ?')) {
+                    window.showOverlay('Renommage en cours...');
+                    this.closest('form').submit();
+                } else {
+                    this.value = '';
+                }
+            }
+        });
     });
 
     document.getElementById('bulk-rename-btn').addEventListener('click', function(){
