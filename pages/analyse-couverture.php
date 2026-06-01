@@ -249,21 +249,6 @@ if ($templates) {
         });
     });
 
-    document.querySelectorAll('select[name="new_name"]').forEach(function(sel){
-        sel.addEventListener('change', function(){
-            var oldName = this.closest('form').querySelector('input[name="var_name"]').value;
-            var newName = this.value;
-            if (newName !== '' && newName !== oldName) {
-                if (confirm('Renommer {{ ' + oldName + ' }} en {{ ' + newName + ' }} ?')) {
-                    window.showOverlay('Renommage en cours...');
-                    this.closest('form').submit();
-                } else {
-                    this.value = '';
-                }
-            }
-        });
-    });
-
     document.getElementById('bulk-rename-btn').addEventListener('click', function(){
         var checked = document.querySelectorAll('.var-checkbox:checked');
         if (checked.length === 0) {
