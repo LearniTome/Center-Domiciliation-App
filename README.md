@@ -76,12 +76,16 @@ Application PHP compatible XAMPP pour la gestion des dossiers de domiciliation :
 │   ├── qualites-associe.php # Qualites d'associe
 │   ├── setup.php          # Instructions XAMPP
 │   └── not-found.php      # Page 404
-├── docs/setup/XAMPP_SETUP.md  # Documentation complete XAMPP
+├── run.ps1                # Lanceur XAMPP
 ├── scripts/               # Utilitaires (renommage variables, debug)
 ├── docs/                  # Documentation
-│   ├── README.md
-│   └── AGENTS.md          # Guide pour l'agent OpenCode
-└── run.ps1                # Lanceur XAMPP
+│   ├── analysis.md
+│   ├── DESIGN_SYSTEM.md
+│   ├── Guide-Variables-Creation-Dossier.md
+│   ├── Guide-Variables-Templates-Documents.md
+│   ├── php-xampp-migration-master-prompt.md
+│   └── setup/
+└── AGENTS.md              # Guide pour l'agent OpenCode
 ```
 
 ## Pages disponibles
