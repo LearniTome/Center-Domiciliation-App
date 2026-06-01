@@ -85,13 +85,13 @@ $filter = $_GET['filter'] ?? 'all';
             <span>Variables trouvees</span>
             <strong><?= $totalCount ?></strong>
         </article>
-        <article class="stat">
+        <article class="stat stat-success">
             <span>Mappees</span>
-            <strong style="color:var(--success)"><?= $mappedCount ?></strong>
+            <strong><?= $mappedCount ?></strong>
         </article>
-        <article class="stat">
+        <article class="stat stat-danger">
             <span>Non mappees</span>
-            <strong style="color:var(--danger)"><?= $unmappedCount ?></strong>
+            <strong><?= $unmappedCount ?></strong>
         </article>
         <article class="stat">
             <span>Templates analyses</span>
@@ -99,11 +99,11 @@ $filter = $_GET['filter'] ?? 'all';
         </article>
     </div>
 
-    <div class="filter-bar" style="display:flex;gap:8px;align-items:center;padding:8px 0;flex-wrap:wrap">
+    <div class="variables-filter-bar">
         <a class="btn <?= $filter === 'all' ? 'btn-next' : '' ?>" href="?page=variables&filter=all">Tous</a>
-        <a class="btn <?= $filter === 'unmapped' ? 'btn-next' : '' ?>" href="?page=variables&filter=unmapped">Non mappes <span class="badge" style="background:var(--danger);color:#fff;padding:1px 8px;border-radius:10px;font-size:0.7rem"><?= $unmappedCount ?></span></a>
-        <a class="btn <?= $filter === 'mapped' ? 'btn-next' : '' ?>" href="?page=variables&filter=mapped">Mappes <span class="badge" style="background:var(--success);color:#fff;padding:1px 8px;border-radius:10px;font-size:0.7rem"><?= $mappedCount ?></span></a>
-        <input type="text" id="var-search" placeholder="Rechercher une variable..." style="margin-left:auto;padding:6px 10px;background:var(--bg);border:1px solid var(--line);border-radius:var(--radius-sm);color:var(--text);font-size:0.8rem;min-width:200px">
+        <a class="btn <?= $filter === 'unmapped' ? 'btn-next' : '' ?>" href="?page=variables&filter=unmapped">Non mappes <span class="badge bg-danger"><?= $unmappedCount ?></span></a>
+        <a class="btn <?= $filter === 'mapped' ? 'btn-next' : '' ?>" href="?page=variables&filter=mapped">Mappes <span class="badge bg-success"><?= $mappedCount ?></span></a>
+        <input type="text" id="var-search" class="var-search" placeholder="Rechercher une variable...">
     </div>
 
     <?php if (!$totalCount): ?>
@@ -116,7 +116,7 @@ $filter = $_GET['filter'] ?? 'all';
         <table>
             <thead>
                 <tr>
-                    <th style="width:32px"><input type="checkbox" id="select-all" title="Tout cocher"></th>
+                    <th class="var-th-checkbox"><input type="checkbox" id="select-all" title="Tout cocher"></th>
                     <th>Variable dans les templates</th>
                     <th>Occurrences</th>
                     <th>Templates</th>
@@ -138,11 +138,11 @@ $filter = $_GET['filter'] ?? 'all';
                     ?>
                     <tr class="<?= $isMapped ? 'row-mapped' : 'row-unmapped' ?>">
                         <td><input type="checkbox" class="var-checkbox" value="<?= e($upper) ?>" <?= $isMapped ? 'disabled' : '' ?>></td>
-                        <td><code style="color:var(--primary)">{{ <?= e($original) ?> }}</code></td>
+                        <td><code class="var-code-primary">{{ <?= e($original) ?> }}</code></td>
                         <td><?= $variableOccurrences[$upper] ?></td>
-                        <td title="<?= e(implode(', ', $tplNames)) ?>" style="font-size:0.8rem;color:var(--text-secondary);white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis"><?= $tplCount ?> template(s)</td>
+                        <td title="<?= e(implode(', ', $tplNames)) ?>" class="tpl-list"><?= $tplCount ?> template(s)</td>
                         <td>
-                            <select name="target_names[<?= e($upper) ?>]" style="max-width:180px;font-size:0.78rem;padding:2px 4px" <?= $isMapped ? 'disabled' : '' ?>>
+                            <select name="target_names[<?= e($upper) ?>]" class="select-mapping" <?= $isMapped ? 'disabled' : '' ?>>
                                 <option value="">-- Choisir --</option>
                                 <?php foreach ($contextKeys as $ck): ?>
                                 <option value="<?= e($ck) ?>" <?= $isMapped && $upper === strtoupper($ck) ? 'selected' : '' ?>><?= e($ck) ?></option>

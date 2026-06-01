@@ -130,29 +130,36 @@ if ($aiSuggestions !== null) {
         $filterBtnClass = fn($f) => 'btn btn-sm ' . ($activeFilter === $f ? 'btn-next' : 'btn-secondary');
     ?>
         <div class="table-actions">
-            <div class="filter-bar" style="display:flex;gap:6px;align-items:center;margin-right:auto">
-                <span style="font-size:0.78rem;color:var(--text-secondary)">Filtrer :</span>
-                <a class="<?= $filterBtnClass('all') ?>" href="?page=analyse-couverture" data-filter="all">Tous <span class="badge" style="background:var(--text-secondary);color:#fff;padding:1px 7px;border-radius:10px;font-size:0.65rem"><?= $total ?></span></a>
-                <a class="<?= $filterBtnClass('couvert') ?>" href="?page=analyse-couverture&filter=couvert" data-filter="couvert">Couvertes <span class="badge" style="background:var(--success);color:#fff;padding:1px 7px;border-radius:10px;font-size:0.65rem"><?= $covered ?></span></a>
-                <a class="<?= $filterBtnClass('non couvert') ?>" href="<?= e(app_url('analyse-couverture', ['filter' => 'non couvert'])) ?>" data-filter="non couvert">Non couvertes <span class="badge" style="background:var(--danger);color:#fff;padding:1px 7px;border-radius:10px;font-size:0.65rem"><?= $uncovered ?></span></a>
-                <input type="text" id="var-search" placeholder="Rechercher une variable..." style="padding:4px 8px;font-size:0.78rem;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--text);width:200px;margin-left:6px">
+            <div class="analyse-filter-bar">
+                <span class="analyse-filter-label">Filtrer :</span>
+                <a class="<?= $filterBtnClass('all') ?>" href="?page=analyse-couverture" data-filter="all">Tous <span class="badge bg-secondary"><?= $total ?></span></a>
+                <a class="<?= $filterBtnClass('couvert') ?>" href="?page=analyse-couverture&filter=couvert" data-filter="couvert">Couvertes <span class="badge bg-success"><?= $covered ?></span></a>
+                <a class="<?= $filterBtnClass('non couvert') ?>" href="<?= e(app_url('analyse-couverture', ['filter' => 'non couvert'])) ?>" data-filter="non couvert">Non couvertes <span class="badge bg-danger"><?= $uncovered ?></span></a>
+                <input type="text" id="var-search" class="var-search-input" placeholder="Rechercher une variable...">
             </div>
         </div>
         <?php endif; ?>
     </div>
 
     <?php if ($aiSuggestions && isset($aiSuggestions['suggestions'])): ?>
-        <div class="card" style="margin-bottom:1rem;padding:12px">
+        <div class="card ai-suggestions-card">
             <div class="section-header">
-                <h4><span class="mdi mdi-robot" style="color:var(--info)"></span> Suggestions IA</h4>
+                <h4><span class="mdi mdi-robot text-info"></span> Suggestions IA</h4>
             </div>
-            <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px">
+            <div class="ai-suggestions-list">
             <?php foreach ($aiSuggestions['suggestions'] as $suggestion): ?>
-                <div style="display:flex;align-items:baseline;gap:8px;font-size:0.85rem;padding:4px 0;border-bottom:1px solid var(--line)">
-                    <code style="background:var(--panel-strong);padding:2px 6px;border-radius:3px"><?= e($suggestion['variable'] ?? '') ?></code>
-                    <span style="color:var(--text-secondary)">→</span>
+                <?php
+                    $badgeClass = match($suggestion['action'] ?? '') {
+                        'rename' => 'bg-warning',
+                        'delete' => 'bg-danger',
+                        default => 'bg-success',
+                    };
+                ?>
+                <div class="ai-suggestion-row">
+                    <code><?= e($suggestion['variable'] ?? '') ?></code>
+                    <span class="ai-suggestion-arrow">→</span>
                     <span><?= e($suggestion['suggestion'] ?? '') ?></span>
-                    <span class="badge" style="background:<?= ($suggestion['action'] ?? '') === 'rename' ? 'var(--warning)' : (($suggestion['action'] ?? '') === 'delete' ? 'var(--danger)' : 'var(--success)') ?>;color:#fff;padding:1px 8px;border-radius:10px;font-size:0.65rem"><?= e($suggestion['action'] ?? '') ?></span>
+                    <span class="ai-suggestion-badge <?= $badgeClass ?>"><?= e($suggestion['action'] ?? '') ?></span>
                 </div>
             <?php endforeach; ?>
             </div>
@@ -168,7 +175,7 @@ if ($aiSuggestions !== null) {
     <table data-sortable>
         <thead>
             <tr>
-                <th style="width:32px"><input type="checkbox" id="select-all" title="Tout cocher"></th>
+                <th class="var-th-checkbox"><input type="checkbox" id="select-all" title="Tout cocher"></th>
                 <th data-col="Variable">Variable</th>
                 <th data-col="Occurrences">Occurrences</th>
                 <th data-col="Templates">Templates</th>
@@ -192,11 +199,11 @@ if ($aiSuggestions !== null) {
                         </span>
                     </td>
                     <td>
-                        <div style="display:flex;gap:4px;align-items:center">
-                            <form method="post" style="display:flex;gap:4px;align-items:center" class="rename-var-form">
+                        <div class="var-action-cell">
+                            <form method="post" class="rename-var-form">
                                 <?= csrf_input() ?>
                                 <input type="hidden" name="var_name" value="<?= e($v['variable']) ?>">
-                                <select name="new_name" required style="max-width:140px;font-size:0.75rem;padding:2px 4px">
+                                <select name="new_name" required class="select-rename">
                                     <option value="">Renommer en...</option>
                                     <?php foreach ($contextKeys as $ck): ?>
                                     <option value="<?= e($ck) ?>"><?= e($ck) ?></option>
@@ -206,7 +213,7 @@ if ($aiSuggestions !== null) {
                                     <span class="mdi mdi-rename"></span>
                                 </button>
                             </form>
-                            <form method="post" style="display:inline" class="delete-var-form">
+                            <form method="post" class="inline-form delete-var-form">
                                 <?= csrf_input() ?>
                                 <input type="hidden" name="var_name" value="<?= e($v['variable']) ?>">
                                 <button type="submit" name="delete_var" value="1" class="btn-icon danger" title="Supprimer">
@@ -223,31 +230,31 @@ if ($aiSuggestions !== null) {
     <?php endif; ?>
 </section>
 <?php if ($analysis): ?>
-<div class="table-actions" style="margin-top:12px">
-    <div style="margin-right:auto">
+<div class="table-actions bulk-actions-bar">
+    <div class="bulk-actions-left">
         <button type="button" id="invert-select-btn" class="btn btn-secondary"><span class="mdi mdi-select-inverse"></span> Inverser la sélection</button>
     </div>
     <button type="button" id="bulk-rename-btn" class="btn btn-info"><span class="mdi mdi-rename"></span> Renommer la sélection</button>
     <button type="button" id="bulk-delete-btn" class="btn btn-danger"><span class="mdi mdi-delete"></span> Supprimer la sélection</button>
-    <form method="post" style="display:inline">
+    <form method="post" class="inline-form">
         <?= csrf_input() ?>
         <button type="submit" name="export_csv" value="1" class="btn btn-info"><span class="mdi mdi-download"></span> Export CSV</button>
     </form>
-    <form method="post" style="display:inline">
+    <form method="post" class="inline-form">
         <?= csrf_input() ?>
         <button type="submit" name="ai_suggest" value="1" class="btn btn-info"><span class="mdi mdi-robot"></span> Suggérer avec IA</button>
     </form>
 </div>
 <?php endif; ?>
 
-<form id="bulk-delete-form" method="post" style="display:none">
+<form id="bulk-delete-form" method="post" class="hidden-form">
     <?= csrf_input() ?>
 </form>
-<form id="bulk-rename-form" method="post" style="display:none">
+<form id="bulk-rename-form" method="post" class="hidden-form">
     <?= csrf_input() ?>
 </form>
 
-<div id="loading-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center">
+<div id="loading-overlay">
     <div class="loader-card">
         <div class="spinner"></div>
         <p id="loading-text">Traitement en cours...</p>
@@ -259,7 +266,7 @@ if ($aiSuggestions !== null) {
     var text = document.getElementById('loading-text');
     window.showOverlay = function(msg){
         text.textContent = msg;
-        overlay.style.display = 'flex';
+        overlay.classList.add('show');
     };
 
     var searchInput = document.getElementById('var-search');

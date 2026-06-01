@@ -1389,6 +1389,10 @@ tbody tr:hover:nth-child(even) {
     padding: 24px 12px;
     text-align: center;
 }
+.empty-state .mdi {
+    font-size: 2rem;
+    color: var(--text-secondary);
+}
 
 .pdf-toggle {
     display: inline-flex;
@@ -1622,6 +1626,154 @@ tbody tr:hover:nth-child(even) {
     font-weight: 600;
 }
 
+/* Section header info (template_edit picker) */
+.section-header-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.section-header-info .mdi-leading {
+    font-size: 1.4rem;
+    color: var(--primary);
+}
+.section-header-info h2 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+/* Picker action bar */
+.picker-actions {
+    margin-top: 0.5rem;
+}
+
+/* Section title with actions bar */
+.section-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+.section-title-row h2,
+.section-title-row h3 {
+    margin: 0;
+}
+
+/* Stats bottom margin */
+.stats-bottom-margin {
+    margin-bottom: 1rem;
+}
+
+/* Flex-1 for form selects */
+.select-flex {
+    flex: 1;
+}
+
+/* Grid full width */
+.grid-full {
+    grid-column: 1 / -1;
+}
+
+/* Flex row helpers */
+.flex-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.flex-row-wrap {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+.flex-row-gap {
+    gap: 8px;
+}
+.flex-row-mb {
+    margin-bottom: 6px;
+}
+
+/* Nowrap button */
+.btn-nowrap {
+    white-space: nowrap;
+}
+
+/* Stat colored text */
+.stat-success strong { color: var(--success); }
+.stat-danger strong { color: var(--danger); }
+
+/* Variables filter bar */
+.variables-filter-bar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 8px 0;
+    flex-wrap: wrap;
+}
+.variables-filter-bar .var-search {
+    margin-left: auto;
+    padding: 6px 10px;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-size: 0.8rem;
+    min-width: 200px;
+}
+.variables-filter-bar .var-search:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+/* Variable code */
+.var-code-primary {
+    color: var(--primary);
+}
+
+/* Template list truncate */
+.tpl-list {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Select mapping */
+.select-mapping {
+    max-width: 180px;
+    font-size: 0.78rem;
+    padding: 2px 4px;
+}
+
+/* Icon with text spacing */
+.icon-text-gap {
+    margin-right: 6px;
+}
+.icon-text-gap.mdi {
+    color: var(--text-secondary);
+}
+
+/* Table actions top margin */
+.table-actions-top {
+    margin-top: 12px;
+}
+
+/* Empty table cell */
+.table-empty-cell {
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* Accordion panel empty text */
+.accordion-table-empty {
+    margin: 0;
+}
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
 /* Template picker (editor home) */
 .picker-tables {
     display: grid;
@@ -1635,6 +1787,230 @@ tbody tr:hover:nth-child(even) {
     letter-spacing: 0.04em;
     color: var(--primary);
 }
+/* ==========================================
+   Text color utilities
+   ========================================== */
+.text-info { color: var(--info); }
+.text-success { color: var(--success); }
+.text-danger { color: var(--danger); }
+.text-warning { color: var(--warning); }
+
+/* ==========================================
+   Modal Viewer (societe.php)
+   ========================================== */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+.modal-overlay.show {
+    display: flex;
+}
+.modal-content {
+    background: #fff;
+    border-radius: 8px;
+    width: 90vw;
+    height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    border-bottom: 1px solid #e0e0e0;
+}
+.modal-title {
+    font-weight: 600;
+    font-size: 16px;
+}
+.modal-body {
+    flex: 1;
+    padding: 0;
+}
+.modal-body iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+/* ==========================================
+   Sticky Table Header + Drag (config-render.php)
+   ========================================== */
+#config-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--surface);
+}
+#config-table thead::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--primary);
+    opacity: 0.4;
+}
+#config-table tbody tr {
+    transition: background 0.12s;
+}
+#config-table tbody tr:hover {
+    background: rgba(74,108,247,0.04);
+}
+#config-table tbody tr[draggable="true"] {
+    transition: opacity 0.15s, background 0.12s;
+}
+#config-table tbody tr.dragging {
+    opacity: 0.4;
+}
+#config-table tbody tr.drag-over {
+    border-bottom: 2px solid var(--primary);
+}
+
+/* ==========================================
+   Analyse couverture (analyse-couverture.php)
+   ========================================== */
+.analyse-filter-bar {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-right: auto;
+}
+.analyse-filter-label {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+.analyse-filter-bar .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-size: 0.65rem;
+    color: #fff;
+    line-height: 1.4;
+}
+.analyse-filter-bar .badge.bg-secondary {
+    background: var(--text-secondary);
+}
+.analyse-filter-bar .badge.bg-success {
+    background: var(--success);
+}
+.analyse-filter-bar .badge.bg-danger {
+    background: var(--danger);
+}
+.var-search-input {
+    padding: 4px 8px;
+    font-size: 0.78rem;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--bg);
+    color: var(--text);
+    width: 200px;
+    margin-left: 6px;
+}
+.var-search-input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+.var-search-input::placeholder {
+    color: var(--text-secondary);
+}
+
+.ai-suggestions-card {
+    margin-bottom: 1rem;
+    padding: 12px;
+}
+.ai-suggestions-list {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.ai-suggestion-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 0.85rem;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--line);
+}
+.ai-suggestion-row code {
+    background: var(--panel-strong);
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+.ai-suggestion-arrow {
+    color: var(--text-secondary);
+}
+.ai-suggestion-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 0.65rem;
+    color: #fff;
+    line-height: 1.4;
+}
+.ai-suggestion-badge.bg-warning {
+    background: var(--warning);
+}
+.ai-suggestion-badge.bg-danger {
+    background: var(--danger);
+}
+.ai-suggestion-badge.bg-success {
+    background: var(--success);
+}
+
+.var-action-cell {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+.rename-var-form {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+.select-rename {
+    max-width: 140px;
+    font-size: 0.75rem;
+    padding: 2px 4px;
+}
+
+.bulk-actions-bar {
+    margin-top: 12px;
+}
+.bulk-actions-left {
+    margin-right: auto;
+}
+.bulk-actions-bar .inline-form {
+    display: inline;
+}
+.hidden-form {
+    display: none;
+}
+
+.var-th-checkbox {
+    width: 32px;
+}
+.col-actions {
+    white-space: nowrap;
+}
+.table-nowrap {
+    white-space: nowrap;
+}
+
 /* ==========================================
    Loading Overlay (shared: generation, documents, societe)
    ========================================== */
@@ -2107,13 +2483,33 @@ tr[data-coverage], .row-mapped {
 .table-dialog {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
-    z-index: 1000;
+    z-index: 1000; margin-bottom: 0.75rem;
 }
 .table-dialog .card { padding: 1.5rem; min-width: 350px; }
 .table-dialog .inline-form { display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap; margin-top: 0.75rem; }
 .table-dialog label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; color: var(--text-secondary); }
 .table-dialog input { padding: 0.4rem; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-sm); color: var(--text); }
 .hidden { display: none !important; }
+
+/* Save-as form */
+.save-as-form {
+    margin-bottom: 0.75rem;
+}
+.save-as-form .inline-form {
+    flex-wrap: wrap;
+}
+.input-flex {
+    flex: 1; min-width: 200px;
+    padding: 6px 10px; border: 1px solid var(--line);
+    border-radius: var(--radius-sm); background: var(--bg);
+    color: var(--text); font-family: inherit;
+}
+.input-flex:focus { outline: none; border-color: var(--primary); }
+
+/* Number input for table dialog */
+.num-input-sm {
+    width: 60px;
+}
 @media (max-width: 900px) {
     .template-editor-layout { grid-template-columns: 1fr; }
     .editor-sidebar { position: static; max-height: none; }

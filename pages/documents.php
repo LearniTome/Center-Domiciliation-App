@@ -151,8 +151,8 @@ if ($exportCsv && count($documents) > 0) {
     <?php if (count($documents) > 0): ?>
         <form method="post" id="documents-form">
             <?= csrf_input() ?>
-            <div class="table-scroll" style="overflow-x: auto">
-                <table data-sortable style="white-space: nowrap">
+            <div class="table-scroll">
+                <table data-sortable class="table-nowrap">
                     <thead>
                         <tr>
                             <th class="col-check"></th>
@@ -214,7 +214,7 @@ if ($exportCsv && count($documents) > 0) {
                     </tbody>
                 </table>
             </div>
-            <div class="table-actions" style="margin-top:12px">
+            <div class="table-actions table-actions-top">
                 <button class="btn btn-next" type="submit" name="validate_submit" value="1">
                     <span class="mdi mdi-file-check"></span> Valider la selection
                 </button>
@@ -231,7 +231,7 @@ if ($exportCsv && count($documents) > 0) {
         </script>
     <?php else: ?>
         <div class="empty-state">
-            <span class="mdi mdi-file-document-outline" style="font-size:2rem;color:var(--text-secondary)"></span>
+            <span class="mdi mdi-file-document-outline"></span>
             <p class="table-empty">Aucun document genere.</p>
             <a class="btn" href="<?= e(app_url('generation')) ?>">Generer des documents</a>
         </div>

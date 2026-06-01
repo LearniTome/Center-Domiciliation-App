@@ -18,10 +18,10 @@ if ($templatePath === '' || !str_starts_with($templatePath, realpath($templatesD
     <section class="card stack">
         <div class="section-header">
             <div class="section-header-info">
-                <span class="mdi mdi-file-document-edit" style="font-size:1.4rem;color:var(--primary)"></span>
+                <span class="mdi mdi-file-document-edit mdi-leading"></span>
                 <div>
-                    <h2 style="margin:0;font-size:1rem;font-weight:500">Selectionnez un template</h2>
-                    <p class="help-text" style="margin:2px 0 0;font-size:0.8rem">Choisissez un dossier puis un fichier .docx a editer</p>
+                    <h2>Selectionnez un template</h2>
+                    <p class="help-text">Choisissez un dossier puis un fichier .docx a editer</p>
                 </div>
             </div>
         </div>
@@ -53,7 +53,7 @@ if ($templatePath === '' || !str_starts_with($templatePath, realpath($templatesD
                         <tbody>
                             <?php if (empty($group['files'])): ?>
                             <tr>
-                                <td colspan="2" style="color:var(--text-secondary);font-style:italic">Aucun template dans ce dossier</td>
+                                <td colspan="2" class="table-empty-cell">Aucun template dans ce dossier</td>
                             </tr>
                             <?php else: ?>
                             <?php foreach ($group['files'] as $f): ?>
@@ -73,7 +73,7 @@ if ($templatePath === '' || !str_starts_with($templatePath, realpath($templatesD
             </div>
             <?php endforeach; ?>
         </div>
-        <div class="section-header" style="margin-top:0.5rem">
+        <div class="section-header picker-actions">
             <div></div>
             <div class="table-actions">
                 <a class="btn btn-back" href="<?= e(app_url('templates')) ?>"><span class="mdi mdi-arrow-left"></span> Retour</a>
@@ -347,26 +347,26 @@ $variables = TemplateEditor::getAvailableVariables();
             </div>
         </form>
 
-        <div id="table-dialog" class="table-dialog hidden" style="margin-bottom:0.75rem">
+        <div id="table-dialog" class="table-dialog hidden">
             <div class="card stack">
                 <h4>Insérer un tableau</h4>
                 <div class="inline-form">
-                    <label>Colonnes: <input type="number" id="table-cols" value="3" min="1" max="10" style="width:60px"></label>
-                    <label>Lignes: <input type="number" id="table-rows" value="3" min="1" max="20" style="width:60px"></label>
+                    <label>Colonnes: <input type="number" id="table-cols" value="3" min="1" max="10" class="num-input-sm"></label>
+                    <label>Lignes: <input type="number" id="table-rows" value="3" min="1" max="20" class="num-input-sm"></label>
                     <button type="button" class="btn btn-sm" onclick="insertTable()">Insérer</button>
                     <button type="button" class="btn btn-secondary btn-sm" onclick="closeTableDialog()">Annuler</button>
                 </div>
             </div>
         </div>
 
-        <form method="post" id="save-as-form" class="hidden" style="margin-bottom:0.75rem">
+        <form method="post" id="save-as-form" class="hidden save-as-form">
             <div class="card stack">
                 <h4>Enregistrer sous</h4>
                 <?= csrf_input() ?>
                 <input type="hidden" name="action" value="save_as">
                 <input type="hidden" name="content_html" id="content-html-saveas">
-                <div class="inline-form" style="flex-wrap:wrap">
-                    <input type="text" name="new_name" placeholder="Nom du fichier (ex: Mon_Template.docx)" required style="flex:1;min-width:200px;padding:6px 10px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-family:inherit">
+                <div class="inline-form">
+                    <input type="text" name="new_name" placeholder="Nom du fichier (ex: Mon_Template.docx)" required class="input-flex">
                     <button type="submit" class="btn btn-next" onclick="document.getElementById('content-html-saveas').value=document.getElementById('editor-content').innerHTML">
                         <span class="mdi mdi-content-save"></span> Creer
                     </button>

@@ -274,8 +274,8 @@ $docTypeLabels = [
     'cin_gerant' => 'CIN Gerant',
 ];
 ?>
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
-    <h2 style="margin:0"><?= e($societe['societe_raison_sociale']) ?></h2>
+<div class="section-title-row">
+    <h2><?= e($societe['societe_raison_sociale']) ?></h2>
     <div class="table-actions">
         <?php if ($editing): ?>
             <a class="btn btn-secondary" href="<?= e(app_url('societe', ['id' => $societeId])) ?>"><span class="mdi mdi-close"></span> Annuler</a>
@@ -287,7 +287,7 @@ $docTypeLabels = [
     </div>
 </div>
 
-<section class="stats small" style="margin-bottom:1rem">
+<section class="stats small stats-bottom-margin">
     <article class="stat">
         <span>Societe</span>
         <strong><?= e($societe['societe_forme_juridique'] ?: '-') ?></strong>
@@ -359,7 +359,7 @@ $docTypeLabels = [
                 </label>
                 <label class="field">
                     <span>Forme juridique</span>
-                    <select name="societe_forme_juridique" style="flex:1">
+                    <select name="societe_forme_juridique" class="select-flex">
                         <option value="">Selectionner</option>
                         <?php foreach ($formesJuridiquesOptions as $option): ?>
                             <option value="<?= e($option) ?>" <?= (string) $societe['societe_forme_juridique'] === $option ? 'selected' : '' ?>><?= e($option) ?></option>
@@ -389,18 +389,18 @@ $docTypeLabels = [
                 <h3 class="section-title">Activite (Certificat negatif)</h3>
                 <label class="field full">
                     <span>Activite pour le certificat negatif</span>
-                    <div style="display:flex;gap:8px;align-items:center">
-                        <select name="societe_activites_ompic" style="flex:1" data-ompic-select>
+                    <div class="flex-row">
+                        <select name="societe_activites_ompic" class="select-flex" data-ompic-select>
                             <option value="">Selectionner</option>
                             <?php foreach ($ompicOptions as $row): ?>
                                 <option value="<?= e($row['code']) ?>" <?= $societeActivitesOmpic === $row['code'] ? 'selected' : '' ?>><?= e($row['code'] . ' - ' . $row['libelle']) ?></option>
                             <?php endforeach; ?>
                         </select>
-                        <button type="button" class="btn btn-info" data-add-activite-cn style="white-space:nowrap"><span class="mdi mdi-plus-circle"></span> Nouvelle activite</button>
+                        <button type="button" class="btn btn-info btn-nowrap" data-add-activite-cn><span class="mdi mdi-plus-circle"></span> Nouvelle activite</button>
                     </div>
                 </label>
 
-                <div data-statuts-section style="grid-column:1/-1">
+                <div data-statuts-section class="grid-full">
                 <h3 class="section-title">Activites (Statuts)</h3>
                 <label class="field full">
                     <span>Activites pour les statuts</span>
@@ -408,8 +408,8 @@ $docTypeLabels = [
                         <div data-activites-container>
                             <?php if (!empty($societeActivitesStatuts)): ?>
                                 <?php foreach ($societeActivitesStatuts as $act): ?>
-                                    <div data-activite-item style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
-                                        <select name="societe_activites_statuts[]" style="flex:1">
+                                    <div data-activite-item class="flex-row flex-row-mb">
+                                        <select name="societe_activites_statuts[]" class="select-flex">
                                             <option value="">Selectionner</option>
                                             <?php foreach ($activitesOptions as $opt): ?>
                                                 <option value="<?= e($opt) ?>" <?= $act === $opt ? 'selected' : '' ?>><?= e($opt) ?></option>
@@ -422,8 +422,8 @@ $docTypeLabels = [
                                     </div>
                                 <?php endforeach; ?>
                             <?php else: ?>
-                                <div data-activite-item style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
-                                    <select name="societe_activites_statuts[]" style="flex:1">
+                                <div data-activite-item class="flex-row flex-row-mb">
+                                    <select name="societe_activites_statuts[]" class="select-flex">
                                         <option value="">Selectionner</option>
                                         <?php foreach ($activitesOptions as $opt): ?>
                                             <option value="<?= e($opt) ?>"><?= e($opt) ?></option>
@@ -433,14 +433,14 @@ $docTypeLabels = [
                                 </div>
                             <?php endif; ?>
                         </div>
-                        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+                        <div class="flex-row-wrap">
                             <button type="button" class="btn" data-add-activite><span class="mdi mdi-plus"></span> Ajouter une activite</button>
                             <button type="button" class="btn btn-info" data-add-activite-ref><span class="mdi mdi-plus-circle"></span> Nouvelle activite</button>
                             <button type="button" class="btn btn-secondary" data-add-activites-multiple><span class="mdi mdi-plus-box-multiple"></span> Ajouter plusieurs</button>
                         </div>
                         <template data-activite-template>
-                            <div data-activite-item style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
-                                <select name="societe_activites_statuts[]" style="flex:1">
+                            <div data-activite-item class="flex-row flex-row-mb">
+                                <select name="societe_activites_statuts[]" class="select-flex">
                                     <option value="">Selectionner</option>
                                     <?php foreach ($activitesOptions as $opt): ?>
                                         <option value="<?= e($opt) ?>"><?= e($opt) ?></option>
@@ -468,7 +468,7 @@ $docTypeLabels = [
                 <h3 class="section-title">Adresse</h3>
                 <label class="field full">
                     <span>Adresse de reference</span>
-                    <select name="societe_adresse_siege" style="flex:1">
+                    <select name="societe_adresse_siege" class="select-flex">
                         <option value="">Selectionner</option>
                         <?php foreach ($adressesOptions as $option): ?>
                             <option value="<?= e($option) ?>" <?= (string) $societe['societe_adresse_siege'] === $option ? 'selected' : '' ?>><?= e($option) ?></option>
@@ -477,7 +477,7 @@ $docTypeLabels = [
                 </label>
                 <label class="field">
                     <span>Ville</span>
-                    <select name="societe_ville" style="flex:1">
+                    <select name="societe_ville" class="select-flex">
                         <option value="">Selectionner</option>
                         <?php foreach ($villesOptions as $option): ?>
                             <option value="<?= e($option) ?>" <?= $defaultVille === $option ? 'selected' : '' ?>><?= e($option) ?></option>
@@ -640,7 +640,7 @@ $docTypeLabels = [
     </div>
     <?php if (!$documents): ?>
         <div class="empty-state">
-            <span class="mdi mdi-file-document-outline" style="font-size:2rem;color:var(--text-secondary)"></span>
+            <span class="mdi mdi-file-document-outline"></span>
             <p class="table-empty">Aucun document genere.</p>
         </div>
     <?php else: ?>
@@ -706,7 +706,8 @@ $docTypeLabels = [
                     </tbody>
                 </table>
             </div>
-            <div class="table-actions" style="margin-top:12px">
+            <div class="table-actions table-actions-top">
+            
                 <?php
                 $allValides = count($documents) > 0 && count(array_filter($documents, fn($d) => !$d['valide'])) === 0;
                 ?>
@@ -752,10 +753,12 @@ $docTypeLabels = [
             <tbody>
                 <?php foreach ($uploadedDocsList as $ud):
                     $relativePath = str_replace('\\', '/', str_replace(__DIR__ . '/../', '', $ud['filepath']));
+                    $ext = strtolower(pathinfo($ud['filename_original'], PATHINFO_EXTENSION));
+                    $fileIcon = $ext === 'pdf' ? 'mdi-file-pdf-box' : (in_array($ext, ['jpg','jpeg','png','gif','webp']) ? 'mdi-file-image' : 'mdi-file');
                 ?>
                 <tr>
                     <td><?= e($docTypeLabels[$ud['doc_type']] ?? $ud['doc_type']) ?></td>
-                    <td><?= e($ud['filename_original']) ?></td>
+                    <td><span class="mdi <?= $fileIcon ?> icon-text-gap"></span><?= e($ud['filename_original']) ?></td>
                     <td><?= e($ud['taille_ko'] ? number_format((float)$ud['taille_ko'], 1, ',', ' ') . ' Ko' : '-') ?></td>
                     <td><?= e(date('d/m/Y H:i', strtotime($ud['uploaded_at']))) ?></td>
                     <td>
@@ -812,49 +815,7 @@ $docTypeLabels = [
         </div>
     </div>
 </div>
-<style>
-.modal-overlay {
-    display: none;
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.6);
-    z-index: 9999;
-    align-items: center;
-    justify-content: center;
-}
-.modal-overlay.show {
-    display: flex;
-}
-.modal-content {
-    background: #fff;
-    border-radius: 8px;
-    width: 90vw;
-    height: 90vh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-.modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 20px;
-    border-bottom: 1px solid #e0e0e0;
-}
-.modal-title {
-    font-weight: 600;
-    font-size: 16px;
-}
-.modal-body {
-    flex: 1;
-    padding: 0;
-}
-.modal-body iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-}
-</style>
+
 <script>
 (function(){
     var modal = document.getElementById('doc-viewer-modal');

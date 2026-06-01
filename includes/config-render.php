@@ -377,39 +377,7 @@ if (is_post()) {
             });
         });
         </script>
-        <style>
-        #config-table thead {
-            position: sticky;
-            top: 0;
-            z-index: 2;
-            background: var(--surface);
-        }
-        #config-table thead::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: var(--primary);
-            opacity: 0.4;
-        }
-        #config-table tbody tr {
-            transition: background 0.12s;
-        }
-        #config-table tbody tr:hover {
-            background: rgba(74,108,247,0.04);
-        }
-        #config-table tbody tr[draggable="true"] {
-            transition: opacity 0.15s, background 0.12s;
-        }
-        #config-table tbody tr.dragging {
-            opacity: 0.4;
-        }
-        #config-table tbody tr.drag-over {
-            border-bottom: 2px solid var(--primary);
-        }
-        </style>
+
     <?php else: ?>
         <div class="config-empty">
             <span class="mdi <?= e($tabIcon) ?>"></span>

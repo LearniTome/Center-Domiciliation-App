@@ -310,7 +310,7 @@ $sortedFolders = array_merge($nonEmpty, $empty);
                         </table>
                         </div>
                         <?php else: ?>
-                            <p class="table-empty" style="margin:0">Aucun template dans ce dossier.</p>
+                            <p class="table-empty accordion-table-empty">Aucun template dans ce dossier.</p>
                         <?php endif; ?>
                     </div>
                 </div>
