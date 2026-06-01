@@ -181,13 +181,13 @@ a:hover {
 }
 
 .nav-links a:hover {
-    background: rgba(0, 210, 91, 0.12);
+    background: rgba(143, 95, 232, 0.15);
     color: var(--text);
 }
 
 .nav-links a.active {
-    background: var(--panel-strong);
-    border-left-color: var(--primary);
+    background: rgba(0, 210, 91, 0.12);
+    border-left-color: var(--success);
     color: var(--text);
 }
 
