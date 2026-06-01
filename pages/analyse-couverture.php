@@ -101,8 +101,21 @@ if ($templates) {
         <div>
             <p class="help-text">Variables trouvees dans les templates vs. variables disponibles dans le contexte de rendu.</p>
         </div>
-        <?php if ($analysis): ?>
+        <?php
+    $activeFilter = $_GET['filter'] ?? 'all';
+    if ($analysis):
+        $covered = $analysis['summary']['covered_variables'];
+        $uncovered = $analysis['summary']['uncovered_variables'];
+        $total = $covered + $uncovered;
+        $filterBtnClass = fn($f) => 'btn btn-sm ' . ($activeFilter === $f ? 'btn-next' : 'btn-secondary');
+    ?>
         <div class="table-actions">
+            <div class="filter-bar" style="display:flex;gap:6px;align-items:center;margin-right:auto">
+                <span style="font-size:0.78rem;color:var(--text-secondary)">Filtrer :</span>
+                <a class="<?= $filterBtnClass('all') ?>" href="?page=analyse-couverture" data-filter="all">Tous <span class="badge" style="background:var(--text-secondary);color:#fff;padding:1px 7px;border-radius:10px;font-size:0.65rem"><?= $total ?></span></a>
+                <a class="<?= $filterBtnClass('covered') ?>" href="?page=analyse-couverture&filter=covered" data-filter="covered">Couvertes <span class="badge" style="background:var(--success);color:#fff;padding:1px 7px;border-radius:10px;font-size:0.65rem"><?= $covered ?></span></a>
+                <a class="<?= $filterBtnClass('uncovered') ?>" href="?page=analyse-couverture&filter=uncovered" data-filter="uncovered">Non couvertes <span class="badge" style="background:var(--danger);color:#fff;padding:1px 7px;border-radius:10px;font-size:0.65rem"><?= $uncovered ?></span></a>
+            </div>
             <button type="button" id="bulk-rename-btn" class="btn btn-info"><span class="mdi mdi-rename"></span> Renommer la sélection</button>
             <button type="button" id="bulk-delete-btn" class="btn btn-danger"><span class="mdi mdi-delete"></span> Supprimer la sélection</button>
             <form method="post" style="display:inline">
@@ -153,7 +166,7 @@ if ($templates) {
         <tbody>
             <?php $contextKeys = TemplateAnalyzer::getExpectedContextKeys(); ?>
             <?php foreach ($analysis['variables'] as $v): ?>
-                <tr>
+                <tr data-coverage="<?= e($v['coverage']) ?>">
                     <td><input type="checkbox" class="var-checkbox" value="<?= e($v['variable']) ?>"></td>
                     <td><code><?= e($v['variable']) ?></code></td>
                     <td><?= e((string) $v['occurrences']) ?></td>
@@ -316,5 +329,13 @@ if ($templates) {
             window.showOverlay('Renommage en cours...');
         });
     });
+
+    var activeFilter = '<?= $activeFilter ?>';
+    if (activeFilter !== 'all') {
+        document.querySelectorAll('tr[data-coverage]').forEach(function(row){
+            row.style.display = row.getAttribute('data-coverage') === activeFilter ? '' : 'none';
+        });
+        document.getElementById('select-all').disabled = true;
+    }
 })();
 </script>
