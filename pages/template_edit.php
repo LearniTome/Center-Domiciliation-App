@@ -62,7 +62,12 @@ if ($templatePath === '' || !str_starts_with($templatePath, realpath($templatesD
                 <?php endif; ?>
             <?php endif; ?>
         </div>
-        <a class="btn btn-back" href="<?= e(app_url('templates')) ?>"><span class="mdi mdi-arrow-left"></span> Retour</a>
+        <div class="section-header" style="margin-top:0.5rem">
+            <div></div>
+            <div class="table-actions">
+                <a class="btn btn-back" href="<?= e(app_url('templates')) ?>"><span class="mdi mdi-arrow-left"></span> Retour</a>
+            </div>
+        </div>
     </section>
     <?php
     return;
@@ -181,8 +186,12 @@ $variables = TemplateEditor::getAvailableVariables();
                 <p class="help-text"><?= e($folderLabels[$folder] ?? $folder) ?> &mdash; <?= e($filename) ?></p>
             </div>
             <div class="table-actions">
-                <a class="btn btn-back" href="<?= e(app_url('template_edit')) ?>"><span class="mdi mdi-arrow-left"></span> Retour</a>
-                <a class="btn-icon" href="<?= e(app_url('template', ['path' => $templatePath])) ?>" title="Fermer"><span class="mdi mdi-close"></span></a>
+                <a class="btn btn-back" href="<?= e(app_url('template', ['path' => $templatePath])) ?>" title="Retour aux infos template">
+                    <span class="mdi mdi-arrow-left"></span> Retour
+                </a>
+                <a class="btn-icon" href="<?= e(app_url('template_edit')) ?>" title="Changer de template">
+                    <span class="mdi mdi-file-document-edit"></span>
+                </a>
             </div>
         </div>
 
