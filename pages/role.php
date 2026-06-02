@@ -242,7 +242,7 @@ if ($editingId > 0 && ($pdo ?? null) instanceof PDO) {
         <form method="post">
             <?= csrf_input() ?>
 
-            <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:16px;align-items:end;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:20px;margin-bottom:20px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px 14px;margin-bottom:16px;">
                 <label class="field" style="margin:0">
                     <span>Nom du role</span>
                     <input name="nom" required value="<?= e($role['nom'] ?? field_value($_POST, 'nom')) ?>" placeholder="ex: Chef d equipe" <?= $isSystem ? 'disabled' : '' ?>>
@@ -251,11 +251,11 @@ if ($editingId > 0 && ($pdo ?? null) instanceof PDO) {
                     <span>Description</span>
                     <input name="description" value="<?= e($role['description'] ?? field_value($_POST, 'description')) ?>" placeholder="Courte description du role" <?= $isSystem ? 'disabled' : '' ?>>
                 </label>
-                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding-bottom:6px;">
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding-bottom:4px;">
                     <input type="checkbox" name="is_internal" value="1"
                         <?= ($role && (int) ($role['is_internal'] ?? 0)) ? 'checked' : '' ?>
                         <?= $isSystem ? 'disabled' : '' ?>>
-                    <span style="font-size:0.85rem;white-space:nowrap">Role interne</span>
+                    <span style="font-size:0.82rem;white-space:nowrap">Role interne</span>
                 </label>
             </div>
 
@@ -307,7 +307,7 @@ if ($editingId > 0 && ($pdo ?? null) instanceof PDO) {
             </div>
 
             <?php if (!$isSystem): ?>
-                <div style="display:flex;gap:10px;align-items:center;padding-top:16px;border-top:1px solid var(--line);margin-top:20px;">
+                <div style="display:flex;gap:10px;align-items:center;padding-top:14px;border-top:1px solid var(--line);margin-top:16px;">
                     <button type="submit"><span class="material-symbols-outlined">save</span> <?= $role ? 'Enregistrer les modifications' : 'Creer le role' ?></button>
                     <a class="btn btn-cancel" href="<?= e(app_url('roles')) ?>"><span class="material-symbols-outlined">close</span> Annuler</a>
                 </div>
