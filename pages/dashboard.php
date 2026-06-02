@@ -163,6 +163,16 @@ if ($isConnected) {
 $alerteCount = count($sansAssocie) + count($sansContrat) + count($expirants) + count($sansDocuments) + count($cinExpire);
 $hasAlerts = $alerteCount > 0;
 
+// --- Activite collaborateurs (Super Admin only) ---
+$collabActivity = [];
+$isSuperAdmin = is_logged_in() && (int) (current_user()['role_id'] ?? 0) === 1;
+if ($isConnected && $isSuperAdmin) {
+    $collabActivity = $pdo->query("
+        SELECT * FROM collaborateur_log
+        ORDER BY created_at DESC LIMIT 10
+    ")->fetchAll();
+}
+
 // --- Fil d'activite ---
 $activiteRecente = [];
 if ($isConnected) {
@@ -434,6 +444,32 @@ if ($isConnected) {
 
 <section class="grid two">
     <!-- Validation documents -->
+    <?php if ($isSuperAdmin && $collabActivity): ?>
+    <article class="card">
+        <div class="section-header">
+            <h2><span class="material-symbols-outlined" style="color:var(--primary)">work_history</span> Activite collaborateurs</h2>
+        </div>
+        <div class="activity-feed">
+            <?php foreach ($collabActivity as $ca):
+                $caIcon = $ca['action'] === 'ajout' ? 'person_add' : 'person_remove';
+                $caColor = $ca['action'] === 'ajout' ? 'var(--success)' : 'var(--danger)';
+                $caLabel = $ca['action'] === 'ajout' ? 'Ajoute' : 'Supprime';
+                $caDt = date('d/m/Y H:i', strtotime($ca['created_at']));
+                $caHref = $ca['collaborateur_id'] ? app_url('collaborateur', ['id' => (int) $ca['collaborateur_id']]) : '#';
+            ?>
+                <a class="activity-item" href="<?= e($caHref) ?>">
+                    <span class="activity-icon" style="color:<?= $caColor ?>"><span class="material-symbols-outlined"><?= $caIcon ?></span></span>
+                    <span class="activity-text">
+                        <strong><?= e($ca['collaborateur_nom']) ?></strong> <?= $caLabel ?>
+                        <?php if ($ca['done_by']): ?><span class="help-text">par <?= e($ca['done_by']) ?></span><?php endif; ?>
+                    </span>
+                    <span class="activity-meta"><?= $caDt ?></span>
+                </a>
+            <?php endforeach; ?>
+        </div>
+    </article>
+    <?php endif; ?>
+
     <?php if ($isConnected): ?>
     <article class="card">
         <div class="section-header">

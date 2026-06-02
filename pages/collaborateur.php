@@ -38,6 +38,24 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
         }
     }
 
+    // Duplicate email check
+    $checkEmail = field_value($_POST, 'collaborateur_email') ?: field_value($_POST, 'email');
+    if ($checkEmail !== '') {
+        $dupSql = 'SELECT id FROM collaborateurs WHERE (collaborateur_email = :email OR email = :email2) AND statut != \'archive\'';
+        $dupParams = ['email' => $checkEmail, 'email2' => $checkEmail];
+        if ($editingId > 0) {
+            $dupSql .= ' AND id != :exclude_id';
+            $dupParams['exclude_id'] = $editingId;
+        }
+        $dupSql .= ' LIMIT 1';
+        $dupStmt = $pdo->prepare($dupSql);
+        $dupStmt->execute($dupParams);
+        if ($dupStmt->fetch()) {
+            set_flash('error', 'Un collaborateur avec cet email existe deja.');
+            redirect_to('collaborateur', $editingId ? ['id' => $editingId] : []);
+        }
+    }
+
     $payload = [
         'den_ste' => field_value($_POST, 'den_ste'),
         'nom_complet' => $nomComplet,
@@ -126,6 +144,12 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
             $sql .= ') VALUES (' . $insertCols . ')';
             $stmt = $pdo->prepare($sql);
             $stmt->execute($params);
+            $newId = (int) $pdo->lastInsertId();
+            $who = '';
+            $cu = current_user();
+            if ($cu) $who = $cu['nom_complet'] ?? '';
+            $logStmt = $pdo->prepare('INSERT INTO collaborateur_log (action, collaborateur_nom, collaborateur_email, collaborateur_id, done_by) VALUES (\'ajout\', :nom, :email, :cid, :done_by)');
+            $logStmt->execute(['nom' => $nomComplet, 'email' => field_value($_POST, 'collaborateur_email') ?: field_value($_POST, 'email'), 'cid' => $newId, 'done_by' => $who]);
             set_flash('success', 'Collaborateur ajoute.');
         }
 

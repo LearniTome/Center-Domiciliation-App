@@ -177,7 +177,8 @@ a:hover {
 .shell.collapsed .nav-section-toggle,
 .shell.collapsed .nav-section-label,
 .shell.collapsed [data-nav-label],
-.shell.collapsed .nav-toggle-all {
+.shell.collapsed .nav-toggle-all,
+.shell.collapsed .sidebar-footer [data-nav-label] {
     display: none;
 }
 .shell.collapsed .brand {
@@ -217,6 +218,49 @@ a:hover {
     display: grid;
     gap: 1px;
     margin-bottom: 8px;
+}
+
+.sidebar-footer {
+    margin-top: auto;
+    border-top: 1px solid var(--line);
+    padding-top: 8px;
+}
+
+.nav-logout {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 10px;
+    border-radius: var(--radius-sm);
+    color: var(--danger);
+    font-size: 0.8rem;
+    transition: all var(--transition);
+    text-decoration: none;
+}
+
+.nav-logout:hover {
+    background: rgba(252, 66, 74, 0.12);
+    color: var(--danger);
+}
+
+.nav-logout .material-symbols-outlined {
+    font-size: 1rem;
+    width: 1.1rem;
+    text-align: center;
+}
+
+.shell.collapsed .sidebar-footer {
+    border-top: none;
+}
+
+.shell.collapsed .nav-logout {
+    justify-content: center;
+    padding: 6px 0;
+}
+
+.shell.collapsed .nav-logout .material-symbols-outlined {
+    margin: 0;
+    font-size: 1.2rem;
 }
 
 .nav-links a {
@@ -1924,8 +1968,18 @@ tbody tr:hover:nth-child(even) {
 .activity-item:last-child {
     border-bottom: none;
 }
+.activity-item {
+    cursor: pointer;
+}
 .activity-item:hover {
     color: var(--primary);
+    background: rgba(74, 108, 247, 0.06);
+    border-radius: 4px;
+    cursor: pointer;
+    padding-left: 6px;
+    padding-right: 6px;
+    margin-left: -6px;
+    margin-right: -6px;
 }
 .activity-icon {
     width: 28px;
