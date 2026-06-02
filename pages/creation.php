@@ -1655,7 +1655,7 @@ if ($aiSuggestions !== null) {
                 <input type="hidden" name="step" value="5">
                 <input type="hidden" name="nav_action" value="next">
 
-                <article class="card">
+                <article class="card" style="border-color:<?= $hasCn ? 'var(--success)' : 'var(--danger)' ?>">
                     <div class="section-header">
                         <div>
                             <h3><span class="material-symbols-outlined">verified</span> Certificat Negatif</h3>
@@ -1663,6 +1663,8 @@ if ($aiSuggestions !== null) {
                         </div>
                         <?php if ($hasCn): ?>
                             <span class="step-badge" style="color:var(--success)"><span class="material-symbols-outlined">check_circle</span> Telecharge</span>
+                        <?php else: ?>
+                            <span class="step-badge" style="color:var(--danger)"><span class="material-symbols-outlined">cancel</span> Manquant</span>
                         <?php endif; ?>
                     </div>
                     <label class="field" style="margin-top:8px">
@@ -1674,7 +1676,8 @@ if ($aiSuggestions !== null) {
                     </label>
                 </article>
 
-                <article class="card">
+                <?php $cinBorder = count($gerants) === 0 ? '' : ($hasCin ? 'var(--success)' : 'var(--danger)'); ?>
+                <article class="card"<?= $cinBorder !== '' ? ' style="border-color:' . $cinBorder . '"' : '' ?>>
                     <div class="section-header">
                         <div>
                             <h3><span class="material-symbols-outlined">badge</span> CIN des Gerants</h3>
@@ -1682,8 +1685,12 @@ if ($aiSuggestions !== null) {
                                 <?= $isSarlAu ? 'SARL AU : un seul CIN requis.' : 'SARL : CIN de tous les gerants.' ?>
                             </p>
                         </div>
-                        <?php if ($hasCin): ?>
+                        <?php if (count($gerants) === 0): ?>
+                            <span class="step-badge"><span class="material-symbols-outlined">info</span> Aucun gerant</span>
+                        <?php elseif ($hasCin): ?>
                             <span class="step-badge" style="color:var(--success)"><span class="material-symbols-outlined">check_circle</span> Telecharge(s)</span>
+                        <?php else: ?>
+                            <span class="step-badge" style="color:var(--danger)"><span class="material-symbols-outlined">cancel</span> Manquant(s)</span>
                         <?php endif; ?>
                     </div>
 
@@ -1758,6 +1765,12 @@ if ($aiSuggestions !== null) {
         foreach ($filteredTemplates as $tpl) {
             $type = $tpl['doc_type'];
             $templatesByType[$type][] = $tpl;
+        }
+
+        $generationType = $societeData['societe_type_generation'] ?? '';
+        if ($generationType !== '' && isset($templatesConfig['template_mapping'][$generationType])) {
+            $allowedTypes = $templatesConfig['template_mapping'][$generationType];
+            $templatesByType = array_intersect_key($templatesByType, array_flip($allowedTypes));
         }
 
         $generatedFiles = $wizard['generated_files'] ?? [];
@@ -1975,14 +1988,16 @@ if ($aiSuggestions !== null) {
                         <table style="white-space:nowrap">
                             <thead>
                                 <tr>
+                                    <th class="col-check"><input type="checkbox" id="select-all-generated"></th>
                                     <th>Fichier</th>
                                     <th>Taille</th>
                                     <th class="col-actions">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($generatedFiles as $file): ?>
+                                <?php foreach ($generatedFiles as $i => $file): ?>
                                     <tr>
+                                        <td><input type="checkbox" name="generated_files[]" value="<?= $i ?>" class="gen-file-check"></td>
                                         <td>
                                             <span class="material-symbols-outlined" style="color:var(--primary);vertical-align:middle;margin-right:6px">article</span>
                                             <?= e($file['name']) ?>
@@ -2017,6 +2032,10 @@ if ($aiSuggestions !== null) {
         </div>
 
         <script>
+        document.getElementById('select-all-generated')?.addEventListener('change', function(e) {
+            document.querySelectorAll('.gen-file-check').forEach(c => c.checked = this.checked);
+        });
+
         document.getElementById('select-all-wizard')?.addEventListener('click', function(e) {
             e.preventDefault();
             const form = document.getElementById('wizard-gen-form');
