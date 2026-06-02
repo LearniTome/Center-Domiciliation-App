@@ -4,115 +4,110 @@ CREATE DATABASE IF NOT EXISTS `center_domiciliation`
 
 USE `center_domiciliation`;
 
+-- ============================================================
+-- SCHEMA
+-- ============================================================
+
 CREATE TABLE IF NOT EXISTS societes (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    -- Identifiants
-    dossier_domiciliation VARCHAR(120) DEFAULT NULL,
-    raison_sociale VARCHAR(255) NOT NULL,
-    -- Juridique
-    forme_juridique VARCHAR(120) DEFAULT NULL,
-    ice VARCHAR(100) DEFAULT NULL,
-    date_ice DATE DEFAULT NULL,
-    rc VARCHAR(100) DEFAULT NULL,
-    if_number VARCHAR(100) DEFAULT NULL,
-    activites_statuts TEXT DEFAULT NULL,
-    activites_ompic TEXT DEFAULT NULL,
-    -- Capital
-    capital DECIMAL(15,2) DEFAULT NULL,
-    part_social INT DEFAULT NULL,
-    valeur_nominale DECIMAL(15,2) DEFAULT NULL,
-    date_exp_cert_neg DATE DEFAULT NULL,
-    -- Adresse
-    adresse TEXT DEFAULT NULL,
-    ste_adress TEXT DEFAULT NULL,
-    ville VARCHAR(120) DEFAULT NULL,
-    tribunal VARCHAR(120) DEFAULT NULL,
-    -- Contact
-    email VARCHAR(190) DEFAULT NULL,
-    telephone VARCHAR(60) DEFAULT NULL,
-    -- Procedure
-    type_generation VARCHAR(120) DEFAULT NULL,
-    procedure_creation VARCHAR(120) DEFAULT NULL,
-    mode_depot_creation VARCHAR(120) DEFAULT NULL,
+    societe_dossier VARCHAR(120) DEFAULT NULL,
+    societe_raison_sociale VARCHAR(255) NOT NULL,
+    den_ste VARCHAR(255) DEFAULT NULL,
+    societe_forme_juridique VARCHAR(120) DEFAULT NULL,
+    societe_ice VARCHAR(100) DEFAULT NULL,
+    societe_date_ice DATE DEFAULT NULL,
+    societe_rc VARCHAR(100) DEFAULT NULL,
+    societe_if VARCHAR(100) DEFAULT NULL,
+    societe_activites_statuts TEXT DEFAULT NULL,
+    societe_capital DECIMAL(15,2) DEFAULT NULL,
+    societe_activites_ompic TEXT DEFAULT NULL,
+    societe_part_social INT DEFAULT NULL,
+    societe_valeur_nominale DECIMAL(15,2) DEFAULT NULL,
+    societe_date_exp_cert_neg DATE DEFAULT NULL,
+    societe_adresse TEXT DEFAULT NULL,
+    societe_adresse_siege TEXT DEFAULT NULL,
+    societe_ville VARCHAR(120) DEFAULT NULL,
+    societe_tribunal VARCHAR(120) DEFAULT NULL,
+    societe_tribunal_type VARCHAR(60) DEFAULT NULL,
+    societe_email VARCHAR(190) DEFAULT NULL,
+    societe_telephone VARCHAR(60) DEFAULT NULL,
+    societe_type_generation VARCHAR(120) DEFAULT NULL,
+    societe_procedure_creation VARCHAR(120) DEFAULT NULL,
+    societe_mode_depot VARCHAR(120) DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_societes_ice (ice),
-    INDEX idx_societes_ville (ville)
+    INDEX idx_societes_ice (societe_ice),
+    INDEX idx_societes_ville (societe_ville)
 );
 
 CREATE TABLE IF NOT EXISTS associes (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     societe_id INT UNSIGNED NOT NULL,
-    -- Identite
-    civilite VARCHAR(10) DEFAULT NULL,
-    nom VARCHAR(120) DEFAULT NULL,
-    prenom VARCHAR(120) DEFAULT NULL,
-    nom_complet VARCHAR(255) NOT NULL,
-    cin VARCHAR(100) DEFAULT NULL,
-    date_validite_cin DATE DEFAULT NULL,
-    date_naiss DATE DEFAULT NULL,
-    lieu_naiss VARCHAR(120) DEFAULT NULL,
-    nationalite VARCHAR(120) DEFAULT NULL,
-    -- Contact
-    adresse TEXT DEFAULT NULL,
-    phone VARCHAR(60) DEFAULT NULL,
-    email VARCHAR(190) DEFAULT NULL,
-    -- Participation
-    qualite_associe VARCHAR(150) DEFAULT NULL,
-    parts INT DEFAULT NULL,
-    capital_detenu DECIMAL(15,2) DEFAULT NULL,
-    part_percent DECIMAL(7,2) DEFAULT NULL,
-    is_gerant TINYINT(1) NOT NULL DEFAULT 0,
+    associe_civilite VARCHAR(10) DEFAULT NULL,
+    associe_nom VARCHAR(120) DEFAULT NULL,
+    associe_prenom VARCHAR(120) DEFAULT NULL,
+    associe_nom_complet VARCHAR(255) NOT NULL,
+    associe_cin VARCHAR(100) DEFAULT NULL,
+    associe_date_validite_cin DATE DEFAULT NULL,
+    associe_date_naissance DATE DEFAULT NULL,
+    associe_lieu_naissance VARCHAR(120) DEFAULT NULL,
+    associe_nationalite VARCHAR(120) DEFAULT NULL,
+    associe_adresse TEXT DEFAULT NULL,
+    associe_telephone VARCHAR(60) DEFAULT NULL,
+    associe_email VARCHAR(190) DEFAULT NULL,
+    associe_qualite VARCHAR(150) DEFAULT NULL,
+    associe_parts INT DEFAULT NULL,
+    associe_capital_detenu DECIMAL(15,2) DEFAULT NULL,
+    associe_part_percent DECIMAL(7,2) DEFAULT NULL,
+    associe_est_gerant TINYINT(1) NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_associes_societe
         FOREIGN KEY (societe_id) REFERENCES societes(id)
         ON DELETE CASCADE,
     INDEX idx_associes_societe_id (societe_id),
-    INDEX idx_associes_nom_complet (nom_complet)
+    INDEX idx_associes_nom_complet (associe_nom_complet)
 );
 
 CREATE TABLE IF NOT EXISTS contrats (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     societe_id INT UNSIGNED NOT NULL,
-    -- Type et duree
-    type_contrat VARCHAR(120) NOT NULL,
-    date_contrat DATE DEFAULT NULL,
-    duree_contrat_mois INT DEFAULT NULL,
-    type_contrat_domiciliation VARCHAR(120) DEFAULT NULL,
-    type_contrat_domiciliation_autre VARCHAR(190) DEFAULT NULL,
-    -- Periode
-    date_debut DATE DEFAULT NULL,
-    date_fin DATE DEFAULT NULL,
-    -- Loyer
-    loyer_mensuel_ttc DECIMAL(15,2) DEFAULT NULL,
-    frais_intermediaire_contrat DECIMAL(15,2) DEFAULT NULL,
-    caution_montant DECIMAL(15,2) DEFAULT NULL,
-    taux_tva_pourcent DECIMAL(7,2) DEFAULT NULL,
-    loyer_mensuel_ht DECIMAL(15,2) DEFAULT NULL,
-    montant_total_ht_contrat DECIMAL(15,2) DEFAULT NULL,
-    montant_pack_demarrage_ttc DECIMAL(15,2) DEFAULT NULL,
-    loyer_mensuel_pack_demarrage_ttc DECIMAL(15,2) DEFAULT NULL,
-    -- Renouvellement
-    type_renouvellement VARCHAR(120) DEFAULT NULL,
-    taux_tva_renouvellement_pourcent DECIMAL(7,2) DEFAULT NULL,
-    loyer_mensuel_ht_renouvellement DECIMAL(15,2) DEFAULT NULL,
-    montant_total_ht_renouvellement DECIMAL(15,2) DEFAULT NULL,
-    loyer_mensuel_renouvellement_ttc DECIMAL(15,2) DEFAULT NULL,
-    loyer_annuel_renouvellement_ttc DECIMAL(15,2) DEFAULT NULL,
-    statut VARCHAR(80) DEFAULT 'actif',
-    notes TEXT DEFAULT NULL,
+    contrat_type VARCHAR(120) NOT NULL,
+    contrat_date DATE DEFAULT NULL,
+    contrat_duree_mois INT DEFAULT NULL,
+    contrat_type_domiciliation VARCHAR(120) DEFAULT NULL,
+    contrat_type_domiciliation_autre VARCHAR(190) DEFAULT NULL,
+    contrat_date_debut DATE DEFAULT NULL,
+    contrat_date_fin DATE DEFAULT NULL,
+    contrat_loyer_ttc DECIMAL(15,2) DEFAULT NULL,
+    contrat_frais_intermediaire DECIMAL(15,2) DEFAULT NULL,
+    contrat_caution DECIMAL(15,2) DEFAULT NULL,
+    contrat_tva_pourcent DECIMAL(7,2) DEFAULT NULL,
+    contrat_loyer_ht DECIMAL(15,2) DEFAULT NULL,
+    contrat_total_ht DECIMAL(15,2) DEFAULT NULL,
+    contrat_pack_montant_ttc DECIMAL(15,2) DEFAULT NULL,
+    contrat_pack_loyer_ttc DECIMAL(15,2) DEFAULT NULL,
+    contrat_type_renouvellement VARCHAR(120) DEFAULT NULL,
+    contrat_renouv_tva_pourcent DECIMAL(7,2) DEFAULT NULL,
+    contrat_renouv_loyer_ht DECIMAL(15,2) DEFAULT NULL,
+    contrat_renouv_total_ht DECIMAL(15,2) DEFAULT NULL,
+    contrat_renouv_loyer_ttc DECIMAL(15,2) DEFAULT NULL,
+    contrat_renouv_annuel_ttc DECIMAL(15,2) DEFAULT NULL,
+    contrat_statut VARCHAR(80) DEFAULT 'actif',
+    contrat_notes TEXT DEFAULT NULL,
+    contrat_mode_signature VARCHAR(120) DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_contrats_societe
         FOREIGN KEY (societe_id) REFERENCES societes(id)
         ON DELETE CASCADE,
     INDEX idx_contrats_societe_id (societe_id),
-    INDEX idx_contrats_type (type_contrat)
+    INDEX idx_contrats_type (contrat_type)
 );
 
 CREATE TABLE IF NOT EXISTS collaborateurs (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    societe_id INT UNSIGNED DEFAULT NULL,
     den_ste VARCHAR(255) DEFAULT NULL,
     nom_complet VARCHAR(255) NOT NULL,
     fonction VARCHAR(150) DEFAULT NULL,
@@ -132,9 +127,29 @@ CREATE TABLE IF NOT EXISTS collaborateurs (
     date_debut DATE DEFAULT NULL,
     statut VARCHAR(80) DEFAULT 'actif',
     notes TEXT DEFAULT NULL,
+    password_hash VARCHAR(255) DEFAULT NULL,
+    role_id INT UNSIGNED DEFAULT NULL,
+    can_login TINYINT(1) NOT NULL DEFAULT 0,
+    last_login DATETIME DEFAULT NULL,
+    created_by INT UNSIGNED DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_collaborateurs_nom (nom_complet)
+    CONSTRAINT fk_collaborateurs_societe
+        FOREIGN KEY (societe_id) REFERENCES societes(id)
+        ON DELETE SET NULL,
+    INDEX idx_collaborateurs_nom (nom_complet),
+    INDEX idx_collaborateurs_role_id (role_id),
+    INDEX idx_collaborateurs_can_login (can_login)
+);
+
+CREATE TABLE IF NOT EXISTS collaborateur_log (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    action VARCHAR(20) NOT NULL COMMENT 'add or delete',
+    collaborateur_nom VARCHAR(255) NOT NULL,
+    collaborateur_email VARCHAR(190) DEFAULT NULL,
+    collaborateur_id INT UNSIGNED DEFAULT NULL,
+    done_by VARCHAR(255) DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS ref_formes_juridiques (
@@ -212,62 +227,6 @@ CREATE TABLE IF NOT EXISTS ref_lieux_naissance (
     UNIQUE KEY uq_ref_lieux_naissance (lieu_naissance)
 );
 
-CREATE TABLE IF NOT EXISTS ref_qualites_associe (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    qualite_associe VARCHAR(150) NOT NULL,
-    sort_order INT NOT NULL DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_ref_qualites_associe (qualite_associe)
-);
-
-CREATE TABLE IF NOT EXISTS ref_ste_adresses (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    ste_adresse VARCHAR(255) NOT NULL,
-    UNIQUE KEY uq_ref_ste_adresses (ste_adresse)
-);
-
-CREATE TABLE IF NOT EXISTS ref_villes (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    ville VARCHAR(120) NOT NULL,
-    UNIQUE KEY uq_ref_villes (ville)
-);
-
-CREATE TABLE IF NOT EXISTS ref_tribunaux (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    tribunal VARCHAR(120) NOT NULL,
-    tribunal_type VARCHAR(60) DEFAULT NULL,
-    UNIQUE KEY uq_ref_tribunaux (tribunal, tribunal_type)
-);
-
-CREATE TABLE IF NOT EXISTS ref_activites (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    activite VARCHAR(190) NOT NULL,
-    UNIQUE KEY uq_ref_activites (activite)
-);
-
-CREATE TABLE IF NOT EXISTS ref_activites_ompic (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    code VARCHAR(20) NOT NULL,
-    libelle VARCHAR(255) NOT NULL,
-    sort_order INT NOT NULL DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_ref_activites_ompic_code (code)
-);
-
-CREATE TABLE IF NOT EXISTS ref_nationalites (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    nationalite VARCHAR(120) NOT NULL,
-    UNIQUE KEY uq_ref_nationalites (nationalite)
-);
-
-CREATE TABLE IF NOT EXISTS ref_lieux_naissance (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    lieu_naissance VARCHAR(120) NOT NULL,
-    UNIQUE KEY uq_ref_lieux_naissance (lieu_naissance)
-);
-
 CREATE TABLE IF NOT EXISTS documents_generes (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     societe_id INT UNSIGNED NOT NULL,
@@ -306,11 +265,47 @@ CREATE TABLE IF NOT EXISTS uploaded_docs (
 CREATE TABLE IF NOT EXISTS ref_qualites_associe (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     qualite_associe VARCHAR(150) NOT NULL,
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uq_ref_qualites_associe (qualite_associe)
 );
-USE `center_domiciliation`;
 
--- Données de référence pour les formes juridiques
+-- RBAC Tables
+CREATE TABLE IF NOT EXISTS roles (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    nom VARCHAR(120) NOT NULL,
+    description VARCHAR(255) DEFAULT NULL,
+    is_internal TINYINT(1) NOT NULL DEFAULT 0,
+    is_system TINYINT(1) NOT NULL DEFAULT 0,
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_roles_nom (nom)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS permissions (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    nom VARCHAR(150) NOT NULL,
+    permission_key VARCHAR(100) NOT NULL,
+    category VARCHAR(50) DEFAULT NULL,
+    description VARCHAR(255) DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_permissions_key (permission_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS role_permissions (
+    role_id INT UNSIGNED NOT NULL,
+    permission_id INT UNSIGNED NOT NULL,
+    PRIMARY KEY (role_id, permission_id),
+    CONSTRAINT fk_rp_role FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE,
+    CONSTRAINT fk_rp_permission FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- SEED DATA
+-- ============================================================
+
+-- Formes juridiques
 INSERT INTO ref_formes_juridiques (forme_juridique, template_folder) VALUES
 ('SARL AU', 'SARL AU'),
 ('SARL', 'SARL'),
@@ -319,7 +314,7 @@ INSERT INTO ref_formes_juridiques (forme_juridique, template_folder) VALUES
 ('Succurssale Etrangère', ''),
 ('Succurssale Marocaine', '');
 
--- Données de référence pour les tribunaux
+-- Tribunaux
 INSERT INTO ref_tribunaux (tribunal, tribunal_type) VALUES
 ('Casablanca', 'Tribunal de commerce'),
 ('Rabat', 'Tribunal de commerce'),
@@ -354,7 +349,7 @@ INSERT INTO ref_tribunaux (tribunal, tribunal_type) VALUES
 ('Souk El Arbaa', 'Tribunal de Première Instance'),
 ('Taourirt', 'Tribunal de Première Instance');
 
--- Données de référence pour les adresses
+-- Adresses
 INSERT INTO ref_ste_adresses (ste_adresse) VALUES
 ('123 Boulevard Hassan II'),
 ('45 Avenue Mohammed V'),
@@ -372,158 +367,49 @@ INSERT INTO ref_ste_adresses (ste_adresse) VALUES
 ('22 Avenue Hassan II (Downtown)'),
 ('99 Boulevard Moulay Ismail');
 
--- Données de référence pour les villes
+-- Villes
 INSERT INTO ref_villes (ville) VALUES
-('Agadir'),
-('Ait Melloul'),
-('Al Hoceima'),
-('Asilah'),
-('Azemmour'),
-('Azrou'),
-('Beni Mellal'),
-('Beni Ansar'),
-('Berrechid'),
-('Berkane'),
-('Boujdour'),
-('Boulemane'),
-('Casablanca'),
-('Chefchaouen'),
-('Chichaoua'),
-('Dakhla'),
-('El Hajeb'),
-('El Jadida'),
-('El Kelaa Des Sraghna'),
-('Errachidia'),
-('Essaouira'),
-('Fes'),
-('Figuig'),
-('Fnideq'),
-('Guelmim'),
-('Guercif'),
-('Ifrane'),
-('Inezgane'),
-('Jerada'),
-('Kelaat Mgouna'),
-('Khemisset'),
-('Khenifra'),
-('Khouribga'),
-('Ksar El Kebir'),
-('Laayoune'),
-('Larache'),
-('Marrakech'),
-('Martil'),
-('Meknes'),
-('Midelt'),
-('Mohammedia'),
-('Nador'),
-('Ouarzazate'),
-('Ouezzane'),
-('Oujda'),
-('Oulad Teima'),
-('Rabat'),
-('Safi'),
-('Sale'),
-('Sefrou'),
-('Settat'),
-('Sidi Bennour'),
-('Sidi Ifni'),
-('Sidi Kacem'),
-('Sidi Slimane'),
-('Skhirat'),
-('Souk El Arbaa'),
-('Tanger'),
-('Tan-Tan'),
-('Taourirt'),
-('Taroudant'),
-('Tata'),
-('Taza'),
-('Temara'),
-('Tetouan'),
-('Tiflet'),
-('Tinghir'),
-('Tiznit'),
-('Youssoufia'),
-('Zagora');
+('Agadir'), ('Ait Melloul'), ('Al Hoceima'), ('Asilah'), ('Azemmour'),
+('Azrou'), ('Beni Mellal'), ('Beni Ansar'), ('Berrechid'), ('Berkane'),
+('Boujdour'), ('Boulemane'), ('Casablanca'), ('Chefchaouen'), ('Chichaoua'),
+('Dakhla'), ('El Hajeb'), ('El Jadida'), ('El Kelaa Des Sraghna'), ('Errachidia'),
+('Essaouira'), ('Fes'), ('Figuig'), ('Fnideq'), ('Guelmim'),
+('Guercif'), ('Ifrane'), ('Inezgane'), ('Jerada'), ('Kelaat Mgouna'),
+('Khemisset'), ('Khenifra'), ('Khouribga'), ('Ksar El Kebir'), ('Laayoune'),
+('Larache'), ('Marrakech'), ('Martil'), ('Meknes'), ('Midelt'),
+('Mohammedia'), ('Nador'), ('Ouarzazate'), ('Ouezzane'), ('Oujda'),
+('Oulad Teima'), ('Rabat'), ('Safi'), ('Sale'), ('Sefrou'),
+('Settat'), ('Sidi Bennour'), ('Sidi Ifni'), ('Sidi Kacem'), ('Sidi Slimane'),
+('Skhirat'), ('Souk El Arbaa'), ('Tanger'), ('Tan-Tan'), ('Taourirt'),
+('Taroudant'), ('Tata'), ('Taza'), ('Temara'), ('Tetouan'),
+('Tiflet'), ('Tinghir'), ('Tiznit'), ('Youssoufia'), ('Zagora');
 
--- Données de référence pour les nationalités
+-- Nationalites
 INSERT INTO ref_nationalites (nationalite) VALUES
-('Marocaine'),
-('Française'),
-('Belge'),
-('Suisse'),
-('Allemande'),
-('Italienne'),
-('Espagnole'),
-('Portugaise'),
-('Britannique'),
-('Américaine'),
-('Canadienne'),
-('Algérienne'),
-('Tunisienne'),
-('Sénégalaise'),
-('Camerounaise'),
-('Gabonaise'),
-('Ivoirienne'),
-('Congolaise'),
-('Guinéenne'),
-('Malienne');
+('Marocaine'), ('Française'), ('Belge'), ('Suisse'), ('Allemande'),
+('Italienne'), ('Espagnole'), ('Portugaise'), ('Britannique'), ('Américaine'),
+('Canadienne'), ('Algérienne'), ('Tunisienne'), ('Sénégalaise'), ('Camerounaise'),
+('Gabonaise'), ('Ivoirienne'), ('Congolaise'), ('Guinéenne'), ('Malienne');
 
--- Données de référence pour les lieux de naissance
+-- Lieux de naissance
 INSERT INTO ref_lieux_naissance (lieu_naissance) VALUES
-('Casablanca'),
-('Rabat'),
-('Marrakech'),
-('Fes'),
-('Agadir'),
-('Tangier'),
-('Meknes'),
-('Tetouan'),
-('Oujda'),
-('Beni Mellal'),
-('Khouribga'),
-('Essaouira'),
-('Safi'),
-('Azemmour'),
-('Ouezzane'),
-('Sefrou'),
-('Taza'),
-('Nador'),
-('Hoceima'),
-('Driouch');
+('Casablanca'), ('Rabat'), ('Marrakech'), ('Fes'), ('Agadir'),
+('Tangier'), ('Meknes'), ('Tetouan'), ('Oujda'), ('Beni Mellal'),
+('Khouribga'), ('Essaouira'), ('Safi'), ('Azemmour'), ('Ouezzane'),
+('Sefrou'), ('Taza'), ('Nador'), ('Hoceima'), ('Driouch');
 
--- Données de référence pour les qualités d'associé
+-- Qualites associe
 INSERT INTO ref_qualites_associe (qualite_associe) VALUES
-('Gerant'),
-('Associe unique'),
-('Associe majoritaire'),
-('Associe minoritaire'),
-('President'),
-('Directeur General'),
-('Actionnaire'),
-('Porteur de parts');
+('Gerant'), ('Associe unique'), ('Associe majoritaire'), ('Associe minoritaire'),
+('President'), ('Directeur General'), ('Actionnaire'), ('Porteur de parts');
 
--- Données de référence pour les activités
+-- Activites
 INSERT INTO ref_activites (activite) VALUES
-('Commerce de gros'),
-('Commerce de detail'),
-('Restauration'),
-('Hotel'),
-('Transport'),
-('Logistique'),
-('Consulting'),
-('Services IT'),
-('Services de sante'),
-('Education'),
-('Immobilier'),
-('Construction'),
-('Manufacture'),
-('Agriculture'),
-('Peche'),
-('Energie'),
-('Telecommunications'),
-('Banque et Finance'),
-('Assurance'),
-('Tourisme');
+('Commerce de gros'), ('Commerce de detail'), ('Restauration'), ('Hotel'),
+('Transport'), ('Logistique'), ('Consulting'), ('Services IT'),
+('Services de sante'), ('Education'), ('Immobilier'), ('Construction'),
+('Manufacture'), ('Agriculture'), ('Peche'), ('Energie'),
+('Telecommunications'), ('Banque et Finance'), ('Assurance'), ('Tourisme');
 
 INSERT INTO ref_activites_ompic (code, libelle, sort_order) VALUES
 ('A', 'AGRICULTURE, SYLVICULTURE ET PECHE', 1),
@@ -575,6 +461,169 @@ INSERT INTO ref_activites_ompic (code, libelle, sort_order) VALUES
 ('8299', 'Autres activites de soutien aux entreprises', 47),
 ('9602', 'Coiffure et soins de beaute', 48),
 ('9609', 'Autres services personnels', 49);
+
+-- RBAC : Roles
+INSERT IGNORE INTO roles (id, nom, description, is_internal, is_system, sort_order) VALUES
+(1,  'Super Admin',       'Accès total au système',                         1, 1, 1),
+(2,  'Admin',             'Administrateur avec presque tous les droits',    1, 0, 2),
+(3,  'Chef d équipes',    'Gère les dossiers et son équipe',               1, 0, 3),
+(4,  'Employé',           'Agent de traitement des dossiers',              1, 0, 4),
+(5,  'Assistante',        'Support administratif et documentaire',          1, 0, 5),
+(6,  'Stagiaire',         'Accès lecture seule',                           1, 0, 6),
+(7,  'Expert-comptable',  'Expert-comptable externe',                      0, 0, 10),
+(8,  'Comptable agréé',   'Comptable agréé externe',                       0, 0, 11),
+(9,  'Commissaire aux comptes', 'Commissaire aux comptes',                 0, 0, 12),
+(10, 'Coursier',          'Coursier / livreur',                             0, 0, 13),
+(11, 'Avocat',            'Avocat externe',                                 0, 0, 14),
+(12, 'Notaire',           'Notaire externe',                                0, 0, 15),
+(13, 'Conseil juridique', 'Conseil juridique externe',                      0, 0, 16),
+(14, 'Banque',            'Représentant bancaire',                          0, 0, 17),
+(15, 'Assurance',         'Représentant assurance',                         0, 0, 18),
+(16, 'Autre',             'Autre type de collaborateur',                    0, 0, 99);
+
+-- RBAC : Permissions
+INSERT IGNORE INTO permissions (id, nom, permission_key, category, description) VALUES
+(1,  'Voir le tableau de bord',                       'dashboard.view',       'dashboard',    'Accéder au tableau de bord'),
+(2,  'Voir les sociétés',                             'societes.view',        'societes',     'Consulter la liste et les fiches sociétés'),
+(3,  'Créer une société',                             'societes.create',      'societes',     'Créer une nouvelle société'),
+(4,  'Modifier une société',                          'societes.edit',        'societes',     'Modifier les informations d une société'),
+(5,  'Supprimer une société',                         'societes.delete',      'societes',     'Supprimer une société'),
+(6,  'Exporter les sociétés',                         'societes.export',      'societes',     'Exporter la liste des sociétés en CSV'),
+(7,  'Voir les associés',                             'associes.view',        'associes',     'Consulter la liste des associés'),
+(8,  'Créer un associé',                              'associes.create',      'associes',     'Ajouter un associé'),
+(9,  'Modifier un associé',                           'associes.edit',        'associes',     'Modifier les informations d un associé'),
+(10, 'Supprimer un associé',                          'associes.delete',      'associes',     'Supprimer un associé'),
+(11, 'Exporter les associés',                         'associes.export',      'associes',     'Exporter la liste des associés en CSV'),
+(12, 'Voir les contrats',                             'contrats.view',        'contrats',     'Consulter la liste des contrats'),
+(13, 'Créer un contrat',                              'contrats.create',      'contrats',     'Ajouter un contrat'),
+(14, 'Modifier un contrat',                           'contrats.edit',        'contrats',     'Modifier les informations d un contrat'),
+(15, 'Supprimer un contrat',                          'contrats.delete',      'contrats',     'Supprimer un contrat'),
+(16, 'Exporter les contrats',                         'contrats.export',      'contrats',     'Exporter la liste des contrats en CSV'),
+(17, 'Voir les collaborateurs',                       'collaborateurs.view',       'collaborateurs', 'Consulter la liste des collaborateurs'),
+(18, 'Créer un collaborateur',                        'collaborateurs.create',     'collaborateurs', 'Ajouter un collaborateur'),
+(19, 'Modifier un collaborateur',                     'collaborateurs.edit',       'collaborateurs', 'Modifier les informations d un collaborateur'),
+(20, 'Supprimer un collaborateur',                    'collaborateurs.delete',     'collaborateurs', 'Supprimer un collaborateur'),
+(21, 'Exporter les collaborateurs',                   'collaborateurs.export',     'collaborateurs', 'Exporter la liste des collaborateurs en CSV'),
+(22, 'Utiliser l assistant de création',              'wizard.create',        'wizard',       'Accéder au wizard de création de dossier'),
+(23, 'Voir les templates',                            'templates.view',       'templates',    'Consulter la liste des templates'),
+(24, 'Créer un template',                             'templates.create',     'templates',    'Ajouter un nouveau template'),
+(25, 'Modifier un template',                          'templates.edit',       'templates',    'Modifier un template existant'),
+(26, 'Supprimer un template',                         'templates.delete',     'templates',    'Supprimer un template'),
+(27, 'Utiliser le générateur de dossiers',            'generation.use',       'generation',   'Générer les documents d un dossier'),
+(28, 'Voir les documents générés',                    'documents.view',       'documents',    'Consulter la liste des documents'),
+(29, 'Télécharger les documents',                     'documents.download',   'documents',    'Télécharger les fichiers générés'),
+(30, 'Voir la configuration',                         'configuration.view',   'configuration','Accéder à la page de configuration'),
+(31, 'Modifier la configuration',                     'configuration.edit',   'configuration','Modifier les données de configuration'),
+(32, 'Voir l analyse de couverture',                  'analyse.view',         'analyse',      'Accéder à l analyse de couverture'),
+(33, 'Voir les variables',                            'variables.view',       'variables',    'Consulter la gestion des variables'),
+(34, 'Modifier les variables',                        'variables.edit',       'variables',    'Renommer et supprimer des variables'),
+(35, 'Modifier les valeurs par défaut',               'defaults.edit',        'defaults',     'Configurer les valeurs par défaut'),
+(36, 'Utiliser la conversion Word → PDF',             'convert.use',          'convert',      'Accéder à l outil de conversion'),
+(37, 'Utiliser l assistant IA',                       'ai.use',               'ai',           'Accéder à l assistant IA'),
+(38, 'Gérer les rôles et permissions',                'roles.manage',         'roles',        'Créer, modifier et supprimer des rôles');
+
+-- RBAC : Role-Permission assignments
+SET @super_admin = 1, @admin = 2, @chef = 3, @employe = 4, @assistante = 5, @stagiaire = 6,
+    @expert = 7, @comptable = 8, @commissaire = 9, @coursier = 10, @avocat = 11,
+    @notaire = 12, @conseil = 13, @banque = 14, @assurance = 15, @autre = 16;
+
+DELETE FROM role_permissions;
+
+-- Super Admin: ALL permissions (1-38)
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT @super_admin, id FROM permissions;
+
+-- Admin: all except roles.manage (38)
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT @admin, id FROM permissions WHERE id < 38;
+
+-- Chef d équipes
+INSERT INTO role_permissions (role_id, permission_id) VALUES
+(@chef, 1),
+(@chef, 2), (@chef, 3), (@chef, 4), (@chef, 5), (@chef, 6),
+(@chef, 7), (@chef, 8), (@chef, 9), (@chef, 10), (@chef, 11),
+(@chef, 12), (@chef, 13), (@chef, 14), (@chef, 15), (@chef, 16),
+(@chef, 17),
+(@chef, 22),
+(@chef, 23),
+(@chef, 27),
+(@chef, 28), (@chef, 29),
+(@chef, 32),
+(@chef, 33);
+
+-- Employé
+INSERT INTO role_permissions (role_id, permission_id) VALUES
+(@employe, 1),
+(@employe, 2), (@employe, 3), (@employe, 4),
+(@employe, 7), (@employe, 8), (@employe, 9),
+(@employe, 12), (@employe, 13), (@employe, 14),
+(@employe, 22),
+(@employe, 23),
+(@employe, 27),
+(@employe, 28), (@employe, 29);
+
+-- Assistante
+INSERT INTO role_permissions (role_id, permission_id) VALUES
+(@assistante, 1),
+(@assistante, 2), (@assistante, 3),
+(@assistante, 7), (@assistante, 8),
+(@assistante, 12), (@assistante, 13),
+(@assistante, 22),
+(@assistante, 23),
+(@assistante, 27),
+(@assistante, 28), (@assistante, 29);
+
+-- Stagiaire
+INSERT INTO role_permissions (role_id, permission_id) VALUES
+(@stagiaire, 1),
+(@stagiaire, 2),
+(@stagiaire, 7),
+(@stagiaire, 12),
+(@stagiaire, 23),
+(@stagiaire, 28);
+
+-- Expert-comptable
+INSERT INTO role_permissions (role_id, permission_id) VALUES
+(@expert, 1),
+(@expert, 2),
+(@expert, 7),
+(@expert, 12),
+(@expert, 28), (@expert, 29);
+
+-- Comptable agréé
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT @comptable, permission_id FROM role_permissions WHERE role_id = @expert;
+
+-- Commissaire aux comptes
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT @commissaire, permission_id FROM role_permissions WHERE role_id = @expert;
+
+-- Coursier
+INSERT INTO role_permissions (role_id, permission_id) VALUES
+(@coursier, 1);
+
+-- Avocat
+INSERT INTO role_permissions (role_id, permission_id) VALUES
+(@avocat, 1),
+(@avocat, 2),
+(@avocat, 12),
+(@avocat, 28), (@avocat, 29);
+
+-- Notaire
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT @notaire, permission_id FROM role_permissions WHERE role_id = @avocat;
+
+-- Conseil juridique
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT @conseil, permission_id FROM role_permissions WHERE role_id = @avocat;
+
+-- Banque, Assurance, Autre
+INSERT INTO role_permissions (role_id, permission_id)
+VALUES (@banque, 1), (@assurance, 1), (@autre, 1);
+
+-- ============================================================
+-- DEMO DATA (Societes, Associes, Contrats, Collaborateurs)
+-- ============================================================
 
 INSERT INTO societes (
     societe_dossier, societe_raison_sociale, societe_forme_juridique, societe_ice, societe_date_ice, societe_rc, societe_if,
@@ -638,17 +687,24 @@ INSERT INTO collaborateurs (
     collaborateur_tel_mobile, collaborateur_adresse, collaborateur_email, email, telephone, date_debut, statut, notes
 ) VALUES
 (
-    'Atlas Domiciliation', 'Nadia Chraibi', 'Gestion administrative', 'EXP -- Expert Comptable', 'EXP',
+    'Atlas Domiciliation', 'Nadia Chraibi', 'Gestion administrative', 'externe-pm', 'EXP',
     'Nadia Chraibi', 'ICE-COL-001', 'TP001', 'RC-C001', 'IF-C001', '0522000001', '+212600000010',
     'Casablanca', 'nadia@atlas.test', 'nadia@atlas.test', '+212600000010', '2026-01-05', 'actif',
     'Suivi dossiers clients'
 ),
 (
-    NULL, 'Karim Tazi', 'Support operationnel', 'CLTD -- Client Direct', 'CLTD',
+    NULL, 'Karim Tazi', 'Support operationnel', 'externe-pp', 'CLTD',
     'Karim Tazi', 'ICE-COL-002', 'TP002', 'RC-C002', 'IF-C002', '0522000002', '+212600000011',
     'Casablanca', 'karim@center.test', 'karim@center.test', '+212600000011', '2026-02-01', 'actif',
     'Appui polyvalent'
 );
+
+-- Super Admin collaborator (default password: admin123)
+INSERT INTO collaborateurs (nom_complet, fonction, role_id, collaborateur_email, email, can_login, password_hash, statut, notes)
+SELECT 'Super Admin', 'Administrateur système', @super_admin, 'admin@center.test', 'admin@center.test', 1,
+       '$2y$10$QOZo9.7oOayIbJEsGwRxLuuS6BvQ9rJT6oX1rAsQoFG4cAvwyHZBG', 'actif',
+       'Compte super admin par defaut'
+WHERE NOT EXISTS (SELECT 1 FROM collaborateurs WHERE email = 'admin@center.test' OR collaborateur_email = 'admin@center.test');
 
 INSERT IGNORE INTO ref_ste_adresses (ste_adresse) VALUES
 ('HAY MOULAY ABDELLAH RUE 300 N 152 ETG 2 AIN CHOCK, CASABLANCA'),
@@ -670,17 +726,13 @@ INSERT IGNORE INTO ref_activites (activite) VALUES
 
 INSERT IGNORE INTO ref_activites_ompic (code, libelle, sort_order) VALUES
 ('F', 'CONSTRUCTION', 6),
-('G', 'COMMERCE; REPARATION D''AUTOMOBILES ET DE MOTOCYCLES', 7),
-('M', 'ACTIVITES SPECIALISEES, SCIENTIFIQUES ET TECHNIQUES', 13),
-('N', 'ACTIVITES DE SERVICES ADMINISTRATIFS ET DE SOUTIEN', 14),
 ('46', 'Commerce de gros', 19),
 ('47', 'Commerce de detail', 20),
 ('68', 'Activites immobilieres', 26),
 ('70', 'Activites des sieges sociaux; conseil de gestion', 28);
 
 INSERT IGNORE INTO ref_nationalites (nationalite) VALUES
-('Marocaine'),
-('Cameronnie');
+('Marocaine');
 
 INSERT IGNORE INTO ref_lieux_naissance (lieu_naissance) VALUES
 ('Casablanca'),

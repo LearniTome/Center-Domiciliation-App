@@ -306,13 +306,13 @@ INSERT INTO collaborateurs (
     collaborateur_tel_mobile, collaborateur_adresse, collaborateur_email, email, telephone, date_debut, statut, notes
 ) VALUES
 (
-    'Atlas Domiciliation', 'Nadia Chraibi', 'Gestion administrative', 'EXP -- Expert Comptable', 'EXP',
+    'Atlas Domiciliation', 'Nadia Chraibi', 'Gestion administrative', 'externe-pm', 'EXP',
     'Nadia Chraibi', 'ICE-COL-001', 'TP001', 'RC-C001', 'IF-C001', '0522000001', '+212600000010',
     'Casablanca', 'nadia@atlas.test', 'nadia@atlas.test', '+212600000010', '2026-01-05', 'actif',
     'Suivi dossiers clients'
 ),
 (
-    NULL, 'Karim Tazi', 'Support operationnel', 'CLTD -- Client Direct', 'CLTD',
+    NULL, 'Karim Tazi', 'Support operationnel', 'externe-pp', 'CLTD',
     'Karim Tazi', 'ICE-COL-002', 'TP002', 'RC-C002', 'IF-C002', '0522000002', '+212600000011',
     'Casablanca', 'karim@center.test', 'karim@center.test', '+212600000011', '2026-02-01', 'actif',
     'Appui polyvalent'
@@ -425,3 +425,10 @@ SELECT 1, id FROM permissions;
 -- Admin: all except roles.manage
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT 2, id FROM permissions WHERE id < 38;
+
+-- Super Admin collaborator (default password: admin123)
+INSERT INTO collaborateurs (nom_complet, fonction, role_id, collaborateur_email, email, can_login, password_hash, statut, notes)
+SELECT 'Super Admin', 'Administrateur système', 1, 'admin@center.test', 'admin@center.test', 1,
+       '$2y$10$QOZo9.7oOayIbJEsGwRxLuuS6BvQ9rJT6oX1rAsQoFG4cAvwyHZBG', 'actif',
+       'Compte super admin par defaut'
+WHERE NOT EXISTS (SELECT 1 FROM collaborateurs WHERE email = 'admin@center.test' OR collaborateur_email = 'admin@center.test');
