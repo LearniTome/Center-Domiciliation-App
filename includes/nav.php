@@ -4,38 +4,53 @@ declare(strict_types=1);
 
 $navSections = [
     '' => [
-        'creation' => ['Nouveau dossier', 'note_add'],
-        'dashboard' => ['Tableau de bord', 'dashboard'],
+        'icon' => null,
+        'items' => [
+            'creation' => ['Nouveau dossier', 'note_add'],
+            'dashboard' => ['Tableau de bord', 'dashboard'],
+        ],
     ],
     'Dossiers' => [
-        'societes' => ['Societes', 'business'],
-        'associes' => ['Associes', 'group'],
-        'contrats' => ['Contrats', 'description'],
-        'collaborateurs' => ['Collaborateurs', 'work'],
+        'icon' => 'folder',
+        'items' => [
+            'societes' => ['Societes', 'business'],
+            'associes' => ['Associes', 'group'],
+            'contrats' => ['Contrats', 'description'],
+            'collaborateurs' => ['Collaborateurs', 'work'],
+        ],
     ],
     'Templates de documents' => [
-        'templates' => ['Templates', 'edit_note'],
-        'template_edit' => ['Editeur de template', 'edit'],
-        'generation' => ['Generateur de dossiers', 'sync'],
-        'documents' => ['Documents generes', 'article'],
+        'icon' => 'article',
+        'items' => [
+            'templates' => ['Templates', 'edit_note'],
+            'template_edit' => ['Editeur de template', 'edit'],
+            'generation' => ['Generateur de dossiers', 'sync'],
+            'documents' => ['Documents generes', 'article'],
+        ],
     ],
     'Outils' => [
-        'analyse-couverture' => ['Analyse de couverture', 'bar_chart'],
-        'defaults' => ['Valeurs par defaut', 'tune'],
-        'variables' => ['Gestion des variables', 'code'],
-        'convert-word-pdf' => ['Word to PDF', 'picture_as_pdf'],
-        'ai-assistant' => ['Assistant IA', 'smart_toy'],
+        'icon' => 'build',
+        'items' => [
+            'analyse-couverture' => ['Analyse de couverture', 'bar_chart'],
+            'defaults' => ['Valeurs par defaut', 'tune'],
+            'variables' => ['Gestion des variables', 'code'],
+            'convert-word-pdf' => ['Word to PDF', 'picture_as_pdf'],
+            'ai-assistant' => ['Assistant IA', 'smart_toy'],
+        ],
     ],
     'Configuration' => [
-        ['page' => 'formes-juridiques', 'label' => 'Formes juridiques', 'icon' => 'description'],
-        ['page' => 'tribunaux', 'label' => 'Tribunaux', 'icon' => 'balance'],
-        ['page' => 'villes', 'label' => 'Villes', 'icon' => 'location_city'],
-        ['page' => 'nationalites', 'label' => 'Nationalites', 'icon' => 'flag'],
-        ['page' => 'lieux-naissance', 'label' => 'Lieux de naissance', 'icon' => 'location_on'],
-        ['page' => 'adresses', 'label' => 'Adresses', 'icon' => 'home'],
-        ['page' => 'qualites-associe', 'label' => 'Qualites associe', 'icon' => 'badge'],
-        ['page' => 'activites', 'label' => 'Activites', 'icon' => 'work'],
-        ['page' => 'activites-ompic', 'label' => 'Activites Ompic', 'icon' => 'verified'],
+        'icon' => 'settings',
+        'items' => [
+            ['page' => 'formes-juridiques', 'label' => 'Formes juridiques', 'icon' => 'description'],
+            ['page' => 'tribunaux', 'label' => 'Tribunaux', 'icon' => 'balance'],
+            ['page' => 'villes', 'label' => 'Villes', 'icon' => 'location_city'],
+            ['page' => 'nationalites', 'label' => 'Nationalites', 'icon' => 'flag'],
+            ['page' => 'lieux-naissance', 'label' => 'Lieux de naissance', 'icon' => 'location_on'],
+            ['page' => 'adresses', 'label' => 'Adresses', 'icon' => 'home'],
+            ['page' => 'qualites-associe', 'label' => 'Qualites associe', 'icon' => 'badge'],
+            ['page' => 'activites', 'label' => 'Activites', 'icon' => 'work'],
+            ['page' => 'activites-ompic', 'label' => 'Activites Ompic', 'icon' => 'verified'],
+        ],
     ],
 ];
 ?>
@@ -58,12 +73,14 @@ $navSections = [
     </div>
 
     <nav class="nav-links">
-        <?php foreach ($navSections as $sectionLabel => $items): ?>
+        <?php foreach ($navSections as $sectionLabel => $section): ?>
+            <?php $items = $section['items']; ?>
             <?php if ($sectionLabel): ?>
             <div class="nav-section">
                 <button class="nav-section-toggle" type="button" data-nav-toggle data-label="<?= e($sectionLabel) ?>">
-                    <span class="material-symbols-outlined">expand_more</span>
-                    <?= e($sectionLabel) ?>
+                    <span class="material-symbols-outlined section-icon"><?= e($section['icon']) ?></span>
+                    <span class="nav-section-label"><?= e($sectionLabel) ?></span>
+                    <span class="material-symbols-outlined section-chevron">expand_more</span>
                 </button>
                 <div class="nav-section-items">
             <?php endif; ?>

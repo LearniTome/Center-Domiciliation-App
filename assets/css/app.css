@@ -270,13 +270,24 @@ a:hover {
     color: var(--text);
 }
 
-.nav-section-toggle .material-symbols-outlined {
+.nav-section-toggle .section-icon {
     font-size: 0.85rem;
+}
+
+.nav-section-toggle .section-chevron {
+    font-size: 0.85rem;
+    margin-left: auto;
     transition: transform var(--transition);
 }
 
-.nav-section.collapsed .nav-section-toggle .material-symbols-outlined {
+.nav-section.collapsed .nav-section-toggle .section-chevron {
     transform: rotate(-90deg);
+}
+
+.nav-section-label {
+    font-size: inherit;
+    text-transform: inherit;
+    letter-spacing: inherit;
 }
 
 .nav-section.collapsed .nav-section-items {
