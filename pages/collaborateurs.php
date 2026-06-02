@@ -57,6 +57,12 @@ if (($pdo ?? null) instanceof PDO) {
             return [
                 $c['id'],
                 $c['role_nom'] ?? '-',
+                (static function () use ($c): string {
+    $t = $c['collaborateur_type'] ?? '';
+    if (in_array($t, ['interne', 'externe-pm', 'externe-pp'], true)) return $t;
+    $ds = $c['den_ste'] ?? '';
+    return ((int) ($c['can_login'] ?? 0)) ? 'interne' : (($ds && $ds !== 'NULL') ? 'externe-pm' : 'externe-pp');
+})(),
                 (int) ($c['can_login'] ?? 0) ? 'Oui' : 'Non',
                 $c['den_ste'],
                 $c['nom_complet'],
@@ -77,6 +83,7 @@ if (($pdo ?? null) instanceof PDO) {
         export_csv('collaborateurs.csv', [
             'ID',
             'Role',
+            'Type',
             'Acces app',
             'Cabinet',
             'Nom complet',
@@ -128,6 +135,7 @@ if (($pdo ?? null) instanceof PDO) {
                 <thead>
                 <tr>
                     <th data-col="role">Role</th>
+                    <th data-col="type">Type</th>
                     <th data-col="acces">Acces app</th>
                     <th data-col="cabinet">Cabinet</th>
                     <th data-col="nom-complet">Nom complet</th>
@@ -151,6 +159,18 @@ if (($pdo ?? null) instanceof PDO) {
                             <span class="badge <?= $isInternal ? 'badge-info' : 'badge-secondary' ?>">
                                 <?= e($roleName) ?>
                             </span>
+                        </td>
+                        <td>
+                            <?php
+                                $ct = $c['collaborateur_type'] ?? '';
+                                if (!in_array($ct, ['interne', 'externe-pm', 'externe-pp'], true)) {
+                                    $denSte = $c['den_ste'] ?? '';
+                                    $ct = ((int) ($c['can_login'] ?? 0)) ? 'interne' : (($denSte && $denSte !== 'NULL') ? 'externe-pm' : 'externe-pp');
+                                }
+                                $typeLabels = ['interne' => 'Interne', 'externe-pm' => 'PM', 'externe-pp' => 'PP'];
+                                $typeClass = ['interne' => 'badge-info', 'externe-pm' => 'badge-secondary', 'externe-pp' => 'badge-warning'];
+                            ?>
+                            <span class="badge <?= $typeClass[$ct] ?? 'badge' ?>"><?= $typeLabels[$ct] ?? '-' ?></span>
                         </td>
                         <td>
                             <?php if ((int) ($c['can_login'] ?? 0)): ?>
