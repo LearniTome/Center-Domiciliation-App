@@ -1268,6 +1268,32 @@ tbody tr:hover:nth-child(even) {
 .select-all-toggle:hover {
     background: rgba(74, 108, 247, 0.08);
 }
+.perms-table tbody input[type="checkbox"] {
+    accent-color: var(--primary);
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+.perms-table tbody input[type="checkbox"]:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+.select-all-toggle {
+    font-size: 0.55rem;
+    cursor: pointer;
+    color: var(--primary);
+    background: none;
+    border: 1px solid var(--primary);
+    padding: 0 6px;
+    border-radius: 3px;
+    transition: background 0.12s ease;
+    font-weight: 500;
+    line-height: 1.5;
+    flex-shrink: 0;
+}
+.select-all-toggle:hover {
+    background: rgba(74, 108, 247, 0.08);
+}
 
 /* Role detail header */
 .role-header {

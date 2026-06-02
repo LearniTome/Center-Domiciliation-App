@@ -132,24 +132,12 @@ $categoryIcons = [
 $totalPerms = array_sum(array_map('count', $permissionsByCategory));
 $selectedCount = count($rolePermIds);
 
-// Separate categories: matrix (CRUD) vs simple (single permissions)
-$matrixCategories = ['societes', 'associes', 'contrats', 'collaborateurs'];
-$matrixCatData = [];
-$simpleCatData = [];
-foreach ($permissionsByCategory as $cat => $perms) {
-    if (in_array($cat, $matrixCategories, true)) {
-        $matrixCatData[$cat] = $perms;
-    } else {
-        $simpleCatData[$cat] = $perms;
-    }
-}
-
-// Build matrix only for CRUD categories
-$actionLabels = ['view' => 'Voir', 'create' => 'Créer', 'edit' => 'Modifier', 'delete' => 'Supprimer', 'export' => 'Exporter'];
-$actionOrder = ['view', 'create', 'edit', 'delete', 'export'];
+// Build full matrix: all categories × all action types
+$actionLabels = ['view' => 'Voir', 'create' => 'Créer', 'edit' => 'Modifier', 'delete' => 'Supprimer', 'export' => 'Exporter', 'use' => 'Utiliser', 'download' => 'Télécharger', 'manage' => 'Gérer'];
+$actionOrder = ['view', 'create', 'edit', 'delete', 'export', 'use', 'download', 'manage'];
 $permMatrix = [];
 $activeActions = [];
-foreach ($matrixCatData as $cat => $perms) {
+foreach ($permissionsByCategory as $cat => $perms) {
     foreach ($perms as $p) {
         $parts = explode('.', $p['permission_key']);
         $actionKey = end($parts);
@@ -294,8 +282,7 @@ if ($editingId > 0 && ($pdo ?? null) instanceof PDO) {
                 <thead>
                     <tr class="cat-row">
                         <th></th>
-                        <?php $colspan = count($actionOrder); ?>
-                        <?php foreach ($actionOrder as $actionKey): ?>
+                        <?php foreach ($orderedActions as $actionKey): ?>
                         <th data-col="<?= e($actionKey) ?>"><?= e($actionLabels[$actionKey]) ?></th>
                         <?php endforeach; ?>
                     </tr>
@@ -308,9 +295,8 @@ if ($editingId > 0 && ($pdo ?? null) instanceof PDO) {
                         }
                         $catTotal = count($perms);
                         $allChecked = $catChecked === $catTotal;
-                        $isCrud = in_array($cat, $matrixCategories, true);
                     ?>
-                    <tr data-cat="<?= e($cat) ?>" class="<?= $isCrud ? '' : 'simple-row' ?>">
+                    <tr data-cat="<?= e($cat) ?>">
                         <td class="cat-label-cell">
                             <div class="cat-label-cell-inner">
                             <span class="cat-label-inner">
@@ -328,38 +314,20 @@ if ($editingId > 0 && ($pdo ?? null) instanceof PDO) {
                             <?php endif; ?>
                             </div>
                         </td>
-                        <?php if ($isCrud): ?>
-                            <?php foreach ($actionOrder as $actionKey): ?>
-                                <?php if (isset($permMatrix[$actionKey][$cat])): ?>
-                                    <?php $p = $permMatrix[$actionKey][$cat]; ?>
-                                    <?php $checked = in_array((int) $p['id'], $rolePermIds, true); ?>
-                                    <td class="perm-cell">
-                                        <input type="checkbox" name="permissions[]" value="<?= (int) $p['id'] ?>"
-                                            data-cat="<?= e($cat) ?>"
-                                            <?= $checked ? 'checked' : '' ?>
-                                            <?= $isSystem ? 'disabled' : '' ?>>
-                                    </td>
-                                <?php else: ?>
-                                    <td class="perm-cell empty"></td>
-                                <?php endif; ?>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <td colspan="<?= $colspan ?>" class="simple-cell">
-                                <div class="simple-cell-inner">
-                                <?php foreach ($perms as $p):
-                                    $checked = in_array((int) $p['id'], $rolePermIds, true);
-                                ?>
-                                <label class="simple-perm-item">
+                        <?php foreach ($orderedActions as $actionKey): ?>
+                            <?php if (isset($permMatrix[$actionKey][$cat])): ?>
+                                <?php $p = $permMatrix[$actionKey][$cat]; ?>
+                                <?php $checked = in_array((int) $p['id'], $rolePermIds, true); ?>
+                                <td class="perm-cell">
                                     <input type="checkbox" name="permissions[]" value="<?= (int) $p['id'] ?>"
                                         data-cat="<?= e($cat) ?>"
                                         <?= $checked ? 'checked' : '' ?>
                                         <?= $isSystem ? 'disabled' : '' ?>>
-                                    <span><?= e($p['nom']) ?></span>
-                                </label>
-                                <?php endforeach; ?>
-                                </div>
-                            </td>
-                        <?php endif; ?>
+                                </td>
+                            <?php else: ?>
+                                <td class="perm-cell empty"></td>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
