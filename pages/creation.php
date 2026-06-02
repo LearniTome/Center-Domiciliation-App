@@ -528,6 +528,18 @@ if (is_post()) {
                     }
                 }
 
+                $formeCrea = $wizard['societe']['societe_forme_juridique'] ?? 'PP';
+                $raisonCrea = $wizard['societe']['societe_raison_sociale'] ?? 'Dossier-' . $societeId;
+                $clientCrea = trim(preg_replace('/[^a-zA-Z0-9-]/', '-', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $raisonCrea)));
+                $clientCrea = trim(preg_replace('/-+/', '-', $clientCrea), '-');
+                $folderDateCrea = $wizard['contrat']['contrat_date'] ?? date('Y-m-d');
+                $dossierName = $folderDateCrea . '_' . $formeCrea . '_' . $clientCrea;
+                $dossierName = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', $dossierName), '-');
+                $creaDir = __DIR__ . '/../dossiers_crea/' . $dossierName;
+                if (!is_dir($creaDir)) {
+                    mkdir($creaDir, 0777, true);
+                }
+
                 set_flash('success', 'Le dossier a ete cree avec succes.');
                 redirect_to('creation', ['step' => 6]);
             } catch (Throwable $exception) {
@@ -559,6 +571,14 @@ if (is_post()) {
             $clientName = trim(preg_replace('/[^a-zA-Z0-9-]/', '-', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $wizard['societe']['societe_raison_sociale'] ?? 'Client')));
             $clientName = preg_replace('/-+/', '-', $clientName);
             $clientName = trim($clientName, '-');
+
+            $folderDate = $wizard['contrat']['contrat_date'] ?? $today;
+            $folderName = $folderDate . '_' . $forme . '_' . $clientName;
+            $folderName = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', $folderName), '-');
+            $outputDir = __DIR__ . '/../dossiers_dom/' . $folderName;
+            if (!is_dir($outputDir)) {
+                mkdir($outputDir, 0777, true);
+            }
             $generatedFiles = [];
 
             foreach ($selectedPaths as $path) {
@@ -647,6 +667,12 @@ if (is_post()) {
                 $clientName = preg_replace('/-+/', '-', $clientName);
                 $clientName = trim($clientName, '-');
                 $forme = $wizard['societe']['societe_forme_juridique'] ?? 'PP';
+
+                $folderDate = $wizard['contrat']['contrat_date'] ?? $today;
+                $folderName = $folderDate . '_' . $forme . '_' . $clientName;
+                $folderName = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', $folderName), '-');
+                $outputDir = __DIR__ . '/../dossiers_dom/' . $folderName;
+                if (!is_dir($outputDir)) mkdir($outputDir, 0777, true);
 
                 $renderer = new DocumentRenderer($path, $outputDir);
                 $filename = pathinfo($path, PATHINFO_FILENAME);
