@@ -79,6 +79,7 @@ $navSections = [
             ['page' => 'lieux-naissance', 'label' => 'Lieux de naissance', 'icon' => 'location_on'],
             ['page' => 'adresses', 'label' => 'Adresses', 'icon' => 'home'],
             ['page' => 'qualites-associe', 'label' => 'Qualites associe', 'icon' => 'badge'],
+            ['page' => 'fonctions', 'label' => 'Fonctions', 'icon' => 'assignment'],
             ['page' => 'activites', 'label' => 'Activites', 'icon' => 'work'],
             ['page' => 'activites-ompic', 'label' => 'Activites Ompic', 'icon' => 'verified'],
         ],
