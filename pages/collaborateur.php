@@ -38,6 +38,13 @@ if (($pdo ?? null) instanceof PDO) {
     }
 }
 
+// Fetch fonctions from DB
+$fonctions = [];
+if (($pdo ?? null) instanceof PDO) {
+    $stmt = $pdo->query('SELECT id, fonction FROM ref_fonctions ORDER BY sort_order ASC, fonction ASC');
+    $fonctions = $stmt->fetchAll();
+}
+
 $typeOptions = ['interne', 'externe-pm', 'externe-pp'];
 
 // --- POST ---
@@ -309,7 +316,14 @@ $isNew = !$editingRecord;
                 </label>
                 <label class="field">
                     <span>Fonction</span>
-                    <input name="fonction" value="<?= e((string) $formData['fonction']) ?>" placeholder="ex: Gerant, Associe">
+                    <select name="fonction">
+                        <option value="">Selectionner...</option>
+                        <?php foreach ($fonctions as $f): ?>
+                            <option value="<?= e((string) $f['fonction']) ?>" <?= (string) $formData['fonction'] === (string) $f['fonction'] ? 'selected' : '' ?>>
+                                <?= e((string) $f['fonction']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
                 </label>
                 <?php endif; ?>
 
@@ -418,7 +432,14 @@ $isNew = !$editingRecord;
                 </label>
                 <label class="field">
                     <span>Fonction</span>
-                    <input name="fonction" value="<?= e((string) $formData['fonction']) ?>" placeholder="ex: Gerant, Associe">
+                    <select name="fonction">
+                        <option value="">Selectionner...</option>
+                        <?php foreach ($fonctions as $f): ?>
+                            <option value="<?= e((string) $f['fonction']) ?>" <?= (string) $formData['fonction'] === (string) $f['fonction'] ? 'selected' : '' ?>>
+                                <?= e((string) $f['fonction']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
                 </label>
                 <?php endif; ?>
 

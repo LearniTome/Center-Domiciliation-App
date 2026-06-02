@@ -10,6 +10,7 @@ $tabs = [
     'lieux-naissance' => ['ref_lieux_naissance', 'lieu_naissance', 'Lieux de naissance', 'location_on'],
     'adresses' => ['ref_ste_adresses', 'ste_adresse', 'Adresses', 'home'],
     'qualites-associe' => ['ref_qualites_associe', 'qualite_associe', 'Qualites associe', 'badge'],
+    'fonctions' => ['ref_fonctions', 'fonction', 'Fonctions', 'assignment'],
     'activites' => ['ref_activites', 'activite', 'Activites', 'work'],
     'activites-ompic' => ['ref_activites_ompic', 'libelle', 'Activites Ompic', 'verified'],
 ];

@@ -267,6 +267,15 @@ CREATE TABLE IF NOT EXISTS ref_qualites_associe (
     UNIQUE KEY uq_ref_qualites_associe (qualite_associe)
 );
 
+CREATE TABLE IF NOT EXISTS ref_fonctions (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    fonction VARCHAR(150) NOT NULL,
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_ref_fonctions (fonction)
+);
+
 -- RBAC Tables
 CREATE TABLE IF NOT EXISTS roles (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
