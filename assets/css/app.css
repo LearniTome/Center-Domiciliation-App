@@ -1158,11 +1158,6 @@ tbody tr:hover:nth-child(even) {
 }
 
 /* Permission matrix table */
-.perms-scroll {
-    max-height: calc(100vh - 340px);
-    overflow: auto;
-    padding-right: 4px;
-}
 .perms-table {
     width: 100%;
     border-collapse: collapse;
@@ -1238,7 +1233,19 @@ tbody tr:hover:nth-child(even) {
 }
 .perms-table tbody td.perm-cell {
     min-width: 70px;
-    padding: 3px 6px !important;
+}
+.perms-table tbody td.perm-cell.empty {
+    opacity: 0.12;
+}
+.perms-table tbody input[type="checkbox"] {
+    accent-color: var(--primary);
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+.perms-table tbody input[type="checkbox"]:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
 }
 .perm-label {
     display: inline-flex;

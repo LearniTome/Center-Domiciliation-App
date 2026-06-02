@@ -277,7 +277,6 @@ if ($editingId > 0 && ($pdo ?? null) instanceof PDO) {
     </div>
 
     <div id="tab-permissions">
-        <div class="perms-scroll">
             <table class="perms-table">
                 <thead>
                     <tr class="cat-row">
@@ -319,13 +318,10 @@ if ($editingId > 0 && ($pdo ?? null) instanceof PDO) {
                                 <?php $p = $permMatrix[$actionKey][$cat]; ?>
                                 <?php $checked = in_array((int) $p['id'], $rolePermIds, true); ?>
                                 <td class="perm-cell">
-                                    <label class="perm-label">
-                                        <input type="checkbox" name="permissions[]" value="<?= (int) $p['id'] ?>"
-                                            data-cat="<?= e($cat) ?>"
-                                            <?= $checked ? 'checked' : '' ?>
-                                            <?= $isSystem ? 'disabled' : '' ?>>
-                                        <span><?= e($p['nom']) ?></span>
-                                    </label>
+                                    <input type="checkbox" name="permissions[]" value="<?= (int) $p['id'] ?>"
+                                        data-cat="<?= e($cat) ?>"
+                                        <?= $checked ? 'checked' : '' ?>
+                                        <?= $isSystem ? 'disabled' : '' ?>>
                                 </td>
                             <?php else: ?>
                                 <td class="perm-cell empty"></td>
@@ -335,7 +331,6 @@ if ($editingId > 0 && ($pdo ?? null) instanceof PDO) {
                     <?php endforeach; ?>
                 </tbody>
             </table>
-        </div>
 
             <?php if (!$isSystem): ?>
                 <div style="display:flex;gap:10px;align-items:center;padding-top:14px;border-top:1px solid var(--line);margin-top:16px;">
