@@ -221,7 +221,7 @@ if ($editingId > 0 && ($pdo ?? null) instanceof PDO) {
         <button type="button" class="tab active" data-tab="permissions">
             <span class="material-symbols-outlined" style="font-size:1rem">checklist</span>
             Permissions
-            <span class="badge badge-info"><?= $selectedCount ?>/<?= $totalPerms ?></span>
+            <span class="badge badge-info" id="total-perm-badge"><?= $selectedCount ?>/<?= $totalPerms ?></span>
         </button>
         <?php if ($role): ?>
         <button type="button" class="tab" data-tab="users">
@@ -260,50 +260,59 @@ if ($editingId > 0 && ($pdo ?? null) instanceof PDO) {
             </div>
 
             <div class="perms-scroll">
-                <div class="perms-grid">
-                <?php foreach ($permissionsByCategory as $cat => $perms): ?>
-                    <?php
-                        $catChecked = 0;
-                        foreach ($perms as $p) {
-                            if (in_array((int) $p['id'], $rolePermIds, true)) $catChecked++;
-                        }
-                        $catTotal = count($perms);
-                        $allChecked = $catChecked === $catTotal;
-                    ?>
-                    <div class="perms-card" data-category="<?= e($cat) ?>">
-                        <h4>
-                            <span>
-                                <?php if (isset($categoryIcons[$cat])): ?>
-                                    <span class="material-symbols-outlined"><?= e($categoryIcons[$cat]) ?></span>
-                                <?php endif; ?>
-                                <?= e($categoryLabels[$cat] ?? $cat) ?>
-                            </span>
-                            <span style="display:flex;align-items:center;gap:8px;">
-                                <span class="badge" style="font-size:0.6rem;padding:1px 7px"><?= $catChecked ?>/<?= $catTotal ?></span>
-                                <?php if (!$isSystem): ?>
-                                    <button type="button" class="select-all-toggle" data-toggle-cat="<?= e($cat) ?>"
-                                        data-state="<?= $allChecked ? 'checked' : 'unchecked' ?>">
-                                        <?= $allChecked ? 'Tout deselect' : 'Tout select' ?>
-                                    </button>
-                                <?php endif; ?>
-                            </span>
-                        </h4>
+                <table class="perms-table">
+                    <?php foreach ($permissionsByCategory as $cat => $perms): ?>
+                        <?php
+                            $catChecked = 0;
+                            foreach ($perms as $p) {
+                                if (in_array((int) $p['id'], $rolePermIds, true)) $catChecked++;
+                            }
+                            $catTotal = count($perms);
+                            $allChecked = $catChecked === $catTotal;
+                        ?>
+                        <thead>
+                            <tr class="cat-head">
+                                <th colspan="3">
+                                    <span class="cat-head-left">
+                                        <?php if (isset($categoryIcons[$cat])): ?>
+                                            <span class="material-symbols-outlined"><?= e($categoryIcons[$cat]) ?></span>
+                                        <?php endif; ?>
+                                        <?= e($categoryLabels[$cat] ?? $cat) ?>
+                                    </span>
+                                    <span class="cat-head-right">
+                                        <span class="badge badge-info"><?= $catChecked ?>/<?= $catTotal ?></span>
+                                        <?php if (!$isSystem): ?>
+                                            <button type="button" class="select-all-toggle" data-toggle-cat="<?= e($cat) ?>"
+                                                data-state="<?= $allChecked ? 'checked' : 'unchecked' ?>">
+                                                <?= $allChecked ? 'Tout deselect' : 'Tout select' ?>
+                                            </button>
+                                        <?php endif; ?>
+                                    </span>
+                                </th>
+                            </tr>
+                            <tr class="cat-cols">
+                                <th style="width:28px"></th>
+                                <th data-col="perm">Permission</th>
+                                <th data-col="key">Cle</th>
+                            </tr>
+                        </thead>
+                        <tbody>
                         <?php foreach ($perms as $p): ?>
                             <?php $checked = in_array((int) $p['id'], $rolePermIds, true); ?>
-                            <label>
-                                <input type="checkbox" name="permissions[]" value="<?= (int) $p['id'] ?>"
-                                    data-cat="<?= e($cat) ?>"
-                                    <?= $checked ? 'checked' : '' ?>
-                                    <?= $isSystem ? 'disabled' : '' ?>>
-                                <span class="perm-label">
-                                    <?= e($p['nom']) ?>
-                                    <span class="perm-key"><?= e($p['permission_key']) ?></span>
-                                </span>
-                            </label>
+                            <tr>
+                                <td>
+                                    <input type="checkbox" name="permissions[]" value="<?= (int) $p['id'] ?>"
+                                        data-cat="<?= e($cat) ?>"
+                                        <?= $checked ? 'checked' : '' ?>
+                                        <?= $isSystem ? 'disabled' : '' ?>>
+                                </td>
+                                <td class="perm-name"><?= e($p['nom']) ?></td>
+                                <td><code class="perm-key"><?= e($p['permission_key']) ?></code></td>
+                            </tr>
                         <?php endforeach; ?>
-                    </div>
-                <?php endforeach; ?>
-                </div>
+                        </tbody>
+                    <?php endforeach; ?>
+                </table>
             </div>
 
             <?php if (!$isSystem): ?>
@@ -424,31 +433,25 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function updateSummary() {
-        var total = document.querySelectorAll('input[name="permissions[]"]').length;
-        var checked = document.querySelectorAll('input[name="permissions[]"]:checked').length;
-        var badges = document.querySelectorAll('.badge.badge-info');
-        badges.forEach(function(badge) {
-            if (badge.textContent.indexOf('/') !== -1) {
-                badge.textContent = checked + ' / ' + total;
-            }
-        });
+        var totalCheckboxes = document.querySelectorAll('input[name="permissions[]"]').length;
+        var totalChecked = document.querySelectorAll('input[name="permissions[]"]:checked').length;
+        var totalBadge = document.getElementById('total-perm-badge');
+        if (totalBadge) totalBadge.textContent = totalChecked + '/' + totalCheckboxes;
 
         document.querySelectorAll('[data-toggle-cat]').forEach(function(btn) {
             var cat = btn.getAttribute('data-toggle-cat');
             var catCbs = document.querySelectorAll('input[data-cat="' + cat + '"]');
-            var allCatChecked = true;
-            catCbs.forEach(function(cb) { if (!cb.checked) allCatChecked = false; });
+            var catChecked = 0;
+            catCbs.forEach(function(cb) { if (cb.checked) catChecked++; });
+            var catTotal = catCbs.length;
+            var allCatChecked = catChecked === catTotal;
             btn.setAttribute('data-state', allCatChecked ? 'checked' : 'unchecked');
             btn.textContent = allCatChecked ? 'Tout deselect' : 'Tout select';
 
-            var catCard = btn.closest('.perms-card');
-            if (catCard) {
-                var catBadge = catCard.querySelector('h4 .badge');
-                if (catBadge) {
-                    var catChecked = catCard.querySelectorAll('input:checked').length;
-                    var catTotal = catCard.querySelectorAll('input[type="checkbox"]').length;
-                    catBadge.textContent = catChecked + '/' + catTotal;
-                }
+            var catHead = btn.closest('.cat-head');
+            if (catHead) {
+                var catBadge = catHead.querySelector('.badge');
+                if (catBadge) catBadge.textContent = catChecked + '/' + catTotal;
             }
         });
     }
