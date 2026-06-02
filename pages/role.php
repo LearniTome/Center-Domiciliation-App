@@ -132,6 +132,22 @@ $categoryIcons = [
 $totalPerms = array_sum(array_map('count', $permissionsByCategory));
 $selectedCount = count($rolePermIds);
 
+function user_initials(string $name): string
+{
+    $parts = preg_split('/\s+/', trim($name));
+    if (count($parts) >= 2) {
+        return mb_strtoupper(mb_substr($parts[0], 0, 1) . mb_substr(end($parts), 0, 1));
+    }
+    return mb_strtoupper(mb_substr($name, 0, 2));
+}
+
+$avatarColors = ['avatar-info', 'avatar-success', 'avatar-warning', 'avatar-danger', 'avatar-secondary'];
+function avatar_color(string $name, array $colors): string
+{
+    $idx = abs(crc32($name)) % count($colors);
+    return $colors[$idx];
+}
+
 $roleUsers = [];
 if ($editingId > 0 && ($pdo ?? null) instanceof PDO) {
     $stmt = $pdo->prepare('
@@ -144,66 +160,103 @@ if ($editingId > 0 && ($pdo ?? null) instanceof PDO) {
     $roleUsers = $stmt->fetchAll();
 }
 ?>
-<section>
-    <article class="card stack">
-        <div class="section-header">
-            <div>
-                <h2><?= $role ? 'Modifier le role' : 'Nouveau role' ?></h2>
-                <p class="help-text">
-                    <?php if ($role): ?>
-                        <?= e($role['nom']) ?>
-                        <?= (int) ($role['is_internal'] ?? 0) ? '<span class="badge badge-info">Interne</span>' : '<span class="badge badge-secondary">Externe</span>' ?>
-                    <?php else: ?>
-                        Creer un nouveau role avec ses permissions
-                    <?php endif; ?>
-                </p>
-            </div>
-            <div class="table-actions">
-                <a class="btn btn-secondary" href="<?= e(app_url('roles')) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
+<section style="max-width:1200px">
+
+    <?php if ($role): ?>
+    <div class="role-header">
+        <div class="role-header-icon">
+            <span class="material-symbols-outlined">admin_panel_settings</span>
+        </div>
+        <div class="role-header-info">
+            <h2><?= e($role['nom']) ?></h2>
+            <div class="role-meta">
+                <span class="badge <?= (int) ($role['is_internal'] ?? 0) ? 'badge-info' : 'badge-secondary' ?>">
+                    <?= (int) ($role['is_internal'] ?? 0) ? 'Interne' : 'Externe' ?>
+                </span>
+                <?php if ($isSystem): ?>
+                    <span class="badge badge-warning">Protege</span>
+                <?php endif; ?>
+                <span class="stat-pill">
+                    <span class="material-symbols-outlined">work</span>
+                    <?= count($roleUsers) ?> collaborateur(s)
+                </span>
+                <span class="stat-pill">
+                    <span class="material-symbols-outlined">checklist</span>
+                    <?= $selectedCount ?>/<?= $totalPerms ?> permissions
+                </span>
+                <?php if ($role['description']): ?>
+                    <span style="color:var(--text-muted);font-size:0.75rem">— <?= e($role['description']) ?></span>
+                <?php endif; ?>
             </div>
         </div>
-
-        <?php if ($isSystem): ?>
-            <div class="alert" style="background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.3);border-radius:var(--radius-sm);padding:12px;color:var(--warning);">
-                <span class="material-symbols-outlined" style="font-size:1rem;vertical-align:middle;">warning</span>
-                Les roles systeme sont proteges et ne peuvent pas etre modifies. Creez un nouveau role si vous avez besoin d un role personnalise.
+        <div class="role-header-actions">
+            <a class="btn btn-secondary" href="<?= e(app_url('roles')) ?>"><span class="material-symbols-outlined">arrow_back</span> Roles</a>
+        </div>
+    </div>
+    <?php else: ?>
+    <div class="role-header">
+        <div class="role-header-icon">
+            <span class="material-symbols-outlined">add</span>
+        </div>
+        <div class="role-header-info">
+            <h2>Nouveau role</h2>
+            <div class="role-meta">
+                <span style="color:var(--text-muted);font-size:0.75rem">Creer un nouveau role avec ses permissions</span>
             </div>
-        <?php endif; ?>
+        </div>
+        <div class="role-header-actions">
+            <a class="btn btn-secondary" href="<?= e(app_url('roles')) ?>"><span class="material-symbols-outlined">arrow_back</span> Roles</a>
+        </div>
+    </div>
+    <?php endif; ?>
 
-        <form method="post" class="stack">
+    <?php if ($isSystem): ?>
+    <div style="background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.2);border-radius:8px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:10px;color:var(--warning);font-size:0.85rem;">
+        <span class="material-symbols-outlined" style="font-size:1.2rem">warning</span>
+        <span>Les roles systeme sont proteges et ne peuvent pas etre modifies. Creez un nouveau role si vous avez besoin d un role personnalise.</span>
+    </div>
+    <?php endif; ?>
+
+    <div class="tabs">
+        <button type="button" class="tab active" data-tab="permissions">
+            <span class="material-symbols-outlined" style="font-size:1rem">checklist</span>
+            Permissions
+            <span class="badge badge-info"><?= $selectedCount ?>/<?= $totalPerms ?></span>
+        </button>
+        <?php if ($role): ?>
+        <button type="button" class="tab" data-tab="users">
+            <span class="material-symbols-outlined" style="font-size:1rem">work</span>
+            Collaborateurs
+            <span class="badge badge-info"><?= count($roleUsers) ?></span>
+        </button>
+        <?php endif; ?>
+        <?php if ($role && !$isSystem): ?>
+        <button type="button" class="tab" data-tab="settings" style="opacity:0.5;pointer-events:none;">
+            <span class="material-symbols-outlined" style="font-size:1rem">settings</span>
+            Parametres
+        </button>
+        <?php endif; ?>
+    </div>
+
+    <div id="tab-permissions">
+        <form method="post">
             <?= csrf_input() ?>
 
-            <div class="form-grid" style="grid-template-columns: 1fr 1fr auto;">
-                <label class="field">
-                    <span>Nom du role *</span>
+            <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:16px;align-items:end;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:20px;margin-bottom:20px;">
+                <label class="field" style="margin:0">
+                    <span>Nom du role</span>
                     <input name="nom" required value="<?= e($role['nom'] ?? field_value($_POST, 'nom')) ?>" placeholder="ex: Chef d equipe" <?= $isSystem ? 'disabled' : '' ?>>
                 </label>
-
-                <label class="field">
+                <label class="field" style="margin:0">
                     <span>Description</span>
                     <input name="description" value="<?= e($role['description'] ?? field_value($_POST, 'description')) ?>" placeholder="Courte description du role" <?= $isSystem ? 'disabled' : '' ?>>
                 </label>
-
-                <label class="field" style="display:flex;align-items:flex-end;padding-bottom:6px;">
-                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                        <input type="checkbox" name="is_internal" value="1"
-                            <?= ($role && (int) ($role['is_internal'] ?? 0)) ? 'checked' : '' ?>
-                            <?= $isSystem ? 'disabled' : '' ?>>
-                        <span style="font-size:0.85rem;">Role interne</span>
-                    </label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding-bottom:6px;">
+                    <input type="checkbox" name="is_internal" value="1"
+                        <?= ($role && (int) ($role['is_internal'] ?? 0)) ? 'checked' : '' ?>
+                        <?= $isSystem ? 'disabled' : '' ?>>
+                    <span style="font-size:0.85rem;white-space:nowrap">Role interne</span>
                 </label>
-            </div>
-
-            <div class="section-title-row" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-                <div style="display:flex;align-items:center;gap:8px;">
-                    <h3 style="margin:0;">Permissions</h3>
-                    <span class="badge badge-info"><?= $selectedCount ?> / <?= $totalPerms ?> selectionnee(s)</span>
-                </div>
-                <?php if (!$isSystem): ?>
-                    <div class="perm-summary" id="permSummary">
-                        <span class="help-text">Selectionnez les permissions de ce role :</span>
-                    </div>
-                <?php endif; ?>
             </div>
 
             <div class="perms-grid">
@@ -214,21 +267,25 @@ if ($editingId > 0 && ($pdo ?? null) instanceof PDO) {
                             if (in_array((int) $p['id'], $rolePermIds, true)) $catChecked++;
                         }
                         $catTotal = count($perms);
+                        $allChecked = $catChecked === $catTotal;
                     ?>
                     <div class="perms-card" data-category="<?= e($cat) ?>">
                         <h4>
                             <span>
                                 <?php if (isset($categoryIcons[$cat])): ?>
-                                    <span class="material-symbols-outlined" style="font-size:0.8rem;vertical-align:middle;"><?= e($categoryIcons[$cat]) ?></span>
+                                    <span class="material-symbols-outlined"><?= e($categoryIcons[$cat]) ?></span>
                                 <?php endif; ?>
                                 <?= e($categoryLabels[$cat] ?? $cat) ?>
                             </span>
-                            <?php if (!$isSystem): ?>
-                                <button type="button" class="select-all-toggle" data-toggle-cat="<?= e($cat) ?>"
-                                    data-state="<?= $catChecked === $catTotal ? 'checked' : 'unchecked' ?>">
-                                    <?= $catChecked === $catTotal ? 'Tout deselect' : 'Tout select' ?>
-                                </button>
-                            <?php endif; ?>
+                            <span style="display:flex;align-items:center;gap:8px;">
+                                <span class="badge" style="font-size:0.6rem;padding:1px 7px"><?= $catChecked ?>/<?= $catTotal ?></span>
+                                <?php if (!$isSystem): ?>
+                                    <button type="button" class="select-all-toggle" data-toggle-cat="<?= e($cat) ?>"
+                                        data-state="<?= $allChecked ? 'checked' : 'unchecked' ?>">
+                                        <?= $allChecked ? 'Tout deselect' : 'Tout select' ?>
+                                    </button>
+                                <?php endif; ?>
+                            </span>
                         </h4>
                         <?php foreach ($perms as $p): ?>
                             <?php $checked = in_array((int) $p['id'], $rolePermIds, true); ?>
@@ -248,71 +305,102 @@ if ($editingId > 0 && ($pdo ?? null) instanceof PDO) {
             </div>
 
             <?php if (!$isSystem): ?>
-                <div style="display:flex;gap:10px;align-items:center;padding-top:8px;">
+                <div style="display:flex;gap:10px;align-items:center;padding-top:16px;border-top:1px solid var(--line);margin-top:20px;">
                     <button type="submit"><span class="material-symbols-outlined">save</span> <?= $role ? 'Enregistrer les modifications' : 'Creer le role' ?></button>
                     <a class="btn btn-cancel" href="<?= e(app_url('roles')) ?>"><span class="material-symbols-outlined">close</span> Annuler</a>
                 </div>
             <?php endif; ?>
         </form>
-    </article>
+    </div>
 
     <?php if ($role): ?>
-    <article class="card">
-        <div class="section-header">
-            <span class="material-symbols-outlined" style="color:var(--text-secondary)">work</span>
-            <span>Collaborateurs avec le role &quot;<?= e($role['nom']) ?>&quot;</span>
-            <span class="badge badge-info"><?= count($roleUsers) ?></span>
-        </div>
-
-        <?php if (!$roleUsers): ?>
-            <p class="table-empty">Aucun collaborateur n a ce role pour le moment.</p>
-        <?php else: ?>
-            <div class="table-scroll">
-            <table data-sortable>
-                <thead>
-                <tr>
-                    <th data-col="nom">Nom complet</th>
-                    <th data-col="cabinet">Cabinet</th>
-                    <th data-col="fonction">Fonction</th>
-                    <th data-col="email">Email</th>
-                    <th data-col="statut">Statut</th>
-                    <th data-col="acces">Acces app</th>
-                    <th data-col="connexion">Derniere connexion</th>
-                    <th>Action</th>
-                </tr>
-                </thead>
-                <tbody>
-                <?php foreach ($roleUsers as $u): ?>
-                    <tr>
-                        <td><strong><?= e($u['nom_complet']) ?></strong></td>
-                        <td><?= e($u['den_ste'] ?? '-') ?></td>
-                        <td><?= e($u['fonction'] ?? '-') ?></td>
-                        <td><?= e($u['email'] ?? '-') ?></td>
-                        <td><?= e($u['statut'] ?? '-') ?></td>
-                        <td>
-                            <?php if ((int) ($u['can_login'] ?? 0)): ?>
-                                <span class="badge badge-success">Connectable</span>
-                            <?php else: ?>
-                                <span class="badge">Aucun acces</span>
-                            <?php endif; ?>
-                        </td>
-                        <td><?= e($u['last_login'] ? date('d/m/Y H:i', strtotime($u['last_login'])) : 'Jamais') ?></td>
-                        <td class="table-actions">
-                            <a class="btn-icon" href="<?= e(app_url('collaborateur', ['id' => (int) $u['id']])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-                </tbody>
-            </table>
+    <div id="tab-users" style="display:none">
+        <div style="background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--line);">
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span class="material-symbols-outlined" style="font-size:1.1rem;color:var(--text-secondary)">work</span>
+                    <strong style="font-size:0.85rem;">Collaborateurs</strong>
+                    <span class="badge badge-info"><?= count($roleUsers) ?></span>
+                </div>
+                <a class="btn btn-next" href="<?= e(app_url('collaborateur', ['role_id' => $role['id']])) ?>" style="font-size:0.78rem;padding:4px 12px;">
+                    <span class="material-symbols-outlined" style="font-size:0.9rem">person_add</span> Ajouter
+                </a>
             </div>
-        <?php endif; ?>
-    </article>
+
+            <?php if (!$roleUsers): ?>
+                <p class="table-empty" style="margin:0;padding:40px 20px;">Aucun collaborateur n a ce role pour le moment.</p>
+            <?php else: ?>
+                <div class="table-scroll">
+                <table data-sortable>
+                    <thead>
+                    <tr>
+                        <th data-col="nom">Collaborateur</th>
+                        <th data-col="cabinet">Cabinet</th>
+                        <th data-col="fonction">Fonction</th>
+                        <th data-col="statut">Statut</th>
+                        <th data-col="acces">Acces app</th>
+                        <th data-col="connexion">Derniere connexion</th>
+                        <th>Action</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($roleUsers as $u): ?>
+                        <?php $initials = user_initials($u['nom_complet']); ?>
+                        <?php $aColor = avatar_color($u['nom_complet'], $avatarColors); ?>
+                        <tr>
+                            <td>
+                                <div class="user-cell">
+                                    <span class="user-avatar <?= $aColor ?>"><?= e($initials) ?></span>
+                                    <div class="user-cell-info">
+                                        <span class="user-cell-name"><?= e($u['nom_complet']) ?></span>
+                                        <span class="user-cell-email"><?= e($u['email'] ?? '-') ?></span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><?= e($u['den_ste'] ?? '-') ?></td>
+                            <td><?= e($u['fonction'] ?? '-') ?></td>
+                            <td><span class="badge <?= $u['statut'] === 'actif' ? 'badge-success' : 'badge-danger' ?>"><?= e($u['statut'] ?? '-') ?></span></td>
+                            <td>
+                                <?php if ((int) ($u['can_login'] ?? 0)): ?>
+                                    <span class="badge badge-success">Connectable</span>
+                                <?php else: ?>
+                                    <span class="badge">Aucun acces</span>
+                                <?php endif; ?>
+                            </td>
+                            <td style="font-size:0.78rem;color:var(--text-secondary)">
+                                <?= e($u['last_login'] ? date('d/m/Y H:i', strtotime($u['last_login'])) : 'Jamais') ?>
+                            </td>
+                            <td class="table-actions">
+                                <a class="btn-icon" href="<?= e(app_url('collaborateur', ['id' => (int) $u['id']])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
     <?php endif; ?>
 </section>
 
-<?php if (!$isSystem): ?>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Tabs
+    var tabs = document.querySelectorAll('.tab[data-tab]');
+    var panes = { permissions: document.getElementById('tab-permissions'), users: document.getElementById('tab-users') };
+
+    tabs.forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            var target = this.getAttribute('data-tab');
+            tabs.forEach(function(t) { t.classList.remove('active'); });
+            this.classList.add('active');
+            if (panes.permissions) panes.permissions.style.display = target === 'permissions' ? '' : 'none';
+            if (panes.users) panes.users.style.display = target === 'users' ? '' : 'none';
+        });
+    });
+
+    <?php if (!$isSystem): ?>
     // Select all / deselect all per category
     document.querySelectorAll('[data-toggle-cat]').forEach(function(btn) {
         btn.addEventListener('click', function() {
@@ -336,10 +424,13 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateSummary() {
         var total = document.querySelectorAll('input[name="permissions[]"]').length;
         var checked = document.querySelectorAll('input[name="permissions[]"]:checked').length;
-        var badge = document.querySelector('.badge.badge-info');
-        if (badge) badge.textContent = checked + ' / ' + total + ' selectionnee(s)';
+        var badges = document.querySelectorAll('.badge.badge-info');
+        badges.forEach(function(badge) {
+            if (badge.textContent.indexOf('/') !== -1) {
+                badge.textContent = checked + ' / ' + total;
+            }
+        });
 
-        // Update per-category toggle buttons
         document.querySelectorAll('[data-toggle-cat]').forEach(function(btn) {
             var cat = btn.getAttribute('data-toggle-cat');
             var catCbs = document.querySelectorAll('input[data-cat="' + cat + '"]');
@@ -347,10 +438,20 @@ document.addEventListener('DOMContentLoaded', function() {
             catCbs.forEach(function(cb) { if (!cb.checked) allCatChecked = false; });
             btn.setAttribute('data-state', allCatChecked ? 'checked' : 'unchecked');
             btn.textContent = allCatChecked ? 'Tout deselect' : 'Tout select';
+
+            var catCard = btn.closest('.perms-card');
+            if (catCard) {
+                var catBadge = catCard.querySelector('h4 .badge');
+                if (catBadge) {
+                    var catChecked = catCard.querySelectorAll('input:checked').length;
+                    var catTotal = catCard.querySelectorAll('input[type="checkbox"]').length;
+                    catBadge.textContent = catChecked + '/' + catTotal;
+                }
+            }
         });
     }
 
     updateSummary();
+    <?php endif; ?>
 });
 </script>
-<?php endif; ?>
