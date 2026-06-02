@@ -146,8 +146,7 @@ a:hover {
 .nav-toggle-all {
     display: flex;
     gap: 2px;
-    justify-content: flex-end;
-    padding: 0 4px 4px;
+    margin-left: auto;
 }
 .nav-toggle-all button {
     display: inline-flex;
