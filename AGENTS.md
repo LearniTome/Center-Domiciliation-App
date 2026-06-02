@@ -94,7 +94,7 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - `.main`: `overflow-y: auto; height: 100vh` — content scrolls independently
 
 ## Scrollbar Design (Mode Sobre)
-- **Global** `::-webkit-scrollbar` : `width: 4px; height: 4px` — sobre et discret
+- **Global** `::-webkit-scrollbar` : `width: 8px; height: 8px`
 - `::-webkit-scrollbar-track`: `background: transparent`
 - `::-webkit-scrollbar-thumb`: `background: var(--line); border-radius: 2px`
 - `::-webkit-scrollbar-thumb:hover`: `background: var(--text-muted)`
