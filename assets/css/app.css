@@ -1410,9 +1410,11 @@ tbody tr:hover:nth-child(even) {
 ::-webkit-scrollbar-thumb {
     background: var(--line);
     border-radius: 2px;
+    cursor: pointer;
 }
 ::-webkit-scrollbar-thumb:hover {
     background: var(--text-muted);
+    cursor: pointer;
 }
 
 .tabs {
