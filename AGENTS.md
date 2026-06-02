@@ -83,7 +83,7 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
   - Orange (`.btn-back`) — backward navigation: Retour, Reinitialiser
   - Grey (`.btn-cancel`) — cancel/abort: Annuler
   - Red (`.btn-danger`) — destructive: delete/remove icons
-- **Table action buttons**: `class="btn-icon"` with MDI icons only (no text). Voir → `mdi-eye`, Modifier → `mdi-pencil`, Supprimer → `mdi-delete` with `class="btn-icon danger"`
+- **Table action buttons**: `class="btn-icon"` with Material Symbols only (no text). Voir → `visibility`, Modifier → `edit`, Supprimer → `delete` with `class="btn-icon danger"`
 - Cards: `<article class="card">` with optional `.stack` for vertical spacing
 
 ## Sidebar
@@ -115,7 +115,7 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 
 ## Table Sorting
 - **Every data table** must have `data-sortable` on `<table>` and `data-col` on each sortable `<th>`
-- Sorting is handled automatically by `app.js` — click header to toggle asc/desc, MDI indicators
+- Sorting is handled automatically by `app.js` — click header to toggle asc/desc, Material Symbols indicators
 - Non-sortable columns (checkbox, actions) omit `data-col`
 - CSS: `th[data-col]` styled in `app.css`
 - JS: IIFE runs on all `table[data-sortable]` on page load in `app.js`

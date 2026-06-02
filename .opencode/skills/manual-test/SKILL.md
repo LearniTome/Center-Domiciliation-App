@@ -37,7 +37,7 @@ Utilise cette skill avant de commit une modification, pour valider que tout fonc
 - [ ] `<div class="table-scroll">` autour du tableau si scroll horizontal
 
 ### UI
-- [ ] Icône MDI avant chaque texte de bouton : `<span class="mdi mdi-xxx"></span>`
+- [ ] Icône Material Symbol avant chaque texte de bouton : `<span class="material-symbols-outlined">icon_name</span>`
 - [ ] Pas de `padding:` inline sur les boutons
 - [ ] Les messages/valeurs sont en français
 - [ ] Responsive : la page tient dans 980px de large

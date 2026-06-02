@@ -34,7 +34,7 @@ Utilise cette skill quand tu crées ou modifies une page/interface dans ce proje
 ## Boutons
 - Base : `.btn` ou `button[type="submit"]` — fond transparent, bordure 2px `var(--primary)`
 - Variants : `.btn-secondary` (gris), `.btn-danger` (rouge), `.btn-cancel` (gris), `.btn-back` (orange `#ff6b35`), `.btn-info` (violet), `.btn-next` (vert `#00b894`)
-- Toujours un `<span class="mdi mdi-xxx"></span>` avant le texte
+- Toujours un `<span class="material-symbols-outlined">icon_name</span>` avant le texte
 - Jamais de `padding:` inline sur les boutons (CSS global 6px 14px)
 - Tableau : `.btn-icon` pour les actions (icône seule, sans texte)
 

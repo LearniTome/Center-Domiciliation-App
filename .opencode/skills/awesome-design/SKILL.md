@@ -36,7 +36,7 @@ Design system du projet Center Domiciliation. Applique ces règles à chaque nou
 **Base** : `.btn` ou `button[type="submit"]`
 - Fond transparent, bordure 2px `var(--primary)`, couleur `var(--primary)`
 - Padding : `6px 14px` (NE JAMAIS mettre de padding inline)
-- Icône MDI obligatoire avant le texte : `<span class="mdi mdi-xxx"></span>` + texte
+- Icône Material Symbol obligatoire avant le texte : `<span class="material-symbols-outlined">icon_name</span>` + texte
 
 **Variants** (ordre alphabétique) :
 | Classe | Bordure | Hover |
@@ -56,7 +56,7 @@ Design system du projet Center Domiciliation. Applique ces règles à chaque nou
 - Rouge (`.btn-danger`) — destructif : supprimer, effacer
 
 **Boutons d'action dans les tableaux** : `.btn-icon` (icône seule, sans texte)
-- Voir → `mdi-eye`, Modifier → `mdi-pencil`, Supprimer → `mdi-delete` + `class="btn-icon danger"`
+- Voir → `visibility`, Modifier → `edit`, Supprimer → `delete` + `class="btn-icon danger"`
 
 ## Tableaux
 - `<div class="table-scroll">` pour le scroll horizontal

@@ -53,7 +53,7 @@
 - Active: border-left `3px solid #0090e7`
 
 ## Icônes
-- Material Design Icons (`@mdi/font`)
+- Material Symbols Outlined (Google Fonts)
 - Taille: `1.25rem` dans la nav, `1rem` dans les boutons
 
 ## Espacements
