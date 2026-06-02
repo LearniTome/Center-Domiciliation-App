@@ -93,6 +93,14 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - Sidebar: `overflow: hidden; display: flex; flex-direction: column` — no scroll
 - `.main`: `overflow-y: auto; height: 100vh` — content scrolls independently
 
+## Scrollbar Design (Mode Sobre)
+- **Global** `::-webkit-scrollbar` : `width: 4px; height: 4px` — sobre et discret
+- `::-webkit-scrollbar-track`: `background: transparent`
+- `::-webkit-scrollbar-thumb`: `background: var(--line); border-radius: 2px`
+- `::-webkit-scrollbar-thumb:hover`: `background: var(--text-muted)`
+- Tous les conteneurs scrollables (`.table-scroll`, `.perms-scroll`, `.main`) héritent du style global — pas de scrollbar personnalisée par conteneur
+- Les `.perms-scroll` (grille de permissions) utilisent `max-height: calc(100vh - 380px)` avec `overflow-y: auto` pour que l'en-tête et les onglets restent visibles
+
 ## Column Toggle (List Tables)
 - Button `.btn-secondary` with `[data-col-toggle-btn]` + badge `.col-toggle-count` in `.table-actions`
 - Dropdown panel `.col-toggle-panel` (absolute, left-aligned) with checkboxes per column
