@@ -145,28 +145,24 @@ a:hover {
 
 .nav-toggle-all {
     display: flex;
-    gap: 4px;
-    padding: 8px 10px;
-    justify-content: flex-end;
+    gap: 2px;
+    margin-left: auto;
 }
 .nav-toggle-all button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    border: 1px solid var(--line);
-    background: transparent;
+    background: none;
     color: var(--text-secondary);
     cursor: pointer;
-    font-size: 1rem;
+    border: none;
+    padding: 4px;
+    border-radius: 4px;
     transition: all var(--transition);
 }
 .nav-toggle-all button:hover {
-    background: var(--panel-strong);
+    background: rgba(255,255,255,0.08);
     color: var(--text);
-    border-color: var(--primary);
 }
 .nav-toggle-all button .material-symbols-outlined {
     font-size: 1rem;
