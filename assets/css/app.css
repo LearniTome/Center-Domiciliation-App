@@ -75,9 +75,7 @@ a:hover {
     display: flex;
     gap: 8px;
     align-items: center;
-    margin-bottom: 10px;
     padding-bottom: 8px;
-    border-bottom: 1px solid var(--line);
     min-height: 34px;
 }
 
@@ -112,9 +110,9 @@ a:hover {
 .sidebar-toggle {
     position: absolute;
     left: 260px;
-    top: 50%;
+    top: 12px;
     z-index: 100;
-    transform: translate(-50%, -50%);
+    transform: translateX(-50%);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -146,7 +144,10 @@ a:hover {
 .nav-toggle-all {
     display: flex;
     gap: 2px;
-    margin-left: auto;
+    justify-content: center;
+    padding: 2px 0 6px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 6px;
 }
 .nav-toggle-all button {
     display: inline-flex;

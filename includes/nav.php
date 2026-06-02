@@ -47,14 +47,14 @@ $navSections = [
         <div class="brand-text">
             <strong>Center Domiciliation</strong>
         </div>
-        <div class="nav-toggle-all">
-            <button type="button" title="Tout réduire" data-collapse-all>
-                <span class="material-symbols-outlined">collapse_all</span>
-            </button>
-            <button type="button" title="Tout déployer" data-expand-all>
-                <span class="material-symbols-outlined">expand_all</span>
-            </button>
-        </div>
+    </div>
+    <div class="nav-toggle-all">
+        <button type="button" title="Tout réduire" data-collapse-all>
+            <span class="material-symbols-outlined">collapse_all</span>
+        </button>
+        <button type="button" title="Tout déployer" data-expand-all>
+            <span class="material-symbols-outlined">expand_all</span>
+        </button>
     </div>
 
     <nav class="nav-links">
