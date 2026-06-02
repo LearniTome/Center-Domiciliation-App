@@ -1373,87 +1373,52 @@ tbody tr:hover:nth-child(even) {
 }
 
 /* Tabs */
-/* Simple permissions (non-CRUD categories) */
-.simple-perms {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 6px;
-    margin-top: 12px;
+/* Simple permission rows (non-CRUD categories inside the table) */
+.simple-row td {
+    border-top: 1px solid var(--line);
 }
-.simple-perm-group {
-    border: 1px solid var(--line);
-    border-radius: 5px;
-    background: var(--panel);
-    overflow: hidden;
+.simple-row .cat-label-cell {
+    border-right: 1px solid var(--line);
 }
-.simple-perm-head {
+.simple-cell {
+    padding: 5px 10px !important;
+    text-align: left !important;
+}
+.simple-cell-inner {
     display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 5px 8px;
-    font-size: 0.62rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--text-secondary);
-    background: var(--panel-strong);
-    border-bottom: 1px solid var(--line);
-    font-weight: 600;
+    flex-wrap: wrap;
+    gap: 4px;
 }
-.simple-perm-head .material-symbols-outlined {
-    font-size: 0.8rem;
-    opacity: 0.7;
-}
-.simple-perm-label {
+.simple-perm-item {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    flex: 1;
-}
-.simple-badge {
-    font-size: 0.5rem !important;
-    padding: 0 4px !important;
-    line-height: 1.4 !important;
-}
-.simple-toggle {
-    font-size: 0.5rem;
     cursor: pointer;
-    color: var(--primary);
-    background: none;
-    border: 1px solid var(--primary);
-    padding: 0 5px;
+    padding: 2px 6px;
     border-radius: 3px;
-    transition: background 0.12s ease;
-    font-weight: 500;
-    line-height: 1.5;
-    margin-left: auto;
-}
-.simple-toggle:hover {
-    background: rgba(74, 108, 247, 0.08);
-}
-.simple-perm-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 8px;
-    cursor: pointer;
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     color: var(--text);
-    transition: background 0.1s ease;
+    background: var(--panel-strong);
+    border: 1px solid var(--line);
+    transition: background 0.1s ease, border-color 0.1s ease;
+    white-space: nowrap;
 }
 .simple-perm-item:hover {
-    background: rgba(74, 108, 247, 0.03);
+    background: rgba(74, 108, 247, 0.05);
+    border-color: var(--primary);
 }
 .simple-perm-item input[type="checkbox"] {
     accent-color: var(--primary);
-    width: 13px;
-    height: 13px;
+    width: 12px;
+    height: 12px;
     flex-shrink: 0;
+    margin: 0;
 }
 .simple-perm-item input[type="checkbox"]:disabled {
     opacity: 0.35;
     cursor: not-allowed;
 }
-.simple-perm-text {
+.simple-perm-item span {
     line-height: 1.3;
 }
 

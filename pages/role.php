@@ -289,27 +289,28 @@ if ($editingId > 0 && ($pdo ?? null) instanceof PDO) {
     </div>
 
     <div id="tab-permissions">
-        <?php if ($matrixCatData): ?>
         <div class="perms-scroll">
-            <table class="perms-table" data-col-toggle>
+            <table class="perms-table">
                 <thead>
                     <tr class="cat-row">
                         <th></th>
+                        <?php $colspan = count($actionOrder); ?>
                         <?php foreach ($actionOrder as $actionKey): ?>
                         <th data-col="<?= e($actionKey) ?>"><?= e($actionLabels[$actionKey]) ?></th>
                         <?php endforeach; ?>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($matrixCatData as $cat => $perms):
+                    <?php foreach ($permissionsByCategory as $cat => $perms):
                         $catChecked = 0;
                         foreach ($perms as $p) {
                             if (in_array((int) $p['id'], $rolePermIds, true)) $catChecked++;
                         }
                         $catTotal = count($perms);
                         $allChecked = $catChecked === $catTotal;
+                        $isCrud = in_array($cat, $matrixCategories, true);
                     ?>
-                    <tr data-cat="<?= e($cat) ?>">
+                    <tr data-cat="<?= e($cat) ?>" class="<?= $isCrud ? '' : 'simple-row' ?>">
                         <td class="cat-label-cell">
                             <div class="cat-label-cell-inner">
                             <span class="cat-label-inner">
@@ -327,68 +328,43 @@ if ($editingId > 0 && ($pdo ?? null) instanceof PDO) {
                             <?php endif; ?>
                             </div>
                         </td>
-                        <?php foreach ($actionOrder as $actionKey): ?>
-                            <?php if (isset($permMatrix[$actionKey][$cat])): ?>
-                                <?php $p = $permMatrix[$actionKey][$cat]; ?>
-                                <?php $checked = in_array((int) $p['id'], $rolePermIds, true); ?>
-                                <td class="perm-cell">
+                        <?php if ($isCrud): ?>
+                            <?php foreach ($actionOrder as $actionKey): ?>
+                                <?php if (isset($permMatrix[$actionKey][$cat])): ?>
+                                    <?php $p = $permMatrix[$actionKey][$cat]; ?>
+                                    <?php $checked = in_array((int) $p['id'], $rolePermIds, true); ?>
+                                    <td class="perm-cell">
+                                        <input type="checkbox" name="permissions[]" value="<?= (int) $p['id'] ?>"
+                                            data-cat="<?= e($cat) ?>"
+                                            <?= $checked ? 'checked' : '' ?>
+                                            <?= $isSystem ? 'disabled' : '' ?>>
+                                    </td>
+                                <?php else: ?>
+                                    <td class="perm-cell empty"></td>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <td colspan="<?= $colspan ?>" class="simple-cell">
+                                <div class="simple-cell-inner">
+                                <?php foreach ($perms as $p):
+                                    $checked = in_array((int) $p['id'], $rolePermIds, true);
+                                ?>
+                                <label class="simple-perm-item">
                                     <input type="checkbox" name="permissions[]" value="<?= (int) $p['id'] ?>"
                                         data-cat="<?= e($cat) ?>"
                                         <?= $checked ? 'checked' : '' ?>
                                         <?= $isSystem ? 'disabled' : '' ?>>
-                                </td>
-                            <?php else: ?>
-                                <td class="perm-cell empty"></td>
-                            <?php endif; ?>
-                        <?php endforeach; ?>
+                                    <span><?= e($p['nom']) ?></span>
+                                </label>
+                                <?php endforeach; ?>
+                                </div>
+                            </td>
+                        <?php endif; ?>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
         </div>
-        <?php endif; ?>
-
-        <?php if ($simpleCatData): ?>
-        <div class="simple-perms">
-            <?php foreach ($simpleCatData as $cat => $perms):
-                $catChecked = 0;
-                foreach ($perms as $p) {
-                    if (in_array((int) $p['id'], $rolePermIds, true)) $catChecked++;
-                }
-                $catTotal = count($perms);
-                $allChecked = $catChecked === $catTotal;
-            ?>
-            <div class="simple-perm-group" data-cat="<?= e($cat) ?>">
-                <div class="simple-perm-head">
-                    <span class="simple-perm-label">
-                        <?php if (isset($categoryIcons[$cat])): ?>
-                            <span class="material-symbols-outlined"><?= e($categoryIcons[$cat]) ?></span>
-                        <?php endif; ?>
-                        <?= e($categoryLabels[$cat] ?? $cat) ?>
-                    </span>
-                    <span class="badge badge-info simple-badge"><?= $catChecked ?>/<?= $catTotal ?></span>
-                    <?php if (!$isSystem): ?>
-                        <button type="button" class="simple-toggle" data-toggle-cat="<?= e($cat) ?>"
-                            data-state="<?= $allChecked ? 'checked' : 'unchecked' ?>">
-                            <?= $allChecked ? 'Tout deselect' : 'Tout select' ?>
-                        </button>
-                    <?php endif; ?>
-                </div>
-                <?php foreach ($perms as $p):
-                    $checked = in_array((int) $p['id'], $rolePermIds, true);
-                ?>
-                <label class="simple-perm-item">
-                    <input type="checkbox" name="permissions[]" value="<?= (int) $p['id'] ?>"
-                        data-cat="<?= e($cat) ?>"
-                        <?= $checked ? 'checked' : '' ?>
-                        <?= $isSystem ? 'disabled' : '' ?>>
-                    <span class="simple-perm-text"><?= e($p['nom']) ?></span>
-                </label>
-                <?php endforeach; ?>
-            </div>
-            <?php endforeach; ?>
-        </div>
-        <?php endif; ?>
 
             <?php if (!$isSystem): ?>
                 <div style="display:flex;gap:10px;align-items:center;padding-top:14px;border-top:1px solid var(--line);margin-top:16px;">
@@ -523,17 +499,10 @@ document.addEventListener('DOMContentLoaded', function() {
             btn.setAttribute('data-state', allCatChecked ? 'checked' : 'unchecked');
             btn.textContent = allCatChecked ? 'Tout deselect' : 'Tout select';
 
-            // Update badge in matrix row
             var row = btn.closest('tr');
             if (row) {
                 var catBadge = row.querySelector('.cat-badge');
                 if (catBadge) catBadge.textContent = catChecked + '/' + catTotal;
-            }
-            // Update badge in simple group head
-            var group = btn.closest('.simple-perm-group');
-            if (group) {
-                var simpleBadge = group.querySelector('.simple-badge');
-                if (simpleBadge) simpleBadge.textContent = catChecked + '/' + catTotal;
             }
         });
     }
