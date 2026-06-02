@@ -348,7 +348,7 @@ a:hover {
 
 .main {
     padding: 1.5rem;
-    overflow-y: auto;
+    overflow-y: scroll;
     height: 100vh;
 }
 
