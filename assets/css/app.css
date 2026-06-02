@@ -1412,16 +1412,12 @@ tbody tr:hover:nth-child(even) {
     background: var(--line);
     border-radius: 3px;
     cursor: pointer;
-    border: 1px solid transparent;
-    background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--text-muted);
-    cursor: pointer;
+    background: var(--text-secondary);
 }
 ::-webkit-scrollbar-thumb:active {
-    background: var(--text-secondary);
-    cursor: pointer;
+    background: var(--text);
 }
 
 .tabs {
