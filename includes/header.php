@@ -1,6 +1,8 @@
 <?php
 
 declare(strict_types=1);
+
+$noSidebar = in_array($page ?? '', ['connexion', 'deconnexion'], true);
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -13,9 +15,17 @@ declare(strict_types=1);
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap">
     <link rel="stylesheet" href="assets/css/app.css?v=<?= filemtime(__DIR__ . '/../assets/css/app.css') ?>">
+    <style>
+        <?php if ($noSidebar): ?>
+        .shell { grid-template-columns: 1fr; }
+        .sidebar, .sidebar-toggle { display: none; }
+        .main { padding: 2rem; }
+        <?php endif; ?>
+    </style>
 </head>
 <body>
-<div class="shell">
+<div class="shell<?= $noSidebar ? '' : '' ?>">
+    <?php if (!$noSidebar): ?>
     <?php require __DIR__ . '/nav.php'; ?>
     <button class="sidebar-toggle" data-sidebar-toggle type="button" title="Reduire la barre de navigation">
         <span class="material-symbols-outlined">chevron_left</span>
@@ -23,6 +33,7 @@ declare(strict_types=1);
     <script>try{var r=localStorage.getItem('nav_sections');if(r){var s=JSON.parse(r);document.querySelectorAll('[data-nav-toggle]').forEach(function(b){var l=b.getAttribute('data-label');if(l&&s[l]){b.closest('.nav-section').classList.add('collapsed')}})}}catch(e){}
     try{var a=localStorage.getItem('sidebar_collapsed');if(a==='1'){document.querySelector('.shell').classList.add('collapsed')}}catch(e){}
     </script>
+    <?php endif; ?>
     <main class="main">
         <header class="page-header">
             <div>

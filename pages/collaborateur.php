@@ -4,18 +4,13 @@ declare(strict_types=1);
 
 $editingId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 $editingRecord = $editingId > 0 ? fetch_record($pdo ?? null, 'collaborateurs', $editingId) : null;
-$types = [
-    'Expert-comptable',
-    'Comptable agree',
-    'Commissaire aux comptes',
-    'Coursier',
-    'Avocat',
-    'Notaire',
-    'Conseil juridique',
-    'Banque',
-    'Assurance',
-    'Autre',
-];
+
+// Fetch roles from DB
+$roles = [];
+if (($pdo ?? null) instanceof PDO) {
+    $stmt = $pdo->query('SELECT id, nom, is_internal FROM roles ORDER BY sort_order ASC, nom ASC');
+    $roles = $stmt->fetchAll();
+}
 
 if (is_post() && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
@@ -26,11 +21,27 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
         redirect_to('collaborateur', $editingId ? ['id' => $editingId] : []);
     }
 
+    $roleId = int_value($_POST, 'role_id');
+    $canLogin = (int) ($_POST['can_login'] ?? 0);
+    $password = field_value($_POST, 'password');
+    $passwordConfirm = field_value($_POST, 'password_confirm');
+
+    // Password validation
+    if ($canLogin && $password !== '') {
+        if (strlen($password) < 6) {
+            set_flash('error', 'Le mot de passe doit contenir au moins 6 caracteres.');
+            redirect_to('collaborateur', $editingId ? ['id' => $editingId] : []);
+        }
+        if ($password !== $passwordConfirm) {
+            set_flash('error', 'Les mots de passe ne correspondent pas.');
+            redirect_to('collaborateur', $editingId ? ['id' => $editingId] : []);
+        }
+    }
+
     $payload = [
         'den_ste' => field_value($_POST, 'den_ste'),
         'nom_complet' => $nomComplet,
         'fonction' => field_value($_POST, 'fonction'),
-        'collaborateur_type' => field_value($_POST, 'collaborateur_type'),
         'collaborateur_code' => field_value($_POST, 'collaborateur_code'),
         'collaborateur_nom' => field_value($_POST, 'collaborateur_nom'),
         'collaborateur_ice' => field_value($_POST, 'collaborateur_ice'),
@@ -46,50 +57,81 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
         'date_debut' => field_value($_POST, 'date_debut'),
         'statut' => field_value($_POST, 'statut', 'actif'),
         'notes' => field_value($_POST, 'notes'),
+        'role_id' => $roleId,
+        'can_login' => $canLogin,
     ];
 
-    if ($editingId > 0 && $editingRecord) {
-        $payload['id'] = $editingId;
-        $stmt = $pdo->prepare('
-            UPDATE collaborateurs
-            SET den_ste = :den_ste,
-                nom_complet = :nom_complet,
-                fonction = :fonction,
-                collaborateur_type = :collaborateur_type,
-                collaborateur_code = :collaborateur_code,
-                collaborateur_nom = :collaborateur_nom,
-                collaborateur_ice = :collaborateur_ice,
-                collaborateur_tp = :collaborateur_tp,
-                collaborateur_rc = :collaborateur_rc,
-                collaborateur_if = :collaborateur_if,
-                collaborateur_tel_fixe = :collaborateur_tel_fixe,
-                collaborateur_tel_mobile = :collaborateur_tel_mobile,
-                collaborateur_adresse = :collaborateur_adresse,
-                collaborateur_email = :collaborateur_email,
-                email = :email,
-                telephone = :telephone,
-                date_debut = :date_debut,
-                statut = :statut,
-                notes = :notes
-            WHERE id = :id
-        ');
-        $stmt->execute($payload);
-        set_flash('success', 'Collaborateur mis a jour.');
-    } else {
-        $stmt = $pdo->prepare('
-            INSERT INTO collaborateurs
-                (den_ste, nom_complet, fonction, collaborateur_type, collaborateur_code,
-                 collaborateur_nom, collaborateur_ice, collaborateur_tp, collaborateur_rc, collaborateur_if,
-                 collaborateur_tel_fixe, collaborateur_tel_mobile, collaborateur_adresse, collaborateur_email,
-                 email, telephone, date_debut, statut, notes)
-            VALUES
-                (:den_ste, :nom_complet, :fonction, :collaborateur_type, :collaborateur_code,
-                 :collaborateur_nom, :collaborateur_ice, :collaborateur_tp, :collaborateur_rc, :collaborateur_if,
-                 :collaborateur_tel_fixe, :collaborateur_tel_mobile, :collaborateur_adresse, :collaborateur_email,
-                 :email, :telephone, :date_debut, :statut, :notes)
-        ');
-        $stmt->execute($payload);
-        set_flash('success', 'Collaborateur ajoute.');
+    try {
+        if ($editingId > 0 && $editingRecord) {
+            $sql = '
+                UPDATE collaborateurs
+                SET den_ste = :den_ste,
+                    nom_complet = :nom_complet,
+                    fonction = :fonction,
+                    collaborateur_code = :collaborateur_code,
+                    collaborateur_nom = :collaborateur_nom,
+                    collaborateur_ice = :collaborateur_ice,
+                    collaborateur_tp = :collaborateur_tp,
+                    collaborateur_rc = :collaborateur_rc,
+                    collaborateur_if = :collaborateur_if,
+                    collaborateur_tel_fixe = :collaborateur_tel_fixe,
+                    collaborateur_tel_mobile = :collaborateur_tel_mobile,
+                    collaborateur_adresse = :collaborateur_adresse,
+                    collaborateur_email = :collaborateur_email,
+                    email = :email,
+                    telephone = :telephone,
+                    date_debut = :date_debut,
+                    statut = :statut,
+                    notes = :notes,
+                    role_id = :role_id,
+                    can_login = :can_login
+            ';
+            $params = $payload;
+            $params['id'] = $editingId;
+
+            // Only update password if provided
+            if ($canLogin && $password !== '') {
+                $sql .= ', password_hash = :password_hash';
+                $params['password_hash'] = password_hash($password, PASSWORD_DEFAULT);
+            }
+
+            $sql .= ' WHERE id = :id';
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+            set_flash('success', 'Collaborateur mis a jour.');
+        } else {
+            $sql = '
+                INSERT INTO collaborateurs
+                    (den_ste, nom_complet, fonction, collaborateur_code,
+                     collaborateur_nom, collaborateur_ice, collaborateur_tp, collaborateur_rc, collaborateur_if,
+                     collaborateur_tel_fixe, collaborateur_tel_mobile, collaborateur_adresse, collaborateur_email,
+                     email, telephone, date_debut, statut, notes, role_id, can_login
+            ';
+
+            $insertCols = '
+                    :den_ste, :nom_complet, :fonction, :collaborateur_code,
+                    :collaborateur_nom, :collaborateur_ice, :collaborateur_tp, :collaborateur_rc, :collaborateur_if,
+                    :collaborateur_tel_fixe, :collaborateur_tel_mobile, :collaborateur_adresse, :collaborateur_email,
+                    :email, :telephone, :date_debut, :statut, :notes, :role_id, :can_login
+            ';
+
+            // Allow password on creation
+            $params = $payload;
+            if ($canLogin && $password !== '') {
+                $sql .= ', password_hash';
+                $insertCols .= ', :password_hash';
+                $params['password_hash'] = password_hash($password, PASSWORD_DEFAULT);
+            }
+
+            $sql .= ') VALUES (' . $insertCols . ')';
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+            set_flash('success', 'Collaborateur ajoute.');
+        }
+
+        clear_user_cache();
+    } catch (PDOException $e) {
+        set_flash('error', 'Erreur : ' . $e->getMessage());
     }
 
     redirect_to('collaborateurs');
@@ -100,7 +142,6 @@ $formData = $editingRecord ?? [
     'den_ste' => '',
     'nom_complet' => '',
     'fonction' => '',
-    'collaborateur_type' => '',
     'collaborateur_code' => '',
     'collaborateur_nom' => '',
     'collaborateur_ice' => '',
@@ -116,14 +157,19 @@ $formData = $editingRecord ?? [
     'date_debut' => '',
     'statut' => 'actif',
     'notes' => '',
+    'role_id' => null,
+    'can_login' => 0,
+    'password_hash' => '',
 ];
+
+$isCurrentUser = is_logged_in() && $editingId > 0 && (int) ($_SESSION['user_id'] ?? 0) === $editingId;
 ?>
 <section class="grid two">
     <article class="card stack">
         <div class="section-header">
             <div>
                 <h2><?= $editingRecord ? 'Modifier un collaborateur' : 'Nouveau collaborateur' ?></h2>
-                <p class="help-text">Expert-comptable, comptable, coursier, avocat, etc.</p>
+                <p class="help-text">Expert-comptable, comptable, admin, employe, etc.</p>
             </div>
             <div class="table-actions">
                 <a class="btn btn-secondary" href="<?= e(app_url('collaborateurs')) ?>">Retour</a>
@@ -135,23 +181,19 @@ $formData = $editingRecord ?? [
             <input type="hidden" name="id" value="<?= e((string) $formData['id']) ?>">
 
             <div class="form-grid">
-                <h3 class="section-title">Type & Identite</h3>
+                <h3 class="section-title">Identite & Role</h3>
 
                 <label class="field">
-                    <span>Type</span>
-                    <select name="collaborateur_type">
+                    <span>Role / Type</span>
+                    <select name="role_id">
                         <option value="">Selectionner...</option>
-                        <?php foreach ($types as $t): ?>
-                            <option value="<?= e($t) ?>" <?= (string) $formData['collaborateur_type'] === $t ? 'selected' : '' ?>>
-                                <?= e($t) ?>
+                        <?php foreach ($roles as $r): ?>
+                            <option value="<?= (int) $r['id'] ?>" <?= (string) ($formData['role_id'] ?? '') === (string) $r['id'] ? 'selected' : '' ?>>
+                                <?= e($r['nom']) ?>
+                                <?= ((int) ($r['is_internal'] ?? 0)) ? '(Interne)' : '(Externe)' ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
-                </label>
-
-                <label class="field">
-                    <span>Cabinet / Societe</span>
-                    <input name="den_ste" value="<?= e((string) $formData['den_ste']) ?>" placeholder="Raison sociale du cabinet">
                 </label>
 
                 <label class="field">
@@ -163,6 +205,37 @@ $formData = $editingRecord ?? [
                     <span>Fonction</span>
                     <input name="fonction" value="<?= e((string) $formData['fonction']) ?>" placeholder="ex: Gerant, Associe">
                 </label>
+
+                <label class="field">
+                    <span>Cabinet / Societe</span>
+                    <input name="den_ste" value="<?= e((string) $formData['den_ste']) ?>" placeholder="Raison sociale du cabinet">
+                </label>
+
+                <h3 class="section-title">Acces au systeme</h3>
+
+                <label class="field" style="grid-column: 1 / -1;">
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                        <input type="checkbox" name="can_login" value="1" data-toggle-password <?= (int) ($formData['can_login'] ?? 0) ? 'checked' : '' ?>>
+                        <span>Peut se connecter a l application</span>
+                    </label>
+                </label>
+
+                <label class="field password-field" <?= (int) ($formData['can_login'] ?? 0) ? '' : 'style="display:none"' ?>>
+                    <span>Mot de passe <?= $editingRecord ? '(laisser vide pour conserver)' : '' ?></span>
+                    <input type="password" name="password" autocomplete="new-password" placeholder="Minimum 6 caracteres" <?= $editingRecord ? '' : '' ?>>
+                </label>
+
+                <label class="field password-field" <?= (int) ($formData['can_login'] ?? 0) ? '' : 'style="display:none"' ?>>
+                    <span>Confirmer le mot de passe</span>
+                    <input type="password" name="password_confirm" autocomplete="new-password" placeholder="Retapez le mot de passe">
+                </label>
+
+                <?php if ($isCurrentUser): ?>
+                    <p class="help-text" style="grid-column:1/-1;color:var(--info);">
+                        <span class="material-symbols-outlined" style="font-size:1rem;vertical-align:middle;">info</span>
+                        Vous modifiez votre propre compte.
+                    </p>
+                <?php endif; ?>
 
                 <h3 class="section-title">Identifiants legaux</h3>
 
@@ -261,7 +334,8 @@ $formData = $editingRecord ?? [
             </div>
 
             <div class="info-grid">
-                <div><strong>Type</strong><span><?= e($formData['collaborateur_type'] ?: '-') ?></span></div>
+                <div><strong>Role</strong><span><?= e($formData['role_id'] ? ($roles[array_search($formData['role_id'], array_column($roles, 'id'))]['nom'] ?? '-') : '-') ?></span></div>
+                <div><strong>Acces app</strong><span><?= (int) ($formData['can_login'] ?? 0) ? 'Oui' : 'Non' ?></span></div>
                 <div><strong>Cabinet</strong><span><?= e($formData['den_ste'] ?: '-') ?></span></div>
                 <div><strong>Nom complet</strong><span><?= e($formData['nom_complet'] ?: '-') ?></span></div>
                 <div><strong>Fonction</strong><span><?= e($formData['fonction'] ?: '-') ?></span></div>
@@ -274,6 +348,9 @@ $formData = $editingRecord ?? [
                 <div class="full"><strong>Adresse</strong><span><?= e($formData['collaborateur_adresse'] ?: '-') ?></span></div>
                 <div><strong>Statut</strong><span><?= e($formData['statut'] ?: '-') ?></span></div>
                 <div><strong>Date debut</strong><span><?= e(format_date($formData['date_debut'] ?? null)) ?></span></div>
+                <?php if ($formData['last_login']): ?>
+                <div><strong>Derniere connexion</strong><span><?= e(format_date($formData['last_login'])) ?></span></div>
+                <?php endif; ?>
             </div>
 
             <?php if ($formData['notes']): ?>
@@ -285,3 +362,16 @@ $formData = $editingRecord ?? [
         </article>
     <?php endif; ?>
 </section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var toggle = document.querySelector('[data-toggle-password]');
+    if (toggle) {
+        toggle.addEventListener('change', function() {
+            document.querySelectorAll('.password-field').forEach(function(el) {
+                el.style.display = this.checked ? '' : 'none';
+            }.bind(this));
+        });
+    }
+});
+</script>

@@ -2,6 +2,35 @@
 
 declare(strict_types=1);
 
+// Map each nav item to a required permission (null = always visible)
+$navPermissions = [
+    'creation' => 'wizard.create',
+    'dashboard' => 'dashboard.view',
+    'societes' => 'societes.view',
+    'associes' => 'associes.view',
+    'contrats' => 'contrats.view',
+    'collaborateurs' => 'collaborateurs.view',
+    'templates' => 'templates.view',
+    'template_edit' => 'templates.edit',
+    'generation' => 'generation.use',
+    'documents' => 'documents.view',
+    'analyse-couverture' => 'analyse.view',
+    'defaults' => 'defaults.edit',
+    'variables' => 'variables.view',
+    'convert-word-pdf' => 'convert.use',
+    'ai-assistant' => 'ai.use',
+    // Configuration sub-pages use configuration.view
+];
+
+function nav_item_visible(string $page, array $permMap): bool
+{
+    $perm = $permMap[$page] ?? null;
+    if ($perm === null) {
+        return true;
+    }
+    return has_permission($perm);
+}
+
 $navSections = [
     '' => [
         'icon' => null,
@@ -61,6 +90,11 @@ $navSections = [
         </span>
         <div class="brand-text">
             <strong>Center Domiciliation</strong>
+            <?php if (is_logged_in()): ?>
+                <small style="display:block;font-size:0.6rem;color:var(--text-secondary);margin-top:2px;">
+                    <?= e(get_role_name()) ?>
+                </small>
+            <?php endif; ?>
         </div>
     </div>
     <div class="nav-toggle-all">
@@ -75,6 +109,21 @@ $navSections = [
     <nav class="nav-links">
         <?php foreach ($navSections as $sectionLabel => $section): ?>
             <?php $items = $section['items']; ?>
+            <?php
+                // Filter items by permission
+                $visibleItems = [];
+                foreach ($items as $navKey => $item) {
+                    if (is_array($item) && isset($item['page'])) {
+                        $itemPage = $item['page'];
+                    } else {
+                        $itemPage = $navKey;
+                    }
+                    if (nav_item_visible($itemPage, $navPermissions)) {
+                        $visibleItems[$navKey] = $item;
+                    }
+                }
+            ?>
+            <?php if (empty($visibleItems)) { continue; } ?>
             <?php if ($sectionLabel): ?>
             <div class="nav-section">
                 <button class="nav-section-toggle" type="button" data-nav-toggle data-label="<?= e($sectionLabel) ?>">
@@ -84,7 +133,7 @@ $navSections = [
                 </button>
                 <div class="nav-section-items">
             <?php endif; ?>
-            <?php foreach ($items as $navKey => $item): ?>
+            <?php foreach ($visibleItems as $navKey => $item): ?>
                 <?php
                     if (is_array($item) && isset($item['label'])) {
                         $itemPage = $item['page'];

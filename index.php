@@ -36,6 +36,10 @@ $allowedPages = [
     'convert-word-pdf',
     'ai-assistant',
     'setup',
+    'connexion',
+    'deconnexion',
+    'roles',
+    'role',
 ];
 
 $page = $_GET['page'] ?? 'dashboard';
@@ -75,9 +79,31 @@ $pageTitleMap = [
     'convert-word-pdf' => 'Word to PDF',
     'setup' => 'Installation XAMPP',
     'not-found' => 'Page introuvable',
+    'connexion' => 'Connexion',
+    'deconnexion' => 'Deconnexion',
+    'roles' => 'Gestion des roles',
+    'role' => 'Fiche role',
 ];
 
+// Public pages without sidebar layout
+$noLayoutPages = ['connexion', 'deconnexion'];
+
+if (in_array($page, $noLayoutPages, true)) {
+    $pageTitle = $pageTitleMap[$page] ?? 'Center Domiciliation App';
+    require __DIR__ . '/includes/header.php';
+    require __DIR__ . '/pages/' . $page . '.php';
+    require __DIR__ . '/includes/footer.php';
+    ob_end_flush();
+    exit;
+}
+
 $pageTitle = $pageTitleMap[$page] ?? 'Center Domiciliation App';
+
+// Page-level permission check (except public pages)
+$publicPages = ['setup', 'not-found'];
+if (!in_array($page, $publicPages, true)) {
+    require_page_access($page);
+}
 
 require __DIR__ . '/includes/header.php';
 require __DIR__ . '/pages/' . $page . '.php';

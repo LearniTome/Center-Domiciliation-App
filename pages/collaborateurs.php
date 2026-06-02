@@ -16,29 +16,39 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
     }
 }
 
+$collaborateurs = [];
 if (($pdo ?? null) instanceof PDO) {
     if ($query !== '') {
         $stmt = $pdo->prepare("
-            SELECT *
-            FROM collaborateurs
-            WHERE nom_complet LIKE :term
-               OR collaborateur_type LIKE :term
-               OR den_ste LIKE :term
-               OR collaborateur_ice LIKE :term
-               OR fonction LIKE :term
-            ORDER BY id DESC
+            SELECT c.*, r.nom AS role_nom
+            FROM collaborateurs c
+            LEFT JOIN roles r ON r.id = c.role_id
+            WHERE c.nom_complet LIKE :term
+               OR c.collaborateur_type LIKE :term
+               OR c.den_ste LIKE :term
+               OR c.collaborateur_ice LIKE :term
+               OR c.fonction LIKE :term
+               OR r.nom LIKE :term
+            ORDER BY c.id DESC
         ");
         $stmt->execute(['term' => like_term($query)]);
         $collaborateurs = $stmt->fetchAll();
     } else {
-        $collaborateurs = fetch_all_records($pdo, 'collaborateurs');
+        $stmt = $pdo->query('
+            SELECT c.*, r.nom AS role_nom
+            FROM collaborateurs c
+            LEFT JOIN roles r ON r.id = c.role_id
+            ORDER BY c.id DESC
+        ');
+        $collaborateurs = $stmt->fetchAll();
     }
 
     if (($_GET['export'] ?? '') === 'csv') {
         $rows = array_map(static function (array $c): array {
             return [
                 $c['id'],
-                $c['collaborateur_type'],
+                $c['role_nom'] ?? $c['collaborateur_type'] ?? '-',
+                (int) ($c['can_login'] ?? 0) ? 'Oui' : 'Non',
                 $c['den_ste'],
                 $c['nom_complet'],
                 $c['fonction'],
@@ -57,7 +67,8 @@ if (($pdo ?? null) instanceof PDO) {
 
         export_csv('collaborateurs.csv', [
             'ID',
-            'Type',
+            'Role',
+            'Acces app',
             'Cabinet',
             'Nom complet',
             'Fonction',
@@ -73,8 +84,6 @@ if (($pdo ?? null) instanceof PDO) {
             'Statut',
         ], $rows);
     }
-} else {
-    $collaborateurs = [];
 }
 ?>
 <section>
@@ -93,7 +102,7 @@ if (($pdo ?? null) instanceof PDO) {
                 <input
                     type="search"
                     name="q"
-                    placeholder="Rechercher par nom, type, ICE ou cabinet"
+                    placeholder="Rechercher par nom, role, ICE ou cabinet"
                     value="<?= e($query) ?>"
                 >
                 <button type="submit"><span class="material-symbols-outlined">search</span> Rechercher</button>
@@ -109,7 +118,8 @@ if (($pdo ?? null) instanceof PDO) {
             <table data-col-toggle data-sortable>
                 <thead>
                 <tr>
-                    <th data-col="type">Type</th>
+                    <th data-col="role">Role</th>
+                    <th data-col="acces">Acces app</th>
                     <th data-col="cabinet">Cabinet</th>
                     <th data-col="nom-complet">Nom complet</th>
                     <th data-col="fonction">Fonction</th>
@@ -117,13 +127,29 @@ if (($pdo ?? null) instanceof PDO) {
                     <th data-col="telephone">Telephone</th>
                     <th data-col="statut">Statut</th>
                     <th data-col="creation">Creation</th>
+                    <th data-col="derniere-connexion">Derniere connexion</th>
                     <th>Actions</th>
                 </tr>
                 </thead>
                 <tbody>
                 <?php foreach ($collaborateurs as $c): ?>
                     <tr>
-                        <td><?= e($c['collaborateur_type'] ?? '-') ?></td>
+                        <td>
+                            <?php if ($c['role_nom']): ?>
+                                <span class="badge <?= in_array((int) ($c['role_id'] ?? 0), [1,2,3]) ? 'badge-info' : 'badge-secondary' ?>">
+                                    <?= e($c['role_nom']) ?>
+                                </span>
+                            <?php else: ?>
+                                <span class="badge"><?= e($c['collaborateur_type'] ?? '-') ?></span>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <?php if ((int) ($c['can_login'] ?? 0)): ?>
+                                <span class="badge badge-success" title="Derniere connexion: <?= e(format_date($c['last_login'] ?? null)) ?>">Connectable</span>
+                            <?php else: ?>
+                                <span class="badge">Aucun acces</span>
+                            <?php endif; ?>
+                        </td>
                         <td><?= e($c['den_ste'] ?? '-') ?></td>
                         <td><?= e($c['nom_complet']) ?></td>
                         <td><?= e($c['fonction'] ?? '-') ?></td>
@@ -131,6 +157,7 @@ if (($pdo ?? null) instanceof PDO) {
                         <td><?= e($c['collaborateur_tel_mobile'] ?: $c['collaborateur_tel_fixe'] ?: $c['telephone'] ?: '-') ?></td>
                         <td><?= e($c['statut']) ?></td>
                         <td><?= e(date('d/m/Y', strtotime((string) $c['created_at']))) ?></td>
+                        <td><?= e($c['last_login'] ? date('d/m/Y H:i', strtotime($c['last_login'])) : '-') ?></td>
                         <td class="table-actions">
                             <a class="btn-icon" href="<?= e(app_url('collaborateur', ['id' => (int) $c['id']])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
                             <form method="post">

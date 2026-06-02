@@ -22,3 +22,11 @@ try {
     $dbError = $exception->getMessage();
 }
 
+// Auth check: public pages don't require login
+$publicPages = ['connexion', 'setup', 'not-found'];
+$currentPage = $_GET['page'] ?? 'dashboard';
+
+if (!in_array($currentPage, $publicPages, true)) {
+    require_auth();
+}
+
