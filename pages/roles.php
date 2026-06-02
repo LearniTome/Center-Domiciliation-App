@@ -95,7 +95,9 @@ $totalAvecCompte = array_reduce($roles, fn($c, $r) => $c + (int) ($r['nb_collabo
                     <?php foreach ($group['list'] as $r): ?>
                         <tr>
                             <td>
-                                <strong><?= e($r['nom'] ?? '?') ?></strong>
+                                <a href="<?= e(app_url('role', ['id' => (int) $r['id']])) ?>" style="font-weight:600;color:var(--text);text-decoration:none;">
+                                    <?= e($r['nom'] ?? '?') ?>
+                                </a>
                             </td>
                             <td>
                                 <span class="help-text"><?= e($r['description'] ?? '-') ?></span>
