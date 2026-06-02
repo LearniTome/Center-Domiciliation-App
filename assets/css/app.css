@@ -76,6 +76,22 @@ a:hover {
     gap: 8px;
     align-items: center;
     min-height: 34px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--line);
+}
+.nav-toggle-all {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    justify-content: flex-end;
+    padding-top: 4px;
+}
+.nav-toggle-all::before {
+    content: '';
+    flex: 1;
+    min-width: 16px;
+    border-bottom: 1px solid var(--line);
+    align-self: center;
 }
 
 .brand-badge {
