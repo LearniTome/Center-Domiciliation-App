@@ -319,10 +319,13 @@ if ($editingId > 0 && ($pdo ?? null) instanceof PDO) {
                                 <?php $p = $permMatrix[$actionKey][$cat]; ?>
                                 <?php $checked = in_array((int) $p['id'], $rolePermIds, true); ?>
                                 <td class="perm-cell">
-                                    <input type="checkbox" name="permissions[]" value="<?= (int) $p['id'] ?>"
-                                        data-cat="<?= e($cat) ?>"
-                                        <?= $checked ? 'checked' : '' ?>
-                                        <?= $isSystem ? 'disabled' : '' ?>>
+                                    <label class="perm-label">
+                                        <input type="checkbox" name="permissions[]" value="<?= (int) $p['id'] ?>"
+                                            data-cat="<?= e($cat) ?>"
+                                            <?= $checked ? 'checked' : '' ?>
+                                            <?= $isSystem ? 'disabled' : '' ?>>
+                                        <span><?= e($p['nom']) ?></span>
+                                    </label>
                                 </td>
                             <?php else: ?>
                                 <td class="perm-cell empty"></td>
