@@ -650,7 +650,7 @@ $docTypeLabels = [
             <table data-sortable>
                 <thead>
                 <tr>
-                    <th class="col-check"></th>
+                    <th class="col-check"><input type="checkbox" id="select-all-docs"></th>
                     <th data-col="type">Type</th>
                     <th data-col="document">Document</th>
                     <th data-col="taille">Taille</th>
