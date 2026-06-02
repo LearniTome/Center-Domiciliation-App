@@ -168,6 +168,9 @@ a:hover {
     color: var(--text);
     border-color: var(--primary);
 }
+.nav-toggle-all button .material-symbols-outlined {
+    font-size: 1rem;
+}
 
 .shell.collapsed .brand-text,
 .shell.collapsed .nav-section-toggle,
@@ -1847,7 +1850,6 @@ tbody tr:hover:nth-child(even) {
 
 /* Material Symbols Outlined base styles */
 .material-symbols-outlined {
-    font-size: 1.25rem;
     line-height: 1;
     vertical-align: middle;
 }

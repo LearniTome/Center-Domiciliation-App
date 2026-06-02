@@ -62,7 +62,7 @@ $navSections = [
         <?php foreach ($navSections as $sectionLabel => $items): ?>
             <?php if ($sectionLabel): ?>
             <div class="nav-section">
-                <button class="nav-section-toggle" type="button" data-nav-toggle>
+                <button class="nav-section-toggle" type="button" data-nav-toggle data-label="<?= e($sectionLabel) ?>">
                     <span class="material-symbols-outlined">expand_more</span>
                     <?= e($sectionLabel) ?>
                 </button>

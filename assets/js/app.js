@@ -41,7 +41,7 @@ document.querySelectorAll('[data-confirm]').forEach((element) => {
         document.querySelectorAll('.nav-section').forEach(function (s) {
             var btn = s.querySelector('[data-nav-toggle]');
             if (btn) {
-                state[btn.textContent.trim()] = s.classList.contains('collapsed');
+                state[btn.getAttribute('data-label')] = s.classList.contains('collapsed');
             }
         });
         try { localStorage.setItem('nav_sections', JSON.stringify(state)); } catch (e) {}
@@ -54,7 +54,7 @@ document.querySelectorAll('[data-confirm]').forEach((element) => {
             var state = JSON.parse(raw);
             document.querySelectorAll('.nav-section').forEach(function (s) {
                 var btn = s.querySelector('[data-nav-toggle]');
-                if (btn && state[btn.textContent.trim()]) {
+                if (btn && state[btn.getAttribute('data-label')]) {
                     s.classList.add('collapsed');
                 }
             });
