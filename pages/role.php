@@ -239,11 +239,31 @@ if ($editingId > 0 && ($pdo ?? null) instanceof PDO) {
     <?php endif; ?>
 
     <?php if ($isSystem): ?>
-    <div style="background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.2);border-radius:8px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:10px;color:var(--warning);font-size:0.85rem;">
-        <span class="material-symbols-outlined" style="font-size:1.2rem">warning</span>
-        <span>Les roles systeme sont proteges et ne peuvent pas etre modifies. Creez un nouveau role si vous avez besoin d un role personnalise.</span>
+    <div style="background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.2);border-radius:6px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:8px;color:var(--warning);font-size:0.8rem;">
+        <span class="material-symbols-outlined" style="font-size:1rem">warning</span>
+        <span>Les roles systeme sont proteges et ne peuvent pas etre modifies.</span>
     </div>
     <?php endif; ?>
+
+    <form method="post">
+        <?= csrf_input() ?>
+
+    <div class="role-info-bar">
+        <label class="field" style="margin:0;flex:1">
+            <span>Nom du role</span>
+            <input name="nom" required value="<?= e($role['nom'] ?? field_value($_POST, 'nom')) ?>" placeholder="ex: Chef d equipe" <?= $isSystem ? 'disabled' : '' ?>>
+        </label>
+        <label class="field" style="margin:0;flex:1">
+            <span>Description</span>
+            <input name="description" value="<?= e($role['description'] ?? field_value($_POST, 'description')) ?>" placeholder="Courte description" <?= $isSystem ? 'disabled' : '' ?>>
+        </label>
+        <label class="role-inline-check">
+            <input type="checkbox" name="is_internal" value="1"
+                <?= ($role && (int) ($role['is_internal'] ?? 0)) ? 'checked' : '' ?>
+                <?= $isSystem ? 'disabled' : '' ?>>
+            <span>Role interne</span>
+        </label>
+    </div>
 
     <div class="tabs">
         <button type="button" class="tab active" data-tab="permissions">
@@ -267,26 +287,6 @@ if ($editingId > 0 && ($pdo ?? null) instanceof PDO) {
     </div>
 
     <div id="tab-permissions">
-        <form method="post">
-            <?= csrf_input() ?>
-
-            <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px 14px;margin-bottom:16px;">
-                <label class="field" style="margin:0">
-                    <span>Nom du role</span>
-                    <input name="nom" required value="<?= e($role['nom'] ?? field_value($_POST, 'nom')) ?>" placeholder="ex: Chef d equipe" <?= $isSystem ? 'disabled' : '' ?>>
-                </label>
-                <label class="field" style="margin:0">
-                    <span>Description</span>
-                    <input name="description" value="<?= e($role['description'] ?? field_value($_POST, 'description')) ?>" placeholder="Courte description du role" <?= $isSystem ? 'disabled' : '' ?>>
-                </label>
-                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding-bottom:4px;">
-                    <input type="checkbox" name="is_internal" value="1"
-                        <?= ($role && (int) ($role['is_internal'] ?? 0)) ? 'checked' : '' ?>
-                        <?= $isSystem ? 'disabled' : '' ?>>
-                    <span style="font-size:0.82rem;white-space:nowrap">Role interne</span>
-                </label>
-            </div>
-
             <div class="perms-scroll">
                 <table class="perms-table" data-col-toggle>
                     <thead>
@@ -350,8 +350,8 @@ if ($editingId > 0 && ($pdo ?? null) instanceof PDO) {
                     <a class="btn btn-cancel" href="<?= e(app_url('roles')) ?>"><span class="material-symbols-outlined">close</span> Annuler</a>
                 </div>
             <?php endif; ?>
-        </form>
-    </div>
+        </div>
+    </form>
 
     <?php if ($role): ?>
     <div id="tab-users" style="display:none">
