@@ -20,7 +20,7 @@ declare(strict_types=1);
     <button class="sidebar-toggle" data-sidebar-toggle type="button" title="Reduire la barre de navigation">
         <span class="material-symbols-outlined">chevron_left</span>
     </button>
-    <script>try{var r=localStorage.getItem('nav_sections');if(r){var s=JSON.parse(r);document.querySelectorAll('[data-nav-toggle]').forEach(function(b){if(s[b.textContent.trim()]){b.closest('.nav-section').classList.add('collapsed')}})}}catch(e){}
+    <script>try{var r=localStorage.getItem('nav_sections');if(r){var s=JSON.parse(r);document.querySelectorAll('[data-nav-toggle]').forEach(function(b){var l=b.getAttribute('data-label');if(l&&s[l]){b.closest('.nav-section').classList.add('collapsed')}})}}catch(e){}
     try{var a=localStorage.getItem('sidebar_collapsed');if(a==='1'){document.querySelector('.shell').classList.add('collapsed')}}catch(e){}
     </script>
     <main class="main">
