@@ -3,15 +3,15 @@
 declare(strict_types=1);
 
 $tabs = [
-    'formes-juridiques' => ['ref_formes_juridiques', 'forme_juridique', 'Formes juridiques', 'mdi-file-document-outline'],
-    'tribunaux' => ['ref_tribunaux', 'tribunal', 'Tribunaux', 'mdi-scale-balance'],
-    'villes' => ['ref_villes', 'ville', 'Villes', 'mdi-city'],
-    'nationalites' => ['ref_nationalites', 'nationalite', 'Nationalites', 'mdi-flag'],
-    'lieux-naissance' => ['ref_lieux_naissance', 'lieu_naissance', 'Lieux de naissance', 'mdi-map-marker'],
-    'adresses' => ['ref_ste_adresses', 'ste_adresse', 'Adresses', 'mdi-home'],
-    'qualites-associe' => ['ref_qualites_associe', 'qualite_associe', 'Qualites associe', 'mdi-account-tie'],
-    'activites' => ['ref_activites', 'activite', 'Activites', 'mdi-briefcase'],
-    'activites-ompic' => ['ref_activites_ompic', 'libelle', 'Activites Ompic', 'mdi-file-certificate'],
+    'formes-juridiques' => ['ref_formes_juridiques', 'forme_juridique', 'Formes juridiques', 'description'],
+    'tribunaux' => ['ref_tribunaux', 'tribunal', 'Tribunaux', 'balance'],
+    'villes' => ['ref_villes', 'ville', 'Villes', 'location_city'],
+    'nationalites' => ['ref_nationalites', 'nationalite', 'Nationalites', 'flag'],
+    'lieux-naissance' => ['ref_lieux_naissance', 'lieu_naissance', 'Lieux de naissance', 'location_on'],
+    'adresses' => ['ref_ste_adresses', 'ste_adresse', 'Adresses', 'home'],
+    'qualites-associe' => ['ref_qualites_associe', 'qualite_associe', 'Qualites associe', 'badge'],
+    'activites' => ['ref_activites', 'activite', 'Activites', 'work'],
+    'activites-ompic' => ['ref_activites_ompic', 'libelle', 'Activites Ompic', 'verified'],
 ];
 
 if (!isset($tab) || !isset($tabs[$tab])) {
@@ -380,7 +380,7 @@ if (is_post()) {
 
     <?php else: ?>
         <div class="config-empty">
-            <span class="mdi <?= e($tabIcon) ?>"></span>
+            <span class="material-symbols-outlined"><?= e($tabIcon) ?></span>
             <p>Aucun(e) <?= e(mb_strtolower($label)) ?> pour le moment.</p>
         </div>
     <?php endif; ?>

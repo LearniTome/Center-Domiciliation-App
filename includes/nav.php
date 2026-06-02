@@ -4,38 +4,38 @@ declare(strict_types=1);
 
 $navSections = [
     '' => [
-        'creation' => ['Nouveau dossier', 'mdi-file-plus'],
-        'dashboard' => ['Tableau de bord', 'mdi-view-dashboard'],
+        'creation' => ['Nouveau dossier', 'note_add'],
+        'dashboard' => ['Tableau de bord', 'dashboard'],
     ],
     'Dossiers' => [
-        'societes' => ['Societes', 'mdi-domain'],
-        'associes' => ['Associes', 'mdi-account-group'],
-        'contrats' => ['Contrats', 'mdi-file-document'],
-        'collaborateurs' => ['Collaborateurs', 'mdi-briefcase'],
+        'societes' => ['Societes', 'business'],
+        'associes' => ['Associes', 'group'],
+        'contrats' => ['Contrats', 'description'],
+        'collaborateurs' => ['Collaborateurs', 'work'],
     ],
     'Templates de documents' => [
-        'templates' => ['Templates', 'mdi-file-document-edit'],
-        'template_edit' => ['Editeur de template', 'mdi-pencil'],
-        'generation' => ['Generateur de dossiers', 'mdi-file-sync'],
-        'documents' => ['Documents generes', 'mdi-file-word'],
+        'templates' => ['Templates', 'edit_note'],
+        'template_edit' => ['Editeur de template', 'edit'],
+        'generation' => ['Generateur de dossiers', 'sync'],
+        'documents' => ['Documents generes', 'article'],
     ],
     'Outils' => [
-        'analyse-couverture' => ['Analyse de couverture', 'mdi-chart-box-outline'],
-        'defaults' => ['Valeurs par defaut', 'mdi-tune'],
-        'variables' => ['Gestion des variables', 'mdi-variable'],
-        'convert-word-pdf' => ['Word to PDF', 'mdi-file-pdf-box'],
-        'ai-assistant' => ['Assistant IA', 'mdi-robot'],
+        'analyse-couverture' => ['Analyse de couverture', 'bar_chart'],
+        'defaults' => ['Valeurs par defaut', 'tune'],
+        'variables' => ['Gestion des variables', 'code'],
+        'convert-word-pdf' => ['Word to PDF', 'picture_as_pdf'],
+        'ai-assistant' => ['Assistant IA', 'smart_toy'],
     ],
     'Configuration' => [
-        ['page' => 'formes-juridiques', 'label' => 'Formes juridiques', 'icon' => 'mdi-file-document-outline'],
-        ['page' => 'tribunaux', 'label' => 'Tribunaux', 'icon' => 'mdi-scale-balance'],
-        ['page' => 'villes', 'label' => 'Villes', 'icon' => 'mdi-city'],
-        ['page' => 'nationalites', 'label' => 'Nationalites', 'icon' => 'mdi-flag'],
-        ['page' => 'lieux-naissance', 'label' => 'Lieux de naissance', 'icon' => 'mdi-map-marker'],
-        ['page' => 'adresses', 'label' => 'Adresses', 'icon' => 'mdi-home'],
-        ['page' => 'qualites-associe', 'label' => 'Qualites associe', 'icon' => 'mdi-account-tie'],
-        ['page' => 'activites', 'label' => 'Activites', 'icon' => 'mdi-briefcase'],
-        ['page' => 'activites-ompic', 'label' => 'Activites Ompic', 'icon' => 'mdi-file-certificate'],
+        ['page' => 'formes-juridiques', 'label' => 'Formes juridiques', 'icon' => 'description'],
+        ['page' => 'tribunaux', 'label' => 'Tribunaux', 'icon' => 'balance'],
+        ['page' => 'villes', 'label' => 'Villes', 'icon' => 'location_city'],
+        ['page' => 'nationalites', 'label' => 'Nationalites', 'icon' => 'flag'],
+        ['page' => 'lieux-naissance', 'label' => 'Lieux de naissance', 'icon' => 'location_on'],
+        ['page' => 'adresses', 'label' => 'Adresses', 'icon' => 'home'],
+        ['page' => 'qualites-associe', 'label' => 'Qualites associe', 'icon' => 'badge'],
+        ['page' => 'activites', 'label' => 'Activites', 'icon' => 'work'],
+        ['page' => 'activites-ompic', 'label' => 'Activites Ompic', 'icon' => 'verified'],
     ],
 ];
 ?>
@@ -84,7 +84,7 @@ $navSections = [
                     }
                 ?>
                 <a class="<?= $isActive ? 'active' : '' ?>" href="<?= e($href) ?>" data-nav-link>
-                    <span class="mdi <?= e($itemIcon) ?>"></span>
+                    <span class="material-symbols-outlined"><?= e($itemIcon) ?></span>
                     <span data-nav-label><?= e($itemLabel) ?></span>
                 </a>
             <?php endforeach; ?>

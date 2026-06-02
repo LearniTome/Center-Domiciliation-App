@@ -17,8 +17,8 @@ document.querySelectorAll('[data-confirm]').forEach((element) => {
         if (btn) {
             const isCollapsed = shell.classList.contains('collapsed');
             btn.title = isCollapsed ? 'Developper la barre de navigation' : 'Reduire la barre de navigation';
-            btn.querySelector('.mdi').classList.toggle('mdi-chevron-right', isCollapsed);
-            btn.querySelector('.mdi').classList.toggle('mdi-chevron-left', !isCollapsed);
+            var icon = btn.querySelector('.material-symbols-outlined');
+            if (icon) { icon.textContent = isCollapsed ? 'chevron_right' : 'chevron_left'; }
         }
     };
     const toggleTrigger = selector => {
