@@ -237,51 +237,78 @@ if ($editingRecord) {
 $isCurrentUser = is_logged_in() && $editingId > 0 && (int) ($_SESSION['user_id'] ?? 0) === $editingId;
 $isNew = !$editingRecord;
 ?>
+<style>
+.collab-page .card { padding: 1rem; }
+.collab-page .card.stack { gap: 0.75rem; }
+.collab-page .form-grid { gap: 10px; }
+.collab-page .section-title { padding: 12px 0 4px; font-size: 0.75rem; }
+.collab-page .section-title:first-child { padding-top: 0; }
+.collab-page .info-grid { gap: 8px; }
+.collab-page .info-grid > div { padding: 8px 10px; gap: 2px; }
+.collab-page .info-grid strong { font-size: 0.65rem; }
+.collab-page .info-grid span { font-size: 0.85rem; }
+.collab-page .section-header { margin-bottom: 0.25rem; }
+.collab-page .field { gap: 4px; }
+.collab-page input, .collab-page select, .collab-page textarea { padding: 7px 10px; }
+.collab-page .hero-badge {
+    display:inline-flex;align-items:center;gap:8px;
+    padding:10px 16px;border-radius:var(--radius-sm);
+    font-size:0.9rem;font-weight:500;
+    border:1px solid var(--line);background:var(--panel);
+}
+.collab-page .hero-badge .material-symbols-outlined { font-size:1.3rem; }
+.collab-page .info-section-title {
+    font-size:0.7rem;font-weight:500;text-transform:uppercase;
+    letter-spacing:0.06em;color:var(--primary);
+    margin:12px 0 4px;padding-bottom:2px;
+    border-bottom:1px solid var(--line);
+    grid-column:1/-1;
+}
+.collab-page .mini-grid {
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:6px;
+}
+.collab-page .mini-grid > div {
+    display:grid;gap:2px;padding:6px 8px;
+    border:1px solid var(--line);border-radius:var(--radius-sm);
+    background:var(--panel);
+}
+.collab-page .mini-grid > div.full { grid-column:1/-1; }
+.collab-page .mini-grid strong { font-size:0.6rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-secondary); }
+.collab-page .mini-grid span { font-size:0.85rem;color:var(--text); }
+</style>
+<section class="grid two collab-page">
 <?php if ($isNew && !in_array($collabType, $typeOptions, true)): ?>
-<!-- Type selector -->
-<section class="grid two">
-    <article class="card stack" style="grid-column:1/-1;max-width:600px;margin:0 auto;">
+    <article class="card stack" style="grid-column:1/-1;max-width:560px;margin:0 auto;">
         <div class="section-header">
-            <div>
-                <h2>Nouveau collaborateur</h2>
-                <p class="help-text">Choisissez le type de collaborateur</p>
-            </div>
+            <h2>Nouveau collaborateur</h2>
             <div class="table-actions">
                 <a class="btn btn-secondary" href="<?= e(app_url('collaborateurs')) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
             </div>
         </div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:16px 0;">
-            <a href="<?= e(app_url('collaborateur', ['type' => 'interne'])) ?>" class="card" style="text-align:center;padding:24px 16px;cursor:pointer;text-decoration:none;color:var(--text);transition:all var(--transition);border:2px solid var(--line);">
-                <span class="material-symbols-outlined" style="font-size:2.5rem;color:var(--primary);display:block;margin-bottom:8px;">badge</span>
-                <strong style="font-size:1rem;">Interne</strong>
-                <p class="help-text" style="margin-top:4px;">Employe, Admin, Super Admin<br>avec acces a l'application</p>
+        <p class="help-text">Choisissez le type de collaborateur</p>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+            <a href="<?= e(app_url('collaborateur', ['type' => 'interne'])) ?>" class="card" style="text-align:center;padding:16px 12px;cursor:pointer;text-decoration:none;color:var(--text);border:2px solid var(--line);">
+                <span class="material-symbols-outlined" style="font-size:2rem;color:var(--primary);display:block;margin-bottom:6px;">badge</span>
+                <strong style="font-size:0.9rem;">Interne</strong>
+                <p class="help-text" style="margin-top:2px;font-size:0.75rem;">Employe, Admin<br>avec acces app</p>
             </a>
-            <a href="<?= e(app_url('collaborateur', ['type' => 'externe-pm'])) ?>" class="card" style="text-align:center;padding:24px 16px;cursor:pointer;text-decoration:none;color:var(--text);transition:all var(--transition);border:2px solid var(--line);">
-                <span class="material-symbols-outlined" style="font-size:2.5rem;color:var(--success);display:block;margin-bottom:8px;">business</span>
-                <strong style="font-size:1rem;">Externe - Personne Morale</strong>
-                <p class="help-text" style="margin-top:4px;">Societe, Cabinet, Agence<br>avec ICE, RC, IF, TP</p>
+            <a href="<?= e(app_url('collaborateur', ['type' => 'externe-pm'])) ?>" class="card" style="text-align:center;padding:16px 12px;cursor:pointer;text-decoration:none;color:var(--text);border:2px solid var(--line);">
+                <span class="material-symbols-outlined" style="font-size:2rem;color:var(--success);display:block;margin-bottom:6px;">business</span>
+                <strong style="font-size:0.9rem;">Externe PM</strong>
+                <p class="help-text" style="margin-top:2px;font-size:0.75rem;">Societe, Cabinet<br>avec ICE, RC, IF</p>
             </a>
-            <a href="<?= e(app_url('collaborateur', ['type' => 'externe-pp'])) ?>" class="card" style="text-align:center;padding:24px 16px;cursor:pointer;text-decoration:none;color:var(--text);transition:all var(--transition);border:2px solid var(--line);">
-                <span class="material-symbols-outlined" style="font-size:2.5rem;color:var(--info);display:block;margin-bottom:8px;">person</span>
-                <strong style="font-size:1rem;">Externe - Personne Physique</strong>
-                <p class="help-text" style="margin-top:4px;">Expert, Avocat, Notaire<br>personne physique</p>
+            <a href="<?= e(app_url('collaborateur', ['type' => 'externe-pp'])) ?>" class="card" style="text-align:center;padding:16px 12px;cursor:pointer;text-decoration:none;color:var(--text);border:2px solid var(--line);">
+                <span class="material-symbols-outlined" style="font-size:2rem;color:var(--info);display:block;margin-bottom:6px;">person</span>
+                <strong style="font-size:0.9rem;">Externe PP</strong>
+                <p class="help-text" style="margin-top:2px;font-size:0.75rem;">Expert, Avocat<br>personne physique</p>
             </a>
         </div>
     </article>
-</section>
 <?php elseif ($isNew || $editingRecord): ?>
-<section class="grid two">
     <article class="card stack">
         <div class="section-header">
-            <div>
-                <h2><?= $editingRecord ? 'Modifier un collaborateur' : 'Nouveau collaborateur' ?></h2>
-                <p class="help-text">
-                    <?php if ($collabType === 'interne'): ?>Interne — Employe avec acces a l'application
-                    <?php elseif ($collabType === 'externe-pm'): ?>Externe — Personne Morale (societe, cabinet)
-                    <?php else: ?>Externe — Personne Physique (expert, avocat, etc.)
-                    <?php endif; ?>
-                </p>
-            </div>
+            <h2><?= $editingRecord ? 'Modifier un collaborateur' : 'Nouveau collaborateur' ?></h2>
             <div class="table-actions">
                 <a class="btn btn-secondary" href="<?= e(app_url('collaborateurs')) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
             </div>
@@ -313,9 +340,6 @@ $isNew = !$editingRecord;
                     <span>Nom complet *</span>
                     <input name="nom_complet" required value="<?= e((string) $formData['nom_complet']) ?>" placeholder="Nom et prenom">
                 </label>
-                <?php endif; ?>
-
-                <?php if ($collabType !== 'externe-pm'): ?>
                 <label class="field">
                     <span>Fonction</span>
                     <input name="fonction" value="<?= e((string) $formData['fonction']) ?>" placeholder="ex: Gerant, Associe">
@@ -332,7 +356,7 @@ $isNew = !$editingRecord;
                 <?php if ($collabType === 'interne'): ?>
                 <h3 class="section-title">Acces au systeme</h3>
 
-                <label class="field" style="grid-column: 1 / -1;">
+                <label class="field" style="grid-column:1/-1;">
                     <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
                         <input type="checkbox" name="can_login" value="1" data-toggle-password <?= (int) ($formData['can_login'] ?? 0) ? 'checked' : '' ?>>
                         <span>Peut se connecter a l application</span>
@@ -341,7 +365,7 @@ $isNew = !$editingRecord;
 
                 <label class="field password-field" <?= (int) ($formData['can_login'] ?? 0) ? '' : 'style="display:none"' ?>>
                     <span>Mot de passe <?= $editingRecord ? '(laisser vide pour conserver)' : '' ?></span>
-                    <input type="password" name="password" autocomplete="new-password" placeholder="Minimum 6 caracteres">
+                    <input type="password" name="password" autocomplete="new-password" placeholder="6 caracteres min">
                 </label>
 
                 <label class="field password-field" <?= (int) ($formData['can_login'] ?? 0) ? '' : 'style="display:none"' ?>>
@@ -351,98 +375,46 @@ $isNew = !$editingRecord;
                 <?php endif; ?>
 
                 <?php if ($isCurrentUser): ?>
-                    <p class="help-text" style="grid-column:1/-1;color:var(--info);">
-                        <span class="material-symbols-outlined" style="font-size:1rem;vertical-align:middle;">info</span>
+                    <p class="help-text" style="grid-column:1/-1;color:var(--info);font-size:0.8rem;">
+                        <span class="material-symbols-outlined" style="font-size:0.9rem;vertical-align:middle;">info</span>
                         Vous modifiez votre propre compte.
                     </p>
                 <?php endif; ?>
 
                 <?php if ($collabType === 'externe-pm'): ?>
                 <h3 class="section-title">Identifiants legaux</h3>
-
-                <label class="field">
-                    <span>Code</span>
-                    <input name="collaborateur_code" value="<?= e((string) $formData['collaborateur_code']) ?>">
-                </label>
-
-                <label class="field">
-                    <span>ICE *</span>
-                    <input name="collaborateur_ice" value="<?= e((string) $formData['collaborateur_ice']) ?>" placeholder="Identifiant ICE">
-                </label>
-
-                <label class="field">
-                    <span>TP</span>
-                    <input name="collaborateur_tp" value="<?= e((string) $formData['collaborateur_tp']) ?>">
-                </label>
-
-                <label class="field">
-                    <span>RC</span>
-                    <input name="collaborateur_rc" value="<?= e((string) $formData['collaborateur_rc']) ?>">
-                </label>
-
-                <label class="field">
-                    <span>IF</span>
-                    <input name="collaborateur_if" value="<?= e((string) $formData['collaborateur_if']) ?>">
-                </label>
+                <label class="field"><span>Code</span><input name="collaborateur_code" value="<?= e((string) $formData['collaborateur_code']) ?>"></label>
+                <label class="field"><span>ICE *</span><input name="collaborateur_ice" value="<?= e((string) $formData['collaborateur_ice']) ?>" placeholder="Identifiant ICE"></label>
+                <label class="field"><span>TP</span><input name="collaborateur_tp" value="<?= e((string) $formData['collaborateur_tp']) ?>"></label>
+                <label class="field"><span>RC</span><input name="collaborateur_rc" value="<?= e((string) $formData['collaborateur_rc']) ?>"></label>
+                <label class="field"><span>IF</span><input name="collaborateur_if" value="<?= e((string) $formData['collaborateur_if']) ?>"></label>
                 <?php endif; ?>
 
                 <h3 class="section-title">Contact</h3>
-
-                <label class="field">
-                    <span>Email professionnel</span>
-                    <input type="email" name="collaborateur_email" value="<?= e((string) $formData['collaborateur_email']) ?>">
-                </label>
-
+                <label class="field"><span>Email professionnel</span><input type="email" name="collaborateur_email" value="<?= e((string) $formData['collaborateur_email']) ?>"></label>
                 <?php if ($collabType === 'interne'): ?>
-                <label class="field">
-                    <span>Email secondaire</span>
-                    <input type="email" name="email" value="<?= e((string) $formData['email']) ?>">
-                </label>
+                <label class="field"><span>Email secondaire</span><input type="email" name="email" value="<?= e((string) $formData['email']) ?>"></label>
                 <?php endif; ?>
-
                 <?php if ($collabType === 'externe-pm'): ?>
-                <label class="field">
-                    <span>Telephone fixe</span>
-                    <input name="collaborateur_tel_fixe" value="<?= e((string) $formData['collaborateur_tel_fixe']) ?>">
-                </label>
+                <label class="field"><span>Telephone fixe</span><input name="collaborateur_tel_fixe" value="<?= e((string) $formData['collaborateur_tel_fixe']) ?>"></label>
                 <?php endif; ?>
-
-                <label class="field">
-                    <span>Telephone mobile</span>
-                    <input name="collaborateur_tel_mobile" value="<?= e((string) $formData['collaborateur_tel_mobile']) ?>">
-                </label>
-
+                <label class="field"><span>Telephone mobile</span><input name="collaborateur_tel_mobile" value="<?= e((string) $formData['collaborateur_tel_mobile']) ?>"></label>
                 <?php if ($collabType === 'externe-pm' || $collabType === 'externe-pp'): ?>
-                <label class="field full">
-                    <span>Adresse</span>
-                    <textarea name="collaborateur_adresse"><?= e((string) $formData['collaborateur_adresse']) ?></textarea>
-                </label>
+                <label class="field full"><span>Adresse</span><textarea name="collaborateur_adresse"><?= e((string) $formData['collaborateur_adresse']) ?></textarea></label>
                 <?php endif; ?>
 
                 <h3 class="section-title">Informations</h3>
-
                 <?php if ($collabType === 'interne'): ?>
-                <label class="field">
-                    <span>Date debut</span>
-                    <input type="date" name="date_debut" value="<?= e((string) $formData['date_debut']) ?>">
-                </label>
+                <label class="field"><span>Date debut</span><input type="date" name="date_debut" value="<?= e((string) $formData['date_debut']) ?>"></label>
                 <?php endif; ?>
-
-                <label class="field">
-                    <span>Statut</span>
+                <label class="field"><span>Statut</span>
                     <select name="statut">
                         <?php foreach (['actif', 'inactif', 'archive'] as $statut): ?>
-                            <option value="<?= e($statut) ?>" <?= (string) $formData['statut'] === $statut ? 'selected' : '' ?>>
-                                <?= e(ucfirst($statut)) ?>
-                            </option>
+                            <option value="<?= e($statut) ?>" <?= (string) $formData['statut'] === $statut ? 'selected' : '' ?>><?= e(ucfirst($statut)) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </label>
-
-                <label class="field full">
-                    <span>Notes</span>
-                    <textarea name="notes"><?= e((string) $formData['notes']) ?></textarea>
-                </label>
+                <label class="field full"><span>Notes</span><textarea name="notes"><?= e((string) $formData['notes']) ?></textarea></label>
             </div>
 
             <button type="submit"><?= $editingRecord ? 'Mettre a jour' : 'Enregistrer' ?></button>
@@ -452,43 +424,66 @@ $isNew = !$editingRecord;
     <?php if ($editingRecord): ?>
         <article class="card stack">
             <div class="section-header">
-                <div>
-                    <h2>Apercu</h2>
-                    <p class="help-text">Informations du collaborateur.</p>
-                </div>
+                <h2>
+                    <?php
+                        $typeLabel = ['interne' => 'Interne', 'externe-pm' => 'PM', 'externe-pp' => 'PP'][$formData['collaborateur_type'] ?? 'externe-pp'] ?? '-';
+                        $typeClass = ['interne' => 'badge-info', 'externe-pm' => 'badge-secondary', 'externe-pp' => 'badge-warning'][$formData['collaborateur_type'] ?? 'externe-pp'] ?? 'badge';
+                        $roleNom = $formData['role_id'] ? ($roles[array_search($formData['role_id'], array_column($roles, 'id'))]['nom'] ?? '-') : '';
+                    ?>
+                    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                        <span><?= e($formData['nom_complet'] ?: 'Collaborateur') ?></span>
+                        <span class="badge <?= $typeClass ?>"><?= e($typeLabel) ?></span>
+                        <?php if ($roleNom): ?><span class="badge badge-secondary" style="font-weight:400;"><?= e($roleNom) ?></span><?php endif; ?>
+                        <?php if ($formData['can_login']): ?><span class="badge badge-success" style="font-weight:400;">Connectable</span><?php endif; ?>
+                    </div>
+                </h2>
             </div>
 
-            <div class="info-grid">
-                <div><strong>Type</strong><span><?= e([
-                    'interne' => 'Interne',
-                    'externe-pm' => 'Externe - Personne Morale',
-                    'externe-pp' => 'Externe - Personne Physique',
-                ][$formData['collaborateur_type'] ?? 'externe-pp'] ?? '-') ?></span></div>
-                <div><strong>Role</strong><span><?= e($formData['role_id'] ? ($roles[array_search($formData['role_id'], array_column($roles, 'id'))]['nom'] ?? '-') : '-') ?></span></div>
-                <?php if ($formData['can_login']): ?><div><strong>Acces app</strong><span>Oui</span></div><?php endif; ?>
+            <?php $hasIdentite = $formData['den_ste'] || $formData['fonction'] || $formData['nom_complet']; ?>
+            <?php $hasLegal = $formData['collaborateur_ice'] || $formData['collaborateur_rc'] || $formData['collaborateur_if'] || $formData['collaborateur_tp']; ?>
+            <?php $hasContact = $formData['collaborateur_email'] || $formData['email'] || $formData['collaborateur_tel_mobile'] || $formData['collaborateur_tel_fixe'] || $formData['telephone'] || $formData['collaborateur_adresse']; ?>
+            <?php $hasInfo = $formData['statut'] || $formData['date_debut'] || $formData['last_login']; ?>
+
+            <div class="mini-grid">
+                <?php if ($hasIdentite): ?>
+                <div class="info-section-title">Identite</div>
                 <?php if ($formData['den_ste']): ?><div><strong>Raison sociale</strong><span><?= e($formData['den_ste']) ?></span></div><?php endif; ?>
-                <div><strong>Nom complet</strong><span><?= e($formData['nom_complet'] ?: '-') ?></span></div>
+                <?php if ($formData['nom_complet']): ?><div><strong>Nom complet</strong><span><?= e($formData['nom_complet']) ?></span></div><?php endif; ?>
                 <?php if ($formData['fonction']): ?><div><strong>Fonction</strong><span><?= e($formData['fonction']) ?></span></div><?php endif; ?>
+                <?php endif; ?>
+
+                <?php if ($hasLegal): ?>
+                <div class="info-section-title">Identifiants legaux</div>
                 <?php if ($formData['collaborateur_ice']): ?><div><strong>ICE</strong><span><?= e($formData['collaborateur_ice']) ?></span></div><?php endif; ?>
                 <?php if ($formData['collaborateur_rc']): ?><div><strong>RC</strong><span><?= e($formData['collaborateur_rc']) ?></span></div><?php endif; ?>
                 <?php if ($formData['collaborateur_if']): ?><div><strong>IF</strong><span><?= e($formData['collaborateur_if']) ?></span></div><?php endif; ?>
                 <?php if ($formData['collaborateur_tp']): ?><div><strong>TP</strong><span><?= e($formData['collaborateur_tp']) ?></span></div><?php endif; ?>
+                <?php endif; ?>
+
+                <?php if ($hasContact): ?>
+                <div class="info-section-title">Contact</div>
                 <div><strong>Email</strong><span><?= e($formData['collaborateur_email'] ?: $formData['email'] ?: '-') ?></span></div>
                 <div><strong>Telephone</strong><span><?= e($formData['collaborateur_tel_mobile'] ?: $formData['collaborateur_tel_fixe'] ?: $formData['telephone'] ?: '-') ?></span></div>
                 <?php if ($formData['collaborateur_adresse']): ?><div class="full"><strong>Adresse</strong><span><?= e($formData['collaborateur_adresse']) ?></span></div><?php endif; ?>
+                <?php endif; ?>
+
+                <?php if ($hasInfo): ?>
+                <div class="info-section-title">Informations</div>
                 <div><strong>Statut</strong><span><?= e($formData['statut'] ?: '-') ?></span></div>
                 <?php if ($formData['date_debut']): ?><div><strong>Date debut</strong><span><?= e(format_date($formData['date_debut'] ?? null)) ?></span></div><?php endif; ?>
                 <?php if ($formData['last_login']): ?><div><strong>Derniere connexion</strong><span><?= e(format_date($formData['last_login'])) ?></span></div><?php endif; ?>
+                <?php endif; ?>
             </div>
 
             <?php if ($formData['notes']): ?>
-                <div class="field full">
-                    <strong>Notes</strong>
-                    <p><?= e($formData['notes']) ?></p>
+                <div style="margin-top:8px;">
+                    <strong style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-secondary);display:block;margin-bottom:4px;">Notes</strong>
+                    <p style="margin:0;font-size:0.85rem;color:var(--text);"><?= e($formData['notes']) ?></p>
                 </div>
             <?php endif; ?>
         </article>
     <?php endif; ?>
+<?php endif; ?>
 </section>
 
 <script>
@@ -503,4 +498,3 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-<?php endif; ?>
