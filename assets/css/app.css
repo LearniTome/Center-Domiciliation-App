@@ -73,9 +73,16 @@ a:hover {
 
 .brand {
     display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 6px;
+}
+.brand-row {
+    display: flex;
     gap: 8px;
     align-items: center;
-    padding-bottom: 8px;
     min-height: 34px;
 }
 
@@ -145,9 +152,7 @@ a:hover {
     display: flex;
     gap: 2px;
     justify-content: center;
-    padding: 2px 0 6px;
-    border-bottom: 1px solid var(--line);
-    margin-bottom: 6px;
+    padding: 2px 0;
 }
 .nav-toggle-all button {
     display: inline-flex;
@@ -178,6 +183,9 @@ a:hover {
 }
 .shell.collapsed .brand {
     justify-content: center;
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
 }
 .shell.collapsed .brand-badge {
     cursor: pointer;
