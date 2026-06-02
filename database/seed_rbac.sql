@@ -212,8 +212,8 @@ INSERT INTO role_permissions (role_id, permission_id)
 VALUES (@autre, 1);
 
 -- 4. Create default Super Admin collaborator (email: admin@center.test, password: admin123)
-INSERT INTO collaborateurs (nom_complet, fonction, role_id, collaborateur_email, email, can_login, password_hash, statut, notes)
-SELECT 'Super Admin', 'Administrateur système', @super_admin, 'admin@center.test', 'admin@center.test', 1,
+INSERT INTO collaborateurs (nom_complet, fonction, collaborateur_type, role_id, collaborateur_email, email, can_login, password_hash, statut, notes)
+SELECT 'Super Admin', 'Administrateur système', 'interne', @super_admin, 'admin@center.test', 'admin@center.test', 1,
        '$2y$10$QOZo9.7oOayIbJEsGwRxLuuS6BvQ9rJT6oX1rAsQoFG4cAvwyHZBG', 'actif',
        'Compte super admin par defaut — changer le mot de passe'
 WHERE NOT EXISTS (SELECT 1 FROM collaborateurs WHERE email = 'admin@center.test' OR collaborateur_email = 'admin@center.test');

@@ -29,8 +29,8 @@
     "contrat_statut": "actif"
   },
   "collaborateur": {
-    "collaborateur_type": "CLTD -- Client Direct",
-    "collaborateur_code": "CLTD",
+    "collaborateur_type": "externe-pp",
+    "collaborateur_code": "",
     "statut": "actif"
   }
 }
