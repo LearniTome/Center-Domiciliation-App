@@ -24,6 +24,7 @@ $editKey = $_GET['edit'] ?? null;
 $isNmaTab = $tab === 'activites-ompic';
 $isTribunalTab = $tab === 'tribunaux';
 $isFormeJuridiqueTab = $tab === 'formes-juridiques';
+$isFonctionsTab = $tab === 'fonctions';
 
 $rows = [];
 if (($pdo ?? null) instanceof PDO) {
@@ -32,6 +33,19 @@ if (($pdo ?? null) instanceof PDO) {
         $orderBy = $isTribunalTab ? "FIELD(tribunal_type, 'Tribunal de commerce', 'Tribunal de Première Instance'), sort_order ASC, {$column} ASC" : "sort_order ASC, {$column} ASC";
         $stmt = $pdo->query("SELECT {$selectCols} FROM {$table} ORDER BY {$orderBy}");
         $rows = $stmt->fetchAll();
+        
+        // Load collaborateur counts for fonctions tab
+        if ($isFonctionsTab) {
+            $countStmt = $pdo->query("SELECT fonction, COUNT(*) as nb FROM collaborateurs WHERE fonction IS NOT NULL AND fonction != '' AND statut != 'archive' GROUP BY fonction");
+            $counts = [];
+            foreach ($countStmt->fetchAll() as $countRow) {
+                $counts[(string) $countRow['fonction']] = (int) $countRow['nb'];
+            }
+            // Add count to each row
+            foreach ($rows as &$row) {
+                $row['collab_count'] = $counts[(string) $row[$column]] ?? 0;
+            }
+        }
     } catch (PDOException) {
         $rows = [];
     }
@@ -212,6 +226,9 @@ if (is_post()) {
                         <th>Dossier Templates</th>
                     <?php endif; ?>
                     <th><?= e($label) ?></th>
+                    <?php if ($isFonctionsTab): ?>
+                        <th style="width:80px;text-align:center">Personnes</th>
+                    <?php endif; ?>
                     <th style="width:100px">Date creation</th>
                     <th style="width:100px">Modification</th>
                     <th style="width:120px">Actions</th>
@@ -253,6 +270,7 @@ if (is_post()) {
                             <td></td>
                             <td></td>
                             <?php if ($isTribunalTab): ?><td></td><?php endif; ?>
+                            <?php if ($isFonctionsTab): ?><td></td><?php endif; ?>
                         <?php else: ?>
                             <td style="text-align:center;color:var(--text-secondary);cursor:grab"><span class="material-symbols-outlined">drag_indicator</span></td>
                             <?php if ($isTribunalTab): ?>
@@ -262,6 +280,9 @@ if (is_post()) {
                                 <td><?= e($tfVal ?: '-') ?></td>
                             <?php endif; ?>
                             <td><?= $isNmaTab ? e((string) $row['code'] . ' - ' . $val) : e($val) ?></td>
+                            <?php if ($isFonctionsTab): ?>
+                                <td style="text-align:center;font-weight:600;color:var(--primary)"><?= (int) ($row['collab_count'] ?? 0) ?></td>
+                            <?php endif; ?>
                             <td style="font-size:0.75rem;color:var(--text-secondary)"><?= $row['created_at'] ? date('d/m/Y H:i', strtotime($row['created_at'])) : '-' ?></td>
                             <td style="font-size:0.75rem;color:var(--text-secondary)"><?= $row['updated_at'] ? date('d/m/Y H:i', strtotime($row['updated_at'])) : '-' ?></td>
                             <td>
