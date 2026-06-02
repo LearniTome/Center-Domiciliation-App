@@ -259,7 +259,8 @@ if ($editingId > 0 && ($pdo ?? null) instanceof PDO) {
                 </label>
             </div>
 
-            <div class="perms-grid">
+            <div class="perms-scroll">
+                <div class="perms-grid">
                 <?php foreach ($permissionsByCategory as $cat => $perms): ?>
                     <?php
                         $catChecked = 0;
@@ -302,6 +303,7 @@ if ($editingId > 0 && ($pdo ?? null) instanceof PDO) {
                         <?php endforeach; ?>
                     </div>
                 <?php endforeach; ?>
+                </div>
             </div>
 
             <?php if (!$isSystem): ?>
