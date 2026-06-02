@@ -212,10 +212,8 @@ INSERT INTO role_permissions (role_id, permission_id)
 VALUES (@autre, 1);
 
 -- 4. Create default Super Admin collaborator (email: admin@center.test, password: admin123)
--- Password hash for "admin123" using PHP password_hash with PASSWORD_DEFAULT (bcrypt)
--- WARNING: This is a development seed. Change password in production!
 INSERT INTO collaborateurs (nom_complet, fonction, role_id, collaborateur_email, email, can_login, password_hash, statut, notes)
 SELECT 'Super Admin', 'Administrateur système', @super_admin, 'admin@center.test', 'admin@center.test', 1,
-       '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'actif',
-       'Compte super admin par défaut — changer le mot de passe'
+       '$2y$10$QOZo9.7oOayIbJEsGwRxLuuS6BvQ9rJT6oX1rAsQoFG4cAvwyHZBG', 'actif',
+       'Compte super admin par defaut — changer le mot de passe'
 WHERE NOT EXISTS (SELECT 1 FROM collaborateurs WHERE email = 'admin@center.test' OR collaborateur_email = 'admin@center.test');
