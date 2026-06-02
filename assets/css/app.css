@@ -191,6 +191,12 @@ a:hover {
 }
 .shell.collapsed .nav-section-items {
     display: grid;
+    padding-left: 0;
+}
+
+.shell.collapsed .nav-section-items::before,
+.shell.collapsed .nav-section-items a::before {
+    display: none;
 }
 
 .shell.collapsed .nav-links a {
@@ -298,6 +304,36 @@ a:hover {
 .nav-section-items {
     display: grid;
     gap: 1px;
+    padding-left: 28px;
+    position: relative;
+}
+
+.nav-section-items::before {
+    content: '';
+    position: absolute;
+    left: 12px;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--border);
+}
+
+.nav-section-items a {
+    position: relative;
+}
+
+.nav-section-items a::before {
+    content: '';
+    position: absolute;
+    left: -16px;
+    top: 50%;
+    width: 12px;
+    height: 1px;
+    background: var(--border);
+}
+
+.nav-section-items a:last-child::before {
+    width: 12px;
 }
 
 .nav-section-label {
