@@ -19,7 +19,6 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
 
     try {
         if ($editingId > 0) {
-            // Check if editing system role
             $stmt = $pdo->prepare('SELECT is_system FROM roles WHERE id = :id');
             $stmt->execute(['id' => $editingId]);
             $existing = $stmt->fetch();
@@ -29,10 +28,14 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
                 redirect_to('roles');
             }
 
+            if ((int) ($existing['is_system'] ?? 0)) {
+                set_flash('error', 'Les roles systeme ne peuvent pas etre modifies.');
+                redirect_to('roles');
+            }
+
             $stmt = $pdo->prepare('UPDATE roles SET nom = :nom, description = :description, is_internal = :is_internal WHERE id = :id');
             $stmt->execute(['nom' => $nom, 'description' => $description, 'is_internal' => $isInternal, 'id' => $editingId]);
 
-            // Update permissions (delete all, re-insert)
             $pdo->prepare('DELETE FROM role_permissions WHERE role_id = :role_id')->execute(['role_id' => $editingId]);
         } else {
             $stmt = $pdo->prepare('INSERT INTO roles (nom, description, is_internal, is_system, sort_order) VALUES (:nom, :description, :is_internal, 0, 99)');
@@ -40,7 +43,6 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
             $editingId = (int) $pdo->lastInsertId();
         }
 
-        // Insert permissions
         if (!empty($permissions)) {
             $stmt = $pdo->prepare('INSERT INTO role_permissions (role_id, permission_id) VALUES (:role_id, :perm_id)');
             foreach ($permissions as $permId) {
@@ -57,7 +59,6 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
     }
 }
 
-// Fetch role data
 $role = null;
 if ($editingId > 0 && ($pdo ?? null) instanceof PDO) {
     $stmt = $pdo->prepare('SELECT * FROM roles WHERE id = :id');
@@ -69,7 +70,8 @@ if ($editingId > 0 && ($pdo ?? null) instanceof PDO) {
     }
 }
 
-// Fetch all permissions grouped by category
+$isSystem = $role && (int) ($role['is_system'] ?? 0);
+
 $permissionsByCategory = [];
 if (($pdo ?? null) instanceof PDO) {
     $stmt = $pdo->query('SELECT * FROM permissions ORDER BY category, id');
@@ -82,7 +84,6 @@ if (($pdo ?? null) instanceof PDO) {
     }
 }
 
-// Fetch role's current permissions
 $rolePermIds = [];
 if ($editingId > 0 && ($pdo ?? null) instanceof PDO) {
     $stmt = $pdo->prepare('SELECT permission_id FROM role_permissions WHERE role_id = :role_id');
@@ -108,58 +109,125 @@ $categoryLabels = [
     'ai' => 'Assistant IA',
     'roles' => 'Gestion des roles',
 ];
+
+$categoryIcons = [
+    'dashboard' => 'dashboard',
+    'societes' => 'business',
+    'associes' => 'group',
+    'contrats' => 'description',
+    'collaborateurs' => 'work',
+    'wizard' => 'note_add',
+    'templates' => 'edit_note',
+    'generation' => 'sync',
+    'documents' => 'article',
+    'configuration' => 'settings',
+    'analyse' => 'bar_chart',
+    'variables' => 'code',
+    'defaults' => 'tune',
+    'convert' => 'picture_as_pdf',
+    'ai' => 'smart_toy',
+    'roles' => 'admin_panel_settings',
+];
+
+$totalPerms = array_sum(array_map('count', $permissionsByCategory));
+$selectedCount = count($rolePermIds);
 ?>
 <section>
     <article class="card stack">
         <div class="section-header">
             <div>
                 <h2><?= $role ? 'Modifier le role' : 'Nouveau role' ?></h2>
-                <p class="help-text"><?= $role ? e($role['nom']) : 'Creer un nouveau role avec ses permissions' ?></p>
+                <p class="help-text">
+                    <?php if ($role): ?>
+                        <?= e($role['nom']) ?>
+                        <?= (int) ($role['is_internal'] ?? 0) ? '<span class="badge badge-info">Interne</span>' : '<span class="badge badge-secondary">Externe</span>' ?>
+                    <?php else: ?>
+                        Creer un nouveau role avec ses permissions
+                    <?php endif; ?>
+                </p>
             </div>
             <div class="table-actions">
-                <a class="btn btn-secondary" href="<?= e(app_url('roles')) ?>">Retour</a>
+                <a class="btn btn-secondary" href="<?= e(app_url('roles')) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
             </div>
         </div>
+
+        <?php if ($isSystem): ?>
+            <div class="alert" style="background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.3);border-radius:var(--radius-sm);padding:12px;color:var(--warning);">
+                <span class="material-symbols-outlined" style="font-size:1rem;vertical-align:middle;">warning</span>
+                Les roles systeme sont proteges et ne peuvent pas etre modifies. Creez un nouveau role si vous avez besoin d un role personnalise.
+            </div>
+        <?php endif; ?>
 
         <form method="post" class="stack">
             <?= csrf_input() ?>
 
-            <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
+            <div class="form-grid" style="grid-template-columns: 1fr 1fr auto;">
                 <label class="field">
                     <span>Nom du role *</span>
-                    <input name="nom" required value="<?= e($role['nom'] ?? field_value($_POST, 'nom')) ?>" placeholder="ex: Chef d equipe">
+                    <input name="nom" required value="<?= e($role['nom'] ?? field_value($_POST, 'nom')) ?>" placeholder="ex: Chef d equipe" <?= $isSystem ? 'disabled' : '' ?>>
                 </label>
 
                 <label class="field">
                     <span>Description</span>
-                    <input name="description" value="<?= e($role['description'] ?? field_value($_POST, 'description')) ?>" placeholder="Courte description">
+                    <input name="description" value="<?= e($role['description'] ?? field_value($_POST, 'description')) ?>" placeholder="Courte description du role" <?= $isSystem ? 'disabled' : '' ?>>
                 </label>
 
-                <label class="field" style="grid-column: 1 / -1;">
+                <label class="field" style="display:flex;align-items:flex-end;padding-bottom:6px;">
                     <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                        <input type="checkbox" name="is_internal" value="1" <?= ($role && (int) ($role['is_internal'] ?? 0)) ? 'checked' : '' ?>>
-                        <span>Role interne (collaborateur du centre)</span>
+                        <input type="checkbox" name="is_internal" value="1"
+                            <?= ($role && (int) ($role['is_internal'] ?? 0)) ? 'checked' : '' ?>
+                            <?= $isSystem ? 'disabled' : '' ?>>
+                        <span style="font-size:0.85rem;">Role interne</span>
                     </label>
                 </label>
             </div>
 
-            <h3 class="section-title">Permissions</h3>
+            <div class="section-title-row" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <h3 style="margin:0;">Permissions</h3>
+                    <span class="badge badge-info"><?= $selectedCount ?> / <?= $totalPerms ?> selectionnee(s)</span>
+                </div>
+                <?php if (!$isSystem): ?>
+                    <div class="perm-summary" id="permSummary">
+                        <span class="help-text">Selectionnez les permissions de ce role :</span>
+                    </div>
+                <?php endif; ?>
+            </div>
 
-            <div class="form-grid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
+            <div class="perms-grid">
                 <?php foreach ($permissionsByCategory as $cat => $perms): ?>
-                    <div class="card" style="padding:0.8rem;">
-                        <h4 style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-secondary);margin-bottom:0.5rem;">
-                            <?= e($categoryLabels[$cat] ?? $cat) ?>
+                    <?php
+                        $catChecked = 0;
+                        foreach ($perms as $p) {
+                            if (in_array((int) $p['id'], $rolePermIds, true)) $catChecked++;
+                        }
+                        $catTotal = count($perms);
+                    ?>
+                    <div class="perms-card" data-category="<?= e($cat) ?>">
+                        <h4>
+                            <span>
+                                <?php if (isset($categoryIcons[$cat])): ?>
+                                    <span class="material-symbols-outlined" style="font-size:0.8rem;vertical-align:middle;"><?= e($categoryIcons[$cat]) ?></span>
+                                <?php endif; ?>
+                                <?= e($categoryLabels[$cat] ?? $cat) ?>
+                            </span>
+                            <?php if (!$isSystem): ?>
+                                <button type="button" class="select-all-toggle" data-toggle-cat="<?= e($cat) ?>"
+                                    data-state="<?= $catChecked === $catTotal ? 'checked' : 'unchecked' ?>">
+                                    <?= $catChecked === $catTotal ? 'Tout deselect' : 'Tout select' ?>
+                                </button>
+                            <?php endif; ?>
                         </h4>
                         <?php foreach ($perms as $p): ?>
-                            <label style="display:flex;align-items:flex-start;gap:8px;padding:4px 0;cursor:pointer;">
+                            <?php $checked = in_array((int) $p['id'], $rolePermIds, true); ?>
+                            <label>
                                 <input type="checkbox" name="permissions[]" value="<?= (int) $p['id'] ?>"
-                                    style="margin-top:2px;"
-                                    <?= in_array((int) $p['id'], $rolePermIds, true) ? 'checked' : '' ?>
-                                    <?= ($role && (int) ($role['is_system'] ?? 0)) ? 'disabled' : '' ?>>
-                                <span style="font-size:0.85rem;line-height:1.3;">
+                                    data-cat="<?= e($cat) ?>"
+                                    <?= $checked ? 'checked' : '' ?>
+                                    <?= $isSystem ? 'disabled' : '' ?>>
+                                <span class="perm-label">
                                     <?= e($p['nom']) ?>
-                                    <small style="display:block;color:var(--text-muted);font-size:0.7rem;"><?= e($p['permission_key']) ?></small>
+                                    <span class="perm-key"><?= e($p['permission_key']) ?></span>
                                 </span>
                             </label>
                         <?php endforeach; ?>
@@ -167,13 +235,57 @@ $categoryLabels = [
                 <?php endforeach; ?>
             </div>
 
-            <?php if ($role && (int) ($role['is_system'] ?? 0)): ?>
-                <p class="help-text" style="color:var(--warning);">Les roles systeme ne peuvent pas etre modifies. Creez un nouveau role si necessaire.</p>
+            <?php if (!$isSystem): ?>
+                <div style="display:flex;gap:10px;align-items:center;padding-top:8px;">
+                    <button type="submit"><span class="material-symbols-outlined">save</span> <?= $role ? 'Enregistrer les modifications' : 'Creer le role' ?></button>
+                    <a class="btn btn-cancel" href="<?= e(app_url('roles')) ?>"><span class="material-symbols-outlined">close</span> Annuler</a>
+                </div>
             <?php endif; ?>
-
-            <button type="submit" <?= ($role && (int) ($role['is_system'] ?? 0)) ? 'disabled' : '' ?>>
-                <span class="material-symbols-outlined">save</span> <?= $role ? 'Mettre a jour' : 'Creer le role' ?>
-            </button>
         </form>
     </article>
 </section>
+
+<?php if (!$isSystem): ?>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Select all / deselect all per category
+    document.querySelectorAll('[data-toggle-cat]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var cat = this.getAttribute('data-toggle-cat');
+            var checkboxes = document.querySelectorAll('input[data-cat="' + cat + '"]');
+            var allChecked = true;
+            checkboxes.forEach(function(cb) { if (!cb.checked) allChecked = false; });
+
+            checkboxes.forEach(function(cb) { cb.checked = !allChecked; });
+            this.setAttribute('data-state', allChecked ? 'unchecked' : 'checked');
+            this.textContent = allChecked ? 'Tout select' : 'Tout deselect';
+            updateSummary();
+        });
+    });
+
+    // Update count on checkbox change
+    document.querySelectorAll('input[name="permissions[]"]').forEach(function(cb) {
+        cb.addEventListener('change', updateSummary);
+    });
+
+    function updateSummary() {
+        var total = document.querySelectorAll('input[name="permissions[]"]').length;
+        var checked = document.querySelectorAll('input[name="permissions[]"]:checked').length;
+        var badge = document.querySelector('.badge.badge-info');
+        if (badge) badge.textContent = checked + ' / ' + total + ' selectionnee(s)';
+
+        // Update per-category toggle buttons
+        document.querySelectorAll('[data-toggle-cat]').forEach(function(btn) {
+            var cat = btn.getAttribute('data-toggle-cat');
+            var catCbs = document.querySelectorAll('input[data-cat="' + cat + '"]');
+            var allCatChecked = true;
+            catCbs.forEach(function(cb) { if (!cb.checked) allCatChecked = false; });
+            btn.setAttribute('data-state', allCatChecked ? 'checked' : 'unchecked');
+            btn.textContent = allCatChecked ? 'Tout deselect' : 'Tout select';
+        });
+    }
+
+    updateSummary();
+});
+</script>
+<?php endif; ?>

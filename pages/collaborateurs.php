@@ -20,11 +20,10 @@ $collaborateurs = [];
 if (($pdo ?? null) instanceof PDO) {
     if ($query !== '') {
         $stmt = $pdo->prepare("
-            SELECT c.*, r.nom AS role_nom
+            SELECT c.*, r.nom AS role_nom, r.is_internal
             FROM collaborateurs c
             LEFT JOIN roles r ON r.id = c.role_id
             WHERE c.nom_complet LIKE :term
-               OR c.collaborateur_type LIKE :term
                OR c.den_ste LIKE :term
                OR c.collaborateur_ice LIKE :term
                OR c.fonction LIKE :term
@@ -35,7 +34,7 @@ if (($pdo ?? null) instanceof PDO) {
         $collaborateurs = $stmt->fetchAll();
     } else {
         $stmt = $pdo->query('
-            SELECT c.*, r.nom AS role_nom
+            SELECT c.*, r.nom AS role_nom, r.is_internal
             FROM collaborateurs c
             LEFT JOIN roles r ON r.id = c.role_id
             ORDER BY c.id DESC
@@ -47,7 +46,7 @@ if (($pdo ?? null) instanceof PDO) {
         $rows = array_map(static function (array $c): array {
             return [
                 $c['id'],
-                $c['role_nom'] ?? $c['collaborateur_type'] ?? '-',
+                $c['role_nom'] ?? '-',
                 (int) ($c['can_login'] ?? 0) ? 'Oui' : 'Non',
                 $c['den_ste'],
                 $c['nom_complet'],
@@ -135,13 +134,13 @@ if (($pdo ?? null) instanceof PDO) {
                 <?php foreach ($collaborateurs as $c): ?>
                     <tr>
                         <td>
-                            <?php if ($c['role_nom']): ?>
-                                <span class="badge <?= in_array((int) ($c['role_id'] ?? 0), [1,2,3]) ? 'badge-info' : 'badge-secondary' ?>">
-                                    <?= e($c['role_nom']) ?>
-                                </span>
-                            <?php else: ?>
-                                <span class="badge"><?= e($c['collaborateur_type'] ?? '-') ?></span>
-                            <?php endif; ?>
+                            <?php
+                                $isInternal = (int) ($c['is_internal'] ?? 0);
+                                $roleName = $c['role_nom'] ?: '—';
+                            ?>
+                            <span class="badge <?= $isInternal ? 'badge-info' : 'badge-secondary' ?>">
+                                <?= e($roleName) ?>
+                            </span>
                         </td>
                         <td>
                             <?php if ((int) ($c['can_login'] ?? 0)): ?>
