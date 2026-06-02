@@ -19,6 +19,7 @@ $navPermissions = [
     'variables' => 'variables.view',
     'convert-word-pdf' => 'convert.use',
     'ai-assistant' => 'ai.use',
+    'roles' => 'roles.manage',
     // Configuration sub-pages use configuration.view
 ];
 
@@ -70,6 +71,7 @@ $navSections = [
     'Configuration' => [
         'icon' => 'settings',
         'items' => [
+            ['page' => 'roles', 'label' => 'Gestion des roles', 'icon' => 'admin_panel_settings'],
             ['page' => 'formes-juridiques', 'label' => 'Formes juridiques', 'icon' => 'description'],
             ['page' => 'tribunaux', 'label' => 'Tribunaux', 'icon' => 'balance'],
             ['page' => 'villes', 'label' => 'Villes', 'icon' => 'location_city'],
