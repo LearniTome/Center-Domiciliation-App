@@ -73,16 +73,11 @@ a:hover {
 
 .brand {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid var(--line);
-    margin-bottom: 6px;
-}
-.brand-row {
-    display: flex;
     gap: 8px;
     align-items: center;
+    margin-bottom: 4px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
     min-height: 34px;
 }
 
@@ -151,8 +146,8 @@ a:hover {
 .nav-toggle-all {
     display: flex;
     gap: 2px;
-    justify-content: center;
-    padding: 2px 0;
+    justify-content: flex-end;
+    padding: 0 4px 4px;
 }
 .nav-toggle-all button {
     display: inline-flex;
