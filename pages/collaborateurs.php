@@ -180,7 +180,7 @@ if (($pdo ?? null) instanceof PDO) {
                             <?php endif; ?>
                         </td>
                         <td><?= e($c['den_ste'] ?? '-') ?></td>
-                        <td><?= e($c['nom_complet']) ?></td>
+                        <td><a href="<?= e(app_url('collaborateur', ['id' => (int) $c['id']])) ?>" style="color:var(--primary);text-decoration:none;font-weight:500;"><?= e($c['nom_complet']) ?></a></td>
                         <td><?= e($c['fonction'] ?? '-') ?></td>
                         <td><?= e($c['collaborateur_ice'] ?? '-') ?></td>
                         <td><?= e($c['collaborateur_tel_mobile'] ?: $c['collaborateur_tel_fixe'] ?: $c['telephone'] ?: '-') ?></td>
