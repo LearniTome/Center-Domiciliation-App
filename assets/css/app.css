@@ -76,8 +76,6 @@ a:hover {
     gap: 8px;
     align-items: center;
     min-height: 34px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid var(--line);
 }
 .nav-toggle-all {
     display: flex;
@@ -87,7 +85,7 @@ a:hover {
 }
 .nav-toggle-all::before {
     content: '';
-    width: 60px;
+    flex: 1;
     border-bottom: 1px solid var(--line);
     align-self: center;
 }
