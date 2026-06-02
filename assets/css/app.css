@@ -81,15 +81,13 @@ a:hover {
 }
 .nav-toggle-all {
     display: flex;
-    gap: 6px;
+    gap: 4px;
     align-items: center;
-    justify-content: flex-end;
     padding-top: 4px;
 }
 .nav-toggle-all::before {
     content: '';
-    flex: 1;
-    min-width: 16px;
+    width: 60px;
     border-bottom: 1px solid var(--line);
     align-self: center;
 }
@@ -157,19 +155,6 @@ a:hover {
     left: 60px;
 }
 
-.nav-toggle-all {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    margin-left: auto;
-}
-.nav-toggle-all::before {
-    content: '';
-    flex: 1;
-    min-width: 16px;
-    border-bottom: 1px solid var(--line);
-    align-self: center;
-}
 .nav-toggle-all button {
     display: inline-flex;
     align-items: center;
