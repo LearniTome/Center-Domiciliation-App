@@ -131,6 +131,18 @@ $categoryIcons = [
 
 $totalPerms = array_sum(array_map('count', $permissionsByCategory));
 $selectedCount = count($rolePermIds);
+
+$roleUsers = [];
+if ($editingId > 0 && ($pdo ?? null) instanceof PDO) {
+    $stmt = $pdo->prepare('
+        SELECT c.id, c.nom_complet, c.email, c.statut, c.can_login, c.last_login, c.den_ste, c.fonction
+        FROM collaborateurs c
+        WHERE c.role_id = :role_id
+        ORDER BY c.nom_complet ASC
+    ');
+    $stmt->execute(['role_id' => $editingId]);
+    $roleUsers = $stmt->fetchAll();
+}
 ?>
 <section>
     <article class="card stack">
@@ -243,6 +255,59 @@ $selectedCount = count($rolePermIds);
             <?php endif; ?>
         </form>
     </article>
+
+    <?php if ($role): ?>
+    <article class="card">
+        <div class="section-header">
+            <span class="material-symbols-outlined" style="color:var(--text-secondary)">work</span>
+            <span>Collaborateurs avec le role &quot;<?= e($role['nom']) ?>&quot;</span>
+            <span class="badge badge-info"><?= count($roleUsers) ?></span>
+        </div>
+
+        <?php if (!$roleUsers): ?>
+            <p class="table-empty">Aucun collaborateur n a ce role pour le moment.</p>
+        <?php else: ?>
+            <div class="table-scroll">
+            <table data-sortable>
+                <thead>
+                <tr>
+                    <th data-col="nom">Nom complet</th>
+                    <th data-col="cabinet">Cabinet</th>
+                    <th data-col="fonction">Fonction</th>
+                    <th data-col="email">Email</th>
+                    <th data-col="statut">Statut</th>
+                    <th data-col="acces">Acces app</th>
+                    <th data-col="connexion">Derniere connexion</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($roleUsers as $u): ?>
+                    <tr>
+                        <td><strong><?= e($u['nom_complet']) ?></strong></td>
+                        <td><?= e($u['den_ste'] ?? '-') ?></td>
+                        <td><?= e($u['fonction'] ?? '-') ?></td>
+                        <td><?= e($u['email'] ?? '-') ?></td>
+                        <td><?= e($u['statut'] ?? '-') ?></td>
+                        <td>
+                            <?php if ((int) ($u['can_login'] ?? 0)): ?>
+                                <span class="badge badge-success">Connectable</span>
+                            <?php else: ?>
+                                <span class="badge">Aucun acces</span>
+                            <?php endif; ?>
+                        </td>
+                        <td><?= e($u['last_login'] ? date('d/m/Y H:i', strtotime($u['last_login'])) : 'Jamais') ?></td>
+                        <td class="table-actions">
+                            <a class="btn-icon" href="<?= e(app_url('collaborateur', ['id' => (int) $u['id']])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+            </div>
+        <?php endif; ?>
+    </article>
+    <?php endif; ?>
 </section>
 
 <?php if (!$isSystem): ?>
