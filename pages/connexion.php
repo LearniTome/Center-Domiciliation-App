@@ -43,7 +43,7 @@ if (is_post()) {
 
             set_flash('success', 'Bienvenue, ' . $user['nom_complet'] . ' !');
 
-            if ($redirect !== '' && str_starts_with((string) $redirect, 'index.php')) {
+            if ($redirect !== '' && !str_starts_with($redirect, 'http://') && !str_starts_with($redirect, 'https://')) {
                 header('Location: ' . $redirect);
                 exit;
             }
