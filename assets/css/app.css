@@ -1316,51 +1316,6 @@ tbody tr:hover:nth-child(even) {
     background: rgba(74, 108, 247, 0.08);
 }
 
-/* Role detail header */
-.role-header {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 14px 20px;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    margin-bottom: 16px;
-}
-.role-header-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(74, 108, 247, 0.1);
-    color: var(--primary);
-    flex-shrink: 0;
-}
-.role-header-icon .material-symbols-outlined {
-    font-size: 1.3rem;
-}
-.role-header-info {
-    flex: 1;
-}
-.role-header-info h2 {
-    margin: 0 0 2px 0;
-    font-size: 1.1rem;
-}
-.role-header-info .role-meta {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.78rem;
-    color: var(--text-secondary);
-}
-.role-header-actions {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-}
-
 /* Role info bar (compact inline form) */
 .role-info-bar {
     display: flex;
@@ -1402,31 +1357,7 @@ tbody tr:hover:nth-child(even) {
 }
 
 /* Collaborator count stat in header */
-.stat-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 3px 10px;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    background: var(--panel-strong);
-    color: var(--text-secondary);
-    border: 1px solid var(--line);
-}
-.stat-pill .material-symbols-outlined {
-    font-size: 0.85rem;
-    opacity: 0.7;
-}
-
 /* Tabs */
-/* Simple permission rows (non-CRUD categories inside the table) */
-.simple-row td {
-    border-top: 1px solid var(--line);
-}
-.simple-row .cat-label-cell {
-    border-right: 1px solid var(--line);
-}
 .simple-cell {
     padding: 5px 10px !important;
     text-align: left !important;

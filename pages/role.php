@@ -180,61 +180,6 @@ if ($editingId > 0 && ($pdo ?? null) instanceof PDO) {
 ?>
 <section style="max-width:1200px">
 
-    <?php if ($role): ?>
-    <div class="role-header">
-        <div class="role-header-icon">
-            <span class="material-symbols-outlined">admin_panel_settings</span>
-        </div>
-        <div class="role-header-info">
-            <h2><?= e($role['nom']) ?></h2>
-            <div class="role-meta">
-                <span class="badge <?= (int) ($role['is_internal'] ?? 0) ? 'badge-info' : 'badge-secondary' ?>">
-                    <?= (int) ($role['is_internal'] ?? 0) ? 'Interne' : 'Externe' ?>
-                </span>
-                <?php if ($isSystem): ?>
-                    <span class="badge badge-warning">Protege</span>
-                <?php endif; ?>
-                <span class="stat-pill">
-                    <span class="material-symbols-outlined">work</span>
-                    <?= count($roleUsers) ?> collaborateur(s)
-                </span>
-                <span class="stat-pill">
-                    <span class="material-symbols-outlined">checklist</span>
-                    <?= $selectedCount ?>/<?= $totalPerms ?> permissions
-                </span>
-                <?php if ($role['description']): ?>
-                    <span style="color:var(--text-muted);font-size:0.75rem">— <?= e($role['description']) ?></span>
-                <?php endif; ?>
-            </div>
-        </div>
-        <div class="role-header-actions">
-            <a class="btn btn-secondary" href="<?= e(app_url('roles')) ?>"><span class="material-symbols-outlined">arrow_back</span> Roles</a>
-        </div>
-    </div>
-    <?php else: ?>
-    <div class="role-header">
-        <div class="role-header-icon">
-            <span class="material-symbols-outlined">add</span>
-        </div>
-        <div class="role-header-info">
-            <h2>Nouveau role</h2>
-            <div class="role-meta">
-                <span style="color:var(--text-muted);font-size:0.75rem">Creer un nouveau role avec ses permissions</span>
-            </div>
-        </div>
-        <div class="role-header-actions">
-            <a class="btn btn-secondary" href="<?= e(app_url('roles')) ?>"><span class="material-symbols-outlined">arrow_back</span> Roles</a>
-        </div>
-    </div>
-    <?php endif; ?>
-
-    <?php if ($isSystem): ?>
-    <div style="background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.2);border-radius:6px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:8px;color:var(--warning);font-size:0.8rem;">
-        <span class="material-symbols-outlined" style="font-size:1rem">warning</span>
-        <span>Les roles systeme sont proteges et ne peuvent pas etre modifies.</span>
-    </div>
-    <?php endif; ?>
-
     <form method="post">
         <?= csrf_input() ?>
 
@@ -253,7 +198,15 @@ if ($editingId > 0 && ($pdo ?? null) instanceof PDO) {
                 <?= $isSystem ? 'disabled' : '' ?>>
             <span>Role interne</span>
         </label>
+        <a class="btn btn-secondary" href="<?= e(app_url('roles')) ?>" style="padding:5px 10px;font-size:0.75rem;"><span class="material-symbols-outlined" style="font-size:0.9rem">arrow_back</span> Roles</a>
     </div>
+
+    <?php if ($isSystem): ?>
+    <div style="background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.2);border-radius:6px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:8px;color:var(--warning);font-size:0.8rem;">
+        <span class="material-symbols-outlined" style="font-size:1rem">warning</span>
+        <span>Les roles systeme sont proteges et ne peuvent pas etre modifies.</span>
+    </div>
+    <?php endif; ?>
 
     <div class="tabs">
         <button type="button" class="tab active" data-tab="permissions">
