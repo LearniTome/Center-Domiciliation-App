@@ -163,6 +163,16 @@ if ($isConnected) {
 $alerteCount = count($sansAssocie) + count($sansContrat) + count($expirants) + count($sansDocuments) + count($cinExpire);
 $hasAlerts = $alerteCount > 0;
 
+// --- Activite collaborateurs (Super Admin only) ---
+$collabActivity = [];
+$isSuperAdmin = is_logged_in() && (int) (current_user()['role_id'] ?? 0) === 1;
+if ($isConnected && $isSuperAdmin) {
+    $collabActivity = $pdo->query("
+        SELECT * FROM collaborateur_log
+        ORDER BY created_at DESC LIMIT 10
+    ")->fetchAll();
+}
+
 // --- Fil d'activite ---
 $activiteRecente = [];
 if ($isConnected) {
@@ -233,7 +243,7 @@ if ($isConnected) {
         <small style="font-size:0.65rem;color:var(--text-secondary)">Principal: <?= e($collabMainType) ?></small>
         <?php endif; ?>
     </article>
-    <article class="stat" style="grid-column:span 2">
+    <article class="stat">
         <span>Dossiers complets</span>
         <strong><?= $dossiersComplets ?>/<?= $totalSocietes ?></strong>
         <div class="progress-bar">
@@ -247,7 +257,7 @@ if ($isConnected) {
 
 <section class="quick-actions extra">
     <a class="card quick-action" href="<?= e(app_url('creation')) ?>">
-        <span class="mdi mdi-plus-circle quick-icon" style="color:var(--success)"></span>
+        <span class="material-symbols-outlined quick-icon" style="color:var(--success)">add_circle</span>
         <div>
             <strong>Creer un dossier</strong>
             <span class="help-text">Nouvelle societe + contrat</span>
@@ -255,7 +265,7 @@ if ($isConnected) {
         </div>
     </a>
     <a class="card quick-action" href="<?= e(app_url('collaborateur')) ?>">
-        <span class="mdi mdi-account-plus quick-icon" style="color:var(--primary)"></span>
+        <span class="material-symbols-outlined quick-icon" style="color:var(--primary)">person_add</span>
         <div>
             <strong>Nouveau collaborateur</strong>
             <span class="help-text">Ajouter un expert, coursier...</span>
@@ -263,7 +273,7 @@ if ($isConnected) {
         </div>
     </a>
     <a class="card quick-action" href="<?= e(app_url('template_edit', ['path' => ''])) ?>">
-        <span class="mdi mdi-file-document-edit quick-icon" style="color:var(--info)"></span>
+        <span class="material-symbols-outlined quick-icon" style="color:var(--info)">edit_note</span>
         <div>
             <strong>Editeur de template</strong>
             <span class="help-text">Modifier les documents Word</span>
@@ -271,7 +281,7 @@ if ($isConnected) {
         </div>
     </a>
     <a class="card quick-action" href="<?= e(app_url('configuration')) ?>">
-        <span class="mdi mdi-cog quick-icon" style="color:var(--warning)"></span>
+        <span class="material-symbols-outlined quick-icon" style="color:var(--warning)">settings</span>
         <div>
             <strong>Configuration</strong>
             <span class="help-text">Tables de reference</span>
@@ -280,12 +290,13 @@ if ($isConnected) {
     </a>
 </section>
 
-<?php if ($hasAlerts): ?>
-<section>
+<?php if ($hasAlerts || $echeances): ?>
+<section class="grid two">
+    <?php if ($hasAlerts): ?>
     <article class="card">
         <div class="section-header">
             <h2>
-                <span class="mdi mdi-alert" style="color:var(--warning);margin-right:6px"></span>Alertes
+                <span class="material-symbols-outlined" style="color:var(--warning)">warning</span> Alertes
                 <span class="alert-badge"><?= $alerteCount ?></span>
             </h2>
         </div>
@@ -295,7 +306,7 @@ if ($isConnected) {
                     <span class="alert-label">Societes sans associe</span>
                     <?php foreach ($sansAssocie as $s): ?>
                         <a class="alert-item" href="<?= e(app_url('societe', ['id' => (int) $s['id']])) ?>">
-                            <span class="mdi mdi-account-remove" style="color:var(--danger)"></span>
+                            <span class="material-symbols-outlined" style="color:var(--danger)">person_remove</span>
                             <?= e($s['societe_raison_sociale']) ?>
                         </a>
                     <?php endforeach; ?>
@@ -306,7 +317,7 @@ if ($isConnected) {
                     <span class="alert-label">Societes sans contrat</span>
                     <?php foreach ($sansContrat as $s): ?>
                         <a class="alert-item" href="<?= e(app_url('societe', ['id' => (int) $s['id']])) ?>">
-                            <span class="mdi mdi-file-remove" style="color:var(--warning)"></span>
+                            <span class="material-symbols-outlined" style="color:var(--warning)">note_remove</span>
                             <?= e($s['societe_raison_sociale']) ?>
                         </a>
                     <?php endforeach; ?>
@@ -317,7 +328,7 @@ if ($isConnected) {
                     <span class="alert-label">Dossiers complets sans documents generes</span>
                     <?php foreach ($sansDocuments as $s): ?>
                         <a class="alert-item" href="<?= e(app_url('societe', ['id' => (int) $s['id']])) ?>">
-                            <span class="mdi mdi-file-document-remove-outline" style="color:var(--info)"></span>
+                            <span class="material-symbols-outlined" style="color:var(--info)">remove_selection</span>
                             <?= e($s['societe_raison_sociale']) ?>
                         </a>
                     <?php endforeach; ?>
@@ -328,7 +339,7 @@ if ($isConnected) {
                     <span class="alert-label">CIN associe expiree</span>
                     <?php foreach ($cinExpire as $a): ?>
                         <a class="alert-item" href="<?= e(app_url('societe', ['id' => (int) $a['societe_id']])) ?>">
-                            <span class="mdi mdi-card-account-details-outline" style="color:var(--danger)"></span>
+                            <span class="material-symbols-outlined" style="color:var(--danger)">badge</span>
                             <?= e($a['associe_nom_complet']) ?> (<?= e($a['societe_raison_sociale']) ?>)
                         </a>
                     <?php endforeach; ?>
@@ -336,10 +347,10 @@ if ($isConnected) {
             <?php endif; ?>
             <?php if ($expirants): ?>
                 <div class="alert-group">
-                    <span class="alert-label">Contrats expirant dans < 30 jours</span>
+                    <span class="alert-label">Contrats expirant dans &lt; 30 jours</span>
                     <?php foreach ($expirants as $c): ?>
                         <a class="alert-item" href="<?= e(app_url('contrats')) ?>">
-                            <span class="mdi mdi-clock-alert" style="color:var(--warning)"></span>
+                            <span class="material-symbols-outlined" style="color:var(--warning)">clock</span>
                             <?= e($c['societe_raison_sociale']) ?> — <?= e($c['contrat_type']) ?> (<?= e(format_date($c['contrat_date_fin'] ?? null)) ?>)
                         </a>
                     <?php endforeach; ?>
@@ -347,24 +358,21 @@ if ($isConnected) {
             <?php endif; ?>
         </div>
     </article>
-</section>
-<?php endif; ?>
-
-<?php if ($echeances): ?>
-<section>
+    <?php endif; ?>
+    <?php if ($echeances): ?>
     <article class="card">
         <div class="section-header">
-            <h2><span class="mdi mdi-calendar-clock" style="margin-right:6px;color:var(--warning)"></span>Echeances (90 jours)</h2>
-            <a class="btn btn-info" href="<?= e(app_url('contrats')) ?>"><span class="mdi mdi-eye"></span> Voir tout</a>
+            <h2><span class="material-symbols-outlined" style="color:var(--warning)">calendar_clock</span> Echeances (90 jours)</h2>
+            <a class="btn btn-info" href="<?= e(app_url('contrats')) ?>"><span class="material-symbols-outlined">visibility</span> Voir tout</a>
         </div>
         <div class="timeline-list">
             <?php foreach ($echeances as $e):
                 $j = (int) $e['jours_restants'];
                 $class = $j <= 15 ? 'urgent' : ($j <= 30 ? 'warning' : 'normal');
-                $icon = $j <= 15 ? 'mdi-alert-circle' : ($j <= 30 ? 'mdi-clock-alert' : 'mdi-calendar-clock');
+                $icon = $j <= 15 ? 'error' : ($j <= 30 ? 'clock' : 'calendar_clock');
             ?>
                 <div class="timeline-item <?= $class ?>">
-                    <span class="mdi <?= $icon ?>" style="color:<?= $j <= 15 ? 'var(--danger)' : ($j <= 30 ? 'var(--warning)' : 'var(--success)') ?>"></span>
+                    <span class="material-symbols-outlined" style="color:<?= $j <= 15 ? 'var(--danger)' : ($j <= 30 ? 'var(--warning)' : 'var(--success)') ?>"><?= $icon ?></span>
                     <div class="timeline-content">
                         <strong><?= e($e['societe_raison_sociale']) ?></strong>
                         <span><?= e($e['contrat_type']) ?></span>
@@ -374,15 +382,15 @@ if ($isConnected) {
             <?php endforeach; ?>
         </div>
     </article>
+    <?php endif; ?>
 </section>
 <?php endif; ?>
 
-<!-- Activity feed -->
-<section>
+<section class="grid two">
     <article class="card">
         <div class="section-header">
             <h2>Activite recente</h2>
-            <a class="btn btn-info" href="<?= e(app_url('societes')) ?>"><span class="mdi mdi-eye"></span> Voir tout</a>
+            <a class="btn btn-info" href="<?= e(app_url('societes')) ?>"><span class="material-symbols-outlined">visibility</span> Voir tout</a>
         </div>
         <?php if (!$activiteRecente): ?>
             <p class="table-empty">Aucune activite recente.</p>
@@ -390,13 +398,13 @@ if ($isConnected) {
             <div class="activity-feed">
                 <?php foreach ($activiteRecente as $a):
                     $type = $a['type'];
-                    $icon = $type === 'societe' ? 'mdi-domain' : ($type === 'contrat' ? 'mdi-file-sign' : 'mdi-account');
+                    $icon = $type === 'societe' ? 'business' : ($type === 'contrat' ? 'signature' : 'person');
                     $label = $type === 'societe' ? 'Societe creee' : ($type === 'contrat' ? 'Contrat ajoute' : 'Associe ajoute');
                     $url = app_url('societe', ['id' => (int) $a['ref_id']]);
                     $dt = date('d/m/Y H:i', strtotime($a['created_at']));
                 ?>
                     <a class="activity-item" href="<?= e($url) ?>">
-                        <span class="activity-icon <?= $type ?>"><span class="mdi <?= $icon ?>"></span></span>
+                        <span class="activity-icon <?= $type ?>"><span class="material-symbols-outlined"><?= $icon ?></span></span>
                         <span class="activity-text"><strong><?= e($label) ?></strong> <?= e($a['libelle'] ?? '-') ?></span>
                         <span class="activity-meta"><?= $dt ?><br><span class="meta-ago"><?= time_ago($a['created_at']) ?></span></span>
                     </a>
@@ -404,14 +412,11 @@ if ($isConnected) {
             </div>
         <?php endif; ?>
     </article>
-</section>
 
-<!-- Documents generes -->
-<section>
     <article class="card">
         <div class="section-header">
-            <h2><span class="mdi mdi-file-document-check" style="margin-right:6px;color:var(--success)"></span>Derniers documents generes</h2>
-            <a class="btn btn-info" href="<?= e(app_url('documents')) ?>"><span class="mdi mdi-eye"></span> Voir tout</a>
+            <h2><span class="material-symbols-outlined" style="color:var(--success)">fact_check</span> Derniers documents generes</h2>
+            <a class="btn btn-info" href="<?= e(app_url('documents')) ?>"><span class="material-symbols-outlined">visibility</span> Voir tout</a>
         </div>
         <?php if (!$documentsRecents): ?>
             <p class="table-empty">Aucun document genere.</p>
@@ -423,7 +428,7 @@ if ($isConnected) {
                     $dvalide = (int) ($d['valide'] ?? 0);
                 ?>
                     <a class="activity-item" href="<?= e(app_url('societe', ['id' => (int) $d['societe_id']])) ?>">
-                        <span class="activity-icon document"><span class="mdi mdi-file-document-outline"></span></span>
+                        <span class="activity-icon document"><span class="material-symbols-outlined">description</span></span>
                         <span class="activity-text">
                             <strong><?= e($d['doc_type']) ?></strong> <?= e($d['societe_raison_sociale']) ?>
                             <?php if ($dsize): ?><span class="doc-size"><?= $dsize ?></span><?php endif; ?>
@@ -437,23 +442,49 @@ if ($isConnected) {
     </article>
 </section>
 
-<!-- Validation documents -->
-<?php if ($isConnected): ?>
-<section>
+<section class="grid two">
+    <!-- Validation documents -->
+    <?php if ($isSuperAdmin && $collabActivity): ?>
     <article class="card">
         <div class="section-header">
-            <h2><span class="mdi mdi-check-circle" style="margin-right:6px;color:var(--primary)"></span>Validation des documents</h2>
-            <a class="btn btn-info" href="<?= e(app_url('documents')) ?>"><span class="mdi mdi-eye"></span> Gerer</a>
+            <h2><span class="material-symbols-outlined" style="color:var(--primary)">work_history</span> Activite collaborateurs</h2>
         </div>
-        <div class="stats small" style="grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1rem">
-            <article class="stat">
+        <div class="activity-feed">
+            <?php foreach ($collabActivity as $ca):
+                $caIcon = $ca['action'] === 'ajout' ? 'person_add' : 'person_remove';
+                $caColor = $ca['action'] === 'ajout' ? 'var(--success)' : 'var(--danger)';
+                $caLabel = $ca['action'] === 'ajout' ? 'Ajoute' : 'Supprime';
+                $caDt = date('d/m/Y H:i', strtotime($ca['created_at']));
+                $caHref = $ca['collaborateur_id'] ? app_url('collaborateur', ['id' => (int) $ca['collaborateur_id']]) : '#';
+            ?>
+                <a class="activity-item" href="<?= e($caHref) ?>">
+                    <span class="activity-icon" style="color:<?= $caColor ?>"><span class="material-symbols-outlined"><?= $caIcon ?></span></span>
+                    <span class="activity-text">
+                        <strong><?= e($ca['collaborateur_nom']) ?></strong> <?= $caLabel ?>
+                        <?php if ($ca['done_by']): ?><span class="help-text">par <?= e($ca['done_by']) ?></span><?php endif; ?>
+                    </span>
+                    <span class="activity-meta"><?= $caDt ?></span>
+                </a>
+            <?php endforeach; ?>
+        </div>
+    </article>
+    <?php endif; ?>
+
+    <?php if ($isConnected): ?>
+    <article class="card">
+        <div class="section-header">
+            <h2><span class="material-symbols-outlined" style="color:var(--primary)">check_circle</span> Validation des documents</h2>
+            <a class="btn btn-info" href="<?= e(app_url('documents')) ?>"><span class="material-symbols-outlined">visibility</span> Gerer</a>
+        </div>
+        <div class="validation-stats">
+            <div class="validation-stat">
                 <span>Valides</span>
                 <strong style="color:var(--success)"><?= $docsValides ?></strong>
-            </article>
-            <article class="stat">
+            </div>
+            <div class="validation-stat">
                 <span>En attente</span>
                 <strong style="color:var(--warning)"><?= $docsEnAttente ?></strong>
-            </article>
+            </div>
         </div>
         <?php if ($docsAVerifier): ?>
         <div class="activity-feed">
@@ -461,7 +492,7 @@ if ($isConnected) {
                 $dvdt = date('d/m/Y H:i', strtotime($dv['created_at']));
             ?>
                 <a class="activity-item" href="<?= e(app_url('societe', ['id' => (int) $dv['societe_id']])) ?>">
-                    <span class="activity-icon document"><span class="mdi mdi-file-document-outline"></span></span>
+                    <span class="activity-icon document"><span class="material-symbols-outlined">description</span></span>
                     <span class="activity-text"><strong><?= e($dv['doc_type']) ?></strong> <?= e($dv['societe_raison_sociale']) ?></span>
                     <span class="activity-meta"><?= $dvdt ?></span>
                 </a>
@@ -471,12 +502,9 @@ if ($isConnected) {
         <p class="table-empty">Tous les documents sont valides.</p>
         <?php endif; ?>
     </article>
-</section>
-<?php endif; ?>
+    <?php endif; ?>
 
-<!-- Repartition -->
-<section class="grid two">
-    <article class="card">
+    <article class="card stack">
         <div class="section-header">
             <h2>Formes juridiques</h2>
         </div>
@@ -498,10 +526,8 @@ if ($isConnected) {
                 </tbody>
             </table>
         <?php endif; ?>
-    </article>
 
-    <article class="card">
-        <div class="section-header">
+        <div class="section-header" style="margin-top:1.25rem">
             <h2>Types de contrat</h2>
         </div>
         <?php if (!$repartitionContrats): ?>

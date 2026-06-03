@@ -5,7 +5,6 @@ declare(strict_types=1);
 <section class="card stack">
     <div class="section-header">
         <div>
-            <h2>Installation locale</h2>
             <p class="help-text">Resume rapide pour lancer l'application sous XAMPP.</p>
         </div>
     </div>

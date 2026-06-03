@@ -9,36 +9,61 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
     $action = $_POST['action'] ?? 'delete';
 
     if ($action === 'delete') {
+        $delStmt = $pdo->prepare('SELECT nom_complet, collaborateur_email FROM collaborateurs WHERE id = :id');
+        $delStmt->execute(['id' => (int) $_POST['id']]);
+        $delRecord = $delStmt->fetch();
         $stmt = $pdo->prepare('DELETE FROM collaborateurs WHERE id = :id');
         $stmt->execute(['id' => (int) $_POST['id']]);
+        if ($delRecord) {
+            $who = '';
+            $cu = current_user();
+            if ($cu) $who = $cu['nom_complet'] ?? '';
+            $logStmt = $pdo->prepare('INSERT INTO collaborateur_log (action, collaborateur_nom, collaborateur_email, collaborateur_id, done_by) VALUES (\'suppression\', :nom, :email, :cid, :done_by)');
+            $logStmt->execute(['nom' => $delRecord['nom_complet'], 'email' => $delRecord['collaborateur_email'] ?? '', 'cid' => (int) $_POST['id'], 'done_by' => $who]);
+        }
         set_flash('success', 'Collaborateur supprime avec succes.');
         redirect_to('collaborateurs');
     }
 }
 
+$collaborateurs = [];
 if (($pdo ?? null) instanceof PDO) {
     if ($query !== '') {
         $stmt = $pdo->prepare("
-            SELECT *
-            FROM collaborateurs
-            WHERE nom_complet LIKE :term
-               OR collaborateur_type LIKE :term
-               OR den_ste LIKE :term
-               OR collaborateur_ice LIKE :term
-               OR fonction LIKE :term
-            ORDER BY id DESC
+            SELECT c.*, r.nom AS role_nom, r.is_internal
+            FROM collaborateurs c
+            LEFT JOIN roles r ON r.id = c.role_id
+            WHERE c.nom_complet LIKE :term
+               OR c.den_ste LIKE :term
+               OR c.collaborateur_ice LIKE :term
+               OR c.fonction LIKE :term
+               OR r.nom LIKE :term
+            ORDER BY c.id DESC
         ");
         $stmt->execute(['term' => like_term($query)]);
         $collaborateurs = $stmt->fetchAll();
     } else {
-        $collaborateurs = fetch_all_records($pdo, 'collaborateurs');
+        $stmt = $pdo->query('
+            SELECT c.*, r.nom AS role_nom, r.is_internal
+            FROM collaborateurs c
+            LEFT JOIN roles r ON r.id = c.role_id
+            ORDER BY c.id DESC
+        ');
+        $collaborateurs = $stmt->fetchAll();
     }
 
     if (($_GET['export'] ?? '') === 'csv') {
         $rows = array_map(static function (array $c): array {
             return [
                 $c['id'],
-                $c['collaborateur_type'],
+                $c['role_nom'] ?? '-',
+                (static function () use ($c): string {
+    $t = $c['collaborateur_type'] ?? '';
+    if (in_array($t, ['interne', 'externe-pm', 'externe-pp'], true)) return $t;
+    $ds = $c['den_ste'] ?? '';
+    return ((int) ($c['can_login'] ?? 0)) ? 'interne' : (($ds && $ds !== 'NULL') ? 'externe-pm' : 'externe-pp');
+})(),
+                (int) ($c['can_login'] ?? 0) ? 'Oui' : 'Non',
                 $c['den_ste'],
                 $c['nom_complet'],
                 $c['fonction'],
@@ -57,7 +82,9 @@ if (($pdo ?? null) instanceof PDO) {
 
         export_csv('collaborateurs.csv', [
             'ID',
+            'Role',
             'Type',
+            'Acces app',
             'Cabinet',
             'Nom complet',
             'Fonction',
@@ -73,21 +100,16 @@ if (($pdo ?? null) instanceof PDO) {
             'Statut',
         ], $rows);
     }
-} else {
-    $collaborateurs = [];
 }
 ?>
 <section>
     <article class="card">
         <div class="section-header">
-            <div>
-                <h2>Collaborateurs</h2>
-                <p class="help-text"><?= count($collaborateurs) ?> enregistrement(s)</p>
-            </div>
+            <span class="page-count"><?= count($collaborateurs) ?> enregistrement(s)</span>
             <div class="table-actions">
-                <button class="btn btn-secondary" type="button" data-col-toggle-btn><span class="mdi mdi-table-column"></span> Colonnes <span class="col-toggle-count" data-col-count>0/0</span></button>
-                <a class="btn btn-next" href="<?= e(app_url('collaborateur')) ?>"><span class="mdi mdi-account-plus"></span> Nouveau collaborateur</a>
-                <a class="btn btn-info" href="<?= e(app_url('collaborateurs', ['export' => 'csv', 'q' => $query])) ?>"><span class="mdi mdi-download"></span> Exporter CSV</a>
+                <button class="btn btn-secondary" type="button" data-col-toggle-btn><span class="material-symbols-outlined">view_column</span> Colonnes <span class="col-toggle-count" data-col-count>0/0</span></button>
+                <a class="btn btn-next" href="<?= e(app_url('collaborateur')) ?>"><span class="material-symbols-outlined">person_add</span> Nouveau collaborateur</a>
+                <a class="btn btn-info" href="<?= e(app_url('collaborateurs', ['export' => 'csv', 'q' => $query])) ?>"><span class="material-symbols-outlined">download</span> Exporter CSV</a>
             </div>
         </div>
         <form method="get" class="stack search-bar">
@@ -96,12 +118,12 @@ if (($pdo ?? null) instanceof PDO) {
                 <input
                     type="search"
                     name="q"
-                    placeholder="Rechercher par nom, type, ICE ou cabinet"
+                    placeholder="Rechercher par nom, role, ICE ou cabinet"
                     value="<?= e($query) ?>"
                 >
-                <button type="submit"><span class="mdi mdi-magnify"></span> Rechercher</button>
+                <button type="submit"><span class="material-symbols-outlined">search</span> Rechercher</button>
                 <?php if ($query !== ''): ?>
-                    <a class="btn btn-cancel" href="<?= e(app_url('collaborateurs')) ?>"><span class="mdi mdi-close"></span> Effacer</a>
+                    <a class="btn btn-cancel" href="<?= e(app_url('collaborateurs')) ?>"><span class="material-symbols-outlined">close</span> Effacer</a>
                 <?php endif; ?>
             </div>
         </form>
@@ -109,10 +131,12 @@ if (($pdo ?? null) instanceof PDO) {
             <p class="table-empty">Aucun collaborateur pour le moment.</p>
         <?php else: ?>
             <div class="table-scroll">
-            <table data-col-toggle>
+            <table data-col-toggle data-sortable>
                 <thead>
                 <tr>
+                    <th data-col="role">Role</th>
                     <th data-col="type">Type</th>
+                    <th data-col="acces">Acces app</th>
                     <th data-col="cabinet">Cabinet</th>
                     <th data-col="nom-complet">Nom complet</th>
                     <th data-col="fonction">Fonction</th>
@@ -120,27 +144,56 @@ if (($pdo ?? null) instanceof PDO) {
                     <th data-col="telephone">Telephone</th>
                     <th data-col="statut">Statut</th>
                     <th data-col="creation">Creation</th>
+                    <th data-col="derniere-connexion">Derniere connexion</th>
                     <th>Actions</th>
                 </tr>
                 </thead>
                 <tbody>
                 <?php foreach ($collaborateurs as $c): ?>
                     <tr>
-                        <td><?= e($c['collaborateur_type'] ?? '-') ?></td>
+                        <td>
+                            <?php
+                                $isInternal = (int) ($c['is_internal'] ?? 0);
+                                $roleName = $c['role_nom'] ?: '—';
+                            ?>
+                            <span class="badge <?= $isInternal ? 'badge-info' : 'badge-secondary' ?>">
+                                <?= e($roleName) ?>
+                            </span>
+                        </td>
+                        <td>
+                            <?php
+                                $ct = $c['collaborateur_type'] ?? '';
+                                if (!in_array($ct, ['interne', 'externe-pm', 'externe-pp'], true)) {
+                                    $denSte = $c['den_ste'] ?? '';
+                                    $ct = ((int) ($c['can_login'] ?? 0)) ? 'interne' : (($denSte && $denSte !== 'NULL') ? 'externe-pm' : 'externe-pp');
+                                }
+                                $typeLabels = ['interne' => 'Interne', 'externe-pm' => 'PM', 'externe-pp' => 'PP'];
+                                $typeClass = ['interne' => 'badge-info', 'externe-pm' => 'badge-secondary', 'externe-pp' => 'badge-warning'];
+                            ?>
+                            <span class="badge <?= $typeClass[$ct] ?? 'badge' ?>"><?= $typeLabels[$ct] ?? '-' ?></span>
+                        </td>
+                        <td>
+                            <?php if ((int) ($c['can_login'] ?? 0)): ?>
+                                <span class="badge badge-success" title="Derniere connexion: <?= e(format_date($c['last_login'] ?? null)) ?>">Connectable</span>
+                            <?php else: ?>
+                                <span class="badge">Aucun acces</span>
+                            <?php endif; ?>
+                        </td>
                         <td><?= e($c['den_ste'] ?? '-') ?></td>
-                        <td><?= e($c['nom_complet']) ?></td>
+                        <td><a href="<?= e(app_url('collaborateur', ['id' => (int) $c['id']])) ?>" style="color:var(--primary);text-decoration:none;font-weight:500;"><?= e($c['nom_complet']) ?></a></td>
                         <td><?= e($c['fonction'] ?? '-') ?></td>
                         <td><?= e($c['collaborateur_ice'] ?? '-') ?></td>
                         <td><?= e($c['collaborateur_tel_mobile'] ?: $c['collaborateur_tel_fixe'] ?: $c['telephone'] ?: '-') ?></td>
                         <td><?= e($c['statut']) ?></td>
                         <td><?= e(date('d/m/Y', strtotime((string) $c['created_at']))) ?></td>
+                        <td><?= e($c['last_login'] ? date('d/m/Y H:i', strtotime($c['last_login'])) : '-') ?></td>
                         <td class="table-actions">
-                            <a class="btn-icon" href="<?= e(app_url('collaborateur', ['id' => (int) $c['id']])) ?>" title="Modifier"><span class="mdi mdi-pencil"></span></a>
+                            <a class="btn-icon" href="<?= e(app_url('collaborateur', ['id' => (int) $c['id']])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
                             <form method="post">
                                 <?= csrf_input() ?>
                                 <input type="hidden" name="action" value="delete">
                                 <input type="hidden" name="id" value="<?= e((string) $c['id']) ?>">
-                                <button class="btn-icon danger" type="submit" data-confirm="Supprimer ce collaborateur ?" title="Supprimer"><span class="mdi mdi-delete"></span></button>
+                                <button class="btn-icon danger" type="submit" data-confirm="Supprimer ce collaborateur ?" title="Supprimer"><span class="material-symbols-outlined">delete</span></button>
                             </form>
                         </td>
                     </tr>

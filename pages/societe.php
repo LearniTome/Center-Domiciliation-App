@@ -6,8 +6,8 @@ $societeId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 $societe = $societeId > 0 ? fetch_record($pdo ?? null, 'societes', $societeId) : null;
 $allTribunaux = fetch_tribunaux_all($pdo ?? null);
 $tribunalTypes = fetch_tribunaux_types($pdo ?? null);
-$currentTribunalType = '';
-if ($societe && $societe['societe_tribunal']) {
+$currentTribunalType = $societe['societe_tribunal_type'] ?? '';
+if (!$currentTribunalType && $societe && $societe['societe_tribunal']) {
     foreach ($allTribunaux as $t) {
         if ($t['tribunal'] === $societe['societe_tribunal'] && ($t['tribunal_type'] ?? '')) {
             $currentTribunalType = $t['tribunal_type'];
@@ -130,7 +130,43 @@ if (is_post() && isset($_POST['delete_submit']) && ($pdo ?? null) instanceof PDO
     }
 }
 
-if (is_post() && !isset($_POST['validate_submit']) && !isset($_POST['delete_submit']) && ($pdo ?? null) instanceof PDO) {
+if (is_post() && isset($_POST['restore_submit']) && ($pdo ?? null) instanceof PDO) {
+    verify_csrf();
+    $selected = $_POST['selected_files'] ?? [];
+    if (count($selected) === 0) {
+        set_flash('error', 'Selectionnez au moins un document.');
+        redirect_to('societe', ['id' => $societeId]);
+    }
+    $placeholders = implode(',', array_fill(0, count($selected), '?'));
+    $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf FROM documents_generes WHERE valide = 1 AND id IN ($placeholders)");
+    $stmt->execute(array_map('intval', $selected));
+    $docs = $stmt->fetchAll();
+    $updateStmt = $pdo->prepare("UPDATE documents_generes SET valide = 0, fichier_docx = :fichier_docx, fichier_pdf = :fichier_pdf WHERE id = :id");
+    foreach ($docs as $doc) {
+        $oldDocx = $doc['fichier_docx'];
+        $newDocx = preg_replace('/\.docx$/i', '_Brouillon.docx', $oldDocx);
+        if ($oldDocx !== $newDocx && file_exists($oldDocx)) {
+            rename($oldDocx, $newDocx);
+        }
+        $newPdf = $doc['fichier_pdf'];
+        if ($newPdf !== null) {
+            $renamedPdf = preg_replace('/\.pdf$/i', '_Brouillon.pdf', $newPdf);
+            if ($newPdf !== $renamedPdf && file_exists($newPdf)) {
+                rename($newPdf, $renamedPdf);
+                $newPdf = $renamedPdf;
+            }
+        }
+        $updateStmt->execute([
+            'fichier_docx' => $newDocx,
+            'fichier_pdf' => $newPdf,
+            'id' => $doc['id'],
+        ]);
+    }
+    set_flash('success', count($selected) . ' document(s) restaure(s) en brouillon.');
+    redirect_to('societe', ['id' => $societeId]);
+}
+
+if (is_post() && !isset($_POST['validate_submit']) && !isset($_POST['delete_submit']) && !isset($_POST['restore_submit']) && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
     $activitesStatuts = $_POST['societe_activites_statuts'] ?? [];
     $allStatuts = is_array($activitesStatuts) ? array_map('trim', $activitesStatuts) : [];
@@ -160,7 +196,8 @@ if (is_post() && !isset($_POST['validate_submit']) && !isset($_POST['delete_subm
             societe_telephone = :societe_telephone,
             societe_type_generation = :societe_type_generation,
             societe_procedure_creation = :societe_procedure_creation,
-            societe_mode_depot = :societe_mode_depot
+            societe_mode_depot = :societe_mode_depot,
+            societe_tribunal_type = :societe_tribunal_type
         WHERE id = :id
     ');
     $stmt->execute([
@@ -185,6 +222,7 @@ if (is_post() && !isset($_POST['validate_submit']) && !isset($_POST['delete_subm
         'societe_type_generation' => field_value($_POST, 'societe_type_generation'),
         'societe_procedure_creation' => field_value($_POST, 'societe_procedure_creation'),
         'societe_mode_depot' => field_value($_POST, 'societe_mode_depot'),
+        'societe_tribunal_type' => field_value($_POST, 'tribunal_type'),
         'id' => $societeId,
     ]);
     set_flash('success', 'Societe mise a jour.');
@@ -222,21 +260,34 @@ $collabCount = ($pdo ?? null) instanceof PDO
     : 0;
 
 $documents = fetch_all_documents($pdo ?? null, $societeId);
+
+$uploadedDocsList = ($pdo ?? null) instanceof PDO
+    ? (function (PDO $pdo, int $societeId): array {
+        $stmt = $pdo->prepare('SELECT id, doc_type, associe_idx, filename_original, filename_stored, filepath, taille_ko, uploaded_at FROM uploaded_docs WHERE societe_id = :societe_id ORDER BY uploaded_at DESC');
+        $stmt->execute(['societe_id' => $societeId]);
+        return $stmt->fetchAll();
+    })($pdo, $societeId)
+    : [];
+
+$docTypeLabels = [
+    'certificat_negatif' => 'Certificat Negatif',
+    'cin_gerant' => 'CIN Gerant',
+];
 ?>
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
-    <h2 style="margin:0"><?= e($societe['societe_raison_sociale']) ?></h2>
+<div class="section-title-row">
+    <h2><?= e($societe['societe_raison_sociale']) ?></h2>
     <div class="table-actions">
         <?php if ($editing): ?>
-            <a class="btn btn-secondary" href="<?= e(app_url('societe', ['id' => $societeId])) ?>"><span class="mdi mdi-close"></span> Annuler</a>
+            <a class="btn btn-secondary" href="<?= e(app_url('societe', ['id' => $societeId])) ?>"><span class="material-symbols-outlined">close</span> Annuler</a>
         <?php else: ?>
-            <a class="btn btn-secondary" href="<?= e(app_url('societe', ['id' => $societeId, 'edit' => '1'])) ?>"><span class="mdi mdi-pencil"></span> Modifier</a>
-            <a class="btn btn-info" href="<?= e(app_url('generation', ['societe_id' => $societeId])) ?>"><span class="mdi mdi-file-sync"></span> Generer documents</a>
+            <a class="btn btn-secondary" href="<?= e(app_url('societe', ['id' => $societeId, 'edit' => '1'])) ?>"><span class="material-symbols-outlined">edit</span> Modifier</a>
+            <a class="btn btn-info" href="<?= e(app_url('generation', ['societe_id' => $societeId])) ?>"><span class="material-symbols-outlined">sync</span> <?= count($documents) > 0 ? 'Regenerer documents' : 'Generer documents' ?></a>
         <?php endif; ?>
-        <a class="btn btn-secondary" href="<?= e(app_url('societes')) ?>"><span class="mdi mdi-arrow-left"></span> Retour</a>
+        <a class="btn btn-secondary" href="<?= e(app_url('societes')) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
     </div>
 </div>
 
-<section class="stats small" style="margin-bottom:1rem">
+<section class="stats small stats-bottom-margin">
     <article class="stat">
         <span>Societe</span>
         <strong><?= e($societe['societe_forme_juridique'] ?: '-') ?></strong>
@@ -308,7 +359,7 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
                 </label>
                 <label class="field">
                     <span>Forme juridique</span>
-                    <select name="societe_forme_juridique" style="flex:1">
+                    <select name="societe_forme_juridique" class="select-flex">
                         <option value="">Selectionner</option>
                         <?php foreach ($formesJuridiquesOptions as $option): ?>
                             <option value="<?= e($option) ?>" <?= (string) $societe['societe_forme_juridique'] === $option ? 'selected' : '' ?>><?= e($option) ?></option>
@@ -338,18 +389,18 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
                 <h3 class="section-title">Activite (Certificat negatif)</h3>
                 <label class="field full">
                     <span>Activite pour le certificat negatif</span>
-                    <div style="display:flex;gap:8px;align-items:center">
-                        <select name="societe_activites_ompic" style="flex:1" data-ompic-select>
+                    <div class="flex-row">
+                        <select name="societe_activites_ompic" class="select-flex" data-ompic-select>
                             <option value="">Selectionner</option>
                             <?php foreach ($ompicOptions as $row): ?>
                                 <option value="<?= e($row['code']) ?>" <?= $societeActivitesOmpic === $row['code'] ? 'selected' : '' ?>><?= e($row['code'] . ' - ' . $row['libelle']) ?></option>
                             <?php endforeach; ?>
                         </select>
-                        <button type="button" class="btn btn-info" data-add-activite-cn style="white-space:nowrap"><span class="mdi mdi-plus-circle"></span> Nouvelle activite</button>
+                        <button type="button" class="btn btn-info btn-nowrap" data-add-activite-cn><span class="material-symbols-outlined">add_circle</span> Nouvelle activite</button>
                     </div>
                 </label>
 
-                <div data-statuts-section style="grid-column:1/-1">
+                <div data-statuts-section class="grid-full">
                 <h3 class="section-title">Activites (Statuts)</h3>
                 <label class="field full">
                     <span>Activites pour les statuts</span>
@@ -357,8 +408,8 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
                         <div data-activites-container>
                             <?php if (!empty($societeActivitesStatuts)): ?>
                                 <?php foreach ($societeActivitesStatuts as $act): ?>
-                                    <div data-activite-item style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
-                                        <select name="societe_activites_statuts[]" style="flex:1">
+                                    <div data-activite-item class="flex-row flex-row-mb">
+                                        <select name="societe_activites_statuts[]" class="select-flex">
                                             <option value="">Selectionner</option>
                                             <?php foreach ($activitesOptions as $opt): ?>
                                                 <option value="<?= e($opt) ?>" <?= $act === $opt ? 'selected' : '' ?>><?= e($opt) ?></option>
@@ -367,35 +418,35 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
                                                 <option value="<?= e($act) ?>" selected><?= e($act) ?></option>
                                             <?php endif; ?>
                                         </select>
-                                        <button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="mdi mdi-close"></span></button>
+                                        <button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="material-symbols-outlined">close</span></button>
                                     </div>
                                 <?php endforeach; ?>
                             <?php else: ?>
-                                <div data-activite-item style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
-                                    <select name="societe_activites_statuts[]" style="flex:1">
+                                <div data-activite-item class="flex-row flex-row-mb">
+                                    <select name="societe_activites_statuts[]" class="select-flex">
                                         <option value="">Selectionner</option>
                                         <?php foreach ($activitesOptions as $opt): ?>
                                             <option value="<?= e($opt) ?>"><?= e($opt) ?></option>
                                         <?php endforeach; ?>
                                     </select>
-                                    <button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="mdi mdi-close"></span></button>
+                                    <button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="material-symbols-outlined">close</span></button>
                                 </div>
                             <?php endif; ?>
                         </div>
-                        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-                            <button type="button" class="btn" data-add-activite><span class="mdi mdi-plus"></span> Ajouter une activite</button>
-                            <button type="button" class="btn btn-info" data-add-activite-ref><span class="mdi mdi-plus-circle"></span> Nouvelle activite</button>
-                            <button type="button" class="btn btn-secondary" data-add-activites-multiple><span class="mdi mdi-plus-box-multiple"></span> Ajouter plusieurs</button>
+                        <div class="flex-row-wrap">
+                            <button type="button" class="btn" data-add-activite><span class="material-symbols-outlined">add</span> Ajouter une activite</button>
+                            <button type="button" class="btn btn-info" data-add-activite-ref><span class="material-symbols-outlined">add_circle</span> Nouvelle activite</button>
+                            <button type="button" class="btn btn-secondary" data-add-activites-multiple><span class="material-symbols-outlined">add_box</span> Ajouter plusieurs</button>
                         </div>
                         <template data-activite-template>
-                            <div data-activite-item style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
-                                <select name="societe_activites_statuts[]" style="flex:1">
+                            <div data-activite-item class="flex-row flex-row-mb">
+                                <select name="societe_activites_statuts[]" class="select-flex">
                                     <option value="">Selectionner</option>
                                     <?php foreach ($activitesOptions as $opt): ?>
                                         <option value="<?= e($opt) ?>"><?= e($opt) ?></option>
                                     <?php endforeach; ?>
                                 </select>
-                                <button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="mdi mdi-close"></span></button>
+                                <button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="material-symbols-outlined">close</span></button>
                             </div>
                         </template>
                     </div>
@@ -417,7 +468,7 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
                 <h3 class="section-title">Adresse</h3>
                 <label class="field full">
                     <span>Adresse de reference</span>
-                    <select name="societe_adresse_siege" style="flex:1">
+                    <select name="societe_adresse_siege" class="select-flex">
                         <option value="">Selectionner</option>
                         <?php foreach ($adressesOptions as $option): ?>
                             <option value="<?= e($option) ?>" <?= (string) $societe['societe_adresse_siege'] === $option ? 'selected' : '' ?>><?= e($option) ?></option>
@@ -426,7 +477,7 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
                 </label>
                 <label class="field">
                     <span>Ville</span>
-                    <select name="societe_ville" style="flex:1">
+                    <select name="societe_ville" class="select-flex">
                         <option value="">Selectionner</option>
                         <?php foreach ($villesOptions as $option): ?>
                             <option value="<?= e($option) ?>" <?= $defaultVille === $option ? 'selected' : '' ?>><?= e($option) ?></option>
@@ -462,7 +513,7 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
                 </label>
             </div>
             <div>
-                <button class="btn btn-next" type="submit"><span class="mdi mdi-check"></span> Enregistrer</button>
+                <button class="btn btn-next" type="submit"><span class="material-symbols-outlined">check</span> Enregistrer</button>
             </div>
         </form>
     </section>
@@ -514,20 +565,20 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
 <article class="card">
     <div class="section-header">
         <h3>Associes lies (<?= count($associes) ?>)</h3>
-        <a class="btn btn-info" href="<?= e(app_url('associes')) ?>"><span class="mdi mdi-eye"></span> Voir tout</a>
+        <a class="btn btn-info" href="<?= e(app_url('associes')) ?>"><span class="material-symbols-outlined">visibility</span> Voir tout</a>
     </div>
     <?php if (!$associes): ?>
         <p class="table-empty">Aucun associe lie a cette societe.</p>
     <?php else: ?>
         <div class="table-scroll">
-            <table>
+            <table data-sortable>
                 <thead>
                 <tr>
-                    <th>Nom</th>
-                    <th>CIN</th>
-                    <th>Nationalite</th>
-                    <th>Qualite</th>
-                    <th>Gerant</th>
+                    <th data-col="nom">Nom</th>
+                    <th data-col="cin">CIN</th>
+                    <th data-col="nationalite">Nationalite</th>
+                    <th data-col="qualite">Qualite</th>
+                    <th data-col="gerant">Gerant</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -549,19 +600,19 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
 <article class="card">
     <div class="section-header">
         <h3>Contrats lies (<?= count($contrats) ?>)</h3>
-        <a class="btn btn-info" href="<?= e(app_url('contrats')) ?>"><span class="mdi mdi-eye"></span> Voir tout</a>
+        <a class="btn btn-info" href="<?= e(app_url('contrats')) ?>"><span class="material-symbols-outlined">visibility</span> Voir tout</a>
     </div>
     <?php if (!$contrats): ?>
         <p class="table-empty">Aucun contrat lie a cette societe.</p>
     <?php else: ?>
         <div class="table-scroll">
-            <table>
+            <table data-sortable>
                 <thead>
                 <tr>
-                    <th>Type</th>
-                    <th>Periode</th>
-                    <th>Statut</th>
-                    <th>Montant Total</th>
+                    <th data-col="type">Type</th>
+                    <th data-col="periode">Periode</th>
+                    <th data-col="statut">Statut</th>
+                    <th data-col="montant">Montant Total</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -583,32 +634,32 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
     <div class="section-header">
         <h3>Documents generes (<?= count($documents) ?>)</h3>
         <div class="table-actions">
-            <a class="btn btn-info" href="<?= e(app_url('generation', ['societe_id' => $societeId])) ?>"><span class="mdi mdi-file-sync"></span> Generer documents</a>
-            <a class="btn btn-info" href="<?= e(app_url('documents', ['societe_id' => $societeId])) ?>"><span class="mdi mdi-eye"></span> Voir tout</a>
+            <a class="btn btn-info" href="<?= e(app_url('generation', ['societe_id' => $societeId])) ?>"><span class="material-symbols-outlined">sync</span> <?= count($documents) > 0 ? 'Regenerer documents' : 'Generer documents' ?></a>
+            <a class="btn btn-info" href="<?= e(app_url('documents', ['societe_id' => $societeId])) ?>"><span class="material-symbols-outlined">visibility</span> Voir tout</a>
         </div>
     </div>
     <?php if (!$documents): ?>
         <div class="empty-state">
-            <span class="mdi mdi-file-document-outline" style="font-size:2rem;color:var(--text-secondary)"></span>
+            <span class="material-symbols-outlined">description</span>
             <p class="table-empty">Aucun document genere.</p>
         </div>
     <?php else: ?>
         <form method="post" id="docs-form">
             <?= csrf_input() ?>
             <div class="table-scroll">
-                <table>
-                    <thead>
-                    <tr>
-                        <th class="col-check"><input type="checkbox" id="select-all-docs"></th>
-                        <th>Type</th>
-                        <th>Document</th>
-                        <th>Taille</th>
-                        <th>Statut</th>
-                        <th>Date creation</th>
-                        <th>Modification</th>
-                        <th class="col-actions">Actions</th>
-                    </tr>
-                    </thead>
+            <table data-sortable>
+                <thead>
+                <tr>
+                    <th class="col-check"><input type="checkbox" id="select-all-docs"></th>
+                    <th data-col="type">Type</th>
+                    <th data-col="document">Document</th>
+                    <th data-col="taille">Taille</th>
+                    <th data-col="statut">Statut</th>
+                    <th data-col="date-creation">Date creation</th>
+                    <th data-col="modification">Modification</th>
+                    <th class="col-actions">Actions</th>
+                </tr>
+                </thead>
                     <tbody>
                     <?php foreach ($documents as $doc): ?>
                         <tr>
@@ -626,23 +677,27 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
                                 <td>
                                     <div class="table-actions">
                                         <a class="btn-icon" href="<?= e(word_url($doc['fichier_docx'])) ?>" title="Ouvrir dans Word">
-                                            <span class="mdi mdi-file-word"></span>
+                                            <span class="material-symbols-outlined">article</span>
                                         </a>
                                         <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_docx'])) ?>" download title="Telecharger DOCX">
-                                            <span class="mdi mdi-download"></span>
+                                            <span class="material-symbols-outlined">download</span>
                                         </a>
                                         <?php if ($doc['fichier_pdf']): ?>
                                             <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_pdf'])) ?>" download title="Telecharger PDF">
-                                                <span class="mdi mdi-file-pdf"></span>
+                                                <span class="material-symbols-outlined">picture_as_pdf</span>
                                             </a>
                                         <?php endif; ?>
                                         <?php if (!$doc['valide']): ?>
                                             <a class="btn-icon" href="#" onclick="event.preventDefault(); (function(){ var f=document.getElementById('docs-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='validate_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Validation en cours...'); f.submit();} })();" title="Valider">
-                                                <span class="mdi mdi-file-check"></span>
+                                                <span class="material-symbols-outlined">task_alt</span>
+                                            </a>
+                                        <?php else: ?>
+                                            <a class="btn-icon" href="#" onclick="event.preventDefault(); (function(){ var f=document.getElementById('docs-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='restore_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Restauration en cours...'); f.submit();} })();" title="Restaurer en brouillon">
+                                                <span class="material-symbols-outlined">restore</span>
                                             </a>
                                         <?php endif; ?>
                                         <a class="btn-icon danger" href="#" onclick="event.preventDefault(); if(!confirm('Supprimer ce document ?')) return; (function(){ var f=document.getElementById('docs-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='delete_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Suppression en cours...'); f.submit();} })();" title="Supprimer">
-                                            <span class="mdi mdi-delete"></span>
+                                            <span class="material-symbols-outlined">delete</span>
                                         </a>
                                     </div>
                                 </td>
@@ -651,12 +706,22 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
                     </tbody>
                 </table>
             </div>
-            <div class="table-actions" style="margin-top:12px">
-                <button class="btn btn-next" type="submit" name="validate_submit" value="1">
-                    <span class="mdi mdi-file-check"></span> Valider la selection
-                </button>
+            <div class="table-actions table-actions-top">
+            
+                <?php
+                $allValides = count($documents) > 0 && count(array_filter($documents, fn($d) => !$d['valide'])) === 0;
+                ?>
+                <?php if ($allValides): ?>
+                    <button class="btn btn-info" type="submit" name="restore_submit" value="1">
+                        <span class="material-symbols-outlined">restore</span> Restaurer en brouillons
+                    </button>
+                <?php else: ?>
+                    <button class="btn btn-next" type="submit" name="validate_submit" value="1">
+                        <span class="material-symbols-outlined">task_alt</span> Valider la selection
+                    </button>
+                <?php endif; ?>
                 <button class="btn btn-back" type="submit" name="delete_submit" value="1">
-                    <span class="mdi mdi-delete"></span> Supprimer la selection
+                    <span class="material-symbols-outlined">delete</span> Supprimer la selection
                 </button>
             </div>
         </form>
@@ -669,14 +734,49 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
     <?php endif; ?>
 </article>
 
-<style>
-#loading-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);z-index:9999;display:none;align-items:center;justify-content:center;flex-direction:column center}
-#loading-overlay.show{display:flex}
-#loading-overlay .loader-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);padding:2.5rem 3rem;display:flex;flex-direction:column;align-items:center;gap:1rem;box-shadow:0 8px 32px rgba(0,0,0,.5)}
-#loading-overlay .spinner{width:40px;height:40px;border:3px solid var(--line);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-#loading-overlay p{font-size:1rem;color:var(--text-secondary);margin:0}
-</style>
+<?php if (!empty($uploadedDocsList)): ?>
+<article class="card">
+    <div class="section-header">
+        <h2>Documents uploades</h2>
+    </div>
+    <div class="table-scroll">
+        <table data-sortable>
+            <thead>
+                <tr>
+                    <th data-col="doc_type">Type</th>
+                    <th data-col="filename">Fichier</th>
+                    <th data-col="taille">Taille</th>
+                    <th data-col="uploaded_at">Date d'upload</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($uploadedDocsList as $ud):
+                    $relativePath = str_replace('\\', '/', str_replace(__DIR__ . '/../', '', $ud['filepath']));
+                    $ext = strtolower(pathinfo($ud['filename_original'], PATHINFO_EXTENSION));
+                    $fileIcon = $ext === 'pdf' ? 'picture_as_pdf' : (in_array($ext, ['jpg','jpeg','png','gif','webp']) ? 'image' : 'description');
+                ?>
+                <tr>
+                    <td><?= e($docTypeLabels[$ud['doc_type']] ?? $ud['doc_type']) ?></td>
+                    <td><span class="material-symbols-outlined icon-text-gap"><?= $fileIcon ?></span><?= e($ud['filename_original']) ?></td>
+                    <td><?= e($ud['taille_ko'] ? number_format((float)$ud['taille_ko'], 1, ',', ' ') . ' Ko' : '-') ?></td>
+                    <td><?= e(date('d/m/Y H:i', strtotime($ud['uploaded_at']))) ?></td>
+                    <td>
+                        <a href="<?= e($relativePath) ?>" class="btn-icon" title="Voir" data-view-doc>
+                            <span class="material-symbols-outlined">visibility</span>
+                        </a>
+                        <a href="<?= e($relativePath) ?>" class="btn-icon" download title="Telecharger">
+                            <span class="material-symbols-outlined">download</span>
+                        </a>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</article>
+<?php endif; ?>
+
 <div id="loading-overlay">
     <div class="loader-card">
         <div class="spinner"></div>
@@ -697,6 +797,45 @@ $documents = fetch_all_documents($pdo ?? null, $societeId);
             window.showOverlay('Suppression en cours...');
         } else {
             window.showOverlay('Validation en cours...');
+        }
+    });
+})();
+</script>
+
+<div id="doc-viewer-modal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span class="modal-title">Document</span>
+            <button class="btn-icon" id="modal-close" title="Fermer">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <iframe id="doc-iframe" src="" frameborder="0"></iframe>
+        </div>
+    </div>
+</div>
+
+<script>
+(function(){
+    var modal = document.getElementById('doc-viewer-modal');
+    var iframe = document.getElementById('doc-iframe');
+    var closeBtn = document.getElementById('modal-close');
+    document.querySelectorAll('[data-view-doc]').forEach(function(link){
+        link.addEventListener('click', function(e){
+            e.preventDefault();
+            iframe.src = this.href;
+            modal.classList.add('show');
+        });
+    });
+    closeBtn.addEventListener('click', function(){
+        modal.classList.remove('show');
+        iframe.src = '';
+    });
+    modal.addEventListener('click', function(e){
+        if(e.target === modal){
+            modal.classList.remove('show');
+            iframe.src = '';
         }
     });
 })();

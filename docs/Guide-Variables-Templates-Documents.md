@@ -24,6 +24,7 @@ Inserez `{{ NOM_VARIABLE }}` dans vos documents Word (.docx).
 | `SOCIETE_VALEUR_NOMINALE` | Valeur nominale | `societe_valeur_nominale` | `societe_valeur_nominale` | Creation (Statuts) |
 | `SOCIETE_VILLE` | Ville du siege | `societe_ville` | `societe_ville` | Creation (Statuts, Annonce-Legale) |
 | `SOCIETE_TRIBUNAL` | Tribunal competent | `societe_tribunal` | `societe_tribunal` | Creation (Depot-Legal, Declaration-RC) |
+| `SOCIETE_TRIBUNAL_TYPE` | Type de tribunal | `societe_tribunal_type` | `tribunal_type` | Creation (Depot-Legal, Declaration-RC) |
 | `SOCIETE_ADRESSE_SIEGE` | Adresse du siege social | `societe_adresse_siege` | `societe_adresse_siege` | Creation + Domiciliation |
 | `SOCIETE_EMAIL` | Email | `societe_email` | `societe_email` | Creation + Domiciliation |
 | `SOCIETE_TELEPHONE` | Telephone | `societe_telephone` | `societe_telephone` | Creation + Domiciliation |
@@ -172,3 +173,4 @@ Encadrez le bloc avec `{%p for a in associes %}` ... `{%p endfor %}`.
 - Les noms de variables sont insensibles a la casse dans le code : `{{ capital }}`, `{{ CAPITAL }}`, `{{ Capital }}` ne fonctionnent plus. Utilisez exclusivement les noms ci-dessus.
 - Les variables en boucle (`a.*`) restent sans prefixe et ne sont pas impactees par le renommage.
 - La colonne **Champ creation** correspond au `name=""` du formulaire dans l'Assistant de creation (`pages/creation.php`). Les champs calcules par le JS sont marques `(calcule)`. Les champs sans champ dedie sont marques `—`.
+- **Filtrage des templates :** chaque forme juridique est liee a un dossier `templates/<template_folder/>` via la colonne `template_folder` de `ref_formes_juridiques` (Configuration > Formes juridiques). Seuls les templates de ce dossier et du dossier generique `_Racine-Actifs/` sont proposes a l'etape 5.

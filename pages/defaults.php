@@ -68,6 +68,7 @@ $fieldLabels = [
         'societe_type_generation' => 'Type de generation',
         'societe_procedure_creation' => 'Procedure de creation',
         'societe_mode_depot' => 'Mode de depot',
+        'societe_tribunal_type' => 'Type de tribunal',
     ],
     'associe' => [
         'associe_nationalite' => 'Nationalite',
@@ -98,16 +99,15 @@ $currentLabels = $fieldLabels[$currentSection] ?? [];
 <section class="card stack">
     <div class="section-header">
         <div>
-            <h2>Valeurs par defaut</h2>
             <p class="help-text">Personnaliser les valeurs pre-remplies dans les formulaires.</p>
         </div>
         <div style="display:flex;gap:6px">
             <form method="post" style="display:inline" onsubmit="return confirm('Reinitialiser toutes les sections ?')">
                 <?= csrf_input() ?>
                 <input type="hidden" name="action" value="reset-all">
-                <button type="submit" class="btn btn-cancel"><span class="mdi mdi-restore"></span> Tout reinitialiser</button>
+                <button type="submit" class="btn btn-cancel"><span class="material-symbols-outlined">restore</span> Tout reinitialiser</button>
             </form>
-            <a class="btn btn-back" href="<?= e(app_url('configuration')) ?>"><span class="mdi mdi-arrow-left"></span> Retour</a>
+            <a class="btn btn-back" href="<?= e(app_url('configuration')) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
         </div>
     </div>
 
@@ -145,9 +145,9 @@ $currentLabels = $fieldLabels[$currentSection] ?? [];
             </div>
 
             <div style="display:flex;gap:6px;margin-top:0.5rem">
-                <button type="submit" class="btn btn-next"><span class="mdi mdi-content-save"></span> Enregistrer</button>
+                <button type="submit" class="btn btn-next"><span class="material-symbols-outlined">save</span> Enregistrer</button>
                 <button type="submit" class="btn btn-cancel" formaction="<?= e(app_url('defaults', ['tab' => $currentSection])) ?>" formmethod="post" name="action" value="reset" onclick="return confirm('Reinitialiser cette section ?')">
-                    <span class="mdi mdi-restore"></span> Reinitialiser
+                    <span class="material-symbols-outlined">restore</span> Reinitialiser
                 </button>
             </div>
         </form>
@@ -156,35 +156,4 @@ $currentLabels = $fieldLabels[$currentSection] ?? [];
     <?php endif; ?>
 </section>
 
-<style>
-.defaults-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 0.75rem;
-}
-.defaults-field {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-}
-.defaults-field label {
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-.defaults-field input {
-    padding: 6px 8px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    font-size: 0.875rem;
-    background: var(--bg);
-    color: var(--text);
-    transition: border-color var(--transition);
-}
-.defaults-field input:focus {
-    outline: none;
-    border-color: var(--primary);
-}
-</style>
+

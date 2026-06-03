@@ -8,7 +8,7 @@ $templatesConfig = require __DIR__ . '/../config/templates.php';
 $templatesDir = __DIR__ . '/../templates';
 $templatePath = isset($_GET['path']) ? realpath((string) $_GET['path']) : '';
 
-if ($templatePath === '' || !str_starts_with($templatePath, realpath($templatesDir)) || !file_exists($templatePath)) {
+if ($templatePath === false || $templatePath === '' || !str_starts_with($templatePath, realpath($templatesDir)) || !file_exists($templatePath)) {
     ?>
     <section class="card stack">
         <h2>Template introuvable</h2>
@@ -41,6 +41,7 @@ $dbFields = [
         'societe_type_generation' => 'Type de generation',
         'societe_procedure_creation' => 'Procedure de creation',
         'societe_mode_depot' => 'Mode de depot',
+        'societe_tribunal_type' => 'Type de tribunal',
         'societe_date_ice' => 'Date immatriculation ICE',
         'societe_date_exp_cert_neg' => 'Date expiration certificat negatif',
     ],
@@ -103,6 +104,7 @@ $variableLabels = [
     'SOCIETE_TYPE_GENERATION' => ['Societe', 'societe_type_generation'],
     'SOCIETE_PROCEDURE_CREATION' => ['Societe', 'societe_procedure_creation'],
     'SOCIETE_MODE_DEPOT' => ['Societe', 'societe_mode_depot'],
+    'SOCIETE_TRIBUNAL_TYPE' => ['Societe', 'societe_tribunal_type'],
     'SOCIETE_DATE_ICE' => ['Societe', 'societe_date_ice'],
     'SOCIETE_DATE_EXP_CERT_NEG' => ['Societe', 'societe_date_exp_cert_neg'],
     'ASSOCIE_NOM_COMPLET' => ['Associe', 'associe_nom_complet'],
@@ -144,25 +146,59 @@ $variableLabels = [
 ];
 
 $docTypes = $templatesConfig['document_types'];
-$legalForms = $templatesConfig['legal_forms'];
+$folderLabels = $templatesConfig['folder_labels'];
+$folderDir = dirname($templatePath);
+$contextKeys = TemplateAnalyzer::getExpectedContextKeys();
+
+if (is_post()) {
+    verify_csrf();
+    $action = $_POST['action'] ?? '';
+
+    if ($action === 'rename_var') {
+        $oldName = trim($_POST['var_name'] ?? '');
+        $newName = trim($_POST['new_name'] ?? '');
+        if ($oldName !== '' && $newName !== '') {
+            $result = TemplateAnalyzer::renameVariable($oldName, $newName, $folderDir);
+            $msg = "Variable {$oldName} renommee en {$newName} dans {$result['modified']} template(s).";
+            if (!empty($result['errors'])) {
+                $msg .= ' Erreurs: ' . implode('; ', $result['errors']);
+            }
+            set_flash('success', $msg);
+        }
+        redirect_to('template', ['path' => $templatePath]);
+    }
+
+    if ($action === 'delete_var') {
+        $varName = trim($_POST['var_name'] ?? '');
+        if ($varName !== '') {
+            $result = TemplateAnalyzer::deleteVariable($varName, $folderDir);
+            $msg = "Variable {$varName} supprimee de {$result['modified']} template(s).";
+            if (!empty($result['errors'])) {
+                $msg .= ' Erreurs: ' . implode('; ', $result['errors']);
+            }
+            set_flash('success', $msg);
+        }
+        redirect_to('template', ['path' => $templatePath]);
+    }
+}
 ?>
 <section class="grid two">
     <article class="card stack">
         <div class="section-header">
             <div>
                 <h2><?= e($docTypes[$info['doc_type']] ?? $info['doc_type']) ?></h2>
-                <p class="help-text"><?= e($legalForms[$info['folder']] ?? $info['folder']) ?></p>
+                <p class="help-text"><?= e($folderLabels[$info['folder']] ?? $info['folder']) ?></p>
             </div>
             <div class="table-actions">
-<a class="btn-icon" href="<?= e(app_url('template_edit', ['path' => $templatePath])) ?>" title="Editer"><span class="mdi mdi-pencil"></span></a>
-                <a class="btn-icon" href="<?= e(app_url('templates')) ?>" title="Retour"><span class="mdi mdi-arrow-left"></span></a>
-                <a class="btn-icon" href="<?= e($templatePath) ?>" download title="Telecharger"><span class="mdi mdi-download"></span></a>
+<a class="btn-icon" href="<?= e(app_url('template_edit', ['path' => $templatePath])) ?>" title="Editer"><span class="material-symbols-outlined">edit</span></a>
+                <a class="btn-icon" href="<?= e(app_url('templates')) ?>" title="Retour"><span class="material-symbols-outlined">arrow_back</span></a>
+                <a class="btn-icon" href="<?= e($templatePath) ?>" download title="Telecharger"><span class="material-symbols-outlined">download</span></a>
             </div>
         </div>
 
         <div class="info-grid">
             <div><strong>Fichier</strong><span><?= e(basename($templatePath)) ?></span></div>
-            <div><strong>Dossier</strong><span><?= e($legalForms[$info['folder']] ?? $info['folder']) ?></span></div>
+            <div><strong>Dossier</strong><span><?= e($folderLabels[$info['folder']] ?? $info['folder']) ?></span></div>
             <div><strong>Taille</strong><span><?= e(number_format(filesize($templatePath) / 1024, 1)) ?> KB</span></div>
             <div><strong>Modifie</strong><span><?= e(date('d/m/Y H:i', filemtime($templatePath))) ?></span></div>
         </div>
@@ -173,6 +209,9 @@ $legalForms = $templatesConfig['legal_forms'];
             <div>
                 <h2>Variables detectees</h2>
                 <p class="help-text"><?= count($variables) ?> variable(s) dans ce template</p>
+            </div>
+            <div class="table-actions">
+                <a class="btn btn-info" href="<?= e(app_url('analyse-couverture')) ?>"><span class="material-symbols-outlined">drive_file_rename_outline</span> Renommer en masse</a>
             </div>
         </div>
 
@@ -185,6 +224,7 @@ $legalForms = $templatesConfig['legal_forms'];
                 <tr>
                     <th>Variable</th>
                     <th>Mapping</th>
+                    <th>Actions</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -203,6 +243,28 @@ $legalForms = $templatesConfig['legal_forms'];
                             <?php else: ?>
                                 <span style="color:var(--danger);font-size:0.8rem">Non mappe</span>
                             <?php endif; ?>
+                        </td>
+                        <td>
+                            <div style="display:flex;gap:4px;align-items:center">
+                                <form method="post" style="display:flex;gap:4px;align-items:center">
+                                    <?= csrf_input() ?>
+                                    <input type="hidden" name="action" value="rename_var">
+                                    <input type="hidden" name="var_name" value="<?= e($var) ?>">
+                                    <select name="new_name" required style="max-width:120px;font-size:0.75rem;padding:2px 4px">
+                                        <option value="">Renommer en...</option>
+                                        <?php foreach ($contextKeys as $ck): ?>
+                                        <option value="<?= e($ck) ?>"><?= e($ck) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <button type="submit" class="btn-icon" title="Renommer"><span class="material-symbols-outlined">drive_file_rename_outline</span></button>
+                                </form>
+                                <form method="post" style="display:inline">
+                                    <?= csrf_input() ?>
+                                    <input type="hidden" name="action" value="delete_var">
+                                    <input type="hidden" name="var_name" value="<?= e($var) ?>">
+                                    <button type="submit" class="btn-icon danger" title="Supprimer" data-confirm="Supprimer {{ <?= e($var) ?> }} de tous les templates de ce dossier ?"><span class="material-symbols-outlined">delete</span></button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 <?php endforeach; ?>

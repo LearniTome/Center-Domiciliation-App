@@ -112,16 +112,13 @@ if ($exportCsv && count($documents) > 0) {
 ?>
 <section class="card">
     <div class="section-header">
-        <div>
-            <h2>Tous les documents generes</h2>
-            <p class="help-text"><?= count($documents) ?> document(s)</p>
-        </div>
+        <span class="page-count"><?= count($documents) ?> document(s)</span>
         <div class="table-actions">
             <a class="btn <?= $filterStatut === '' ? 'btn-next' : 'btn-secondary' ?>" href="<?= e(app_url('documents', array_filter(['societe_id' => $filterSociete, 'doc_type' => $filterDocType, 'q' => $q], fn($v) => $v !== null && $v !== ''))) ?>">Tous</a>
             <a class="btn <?= $filterStatut === 'valide' ? 'btn-next' : 'btn-secondary' ?>" href="<?= e(app_url('documents', array_filter(['societe_id' => $filterSociete, 'doc_type' => $filterDocType, 'q' => $q, 'statut' => 'valide'], fn($v) => $v !== null && $v !== ''))) ?>">Valides</a>
             <a class="btn <?= $filterStatut === 'brouillon' ? 'btn-next' : 'btn-secondary' ?>" href="<?= e(app_url('documents', array_filter(['societe_id' => $filterSociete, 'doc_type' => $filterDocType, 'q' => $q, 'statut' => 'brouillon'], fn($v) => $v !== null && $v !== ''))) ?>">Brouillons</a>
             <a class="btn btn-info" href="<?= e(app_url('documents', array_filter(['export' => 'csv', 'societe_id' => $filterSociete, 'doc_type' => $filterDocType], fn($v) => $v !== null && $v !== ''))) ?>">
-                <span class="mdi mdi-download"></span> Exporter CSV
+                <span class="material-symbols-outlined">download</span> Exporter CSV
             </a>
         </div>
     </div>
@@ -147,25 +144,25 @@ if ($exportCsv && count($documents) > 0) {
             <?php endforeach; ?>
         </select>
         <?php if ($q !== '' || $filterSociete !== null || $filterDocType !== '' || $filterStatut !== ''): ?>
-            <a class="btn btn-cancel" href="<?= e(app_url('documents')) ?>"><span class="mdi mdi-close"></span> Reinitialiser</a>
+            <a class="btn btn-cancel" href="<?= e(app_url('documents')) ?>"><span class="material-symbols-outlined">close</span> Reinitialiser</a>
         <?php endif; ?>
     </form>
 
     <?php if (count($documents) > 0): ?>
         <form method="post" id="documents-form">
             <?= csrf_input() ?>
-            <div class="table-scroll" style="overflow-x: auto">
-                <table style="white-space: nowrap">
+            <div class="table-scroll">
+                <table data-sortable class="table-nowrap">
                     <thead>
                         <tr>
-                            <th class="col-check"><input type="checkbox" id="select-all"></th>
-                            <th>Societe</th>
-                            <th>Type</th>
-                            <th>Document</th>
-                            <th>Taille</th>
-                            <th>Statut</th>
-                            <th>Date creation</th>
-                            <th>Modification</th>
+                            <th class="col-check"></th>
+                            <th data-col="societe">Societe</th>
+                            <th data-col="type">Type</th>
+                            <th data-col="document">Document</th>
+                            <th data-col="taille">Taille</th>
+                            <th data-col="statut">Statut</th>
+                            <th data-col="date-creation">Date creation</th>
+                            <th data-col="modification">Modification</th>
                             <th class="col-actions">Actions</th>
                         </tr>
                     </thead>
@@ -192,23 +189,23 @@ if ($exportCsv && count($documents) > 0) {
                                 <td>
                                     <div class="table-actions">
                                         <a class="btn-icon" href="<?= e(word_url($doc['fichier_docx'])) ?>" title="Ouvrir dans Word">
-                                            <span class="mdi mdi-file-word"></span>
+                                            <span class="material-symbols-outlined">article</span>
                                         </a>
                                         <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_docx'])) ?>" download title="Telecharger DOCX">
-                                            <span class="mdi mdi-download"></span>
+                                            <span class="material-symbols-outlined">download</span>
                                         </a>
                                         <?php if ($doc['fichier_pdf']): ?>
                                             <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_pdf'])) ?>" download title="Telecharger PDF">
-                                                <span class="mdi mdi-file-pdf"></span>
+                                                <span class="material-symbols-outlined">picture_as_pdf</span>
                                             </a>
                                         <?php endif; ?>
                                         <?php if (!$doc['valide']): ?>
                                             <a class="btn-icon" href="#" onclick="event.preventDefault(); (function(){ var f=document.getElementById('documents-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='validate_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Validation en cours...'); f.submit();} })();" title="Valider">
-                                                <span class="mdi mdi-file-check"></span>
+                                                <span class="material-symbols-outlined">task_alt</span>
                                             </a>
                                         <?php endif; ?>
                                         <a class="btn-icon danger" href="#" onclick="event.preventDefault(); if(!confirm('Supprimer ce document ?')) return; (function(){ var f=document.getElementById('documents-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='delete_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Suppression en cours...'); f.submit();} })();" title="Supprimer">
-                                            <span class="mdi mdi-delete"></span>
+                                            <span class="material-symbols-outlined">delete</span>
                                         </a>
                                     </div>
                                 </td>
@@ -217,12 +214,12 @@ if ($exportCsv && count($documents) > 0) {
                     </tbody>
                 </table>
             </div>
-            <div class="table-actions" style="margin-top:12px">
+            <div class="table-actions table-actions-top">
                 <button class="btn btn-next" type="submit" name="validate_submit" value="1">
-                    <span class="mdi mdi-file-check"></span> Valider la selection
+                    <span class="material-symbols-outlined">task_alt</span> Valider la selection
                 </button>
                 <button class="btn btn-back" type="submit" name="delete_submit" value="1">
-                    <span class="mdi mdi-delete"></span> Supprimer la selection
+                    <span class="material-symbols-outlined">delete</span> Supprimer la selection
                 </button>
             </div>
         </form>
@@ -234,21 +231,14 @@ if ($exportCsv && count($documents) > 0) {
         </script>
     <?php else: ?>
         <div class="empty-state">
-            <span class="mdi mdi-file-document-outline" style="font-size:2rem;color:var(--text-secondary)"></span>
+            <span class="material-symbols-outlined">description</span>
             <p class="table-empty">Aucun document genere.</p>
             <a class="btn" href="<?= e(app_url('generation')) ?>">Generer des documents</a>
         </div>
     <?php endif; ?>
 </section>
 
-<style>
-#loading-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);z-index:9999;display:none;align-items:center;justify-content:center;flex-direction:column center}
-#loading-overlay.show{display:flex}
-#loading-overlay .loader-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);padding:2.5rem 3rem;display:flex;flex-direction:column;align-items:center;gap:1rem;box-shadow:0 8px 32px rgba(0,0,0,.5)}
-#loading-overlay .spinner{width:40px;height:40px;border:3px solid var(--line);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-#loading-overlay p{font-size:1rem;color:var(--text-secondary);margin:0}
-</style>
+
 <div id="loading-overlay">
     <div class="loader-card">
         <div class="spinner"></div>

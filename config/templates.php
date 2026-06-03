@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 return [
-    'legal_forms' => [
+    'folder_labels' => [
         '_Racine-Actifs' => 'Generique (toutes formes)',
         'SARL AU' => 'SARL-AU',
         'SARL' => 'SARL',

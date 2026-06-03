@@ -28,15 +28,12 @@ if ($societeId > 0) {
 
 $allTemplates = TemplateAnalyzer::scanTemplates($templatesDir);
 
-function filterTemplatesByLegalForm(array $templates, string $form): array
+function filterTemplatesByLegalForm(array $templates, string $form, ?PDO $pdo = null): array
 {
-    $folderMap = [
-        'SARL-AU' => 'SARL AU',
-        'SARL' => 'SARL',
-        'SA' => 'SA',
-    ];
-
-    $targetFolder = $folderMap[$form] ?? '';
+    $targetFolder = ($form !== '') ? fetch_legal_form_template_folder($pdo, $form) : '';
+    if ($targetFolder !== '') {
+        ensure_template_folder($targetFolder);
+    }
     $matched = [];
     $generic = [];
 
@@ -55,7 +52,7 @@ $filteredTemplates = [];
 $context = [];
 
 if ($selectedSociete) {
-    $filteredTemplates = filterTemplatesByLegalForm($allTemplates, $legalForm);
+    $filteredTemplates = filterTemplatesByLegalForm($allTemplates, $legalForm, $pdo ?? null);
 }
 
 $sessionFiles = $_SESSION['gen_files'][$societeId] ?? [];
@@ -235,8 +232,8 @@ if (is_post() && isset($_POST['validate_submit']) && $societeId > 0) {
 }
 
 $genTypeIcons = [
-    'creation' => 'mdi-file-document-plus',
-    'domiciliation' => 'mdi-home-city',
+    'creation' => 'post_add',
+    'domiciliation' => 'location_city',
 ];
 $genTypeMapping = $templatesConfig['template_mapping'];
 
@@ -270,19 +267,10 @@ $totalGenerated = count($sessionFiles);
 $docxCount = $totalGenerated;
 
 ?>
-<style>.main { overflow-x: hidden; }</style>
-<style>
-#loading-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);z-index:9999;display:none;align-items:center;justify-content:center;flex-direction:column center}
-#loading-overlay.show{display:flex}
-#loading-overlay .loader-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);padding:2.5rem 3rem;display:flex;flex-direction:column;align-items:center;gap:1rem;box-shadow:0 8px 32px rgba(0,0,0,.5)}
-#loading-overlay .spinner{width:40px;height:40px;border:3px solid var(--line);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-#loading-overlay p{font-size:1rem;color:var(--text-secondary);margin:0}
-</style>
+
 <section class="card stack">
     <div class="section-header">
         <div>
-            <h2>Generateur de dossiers</h2>
             <p class="help-text">Selectionnez une societe puis les templates a generer.</p>
         </div>
     </div>
@@ -298,14 +286,14 @@ $docxCount = $totalGenerated;
             <?php endforeach; ?>
         </select>
         <?php if ($societeId > 0): ?>
-            <a class="btn btn-cancel" href="<?= e(app_url('generation')) ?>"><span class="mdi mdi-close"></span></a>
+            <a class="btn btn-cancel" href="<?= e(app_url('generation')) ?>"><span class="material-symbols-outlined">close</span></a>
         <?php endif; ?>
     </form>
 
     <?php if ($selectedSociete): ?>
         <div class="societe-summary">
             <div class="societe-summary-main">
-                <span class="mdi mdi-domain" style="color:var(--primary);font-size:1.3rem"></span>
+                <span class="material-symbols-outlined" style="color:var(--primary);font-size:1.3rem">business</span>
                 <div>
                     <strong><?= e($selectedSociete['societe_raison_sociale']) ?></strong>
                     <span class="help-text"><?= e($selectedSociete['societe_forme_juridique'] ?: '-') ?> — <?= e($selectedSociete['societe_ville'] ?: '-') ?></span>
@@ -325,27 +313,27 @@ $docxCount = $totalGenerated;
 
                 <div class="section-header">
                     <div class="table-actions">
-                        <a class="btn-icon" href="#" id="select-all" title="Tout selectionner"><span class="mdi mdi-check-all"></span></a>
+                        <a class="btn-icon" href="#" id="select-all" title="Tout selectionner"><span class="material-symbols-outlined">select_all</span></a>
                         <label class="pdf-toggle">
                             <input type="checkbox" name="pdf" value="1" checked>
-                            <span class="mdi mdi-file-pdf"></span> PDF
+                            <span class="material-symbols-outlined">picture_as_pdf</span> PDF
                         </label>
                         <button type="submit" class="btn btn-next">
-                            <span class="mdi mdi-file-sync"></span>
+                            <span class="material-symbols-outlined">sync</span>
                             Generer
                         </button>
                     </div>
                 </div>
 
-                <div class="table-scroll" style="overflow-x: auto; margin-left: -1.25rem; margin-right: 0; padding-right: 24px;">
-                    <table style="white-space: nowrap">
+                <div class="table-scroll">
+                    <table data-sortable style="white-space: nowrap">
                         <thead>
                             <tr>
                                 <th class="col-check"></th>
-                                <th>Type de document</th>
-                                <th>Fichier</th>
-                                <th>Champs</th>
-                                <th>Groupe</th>
+                                <th data-col="type">Type de document</th>
+                                <th data-col="fichier">Fichier</th>
+                                <th data-col="champs">Champs</th>
+                                <th data-col="groupe">Groupe</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -354,13 +342,13 @@ $docxCount = $totalGenerated;
                                     <tr>
                                         <td><input type="checkbox" name="templates[]" value="<?= e($tpl['path']) ?>" checked></td>
                                         <td>
-                                            <span class="mdi mdi-file-word" style="color:var(--primary);margin-right:6px"></span>
+                                            <span class="material-symbols-outlined" style="color:var(--primary);margin-right:6px">article</span>
                                             <?= e($docTypesConfig[$tpl['doc_type']] ?? $tpl['doc_type']) ?>
                                         </td>
                                         <td><span class="help-text"><?= e(basename($tpl['path'])) ?></span></td>
                                         <td><?= count($tpl['variables']) ?></td>
                                         <td>
-                                            <span class="mdi <?= $genTypeIcons[$gt] ?? 'mdi-file-document' ?>" style="color:var(--primary);margin-right:4px"></span>
+                                            <span class="material-symbols-outlined" style="color:var(--primary);margin-right:4px"><?= $genTypeIcons[$gt] ?? 'description' ?></span>
                                             <?= e($templatesConfig['generation_types'][$gt] ?? $gt) ?>
                                         </td>
                                     </tr>
@@ -382,7 +370,7 @@ $docxCount = $totalGenerated;
             </script>
         <?php else: ?>
             <div class="empty-state">
-                <span class="mdi mdi-file-document-outline" style="font-size:2rem;color:var(--text-secondary)"></span>
+                <span class="material-symbols-outlined" style="font-size:2rem;color:var(--text-secondary)">description</span>
                 <p class="table-empty">Aucun template disponible pour cette forme juridique.</p>
                 <a class="btn btn-secondary" href="<?= e(app_url('templates')) ?>">Gerer les templates</a>
             </div>
@@ -405,11 +393,11 @@ $docxCount = $totalGenerated;
         <strong style="color:var(--warning)"><?= $brouillonCount ?></strong>
     </article>
     <article class="stat">
-        <span><span class="mdi mdi-file-word"></span> Word</span>
+        <span><span class="material-symbols-outlined">article</span> Word</span>
         <strong><?= $docxCount ?></strong>
     </article>
     <article class="stat">
-        <span><span class="mdi mdi-file-pdf"></span> PDF</span>
+        <span><span class="material-symbols-outlined">picture_as_pdf</span> PDF</span>
         <strong><?= $pdfCount ?></strong>
     </article>
 </section>
@@ -434,26 +422,26 @@ $docxCount = $totalGenerated;
             <input type="hidden" name="societe_id" value="<?= $societeId ?>">
             <div class="section-header">
                 <div class="table-actions">
-                    <a class="btn-icon" href="#" id="select-all-files" title="Selectionner tout"><span class="mdi mdi-check-all"></span></a>
+                    <a class="btn-icon" href="#" id="select-all-files" title="Selectionner tout"><span class="material-symbols-outlined">select_all</span></a>
                     <button type="submit" class="btn btn-next" name="validate_submit" value="1">
-                        <span class="mdi mdi-file-check"></span> Valider
+                        <span class="material-symbols-outlined">task_alt</span> Valider
                     </button>
                     <button type="submit" class="btn btn-back" name="delete_submit" value="1">
-                        <span class="mdi mdi-delete"></span> Supprimer
+                        <span class="material-symbols-outlined">delete</span> Supprimer
                     </button>
                 </div>
             </div>
-            <div class="table-scroll" style="overflow-x: auto; margin-left: -1.25rem; margin-right: 0; padding-right: 24px;">
-                <table style="white-space: nowrap">
+            <div class="table-scroll">
+                <table data-sortable style="white-space: nowrap">
                     <thead>
                         <tr>
                             <th class="col-check"></th>
-                            <th>Type de document</th>
-                            <th>Fichier</th>
-                            <th>Taille</th>
-                            <th>Statut</th>
-                            <th>Date creation</th>
-                            <th>Modification</th>
+                            <th data-col="type">Type de document</th>
+                            <th data-col="fichier">Fichier</th>
+                            <th data-col="taille">Taille</th>
+                            <th data-col="statut">Statut</th>
+                            <th data-col="date-creation">Date creation</th>
+                            <th data-col="modification">Modification</th>
                             <th class="col-actions">Actions</th>
                         </tr>
                     </thead>
@@ -463,7 +451,7 @@ $docxCount = $totalGenerated;
                             <tr>
                                 <td><input type="checkbox" name="selected_files[]" value="<?= e((string) $doc['id']) ?>"></td>
                                 <td>
-                                    <span class="mdi mdi-file-word" style="color:var(--primary);margin-right:6px"></span>
+                                    <span class="material-symbols-outlined" style="color:var(--primary);margin-right:6px">article</span>
                                     <?= e($docTypesConfig[$doc['doc_type']] ?? $doc['doc_type']) ?>
                                 </td>
                                 <td><span class="help-text"><?= e(basename($doc['fichier_docx'])) ?></span></td>
@@ -478,23 +466,23 @@ $docxCount = $totalGenerated;
                                 <td>
                                     <div class="table-actions">
                                         <a class="btn-icon" href="<?= e(word_url($doc['fichier_docx'])) ?>" title="Ouvrir dans Word">
-                                            <span class="mdi mdi-file-word"></span>
+                                            <span class="material-symbols-outlined">article</span>
                                         </a>
                                         <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_docx'])) ?>" download title="Telecharger DOCX">
-                                            <span class="mdi mdi-download"></span>
+                                            <span class="material-symbols-outlined">download</span>
                                         </a>
                                         <?php if ($doc['fichier_pdf']): ?>
                                             <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_pdf'])) ?>" download title="Telecharger PDF">
-                                                <span class="mdi mdi-file-pdf"></span>
+                                                <span class="material-symbols-outlined">picture_as_pdf</span>
                                             </a>
                                         <?php endif; ?>
                                         <?php if (!$doc['valide']): ?>
                                             <a class="btn-icon" href="#" onclick="event.preventDefault(); (function(){ var f=document.getElementById('files-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='validate_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Validation en cours...'); f.submit();} })();" title="Valider">
-                                                <span class="mdi mdi-file-check"></span>
+                                                <span class="material-symbols-outlined">task_alt</span>
                                             </a>
                                         <?php endif; ?>
                                         <a class="btn-icon danger" href="#" onclick="event.preventDefault(); if(!confirm('Supprimer ce document ?')) return; (function(){ var f=document.getElementById('files-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='delete_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Suppression en cours...'); f.submit();} })();" title="Supprimer">
-                                            <span class="mdi mdi-delete"></span>
+                                            <span class="material-symbols-outlined">delete</span>
                                         </a>
                                     </div>
                                 </td>
@@ -515,7 +503,7 @@ $docxCount = $totalGenerated;
         </script>
     <?php else: ?>
         <div class="empty-state">
-            <span class="mdi mdi-file-document-outline" style="font-size:2rem;color:var(--text-secondary)"></span>
+            <span class="material-symbols-outlined" style="font-size:2rem;color:var(--text-secondary)">description</span>
             <p class="table-empty">Aucun document genere pour cette societe.</p>
         </div>
     <?php endif; ?>

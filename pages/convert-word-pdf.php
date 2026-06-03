@@ -356,12 +356,11 @@ if (is_dir($outputDir)) {
     <article class="card stack">
         <div class="section-header">
             <div>
-                <h2>Word to PDF</h2>
                 <p class="help-text">Convertissez vos fichiers .docx en PDF avec le moteur disponible.</p>
             </div>
             <div class="table-actions">
                 <span class="engine-badge <?= $engine ? 'active' : '' ?>">
-                    <span class="mdi mdi-<?= $engine ? 'check-circle' : 'alert-circle' ?>"></span>
+                    <span class="material-symbols-outlined"><?= $engine ? 'check_circle' : 'error' ?></span>
                     <?= $engine ? e($engine) : 'Aucun moteur' ?>
                 </span>
             </div>
@@ -369,17 +368,17 @@ if (is_dir($outputDir)) {
 
         <?php if (!$engine): ?>
             <div class="alert alert-warning">
-                <span class="mdi mdi-alert"></span>
+                <span class="material-symbols-outlined">warning</span>
                 Aucun moteur PDF detecte. Installez <strong>Microsoft Word</strong> ou <strong>LibreOffice</strong> pour utiliser cet outil.
             </div>
         <?php endif; ?>
 
         <div class="convert-tabs" style="display:flex;gap:6px;margin-bottom:1rem">
             <button type="button" class="btn btn-next convert-tab active" data-tab="upload">
-                <span class="mdi mdi-upload"></span> Upload fichiers
+                <span class="material-symbols-outlined">upload</span> Upload fichiers
             </button>
             <button type="button" class="btn btn-secondary convert-tab" data-tab="browse">
-                <span class="mdi mdi-folder-open"></span> Parcourir dossiers
+                <span class="material-symbols-outlined">folder_open</span> Parcourir dossiers
             </button>
         </div>
 
@@ -390,7 +389,7 @@ if (is_dir($outputDir)) {
 
                 <div class="drop-zone" id="drop-zone">
                     <div class="drop-zone-content">
-                        <span class="mdi mdi-cloud-upload" style="font-size:2.5rem;color:var(--primary)"></span>
+                        <span class="material-symbols-outlined" style="font-size:2.5rem;color:var(--primary)">cloud_upload</span>
                         <p style="margin:0.5rem 0;font-weight:500">Glissez-deposez vos fichiers .docx ici</p>
                         <p class="help-text" style="margin:0">ou cliquez pour parcourir</p>
                     </div>
@@ -407,7 +406,7 @@ if (is_dir($outputDir)) {
                 </div>
 
                 <button type="submit" class="btn btn-next" <?= !$engine ? 'disabled' : '' ?>>
-                    <span class="mdi mdi-upload"></span> Uploader et placer dans la file
+                    <span class="material-symbols-outlined">upload</span> Uploader et placer dans la file
                 </button>
             </form>
 
@@ -418,15 +417,15 @@ if (is_dir($outputDir)) {
                 </span>
                 <div class="table-actions">
                     <button type="button" class="btn-icon" data-select-all-upload title="Tout selectionner">
-                        <span class="mdi mdi-check-all"></span>
+                        <span class="material-symbols-outlined">select_all</span>
                     </button>
                     <button type="button" class="btn-icon" data-deselect-all-upload title="Tout deselectionner">
-                        <span class="mdi mdi-checkbox-blank-off-outline"></span>
+                        <span class="material-symbols-outlined">check_box_outline_blank</span>
                     </button>
                     <form method="post" style="display:inline" onsubmit="return confirm('Vider tous les fichiers uploades ?')">
                         <?= csrf_input() ?>
                         <input type="hidden" name="action" value="clear-uploads">
-                        <button type="submit" class="btn-icon danger" title="Vider"><span class="mdi mdi-delete-sweep"></span></button>
+                        <button type="submit" class="btn-icon danger" title="Vider"><span class="material-symbols-outlined">delete_sweep</span></button>
                     </form>
                 </div>
             </div>
@@ -439,14 +438,14 @@ if (is_dir($outputDir)) {
                     <?php $ufPath = $uploadedDir . DIRECTORY_SEPARATOR . $uf; ?>
                     <div class="file-item selected">
                         <input type="checkbox" name="selected_files[]" value="<?= e($ufPath) ?>" checked style="margin:0">
-                        <span class="mdi mdi-file-word" style="color:var(--primary);font-size:1.1rem"></span>
+                        <span class="material-symbols-outlined" style="color:var(--primary);font-size:1.1rem">article</span>
                         <span class="file-item-name"><?= e($uf) ?></span>
                         <span class="file-item-size"><?= e(number_format(filesize($ufPath) / 1024, 1)) ?> Ko</span>
                     </div>
                 <?php endforeach; ?>
             </div>
                 <button type="submit" class="btn btn-next" style="margin-top:0.75rem" <?= !$engine ? 'disabled' : '' ?>>
-                    <span class="mdi mdi-file-pdf-box"></span> Convertir la selection en PDF
+                    <span class="material-symbols-outlined">picture_as_pdf</span> Convertir la selection en PDF
                 </button>
             </form>
             <?php endif; ?>
@@ -459,7 +458,7 @@ if (is_dir($outputDir)) {
 
                 <div class="inline-form">
                     <label style="display:flex;align-items:center;gap:6px;flex:1">
-                        <span class="mdi mdi-folder"></span>
+                        <span class="material-symbols-outlined">folder</span>
                         <select name="source" style="flex:1" id="source-select">
                             <option value="templates">Dossier templates</option>
                             <option value="output">Dossier output</option>
@@ -471,7 +470,7 @@ if (is_dir($outputDir)) {
                         Sous-dossiers
                     </label>
                     <label style="display:flex;align-items:center;gap:6px;flex:1" id="folder-select-label">
-                        <span class="mdi mdi-folder-multiple"></span>
+                        <span class="material-symbols-outlined">folders</span>
                         <select name="subfolder" style="flex:1" id="subfolder-select">
                             <option value="">Tous les dossiers</option>
                             <?php foreach ($outputSubdirs as $sd): ?>
@@ -488,10 +487,10 @@ if (is_dir($outputDir)) {
                         </span>
                         <div class="table-actions">
                             <button type="button" class="btn-icon" data-select-all title="Tout selectionner">
-                                <span class="mdi mdi-check-all"></span>
+                                <span class="material-symbols-outlined">select_all</span>
                             </button>
                             <button type="button" class="btn-icon" data-deselect-all title="Tout deselectionner">
-                                <span class="mdi mdi-checkbox-blank-off-outline"></span>
+                                <span class="material-symbols-outlined">check_box_outline_blank</span>
                             </button>
                         </div>
                     </div>
@@ -500,7 +499,7 @@ if (is_dir($outputDir)) {
                         <?php foreach ($currentFiles as $sf): ?>
                             <div class="file-item selected" data-path="<?= e($sf['path']) ?>">
                                 <input type="checkbox" name="selected_files[]" value="<?= e($sf['path']) ?>" checked style="margin:0">
-                                <span class="mdi mdi-file-word" style="color:var(--primary);font-size:1.1rem"></span>
+                                <span class="material-symbols-outlined" style="color:var(--primary);font-size:1.1rem">article</span>
                                 <span class="file-item-name"><?= e($sf['name']) ?></span>
                                 <span class="file-item-size"><?= e($sf['size']) ?></span>
                             </div>
@@ -512,7 +511,7 @@ if (is_dir($outputDir)) {
                 </div>
 
                 <button type="submit" class="btn btn-next" <?= !$engine ? 'disabled' : '' ?>>
-                    <span class="mdi mdi-file-pdf"></span>
+                    <span class="material-symbols-outlined">picture_as_pdf</span>
                     Convertir la selection en PDF
                 </button>
             </form>
@@ -520,18 +519,18 @@ if (is_dir($outputDir)) {
 
         <?php if ($uploadResult): ?>
             <div class="flash flash-success" style="margin-top:0.75rem">
-                <span class="mdi mdi-check-circle"></span>
+                <span class="material-symbols-outlined">check_circle</span>
                 <?= e((string) ($uploadResult['ok'] ?? '0')) ?> fichier(s) uploades avec succes.
             </div>
         <?php endif; ?>
         <?php if (isset($uploadResult['cleared']) && $uploadResult['cleared']): ?>
             <div class="flash flash-success" style="margin-top:0.75rem">
-                <span class="mdi mdi-check-circle"></span>
+                <span class="material-symbols-outlined">check_circle</span>
                 Fichiers uploades supprimes.
             </div>
         <?php elseif (isset($uploadResult['cleared']) && !$uploadResult['cleared']): ?>
             <div class="flash flash-error" style="margin-top:0.75rem">
-                <span class="mdi mdi-alert"></span>
+                <span class="material-symbols-outlined">warning</span>
                 Certains fichiers sont verrouilles par un autre processus (Word). Fermez Word et reessayez.
             </div>
         <?php endif; ?>
@@ -540,7 +539,7 @@ if (is_dir($outputDir)) {
         <div class="convert-result">
             <div class="section-header" style="margin-top:1rem">
                 <h3 style="margin:0;font-size:0.9rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-secondary)">
-                    <span class="mdi mdi-file-check"></span> Resultat de la conversion
+                    <span class="material-symbols-outlined">task_alt</span> Resultat de la conversion
                 </h3>
             </div>
 
@@ -570,7 +569,7 @@ if (is_dir($outputDir)) {
             <?php if ($convertResult['zip_path']): ?>
             <div style="margin:0.75rem 0">
                 <a class="btn btn-next" href="<?= e($convertResult['zip_path']) ?>">
-                    <span class="mdi mdi-download"></span> Tout telecharger en ZIP
+                    <span class="material-symbols-outlined">download</span> Tout telecharger en ZIP
                 </a>
             </div>
             <?php endif; ?>
@@ -600,10 +599,10 @@ if (is_dir($outputDir)) {
                             <td>
                                 <?php if ($e['status'] === 'ok' && file_exists($e['out_pdf'])): ?>
                                     <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../', '', $e['out_pdf'])) ?>" target="_blank" title="Voir le PDF">
-                                        <span class="mdi mdi-file-eye"></span>
+                                        <span class="material-symbols-outlined">visibility</span>
                                     </a>
                                     <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../', '', $e['out_pdf'])) ?>" download title="Telecharger le PDF">
-                                        <span class="mdi mdi-download"></span>
+                                        <span class="material-symbols-outlined">download</span>
                                     </a>
                                 <?php else: ?>
                                     -
@@ -624,7 +623,7 @@ if (is_dir($outputDir)) {
         <article class="card stack" style="margin-top:1rem">
             <div class="section-header">
                 <h3 style="margin:0;font-size:0.9rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-secondary)">
-                    <span class="mdi mdi-history"></span> Conversions recentes
+                    <span class="material-symbols-outlined">history</span> Conversions recentes
                 </h3>
             </div>
             <div class="table-scroll">
@@ -645,10 +644,10 @@ if (is_dir($outputDir)) {
                             <td style="font-size:0.8rem"><?= e(date('d/m/Y H:i', $rc['mtime'])) ?></td>
                             <td>
                                 <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../', '', $rc['path'])) ?>" target="_blank" title="Voir le PDF">
-                                    <span class="mdi mdi-file-eye"></span>
+                                    <span class="material-symbols-outlined">visibility</span>
                                 </a>
                                 <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../', '', $rc['path'])) ?>" download title="Telecharger le PDF">
-                                    <span class="mdi mdi-download"></span>
+                                    <span class="material-symbols-outlined">download</span>
                                 </a>
                             </td>
                         </tr>
@@ -661,46 +660,7 @@ if (is_dir($outputDir)) {
     </article>
 </section>
 
-<style>
-.engine-badge {
-    display:inline-flex;align-items:center;gap:5px;
-    padding:4px 12px;border-radius:20px;font-size:0.75rem;font-weight:600;
-    background:rgba(255,255,255,0.05);border:1px solid var(--border);
-}
-.engine-badge.active { border-color:var(--success);color:var(--success); }
-.engine-badge:not(.active) { border-color:var(--danger);color:var(--danger); }
 
-.drop-zone {
-    position:relative;border:2px dashed var(--border);
-    border-radius:12px;padding:2rem;text-align:center;
-    cursor:pointer;transition:all var(--transition);
-    background:rgba(255,255,255,0.02);
-}
-.drop-zone:hover, .drop-zone.drag-over { border-color:var(--primary);background:rgba(74,108,247,0.05); }
-.drop-zone-input {
-    position:absolute;inset:0;opacity:0;cursor:pointer;
-}
-
-.file-list { display:flex;flex-direction:column;gap:2px;margin-top:0.25rem; }
-.file-item {
-    display:flex;align-items:center;gap:8px;
-    padding:6px 10px;border-radius:6px;
-    background:rgba(255,255,255,0.03);border:1px solid var(--border);
-    font-size:0.85rem;
-}
-.file-item.selected { border-color:var(--success);background:rgba(0,184,148,0.05); }
-.file-item input[type="checkbox"] { width:14px;height:14px;margin:0;flex-shrink:0;cursor:pointer; }
-.file-item-name { flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
-.file-item-size { font-size:0.75rem;color:var(--text-secondary);white-space:nowrap;flex-shrink:0; }
-
-.browser-header {
-    display:flex;align-items:center;justify-content:space-between;
-    margin-bottom:0.25rem;padding:0 2px;
-}
-
-.convert-tabs .btn.active { background:rgba(0,184,148,0.12) !important;border-color:var(--success) !important;color:var(--success) !important; }
-.convert-panel { transition:opacity 0.2s; }
-</style>
 
 <script>
 (function() {
@@ -720,10 +680,10 @@ if (is_dir($outputDir)) {
             Array.from(files).forEach(function(f) {
                 const div = document.createElement('div');
                 div.className = 'file-item selected';
-                div.innerHTML = '<span class="mdi mdi-file-word" style="color:var(--primary);font-size:1.1rem"></span>'
+                div.innerHTML = '<span class="material-symbols-outlined" style="color:var(--primary);font-size:1.1rem">article</span>'
                     + '<span class="file-item-name">' + f.name + '</span>'
                     + '<span class="file-item-size">' + (f.size / 1024).toFixed(1) + ' Ko</span>'
-                    + '<span class="mdi mdi-check-circle" style="color:var(--success);font-size:0.9rem"></span>';
+                    + '<span class="material-symbols-outlined" style="color:var(--success);font-size:0.9rem">check_circle</span>';
                 fileList.appendChild(div);
             });
         });
@@ -805,7 +765,7 @@ if (is_dir($outputDir)) {
                 var div = document.createElement('div');
                 div.className = 'file-item selected';
                 div.innerHTML = '<input type="checkbox" name="selected_files[]" value="' + eAttr(f.path) + '" checked style="margin:0">'
-                    + '<span class="mdi mdi-file-word" style="color:var(--primary);font-size:1.1rem"></span>'
+                    + '<span class="material-symbols-outlined" style="color:var(--primary);font-size:1.1rem">article</span>'
                     + '<span class="file-item-name">' + eHtml(f.name) + '</span>'
                     + '<span class="file-item-size">' + eHtml(f.size) + '</span>';
                 div.querySelector('input').addEventListener('change', function() {

@@ -7,6 +7,15 @@
 /.env
 /.env.local
 /*.log
-
+/*.txt
+/*.png
 
 /output/
+
+backups/
+/config/ai.local.php
+
+/dossiers_dom/
+/dossiers_crea/
+.opencode/skill_cache/
+

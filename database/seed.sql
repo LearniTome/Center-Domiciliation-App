@@ -1,13 +1,13 @@
 USE `center_domiciliation`;
 
 -- Données de référence pour les formes juridiques
-INSERT INTO ref_formes_juridiques (forme_juridique) VALUES
-('SARL AU'),
-('SARL'),
-('Personne Physique'),
-('SA'),
-('Succurssale Etrangère'),
-('Succurssale Marocaine');
+INSERT INTO ref_formes_juridiques (forme_juridique, template_folder) VALUES
+('SARL AU', 'SARL AU'),
+('SARL', 'SARL'),
+('Personne Physique', ''),
+('SA', 'SA'),
+('Succurssale Etrangère', ''),
+('Succurssale Marocaine', '');
 
 -- Données de référence pour les tribunaux
 INSERT INTO ref_tribunaux (tribunal, tribunal_type) VALUES
@@ -306,13 +306,13 @@ INSERT INTO collaborateurs (
     collaborateur_tel_mobile, collaborateur_adresse, collaborateur_email, email, telephone, date_debut, statut, notes
 ) VALUES
 (
-    'Atlas Domiciliation', 'Nadia Chraibi', 'Gestion administrative', 'EXP -- Expert Comptable', 'EXP',
+    'Atlas Domiciliation', 'Nadia Chraibi', 'Gestion administrative', 'externe-pm', 'EXP',
     'Nadia Chraibi', 'ICE-COL-001', 'TP001', 'RC-C001', 'IF-C001', '0522000001', '+212600000010',
     'Casablanca', 'nadia@atlas.test', 'nadia@atlas.test', '+212600000010', '2026-01-05', 'actif',
     'Suivi dossiers clients'
 ),
 (
-    NULL, 'Karim Tazi', 'Support operationnel', 'CLTD -- Client Direct', 'CLTD',
+    NULL, 'Karim Tazi', 'Support operationnel', 'externe-pp', 'CLTD',
     'Karim Tazi', 'ICE-COL-002', 'TP002', 'RC-C002', 'IF-C002', '0522000002', '+212600000011',
     'Casablanca', 'karim@center.test', 'karim@center.test', '+212600000011', '2026-02-01', 'actif',
     'Appui polyvalent'
@@ -358,3 +358,77 @@ INSERT IGNORE INTO ref_villes (ville) VALUES
 INSERT IGNORE INTO ref_qualites_associe (qualite_associe) VALUES
 ('Gerant'),
 ('Associe unique');
+
+-- RBAC Seed Data
+INSERT IGNORE INTO roles (id, nom, description, is_internal, is_system, sort_order) VALUES
+(1,  'Super Admin',       'Accès total au système',                         1, 1, 1),
+(2,  'Admin',             'Administrateur avec presque tous les droits',    1, 0, 2),
+(3,  'Chef d équipes',    'Gère les dossiers et son équipe',               1, 0, 3),
+(4,  'Employé',           'Agent de traitement des dossiers',              1, 0, 4),
+(5,  'Assistante',        'Support administratif et documentaire',          1, 0, 5),
+(6,  'Stagiaire',         'Accès lecture seule',                           1, 0, 6),
+(7,  'Expert-comptable',  'Expert-comptable externe',                      0, 0, 10),
+(8,  'Comptable agréé',   'Comptable agréé externe',                       0, 0, 11),
+(9,  'Commissaire aux comptes', 'Commissaire aux comptes',                 0, 0, 12),
+(10, 'Coursier',          'Coursier / livreur',                             0, 0, 13),
+(11, 'Avocat',            'Avocat externe',                                 0, 0, 14),
+(12, 'Notaire',           'Notaire externe',                                0, 0, 15),
+(13, 'Conseil juridique', 'Conseil juridique externe',                      0, 0, 16),
+(14, 'Banque',            'Représentant bancaire',                          0, 0, 17),
+(15, 'Assurance',         'Représentant assurance',                         0, 0, 18),
+(16, 'Autre',             'Autre type de collaborateur',                    0, 0, 99);
+
+INSERT IGNORE INTO permissions (id, nom, permission_key, category, description) VALUES
+(1,  'Voir le tableau de bord',                       'dashboard.view',       'dashboard',    'Accéder au tableau de bord'),
+(2,  'Voir les sociétés',                             'societes.view',        'societes',     'Consulter la liste et les fiches sociétés'),
+(3,  'Créer une société',                             'societes.create',      'societes',     'Créer une nouvelle société'),
+(4,  'Modifier une société',                          'societes.edit',        'societes',     'Modifier les informations d une société'),
+(5,  'Supprimer une société',                         'societes.delete',      'societes',     'Supprimer une société'),
+(6,  'Exporter les sociétés',                         'societes.export',      'societes',     'Exporter la liste des sociétés en CSV'),
+(7,  'Voir les associés',                             'associes.view',        'associes',     'Consulter la liste des associés'),
+(8,  'Créer un associé',                              'associes.create',      'associes',     'Ajouter un associé'),
+(9,  'Modifier un associé',                           'associes.edit',        'associes',     'Modifier les informations d un associé'),
+(10, 'Supprimer un associé',                          'associes.delete',      'associes',     'Supprimer un associé'),
+(11, 'Exporter les associés',                         'associes.export',      'associes',     'Exporter la liste des associés en CSV'),
+(12, 'Voir les contrats',                             'contrats.view',        'contrats',     'Consulter la liste des contrats'),
+(13, 'Créer un contrat',                              'contrats.create',      'contrats',     'Ajouter un contrat'),
+(14, 'Modifier un contrat',                           'contrats.edit',        'contrats',     'Modifier les informations d un contrat'),
+(15, 'Supprimer un contrat',                          'contrats.delete',      'contrats',     'Supprimer un contrat'),
+(16, 'Exporter les contrats',                         'contrats.export',      'contrats',     'Exporter la liste des contrats en CSV'),
+(17, 'Voir les collaborateurs',                       'collaborateurs.view',       'collaborateurs', 'Consulter la liste des collaborateurs'),
+(18, 'Créer un collaborateur',                        'collaborateurs.create',     'collaborateurs', 'Ajouter un collaborateur'),
+(19, 'Modifier un collaborateur',                     'collaborateurs.edit',       'collaborateurs', 'Modifier les informations d un collaborateur'),
+(20, 'Supprimer un collaborateur',                    'collaborateurs.delete',     'collaborateurs', 'Supprimer un collaborateur'),
+(21, 'Exporter les collaborateurs',                   'collaborateurs.export',     'collaborateurs', 'Exporter la liste des collaborateurs en CSV'),
+(22, 'Utiliser l assistant de création',              'wizard.create',        'wizard',       'Accéder au wizard de création de dossier'),
+(23, 'Voir les templates',                            'templates.view',       'templates',    'Consulter la liste des templates'),
+(24, 'Créer un template',                             'templates.create',     'templates',    'Ajouter un nouveau template'),
+(25, 'Modifier un template',                          'templates.edit',       'templates',    'Modifier un template existant'),
+(26, 'Supprimer un template',                         'templates.delete',     'templates',    'Supprimer un template'),
+(27, 'Utiliser le générateur de dossiers',            'generation.use',       'generation',   'Générer les documents d un dossier'),
+(28, 'Voir les documents générés',                    'documents.view',       'documents',    'Consulter la liste des documents'),
+(29, 'Télécharger les documents',                     'documents.download',   'documents',    'Télécharger les fichiers générés'),
+(30, 'Voir la configuration',                         'configuration.view',   'configuration','Accéder à la page de configuration'),
+(31, 'Modifier la configuration',                     'configuration.edit',   'configuration','Modifier les données de configuration'),
+(32, 'Voir l analyse de couverture',                  'analyse.view',         'analyse',      'Accéder à l analyse de couverture'),
+(33, 'Voir les variables',                            'variables.view',       'variables',    'Consulter la gestion des variables'),
+(34, 'Modifier les variables',                        'variables.edit',       'variables',    'Renommer et supprimer des variables'),
+(35, 'Modifier les valeurs par défaut',               'defaults.edit',        'defaults',     'Configurer les valeurs par défaut'),
+(36, 'Utiliser la conversion Word → PDF',             'convert.use',          'convert',      'Accéder à l outil de conversion'),
+(37, 'Utiliser l assistant IA',                       'ai.use',               'ai',           'Accéder à l assistant IA'),
+(38, 'Gérer les rôles et permissions',                'roles.manage',         'roles',        'Créer, modifier et supprimer des rôles');
+
+-- Super Admin: ALL permissions
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT 1, id FROM permissions;
+
+-- Admin: all except roles.manage
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT 2, id FROM permissions WHERE id < 38;
+
+-- Super Admin collaborator (default password: admin123)
+INSERT INTO collaborateurs (nom_complet, fonction, role_id, collaborateur_email, email, can_login, password_hash, statut, notes)
+SELECT 'Super Admin', 'Administrateur système', 1, 'admin@center.test', 'admin@center.test', 1,
+       '$2y$10$QOZo9.7oOayIbJEsGwRxLuuS6BvQ9rJT6oX1rAsQoFG4cAvwyHZBG', 'actif',
+       'Compte super admin par defaut'
+WHERE NOT EXISTS (SELECT 1 FROM collaborateurs WHERE email = 'admin@center.test' OR collaborateur_email = 'admin@center.test');

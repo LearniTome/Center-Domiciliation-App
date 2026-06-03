@@ -387,3 +387,228 @@ function load_defaults(?string $key = null): array
     
     return $defaults;
 }
+
+function fetch_legal_form_template_folder(?PDO $pdo, string $formeJuridique): string
+{
+    if (!$pdo || $formeJuridique === '') {
+        return '';
+    }
+
+    try {
+        $stmt = $pdo->prepare("SELECT template_folder FROM ref_formes_juridiques WHERE forme_juridique = :fj LIMIT 1");
+        $stmt->execute(['fj' => $formeJuridique]);
+        $row = $stmt->fetch();
+        return $row ? (string) ($row['template_folder'] ?? '') : '';
+    } catch (PDOException) {
+        return '';
+    }
+}
+
+function fetch_formes_juridiques_with_folders(?PDO $pdo): array
+{
+    if (!$pdo) {
+        return [];
+    }
+
+    try {
+        $stmt = $pdo->query("SELECT forme_juridique, template_folder FROM ref_formes_juridiques ORDER BY sort_order ASC, forme_juridique ASC");
+        return $stmt->fetchAll();
+    } catch (PDOException) {
+        return [];
+    }
+}
+
+function ensure_template_folder(string $folderName): bool
+{
+    if ($folderName === '') {
+        return false;
+    }
+
+    $dir = __DIR__ . '/../templates/' . $folderName;
+
+    if (is_dir($dir)) {
+        return true;
+    }
+
+    return mkdir($dir, 0777, true);
+}
+
+// ─── Auth Helpers ───────────────────────────────────────────
+
+function current_user(): ?array
+{
+    if (empty($_SESSION['user_id'])) {
+        return null;
+    }
+
+    if (!empty($_SESSION['_user_cache'])) {
+        return $_SESSION['_user_cache'];
+    }
+
+    global $pdo;
+    if (!$pdo) {
+        return null;
+    }
+
+    $stmt = $pdo->prepare('
+        SELECT c.*, r.nom AS role_nom, r.id AS role_id
+        FROM collaborateurs c
+        LEFT JOIN roles r ON r.id = c.role_id
+        WHERE c.id = :id AND c.can_login = 1 AND c.statut = \'actif\'
+        LIMIT 1
+    ');
+    $stmt->execute(['id' => (int) $_SESSION['user_id']]);
+    $user = $stmt->fetch();
+
+    if (!$user) {
+        unset($_SESSION['user_id'], $_SESSION['_user_cache'], $_SESSION['_permissions_cache']);
+        return null;
+    }
+
+    $_SESSION['_user_cache'] = $user;
+    return $user;
+}
+
+function is_logged_in(): bool
+{
+    if (empty($_SESSION['user_id'])) {
+        return false;
+    }
+
+    // Verify user still exists and is active
+    if (current_user() !== null) {
+        return true;
+    }
+
+    return false;
+}
+
+function require_auth(): void
+{
+    if (!is_logged_in()) {
+        set_flash('error', 'Veuillez vous connecter pour accéder a cette page.');
+        redirect_to('connexion', ['redirect' => $_SERVER['REQUEST_URI'] ?? '']);
+    }
+}
+
+function get_user_permissions(): array
+{
+    if (!empty($_SESSION['_permissions_cache']) && is_array($_SESSION['_permissions_cache'])) {
+        return $_SESSION['_permissions_cache'];
+    }
+
+    $user = current_user();
+    if (!$user || empty($user['role_id'])) {
+        $_SESSION['_permissions_cache'] = [];
+        return [];
+    }
+
+    global $pdo;
+    if (!$pdo) {
+        return [];
+    }
+
+    $stmt = $pdo->prepare('
+        SELECT p.permission_key
+        FROM role_permissions rp
+        JOIN permissions p ON p.id = rp.permission_id
+        WHERE rp.role_id = :role_id
+    ');
+    $stmt->execute(['role_id' => (int) $user['role_id']]);
+    $perms = $stmt->fetchAll(\PDO::FETCH_COLUMN);
+
+    $_SESSION['_permissions_cache'] = $perms;
+    return $perms;
+}
+
+function has_permission(string $key): bool
+{
+    // Super Admin (role_id = 1) always has all permissions
+    $user = current_user();
+    if ($user && (int) ($user['role_id'] ?? 0) === 1) {
+        return true;
+    }
+
+    $permissions = get_user_permissions();
+    return in_array($key, $permissions, true);
+}
+
+function require_permission(string $key): void
+{
+    if (!has_permission($key)) {
+        set_flash('error', 'Vous n\'avez pas les droits nécessaires pour accéder a cette page.');
+        redirect_to('dashboard');
+    }
+}
+
+function get_page_permission(string $page): ?string
+{
+    $map = [
+        'dashboard' => 'dashboard.view',
+
+        'societes' => 'societes.view',
+        'societe' => 'societes.view',
+
+        'associes' => 'associes.view',
+
+        'contrats' => 'contrats.view',
+
+        'collaborateurs' => 'collaborateurs.view',
+        'collaborateur' => 'collaborateurs.view',
+
+        'creation' => 'wizard.create',
+
+        'templates' => 'templates.view',
+        'template' => 'templates.view',
+        'template_edit' => 'templates.edit',
+
+        'generation' => 'generation.use',
+
+        'documents' => 'documents.view',
+
+        'configuration' => 'configuration.view',
+        'formes-juridiques' => 'configuration.view',
+        'tribunaux' => 'configuration.view',
+        'villes' => 'configuration.view',
+        'nationalites' => 'configuration.view',
+        'lieux-naissance' => 'configuration.view',
+        'adresses' => 'configuration.view',
+        'qualites-associe' => 'configuration.view',
+        'activites' => 'configuration.view',
+        'activites-ompic' => 'configuration.view',
+
+        'analyse-couverture' => 'analyse.view',
+
+        'variables' => 'variables.view',
+
+        'defaults' => 'defaults.edit',
+
+        'convert-word-pdf' => 'convert.use',
+
+        'ai-assistant' => 'ai.use',
+
+        'roles' => 'roles.manage',
+        'role' => 'roles.manage',
+    ];
+
+    return $map[$page] ?? null;
+}
+
+function require_page_access(string $page): void
+{
+    $perm = get_page_permission($page);
+    if ($perm !== null) {
+        require_permission($perm);
+    }
+}
+
+function get_role_name(): string
+{
+    $user = current_user();
+    return $user['role_nom'] ?? '—';
+}
+
+function clear_user_cache(): void
+{
+    unset($_SESSION['_user_cache'], $_SESSION['_permissions_cache']);
+}

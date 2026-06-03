@@ -16,6 +16,7 @@ $allowedPages = [
     'nationalites',
     'lieux-naissance',
     'qualites-associe',
+    'fonctions',
     'activites',
     'activites-ompic',
     'dashboard',
@@ -32,8 +33,14 @@ $allowedPages = [
     'documents',
     'defaults',
     'analyse-couverture',
+    'variables',
     'convert-word-pdf',
+    'ai-assistant',
     'setup',
+    'connexion',
+    'deconnexion',
+    'roles',
+    'role',
 ];
 
 $page = $_GET['page'] ?? 'dashboard';
@@ -47,11 +54,12 @@ $pageTitleMap = [
     'configuration' => 'Configuration',
     'formes-juridiques' => 'Formes juridiques',
     'tribunaux' => 'Tribunaux',
-    'adresses' => 'Adresses de reference',
+    'adresses' => 'Adresses',
     'villes' => 'Villes',
     'nationalites' => 'Nationalites',
     'lieux-naissance' => 'Lieux de naissance',
     'qualites-associe' => 'Qualites associe',
+    'fonctions' => 'Fonctions',
     'activites' => 'Activites',
     'activites-ompic' => 'Activites Ompic',
     'dashboard' => 'Tableau de bord',
@@ -61,19 +69,43 @@ $pageTitleMap = [
     'contrats' => 'Contrats',
     'collaborateur' => 'Fiche collaborateur',
     'collaborateurs' => 'Collaborateurs',
-    'generation' => 'Generation',
+    'generation' => 'Generateur de dossiers',
     'template' => 'Template',
     'template_edit' => 'Editeur de template',
     'templates' => 'Templates',
     'analyse-couverture' => 'Analyse de couverture',
-    'documents' => 'Documents',
+    'variables' => 'Gestion des variables',
+    'ai-assistant' => 'Assistant IA',
+    'documents' => 'Documents generes',
     'defaults' => 'Valeurs par defaut',
     'convert-word-pdf' => 'Word to PDF',
     'setup' => 'Installation XAMPP',
     'not-found' => 'Page introuvable',
+    'connexion' => 'Connexion',
+    'deconnexion' => 'Deconnexion',
+    'roles' => 'Gestion des roles',
+    'role' => 'Fiche role',
 ];
 
+// Public pages without sidebar layout
+$noLayoutPages = ['connexion', 'deconnexion'];
+
+if (in_array($page, $noLayoutPages, true)) {
+    $pageTitle = $pageTitleMap[$page] ?? 'Center Domiciliation App';
+    require __DIR__ . '/includes/header.php';
+    require __DIR__ . '/pages/' . $page . '.php';
+    require __DIR__ . '/includes/footer.php';
+    ob_end_flush();
+    exit;
+}
+
 $pageTitle = $pageTitleMap[$page] ?? 'Center Domiciliation App';
+
+// Page-level permission check (except public pages)
+$publicPages = ['setup', 'not-found'];
+if (!in_array($page, $publicPages, true)) {
+    require_page_access($page);
+}
 
 require __DIR__ . '/includes/header.php';
 require __DIR__ . '/pages/' . $page . '.php';

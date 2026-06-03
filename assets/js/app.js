@@ -8,37 +8,53 @@ document.querySelectorAll('[data-confirm]').forEach((element) => {
 });
 
 (function () {
-    const toggle = document.querySelector('[data-sidebar-toggle]');
     const shell = document.querySelector('.shell');
-    if (toggle && shell) {
-        toggle.addEventListener('click', () => {
-            shell.classList.toggle('collapsed');
-        });
-    }
+    const saveSidebarState = () => {
+        try { localStorage.setItem('sidebar_collapsed', shell.classList.contains('collapsed') ? '1' : '0'); } catch (e) {}
+    };
+    const updateToggleTitle = () => {
+        const btn = document.querySelector('[data-sidebar-toggle]');
+        if (btn) {
+            const isCollapsed = shell.classList.contains('collapsed');
+            btn.title = isCollapsed ? 'Developper la barre de navigation' : 'Reduire la barre de navigation';
+            var icon = btn.querySelector('.material-symbols-outlined');
+            if (icon) { icon.textContent = isCollapsed ? 'chevron_right' : 'chevron_left'; }
+        }
+    };
+    const toggleTrigger = selector => {
+        const el = document.querySelector(selector);
+        if (el && shell) {
+            el.addEventListener('click', () => {
+                shell.classList.toggle('collapsed');
+                saveSidebarState();
+                updateToggleTitle();
+            });
+        }
+    };
+    toggleTrigger('[data-sidebar-toggle]');
+    toggleTrigger('.brand-badge');
+    updateToggleTitle();
 })();
-
 (function () {
-    var storageKey = 'nav_sections';
-
     function saveState() {
         var state = {};
         document.querySelectorAll('.nav-section').forEach(function (s) {
             var btn = s.querySelector('[data-nav-toggle]');
             if (btn) {
-                state[btn.textContent.trim()] = s.classList.contains('collapsed');
+                state[btn.getAttribute('data-label')] = s.classList.contains('collapsed');
             }
         });
-        try { localStorage.setItem(storageKey, JSON.stringify(state)); } catch (e) {}
+        try { localStorage.setItem('nav_sections', JSON.stringify(state)); } catch (e) {}
     }
 
     function restoreState() {
         try {
-            var raw = localStorage.getItem(storageKey);
+            var raw = localStorage.getItem('nav_sections');
             if (!raw) return;
             var state = JSON.parse(raw);
             document.querySelectorAll('.nav-section').forEach(function (s) {
                 var btn = s.querySelector('[data-nav-toggle]');
-                if (btn && state[btn.textContent.trim()]) {
+                if (btn && state[btn.getAttribute('data-label')]) {
                     s.classList.add('collapsed');
                 }
             });
@@ -55,6 +71,20 @@ document.querySelectorAll('[data-confirm]').forEach((element) => {
                 saveState();
             }
         });
+    });
+
+    document.querySelector('[data-collapse-all]')?.addEventListener('click', function () {
+        document.querySelectorAll('.nav-section:not(.collapsed)').forEach(function (s) {
+            s.classList.add('collapsed');
+        });
+        saveState();
+    });
+
+    document.querySelector('[data-expand-all]')?.addEventListener('click', function () {
+        document.querySelectorAll('.nav-section.collapsed').forEach(function (s) {
+            s.classList.remove('collapsed');
+        });
+        saveState();
     });
 })();
 
@@ -186,9 +216,9 @@ const testData = {
     'societe_adresse_siege': 'HAY MOULAY ABDELLAH RUE 300 N 152 ETG 2 AIN CHOCK, CASABLANCA',
     'societe_tribunal': 'Casablanca',
     'tribunal_type': 'Tribunal de commerce',
-    'type_generation': 'creation',
-    'procedure_creation': 'normal',
-    'mode_depot_creation': 'depot_physique',
+    'societe_type_generation': 'creation',
+    'societe_procedure_creation': 'normal',
+    'societe_mode_depot': 'depot_physique',
     // contrat (step 3)
     'contrat_type': 'Domiciliation commerciale',
     'contrat_date': '2026-01-01',
@@ -215,17 +245,17 @@ const testData = {
     'nom_complet': 'Mr Ahmed BENANI',
     'cin': 'AB123456',
     'date_validite_cin': '2028-05-15',
-    'date_naiss': '1990-05-15',
-    'lieu_naiss': 'Casablanca',
+    'date_naissance': '1990-05-15',
+    'lieu_naissance': 'Casablanca',
     'nationalite': 'Marocaine',
-    'phone': '0612345678',
+    'telephone': '0612345678',
     'email': 'ahmed.benani@test.ma',
     'adresse': '123 Rue Mohammed V, Casablanca',
-    'qualite_associe': 'Associe',
+    'qualite': 'Associe',
     'parts': '1000',
     'capital_detenu': '100000',
     'part_percent': '',
-    'is_gerant': '1',
+    'est_gerant': '1',
 };
 
 document.addEventListener('click', (event) => {
@@ -321,8 +351,8 @@ if (associesContainer && associeTemplate && addAssocieButton) {
     var toggleProcedureFields = function (typeGen) {
         var form = typeGen.closest('form');
         if (!form) return;
-        var procCreation = form.querySelector('[name="procedure_creation"]');
-        var modeDepot = form.querySelector('[name="mode_depot_creation"]');
+        var procCreation = form.querySelector('[name="societe_procedure_creation"]');
+        var modeDepot = form.querySelector('[name="societe_mode_depot"]');
         var statutsSection = form.querySelector('[data-statuts-section]');
         if (!procCreation || !modeDepot) return;
         var isDomiciliation = typeGen.value === 'domiciliation';
@@ -338,12 +368,12 @@ if (associesContainer && associeTemplate && addAssocieButton) {
     };
 
     document.addEventListener('change', function (e) {
-        if (e.target && e.target.matches('[name="type_generation"]')) {
+        if (e.target && e.target.matches('[name="societe_type_generation"]')) {
             toggleProcedureFields(e.target);
         }
     });
 
-    var typeGen = document.querySelector('[name="type_generation"]');
+    var typeGen = document.querySelector('[name="societe_type_generation"]');
     if (typeGen) {
         toggleProcedureFields(typeGen);
     }
@@ -810,8 +840,8 @@ document.addEventListener('input', (e) => {
         }
         if (isSarlAu) {
             document.querySelectorAll('[data-associe-item]').forEach((item) => {
-                const qualite = item.querySelector('[data-field-name="qualite_associe"]');
-                const gerant = item.querySelector('[data-field-name="is_gerant"]');
+                const qualite = item.querySelector('[data-field-name="qualite"]');
+                const gerant = item.querySelector('[data-field-name="est_gerant"]');
                 if (qualite) qualite.value = 'Gerant';
                 if (gerant) gerant.value = '1';
             });
@@ -858,5 +888,121 @@ document.addEventListener('input', (e) => {
     toggleCapitalFields();
     updateCapitalSummary();
 })();
+
+(function () {
+    document.querySelectorAll('table[data-sortable]').forEach(function (table) {
+        var thead = table.querySelector('thead');
+        if (!thead) return;
+        var ths = thead.querySelectorAll('th[data-col]');
+        var tbody = table.querySelector('tbody');
+        if (!tbody) return;
+
+        ths.forEach(function (th) {
+            th.style.cursor = 'pointer';
+            th.style.userSelect = 'none';
+
+            var icon = document.createElement('span');
+            icon.className = 'material-symbols-outlined';
+            icon.textContent = 'unfold_more';
+            icon.style.marginLeft = '4px';
+            icon.style.fontSize = '0.85rem';
+            icon.style.opacity = '0.35';
+            icon.style.verticalAlign = 'middle';
+            th.appendChild(icon);
+
+            th.addEventListener('click', function () {
+                var key = th.getAttribute('data-col');
+                var order = th.getAttribute('data-order') || 'none';
+
+                ths.forEach(function (other) {
+                    other.removeAttribute('data-order');
+                    var ic = other.querySelector('.material-symbols-outlined');
+                    if (ic) { ic.className = 'material-symbols-outlined'; ic.textContent = 'unfold_more'; ic.style.opacity = '0.35'; }
+                });
+
+                var newOrder = order === 'asc' ? 'desc' : 'asc';
+                th.setAttribute('data-order', newOrder);
+                icon.className = 'material-symbols-outlined';
+                icon.textContent = newOrder === 'asc' ? 'arrow_upward' : 'arrow_downward';
+                icon.style.opacity = '1';
+
+                var rows = Array.from(tbody.querySelectorAll('tr'));
+                var colIdx = Array.from(th.parentNode.children).indexOf(th);
+
+                rows.sort(function (a, b) {
+                    var aTd = a.children[colIdx];
+                    var bTd = b.children[colIdx];
+                    if (!aTd || !bTd) return 0;
+                    var aVal = aTd.textContent.trim();
+                    var bVal = bTd.textContent.trim();
+
+                    var aNum = parseFloat(aVal.replace(/[^\d.,-]/g, '').replace(',', '.'));
+                    var bNum = parseFloat(bVal.replace(/[^\d.,-]/g, '').replace(',', '.'));
+                    var isNum = !isNaN(aNum) && !isNaN(bNum);
+
+                    var cmp = isNum ? aNum - bNum : aVal.localeCompare(bVal, 'fr', { numeric: true });
+                    return newOrder === 'asc' ? cmp : -cmp;
+                });
+
+                rows.forEach(function (row) { tbody.appendChild(row); });
+            });
+        });
+    });
+})();
+
+(function () {
+    var bar = document.querySelector('.page-count-bar');
+    var counts = document.querySelectorAll('.page-count');
+    if (bar && counts.length) {
+        counts.forEach(function (el) {
+            bar.appendChild(el);
+        });
+    }
+})();
+
+document.addEventListener('click', function (event) {
+    var btn = event.target.closest('[data-apply-ai-fill]');
+    if (!btn) return;
+    event.preventDefault();
+
+    var suggestionsStr = btn.getAttribute('data-apply-ai-fill');
+    if (!suggestionsStr) return;
+
+    var suggestions;
+    try {
+        suggestions = JSON.parse(suggestionsStr);
+    } catch (e) {
+        return;
+    }
+
+    var form = btn.closest('form');
+    if (!form) return;
+
+    form.querySelectorAll('input, select, textarea').forEach(function (field) {
+        var name = field.getAttribute('name');
+        if (!name) return;
+
+        var value = suggestions[name] !== undefined ? suggestions[name] : suggestions[name.replace(/^associes\[\d+\]\[(\w+)\]$/, '$1')];
+        if (value === undefined) return;
+
+        if (field.tagName === 'SELECT') {
+            var option = Array.from(field.options).find(function (opt) { return String(opt.value) === String(value); });
+            if (option) field.value = value;
+        } else if (field.type === 'checkbox' || field.type === 'radio') {
+            field.checked = String(field.value) === String(value);
+        } else {
+            field.value = value;
+        }
+    });
+
+    form.querySelectorAll('input, select, textarea').forEach(function (field) {
+        var name = field.getAttribute('name');
+        if (!name) return;
+        var key = name.replace(/^associes\[\d+\]\[(\w+)\]$/, '$1');
+        if (suggestions[key] === undefined && suggestions[name] === undefined) return;
+        field.dispatchEvent(new Event('input', { bubbles: true }));
+        field.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+});
 
 

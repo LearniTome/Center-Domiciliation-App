@@ -31,11 +31,12 @@ if (!isset($_SESSION['creation_wizard']) || !is_array($_SESSION['creation_wizard
             'associe_est_gerant' => ($associeDefaults['associe_est_gerant'] ?? false) ? '1' : '0',
         ]],
         'contrat' => $defaults['contrat'] ?? [],
+        'uploaded_docs' => [],
     ];
 }
 
 $wizard = &$_SESSION['creation_wizard'];
-$step = max(1, min(5, (int) ($_GET['step'] ?? 1)));
+$step = max(1, min(6, (int) ($_GET['step'] ?? 1)));
 $adressesOptions = fetch_reference_options($pdo ?? null, 'ref_ste_adresses', 'ste_adresse');
 $villesOptions = fetch_reference_options($pdo ?? null, 'ref_villes', 'ville');
 $nationalitesOptions = fetch_reference_options($pdo ?? null, 'ref_nationalites', 'nationalite');
@@ -78,13 +79,27 @@ if (is_post() && isset($_POST['add_activite_ref']) && ($pdo ?? null) instanceof 
     exit;
 }
 
+function _cleanup_tmp_uploads(): void
+{
+    $tmpDir = __DIR__ . '/../uploads/tmp/' . session_id();
+    if (is_dir($tmpDir)) {
+        $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($tmpDir, RecursiveDirectoryIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST);
+        foreach ($files as $f) {
+            $f->isDir() ? rmdir((string) $f) : unlink((string) $f);
+        }
+        rmdir($tmpDir);
+    }
+}
+
 if (isset($_GET['reset']) && $_GET['reset'] === '1') {
+    _cleanup_tmp_uploads();
     unset($_SESSION['creation_wizard']);
     set_flash('success', 'Assistant reinitialise.');
     redirect_to('creation');
 }
 
 if (isset($_GET['cancel']) && $_GET['cancel'] === '1') {
+    _cleanup_tmp_uploads();
     unset($_SESSION['creation_wizard']);
     set_flash('success', 'Creation annulee.');
     redirect_to('societes');
@@ -92,7 +107,7 @@ if (isset($_GET['cancel']) && $_GET['cancel'] === '1') {
 
 if (is_post()) {
     verify_csrf();
-    $postedStep = max(1, min(5, (int) ($_POST['step'] ?? $step)));
+    $postedStep = max(1, min(6, (int) ($_POST['step'] ?? $step)));
     $navAction = $_POST['nav_action'] ?? 'next';
 
     if ($postedStep === 1) {
@@ -121,12 +136,23 @@ if (is_post()) {
             'societe_email' => field_value($_POST, 'societe_email'),
             'societe_telephone' => field_value($_POST, 'societe_telephone'),
             'societe_capital' => field_value($_POST, 'societe_capital'),
-            'type_generation' => field_value($_POST, 'type_generation'),
-            'procedure_creation' => field_value($_POST, 'procedure_creation'),
-            'mode_depot_creation' => field_value($_POST, 'mode_depot_creation'),
+            'societe_type_generation' => field_value($_POST, 'societe_type_generation'),
+            'societe_procedure_creation' => field_value($_POST, 'societe_procedure_creation'),
+            'societe_mode_depot' => field_value($_POST, 'societe_mode_depot'),
+            'societe_tribunal_type' => field_value($_POST, 'tribunal_type'),
         ];
 
         $wizard['societe'] = $societe;
+        if ($navAction === 'ai_fill') {
+            if (ClaudeService::isAvailable()) {
+                $suggestions = ClaudeService::autoFill($societe);
+                $_SESSION['creation_wizard']['ai_suggestions'] = ['step1' => $suggestions];
+            } else {
+                set_flash('error', "L'assistant IA n'est pas disponible. Configurez la cle API dans config/ai.local.php.");
+            }
+            redirect_to('creation', ['step' => 1]);
+        }
+
         if ($societe['societe_raison_sociale'] === '') {
             set_flash('error', 'La raison sociale est obligatoire.');
             redirect_to('creation', ['step' => 1]);
@@ -161,16 +187,15 @@ if (is_post()) {
                     'associe_cin' => trim((string) ($associe['cin'] ?? '')),
                     'associe_date_validite_cin' => trim((string) ($associe['date_validite_cin'] ?? '')),
                     'associe_adresse' => trim((string) ($associe['adresse'] ?? '')),
-                    'associe_date_naissance' => trim((string) ($associe['date_naiss'] ?? '')),
-                    'associe_lieu_naissance' => trim((string) ($associe['lieu_naiss'] ?? '')),
-                    'associe_nationalite' => trim((string) ($associe['nationalite'] ?? '')),
-                    'associe_telephone' => trim((string) ($associe['phone'] ?? '')),
-                    'associe_email' => trim((string) ($associe['societe_email'] ?? '')),
-                    'associe_qualite' => trim((string) ($associe['qualite_associe'] ?? '')),
+                    'associe_date_naissance' => trim((string) ($associe['date_naissance'] ?? '')),
+                    'associe_lieu_naissance' => trim((string) ($associe['lieu_naissance'] ?? '')),
+                    'associe_telephone' => trim((string) ($associe['telephone'] ?? '')),
+                    'associe_email' => trim((string) ($associe['email'] ?? '')),
+                    'associe_qualite' => trim((string) ($associe['qualite'] ?? '')),
                     'associe_parts' => trim((string) ($associe['parts'] ?? '')),
                     'associe_capital_detenu' => trim((string) ($associe['capital_detenu'] ?? '')),
                     'associe_part_percent' => trim((string) ($associe['part_percent'] ?? '')),
-                    'associe_est_gerant' => ((string) ($associe['is_gerant'] ?? '0') === '1') ? '1' : '0',
+                    'associe_est_gerant' => ((string) ($associe['est_gerant'] ?? '0') === '1') ? '1' : '0',
                 ];
 
                 $isEmpty = $item['associe_nom_complet'] === ''
@@ -186,6 +211,16 @@ if (is_post()) {
         }
 
         $wizard['associes'] = count($normalizedAssocies) > 0 ? $normalizedAssocies : $wizard['associes'];
+
+        if ($navAction === 'ai_fill') {
+            if (ClaudeService::isAvailable()) {
+                $suggestions = ClaudeService::autoFill(current($normalizedAssocies) ?: []);
+                $_SESSION['creation_wizard']['ai_suggestions'] = ['step2' => $suggestions];
+            } else {
+                set_flash('error', "L'assistant IA n'est pas disponible. Configurez la cle API dans config/ai.local.php.");
+            }
+            redirect_to('creation', ['step' => 2]);
+        }
 
         if ($navAction === 'back') {
             redirect_to('creation', ['step' => 1]);
@@ -228,6 +263,16 @@ if (is_post()) {
 
         $wizard['contrat'] = $contrat;
 
+        if ($navAction === 'ai_fill') {
+            if (ClaudeService::isAvailable()) {
+                $suggestions = ClaudeService::autoFill($contrat);
+                $_SESSION['creation_wizard']['ai_suggestions'] = ['step3' => $suggestions];
+            } else {
+                set_flash('error', "L'assistant IA n'est pas disponible. Configurez la cle API dans config/ai.local.php.");
+            }
+            redirect_to('creation', ['step' => 3]);
+        }
+
         if ($navAction === 'back') {
             redirect_to('creation', ['step' => 2]);
         }
@@ -253,10 +298,61 @@ if (is_post()) {
             redirect_to('creation', ['step' => 4]);
         }
 
+        $uploadDir = __DIR__ . '/../uploads';
+        $tmpDir = $uploadDir . '/tmp/' . session_id();
+        if (!is_dir($tmpDir)) {
+            mkdir($tmpDir, 0777, true);
+        }
+
+        $uploadedDocs = $wizard['uploaded_docs'] ?? [];
+
+        if (!empty($_FILES['certificat_negatif']['name']) && $_FILES['certificat_negatif']['error'] === UPLOAD_ERR_OK) {
+            $ext = pathinfo($_FILES['certificat_negatif']['name'], PATHINFO_EXTENSION);
+            $stored = 'certificat_negatif_' . date('Ymd_His') . '.' . $ext;
+            $dest = $tmpDir . '/' . $stored;
+            if (move_uploaded_file($_FILES['certificat_negatif']['tmp_name'], $dest)) {
+                $uploadedDocs['certificat_negatif'] = [
+                    'original' => $_FILES['certificat_negatif']['name'],
+                    'stored' => $stored,
+                    'path' => $dest,
+                    'taille_ko' => round(filesize($dest) / 1024, 1),
+                ];
+            }
+        }
+
+        if (!empty($_FILES['cin_gerants']['name'][0]) && is_array($_FILES['cin_gerants']['name'])) {
+            $files = $_FILES['cin_gerants'];
+            $associeIndexes = $_POST['cin_associe_index'] ?? [];
+            foreach ($files['name'] as $idx => $name) {
+                if ($name === '' || $files['error'][$idx] !== UPLOAD_ERR_OK) continue;
+                $ext = pathinfo($name, PATHINFO_EXTENSION);
+                $stored = 'cin_gerant_' . $idx . '_' . date('Ymd_His') . '.' . $ext;
+                $dest = $tmpDir . '/' . $stored;
+                if (move_uploaded_file($files['tmp_name'][$idx], $dest)) {
+                    $associeIdx = $associeIndexes[$idx] ?? $idx;
+                    $uploadedDocs['cin_gerants'][$associeIdx] = [
+                        'original' => $name,
+                        'stored' => $stored,
+                        'path' => $dest,
+                        'taille_ko' => round(filesize($dest) / 1024, 1),
+                    ];
+                }
+            }
+        }
+
+        $wizard['uploaded_docs'] = $uploadedDocs;
+        redirect_to('creation', ['step' => 6]);
+    }
+
+    if ($postedStep === 6) {
+        if ($navAction === 'back') {
+            redirect_to('creation', ['step' => 5]);
+        }
+
         if ($navAction === 'create_dossier') {
             if (!(($pdo ?? null) instanceof PDO)) {
                 set_flash('error', 'Connexion MySQL indisponible.');
-                redirect_to('creation', ['step' => 5]);
+                redirect_to('creation', ['step' => 6]);
             }
 
             try {
@@ -267,12 +363,12 @@ if (is_post()) {
                         societe_dossier, societe_raison_sociale, societe_forme_juridique, societe_ice, societe_date_ice, societe_rc, societe_if,
                         societe_activites_statuts, societe_activites_ompic,
                         societe_capital, societe_part_social, societe_valeur_nominale, societe_date_exp_cert_neg, societe_adresse_siege, societe_ville, societe_tribunal, societe_email,
-                        societe_telephone, societe_type_generation, societe_procedure_creation, societe_mode_depot
+                        societe_telephone, societe_type_generation, societe_procedure_creation, societe_mode_depot, societe_tribunal_type
                     ) VALUES (
                         :societe_dossier, :societe_raison_sociale, :societe_forme_juridique, :societe_ice, :societe_date_ice, :societe_rc, :societe_if,
                         :societe_activites_statuts, :societe_activites_ompic,
                         :societe_capital, :societe_part_social, :societe_valeur_nominale, :societe_date_exp_cert_neg, :societe_adresse_siege, :societe_ville, :societe_tribunal, :societe_email,
-                        :societe_telephone, :societe_type_generation, :societe_procedure_creation, :societe_mode_depot
+                        :societe_telephone, :societe_type_generation, :societe_procedure_creation, :societe_mode_depot, :societe_tribunal_type
                     )
                 ');
                 $societeStmt->execute([
@@ -294,9 +390,10 @@ if (is_post()) {
                     'societe_part_social' => ($wizard['societe']['societe_part_social'] ?? '') !== '' ? (int) $wizard['societe']['societe_part_social'] : null,
                     'societe_valeur_nominale' => ($wizard['societe']['societe_valeur_nominale'] ?? '') !== '' ? parse_money((string) $wizard['societe']['societe_valeur_nominale']) : null,
                     'societe_date_exp_cert_neg' => ($wizard['societe']['societe_date_exp_cert_neg'] ?? '') !== '' ? $wizard['societe']['societe_date_exp_cert_neg'] : null,
-                    'societe_type_generation' => $wizard['societe']['type_generation'] ?? '',
-                    'societe_procedure_creation' => $wizard['societe']['procedure_creation'] ?? '',
-                    'societe_mode_depot' => $wizard['societe']['mode_depot_creation'] ?? '',
+                    'societe_type_generation' => $wizard['societe']['societe_type_generation'] ?? '',
+                    'societe_procedure_creation' => $wizard['societe']['societe_procedure_creation'] ?? '',
+                    'societe_mode_depot' => $wizard['societe']['societe_mode_depot'] ?? '',
+                    'societe_tribunal_type' => $wizard['societe']['societe_tribunal_type'] ?? '',
                 ]);
 
                 $societeId = (int) $pdo->lastInsertId();
@@ -371,15 +468,87 @@ if (is_post()) {
                 $pdo->commit();
 
                 $_SESSION['creation_wizard']['societe_id'] = $societeId;
+
+                $uploadedDocs = $wizard['uploaded_docs'] ?? [];
+                if ($uploadedDocs !== [] && ($pdo ?? null) instanceof PDO) {
+                    $dossierUploadDir = __DIR__ . '/../uploads/dossiers/' . $societeId;
+                    if (!is_dir($dossierUploadDir)) {
+                        mkdir($dossierUploadDir, 0777, true);
+                    }
+
+                    $insertDocStmt = $pdo->prepare('
+                        INSERT INTO uploaded_docs (societe_id, doc_type, associe_idx, filename_original, filename_stored, filepath, taille_ko)
+                        VALUES (:societe_id, :doc_type, :associe_idx, :filename_original, :filename_stored, :filepath, :taille_ko)
+                    ');
+
+                    $socName = trim(preg_replace('/[^a-zA-Z0-9-]/', '_', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $wizard['societe']['societe_raison_sociale'] ?? 'Societe')));
+                    $socName = preg_replace('/_+/', '_', $socName);
+                    $socName = trim($socName, '_');
+                    $dateStr = date('Y-m-d');
+
+                    if (isset($uploadedDocs['certificat_negatif'])) {
+                        $cn = $uploadedDocs['certificat_negatif'];
+                        $ext = pathinfo($cn['original'], PATHINFO_EXTENSION);
+                        $newFilename = $dateStr . '_CN_' . $socName . '.' . $ext;
+                        $newPath = $dossierUploadDir . '/' . $newFilename;
+                        if (file_exists($cn['path'])) {
+                            rename($cn['path'], $newPath);
+                            $insertDocStmt->execute([
+                                'societe_id' => $societeId,
+                                'doc_type' => 'certificat_negatif',
+                                'associe_idx' => null,
+                                'filename_original' => $newFilename,
+                                'filename_stored' => $newFilename,
+                                'filepath' => $newPath,
+                                'taille_ko' => $cn['taille_ko'],
+                            ]);
+                        }
+                    }
+
+                    if (isset($uploadedDocs['cin_gerants']) && is_array($uploadedDocs['cin_gerants'])) {
+                        foreach ($uploadedDocs['cin_gerants'] as $associeIdx => $cin) {
+                            $ext = pathinfo($cin['original'], PATHINFO_EXTENSION);
+                            $nom = trim(preg_replace('/[^a-zA-Z0-9-]/', '', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $wizard['associes'][$associeIdx]['associe_nom'] ?? 'Nom')));
+                            $prenom = trim(preg_replace('/[^a-zA-Z0-9-]/', '', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $wizard['associes'][$associeIdx]['associe_prenom'] ?? 'Prenom')));
+                            $newFilename = $dateStr . '_CIN_' . $nom . '_' . $prenom . '_' . $socName . '.' . $ext;
+                            $newPath = $dossierUploadDir . '/' . $newFilename;
+                            if (file_exists($cin['path'])) {
+                                rename($cin['path'], $newPath);
+                                $insertDocStmt->execute([
+                                    'societe_id' => $societeId,
+                                    'doc_type' => 'cin_gerant',
+                                    'associe_idx' => (int) $associeIdx,
+                                    'filename_original' => $newFilename,
+                                    'filename_stored' => $newFilename,
+                                    'filepath' => $newPath,
+                                    'taille_ko' => $cin['taille_ko'],
+                                ]);
+                            }
+                        }
+                    }
+                }
+
+                $formeCrea = $wizard['societe']['societe_forme_juridique'] ?? 'PP';
+                $raisonCrea = $wizard['societe']['societe_raison_sociale'] ?? 'Dossier-' . $societeId;
+                $clientCrea = trim(preg_replace('/[^a-zA-Z0-9-]/', '-', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $raisonCrea)));
+                $clientCrea = trim(preg_replace('/-+/', '-', $clientCrea), '-');
+                $folderDateCrea = $wizard['contrat']['contrat_date'] ?? date('Y-m-d');
+                $dossierName = $folderDateCrea . '_' . $formeCrea . '_' . $clientCrea;
+                $dossierName = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', $dossierName), '-');
+                $creaDir = __DIR__ . '/../dossiers_crea/' . $dossierName;
+                if (!is_dir($creaDir)) {
+                    mkdir($creaDir, 0777, true);
+                }
+
                 set_flash('success', 'Le dossier a ete cree avec succes.');
-                redirect_to('creation', ['step' => 5]);
+                redirect_to('creation', ['step' => 6]);
             } catch (Throwable $exception) {
                 if ($pdo->inTransaction()) {
                     $pdo->rollBack();
                 }
 
                 set_flash('error', 'Erreur lors de la creation du dossier: ' . $exception->getMessage());
-                redirect_to('creation', ['step' => 5]);
+                redirect_to('creation', ['step' => 6]);
             }
         }
 
@@ -402,6 +571,14 @@ if (is_post()) {
             $clientName = trim(preg_replace('/[^a-zA-Z0-9-]/', '-', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $wizard['societe']['societe_raison_sociale'] ?? 'Client')));
             $clientName = preg_replace('/-+/', '-', $clientName);
             $clientName = trim($clientName, '-');
+
+            $folderDate = $wizard['contrat']['contrat_date'] ?? $today;
+            $folderName = $folderDate . '_' . $forme . '_' . $clientName;
+            $folderName = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', $folderName), '-');
+            $outputDir = __DIR__ . '/../dossiers_dom/' . $folderName;
+            if (!is_dir($outputDir)) {
+                mkdir($outputDir, 0777, true);
+            }
             $generatedFiles = [];
 
             foreach ($selectedPaths as $path) {
@@ -463,7 +640,123 @@ if (is_post()) {
                 set_flash('success', count($generatedFiles) . ' document(s) genere(s).');
             }
 
-            redirect_to('creation', ['step' => 5]);
+            redirect_to('creation', ['step' => 6]);
+        }
+
+        if ($navAction === 'generate_single') {
+            header('Content-Type: application/json');
+            try {
+                require_once __DIR__ . '/../src/TemplateAnalyzer.php';
+                require_once __DIR__ . '/../src/DocumentRenderer.php';
+
+                $templatesDir = __DIR__ . '/../templates';
+                $outputDir = __DIR__ . '/../dossiers_dom';
+                if (!is_dir($outputDir)) mkdir($outputDir, 0777, true);
+
+                $path = $_POST['template_path'] ?? '';
+                $generatePdf = isset($_POST['pdf']);
+
+                $realTpl = realpath($templatesDir);
+                if (!file_exists($path) || !str_starts_with(realpath($path), $realTpl)) {
+                    throw new \RuntimeException('Template invalide ou introuvable');
+                }
+
+                $context = DocumentRenderer::buildContextFromSession($wizard, $pdo ?? null);
+                $today = date('Y-m-d');
+                $clientName = trim(preg_replace('/[^a-zA-Z0-9-]/', '-', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $wizard['societe']['societe_raison_sociale'] ?? 'Client')));
+                $clientName = preg_replace('/-+/', '-', $clientName);
+                $clientName = trim($clientName, '-');
+                $forme = $wizard['societe']['societe_forme_juridique'] ?? 'PP';
+
+                $folderDate = $wizard['contrat']['contrat_date'] ?? $today;
+                $folderName = $folderDate . '_' . $forme . '_' . $clientName;
+                $folderName = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', $folderName), '-');
+                $outputDir = __DIR__ . '/../dossiers_dom/' . $folderName;
+                if (!is_dir($outputDir)) mkdir($outputDir, 0777, true);
+
+                $renderer = new DocumentRenderer($path, $outputDir);
+                $filename = pathinfo($path, PATHINFO_FILENAME);
+                $parts = explode('_', $filename);
+                $docType = '';
+                if (count($parts) >= 4) {
+                    $docType = preg_replace('/_?Template$/i', '', implode('_', array_slice($parts, 2)));
+                } elseif (count($parts) === 3) {
+                    $docType = preg_replace('/_?Template$/i', '', $parts[1]);
+                }
+                $base = $forme . '_' . $today . '_' . $docType . '_' . $clientName;
+                $outName = $base . '_Brouillon.docx';
+                $docxPath = $renderer->render($context, $outName);
+
+                $pdfPath = null;
+                if ($generatePdf) {
+                    $pdfName = $base . '_Brouillon.pdf';
+                    $pdfPath = $renderer->tryConvertToPdf($docxPath, $pdfName);
+                }
+
+                $result = ['docx' => $docxPath, 'pdf' => $pdfPath, 'name' => $outName];
+                if (!isset($_SESSION['creation_wizard']['generated_files'])) {
+                    $_SESSION['creation_wizard']['generated_files'] = [];
+                }
+                $_SESSION['creation_wizard']['generated_files'][] = $result;
+
+                $societeId = $wizard['societe_id'] ?? null;
+                if ($societeId && ($pdo ?? null) instanceof PDO) {
+                    $p2 = explode('_', $outName);
+                    $dt = $p2[2] ?? null;
+                    $ins = $pdo->prepare('INSERT INTO documents_generes (societe_id, template_source, doc_type, fichier_docx, fichier_pdf, taille_ko) VALUES (:societe_id, :template_source, :doc_type, :fichier_docx, :fichier_pdf, :taille_ko)');
+                    $ins->execute([
+                        'societe_id' => $societeId,
+                        'template_source' => basename($path),
+                        'doc_type' => $dt,
+                        'fichier_docx' => $docxPath,
+                        'fichier_pdf' => $pdfPath,
+                        'taille_ko' => file_exists($docxPath) ? round(filesize($docxPath) / 1024, 1) : null,
+                    ]);
+                }
+
+                echo json_encode(['success' => true, 'name' => basename((string) $docxPath)]);
+            } catch (\Throwable $e) {
+                echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            }
+            exit;
+        }
+
+        if ($navAction === 'generate_clause') {
+            $type = $_POST['clause_type'] ?? '';
+            if ($type !== '' && ClaudeService::isAvailable()) {
+                $dossierData = $wizard['societe'] ?? [];
+                $dossierData['forme_juridique'] = $dossierData['societe_forme_juridique'] ?? '';
+                $result = ClaudeService::generateClause($dossierData, $type);
+                $_SESSION['creation_wizard']['clause_result'] = ['type' => $type, 'text' => $result ?? 'Erreur lors de la generation.'];
+            } elseif ($type === '') {
+                set_flash('error', 'Type de clause non specifie.');
+            } else {
+                set_flash('error', "L'assistant IA n'est pas disponible.");
+            }
+            redirect_to('creation', ['step' => 6]);
+        }
+
+        if ($navAction === 'validate') {
+            if (ClaudeService::isAvailable()) {
+                $dossierData = [
+                    'societe' => $wizard['societe'] ?? [],
+                    'associes' => $wizard['associes'] ?? [],
+                    'contrat' => $wizard['contrat'] ?? [],
+                ];
+                $result = ClaudeService::validateDossier($dossierData);
+                $_SESSION['creation_wizard']['validation_result'] = $result;
+            } else {
+                set_flash('error', "L'assistant IA n'est pas disponible.");
+            }
+            redirect_to('creation', ['step' => 6]);
+        }
+
+        if ($navAction === 'terminer') {
+            $societeId = $wizard['societe_id'] ?? null;
+            _cleanup_tmp_uploads();
+            unset($_SESSION['creation_wizard']);
+            set_flash('success', 'Dossier cree avec succes.');
+            redirect_to('societe', ['id' => (string) $societeId]);
         }
     }
 }
@@ -487,16 +780,16 @@ $societeData = array_merge([
     'societe_email' => '',
     'societe_telephone' => '',
     'societe_capital' => '',
-    'type_generation' => '',
-    'procedure_creation' => '',
-    'mode_depot_creation' => '',
+    'societe_type_generation' => '',
+    'societe_procedure_creation' => '',
+    'societe_mode_depot' => '',
 ], $wizard['societe']);
 
 $tribunalTypes = fetch_tribunaux_types($pdo ?? null);
 $allTribunaux = fetch_tribunaux_all($pdo ?? null);
-$currentTribunalType = '';
+$currentTribunalType = $societeData['societe_tribunal_type'] ?? '';
 $societeTribunal = $societeData['societe_tribunal'] ?? '';
-if ($societeTribunal) {
+if (!$currentTribunalType && $societeTribunal) {
     foreach ($allTribunaux as $t) {
         if ($t['tribunal'] === $societeTribunal && ($t['tribunal_type'] ?? '')) {
             $currentTribunalType = $t['tribunal_type'];
@@ -535,7 +828,7 @@ if (!is_array($associesData) || $associesData === []) {
 }
 
 $contratData = array_merge([
-    'contrat_type' => '',
+    'contrat_type' => 'Domiciliation simple',
     'contrat_type_autre' => '',
     'contrat_date' => '',
     'contrat_duree_mois' => '',
@@ -559,11 +852,10 @@ $contratData = array_merge([
 <section class="card stack">
     <div class="section-header">
         <div>
-            <h2>Assistant de creation d'un dossier</h2>
             <p class="help-text">Parcours guide: societe, associes, puis contrat, dans un seul flux.</p>
         </div>
-        <a class="btn btn-cancel" href="<?= e(app_url('creation', ['cancel' => '1'])) ?>" data-confirm="Annuler la creation ?"><span class="mdi mdi-close-circle"></span> Annuler</a>
-        <a class="btn btn-back" href="<?= e(app_url('creation', ['reset' => '1'])) ?>" data-confirm="Reinitialiser cet assistant ?"><span class="mdi mdi-restart"></span> Reinitialiser</a>
+        <a class="btn btn-cancel" href="<?= e(app_url('creation', ['cancel' => '1'])) ?>" data-confirm="Annuler la creation ?"><span class="material-symbols-outlined">cancel</span> Annuler</a>
+        <a class="btn btn-back" href="<?= e(app_url('creation', ['reset' => '1'])) ?>" data-confirm="Reinitialiser cet assistant ?"><span class="material-symbols-outlined">restart_alt</span> Reinitialiser</a>
     </div>
 
     <div class="wizard-steps" id="wizard-steps-top">
@@ -585,38 +877,54 @@ $contratData = array_merge([
         </div>
         <div class="wizard-step <?= $step > 5 ? 'done' : ($step === 5 ? 'active' : 'waiting') ?>">
             <strong>Etape 5</strong>
+            <span>Documents</span>
+        </div>
+        <div class="wizard-step <?= $step > 6 ? 'done' : ($step === 6 ? 'active' : 'waiting') ?>">
+            <strong>Etape 6</strong>
             <span>Generation</span>
         </div>
     </div>
 
-    <?php if ($step === 1): ?>
-        <form method="post" class="stack">
+    <?php
+$aiSuggestions = $_SESSION['creation_wizard']['ai_suggestions'] ?? null;
+if ($aiSuggestions !== null) {
+    unset($_SESSION['creation_wizard']['ai_suggestions']);
+}
+?>
+<?php if ($step === 1): ?>
+        <form method="post" class="stack" id="wizard-step1">
             <?= csrf_input() ?>
             <input type="hidden" name="step" value="1">
+            <?php if ($aiSuggestions && isset($aiSuggestions['step1'])): ?>
+            <div class="flash flash-info" style="margin-bottom:12px">
+                <span class="material-symbols-outlined">smart_toy</span>
+                Suggestions IA disponibles. <button type="button" class="btn btn-info" style="padding:2px 10px;font-size:0.8rem" data-apply-ai-fill="<?= e(json_encode($aiSuggestions['step1'], JSON_UNESCAPED_UNICODE)) ?>"><span class="material-symbols-outlined">auto_fix</span> Appliquer les suggestions</button>
+            </div>
+            <?php endif; ?>
             <div class="form-grid">
                 <h3 class="section-title">Procedure</h3>
                 <label class="field">
                     <span>Type generation</span>
-                    <select name="type_generation">
+                    <select name="societe_type_generation">
                         <option value="">Selectionner</option>
-                        <option value="creation" <?= (string) $societeData['type_generation'] === 'creation' ? 'selected' : '' ?>>Création</option>
-                        <option value="domiciliation" <?= (string) $societeData['type_generation'] === 'domiciliation' ? 'selected' : '' ?>>Domiciliation</option>
+                        <option value="creation" <?= (string) $societeData['societe_type_generation'] === 'creation' ? 'selected' : '' ?>>Création</option>
+                        <option value="domiciliation" <?= (string) $societeData['societe_type_generation'] === 'domiciliation' ? 'selected' : '' ?>>Domiciliation</option>
                     </select>
                 </label>
                 <label class="field">
                     <span>Procedure creation</span>
-                    <select name="procedure_creation">
+                    <select name="societe_procedure_creation">
                         <option value="">Selectionner</option>
-                        <option value="normal" <?= (string) $societeData['procedure_creation'] === 'normal' ? 'selected' : '' ?>>Normal</option>
-                        <option value="acceleree" <?= (string) $societeData['procedure_creation'] === 'acceleree' ? 'selected' : '' ?>>Accélérer</option>
+                        <option value="normal" <?= (string) $societeData['societe_procedure_creation'] === 'normal' ? 'selected' : '' ?>>Normal</option>
+                        <option value="acceleree" <?= (string) $societeData['societe_procedure_creation'] === 'acceleree' ? 'selected' : '' ?>>Accélérer</option>
                     </select>
                 </label>
                 <label class="field">
                     <span>Mode depot creation</span>
-                    <select name="mode_depot_creation">
+                    <select name="societe_mode_depot">
                         <option value="">Selectionner</option>
-                        <option value="depot_physique" <?= (string) $societeData['mode_depot_creation'] === 'depot_physique' ? 'selected' : '' ?>>Dépôt Physique</option>
-                        <option value="depot_en_ligne" <?= (string) $societeData['mode_depot_creation'] === 'depot_en_ligne' ? 'selected' : '' ?>>Dépôt En Ligne</option>
+                        <option value="depot_physique" <?= (string) $societeData['societe_mode_depot'] === 'depot_physique' ? 'selected' : '' ?>>Dépôt Physique</option>
+                        <option value="depot_en_ligne" <?= (string) $societeData['societe_mode_depot'] === 'depot_en_ligne' ? 'selected' : '' ?>>Dépôt En Ligne</option>
                     </select>
                 </label>
 
@@ -672,7 +980,7 @@ $contratData = array_merge([
                                 <option value="<?= e($row['code']) ?>" <?= ((string) $societeData['societe_activites_ompic']) === $row['code'] ? 'selected' : '' ?>><?= e($row['code'] . ' - ' . $row['libelle']) ?></option>
                             <?php endforeach; ?>
                         </select>
-                        <button type="button" class="btn btn-info" data-add-activite-cn style="white-space:nowrap"><span class="mdi mdi-plus-circle"></span> Nouvelle activite</button>
+                        <button type="button" class="btn btn-info" data-add-activite-cn style="white-space:nowrap"><span class="material-symbols-outlined">add_circle</span> Nouvelle activite</button>
                     </div>
                 </label>
 
@@ -697,7 +1005,7 @@ $contratData = array_merge([
                                             <option value="<?= e($act) ?>" selected><?= e($act) ?></option>
                                         <?php endif; ?>
                                     </select>
-                                    <button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="mdi mdi-close"></span></button>
+                                    <button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="material-symbols-outlined">close</span></button>
                                 </div>
                             <?php
                                 endforeach;
@@ -710,14 +1018,14 @@ $contratData = array_merge([
                                             <option value="<?= e($opt) ?>"><?= e($opt) ?></option>
                                         <?php endforeach; ?>
                                     </select>
-                                    <button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="mdi mdi-close"></span></button>
+                                    <button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="material-symbols-outlined">close</span></button>
                                 </div>
                             <?php endif; ?>
                         </div>
                         <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-                            <button type="button" class="btn" data-add-activite><span class="mdi mdi-plus"></span> Ajouter une activite</button>
-                            <button type="button" class="btn btn-info" data-add-activite-ref><span class="mdi mdi-plus-circle"></span> Nouvelle activite</button>
-                            <button type="button" class="btn btn-secondary" data-add-activites-multiple><span class="mdi mdi-plus-box-multiple"></span> Ajouter plusieurs</button>
+                            <button type="button" class="btn" data-add-activite><span class="material-symbols-outlined">add</span> Ajouter une activite</button>
+                            <button type="button" class="btn btn-info" data-add-activite-ref><span class="material-symbols-outlined">add_circle</span> Nouvelle activite</button>
+                            <button type="button" class="btn btn-secondary" data-add-activites-multiple><span class="material-symbols-outlined">add_box</span> Ajouter plusieurs</button>
                         </div>
                         <template data-activite-template>
                             <div data-activite-item style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
@@ -727,7 +1035,7 @@ $contratData = array_merge([
                                         <option value="<?= e($opt) ?>"><?= e($opt) ?></option>
                                     <?php endforeach; ?>
                                 </select>
-                                <button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="mdi mdi-close"></span></button>
+                                <button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="material-symbols-outlined">close</span></button>
                             </div>
                         </template>
                     </div>
@@ -802,8 +1110,9 @@ $contratData = array_merge([
                 </label>
             </div>
             <div class="table-actions">
-                <button class="btn btn-info" type="button" data-fill-test><span class="mdi mdi-auto-fix"></span> Remplir automatiquement</button>
-                <button class="btn btn-next" type="submit" name="nav_action" value="next"><span class="mdi mdi-arrow-right"></span> Suivant</button>
+                <button class="btn btn-info" type="button" data-fill-test><span class="material-symbols-outlined">auto_fix</span> Remplir automatiquement</button>
+                <button class="btn btn-info" type="submit" name="nav_action" value="ai_fill" form="wizard-step1"><span class="material-symbols-outlined">smart_toy</span> Remplir avec IA</button>
+                <button class="btn btn-next" type="submit" name="nav_action" value="next"><span class="material-symbols-outlined">arrow_forward</span> Suivant</button>
             </div>
         </form>
 
@@ -814,12 +1123,18 @@ $contratData = array_merge([
             <input type="hidden" id="societe-capital" value="<?= e((string) ($societeData['societe_capital'] ?? '')) ?>">
             <input type="hidden" id="societe-part-social" value="<?= e((string) ($societeData['societe_part_social'] ?? '')) ?>">
             <input type="hidden" name="forme_juridique" value="<?= e((string) ($societeData['societe_forme_juridique'] ?? '')) ?>">
+            <?php if ($aiSuggestions && isset($aiSuggestions['step2'])): ?>
+            <div class="flash flash-info" style="margin-bottom:12px">
+                <span class="material-symbols-outlined">smart_toy</span>
+                Suggestions IA disponibles. <button type="button" class="btn btn-info" style="padding:2px 10px;font-size:0.8rem" data-apply-ai-fill="<?= e(json_encode($aiSuggestions['step2'], JSON_UNESCAPED_UNICODE)) ?>"><span class="material-symbols-outlined">auto_fix</span> Appliquer les suggestions</button>
+            </div>
+            <?php endif; ?>
             <div class="section-header">
                 <div>
                     <h2>Associes de <?= e((string) ($societeData['societe_raison_sociale'] ?: 'la societe')) ?></h2>
                     <p class="help-text">Ajoutez autant d'associes que necessaire.</p>
                 </div>
-                <button class="btn" type="button" data-add-associe><span class="mdi mdi-plus"></span> Ajouter un associé</button>
+                <button class="btn" type="button" data-add-associe><span class="material-symbols-outlined">add</span> Ajouter un associé</button>
             </div>
 
             <div class="stack" data-associes-container>
@@ -871,12 +1186,12 @@ $contratData = array_merge([
                             </label>
                             <label class="field">
                                 <span>Date naissance</span>
-                                <input data-field-name="date_naiss" type="date" name="associes[<?= $index ?>][date_naiss]" placeholder="18/05/2026" value="<?= e((string) ($associe['associe_date_naissance'] ?? '')) ?>">
+                                <input data-field-name="date_naissance" type="date" name="associes[<?= $index ?>][date_naissance]" placeholder="18/05/2026" value="<?= e((string) ($associe['associe_date_naissance'] ?? '')) ?>">
                             </label>
                             <label class="field">
                                 <span>Lieu naissance</span>
                                 <div style="display:flex;gap:8px;align-items:center">
-                                    <select data-field-name="lieu_naiss" name="associes[<?= $index ?>][lieu_naiss]" style="flex:1">
+                                    <select data-field-name="lieu_naissance" name="associes[<?= $index ?>][lieu_naissance]" style="flex:1">
                                         <option value="">Selectionner</option>
                                         <?php foreach ($lieuxNaissanceOptions as $option): ?>
                                             <option value="<?= e($option) ?>" <?= (string) ($associe['associe_lieu_naissance'] ?? '') === $option ? 'selected' : '' ?>><?= e($option) ?></option>
@@ -888,7 +1203,7 @@ $contratData = array_merge([
                             <h3 class="section-title">Contact</h3>
                             <label class="field">
                                 <span>Telephone</span>
-                                <input data-field-name="phone" name="associes[<?= $index ?>][phone]" value="<?= e((string) ($associe['associe_telephone'] ?? '')) ?>">
+                                <input data-field-name="telephone" name="associes[<?= $index ?>][telephone]" value="<?= e((string) ($associe['associe_telephone'] ?? '')) ?>">
                             </label>
                             <label class="field">
                                 <span>Email</span>
@@ -902,7 +1217,7 @@ $contratData = array_merge([
                             <label class="field">
                                 <span>Qualite associe</span>
                                 <div style="display:flex;gap:8px;align-items:center">
-                                    <select data-field-name="qualite_associe" name="associes[<?= $index ?>][qualite_associe]" style="flex:1">
+                                    <select data-field-name="qualite" name="associes[<?= $index ?>][qualite]" style="flex:1">
                                         <option value="">Selectionner</option>
                                         <?php foreach ($qualitesAssocieOptions as $option): ?>
                                             <option value="<?= e($option) ?>" <?= (string) ($associe['associe_qualite'] ?? '') === $option ? 'selected' : '' ?>><?= e($option) ?></option>
@@ -925,7 +1240,7 @@ $contratData = array_merge([
                             </label>
                             <label class="field">
                                 <span>Gerant</span>
-                                <select data-field-name="is_gerant" name="associes[<?= $index ?>][is_gerant]">
+                                <select data-field-name="est_gerant" name="associes[<?= $index ?>][est_gerant]">
                                     <option value="0" <?= (string) ($associe['associe_est_gerant'] ?? '0') === '0' ? 'selected' : '' ?>>Non</option>
                                     <option value="1" <?= (string) ($associe['associe_est_gerant'] ?? '0') === '1' ? 'selected' : '' ?>>Oui</option>
                                 </select>
@@ -1021,12 +1336,12 @@ $contratData = array_merge([
                         </label>
                         <label class="field">
                             <span>Date naissance</span>
-                            <input data-field-name="date_naiss" type="date" placeholder="18/05/2026" value="">
+                            <input data-field-name="date_naissance" type="date" placeholder="18/05/2026" value="">
                         </label>
                         <label class="field">
                             <span>Lieu naissance</span>
                             <div style="display:flex;gap:8px;align-items:center">
-                                <select data-field-name="lieu_naiss" style="flex:1">
+                                <select data-field-name="lieu_naissance" style="flex:1">
                                     <option value="">Selectionner</option>
                                     <?php foreach ($lieuxNaissanceOptions as $option): ?>
                                         <option value="<?= e($option) ?>"><?= e($option) ?></option>
@@ -1038,7 +1353,7 @@ $contratData = array_merge([
                         <h3 class="section-title">Contact</h3>
                         <label class="field">
                             <span>Telephone</span>
-                            <input data-field-name="phone" value="">
+                            <input data-field-name="telephone" value="">
                         </label>
                         <label class="field">
                             <span>Email</span>
@@ -1052,7 +1367,7 @@ $contratData = array_merge([
                         <label class="field">
                             <span>Qualite associe</span>
                             <div style="display:flex;gap:8px;align-items:center">
-                                <select data-field-name="qualite_associe" style="flex:1">
+                                <select data-field-name="qualite" style="flex:1">
                                     <option value="">Selectionner</option>
                                     <?php foreach ($qualitesAssocieOptions as $option): ?>
                                         <option value="<?= e($option) ?>"><?= e($option) ?></option>
@@ -1075,7 +1390,7 @@ $contratData = array_merge([
                         </label>
                         <label class="field">
                             <span>Gerant</span>
-                            <select data-field-name="is_gerant">
+                            <select data-field-name="est_gerant">
                                 <option value="0" selected>Non</option>
                                 <option value="1">Oui</option>
                             </select>
@@ -1085,15 +1400,22 @@ $contratData = array_merge([
             </template>
 
             <div class="table-actions">
-                <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="mdi mdi-arrow-left"></span> Retour</button>
-                <button class="btn btn-info" type="button" data-fill-test><span class="mdi mdi-auto-fix"></span> Remplir automatiquement</button>
-                <button class="btn btn-next" type="submit" name="nav_action" value="next"><span class="mdi mdi-arrow-right"></span> Suivant</button>
+                <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="material-symbols-outlined">arrow_back</span> Retour</button>
+                <button class="btn btn-info" type="button" data-fill-test><span class="material-symbols-outlined">auto_fix</span> Remplir automatiquement</button>
+                <button class="btn btn-info" type="submit" name="nav_action" value="ai_fill"><span class="material-symbols-outlined">smart_toy</span> Remplir avec IA</button>
+                <button class="btn btn-next" type="submit" name="nav_action" value="next"><span class="material-symbols-outlined">arrow_forward</span> Suivant</button>
             </div>
         </form>
     <?php elseif ($step === 3): ?>
         <form method="post" class="stack">
             <?= csrf_input() ?>
             <input type="hidden" name="step" value="3">
+            <?php if ($aiSuggestions && isset($aiSuggestions['step3'])): ?>
+            <div class="flash flash-info" style="margin-bottom:12px">
+                <span class="material-symbols-outlined">smart_toy</span>
+                Suggestions IA disponibles. <button type="button" class="btn btn-info" style="padding:2px 10px;font-size:0.8rem" data-apply-ai-fill="<?= e(json_encode($aiSuggestions['step3'], JSON_UNESCAPED_UNICODE)) ?>"><span class="material-symbols-outlined">auto_fix</span> Appliquer les suggestions</button>
+            </div>
+            <?php endif; ?>
             <div class="form-grid">
                 <h3 class="section-title">Type de contrat</h3>
                 <label class="field">
@@ -1213,104 +1535,14 @@ $contratData = array_merge([
                 </label>
             </div>
             <div class="table-actions">
-                <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="mdi mdi-arrow-left"></span> Retour</button>
-                <button class="btn btn-info" type="button" data-fill-test><span class="mdi mdi-auto-fix"></span> Remplir automatiquement</button>
-                <button class="btn btn-next" type="submit" name="nav_action" value="next"><span class="mdi mdi-arrow-right"></span> Suivant</button>
+                <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="material-symbols-outlined">arrow_back</span> Retour</button>
+                <button class="btn btn-info" type="button" data-fill-test><span class="material-symbols-outlined">auto_fix</span> Remplir automatiquement</button>
+                <button class="btn btn-info" type="submit" name="nav_action" value="ai_fill"><span class="material-symbols-outlined">smart_toy</span> Remplir avec IA</button>
+                <button class="btn btn-next" type="submit" name="nav_action" value="next"><span class="material-symbols-outlined">arrow_forward</span> Suivant</button>
             </div>
         </form>
     <?php elseif ($step === 4): ?>
-        <style>
-            .recap-a4 {
-                background: var(--surface);
-                box-shadow: 0 2px 12px rgba(0,0,0,0.3);
-                padding: 2rem 2.5rem;
-                margin-bottom: 1.5rem;
-                max-width: 210mm;
-            }
-            .recap-a4 .recap-header {
-                text-align: left;
-                border-bottom: 2px solid var(--text);
-                padding-bottom: 1rem;
-                margin-bottom: 1.5rem;
-            }
-            .recap-a4 .recap-header h2 {
-                margin: 0;
-                font-size: 1.3rem;
-                text-transform: uppercase;
-                letter-spacing: 1px;
-            }
-            .recap-a4 .recap-header p {
-                margin: 0.3rem 0 0;
-                color: var(--text-secondary);
-                font-size: 0.8rem;
-            }
-            .recap-a4 .recap-section {
-                margin-bottom: 1.5rem;
-                page-break-inside: avoid;
-            }
-            .recap-a4 .recap-section h3 {
-                font-size: 0.95rem;
-                color: var(--primary);
-                border-bottom: 1px solid var(--border);
-                padding-bottom: 0.35rem;
-                margin: 0 0 0.6rem;
-            }
-            .recap-a4 .recap-grid {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 0.3rem 1.5rem;
-            }
-            .recap-a4 .recap-grid .full {
-                grid-column: 1 / -1;
-            }
-            .recap-a4 .recap-grid .item {
-                padding: 0.2rem 0;
-                border-bottom: 1px dotted var(--border);
-                font-size: 0.8rem;
-            }
-            .recap-a4 .recap-grid .item .label {
-                color: var(--text-secondary);
-            }
-            .recap-a4 .recap-grid .item .label::after {
-                content: " :\00a0";
-            }
-            .recap-a4 .recap-grid .item .value {
-                font-weight: 600;
-                color: var(--text);
-            }
-            .recap-a4 .recap-associe {
-                border: 1px solid var(--border);
-                border-radius: 6px;
-                padding: 0.6rem 0.8rem;
-                margin-bottom: 0.5rem;
-            }
-            .recap-a4 .recap-associe .associe-num {
-                font-size: 0.7rem;
-                color: var(--primary);
-                font-weight: 600;
-                margin-bottom: 0.3rem;
-            }
-            .recap-a4 .recap-associe .recap-grid {
-                gap: 0.1rem 1rem;
-            }
-            .recap-a4 .recap-associe .recap-grid .item {
-                padding: 0.1rem 0;
-                font-size: 0.75rem;
-            }
-            @media print {
-                body { background: #fff !important; }
-                .sidebar, .page-header, .section-header, .step-4-controls { display: none !important; }
-                .shell { display: block !important; }
-                .main { overflow: visible !important; height: auto !important; padding: 0 !important; }
-                .stack { display: block !important; }
-                .recap-a4 { box-shadow: none !important; padding: 0 !important; max-width: none !important; background: #fff !important; }
-                .recap-a4 .recap-grid .item .value { color: #222 !important; }
-                .recap-a4 .recap-grid .item .label { color: #666 !important; }
-                .recap-a4 .recap-header { border-bottom-color: #222 !important; }
-                .recap-a4 .recap-header p { color: #666 !important; }
-                .recap-a4 .recap-section { page-break-inside: avoid; }
-            }
-        </style>
+
 
         <div class="stack">
             <div class="section-header">
@@ -1321,10 +1553,11 @@ $contratData = array_merge([
             </div>
 
             <div class="step-4-controls table-actions" style="margin-bottom:0.75rem">
-                <button class="btn btn-info" onclick="window.print()"><span class="mdi mdi-printer"></span> Imprimer</button>
-                <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => 1])) ?>"><span class="mdi mdi-pencil"></span> Modifier societe</a>
-                <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => 2])) ?>"><span class="mdi mdi-pencil"></span> Modifier associes</a>
-                <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => 3])) ?>"><span class="mdi mdi-pencil"></span> Modifier contrat</a>
+                <button class="btn btn-info" onclick="window.print()"><span class="material-symbols-outlined">print</span> Imprimer</button>
+                <button class="btn btn-info" id="btn-pdf-recap" data-forme="<?= e($societeData['societe_forme_juridique'] ?? '') ?>" data-raison="<?= e($societeData['societe_raison_sociale'] ?? '') ?>"><span class="material-symbols-outlined">picture_as_pdf</span> Sauvegarder PDF</button>
+                <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => 1])) ?>"><span class="material-symbols-outlined">edit</span> Modifier societe</a>
+                <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => 2])) ?>"><span class="material-symbols-outlined">edit</span> Modifier associes</a>
+                <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => 3])) ?>"><span class="material-symbols-outlined">edit</span> Modifier contrat</a>
             </div>
 
             <div class="recap-a4">
@@ -1339,8 +1572,7 @@ $contratData = array_merge([
                         <div class="item"><span class="label">Raison sociale</span><span class="value"><?= e($societeData['societe_raison_sociale'] ?: '-') ?></span></div>
                         <div class="item"><span class="label">Forme juridique</span><span class="value"><?= e($societeData['societe_forme_juridique'] ?: '-') ?></span></div>
                         <div class="item"><span class="label">ICE</span><span class="value"><?= e($societeData['societe_ice'] ?: '-') ?></span></div>
-                        <div class="item"><span class="label">RC</span><span class="value"><?= e($societeData['societe_rc'] ?: '-') ?></span></div>
-                        <div class="item"><span class="label">IF</span><span class="value"><?= e($societeData['societe_if'] ?: '-') ?></span></div>
+
                         <div class="item"><span class="label">Capital</span><span class="value"><?= e($societeData['societe_capital'] ?: '-') ?> DH</span></div>
                         <div class="item"><span class="label">Part social</span><span class="value"><?= e($societeData['societe_part_social'] ?: '-') ?></span></div>
                         <div class="item"><span class="label">Valeur nominale</span><span class="value"><?= e($societeData['societe_valeur_nominale'] ?: '-') ?> DH</span></div>
@@ -1351,9 +1583,9 @@ $contratData = array_merge([
                         <div class="item"><span class="label">Telephone</span><span class="value"><?= e($societeData['societe_telephone'] ?: '-') ?></span></div>
                         <div class="item full"><span class="label">Activites (Statuts)</span><span class="value"><?= e(!empty($societeData['societe_activites_statuts']) ? (string) $societeData['societe_activites_statuts'] : '-') ?></span></div>
                         <div class="item full"><span class="label">Activites (OMPIC)</span><span class="value"><?= e(!empty($societeData['societe_activites_ompic']) ? fetch_activites_ompic_display($pdo ?? null, (string) $societeData['societe_activites_ompic']) : '-') ?></span></div>
-                        <div class="item"><span class="label">Type generation</span><span class="value"><?= e($societeData['type_generation'] ?: '-') ?></span></div>
-                        <div class="item"><span class="label">Procedure</span><span class="value"><?= e($societeData['procedure_creation'] ?: '-') ?></span></div>
-                        <div class="item"><span class="label">Mode depot</span><span class="value"><?= e($societeData['mode_depot_creation'] ?: '-') ?></span></div>
+                        <div class="item"><span class="label">Type generation</span><span class="value"><?= e($societeData['societe_type_generation'] ?: '-') ?></span></div>
+                        <div class="item"><span class="label">Procedure</span><span class="value"><?= e($societeData['societe_procedure_creation'] ?: '-') ?></span></div>
+                        <div class="item"><span class="label">Mode depot</span><span class="value"><?= e($societeData['societe_mode_depot'] ?: '-') ?></span></div>
                     </div>
                 </div>
 
@@ -1365,7 +1597,7 @@ $contratData = array_merge([
                         <div class="recap-grid">
                             <div class="item"><span class="label">Nom complet</span><span class="value"><?= e($associe['associe_nom_complet'] ?: '-') ?></span></div>
                             <div class="item"><span class="label">CIN</span><span class="value"><?= e($associe['associe_cin'] ?: '-') ?></span></div>
-                            <div class="item"><span class="label">Nationalite</span><span class="value"><?= e($associe['associe_nationalite'] ?: '-') ?></span></div>
+                            <div class="item"><span class="label">Nationalite</span><span class="value"><?= e((string) ($associe['associe_nationalite'] ?? '-')) ?></span></div>
                             <div class="item"><span class="label">Date naissance</span><span class="value"><?= format_date($associe['associe_date_naissance'] ?? null) ?></span></div>
                             <div class="item"><span class="label">Lieu naissance</span><span class="value"><?= e($associe['associe_lieu_naissance'] ?: '-') ?></span></div>
                             <div class="item"><span class="label">Qualite</span><span class="value"><?= e($associe['associe_qualite'] ?: '-') ?></span></div>
@@ -1382,13 +1614,11 @@ $contratData = array_merge([
                     <div class="recap-grid">
                         <div class="item"><span class="label">Type contrat</span><span class="value"><?= e($contratData['contrat_type'] ?: '-') ?></span></div>
                         <div class="item"><span class="label">Type domiciliation</span><span class="value"><?= e($contratData['contrat_type_domiciliation'] ?: '-') ?></span></div>
-                        <div class="item"><span class="label">Statut</span><span class="value"><?= e($contratData['contrat_statut'] ?: '-') ?></span></div>
                         <div class="item"><span class="label">Date contrat</span><span class="value"><?= format_date($contratData['contrat_date'] ?? null) ?></span></div>
                         <div class="item"><span class="label">Date debut</span><span class="value"><?= format_date($contratData['contrat_date_debut'] ?? null) ?></span></div>
                         <div class="item"><span class="label">Date fin</span><span class="value"><?= format_date($contratData['contrat_date_fin'] ?? null) ?></span></div>
                         <div class="item"><span class="label">Duree</span><span class="value"><?= e((string) ($contratData['contrat_duree_mois'] ?: '-')) ?> mois</span></div>
                         <div class="item"><span class="label">Loyer HT</span><span class="value"><?= e($contratData['contrat_loyer_ht'] ?: '-') ?> DH</span></div>
-                        <div class="item"><span class="label">TVA</span><span class="value"><?= e((string) ($contratData['contrat_tva_pourcent'] ?: '-')) ?>%</span></div>
                         <div class="item"><span class="label">Loyer TTC/mois</span><span class="value"><?= e($contratData['contrat_loyer_ttc'] ?: '-') ?> DH</span></div>
                         <div class="item"><span class="label">Total loyer</span><span class="value"><?= e($contratData['contrat_total_ht'] ?: '-') ?> DH</span></div>
                         <div class="item"><span class="label">Renouvellement</span><span class="value"><?= e($contratData['contrat_type_renouvellement'] ?: '-') ?></span></div>
@@ -1399,11 +1629,101 @@ $contratData = array_merge([
             <form method="post" class="step-4-controls table-actions" style="margin-top:1rem">
                 <?= csrf_input() ?>
                 <input type="hidden" name="step" value="4">
-                <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="mdi mdi-arrow-left"></span> Retour</button>
-                <button class="btn btn-next" type="submit" name="nav_action" value="next"><span class="mdi mdi-arrow-right"></span> Suivant</button>
+                <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="material-symbols-outlined">arrow_back</span> Retour</button>
+                <button class="btn btn-next" type="submit" name="nav_action" value="next"><span class="material-symbols-outlined">arrow_forward</span> Suivant</button>
             </form>
         </div>
     <?php elseif ($step === 5): ?>
+        <?php
+        $formeJuridique = $societeData['societe_forme_juridique'] ?? '';
+        $gerants = array_filter($associesData, fn($a) => ((string) ($a['associe_est_gerant'] ?? '0') === '1'));
+        $isSarlAu = str_starts_with($formeJuridique, 'SARL AU');
+        $uploadedDocs = $wizard['uploaded_docs'] ?? [];
+        $hasCn = isset($uploadedDocs['certificat_negatif']);
+        $hasCin = isset($uploadedDocs['cin_gerants']);
+        ?>
+        <div class="stack">
+            <div class="section-header">
+                <div>
+                    <h2>Etape 5 — Documents a uploader</h2>
+                    <p class="help-text">Fournissez les documents necessaires avant la generation.</p>
+                </div>
+            </div>
+
+            <form method="post" class="stack" enctype="multipart/form-data">
+                <?= csrf_input() ?>
+                <input type="hidden" name="step" value="5">
+                <input type="hidden" name="nav_action" value="next">
+
+                <article class="card" style="border-color:<?= $hasCn ? 'var(--success)' : 'var(--danger)' ?>">
+                    <div class="section-header">
+                        <div>
+                            <h3><span class="material-symbols-outlined">verified</span> Certificat Negatif</h3>
+                            <p class="help-text">Document delivre par l'OMPIC (format PDF).</p>
+                        </div>
+                        <?php if ($hasCn): ?>
+                            <span class="step-badge" style="color:var(--success)"><span class="material-symbols-outlined">check_circle</span> Telecharge</span>
+                        <?php else: ?>
+                            <span class="step-badge" style="color:var(--danger)"><span class="material-symbols-outlined">cancel</span> Manquant</span>
+                        <?php endif; ?>
+                    </div>
+                    <label class="field" style="margin-top:8px">
+                        <span>Fichier</span>
+                        <input type="file" name="certificat_negatif" accept=".pdf" <?= $hasCn ? '' : 'required' ?>>
+                        <?php if ($hasCn): ?>
+                            <small style="color:var(--success)"><?= e($uploadedDocs['certificat_negatif']['original']) ?> deja uploade.</small>
+                        <?php endif; ?>
+                    </label>
+                </article>
+
+                <?php $cinBorder = count($gerants) === 0 ? '' : ($hasCin ? 'var(--success)' : 'var(--danger)'); ?>
+                <article class="card"<?= $cinBorder !== '' ? ' style="border-color:' . $cinBorder . '"' : '' ?>>
+                    <div class="section-header">
+                        <div>
+                            <h3><span class="material-symbols-outlined">badge</span> CIN des Gerants</h3>
+                            <p class="help-text">
+                                <?= $isSarlAu ? 'SARL AU : un seul CIN requis.' : 'SARL : CIN de tous les gerants.' ?>
+                            </p>
+                        </div>
+                        <?php if (count($gerants) === 0): ?>
+                            <span class="step-badge"><span class="material-symbols-outlined">info</span> Aucun gerant</span>
+                        <?php elseif ($hasCin): ?>
+                            <span class="step-badge" style="color:var(--success)"><span class="material-symbols-outlined">check_circle</span> Telecharge(s)</span>
+                        <?php else: ?>
+                            <span class="step-badge" style="color:var(--danger)"><span class="material-symbols-outlined">cancel</span> Manquant(s)</span>
+                        <?php endif; ?>
+                    </div>
+
+                    <?php if (count($gerants) === 0): ?>
+                        <p class="help-text" style="margin-top:8px;color:var(--warning)">
+                            <span class="material-symbols-outlined">warning</span> Aucun gerant designe dans les associes. Veuillez revenir a l'etape 2.
+                        </p>
+                    <?php else: ?>
+                        <div class="stack" style="margin-top:8px;gap:12px">
+                        <?php foreach ($gerants as $idx => $gerant):
+                            $nomGerant = $gerant['associe_nom_complet'] ?: ('Gerant ' . ($idx + 1));
+                        ?>
+                            <label class="field">
+                                <span><?= e('CIN de ' . $nomGerant) ?></span>
+                                <input type="file" name="cin_gerants[]" accept=".pdf,.jpg,.jpeg,.png" <?= isset($uploadedDocs['cin_gerants'][$idx]) ? '' : 'required' ?>>
+                                <input type="hidden" name="cin_associe_index[]" value="<?= $idx ?>">
+                                <?php if (isset($uploadedDocs['cin_gerants'][$idx])): ?>
+                                    <small style="color:var(--success)"><?= e($uploadedDocs['cin_gerants'][$idx]['original']) ?> deja uploade.</small>
+                                <?php endif; ?>
+                            </label>
+                        <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </article>
+
+                <div class="table-actions" style="margin-top:1rem">
+                    <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="material-symbols-outlined">arrow_back</span> Retour</button>
+                    <button class="btn btn-next" type="submit" name="nav_action" value="next" <?= count($gerants) === 0 ? 'disabled' : '' ?>><span class="material-symbols-outlined">arrow_forward</span> Suivant</button>
+                </div>
+            </form>
+        </div>
+
+    <?php elseif ($step === 6): ?>
         <?php
         $dossierCreated = isset($wizard['societe_id']);
         $societeId = $wizard['societe_id'] ?? null;
@@ -1417,19 +1737,28 @@ $contratData = array_merge([
         $legalForm = $societeData['societe_forme_juridique'] ?? '';
         $allTemplates = TemplateAnalyzer::scanTemplates($templatesDir);
 
-        $folderMap = [
-            'SARL-AU' => 'SARL AU',
-            'SARL' => 'SARL',
-            'SA' => 'SA',
-        ];
-        $targetFolder = $folderMap[$legalForm] ?? '';
+        $targetFolder = ($legalForm !== '') ? fetch_legal_form_template_folder($pdo ?? null, $legalForm) : '';
+        if ($targetFolder !== '') {
+            ensure_template_folder($targetFolder);
+        }
+        $useRacine = ($_GET['use_racine'] ?? '') === '1';
         $filteredTemplates = [];
+        $racineTemplates = [];
         foreach ($allTemplates as $tpl) {
-            if ($targetFolder !== '' && $tpl['folder'] === $targetFolder) {
-                $filteredTemplates[] = $tpl;
-            } elseif ($tpl['folder'] === '_Racine-Actifs') {
-                $filteredTemplates[] = $tpl;
+            if ($tpl['folder'] === '_Racine-Actifs') {
+                $racineTemplates[] = $tpl;
             }
+        }
+        if ($targetFolder !== '' && !$useRacine) {
+            foreach ($allTemplates as $tpl) {
+                if ($tpl['folder'] === $targetFolder) {
+                    $filteredTemplates[] = $tpl;
+                }
+            }
+        } elseif ($targetFolder !== '' && $useRacine) {
+            $filteredTemplates = $racineTemplates;
+        } else {
+            $filteredTemplates = $racineTemplates;
         }
 
         $templatesByType = [];
@@ -1438,17 +1767,23 @@ $contratData = array_merge([
             $templatesByType[$type][] = $tpl;
         }
 
+        $generationType = $societeData['societe_type_generation'] ?? '';
+        if ($generationType !== '' && isset($templatesConfig['template_mapping'][$generationType])) {
+            $allowedTypes = $templatesConfig['template_mapping'][$generationType];
+            $templatesByType = array_intersect_key($templatesByType, array_flip($allowedTypes));
+        }
+
         $generatedFiles = $wizard['generated_files'] ?? [];
         ?>
         <div class="stack">
             <div class="section-header">
                 <div>
-                    <h2>Etape 5 — Generation des documents</h2>
+                    <h2>Etape 6 — Generation des documents</h2>
                     <p class="help-text">Creez d'abord le dossier, puis generez les documents.</p>
                 </div>
                 <?php if ($dossierCreated): ?>
                     <a class="btn btn-secondary" href="<?= e(app_url('societe', ['id' => $societeId])) ?>">
-                        <span class="mdi mdi-eye"></span> Voir le dossier
+                        <span class="material-symbols-outlined">visibility</span> Voir le dossier
                     </a>
                 <?php endif; ?>
             </div>
@@ -1465,14 +1800,54 @@ $contratData = array_merge([
                             <span class="step-badge">Fait</span>
                         <?php endif; ?>
                     </div>
+                    <?php
+                    $validationResult = $_SESSION['creation_wizard']['validation_result'] ?? null;
+                    $clauseResult = $_SESSION['creation_wizard']['clause_result'] ?? null;
+                    if ($validationResult) {
+                        unset($_SESSION['creation_wizard']['validation_result']);
+                    }
+                    if ($clauseResult) {
+                        unset($_SESSION['creation_wizard']['clause_result']);
+                    }
+                    ?>
                     <?php if (!$dossierCreated): ?>
-                        <form method="post" class="table-actions" style="margin-top:8px">
-                            <?= csrf_input() ?>
-                            <input type="hidden" name="step" value="5">
-                            <button class="btn btn-next" type="submit" name="nav_action" value="create_dossier">
-                                <span class="mdi mdi-folder-plus"></span> Creer le dossier
-                            </button>
-                        </form>
+                        <div class="table-actions" style="margin-top:8px;flex-wrap:wrap">
+                            <form method="post" style="display:inline">
+                                <?= csrf_input() ?>
+                                <input type="hidden" name="step" value="6">
+                                <button class="btn btn-next" type="submit" name="nav_action" value="create_dossier">
+                                    <span class="material-symbols-outlined">create_new_folder</span> Creer le dossier
+                                </button>
+                            </form>
+                            <form method="post" style="display:inline">
+                                <?= csrf_input() ?>
+                                <input type="hidden" name="step" value="6">
+                                <button class="btn btn-info" type="submit" name="nav_action" value="validate">
+                                    <span class="material-symbols-outlined">smart_toy</span> Valider avec IA
+                                </button>
+                            </form>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if ($validationResult && is_array($validationResult)): ?>
+                        <div class="card" style="margin-top:12px;padding:12px">
+                            <div class="section-header">
+                                <h4><span class="material-symbols-outlined" style="color:var(--info)">smart_toy</span> Validation IA</h4>
+                                <span style="font-weight:600;color:<?= ($validationResult['valide'] ?? false) ? 'var(--success)' : 'var(--danger)' ?>">
+                                    <?= ($validationResult['valide'] ?? false) ? 'Dossier valide' : 'Dossier Non valide' ?>
+                                </span>
+                            </div>
+                            <?php if (isset($validationResult['points']) && is_array($validationResult['points'])): ?>
+                                <ul style="margin:8px 0 0;padding-left:1rem">
+                                <?php foreach ($validationResult['points'] as $point): ?>
+                                    <?php $ptype = $point['type'] ?? 'info'; ?>
+                                    <li style="color:<?= $ptype === 'error' ? 'var(--danger)' : ($ptype === 'warning' ? 'var(--warning)' : 'var(--text)') ?>">
+                                        <?= e($point['message'] ?? '') ?>
+                                    </li>
+                                <?php endforeach; ?>
+                                </ul>
+                            <?php endif; ?>
+                        </div>
                     <?php endif; ?>
                 </div>
 
@@ -1480,7 +1855,7 @@ $contratData = array_merge([
                     <div class="step-card-header">
                         <span class="step-num">2</span>
                         <div>
-                            <h3>Generer les documents</h3>
+                            <h3 style="display:none">Generer les documents</h3>
                             <p class="help-text">Selectionnez les templates a generer pour <?= e($societeData['societe_raison_sociale'] ?: 'la societe') ?>.</p>
                         </div>
                     </div>
@@ -1490,15 +1865,15 @@ $contratData = array_merge([
                     <?php elseif ($filteredTemplates): ?>
                         <form method="post" class="stack" id="wizard-gen-form" style="gap:8px;margin-top:8px">
                             <?= csrf_input() ?>
-                            <input type="hidden" name="step" value="5">
+                            <input type="hidden" name="step" value="6">
                             <input type="hidden" name="nav_action" value="generate">
 
                             <div style="display:flex;align-items:center;gap:8px">
                                 <label class="pdf-toggle" style="margin:0">
                                     <input type="checkbox" name="pdf" value="1" checked>
-                                    <span class="mdi mdi-file-pdf"></span> PDF
+                                    <span class="material-symbols-outlined">picture_as_pdf</span> PDF
                                 </label>
-                                <a class="btn-icon" href="#" id="select-all-wizard" title="Tout selectionner"><span class="mdi mdi-check-all"></span></a>
+                                <a class="btn-icon" href="#" id="select-all-wizard" title="Tout selectionner"><span class="material-symbols-outlined">select_all</span></a>
                             </div>
 
                             <div class="table-scroll" style="overflow-x:auto">
@@ -1522,7 +1897,7 @@ $contratData = array_merge([
                                                         <td rowspan="<?= $tplCount ?>" style="vertical-align:middle"><?= e($typeLabel) ?></td>
                                                     <?php endif; ?>
                                                     <td>
-                                                        <span class="mdi mdi-file-word" style="color:var(--primary);vertical-align:middle;margin-right:4px"></span>
+                                                        <span class="material-symbols-outlined" style="color:var(--primary);vertical-align:middle;margin-right:4px">article</span>
                                                         <?= e(basename($tpl['path'])) ?>
                                                     </td>
                                                     <td><span class="help-text"><?= count($tpl['variables']) ?> variable(s)</span></td>
@@ -1534,22 +1909,76 @@ $contratData = array_merge([
                             </div>
 
                             <div style="display:flex;justify-content:flex-end;margin-top:4px">
-                                <button class="btn btn-next" type="submit"><span class="mdi mdi-file-sync"></span> Generer les documents</button>
+                                <?php if ($generatedFiles): ?>
+                                <button class="btn btn-next" type="submit" data-confirm="ATTENTION : Les documents existants seront ecrases. Voulez-vous continuer ?"><span class="material-symbols-outlined">sync</span> Regenerer les documents</button>
+                                <?php else: ?>
+                                <button class="btn btn-next" type="submit"><span class="material-symbols-outlined">sync</span> Generer les documents</button>
+                                <?php endif; ?>
                             </div>
                         </form>
+                    <?php elseif ($targetFolder !== '' && !$useRacine): ?>
+                        <div class="empty-state" style="margin-top:8px">
+                            <span class="material-symbols-outlined" style="font-size:2rem;color:var(--text-secondary)">description</span>
+                            <p class="table-empty">Aucun template dans le dossier <strong><?= e($targetFolder) ?></strong> pour cette forme juridique.</p>
+                            <?php if ($racineTemplates): ?>
+                            <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => $step, 'use_racine' => 1])) ?>" style="margin-top:8px">
+                                <span class="material-symbols-outlined">folder_open</span> Utiliser les templates Racine par defaut (<?= count($racineTemplates) ?>)
+                            </a>
+                            <?php endif; ?>
+                        </div>
                     <?php else: ?>
                         <div class="empty-state" style="margin-top:8px">
-                            <span class="mdi mdi-file-document-outline" style="font-size:2rem;color:var(--text-secondary)"></span>
+                            <span class="material-symbols-outlined" style="font-size:2rem;color:var(--text-secondary)">description</span>
                             <p class="table-empty">Aucun template disponible pour cette forme juridique.</p>
                         </div>
                     <?php endif; ?>
                 </div>
             </div>
 
+            <?php if ($dossierCreated): ?>
+                <div class="step-card <?= $clauseResult ? 'done' : 'active' ?>" style="margin-top:16px">
+                    <div class="step-card-header">
+                        <span class="step-num">3</span>
+                        <div>
+                            <h3>Clauses juridiques</h3>
+                            <p class="help-text">Generez des clauses juridiques avec l'assistant IA.</p>
+                        </div>
+                    </div>
+                    <div class="table-actions" style="margin-top:8px">
+                        <form method="post" style="display:inline">
+                            <?= csrf_input() ?>
+                            <input type="hidden" name="step" value="6">
+                            <input type="hidden" name="clause_type" value="objet_social">
+                            <button class="btn btn-info" type="submit" name="nav_action" value="generate_clause"><span class="material-symbols-outlined">smart_toy</span> Objet social</button>
+                        </form>
+                        <form method="post" style="display:inline">
+                            <?= csrf_input() ?>
+                            <input type="hidden" name="step" value="6">
+                            <input type="hidden" name="clause_type" value="mention_legale">
+                            <button class="btn btn-info" type="submit" name="nav_action" value="generate_clause"><span class="material-symbols-outlined">smart_toy</span> Mentions legales</button>
+                        </form>
+                        <form method="post" style="display:inline">
+                            <?= csrf_input() ?>
+                            <input type="hidden" name="step" value="6">
+                            <input type="hidden" name="clause_type" value="clause_siege">
+                            <button class="btn btn-info" type="submit" name="nav_action" value="generate_clause"><span class="material-symbols-outlined">smart_toy</span> Siege social</button>
+                        </form>
+                    </div>
+                    <?php if ($clauseResult): ?>
+                        <div class="card" style="margin-top:12px;padding:12px">
+                            <div class="section-header">
+                                <h4><span class="material-symbols-outlined" style="color:var(--info)">description</span> <?= e(ucfirst(str_replace('_', ' ', $clauseResult['type']))) ?></h4>
+                            </div>
+                            <div style="margin-top:8px;padding:12px;background:var(--panel-strong);border-radius:6px;font-size:0.9rem;line-height:1.6;white-space:pre-wrap"><?= e($clauseResult['text']) ?></div>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+
             <?php if ($generatedFiles): ?>
                 <div class="step-card done" style="margin-top:16px">
                     <div class="step-card-header">
-                        <span class="step-num">3</span>
+                        <span class="step-num">4</span>
                         <div>
                             <h3>Documents generes</h3>
                             <p class="help-text"><?= count($generatedFiles) ?> fichier(s) genere(s)</p>
@@ -1559,27 +1988,29 @@ $contratData = array_merge([
                         <table style="white-space:nowrap">
                             <thead>
                                 <tr>
+                                    <th class="col-check"><input type="checkbox" id="select-all-generated"></th>
                                     <th>Fichier</th>
                                     <th>Taille</th>
                                     <th class="col-actions">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($generatedFiles as $file): ?>
+                                <?php foreach ($generatedFiles as $i => $file): ?>
                                     <tr>
+                                        <td><input type="checkbox" name="generated_files[]" value="<?= $i ?>" class="gen-file-check"></td>
                                         <td>
-                                            <span class="mdi mdi-file-word" style="color:var(--primary);vertical-align:middle;margin-right:6px"></span>
+                                            <span class="material-symbols-outlined" style="color:var(--primary);vertical-align:middle;margin-right:6px">article</span>
                                             <?= e($file['name']) ?>
                                         </td>
                                         <td><?php if (file_exists($file['docx'])): ?><?= number_format(filesize($file['docx']) / 1024, 1) ?> Ko<?php else: ?>-<?php endif; ?></td>
                                         <td>
                                             <div class="table-actions">
                                                 <a class="btn btn-secondary" href="<?= e(str_replace(__DIR__ . '/../', '', $file['docx'])) ?>" download>
-                                                    <span class="mdi mdi-download"></span> DOCX
+                                                    <span class="material-symbols-outlined">download</span> DOCX
                                                 </a>
                                                 <?php if ($file['pdf']): ?>
                                                     <a class="btn" href="<?= e(str_replace(__DIR__ . '/../', '', $file['pdf'])) ?>" download>
-                                                        <span class="mdi mdi-file-pdf"></span> PDF
+                                                        <span class="material-symbols-outlined">picture_as_pdf</span> PDF
                                                     </a>
                                                 <?php endif; ?>
                                             </div>
@@ -1594,12 +2025,17 @@ $contratData = array_merge([
 
             <form method="post" class="table-actions" style="margin-top:1rem">
                 <?= csrf_input() ?>
-                <input type="hidden" name="step" value="5">
-                <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="mdi mdi-arrow-left"></span> Retour</button>
+                <input type="hidden" name="step" value="6">
+                <button class="btn btn-next" type="submit" name="nav_action" value="terminer"><span class="material-symbols-outlined">check_circle</span> Terminer</button>
+                <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="material-symbols-outlined">arrow_back</span> Retour</button>
             </form>
         </div>
 
         <script>
+        document.getElementById('select-all-generated')?.addEventListener('change', function(e) {
+            document.querySelectorAll('.gen-file-check').forEach(c => c.checked = this.checked);
+        });
+
         document.getElementById('select-all-wizard')?.addEventListener('click', function(e) {
             e.preventDefault();
             const form = document.getElementById('wizard-gen-form');
@@ -1608,49 +2044,98 @@ $contratData = array_merge([
             checkboxes.forEach(c => c.checked = !allChecked);
         });
 
-        document.getElementById('wizard-gen-form')?.addEventListener('submit', function() {
-            window.showGenOverlay();
-        });
-
-        window.showGenOverlay = function() {
+        document.getElementById('wizard-gen-form')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var form = this;
+            var checkboxes = Array.from(form.querySelectorAll('.template-check:checked'));
+            if (checkboxes.length === 0) return;
+            var generatePdf = form.querySelector('[name="pdf"]')?.checked || false;
+            var csrf = form.querySelector('[name="csrf_token"]')?.value || '';
             var overlay = document.getElementById('gen-loading-overlay');
+            var progressFill = overlay?.querySelector('.gen-progress-fill');
+            var progressText = overlay?.querySelector('.gen-progress-text');
+            var statusText = overlay?.querySelector('.gen-status-text');
+            var total = checkboxes.length;
+            var done = 0;
             if (overlay) overlay.classList.add('show');
-        };
+            var next = function () {
+                if (done >= total) {
+                    window.location.reload();
+                    return;
+                }
+                var cb = checkboxes[done];
+                var path = cb.value;
+                var pct = Math.round((done / total) * 100);
+                if (progressFill) progressFill.style.width = pct + '%';
+                if (progressText) progressText.textContent = done + '/' + total + ' documents';
+                if (statusText) statusText.textContent = 'Generation de : ' + path.split(/[\\/]/).pop();
+                var fd = new FormData();
+                fd.append('csrf_token', csrf);
+                fd.append('step', '6');
+                fd.append('nav_action', 'generate_single');
+                fd.append('template_path', path);
+                fd.append('pdf', generatePdf ? '1' : '');
+                fetch(window.location.href, { method: 'POST', body: fd }).then(function (r) {
+                    return r.json();
+                }).then(function (data) {
+                    done++;
+                    if (!data.success) {
+                        if (statusText) statusText.textContent = 'Erreur: ' + (data.error || 'inconnue');
+                    }
+                    next();
+                }).catch(function (err) {
+                    done++;
+                    if (statusText) statusText.textContent = 'Erreur: ' + err.message;
+                    next();
+                });
+            };
+            next();
+        });
         </script>
 
-        <style>
-        #gen-loading-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);z-index:9999;display:none;align-items:center;justify-content:center}
-        #gen-loading-overlay.show{display:flex}
-        #gen-loading-overlay .loader-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);padding:2.5rem 3rem;display:flex;flex-direction:column;align-items:center;gap:1rem;box-shadow:0 8px 32px rgba(0,0,0,.5)}
-        #gen-loading-overlay .spinner{width:40px;height:40px;border:3px solid var(--line);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
-        @keyframes spin{to{transform:rotate(360deg)}}
-        #gen-loading-overlay p{font-size:1rem;color:var(--text-secondary);margin:0}
-        :root{--violet:var(--info);--rouge:#e74c3c}
-        .step-card{transition:border-color .4s ease,box-shadow .4s ease,transform .3s ease,opacity .4s ease}
-        .step-card.done{border-color:var(--success)!important}
-        .step-card.done .step-num{background:var(--success)!important;color:#fff!important;animation:pop-done .5s ease}
-        .step-card.done .step-card-header h3{color:var(--success)}
-        .step-card.done{box-shadow:0 0 16px color-mix(in srgb,var(--success) 20%,transparent)}
-        .step-card.done table{border-color:var(--success)}
-        .step-card.done table th,.step-card.done table td{border-color:color-mix(in srgb,var(--success) 30%,transparent)}
-        .step-card.active{border-color:var(--violet)!important}
-        .step-card.active .step-num{background:var(--violet)!important;color:#fff!important;animation:pulse-glow 2s ease-in-out infinite}
-        .step-card.active .step-card-header h3{color:var(--violet)}
-        .step-card.active{box-shadow:0 0 20px color-mix(in srgb,var(--violet) 25%,transparent),0 4px 12px rgba(0,0,0,.08)}
-        .step-card.active table{border-color:var(--violet)}
-        .step-card.active table th,.step-card.active table td{border-color:color-mix(in srgb,var(--violet) 30%,transparent)}
-        .step-card.waiting{border-color:var(--rouge)!important}
-        .step-card.waiting .step-num{background:var(--rouge)!important;color:#fff!important}
-        .step-card.waiting .step-card-header h3{color:var(--rouge)}
-        .step-card.waiting{box-shadow:0 0 12px color-mix(in srgb,var(--rouge) 15%,transparent);opacity:.7}
-        @keyframes pulse-glow{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--violet) 40%,transparent)}50%{box-shadow:0 0 0 8px color-mix(in srgb,var(--violet) 0%,transparent)}}
-        @keyframes pop-done{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
-        </style>
+
         <div id="gen-loading-overlay">
             <div class="loader-card">
                 <div class="spinner"></div>
-                <p>Generation des documents en cours...</p>
+                <div class="gen-progress-text">0/0 documents</div>
+                <div class="gen-progress-bar"><div class="gen-progress-fill"></div></div>
+                <p class="gen-status-text">Preparation...</p>
             </div>
         </div>
     <?php endif; ?>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script>
+    document.getElementById('btn-pdf-recap')?.addEventListener('click', function () {
+        var element = document.querySelector('.recap-a4');
+        if (!element) return;
+
+        var forme = this.getAttribute('data-forme') || '';
+        var raison = this.getAttribute('data-raison') || 'Dossier';
+        var raisonSlug = raison.replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'Dossier';
+        var prefixMap = { 'SARL AU': 'SARL-AU', 'SARL': 'SARL', 'SA': 'SA', 'Personne Physique': 'PP' };
+        var prefix = prefixMap[forme] || 'DOSSIER';
+        var now = new Date();
+        var yyyy = now.getFullYear();
+        var mm = String(now.getMonth() + 1).padStart(2, '0');
+        var filename = prefix + '_' + yyyy + '-' + mm + '_Recapitulatif-' + raisonSlug + '.pdf';
+
+        this.disabled = true;
+        this.innerHTML = '<span class="material-symbols-outlined spin">sync</span> Generation...';
+
+        element.classList.add('recap-pdf-mode');
+
+        var opt = {
+            margin:       10,
+            filename:     filename,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(element).save().then(function () {
+            element.classList.remove('recap-pdf-mode');
+            document.getElementById('btn-pdf-recap').disabled = false;
+            document.getElementById('btn-pdf-recap').innerHTML = '<span class="material-symbols-outlined">picture_as_pdf</span> Sauvegarder PDF';
+        });
+    });
+    </script>
 </section>

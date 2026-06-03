@@ -8,14 +8,15 @@ CREATE TABLE IF NOT EXISTS societes (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     societe_dossier VARCHAR(120) DEFAULT NULL,
     societe_raison_sociale VARCHAR(255) NOT NULL,
+    den_ste VARCHAR(255) DEFAULT NULL,
     societe_forme_juridique VARCHAR(120) DEFAULT NULL,
     societe_ice VARCHAR(100) DEFAULT NULL,
     societe_date_ice DATE DEFAULT NULL,
     societe_rc VARCHAR(100) DEFAULT NULL,
     societe_if VARCHAR(100) DEFAULT NULL,
     societe_activites_statuts TEXT DEFAULT NULL,
-    societe_activites_ompic TEXT DEFAULT NULL,
     societe_capital DECIMAL(15,2) DEFAULT NULL,
+    societe_activites_ompic TEXT DEFAULT NULL,
     societe_part_social INT DEFAULT NULL,
     societe_valeur_nominale DECIMAL(15,2) DEFAULT NULL,
     societe_date_exp_cert_neg DATE DEFAULT NULL,
@@ -23,6 +24,7 @@ CREATE TABLE IF NOT EXISTS societes (
     societe_adresse_siege TEXT DEFAULT NULL,
     societe_ville VARCHAR(120) DEFAULT NULL,
     societe_tribunal VARCHAR(120) DEFAULT NULL,
+    societe_tribunal_type VARCHAR(60) DEFAULT NULL,
     societe_email VARCHAR(190) DEFAULT NULL,
     societe_telephone VARCHAR(60) DEFAULT NULL,
     societe_type_generation VARCHAR(120) DEFAULT NULL,
@@ -101,6 +103,7 @@ CREATE TABLE IF NOT EXISTS contrats (
 
 CREATE TABLE IF NOT EXISTS collaborateurs (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    societe_id INT UNSIGNED DEFAULT NULL,
     den_ste VARCHAR(255) DEFAULT NULL,
     nom_complet VARCHAR(255) NOT NULL,
     fonction VARCHAR(150) DEFAULT NULL,
@@ -120,14 +123,35 @@ CREATE TABLE IF NOT EXISTS collaborateurs (
     date_debut DATE DEFAULT NULL,
     statut VARCHAR(80) DEFAULT 'actif',
     notes TEXT DEFAULT NULL,
+    password_hash VARCHAR(255) DEFAULT NULL,
+    role_id INT UNSIGNED DEFAULT NULL,
+    can_login TINYINT(1) NOT NULL DEFAULT 0,
+    last_login DATETIME DEFAULT NULL,
+    created_by INT UNSIGNED DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_collaborateurs_nom (nom_complet)
+    CONSTRAINT fk_collaborateurs_societe
+        FOREIGN KEY (societe_id) REFERENCES societes(id)
+        ON DELETE SET NULL,
+    INDEX idx_collaborateurs_nom (nom_complet),
+    INDEX idx_collaborateurs_role_id (role_id),
+    INDEX idx_collaborateurs_can_login (can_login)
+);
+
+CREATE TABLE IF NOT EXISTS collaborateur_log (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    action VARCHAR(20) NOT NULL COMMENT 'add or delete',
+    collaborateur_nom VARCHAR(255) NOT NULL,
+    collaborateur_email VARCHAR(190) DEFAULT NULL,
+    collaborateur_id INT UNSIGNED DEFAULT NULL,
+    done_by VARCHAR(255) DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS ref_formes_juridiques (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     forme_juridique VARCHAR(120) NOT NULL,
+    template_folder VARCHAR(120) DEFAULT '' NOT NULL,
     sort_order INT NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -217,6 +241,23 @@ CREATE TABLE IF NOT EXISTS documents_generes (
     INDEX idx_documents_valide (valide)
 );
 
+CREATE TABLE IF NOT EXISTS uploaded_docs (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    societe_id INT UNSIGNED NOT NULL,
+    doc_type VARCHAR(50) NOT NULL COMMENT 'certificat_negatif or cin_gerant',
+    associe_idx INT UNSIGNED DEFAULT NULL COMMENT 'Index in associes array for cin_gerant',
+    filename_original VARCHAR(255) NOT NULL,
+    filename_stored VARCHAR(255) NOT NULL,
+    filepath VARCHAR(500) NOT NULL,
+    taille_ko DECIMAL(10,1) DEFAULT NULL,
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_uploaded_docs_societe
+        FOREIGN KEY (societe_id) REFERENCES societes(id)
+        ON DELETE CASCADE,
+    INDEX idx_uploaded_docs_societe_id (societe_id),
+    INDEX idx_uploaded_docs_type (doc_type)
+);
+
 CREATE TABLE IF NOT EXISTS ref_qualites_associe (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     qualite_associe VARCHAR(150) NOT NULL,
@@ -225,3 +266,42 @@ CREATE TABLE IF NOT EXISTS ref_qualites_associe (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uq_ref_qualites_associe (qualite_associe)
 );
+
+CREATE TABLE IF NOT EXISTS ref_fonctions (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    fonction VARCHAR(150) NOT NULL,
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_ref_fonctions (fonction)
+);
+
+-- RBAC Tables
+CREATE TABLE IF NOT EXISTS roles (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    nom VARCHAR(120) NOT NULL,
+    description VARCHAR(255) DEFAULT NULL,
+    is_internal TINYINT(1) NOT NULL DEFAULT 0,
+    is_system TINYINT(1) NOT NULL DEFAULT 0,
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_roles_nom (nom)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS permissions (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    nom VARCHAR(150) NOT NULL,
+    permission_key VARCHAR(100) NOT NULL,
+    category VARCHAR(50) DEFAULT NULL,
+    description VARCHAR(255) DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_permissions_key (permission_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS role_permissions (
+    role_id INT UNSIGNED NOT NULL,
+    permission_id INT UNSIGNED NOT NULL,
+    PRIMARY KEY (role_id, permission_id),
+    CONSTRAINT fk_rp_role FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE,
+    CONSTRAINT fk_rp_permission FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

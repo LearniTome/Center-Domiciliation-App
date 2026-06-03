@@ -7,12 +7,78 @@ require_once __DIR__ . '/../src/TemplateEditor.php';
 $templatesDir = __DIR__ . '/../templates';
 $templatePath = isset($_GET['path']) ? realpath((string) $_GET['path']) : '';
 
+$folderLabels = require __DIR__ . '/../config/templates.php';
+$folderLabels = $folderLabels['folder_labels'];
+
+$templateDirs = array_filter(glob($templatesDir . '/*', GLOB_ONLYDIR), fn($d) => basename($d)[0] !== '_');
+$racineDir = $templatesDir . '/_Racine-Actifs';
+
 if ($templatePath === '' || !str_starts_with($templatePath, realpath($templatesDir)) || !file_exists($templatePath)) {
     ?>
     <section class="card stack">
-        <h2>Template introuvable</h2>
-        <p>Le fichier demande n'existe pas ou n'est pas accessible.</p>
-        <a class="btn" href="<?= e(app_url('templates')) ?>">Retour aux templates</a>
+        <div class="section-header">
+            <div class="section-header-info">
+                <span class="material-symbols-outlined icon-leading">edit_note</span>
+                <div>
+                    <h2>Selectionnez un template</h2>
+                    <p class="help-text">Choisissez un dossier puis un fichier .docx a editer</p>
+                </div>
+            </div>
+        </div>
+        <?php
+        $allFolders = [];
+        if (is_dir($racineDir)) {
+            $racineFiles = glob($racineDir . '/*.docx');
+            $allFolders[] = ['name' => '_Racine-Actifs', 'label' => $folderLabels['_Racine-Actifs'] ?? 'Toutes formes', 'files' => $racineFiles];
+        }
+        foreach ($templateDirs as $dir) {
+            $folderName = basename($dir);
+            $files = glob($dir . '/*.docx');
+            $allFolders[] = ['name' => $folderName, 'label' => $folderLabels[$folderName] ?? $folderName, 'files' => $files];
+        }
+        usort($allFolders, fn($a, $b) => (empty($a['files']) <=> empty($b['files'])));
+        ?>
+        <div class="picker-tables">
+            <?php foreach ($allFolders as $group): ?>
+            <div class="picker-table-group">
+                <h3 class="picker-table-title"><?= e($group['label']) ?></h3>
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Fichier</th>
+                                <th style="width:70px">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($group['files'])): ?>
+                            <tr>
+                                <td colspan="2" class="table-empty-cell">Aucun template dans ce dossier</td>
+                            </tr>
+                            <?php else: ?>
+                            <?php foreach ($group['files'] as $f): ?>
+                            <tr>
+                                <td><?= e(basename($f)) ?></td>
+                                <td>
+                                    <a class="btn-icon" href="<?= e(app_url('template_edit', ['path' => $f])) ?>" title="Editer">
+                                        <span class="material-symbols-outlined">edit</span>
+                                    </a>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+        <div class="section-header picker-actions">
+            <div></div>
+            <div class="table-actions">
+                <a class="btn btn-back" href="<?= e(app_url('templates')) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
+            </div>
+        </div>
     </section>
     <?php
     return;
@@ -21,7 +87,7 @@ if ($templatePath === '' || !str_starts_with($templatePath, realpath($templatesD
 $filename = basename($templatePath);
 $folder = basename(dirname($templatePath));
 $templatesConfig = require __DIR__ . '/../config/templates.php';
-$legalForms = $templatesConfig['legal_forms'];
+$folderLabels = $templatesConfig['folder_labels'];
 $docTypes = $templatesConfig['document_types'];
 
 $info = pathinfo($filename, PATHINFO_FILENAME);
@@ -107,7 +173,7 @@ $variables = TemplateEditor::getAvailableVariables();
             <?php foreach ($variables as $category => $vars): ?>
                 <div class="var-category">
                     <h4 class="var-category-title" onclick="toggleCategory(this)">
-                        <span class="mdi mdi-chevron-down"></span>
+                        <span class="material-symbols-outlined">expand_more</span>
                         <?= e($category) ?>
                         <span class="var-count"><?= count($vars) ?></span>
                     </h4>
@@ -128,10 +194,15 @@ $variables = TemplateEditor::getAvailableVariables();
         <div class="section-header">
             <div>
                 <h2><?= e($docTypes[$docType] ?? $docType ?: 'Editeur de template') ?></h2>
-                <p class="help-text"><?= e($legalForms[$folder] ?? $folder) ?> &mdash; <?= e($filename) ?></p>
+                <p class="help-text"><?= e($folderLabels[$folder] ?? $folder) ?> &mdash; <?= e($filename) ?></p>
             </div>
             <div class="table-actions">
-                <a class="btn-icon" href="<?= e(app_url('template', ['path' => $templatePath])) ?>" title="Fermer"><span class="mdi mdi-close"></span></a>
+                <a class="btn btn-back" href="<?= e(app_url('template', ['path' => $templatePath])) ?>" title="Retour aux infos template">
+                    <span class="material-symbols-outlined">arrow_back</span> Retour
+                </a>
+                <a class="btn-icon" href="<?= e(app_url('template_edit')) ?>" title="Changer de template">
+                    <span class="material-symbols-outlined">edit_note</span>
+                </a>
             </div>
         </div>
 
@@ -180,13 +251,13 @@ $variables = TemplateEditor::getAvailableVariables();
                 </select>
                 <span class="toolbar-sep"></span>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="exec('bold')" title="Gras (Ctrl+B)">
-                    <span class="mdi mdi-format-bold"></span>
+                    <span class="material-symbols-outlined">format_bold</span>
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="exec('italic')" title="Italique (Ctrl+I)">
-                    <span class="mdi mdi-format-italic"></span>
+                    <span class="material-symbols-outlined">format_italic</span>
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="exec('underline')" title="Souligne (Ctrl+U)">
-                    <span class="mdi mdi-format-underline"></span>
+                    <span class="material-symbols-outlined">format_underline</span>
                 </button>
                 <span class="toolbar-sep"></span>
                 <span class="color-btn">
@@ -199,55 +270,55 @@ $variables = TemplateEditor::getAvailableVariables();
                 </span>
                 <span class="toolbar-sep"></span>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="exec('justifyleft')" title="Aligner a gauche">
-                    <span class="mdi mdi-format-align-left"></span>
+                    <span class="material-symbols-outlined">format_align_left</span>
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="exec('justifycenter')" title="Centrer">
-                    <span class="mdi mdi-format-align-center"></span>
+                    <span class="material-symbols-outlined">format_align_center</span>
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="exec('justifyright')" title="Aligner a droite">
-                    <span class="mdi mdi-format-align-right"></span>
+                    <span class="material-symbols-outlined">format_align_right</span>
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="exec('justifyfull')" title="Justifier">
-                    <span class="mdi mdi-format-align-justify"></span>
+                    <span class="material-symbols-outlined">format_align_justify</span>
                 </button>
                 <span class="toolbar-sep"></span>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="exec('insertorderedlist')" title="Liste numerotee">
-                    <span class="mdi mdi-format-list-numbered"></span>
+                    <span class="material-symbols-outlined">format_list_numbered</span>
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="exec('insertunorderedlist')" title="Liste a puces">
-                    <span class="mdi mdi-format-list-bulleted"></span>
+                    <span class="material-symbols-outlined">format_list_bulleted</span>
                 </button>
                 <span class="toolbar-sep"></span>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="showTableDialog()" title="Insérer un tableau">
-                    <span class="mdi mdi-table"></span>
+                    <span class="material-symbols-outlined">table</span>
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="exec('inserthorizontalrule')" title="Ligne horizontale">
-                    <span class="mdi mdi-minus"></span>
+                    <span class="material-symbols-outlined">remove</span>
                 </button>
                 <span class="toolbar-sep"></span>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="exec('undo')" title="Annuler">
-                    <span class="mdi mdi-undo"></span>
+                    <span class="material-symbols-outlined">undo</span>
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="exec('redo')" title="Retablir">
-                    <span class="mdi mdi-redo"></span>
+                    <span class="material-symbols-outlined">redo</span>
                 </button>
                 <span class="toolbar-sep"></span>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="toggleSource()" title="Code source">
-                    <span class="mdi mdi-code-tags"></span>
+                    <span class="material-symbols-outlined">code</span>
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="togglePreview()" title="Aperçu">
-                    <span class="mdi mdi-eye"></span> Aperçu
+                    <span class="material-symbols-outlined">visibility</span> Aperçu
                 </button>
                 <span class="toolbar-sep"></span>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="clearFormatting()" title="Effacer la mise en forme">
-                    <span class="mdi mdi-format-clear"></span>
+                    <span class="material-symbols-outlined">format_clear</span>
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="printEditor()" title="Imprimer / PDF (Ctrl+P)">
-                    <span class="mdi mdi-printer"></span> PDF
+                    <span class="material-symbols-outlined">print</span> PDF
                 </button>
                 <span class="toolbar-sep"></span>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="insertPageBreak()" title="Nouvelle page">
-                    <span class="mdi mdi-file-plus"></span>
+                    <span class="material-symbols-outlined">note_add</span>
                 </button>
             </div>
 
@@ -264,19 +335,15 @@ $variables = TemplateEditor::getAvailableVariables();
             </div>
 
             <div class="editor-actions">
-                <div>
-                    <button type="submit" class="btn-icon" onclick="return beforeSave()" title="Enregistrer">
-                        <span class="mdi mdi-content-save"></span>
-                    </button>
-                    <button type="button" class="btn-icon" onclick="showSaveAs()" title="Enregistrer sous...">
-                        <span class="mdi mdi-content-save-outline"></span>
-                    </button>
-                </div>
-                <div>
-                    <button type="button" class="btn-icon" onclick="if(confirm('Creer un nouveau template vierge ?'))document.getElementById('blank-form').submit();" title="Nouveau vierge">
-                        <span class="mdi mdi-file-plus"></span>
-                    </button>
-                </div>
+                <button type="submit" class="btn btn-next" onclick="return beforeSave()">
+                    <span class="material-symbols-outlined">save</span> Enregistrer
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="showSaveAs()">
+                    <span class="material-symbols-outlined">save</span> Enregistrer sous
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="if(confirm('Creer un nouveau template vierge ?'))document.getElementById('blank-form').submit();">
+                    <span class="material-symbols-outlined">note_add</span> Nouveau vierge
+                </button>
             </div>
         </form>
 
@@ -284,21 +351,30 @@ $variables = TemplateEditor::getAvailableVariables();
             <div class="card stack">
                 <h4>Insérer un tableau</h4>
                 <div class="inline-form">
-                    <label>Colonnes: <input type="number" id="table-cols" value="3" min="1" max="10" style="width:60px"></label>
-                    <label>Lignes: <input type="number" id="table-rows" value="3" min="1" max="20" style="width:60px"></label>
+                    <label>Colonnes: <input type="number" id="table-cols" value="3" min="1" max="10" class="num-input-sm"></label>
+                    <label>Lignes: <input type="number" id="table-rows" value="3" min="1" max="20" class="num-input-sm"></label>
                     <button type="button" class="btn btn-sm" onclick="insertTable()">Insérer</button>
                     <button type="button" class="btn btn-secondary btn-sm" onclick="closeTableDialog()">Annuler</button>
                 </div>
             </div>
         </div>
 
-        <form method="post" id="save-as-form" class="hidden inline-form" style="margin-top:0.5rem">
-            <?= csrf_input() ?>
-            <input type="hidden" name="action" value="save_as">
-            <input type="hidden" name="content_html" id="content-html-saveas">
-            <input type="text" name="new_name" placeholder="Nom du fichier (ex: Mon_Template.docx)" required class="input-full">
-            <button type="submit" class="btn" onclick="document.getElementById('content-html-saveas').value=document.getElementById('editor-content').innerHTML">Creer</button>
-            <button type="button" class="btn btn-secondary" onclick="document.getElementById('save-as-form').classList.add('hidden')">Annuler</button>
+        <form method="post" id="save-as-form" class="hidden save-as-form">
+            <div class="card stack">
+                <h4>Enregistrer sous</h4>
+                <?= csrf_input() ?>
+                <input type="hidden" name="action" value="save_as">
+                <input type="hidden" name="content_html" id="content-html-saveas">
+                <div class="inline-form">
+                    <input type="text" name="new_name" placeholder="Nom du fichier (ex: Mon_Template.docx)" required class="input-flex">
+                    <button type="submit" class="btn btn-next" onclick="document.getElementById('content-html-saveas').value=document.getElementById('editor-content').innerHTML">
+                        <span class="material-symbols-outlined">save</span> Creer
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('save-as-form').classList.add('hidden')">
+                        <span class="material-symbols-outlined">close</span> Annuler
+                    </button>
+                </div>
+            </div>
         </form>
 
         <form method="post" id="blank-form" class="hidden">
@@ -308,161 +384,6 @@ $variables = TemplateEditor::getAvailableVariables();
         </form>
     </div>
 </section>
-
-<style>
-.template-editor-layout {
-    display: grid;
-    grid-template-columns: 280px 1fr;
-    gap: 1rem;
-    align-items: start;
-}
-.editor-sidebar {
-    position: sticky;
-    top: 1rem;
-    max-height: calc(100vh - 140px);
-    overflow-y: auto;
-}
-.editor-sidebar::-webkit-scrollbar { width: 4px; }
-.editor-sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-.variable-search { margin-bottom: 0.75rem; }
-.input-full {
-    width: 100%; padding: 0.5rem; background: var(--bg); border: 1px solid var(--border);
-    border-radius: 4px; color: var(--text); font-family: inherit; font-size: 0.85rem; box-sizing: border-box;
-}
-.input-full:focus { outline: none; border-color: var(--primary); }
-.var-category { margin-bottom: 0.25rem; }
-.var-category-title {
-    font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em;
-    color: var(--text-secondary); cursor: pointer; padding: 0.35rem 0;
-    display: flex; align-items: center; gap: 0.35rem; user-select: none;
-}
-.var-category-title .mdi { font-size: 1rem; }
-.var-category-title .var-count {
-    margin-left: auto; font-size: 0.7rem; color: var(--text-muted);
-    background: var(--panel); padding: 0 0.4rem; border-radius: 8px;
-}
-.var-list { display: flex; flex-direction: column; gap: 2px; margin-bottom: 0.5rem; }
-.var-btn {
-    display: flex; flex-direction: column; align-items: flex-start;
-    padding: 0.3rem 0.5rem; background: transparent; border: 1px solid transparent;
-    border-radius: 4px; cursor: pointer; text-align: left; transition: all 0.15s;
-}
-.var-btn:hover { background: var(--panel-hover); border-color: var(--border); }
-.var-btn code { font-size: 0.78rem; color: var(--primary); font-family: 'Courier New', monospace; }
-.var-btn small { font-size: 0.68rem; color: var(--text-muted); }
-.editor-main { min-height: 400px; }
-.editor-toolbar {
-    display: flex; align-items: center; gap: 0.25rem;
-    padding: 0.5rem; background: var(--bg); border: 1px solid var(--border);
-    border-bottom: none; border-radius: 4px 4px 0 0; flex-wrap: wrap;
-}
-.toolbar-sep { width: 1px; height: 22px; background: var(--border); margin: 0 0.25rem; }
-.btn-sm { padding: 0.3rem 0.5rem; font-size: 0.8rem; }
-.editor-content {
-    background: #ccc; padding: 30px 0;
-    display: flex; flex-direction: column; align-items: center;
-    gap: 24px; min-height: 100%;
-    outline: none; box-sizing: border-box;
-}
-.a4-page {
-    width: 21cm; min-height: 29.7cm; padding: 2cm 2.5cm;
-    background: white; color: #1a1a1a;
-    font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; font-size: 11pt;
-    line-height: 1.5; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    box-sizing: border-box; overflow: hidden;
-}
-.a4-page hr.page-break {
-    border: 0; border-top: 2px dashed #ccc; margin: 2cm 0;
-    page-break-after: always; break-after: page;
-}
-.a4-page h1 { font-size: 18pt; font-weight: 700; margin: 12pt 0 6pt; }
-.a4-page h2 { font-size: 16pt; font-weight: 700; margin: 10pt 0 4pt; }
-.a4-page h3 { font-size: 14pt; font-weight: 600; margin: 8pt 0 4pt; }
-.a4-page h4 { font-size: 12pt; font-weight: 600; margin: 6pt 0 3pt; }
-.a4-page p { margin: 0 0 6pt; }
-.a4-page table { width: 100%; border-collapse: collapse; margin: 6pt 0; }
-.a4-page td, .a4-page th { border: 1px solid #999; padding: 4pt; }
-.a4-page var {
-    color: #0090e7; font-style: normal; font-family: 'Courier New', monospace;
-    background: #e8f4fd; padding: 0 3px; border-radius: 2px;
-}
-.editor-source {
-    width: 100%; min-height: 400px; padding: 1rem;
-    background: #1a1a2e; color: #e0e0e0;
-    font-family: 'Courier New', monospace; font-size: 0.8rem;
-    line-height: 1.5; border: 1px solid var(--border);
-    resize: vertical; box-sizing: border-box; tab-size: 2;
-}
-.editor-preview {
-    width: 100%; min-height: 400px; padding: 2cm 2.5cm;
-    background: white; border: 1px solid var(--border);
-    border-radius: 0 0 4px 4px; color: #1a1a1a;
-    font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; font-size: 11pt;
-    line-height: 1.5; overflow-y: auto; box-sizing: border-box;
-    max-width: 21cm; margin: 0 auto; box-shadow: 0 2px 12px rgba(0,0,0,0.15);
-}
-.editor-preview var {
-    color: #0090e7; font-style: normal; font-family: 'Courier New', monospace;
-    background: #e8f4fd; padding: 0 2px; border-radius: 2px;
-}
-.editor-wrapper {
-    background: #666; padding: 1.5rem 1rem;
-    border-radius: 0 0 4px 4px; overflow-y: auto;
-    max-height: calc(100vh - 280px); min-height: 400px;
-}
-.editor-toolbar select {
-    padding: 0.25rem 0.4rem; background: var(--bg); border: 1px solid var(--border);
-    border-radius: 4px; color: var(--text); font-size: 0.78rem; cursor: pointer;
-    font-family: inherit; max-width: 140px;
-}
-.editor-toolbar select:focus { outline: none; border-color: var(--primary); }
-.editor-toolbar input[type="color"] {
-    width: 28px; height: 28px; padding: 2px; border: 1px solid var(--border);
-    border-radius: 4px; background: transparent; cursor: pointer; vertical-align: middle;
-}
-.editor-toolbar input[type="color"]:hover { border-color: var(--text-secondary); }
-.editor-toolbar .color-btn {
-    position: relative; display: inline-flex; align-items: center; gap: 2px;
-}
-.editor-toolbar .color-btn .color-preview {
-    width: 12px; height: 12px; border-radius: 2px; border: 1px solid var(--border);
-    display: inline-block;
-}
-@media print {
-    body { background: white !important; margin: 0 !important; padding: 0 !important; }
-    .sidebar, .page-header, .flash, .editor-sidebar, .editor-toolbar,
-    .editor-actions, .editor-source, #table-dialog, #save-as-form, #blank-form,
-    .template-editor-layout .section-header .table-actions { display: none !important; }
-    .template-editor-layout { display: block !important; }
-    .editor-main { border: none !important; padding: 0 !important; box-shadow: none !important; }
-    .editor-wrapper { background: none !important; padding: 0 !important; max-height: none !important; box-shadow: none !important; }
-    .editor-content { background: none !important; padding: 0 !important; gap: 0 !important; display: block !important; }
-    .a4-page { width: auto !important; min-height: auto !important; padding: 0 !important; box-shadow: none !important; overflow: visible !important; page-break-after: always; break-after: page; }
-    .a4-page hr.page-break { page-break-after: always; break-after: page; }
-    .main { padding: 0 !important; }
-    .shell { display: block !important; }
-    @page { margin: 2cm; size: A4; }
-}
-.editor-actions {
-    display: flex; justify-content: space-between; align-items: center;
-    margin-top: 0.75rem; gap: 0.5rem; flex-wrap: wrap;
-}
-.editor-actions > div { display: flex; gap: 0.5rem; align-items: center; }
-.table-dialog {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
-    z-index: 1000;
-}
-.table-dialog .card { padding: 1.5rem; min-width: 350px; }
-.table-dialog .inline-form { display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap; margin-top: 0.75rem; }
-.table-dialog label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; color: var(--text-secondary); }
-.table-dialog input { padding: 0.4rem; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); }
-.hidden { display: none !important; }
-@media (max-width: 900px) {
-    .template-editor-layout { grid-template-columns: 1fr; }
-    .editor-sidebar { position: static; max-height: none; }
-}
-</style>
 
 <script>
 let savedRange = null;
@@ -512,13 +433,13 @@ function insertVar(text) {
 
 function toggleCategory(titleEl) {
     const list = titleEl.nextElementSibling;
-    const icon = titleEl.querySelector('.mdi');
+    const icon = titleEl.querySelector('.material-symbols-outlined');
     if (list.style.display === 'none') {
         list.style.display = 'flex';
-        icon.classList.replace('mdi-chevron-right', 'mdi-chevron-down');
+        icon.textContent = 'expand_more';
     } else {
         list.style.display = 'none';
-        icon.classList.replace('mdi-chevron-down', 'mdi-chevron-right');
+        icon.textContent = 'chevron_right';
     }
 }
 

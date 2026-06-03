@@ -7,6 +7,8 @@ require_once __DIR__ . '/../src/TemplateAnalyzer.php';
 $templatesDir = __DIR__ . '/../templates';
 $outputDir = __DIR__ . '/../dossiers_dom';
 
+$pageSubtitle = 'Variables trouvees dans les templates vs. variables disponibles dans le contexte de rendu.';
+
 $templates = TemplateAnalyzer::scanTemplates($templatesDir);
 $analysis = null;
 $exported = false;
@@ -94,71 +96,102 @@ if ($templates) {
         set_flash('success', 'Analyse exportee dans output/');
         redirect_to('analyse-couverture');
     }
+
+    if (is_post() && isset($_POST['ai_suggest'])) {
+        verify_csrf();
+        if (ClaudeService::isAvailable()) {
+            $result = ClaudeService::analyzeTemplates($analysis['variables']);
+            $_SESSION['ai_analysis_suggestions'] = $result;
+            if ($result !== null) {
+                set_flash('success', 'Suggestions IA generees.');
+            } else {
+                set_flash('error', "Erreur lors de la generation des suggestions IA.");
+            }
+        } else {
+            set_flash('error', "L'assistant IA n'est pas disponible. Configurez la cle API dans config/ai.local.php.");
+        }
+        redirect_to('analyse-couverture');
+    }
+}
+
+$aiSuggestions = $_SESSION['ai_analysis_suggestions'] ?? null;
+if ($aiSuggestions !== null) {
+    unset($_SESSION['ai_analysis_suggestions']);
 }
 ?>
 <section class="card stack">
     <div class="section-header">
-        <div>
-            <h2>Analyse de couverture des variables</h2>
-            <p class="help-text">Variables trouvees dans les templates vs. variables disponibles dans le contexte de rendu.</p>
-        </div>
-        <?php if ($analysis): ?>
+        <?php
+    $activeFilter = $_GET['filter'] ?? 'all';
+    if ($analysis):
+        $covered = $analysis['summary']['covered_variables'];
+        $uncovered = $analysis['summary']['uncovered_variables'];
+        $total = $covered + $uncovered;
+        $filterBtnClass = fn($f) => 'btn btn-sm ' . ($activeFilter === $f ? 'btn-next' : 'btn-secondary');
+    ?>
         <div class="table-actions">
-            <button type="button" id="bulk-rename-btn" class="btn btn-info"><span class="mdi mdi-rename"></span> Renommer la sélection</button>
-            <button type="button" id="bulk-delete-btn" class="btn btn-danger"><span class="mdi mdi-delete"></span> Supprimer la sélection</button>
-            <form method="post" style="display:inline">
-                <?= csrf_input() ?>
-                <button type="submit" name="export_csv" value="1" class="btn btn-info"><span class="mdi mdi-download"></span> Export CSV</button>
-            </form>
+            <div class="analyse-filter-bar">
+                <span class="analyse-filter-label">Filtrer :</span>
+                <a class="<?= $filterBtnClass('all') ?>" href="?page=analyse-couverture" data-filter="all">Tous <span class="badge bg-secondary"><?= $total ?></span></a>
+                <a class="<?= $filterBtnClass('couvert') ?>" href="?page=analyse-couverture&filter=couvert" data-filter="couvert">Couvertes <span class="badge bg-success"><?= $covered ?></span></a>
+                <a class="<?= $filterBtnClass('non couvert') ?>" href="<?= e(app_url('analyse-couverture', ['filter' => 'non couvert'])) ?>" data-filter="non couvert">Non couvertes <span class="badge bg-danger"><?= $uncovered ?></span></a>
+                <input type="text" id="var-search" class="var-search-input" placeholder="Rechercher une variable...">
+            </div>
         </div>
         <?php endif; ?>
     </div>
+
+    <?php if ($aiSuggestions && isset($aiSuggestions['suggestions'])): ?>
+        <div class="card ai-suggestions-card">
+            <div class="section-header">
+                <h4><span class="material-symbols-outlined text-info">smart_toy</span> Suggestions IA</h4>
+            </div>
+            <div class="ai-suggestions-list">
+            <?php foreach ($aiSuggestions['suggestions'] as $suggestion): ?>
+                <?php
+                    $badgeClass = match($suggestion['action'] ?? '') {
+                        'rename' => 'bg-warning',
+                        'delete' => 'bg-danger',
+                        default => 'bg-success',
+                    };
+                ?>
+                <div class="ai-suggestion-row">
+                    <code><?= e($suggestion['variable'] ?? '') ?></code>
+                    <span class="ai-suggestion-arrow">→</span>
+                    <span><?= e($suggestion['suggestion'] ?? '') ?></span>
+                    <span class="ai-suggestion-badge <?= $badgeClass ?>"><?= e($suggestion['action'] ?? '') ?></span>
+                </div>
+            <?php endforeach; ?>
+            </div>
+        </div>
+    <?php endif; ?>
 
     <?php if (!$templates): ?>
         <p class="table-empty">Aucun template trouve. Ajoutez des fichiers .docx sur la page Templates.</p>
     <?php elseif (!$analysis): ?>
         <p class="table-empty">Impossible d analyser les templates.</p>
     <?php else: ?>
-    <div class="stats compact">
-        <article class="stat">
-            <span>Templates</span>
-            <strong><?= $analysis['summary']['total_templates'] ?></strong>
-        </article>
-        <article class="stat">
-            <span>Variables distinctes</span>
-            <strong><?= $analysis['summary']['total_variables'] ?></strong>
-        </article>
-        <article class="stat">
-            <span>Couvertes</span>
-            <strong style="color:var(--success)"><?= $analysis['summary']['covered_variables'] ?></strong>
-        </article>
-        <article class="stat">
-            <span>Non couvertes</span>
-            <strong style="color:var(--danger)"><?= $analysis['summary']['uncovered_variables'] ?></strong>
-        </article>
-    </div>
-
     <div class="table-scroll">
-    <table>
+    <table data-sortable>
         <thead>
             <tr>
-                <th style="width:32px"><input type="checkbox" id="select-all" title="Tout cocher"></th>
-                <th>Variable</th>
-                <th>Occurrences</th>
-                <th>Templates</th>
-                <th>Section</th>
-                <th>Couverture</th>
+                <th class="var-th-checkbox"><input type="checkbox" id="select-all" title="Tout cocher"></th>
+                <th data-col="Variable">Variable</th>
+                <th data-col="Occurrences">Occurrences</th>
+                <th data-col="Templates">Templates</th>
+                <th data-col="Section">Section</th>
+                <th data-col="Couverture">Couverture</th>
                 <th>Action</th>
             </tr>
         </thead>
         <tbody>
             <?php $contextKeys = TemplateAnalyzer::getExpectedContextKeys(); ?>
             <?php foreach ($analysis['variables'] as $v): ?>
-                <tr>
+                <tr data-coverage="<?= e($v['coverage']) ?>">
                     <td><input type="checkbox" class="var-checkbox" value="<?= e($v['variable']) ?>"></td>
                     <td><code><?= e($v['variable']) ?></code></td>
                     <td><?= e((string) $v['occurrences']) ?></td>
-                    <td><?= e((string) $v['templates_count']) ?> template(s)</td>
+                    <td title="<?= e(implode(', ', $v['templates'])) ?>"><?= e((string) $v['templates_count']) ?> template(s)</td>
                     <td><span class="pill"><?= e($v['section']) ?></span></td>
                     <td>
                         <span class="statut-badge <?= $v['coverage'] === 'couvert' ? 'actif' : 'resilie' ?>">
@@ -166,25 +199,25 @@ if ($templates) {
                         </span>
                     </td>
                     <td>
-                        <div style="display:flex;gap:4px;align-items:center">
-                            <form method="post" style="display:flex;gap:4px;align-items:center" class="rename-var-form">
+                        <div class="var-action-cell">
+                            <form method="post" class="rename-var-form">
                                 <?= csrf_input() ?>
                                 <input type="hidden" name="var_name" value="<?= e($v['variable']) ?>">
-                                <select name="new_name" required style="max-width:140px;font-size:0.75rem;padding:2px 4px">
+                                <select name="new_name" required class="select-rename">
                                     <option value="">Renommer en...</option>
                                     <?php foreach ($contextKeys as $ck): ?>
                                     <option value="<?= e($ck) ?>"><?= e($ck) ?></option>
                                     <?php endforeach; ?>
                                 </select>
                                 <button type="submit" name="rename" value="1" class="btn-icon" title="Renommer">
-                                    <span class="mdi mdi-rename"></span>
+                                    <span class="material-symbols-outlined">drive_file_rename_outline</span>
                                 </button>
                             </form>
-                            <form method="post" style="display:inline" class="delete-var-form">
+                            <form method="post" class="inline-form delete-var-form">
                                 <?= csrf_input() ?>
                                 <input type="hidden" name="var_name" value="<?= e($v['variable']) ?>">
                                 <button type="submit" name="delete_var" value="1" class="btn-icon danger" title="Supprimer">
-                                    <span class="mdi mdi-delete"></span>
+                                    <span class="material-symbols-outlined">delete</span>
                                 </button>
                             </form>
                         </div>
@@ -196,15 +229,32 @@ if ($templates) {
     </div>
     <?php endif; ?>
 </section>
+<?php if ($analysis): ?>
+<div class="table-actions bulk-actions-bar">
+    <div class="bulk-actions-left">
+        <button type="button" id="invert-select-btn" class="btn btn-secondary"><span class="material-symbols-outlined">deselect</span> Inverser la sélection</button>
+    </div>
+    <button type="button" id="bulk-rename-btn" class="btn btn-info"><span class="material-symbols-outlined">drive_file_rename_outline</span> Renommer la sélection</button>
+    <button type="button" id="bulk-delete-btn" class="btn btn-danger"><span class="material-symbols-outlined">delete</span> Supprimer la sélection</button>
+    <form method="post" class="inline-form">
+        <?= csrf_input() ?>
+        <button type="submit" name="export_csv" value="1" class="btn btn-info"><span class="material-symbols-outlined">download</span> Export CSV</button>
+    </form>
+    <form method="post" class="inline-form">
+        <?= csrf_input() ?>
+        <button type="submit" name="ai_suggest" value="1" class="btn btn-info"><span class="material-symbols-outlined">smart_toy</span> Suggérer avec IA</button>
+    </form>
+</div>
+<?php endif; ?>
 
-<form id="bulk-delete-form" method="post" style="display:none">
+<form id="bulk-delete-form" method="post" class="hidden-form">
     <?= csrf_input() ?>
 </form>
-<form id="bulk-rename-form" method="post" style="display:none">
+<form id="bulk-rename-form" method="post" class="hidden-form">
     <?= csrf_input() ?>
 </form>
 
-<div id="loading-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center">
+<div id="loading-overlay">
     <div class="loader-card">
         <div class="spinner"></div>
         <p id="loading-text">Traitement en cours...</p>
@@ -216,13 +266,37 @@ if ($templates) {
     var text = document.getElementById('loading-text');
     window.showOverlay = function(msg){
         text.textContent = msg;
-        overlay.style.display = 'flex';
+        overlay.classList.add('show');
     };
+
+    var searchInput = document.getElementById('var-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', function(){
+            var q = this.value.toUpperCase();
+            document.querySelectorAll('tr[data-coverage]').forEach(function(row){
+                var code = row.querySelector('code');
+                if (code) {
+                    var match = code.textContent.toUpperCase().indexOf(q) !== -1;
+                    row.style.display = match ? '' : 'none';
+                }
+            });
+        });
+    }
 
     document.getElementById('select-all').addEventListener('change', function(){
         document.querySelectorAll('.var-checkbox').forEach(function(cb){
-            cb.checked = this.checked;
+            if (cb.closest('tr').style.display !== 'none') {
+                cb.checked = this.checked;
+            }
         }, this);
+    });
+
+    document.getElementById('invert-select-btn').addEventListener('click', function(){
+        document.querySelectorAll('.var-checkbox').forEach(function(cb){
+            if (cb.closest('tr').style.display !== 'none') {
+                cb.checked = !cb.checked;
+            }
+        });
     });
 
     document.getElementById('bulk-rename-btn').addEventListener('click', function(){
@@ -232,21 +306,20 @@ if ($templates) {
             return;
         }
         var pairs = [];
-        var cancelled = false;
         checked.forEach(function(cb){
-            if (cancelled) return;
             var oldName = cb.value;
-            var newName = prompt('Renommer {{ ' + oldName + ' }} en :', '');
-            if (newName === null) {
-                cancelled = true;
-                return;
-            }
-            newName = newName.trim().toUpperCase();
+            var select = cb.closest('tr').querySelector('select[name="new_name"]');
+            if (!select) return;
+            var newName = select.value;
             if (newName !== '' && newName !== oldName) {
                 pairs.push({old: oldName, new: newName});
             }
         });
-        if (cancelled || pairs.length === 0) return;
+        if (pairs.length === 0) {
+            alert('Selectionnez au moins une variable avec un nouveau nom dans la liste deroulante.');
+            return;
+        }
+        if (!confirm('Confirmer le renommage de ' + pairs.length + ' variable(s) ?')) return;
         var form = document.getElementById('bulk-rename-form');
         document.querySelectorAll('#bulk-rename-form .dynamic-input').forEach(function(e){ e.remove(); });
         pairs.forEach(function(p){
@@ -317,5 +390,12 @@ if ($templates) {
             window.showOverlay('Renommage en cours...');
         });
     });
+
+    var activeFilter = '<?= $activeFilter ?>';
+    if (activeFilter !== 'all') {
+        document.querySelectorAll('tr[data-coverage]').forEach(function(row){
+            row.style.display = row.getAttribute('data-coverage') === activeFilter ? '' : 'none';
+        });
+    }
 })();
 </script>
