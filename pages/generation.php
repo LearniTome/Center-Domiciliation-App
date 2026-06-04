@@ -253,7 +253,9 @@ foreach ($filteredTemplates as $tpl) {
     $templatesByGenType[$gt][] = $tpl;
 }
 
-$genTypeOrder = ['creation', 'domiciliation'];
+$genTypeOrder = $genUser && $genUser['collaborateur_type'] !== 'interne'
+    ? ['domiciliation']
+    : ['creation', 'domiciliation'];
 
 $docTypesConfig = $templatesConfig['document_types'];
 

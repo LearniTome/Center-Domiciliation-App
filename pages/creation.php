@@ -783,6 +783,12 @@ $societeData = array_merge([
     'societe_mode_depot' => '',
 ], $wizard['societe']);
 
+$wizardUser = current_user();
+$isExterne = $wizardUser && $wizardUser['collaborateur_type'] !== 'interne';
+if ($isExterne) {
+    $societeData['societe_type_generation'] = 'domiciliation';
+}
+
 $tribunalTypes = fetch_tribunaux_types($pdo ?? null);
 $allTribunaux = fetch_tribunaux_all($pdo ?? null);
 $currentTribunalType = $societeData['societe_tribunal_type'] ?? '';
@@ -900,6 +906,7 @@ if ($aiSuggestions !== null) {
             </div>
             <?php endif; ?>
             <div class="form-grid">
+                <?php if (!$isExterne): ?>
                 <h3 class="section-title">Procedure</h3>
                 <label class="field">
                     <span>Type generation</span>
@@ -925,6 +932,9 @@ if ($aiSuggestions !== null) {
                         <option value="depot_en_ligne" <?= (string) $societeData['societe_mode_depot'] === 'depot_en_ligne' ? 'selected' : '' ?>>Dépôt En Ligne</option>
                     </select>
                 </label>
+                <?php else: ?>
+                    <input type="hidden" name="societe_type_generation" value="domiciliation">
+                <?php endif; ?>
 
                 <h3 class="section-title">Identifiants</h3>
                 <label class="field">
