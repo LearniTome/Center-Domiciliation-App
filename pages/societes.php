@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 $query = search_term();
+$user = current_user();
+$isAdmin = $user && in_array((int) $user['role_id'], [1, 2], true);
 
 if (is_post() && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
@@ -17,17 +19,32 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
 }
 
 if (($pdo ?? null) instanceof PDO) {
+    $userFilter = '';
+    $userParams = [];
+    if (!$isAdmin && $user) {
+        $userFilter = ' AND created_by = :user_id';
+        $userParams['user_id'] = (int) $user['id'];
+    }
     if ($query !== '') {
         $stmt = $pdo->prepare('
             SELECT *
             FROM societes
-            WHERE societe_raison_sociale LIKE :term OR societe_forme_juridique LIKE :term OR societe_ice LIKE :term OR societe_ville LIKE :term
+            WHERE (societe_raison_sociale LIKE :term OR societe_forme_juridique LIKE :term OR societe_ice LIKE :term OR societe_ville LIKE :term)
+            ' . $userFilter . '
             ORDER BY id DESC
         ');
-        $stmt->execute(['term' => like_term($query)]);
+        $params = ['term' => like_term($query)] + $userParams;
+        $stmt->execute($params);
         $societes = $stmt->fetchAll();
     } else {
-        $societes = fetch_all_records($pdo, 'societes');
+        $sql = 'SELECT * FROM societes';
+        if ($userFilter) {
+            $sql .= ' WHERE created_by = :user_id';
+        }
+        $sql .= ' ORDER BY id DESC';
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($userParams);
+        $societes = $stmt->fetchAll();
     }
 
     if (($_GET['export'] ?? '') === 'csv') {

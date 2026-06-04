@@ -363,12 +363,9 @@ if (is_post()) {
                         societe_dossier, societe_raison_sociale, societe_forme_juridique, societe_ice, societe_date_ice, societe_rc, societe_if,
                         societe_activites_statuts, societe_activites_ompic,
                         societe_capital, societe_part_social, societe_valeur_nominale, societe_date_exp_cert_neg, societe_adresse_siege, societe_ville, societe_tribunal, societe_email,
-                        societe_telephone, societe_type_generation, societe_procedure_creation, societe_mode_depot, societe_tribunal_type
+                        societe_telephone, societe_type_generation, societe_procedure_creation, societe_mode_depot, societe_tribunal_type, created_by
                     ) VALUES (
-                        :societe_dossier, :societe_raison_sociale, :societe_forme_juridique, :societe_ice, :societe_date_ice, :societe_rc, :societe_if,
-                        :societe_activites_statuts, :societe_activites_ompic,
-                        :societe_capital, :societe_part_social, :societe_valeur_nominale, :societe_date_exp_cert_neg, :societe_adresse_siege, :societe_ville, :societe_tribunal, :societe_email,
-                        :societe_telephone, :societe_type_generation, :societe_procedure_creation, :societe_mode_depot, :societe_tribunal_type
+                        :societe_telephone, :societe_type_generation, :societe_procedure_creation, :societe_mode_depot, :societe_tribunal_type, :created_by
                     )
                 ');
                 $societeStmt->execute([
@@ -394,6 +391,7 @@ if (is_post()) {
                     'societe_procedure_creation' => $wizard['societe']['societe_procedure_creation'] ?? '',
                     'societe_mode_depot' => $wizard['societe']['societe_mode_depot'] ?? '',
                     'societe_tribunal_type' => $wizard['societe']['societe_tribunal_type'] ?? '',
+                    'created_by' => (int) ($_SESSION['user_id'] ?? 0) ?: null,
                 ]);
 
                 $societeId = (int) $pdo->lastInsertId();
