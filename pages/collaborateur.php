@@ -280,8 +280,8 @@ $isNew = !$editingRecord;
         </div>
     </article>
 <?php elseif ($isNew): ?>
-    <article class="card stack">
-        <div class="section-header">
+    <div style="grid-column:1/-1;">
+        <div class="section-header" style="margin-bottom:4px;">
             <h2>Nouveau collaborateur</h2>
             <div class="table-actions">
                 <a class="btn btn-secondary" href="<?= e(app_url('collaborateurs')) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
@@ -289,17 +289,20 @@ $isNew = !$editingRecord;
         </div>
 
         <form method="post" class="stack">
-            <?= csrf_input() ?>
-            <input type="hidden" name="id" value="<?= e((string) $formData['id']) ?>">
-            <input type="hidden" name="collaborateur_type" value="<?= e($collabType) ?>">
+        <?= csrf_input() ?>
+        <input type="hidden" name="id" value="<?= e((string) $formData['id']) ?>">
+        <input type="hidden" name="collaborateur_type" value="<?= e($collabType) ?>">
 
+        <article class="card">
+            <div class="section-header">
+                <span class="material-symbols-outlined">badge</span>
+                <h2>Identit&eacute; &amp; R&ocirc;le</h2>
+            </div>
             <div class="form-grid">
-                <h3 class="section-title">Identite & Role</h3>
-
                 <label class="field">
-                    <span>Role / Type</span>
+                    <span>R&ocirc;le / Type</span>
                     <select name="role_id">
-                        <option value="">Selectionner...</option>
+                        <option value="">S&eacute;lectionner...</option>
                         <?php $optRoles = ($collabType === 'interne') ? $rolesInterne : $rolesExterne; ?>
                         <?php foreach ($optRoles as $r): ?>
                             <option value="<?= (int) $r['id'] ?>" <?= (string) ($formData['role_id'] ?? '') === (string) $r['id'] ? 'selected' : '' ?>>
@@ -312,12 +315,12 @@ $isNew = !$editingRecord;
                 <?php if ($collabType !== 'externe-pm'): ?>
                 <label class="field">
                     <span>Nom complet *</span>
-                    <input name="nom_complet" required value="<?= e((string) $formData['nom_complet']) ?>" placeholder="Nom et prenom">
+                    <input name="nom_complet" required value="<?= e((string) $formData['nom_complet']) ?>" placeholder="Nom et pr&eacute;nom">
                 </label>
                 <label class="field">
                     <span>Fonction</span>
                     <select name="fonction">
-                        <option value="">Selectionner...</option>
+                        <option value="">S&eacute;lectionner...</option>
                         <?php foreach ($fonctions as $f): ?>
                             <option value="<?= e((string) $f['fonction']) ?>" <?= (string) $formData['fonction'] === (string) $f['fonction'] ? 'selected' : '' ?>>
                                 <?= e((string) $f['fonction']) ?>
@@ -330,56 +333,83 @@ $isNew = !$editingRecord;
                 <?php if ($collabType === 'externe-pm'): ?>
                 <label class="field full">
                     <span>Raison sociale *</span>
-                    <input name="den_ste" required value="<?= e((string) $formData['den_ste']) ?>" placeholder="Denomination sociale">
+                    <input name="den_ste" required value="<?= e((string) $formData['den_ste']) ?>" placeholder="D&eacute;nomination sociale">
                 </label>
                 <?php endif; ?>
+            </div>
+        </article>
 
-                <?php if ($collabType === 'interne'): ?>
-                <h3 class="section-title">Acces au systeme</h3>
-
-                <label class="field" style="grid-column:1/-1;">
+        <?php if ($collabType === 'interne'): ?>
+        <article class="card">
+            <div class="section-header">
+                <span class="material-symbols-outlined">lock</span>
+                <h2>Acc&egrave;s au syst&egrave;me</h2>
+            </div>
+            <div class="form-grid">
+                <div class="field full">
                     <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
                         <input type="checkbox" name="can_login" value="1" data-toggle-password <?= (int) ($formData['can_login'] ?? 0) ? 'checked' : '' ?>>
-                        <span>Peut se connecter a l application</span>
+                        <span>Peut se connecter &agrave; l'application</span>
                     </label>
-                </label>
+                </div>
 
                 <label class="field password-field" <?= (int) ($formData['can_login'] ?? 0) ? '' : 'style="display:none"' ?>>
                     <span>Mot de passe</span>
-                    <input type="password" name="password" autocomplete="new-password" placeholder="6 caracteres min">
+                    <input type="password" name="password" autocomplete="new-password" placeholder="6 caract&egrave;res min">
                 </label>
 
                 <label class="field password-field" <?= (int) ($formData['can_login'] ?? 0) ? '' : 'style="display:none"' ?>>
                     <span>Confirmer le mot de passe</span>
                     <input type="password" name="password_confirm" autocomplete="new-password" placeholder="Retapez le mot de passe">
                 </label>
-                <?php endif; ?>
+            </div>
+        </article>
+        <?php endif; ?>
 
-                <?php if ($collabType === 'externe-pm'): ?>
-                <h3 class="section-title">Identifiants legaux</h3>
+        <?php if ($collabType === 'externe-pm'): ?>
+        <article class="card">
+            <div class="section-header">
+                <span class="material-symbols-outlined">assignment</span>
+                <h2>Identifiants l&eacute;gaux</h2>
+            </div>
+            <div class="form-grid">
                 <label class="field"><span>Code</span><input name="collaborateur_code" value="<?= e((string) $formData['collaborateur_code']) ?>"></label>
                 <label class="field"><span>ICE *</span><input name="collaborateur_ice" value="<?= e((string) $formData['collaborateur_ice']) ?>" placeholder="Identifiant ICE"></label>
                 <label class="field"><span>TP</span><input name="collaborateur_tp" value="<?= e((string) $formData['collaborateur_tp']) ?>"></label>
                 <label class="field"><span>RC</span><input name="collaborateur_rc" value="<?= e((string) $formData['collaborateur_rc']) ?>"></label>
                 <label class="field"><span>IF</span><input name="collaborateur_if" value="<?= e((string) $formData['collaborateur_if']) ?>"></label>
-                <?php endif; ?>
+            </div>
+        </article>
+        <?php endif; ?>
 
-                <h3 class="section-title">Contact</h3>
+        <article class="card">
+            <div class="section-header">
+                <span class="material-symbols-outlined">contact_mail</span>
+                <h2>Contact</h2>
+            </div>
+            <div class="form-grid">
                 <label class="field"><span>Email professionnel</span><input type="email" name="collaborateur_email" value="<?= e((string) $formData['collaborateur_email']) ?>"></label>
                 <?php if ($collabType === 'interne'): ?>
                 <label class="field"><span>Email secondaire</span><input type="email" name="email" value="<?= e((string) $formData['email']) ?>"></label>
                 <?php endif; ?>
                 <?php if ($collabType === 'externe-pm'): ?>
-                <label class="field"><span>Telephone fixe</span><input name="collaborateur_tel_fixe" value="<?= e((string) $formData['collaborateur_tel_fixe']) ?>"></label>
+                <label class="field"><span>T&eacute;l&eacute;phone fixe</span><input name="collaborateur_tel_fixe" value="<?= e((string) $formData['collaborateur_tel_fixe']) ?>"></label>
                 <?php endif; ?>
-                <label class="field"><span>Telephone mobile</span><input name="collaborateur_tel_mobile" value="<?= e((string) $formData['collaborateur_tel_mobile']) ?>"></label>
+                <label class="field"><span>T&eacute;l&eacute;phone mobile</span><input name="collaborateur_tel_mobile" value="<?= e((string) $formData['collaborateur_tel_mobile']) ?>"></label>
                 <?php if ($collabType === 'externe-pm' || $collabType === 'externe-pp'): ?>
                 <label class="field full"><span>Adresse</span><textarea name="collaborateur_adresse"><?= e((string) $formData['collaborateur_adresse']) ?></textarea></label>
                 <?php endif; ?>
+            </div>
+        </article>
 
-                <h3 class="section-title">Informations</h3>
+        <article class="card">
+            <div class="section-header">
+                <span class="material-symbols-outlined">info</span>
+                <h2>Informations</h2>
+            </div>
+            <div class="form-grid">
                 <?php if ($collabType === 'interne'): ?>
-                <label class="field"><span>Date debut</span><input type="date" name="date_debut" value="<?= e((string) $formData['date_debut']) ?>"></label>
+                <label class="field"><span>Date d&eacute;but</span><input type="date" name="date_debut" value="<?= e((string) $formData['date_debut']) ?>"></label>
                 <?php endif; ?>
                 <label class="field"><span>Statut</span>
                     <select name="statut">
@@ -390,11 +420,14 @@ $isNew = !$editingRecord;
                 </label>
                 <label class="field full"><span>Notes</span><textarea name="notes"><?= e((string) $formData['notes']) ?></textarea></label>
             </div>
+        </article>
 
-            <button type="submit">Enregistrer</button>
-        </form>
-    </article>
-
+        <div class="table-actions" style="justify-content:flex-end;">
+            <a class="btn btn-cancel" href="<?= e(app_url('collaborateurs')) ?>"><span class="material-symbols-outlined">close</span> Annuler</a>
+            <button type="submit" class="btn btn-next"><span class="material-symbols-outlined">save</span> Enregistrer</button>
+        </div>
+    </form>
+</div>
 <?php elseif ($editingRecord && $showEdit): ?>
     <article class="card stack">
         <div class="section-header">
@@ -409,112 +442,146 @@ $isNew = !$editingRecord;
             <input type="hidden" name="id" value="<?= e((string) $formData['id']) ?>">
             <input type="hidden" name="collaborateur_type" value="<?= e($collabType) ?>">
 
-            <div class="form-grid">
-                <h3 class="section-title">Identite & Role</h3>
-
-                <label class="field">
-                    <span>Role / Type</span>
-                    <select name="role_id">
-                        <option value="">Selectionner...</option>
-                        <?php $optRoles = ($collabType === 'interne') ? $rolesInterne : $rolesExterne; ?>
-                        <?php foreach ($optRoles as $r): ?>
-                            <option value="<?= (int) $r['id'] ?>" <?= (string) ($formData['role_id'] ?? '') === (string) $r['id'] ? 'selected' : '' ?>>
-                                <?= e($r['nom']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </label>
-
-                <?php if ($collabType !== 'externe-pm'): ?>
-                <label class="field">
-                    <span>Nom complet *</span>
-                    <input name="nom_complet" required value="<?= e((string) $formData['nom_complet']) ?>" placeholder="Nom et prenom">
-                </label>
-                <label class="field">
-                    <span>Fonction</span>
-                    <select name="fonction">
-                        <option value="">Selectionner...</option>
-                        <?php foreach ($fonctions as $f): ?>
-                            <option value="<?= e((string) $f['fonction']) ?>" <?= (string) $formData['fonction'] === (string) $f['fonction'] ? 'selected' : '' ?>>
-                                <?= e((string) $f['fonction']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </label>
-                <?php endif; ?>
-
-                <?php if ($collabType === 'externe-pm'): ?>
-                <label class="field full">
-                    <span>Raison sociale *</span>
-                    <input name="den_ste" required value="<?= e((string) $formData['den_ste']) ?>" placeholder="Denomination sociale">
-                </label>
-                <?php endif; ?>
-
-                <?php if ($collabType === 'interne'): ?>
-                <h3 class="section-title">Acces au systeme</h3>
-
-                <label class="field" style="grid-column:1/-1;">
-                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                        <input type="checkbox" name="can_login" value="1" data-toggle-password <?= (int) ($formData['can_login'] ?? 0) ? 'checked' : '' ?>>
-                        <span>Peut se connecter a l application</span>
+            <article class="card">
+                <div class="section-header">
+                    <span class="material-symbols-outlined">badge</span>
+                    <h2>Identit&eacute; &amp; R&ocirc;le</h2>
+                </div>
+                <div class="form-grid">
+                    <label class="field">
+                        <span>R&ocirc;le / Type</span>
+                        <select name="role_id">
+                            <option value="">S&eacute;lectionner...</option>
+                            <?php $optRoles = ($collabType === 'interne') ? $rolesInterne : $rolesExterne; ?>
+                            <?php foreach ($optRoles as $r): ?>
+                                <option value="<?= (int) $r['id'] ?>" <?= (string) ($formData['role_id'] ?? '') === (string) $r['id'] ? 'selected' : '' ?>>
+                                    <?= e($r['nom']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
                     </label>
-                </label>
 
-                <label class="field password-field" <?= (int) ($formData['can_login'] ?? 0) ? '' : 'style="display:none"' ?>>
-                    <span>Mot de passe <?= $editingRecord ? '(laisser vide pour conserver)' : '' ?></span>
-                    <input type="password" name="password" autocomplete="new-password" placeholder="6 caracteres min">
-                </label>
+                    <?php if ($collabType !== 'externe-pm'): ?>
+                    <label class="field">
+                        <span>Nom complet *</span>
+                        <input name="nom_complet" required value="<?= e((string) $formData['nom_complet']) ?>" placeholder="Nom et pr&eacute;nom">
+                    </label>
+                    <label class="field">
+                        <span>Fonction</span>
+                        <select name="fonction">
+                            <option value="">S&eacute;lectionner...</option>
+                            <?php foreach ($fonctions as $f): ?>
+                                <option value="<?= e((string) $f['fonction']) ?>" <?= (string) $formData['fonction'] === (string) $f['fonction'] ? 'selected' : '' ?>>
+                                    <?= e((string) $f['fonction']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
+                    <?php endif; ?>
 
-                <label class="field password-field" <?= (int) ($formData['can_login'] ?? 0) ? '' : 'style="display:none"' ?>>
-                    <span>Confirmer le mot de passe</span>
-                    <input type="password" name="password_confirm" autocomplete="new-password" placeholder="Retapez le mot de passe">
-                </label>
-                <?php endif; ?>
+                    <?php if ($collabType === 'externe-pm'): ?>
+                    <label class="field full">
+                        <span>Raison sociale *</span>
+                        <input name="den_ste" required value="<?= e((string) $formData['den_ste']) ?>" placeholder="D&eacute;nomination sociale">
+                    </label>
+                    <?php endif; ?>
+                </div>
+            </article>
 
-                <?php if ($isCurrentUser): ?>
-                    <p class="help-text" style="grid-column:1/-1;color:var(--info);font-size:0.8rem;">
-                        <span class="material-symbols-outlined" style="font-size:0.9rem;vertical-align:middle;">info</span>
-                        Vous modifiez votre propre compte.
-                    </p>
-                <?php endif; ?>
+            <?php if ($collabType === 'interne'): ?>
+            <article class="card">
+                <div class="section-header">
+                    <span class="material-symbols-outlined">lock</span>
+                    <h2>Acc&egrave;s au syst&egrave;me</h2>
+                </div>
+                <div class="form-grid">
+                    <div class="field full">
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                            <input type="checkbox" name="can_login" value="1" data-toggle-password <?= (int) ($formData['can_login'] ?? 0) ? 'checked' : '' ?>>
+                            <span>Peut se connecter &agrave; l'application</span>
+                        </label>
+                    </div>
 
-                <?php if ($collabType === 'externe-pm'): ?>
-                <h3 class="section-title">Identifiants legaux</h3>
-                <label class="field"><span>Code</span><input name="collaborateur_code" value="<?= e((string) $formData['collaborateur_code']) ?>"></label>
-                <label class="field"><span>ICE *</span><input name="collaborateur_ice" value="<?= e((string) $formData['collaborateur_ice']) ?>" placeholder="Identifiant ICE"></label>
-                <label class="field"><span>TP</span><input name="collaborateur_tp" value="<?= e((string) $formData['collaborateur_tp']) ?>"></label>
-                <label class="field"><span>RC</span><input name="collaborateur_rc" value="<?= e((string) $formData['collaborateur_rc']) ?>"></label>
-                <label class="field"><span>IF</span><input name="collaborateur_if" value="<?= e((string) $formData['collaborateur_if']) ?>"></label>
-                <?php endif; ?>
+                    <label class="field password-field" <?= (int) ($formData['can_login'] ?? 0) ? '' : 'style="display:none"' ?>>
+                        <span>Mot de passe <?= $editingRecord ? '(laisser vide pour conserver)' : '' ?></span>
+                        <input type="password" name="password" autocomplete="new-password" placeholder="6 caract&egrave;res min">
+                    </label>
 
-                <h3 class="section-title">Contact</h3>
-                <label class="field"><span>Email professionnel</span><input type="email" name="collaborateur_email" value="<?= e((string) $formData['collaborateur_email']) ?>"></label>
-                <?php if ($collabType === 'interne'): ?>
-                <label class="field"><span>Email secondaire</span><input type="email" name="email" value="<?= e((string) $formData['email']) ?>"></label>
-                <?php endif; ?>
-                <?php if ($collabType === 'externe-pm'): ?>
-                <label class="field"><span>Telephone fixe</span><input name="collaborateur_tel_fixe" value="<?= e((string) $formData['collaborateur_tel_fixe']) ?>"></label>
-                <?php endif; ?>
-                <label class="field"><span>Telephone mobile</span><input name="collaborateur_tel_mobile" value="<?= e((string) $formData['collaborateur_tel_mobile']) ?>"></label>
-                <?php if ($collabType === 'externe-pm' || $collabType === 'externe-pp'): ?>
-                <label class="field full"><span>Adresse</span><textarea name="collaborateur_adresse"><?= e((string) $formData['collaborateur_adresse']) ?></textarea></label>
-                <?php endif; ?>
+                    <label class="field password-field" <?= (int) ($formData['can_login'] ?? 0) ? '' : 'style="display:none"' ?>>
+                        <span>Confirmer le mot de passe</span>
+                        <input type="password" name="password_confirm" autocomplete="new-password" placeholder="Retapez le mot de passe">
+                    </label>
 
-                <h3 class="section-title">Informations</h3>
-                <?php if ($collabType === 'interne'): ?>
-                <label class="field"><span>Date debut</span><input type="date" name="date_debut" value="<?= e((string) $formData['date_debut']) ?>"></label>
-                <?php endif; ?>
-                <label class="field"><span>Statut</span>
-                    <select name="statut">
-                        <?php foreach (['actif', 'inactif', 'archive'] as $statut): ?>
-                            <option value="<?= e($statut) ?>" <?= (string) $formData['statut'] === $statut ? 'selected' : '' ?>><?= e(ucfirst($statut)) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </label>
-                <label class="field full"><span>Notes</span><textarea name="notes"><?= e((string) $formData['notes']) ?></textarea></label>
+                    <?php if ($isCurrentUser): ?>
+                        <p class="help-text" style="grid-column:1/-1;color:var(--info);font-size:0.8rem;margin:0;">
+                            <span class="material-symbols-outlined" style="font-size:0.9rem;vertical-align:middle;">info</span>
+                            Vous modifiez votre propre compte.
+                        </p>
+                    <?php endif; ?>
+                </div>
+            </article>
+            <?php endif; ?>
+
+            <?php if ($collabType === 'externe-pm'): ?>
+            <article class="card">
+                <div class="section-header">
+                    <span class="material-symbols-outlined">assignment</span>
+                    <h2>Identifiants l&eacute;gaux</h2>
+                </div>
+                <div class="form-grid">
+                    <label class="field"><span>Code</span><input name="collaborateur_code" value="<?= e((string) $formData['collaborateur_code']) ?>"></label>
+                    <label class="field"><span>ICE *</span><input name="collaborateur_ice" value="<?= e((string) $formData['collaborateur_ice']) ?>" placeholder="Identifiant ICE"></label>
+                    <label class="field"><span>TP</span><input name="collaborateur_tp" value="<?= e((string) $formData['collaborateur_tp']) ?>"></label>
+                    <label class="field"><span>RC</span><input name="collaborateur_rc" value="<?= e((string) $formData['collaborateur_rc']) ?>"></label>
+                    <label class="field"><span>IF</span><input name="collaborateur_if" value="<?= e((string) $formData['collaborateur_if']) ?>"></label>
+                </div>
+            </article>
+            <?php endif; ?>
+
+            <article class="card">
+                <div class="section-header">
+                    <span class="material-symbols-outlined">contact_mail</span>
+                    <h2>Contact</h2>
+                </div>
+                <div class="form-grid">
+                    <label class="field"><span>Email professionnel</span><input type="email" name="collaborateur_email" value="<?= e((string) $formData['collaborateur_email']) ?>"></label>
+                    <?php if ($collabType === 'interne'): ?>
+                    <label class="field"><span>Email secondaire</span><input type="email" name="email" value="<?= e((string) $formData['email']) ?>"></label>
+                    <?php endif; ?>
+                    <?php if ($collabType === 'externe-pm'): ?>
+                    <label class="field"><span>T&eacute;l&eacute;phone fixe</span><input name="collaborateur_tel_fixe" value="<?= e((string) $formData['collaborateur_tel_fixe']) ?>"></label>
+                    <?php endif; ?>
+                    <label class="field"><span>T&eacute;l&eacute;phone mobile</span><input name="collaborateur_tel_mobile" value="<?= e((string) $formData['collaborateur_tel_mobile']) ?>"></label>
+                    <?php if ($collabType === 'externe-pm' || $collabType === 'externe-pp'): ?>
+                    <label class="field full"><span>Adresse</span><textarea name="collaborateur_adresse"><?= e((string) $formData['collaborateur_adresse']) ?></textarea></label>
+                    <?php endif; ?>
+                </div>
+            </article>
+
+            <article class="card">
+                <div class="section-header">
+                    <span class="material-symbols-outlined">info</span>
+                    <h2>Informations</h2>
+                </div>
+                <div class="form-grid">
+                    <?php if ($collabType === 'interne'): ?>
+                    <label class="field"><span>Date d&eacute;but</span><input type="date" name="date_debut" value="<?= e((string) $formData['date_debut']) ?>"></label>
+                    <?php endif; ?>
+                    <label class="field"><span>Statut</span>
+                        <select name="statut">
+                            <?php foreach (['actif', 'inactif', 'archive'] as $statut): ?>
+                                <option value="<?= e($statut) ?>" <?= (string) $formData['statut'] === $statut ? 'selected' : '' ?>><?= e(ucfirst($statut)) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
+                    <label class="field full"><span>Notes</span><textarea name="notes"><?= e((string) $formData['notes']) ?></textarea></label>
+                </div>
+            </article>
+
+            <div class="table-actions" style="justify-content:flex-end;">
+                <a class="btn btn-cancel" href="<?= e(app_url('collaborateur', ['id' => $editingId])) ?>"><span class="material-symbols-outlined">close</span> Annuler</a>
+                <button type="submit" class="btn btn-next"><span class="material-symbols-outlined">save</span> Mettre &agrave; jour</button>
             </div>
-
-            <button type="submit">Mettre a jour</button>
         </form>
     </article>
 
