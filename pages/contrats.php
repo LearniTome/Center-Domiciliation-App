@@ -68,6 +68,14 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
 }
 
 $query = search_term();
+$user = current_user();
+$isAdmin = $user && in_array((int) $user['role_id'], [1, 2], true);
+$userFilter = '';
+$userParams = [];
+if (!$isAdmin && $user) {
+    $userFilter = ' AND societes.created_by = :user_id';
+    $userParams['user_id'] = (int) $user['id'];
+}
 
 if (($pdo ?? null) instanceof PDO) {
     if ($query !== '') {
@@ -75,20 +83,25 @@ if (($pdo ?? null) instanceof PDO) {
             SELECT contrats.*, societes.societe_raison_sociale
             FROM contrats
             INNER JOIN societes ON societes.id = contrats.societe_id
-            WHERE societes.societe_raison_sociale LIKE :term
+            WHERE (societes.societe_raison_sociale LIKE :term
                OR contrats.contrat_type LIKE :term
-               OR contrats.contrat_statut LIKE :term
+               OR contrats.contrat_statut LIKE :term)
+            ' . $userFilter . '
             ORDER BY contrats.id DESC
         ');
-        $stmt->execute(['term' => like_term($query)]);
+        $stmt->execute(['term' => like_term($query)] + $userParams);
         $contrats = $stmt->fetchAll();
     } else {
-        $contrats = $pdo->query('
+        $stmt = $pdo->prepare('
             SELECT contrats.*, societes.societe_raison_sociale
             FROM contrats
             INNER JOIN societes ON societes.id = contrats.societe_id
+            WHERE 1=1
+            ' . $userFilter . '
             ORDER BY contrats.id DESC
-        ')->fetchAll();
+        ');
+        $stmt->execute($userParams);
+        $contrats = $stmt->fetchAll();
     }
 
     if (($_GET['export'] ?? '') === 'csv') {

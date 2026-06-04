@@ -165,13 +165,21 @@ function fetch_record(?PDO $pdo, string $table, int $id): ?array
     return $record ?: null;
 }
 
-function fetch_societes_options(?PDO $pdo): array
+function fetch_societes_options(?PDO $pdo, ?int $userId = null): array
 {
     if (!$pdo) {
         return [];
     }
 
-    $stmt = $pdo->query('SELECT id, societe_raison_sociale FROM societes ORDER BY societe_raison_sociale ASC');
+    $sql = 'SELECT id, societe_raison_sociale FROM societes';
+    $params = [];
+    if ($userId !== null) {
+        $sql .= ' WHERE created_by = :user_id';
+        $params['user_id'] = $userId;
+    }
+    $sql .= ' ORDER BY societe_raison_sociale ASC';
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
     return $stmt->fetchAll();
 }
 
@@ -252,7 +260,7 @@ function fetch_activites_ompic_display(?PDO $pdo, string $code): string
     return $code;
 }
 
-function fetch_all_documents(?PDO $pdo, ?int $societe_id = null, ?string $q = null, ?string $doc_type = null): array
+function fetch_all_documents(?PDO $pdo, ?int $societe_id = null, ?string $q = null, ?string $doc_type = null, ?int $userId = null): array
 {
     if (!$pdo) {
         return [];
@@ -263,6 +271,11 @@ function fetch_all_documents(?PDO $pdo, ?int $societe_id = null, ?string $q = nu
             JOIN societes s ON s.id = d.societe_id
             WHERE 1=1';
     $params = [];
+
+    if ($userId !== null) {
+        $sql .= ' AND s.created_by = :user_id';
+        $params['user_id'] = $userId;
+    }
 
     if ($societe_id !== null) {
         $sql .= ' AND d.societe_id = :societe_id';

@@ -25,19 +25,53 @@ $dossiersComplets = 0;
 $revenuMensuel = 0;
 $creationsMois = 0;
 
-if ($isConnected) {
-    $totalSocietes = (int) $pdo->query('SELECT COUNT(*) FROM societes')->fetchColumn();
-    $contratsActifs = (int) $pdo->query("SELECT COUNT(*) FROM contrats WHERE contrat_statut = 'actif'")->fetchColumn();
-    $contratsResilies = (int) $pdo->query("SELECT COUNT(*) FROM contrats WHERE contrat_statut = 'resilie'")->fetchColumn();
-    $collaborateursCount = (int) $pdo->query('SELECT COUNT(*) FROM collaborateurs')->fetchColumn();
-    $revenuMensuel = (float) $pdo->query("SELECT COALESCE(SUM(contrat_loyer_ttc), 0) FROM contrats WHERE contrat_statut = 'actif'")->fetchColumn();
-    $creationsMois = (int) $pdo->query("SELECT COUNT(*) FROM societes WHERE MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE())")->fetchColumn();
+$user = current_user();
+$isAdmin = $user && in_array((int) $user['role_id'], [1, 2], true);
+$userId = (!$isAdmin && $user) ? (int) $user['id'] : null;
 
-    $dossiersComplets = (int) $pdo->query("
-        SELECT COUNT(*) FROM societes s
-        WHERE EXISTS (SELECT 1 FROM associes a WHERE a.societe_id = s.id)
-        AND EXISTS (SELECT 1 FROM contrats c WHERE c.societe_id = s.id)
-    ")->fetchColumn();
+if ($isConnected) {
+    if ($userId !== null) {
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM societes WHERE created_by = :uid');
+        $stmt->execute(['uid' => $userId]);
+        $totalSocietes = (int) $stmt->fetchColumn();
+
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM contrats c INNER JOIN societes s ON s.id = c.societe_id WHERE c.contrat_statut = 'actif' AND s.created_by = :uid");
+        $stmt->execute(['uid' => $userId]);
+        $contratsActifs = (int) $stmt->fetchColumn();
+
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM contrats c INNER JOIN societes s ON s.id = c.societe_id WHERE c.contrat_statut = 'resilie' AND s.created_by = :uid");
+        $stmt->execute(['uid' => $userId]);
+        $contratsResilies = (int) $stmt->fetchColumn();
+
+        $stmt = $pdo->prepare("SELECT COALESCE(SUM(c.contrat_loyer_ttc), 0) FROM contrats c INNER JOIN societes s ON s.id = c.societe_id WHERE c.contrat_statut = 'actif' AND s.created_by = :uid");
+        $stmt->execute(['uid' => $userId]);
+        $revenuMensuel = (float) $stmt->fetchColumn();
+
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM societes WHERE MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE()) AND created_by = :uid");
+        $stmt->execute(['uid' => $userId]);
+        $creationsMois = (int) $stmt->fetchColumn();
+
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*) FROM societes s
+            WHERE s.created_by = :uid
+            AND EXISTS (SELECT 1 FROM associes a WHERE a.societe_id = s.id)
+            AND EXISTS (SELECT 1 FROM contrats c WHERE c.societe_id = s.id)
+        ");
+        $stmt->execute(['uid' => $userId]);
+        $dossiersComplets = (int) $stmt->fetchColumn();
+    } else {
+        $totalSocietes = (int) $pdo->query('SELECT COUNT(*) FROM societes')->fetchColumn();
+        $contratsActifs = (int) $pdo->query("SELECT COUNT(*) FROM contrats WHERE contrat_statut = 'actif'")->fetchColumn();
+        $contratsResilies = (int) $pdo->query("SELECT COUNT(*) FROM contrats WHERE contrat_statut = 'resilie'")->fetchColumn();
+        $revenuMensuel = (float) $pdo->query("SELECT COALESCE(SUM(contrat_loyer_ttc), 0) FROM contrats WHERE contrat_statut = 'actif'")->fetchColumn();
+        $creationsMois = (int) $pdo->query("SELECT COUNT(*) FROM societes WHERE MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE())")->fetchColumn();
+
+        $dossiersComplets = (int) $pdo->query("
+            SELECT COUNT(*) FROM societes s
+            WHERE EXISTS (SELECT 1 FROM associes a WHERE a.societe_id = s.id)
+            AND EXISTS (SELECT 1 FROM contrats c WHERE c.societe_id = s.id)
+        ")->fetchColumn();
+    }
 }
 
 $dossiersIncomplets = max(0, $totalSocietes - $dossiersComplets);
@@ -51,25 +85,57 @@ $incompletsCount = 0;
 $templateCount = 0;
 $refTableCount = 0;
 if ($isConnected) {
-    $renouvelerCount = (int) $pdo->query("
-        SELECT COUNT(*) FROM contrats
-        WHERE contrat_statut = 'actif'
-          AND contrat_date_fin BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
-    ")->fetchColumn();
-    $resiliesMois = (int) $pdo->query("
-        SELECT COUNT(*) FROM contrats
-        WHERE contrat_statut = 'resilie'
-          AND MONTH(created_at) = MONTH(CURDATE())
-          AND YEAR(created_at) = YEAR(CURDATE())
-    ")->fetchColumn();
+    if ($userId !== null) {
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*) FROM contrats c
+            INNER JOIN societes s ON s.id = c.societe_id
+            WHERE c.contrat_statut = 'actif'
+              AND c.contrat_date_fin BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+              AND s.created_by = :uid
+        ");
+        $stmt->execute(['uid' => $userId]);
+        $renouvelerCount = (int) $stmt->fetchColumn();
+
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*) FROM contrats c
+            INNER JOIN societes s ON s.id = c.societe_id
+            WHERE c.contrat_statut = 'resilie'
+              AND MONTH(c.created_at) = MONTH(CURDATE())
+              AND YEAR(c.created_at) = YEAR(CURDATE())
+              AND s.created_by = :uid
+        ");
+        $stmt->execute(['uid' => $userId]);
+        $resiliesMois = (int) $stmt->fetchColumn();
+
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*) FROM societes s
+            WHERE s.created_by = :uid
+              AND NOT (EXISTS (SELECT 1 FROM associes a WHERE a.societe_id = s.id)
+                   AND EXISTS (SELECT 1 FROM contrats c WHERE c.societe_id = s.id))
+        ");
+        $stmt->execute(['uid' => $userId]);
+        $incompletsCount = (int) $stmt->fetchColumn();
+    } else {
+        $renouvelerCount = (int) $pdo->query("
+            SELECT COUNT(*) FROM contrats
+            WHERE contrat_statut = 'actif'
+              AND contrat_date_fin BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+        ")->fetchColumn();
+        $resiliesMois = (int) $pdo->query("
+            SELECT COUNT(*) FROM contrats
+            WHERE contrat_statut = 'resilie'
+              AND MONTH(created_at) = MONTH(CURDATE())
+              AND YEAR(created_at) = YEAR(CURDATE())
+        ")->fetchColumn();
+        $incompletsCount = (int) $pdo->query("
+            SELECT COUNT(*) FROM societes s
+            WHERE NOT (EXISTS (SELECT 1 FROM associes a WHERE a.societe_id = s.id)
+                   AND EXISTS (SELECT 1 FROM contrats c WHERE c.societe_id = s.id))
+        ")->fetchColumn();
+    }
     $collabMainType = (string) $pdo->query("
         SELECT collaborateur_type FROM collaborateurs
         GROUP BY collaborateur_type ORDER BY COUNT(*) DESC LIMIT 1
-    ")->fetchColumn();
-    $incompletsCount = (int) $pdo->query("
-        SELECT COUNT(*) FROM societes s
-        WHERE NOT (EXISTS (SELECT 1 FROM associes a WHERE a.societe_id = s.id)
-               AND EXISTS (SELECT 1 FROM contrats c WHERE c.societe_id = s.id))
     ")->fetchColumn();
 }
 $templateCount = is_dir(__DIR__ . '/../templates')
@@ -77,26 +143,47 @@ $templateCount = is_dir(__DIR__ . '/../templates')
     : 0;
 $refTableCount = count(load_defaults());
 
+$sf = $userId !== null ? " AND s.created_by = $userId" : '';
+
 // --- Repartition ---
 $repartitionFormes = [];
 $repartitionContrats = [];
 if ($isConnected) {
-    $repartitionFormes = $pdo->query("
-        SELECT societe_forme_juridique, COUNT(*) AS total
-        FROM societes WHERE societe_forme_juridique != ''
-        GROUP BY societe_forme_juridique ORDER BY total DESC
-    ")->fetchAll();
+    if ($userId !== null) {
+        $stmt = $pdo->prepare("
+            SELECT societe_forme_juridique, COUNT(*) AS total
+            FROM societes WHERE societe_forme_juridique != '' AND created_by = :uid
+            GROUP BY societe_forme_juridique ORDER BY total DESC
+        ");
+        $stmt->execute(['uid' => $userId]);
+        $repartitionFormes = $stmt->fetchAll();
 
-    $repartitionContrats = $pdo->query("
-        SELECT contrat_type, COUNT(*) AS total
-        FROM contrats GROUP BY contrat_type ORDER BY total DESC
-    ")->fetchAll();
+        $stmt = $pdo->prepare("
+            SELECT c.contrat_type, COUNT(*) AS total
+            FROM contrats c INNER JOIN societes s ON s.id = c.societe_id
+            WHERE s.created_by = :uid
+            GROUP BY c.contrat_type ORDER BY total DESC
+        ");
+        $stmt->execute(['uid' => $userId]);
+        $repartitionContrats = $stmt->fetchAll();
+    } else {
+        $repartitionFormes = $pdo->query("
+            SELECT societe_forme_juridique, COUNT(*) AS total
+            FROM societes WHERE societe_forme_juridique != ''
+            GROUP BY societe_forme_juridique ORDER BY total DESC
+        ")->fetchAll();
+
+        $repartitionContrats = $pdo->query("
+            SELECT contrat_type, COUNT(*) AS total
+            FROM contrats GROUP BY contrat_type ORDER BY total DESC
+        ")->fetchAll();
+    }
 }
 
 // --- Timeline (echeances 0-90 jours) ---
 $echeances = [];
 if ($isConnected) {
-    $echeances = $pdo->query("
+    $stmt = $pdo->prepare("
         SELECT c.id, c.contrat_type, c.contrat_date_fin, s.societe_raison_sociale, s.id AS societe_id,
                DATEDIFF(c.contrat_date_fin, CURDATE()) AS jours_restants
         FROM contrats c
@@ -105,9 +192,12 @@ if ($isConnected) {
           AND c.contrat_date_fin IS NOT NULL
           AND c.contrat_date_fin >= CURDATE()
           AND c.contrat_date_fin <= DATE_ADD(CURDATE(), INTERVAL 90 DAY)
+          $sf
         ORDER BY c.contrat_date_fin
         LIMIT 8
-    ")->fetchAll();
+    ");
+    $stmt->execute();
+    $echeances = $stmt->fetchAll();
 }
 
 // --- Alertes ---
@@ -119,45 +209,60 @@ $cinExpire = [];
 $alerteCount = 0;
 
 if ($isConnected) {
-    $sansAssocie = $pdo->query("
+    $stmt = $pdo->prepare("
         SELECT s.id, s.societe_raison_sociale FROM societes s
         LEFT JOIN associes a ON a.societe_id = s.id
         WHERE a.id IS NULL
+        $sf
         ORDER BY s.societe_raison_sociale LIMIT 10
-    ")->fetchAll();
+    ");
+    $stmt->execute();
+    $sansAssocie = $stmt->fetchAll();
 
-    $sansContrat = $pdo->query("
+    $stmt = $pdo->prepare("
         SELECT s.id, s.societe_raison_sociale FROM societes s
         LEFT JOIN contrats c ON c.societe_id = s.id
         WHERE c.id IS NULL
+        $sf
         ORDER BY s.societe_raison_sociale LIMIT 10
-    ")->fetchAll();
+    ");
+    $stmt->execute();
+    $sansContrat = $stmt->fetchAll();
 
-    $expirants = $pdo->query("
+    $stmt = $pdo->prepare("
         SELECT c.id, c.contrat_type, c.contrat_date_fin, s.societe_raison_sociale
         FROM contrats c
         INNER JOIN societes s ON s.id = c.societe_id
         WHERE c.contrat_statut = 'actif'
           AND c.contrat_date_fin BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+          $sf
         ORDER BY c.contrat_date_fin LIMIT 10
-    ")->fetchAll();
+    ");
+    $stmt->execute();
+    $expirants = $stmt->fetchAll();
 
-    $sansDocuments = $pdo->query("
+    $stmt = $pdo->prepare("
         SELECT s.id, s.societe_raison_sociale FROM societes s
         WHERE EXISTS (SELECT 1 FROM associes a WHERE a.societe_id = s.id)
           AND EXISTS (SELECT 1 FROM contrats c WHERE c.societe_id = s.id)
           AND NOT EXISTS (SELECT 1 FROM documents_generes d WHERE d.societe_id = s.id)
+        $sf
         ORDER BY s.societe_raison_sociale LIMIT 10
-    ")->fetchAll();
+    ");
+    $stmt->execute();
+    $sansDocuments = $stmt->fetchAll();
 
-    $cinExpire = $pdo->query("
+    $stmt = $pdo->prepare("
         SELECT a.associe_nom_complet, s.societe_raison_sociale, s.id AS societe_id
         FROM associes a
         INNER JOIN societes s ON s.id = a.societe_id
         WHERE a.associe_date_validite_cin IS NOT NULL
           AND a.associe_date_validite_cin < CURDATE()
+          $sf
         ORDER BY a.associe_date_validite_cin LIMIT 10
-    ")->fetchAll();
+    ");
+    $stmt->execute();
+    $cinExpire = $stmt->fetchAll();
 }
 
 $alerteCount = count($sansAssocie) + count($sansContrat) + count($expirants) + count($sansDocuments) + count($cinExpire);
@@ -176,27 +281,46 @@ if ($isConnected && $isSuperAdmin) {
 // --- Fil d'activite ---
 $activiteRecente = [];
 if ($isConnected) {
-    $activiteRecente = $pdo->query("
-        (SELECT 'societe' AS type, id, societe_raison_sociale AS libelle, id AS ref_id, created_at FROM societes)
-        UNION ALL
-        (SELECT 'contrat', c.id, s.societe_raison_sociale, c.societe_id, c.created_at
-         FROM contrats c JOIN societes s ON s.id = c.societe_id)
-        UNION ALL
-        (SELECT 'associe', a.id, s.societe_raison_sociale, a.societe_id, a.created_at
-         FROM associes a JOIN societes s ON s.id = a.societe_id)
-        ORDER BY created_at DESC LIMIT 3
-    ")->fetchAll();
+    if ($userId !== null) {
+        $stmt = $pdo->prepare("
+            (SELECT 'societe' AS type, id, societe_raison_sociale AS libelle, id AS ref_id, created_at FROM societes WHERE created_by = :uid)
+            UNION ALL
+            (SELECT 'contrat', c.id, s.societe_raison_sociale, c.societe_id, c.created_at
+             FROM contrats c JOIN societes s ON s.id = c.societe_id WHERE s.created_by = :uid2)
+            UNION ALL
+            (SELECT 'associe', a.id, s.societe_raison_sociale, a.societe_id, a.created_at
+             FROM associes a JOIN societes s ON s.id = a.societe_id WHERE s.created_by = :uid3)
+            ORDER BY created_at DESC LIMIT 3
+        ");
+        $stmt->execute(['uid' => $userId, 'uid2' => $userId, 'uid3' => $userId]);
+        $activiteRecente = $stmt->fetchAll();
+    } else {
+        $activiteRecente = $pdo->query("
+            (SELECT 'societe' AS type, id, societe_raison_sociale AS libelle, id AS ref_id, created_at FROM societes)
+            UNION ALL
+            (SELECT 'contrat', c.id, s.societe_raison_sociale, c.societe_id, c.created_at
+             FROM contrats c JOIN societes s ON s.id = c.societe_id)
+            UNION ALL
+            (SELECT 'associe', a.id, s.societe_raison_sociale, a.societe_id, a.created_at
+             FROM associes a JOIN societes s ON s.id = a.societe_id)
+            ORDER BY created_at DESC LIMIT 3
+        ")->fetchAll();
+    }
 }
 
 // --- Documents generes ---
 $documentsRecents = [];
 if ($isConnected) {
-    $documentsRecents = $pdo->query("
+    $stmt = $pdo->prepare("
         SELECT d.id, d.doc_type, d.created_at, d.taille_ko, d.valide, s.societe_raison_sociale, s.id AS societe_id
         FROM documents_generes d
         INNER JOIN societes s ON s.id = d.societe_id
+        WHERE 1=1
+        $sf
         ORDER BY d.created_at DESC LIMIT 5
-    ")->fetchAll();
+    ");
+    $stmt->execute();
+    $documentsRecents = $stmt->fetchAll();
 }
 
 // --- Validation documents ---
@@ -204,15 +328,34 @@ $docsValides = 0;
 $docsEnAttente = 0;
 $docsAVerifier = [];
 if ($isConnected) {
-    $docsValides = (int) $pdo->query("SELECT COUNT(*) FROM documents_generes WHERE valide = 1")->fetchColumn();
-    $docsEnAttente = (int) $pdo->query("SELECT COUNT(*) FROM documents_generes WHERE valide = 0")->fetchColumn();
-    $docsAVerifier = $pdo->query("
-        SELECT d.id, d.doc_type, d.created_at, d.valide, d.societe_id, s.societe_raison_sociale
-        FROM documents_generes d
-        INNER JOIN societes s ON s.id = d.societe_id
-        WHERE d.valide = 0
-        ORDER BY d.created_at DESC LIMIT 10
-    ")->fetchAll();
+    if ($userId !== null) {
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM documents_generes d INNER JOIN societes s ON s.id = d.societe_id WHERE d.valide = 1 AND s.created_by = :uid");
+        $stmt->execute(['uid' => $userId]);
+        $docsValides = (int) $stmt->fetchColumn();
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM documents_generes d INNER JOIN societes s ON s.id = d.societe_id WHERE d.valide = 0 AND s.created_by = :uid");
+        $stmt->execute(['uid' => $userId]);
+        $docsEnAttente = (int) $stmt->fetchColumn();
+        $stmt = $pdo->prepare("
+            SELECT d.id, d.doc_type, d.created_at, d.valide, d.societe_id, s.societe_raison_sociale
+            FROM documents_generes d
+            INNER JOIN societes s ON s.id = d.societe_id
+            WHERE d.valide = 0
+              AND s.created_by = :uid
+            ORDER BY d.created_at DESC LIMIT 10
+        ");
+        $stmt->execute(['uid' => $userId]);
+        $docsAVerifier = $stmt->fetchAll();
+    } else {
+        $docsValides = (int) $pdo->query("SELECT COUNT(*) FROM documents_generes WHERE valide = 1")->fetchColumn();
+        $docsEnAttente = (int) $pdo->query("SELECT COUNT(*) FROM documents_generes WHERE valide = 0")->fetchColumn();
+        $docsAVerifier = $pdo->query("
+            SELECT d.id, d.doc_type, d.created_at, d.valide, d.societe_id, s.societe_raison_sociale
+            FROM documents_generes d
+            INNER JOIN societes s ON s.id = d.societe_id
+            WHERE d.valide = 0
+            ORDER BY d.created_at DESC LIMIT 10
+        ")->fetchAll();
+    }
 }
 ?>
 <!-- Stats row -->

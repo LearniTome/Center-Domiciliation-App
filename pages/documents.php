@@ -82,9 +82,13 @@ if (is_post() && isset($_POST['validate_submit'])) {
     redirect_to('documents', $valParams);
 }
 
-$societesOptions = fetch_societes_options($pdo ?? null);
+$user = current_user();
+$isAdmin = $user && in_array((int) $user['role_id'], [1, 2], true);
+$userId = (!$isAdmin && $user) ? (int) $user['id'] : null;
+
+$societesOptions = fetch_societes_options($pdo ?? null, $userId);
 $docTypes = fetch_all_doc_types($pdo ?? null);
-$allDocuments = fetch_all_documents($pdo ?? null, $filterSociete, $q, $filterDocType);
+$allDocuments = fetch_all_documents($pdo ?? null, $filterSociete, $q, $filterDocType, $userId);
 $documents = $allDocuments;
 if ($filterStatut === 'valide') {
     $documents = array_values(array_filter($allDocuments, fn($d) => (int) $d['valide'] === 1));
