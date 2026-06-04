@@ -133,13 +133,13 @@ INSERT INTO role_permissions (role_id, permission_id) VALUES
 -- Variables (view only)
 (@chef, 33);
 
--- Employé: view societes/associes/contrats, generation, documents
+-- Employé: view societes/associes/contrats, create wizard, generation, documents
 INSERT INTO role_permissions (role_id, permission_id) VALUES
 (@employe, 1),
 (@employe, 2), (@employe, 3), (@employe, 4),
 (@employe, 7), (@employe, 8), (@employe, 9),
 (@employe, 12), (@employe, 13), (@employe, 14),
-(@employe, 23),
+(@employe, 22),
 (@employe, 27),
 (@employe, 28), (@employe, 29);
 

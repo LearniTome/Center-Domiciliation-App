@@ -16,7 +16,11 @@ if (!is_dir($outputDir)) {
 $societeId = isset($_GET['societe_id']) ? (int) $_GET['societe_id'] : 0;
 $legalForm = field_value($_GET, 'forme');
 
-$societesOptions = fetch_societes_options($pdo ?? null);
+$genUser = current_user();
+$genIsAdmin = $genUser && in_array((int) $genUser['role_id'], [1, 2], true);
+$genUserId = (!$genIsAdmin && $genUser) ? (int) $genUser['id'] : null;
+
+$societesOptions = fetch_societes_options($pdo ?? null, $genUserId);
 
 $selectedSociete = null;
 if ($societeId > 0) {
