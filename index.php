@@ -41,6 +41,7 @@ $allowedPages = [
     'deconnexion',
     'roles',
     'role',
+    'activite',
 ];
 
 $page = $_GET['page'] ?? 'dashboard';
