@@ -399,7 +399,7 @@ if ($isConnected) {
 </section>
 
 <section class="quick-actions extra">
-    <?php if (has_permission('wizard.create')): ?>
+    <?php if ($isAdmin): ?>
     <a class="card quick-action" href="<?= e(app_url('creation')) ?>">
         <span class="material-symbols-outlined quick-icon" style="color:var(--success)">add_circle</span>
         <div>
