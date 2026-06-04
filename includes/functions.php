@@ -530,6 +530,26 @@ function get_user_permissions(): array
     $stmt->execute(['role_id' => (int) $user['role_id']]);
     $perms = $stmt->fetchAll(\PDO::FETCH_COLUMN);
 
+    // Check collaborateur-specific overrides
+    $stmt = $pdo->prepare('
+        SELECT p.permission_key, cp.granted
+        FROM collaborateur_permissions cp
+        JOIN permissions p ON p.id = cp.permission_id
+        WHERE cp.collaborateur_id = :cid
+    ');
+    $stmt->execute(['cid' => (int) $user['id']]);
+    $overrides = $stmt->fetchAll();
+
+    foreach ($overrides as $ov) {
+        if ((int) $ov['granted'] === 1) {
+            if (!in_array($ov['permission_key'], $perms, true)) {
+                $perms[] = $ov['permission_key'];
+            }
+        } else {
+            $perms = array_values(array_filter($perms, static fn(string $k) => $k !== $ov['permission_key']));
+        }
+    }
+
     $_SESSION['_permissions_cache'] = $perms;
     return $perms;
 }

@@ -305,3 +305,12 @@ CREATE TABLE IF NOT EXISTS role_permissions (
     CONSTRAINT fk_rp_role FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE,
     CONSTRAINT fk_rp_permission FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS collaborateur_permissions (
+    collaborateur_id INT UNSIGNED NOT NULL,
+    permission_id INT UNSIGNED NOT NULL,
+    granted TINYINT(1) NOT NULL DEFAULT 1,
+    PRIMARY KEY (collaborateur_id, permission_id),
+    CONSTRAINT fk_cp_collaborateur FOREIGN KEY (collaborateur_id) REFERENCES collaborateurs(id) ON DELETE CASCADE,
+    CONSTRAINT fk_cp_permission FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

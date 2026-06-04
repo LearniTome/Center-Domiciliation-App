@@ -234,7 +234,30 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
             $who = ''; $cu = current_user(); if ($cu) $who = $cu['nom_complet'] ?? '';
             $logStmt = $pdo->prepare('INSERT INTO collaborateur_log (action, collaborateur_nom, collaborateur_email, collaborateur_id, done_by) VALUES (\'ajout\', :nom, :email, :cid, :done_by)');
             $logStmt->execute(['nom' => $payload['nom_complet'], 'email' => $payload['collaborateur_email'] ?: $payload['email'], 'cid' => $newId, 'done_by' => $who]);
+            $editingId = $newId;
             set_flash('success', 'Collaborateur ajoute.');
+        }
+        // Save collaborateur-specific permission overrides
+        $targetId = $editingId;
+        $stmt = $pdo->prepare('DELETE FROM collaborateur_permissions WHERE collaborateur_id = :cid');
+        $stmt->execute(['cid' => $targetId]);
+        $submittedPerms = $_POST['perms'] ?? [];
+        if (!empty($submittedPerms) && is_array($submittedPerms)) {
+            $allPermKeys = array_keys($submittedPerms);
+            $placeholders = implode(',', array_fill(0, count($allPermKeys), '?'));
+            $stmt = $pdo->prepare("SELECT id, permission_key FROM permissions WHERE permission_key IN ($placeholders)");
+            $stmt->execute($allPermKeys);
+            $permMap = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
+            $insStmt = $pdo->prepare('INSERT INTO collaborateur_permissions (collaborateur_id, permission_id, granted) VALUES (:cid, :pid, 1)');
+            foreach ($submittedPerms as $key => $val) {
+                if (isset($permMap[$key])) {
+                    $insStmt->execute(['cid' => $targetId, 'pid' => (int) $permMap[$key]]);
+                }
+            }
+        }
+        // Clear session cache for the affected user
+        if ($targetId === (int) ($_SESSION['user_id'] ?? 0)) {
+            unset($_SESSION['_permissions_cache']);
         }
         clear_user_cache();
     } catch (PDOException $e) {
@@ -263,6 +286,7 @@ if ($editingRecord) {
 // Fetch permissions data (needed for both edit form and detail view)
 $rolePermKeys = [];
 $allPermsByCat = [];
+$collabOverridePerms = [];
 if (($pdo ?? null) instanceof PDO && ($formData['role_id'] ?? 0)) {
     $stmt = $pdo->query('SELECT * FROM permissions ORDER BY category, id');
     $allPerms = $stmt->fetchAll();
@@ -272,6 +296,15 @@ if (($pdo ?? null) instanceof PDO && ($formData['role_id'] ?? 0)) {
     $stmt = $pdo->prepare('SELECT p.permission_key FROM role_permissions rp JOIN permissions p ON p.id = rp.permission_id WHERE rp.role_id = :rid');
     $stmt->execute(['rid' => (int) $formData['role_id']]);
     $rolePermKeys = $stmt->fetchAll(\PDO::FETCH_COLUMN);
+    // Fetch collaborateur-specific permission overrides
+    if ($editingId > 0) {
+        $stmt = $pdo->prepare('SELECT p.permission_key, cp.granted FROM collaborateur_permissions cp JOIN permissions p ON p.id = cp.permission_id WHERE cp.collaborateur_id = :cid');
+        $stmt->execute(['cid' => $editingId]);
+        $cpRows = $stmt->fetchAll();
+        foreach ($cpRows as $cr) {
+            $collabOverridePerms[$cr['permission_key']] = (int) $cr['granted'];
+        }
+    }
 }
 $catIcons = ['dashboard'=>'dashboard','societes'=>'business','associes'=>'group','contrats'=>'description','collaborateurs'=>'work','wizard'=>'note_add','templates'=>'edit_note','generation'=>'sync','documents'=>'article','configuration'=>'settings','analyse'=>'bar_chart','variables'=>'code','defaults'=>'tune','convert'=>'picture_as_pdf','ai'=>'smart_toy','roles'=>'admin_panel_settings'];
 $catLabels = ['dashboard'=>'Tableau de bord','societes'=>'Societes','associes'=>'Associes','contrats'=>'Contrats','collaborateurs'=>'Collaborateurs','wizard'=>'Assistant de creation','templates'=>'Templates','generation'=>'Generation','documents'=>'Documents','configuration'=>'Configuration','analyse'=>'Analyse de couverture','variables'=>'Variables','defaults'=>'Valeurs par defaut','convert'=>'Conversion Word→PDF','ai'=>'Assistant IA','roles'=>'Gestion des roles'];
@@ -656,6 +689,57 @@ form.stack > article.card + article.card { margin-top: 0; }
                     <label class="field full"><span>Notes</span><textarea name="notes"><?= e((string) $formData['notes']) ?></textarea></label>
                 </div>
             </article>
+
+            <?php if (!empty($allPermsByCat) && ($formData['role_id'] ?? 0)): ?>
+            <article class="card">
+                <div class="section-header">
+                    <span class="material-symbols-outlined">security</span>
+                    <h2>Permissions</h2>
+                </div>
+                <div style="overflow-x:auto;">
+                <table class="perms-table">
+                    <thead>
+                        <tr class="cat-row">
+                            <th></th>
+                            <?php foreach ($orderedActions as $actionKey): ?>
+                            <th data-col="<?= e($actionKey) ?>"><?= e($actionLabels[$actionKey]) ?></th>
+                            <?php endforeach; ?>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($allPermsByCat as $cat => $perms): ?>
+                        <tr data-cat="<?= e($cat) ?>">
+                            <td class="cat-label-cell">
+                                <div class="cat-label-cell-inner">
+                                <span class="cat-label-inner">
+                                    <?php if (isset($catIcons[$cat])): ?>
+                                        <span class="material-symbols-outlined"><?= e($catIcons[$cat]) ?></span>
+                                    <?php endif; ?>
+                                    <?= e($catLabels[$cat] ?? $cat) ?>
+                                </span>
+                                </div>
+                            </td>
+                            <?php foreach ($orderedActions as $actionKey): ?>
+                                <?php if (isset($permMatrix[$actionKey][$cat])): ?>
+                                    <?php $p = $permMatrix[$actionKey][$cat]; ?>
+                                    <?php $roleHas = in_array($p['permission_key'], $rolePermKeys, true); ?>
+                                    <?php $override = array_key_exists($p['permission_key'], $collabOverridePerms) ? $collabOverridePerms[$p['permission_key']] : null; ?>
+                                    <?php $checked = $override !== null ? ($override === 1) : $roleHas; ?>
+                                    <td class="perm-cell">
+                                        <input type="checkbox" name="perms[<?= e($p['permission_key']) ?>]" value="1" <?= $checked ? 'checked' : '' ?>>
+                                    </td>
+                                <?php else: ?>
+                                    <td class="perm-cell empty"></td>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+                </div>
+                <p class="help-text" style="margin:8px 0 0;font-size:0.75rem;">Les permissions du role sont pre-cochées. Decocher pour refuser, cocher pour accorder un acces supplementaire.</p>
+            </article>
+            <?php endif; ?>
 
             <div class="table-actions" style="justify-content:flex-end;">
                 <a class="btn btn-cancel" href="<?= e(app_url('collaborateur', ['id' => $editingId])) ?>"><span class="material-symbols-outlined">close</span> Annuler</a>
