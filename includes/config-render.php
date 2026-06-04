@@ -45,6 +45,7 @@ if (($pdo ?? null) instanceof PDO) {
             foreach ($rows as &$row) {
                 $row['collab_count'] = $counts[(string) $row[$column]] ?? 0;
             }
+            unset($row);
         }
     } catch (PDOException) {
         $rows = [];
