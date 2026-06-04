@@ -116,7 +116,7 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
             'statut' => field_value($_POST, 'statut', 'actif'),
             'notes' => field_value($_POST, 'notes'),
             'role_id' => $roleId,
-            'can_login' => 0,
+            'can_login' => (int) ($_POST['can_login'] ?? 0),
             'collaborateur_type' => 'externe-pm',
         ];
     } else {
@@ -146,7 +146,7 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
             'statut' => field_value($_POST, 'statut', 'actif'),
             'notes' => field_value($_POST, 'notes'),
             'role_id' => $roleId,
-            'can_login' => 0,
+            'can_login' => (int) ($_POST['can_login'] ?? 0),
             'collaborateur_type' => $savedType,
         ];
     }
