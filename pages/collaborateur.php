@@ -248,10 +248,11 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
             $stmt = $pdo->prepare("SELECT id, permission_key FROM permissions WHERE permission_key IN ($placeholders)");
             $stmt->execute($allPermKeys);
             $permMap = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
-            $insStmt = $pdo->prepare('INSERT INTO collaborateur_permissions (collaborateur_id, permission_id, granted) VALUES (:cid, :pid, 1)');
+            $insStmt = $pdo->prepare('INSERT INTO collaborateur_permissions (collaborateur_id, permission_id, granted) VALUES (:cid, :pid, :granted)');
             foreach ($submittedPerms as $key => $val) {
                 if (isset($permMap[$key])) {
-                    $insStmt->execute(['cid' => $targetId, 'pid' => (int) $permMap[$key]]);
+                    $granted = (int) ($val === '1');
+                    $insStmt->execute(['cid' => $targetId, 'pid' => (int) $permMap[$key], 'granted' => $granted]);
                 }
             }
         }
@@ -726,6 +727,7 @@ form.stack > article.card + article.card { margin-top: 0; }
                                     <?php $override = array_key_exists($p['permission_key'], $collabOverridePerms) ? $collabOverridePerms[$p['permission_key']] : null; ?>
                                     <?php $checked = $override !== null ? ($override === 1) : $roleHas; ?>
                                     <td class="perm-cell">
+                                        <input type="hidden" name="perms[<?= e($p['permission_key']) ?>]" value="0">
                                         <input type="checkbox" name="perms[<?= e($p['permission_key']) ?>]" value="1" <?= $checked ? 'checked' : '' ?>>
                                     </td>
                                 <?php else: ?>
