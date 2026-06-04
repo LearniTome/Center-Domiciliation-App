@@ -557,7 +557,6 @@ INSERT INTO role_permissions (role_id, permission_id) VALUES
 (@employe, 2), (@employe, 3), (@employe, 4),
 (@employe, 7), (@employe, 8), (@employe, 9),
 (@employe, 12), (@employe, 13), (@employe, 14),
-(@employe, 22),
 (@employe, 23),
 (@employe, 27),
 (@employe, 28), (@employe, 29);
