@@ -906,16 +906,23 @@ if ($aiSuggestions !== null) {
             </div>
             <?php endif; ?>
             <div class="form-grid">
-                <?php if (!$isExterne): ?>
                 <h3 class="section-title">Procedure</h3>
                 <label class="field">
                     <span>Type generation</span>
+                    <?php if ($isExterne): ?>
+                    <select name="societe_type_generation" disabled>
+                        <option value="domiciliation" selected>Domiciliation</option>
+                    </select>
+                    <input type="hidden" name="societe_type_generation" value="domiciliation">
+                    <?php else: ?>
                     <select name="societe_type_generation">
                         <option value="">Selectionner</option>
                         <option value="creation" <?= (string) $societeData['societe_type_generation'] === 'creation' ? 'selected' : '' ?>>Création</option>
                         <option value="domiciliation" <?= (string) $societeData['societe_type_generation'] === 'domiciliation' ? 'selected' : '' ?>>Domiciliation</option>
                     </select>
+                    <?php endif; ?>
                 </label>
+                <?php if (!$isExterne): ?>
                 <label class="field">
                     <span>Procedure creation</span>
                     <select name="societe_procedure_creation">
@@ -932,8 +939,6 @@ if ($aiSuggestions !== null) {
                         <option value="depot_en_ligne" <?= (string) $societeData['societe_mode_depot'] === 'depot_en_ligne' ? 'selected' : '' ?>>Dépôt En Ligne</option>
                     </select>
                 </label>
-                <?php else: ?>
-                    <input type="hidden" name="societe_type_generation" value="domiciliation">
                 <?php endif; ?>
 
                 <h3 class="section-title">Identifiants</h3>
