@@ -346,8 +346,8 @@ $isNew = !$editingRecord;
                 <h2>Acc&egrave;s au syst&egrave;me</h2>
             </div>
             <div class="form-grid">
-                <div class="field full">
-                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                <div style="grid-column:1/-1;">
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;min-height:36px;">
                         <input type="checkbox" name="can_login" value="1" data-toggle-password <?= (int) ($formData['can_login'] ?? 0) ? 'checked' : '' ?>>
                         <span>Peut se connecter &agrave; l'application</span>
                     </label>
@@ -495,8 +495,8 @@ $isNew = !$editingRecord;
                     <h2>Acc&egrave;s au syst&egrave;me</h2>
                 </div>
                 <div class="form-grid">
-                    <div class="field full">
-                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                    <div style="grid-column:1/-1;">
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;min-height:36px;">
                             <input type="checkbox" name="can_login" value="1" data-toggle-password <?= (int) ($formData['can_login'] ?? 0) ? 'checked' : '' ?>>
                             <span>Peut se connecter &agrave; l'application</span>
                         </label>
