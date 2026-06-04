@@ -264,6 +264,7 @@ if ($isConnected) {
             <span class="quick-count"><?= $incompletsCount ?> dossiers incomplets</span>
         </div>
     </a>
+    <?php if (has_permission('collaborateurs.create')): ?>
     <a class="card quick-action" href="<?= e(app_url('collaborateur')) ?>">
         <span class="material-symbols-outlined quick-icon" style="color:var(--primary)">person_add</span>
         <div>
@@ -272,6 +273,8 @@ if ($isConnected) {
             <span class="quick-count"><?= $collaborateursCount ?> collaborateurs</span>
         </div>
     </a>
+    <?php endif; ?>
+    <?php if (has_permission('templates.edit')): ?>
     <a class="card quick-action" href="<?= e(app_url('template_edit', ['path' => ''])) ?>">
         <span class="material-symbols-outlined quick-icon" style="color:var(--info)">edit_note</span>
         <div>
@@ -280,6 +283,8 @@ if ($isConnected) {
             <span class="quick-count"><?= $templateCount ?> templates</span>
         </div>
     </a>
+    <?php endif; ?>
+    <?php if (has_permission('configuration.view')): ?>
     <a class="card quick-action" href="<?= e(app_url('configuration')) ?>">
         <span class="material-symbols-outlined quick-icon" style="color:var(--warning)">settings</span>
         <div>
@@ -288,6 +293,7 @@ if ($isConnected) {
             <span class="quick-count"><?= $refTableCount ?> tables</span>
         </div>
     </a>
+    <?php endif; ?>
 </section>
 
 <?php if ($hasAlerts || $echeances): ?>
