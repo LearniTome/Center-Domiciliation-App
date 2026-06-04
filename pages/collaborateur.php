@@ -242,6 +242,38 @@ if ($editingRecord) {
     ];
 }
 
+// Fetch permissions data (needed for both edit form and detail view)
+$rolePermKeys = [];
+$allPermsByCat = [];
+if (($pdo ?? null) instanceof PDO && ($formData['role_id'] ?? 0)) {
+    $stmt = $pdo->query('SELECT * FROM permissions ORDER BY category, id');
+    $allPerms = $stmt->fetchAll();
+    foreach ($allPerms as $p) {
+        $allPermsByCat[$p['category']][] = $p;
+    }
+    $stmt = $pdo->prepare('SELECT p.permission_key FROM role_permissions rp JOIN permissions p ON p.id = rp.permission_id WHERE rp.role_id = :rid');
+    $stmt->execute(['rid' => (int) $formData['role_id']]);
+    $rolePermKeys = $stmt->fetchAll(\PDO::FETCH_COLUMN);
+}
+$catIcons = ['dashboard'=>'dashboard','societes'=>'business','associes'=>'group','contrats'=>'description','collaborateurs'=>'work','wizard'=>'note_add','templates'=>'edit_note','generation'=>'sync','documents'=>'article','configuration'=>'settings','analyse'=>'bar_chart','variables'=>'code','defaults'=>'tune','convert'=>'picture_as_pdf','ai'=>'smart_toy','roles'=>'admin_panel_settings'];
+$catLabels = ['dashboard'=>'Tableau de bord','societes'=>'Societes','associes'=>'Associes','contrats'=>'Contrats','collaborateurs'=>'Collaborateurs','wizard'=>'Assistant de creation','templates'=>'Templates','generation'=>'Generation','documents'=>'Documents','configuration'=>'Configuration','analyse'=>'Analyse de couverture','variables'=>'Variables','defaults'=>'Valeurs par defaut','convert'=>'Conversion Word→PDF','ai'=>'Assistant IA','roles'=>'Gestion des roles'];
+$actionLabels = ['view'=>'Voir','create'=>'Creer','edit'=>'Modifier','delete'=>'Supprimer','export'=>'Exporter','use'=>'Utiliser','download'=>'Telecharger','manage'=>'Gerer'];
+$actionOrder = ['view','create','edit','delete','export','use','download','manage'];
+$permMatrix = [];
+$activeActions = [];
+foreach ($allPermsByCat as $cat => $perms) {
+    foreach ($perms as $p) {
+        $parts = explode('.', $p['permission_key']);
+        $actionKey = end($parts);
+        $permMatrix[$actionKey][$cat] = $p;
+        $activeActions[$actionKey] = true;
+    }
+}
+$orderedActions = array_values(array_intersect($actionOrder, array_keys($activeActions)));
+foreach (array_keys($activeActions) as $k) {
+    if (!in_array($k, $actionOrder)) $orderedActions[] = $k;
+}
+
 $isCurrentUser = is_logged_in() && $editingId > 0 && (int) ($_SESSION['user_id'] ?? 0) === $editingId;
 $isNew = !$editingRecord;
 ?>
@@ -647,6 +679,65 @@ form.stack > article.card + article.card { margin-top: 0; }
             <?php if ($formData['date_debut']): ?><div><span>Date d&eacute;but</span><strong><?= e(format_date($formData['date_debut'] ?? null)) ?></strong></div><?php endif; ?>
             <?php if ($formData['last_login']): ?><div><span>Derni&egrave;re connexion</span><strong><?= e(format_date($formData['last_login'])) ?></strong></div><?php endif; ?>
             <?php if ($formData['notes']): ?><div class="full notes-item"><span>Notes</span><strong><?= e($formData['notes']) ?></strong></div><?php endif; ?>
+
+            <?php if ($formData['can_login']): ?>
+            <h3 class="section-title">Acc&egrave;s au syst&egrave;me</h3>
+            <div><span>Connexion</span><strong>Activ&eacute;e</strong></div>
+            <div><span>Email</span><strong><?= e($formData['email'] ?: '-') ?></strong></div>
+            <?php if ($formData['last_login']): ?><div><span>Derni&egrave;re connexion</span><strong><?= e(format_date($formData['last_login'])) ?></strong></div><?php endif; ?>
+            <?php endif; ?>
+
+            <?php if (!empty($allPermsByCat) && ($formData['role_id'] ?? 0)): ?>
+            <h3 class="section-title">Permissions</h3>
+            <div style="grid-column:1/-1;">
+            <table class="perms-table">
+                <thead>
+                    <tr class="cat-row">
+                        <th></th>
+                        <?php foreach ($orderedActions as $actionKey): ?>
+                        <th data-col="<?= e($actionKey) ?>"><?= e($actionLabels[$actionKey]) ?></th>
+                        <?php endforeach; ?>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($allPermsByCat as $cat => $perms):
+                        $catGranted = 0;
+                        foreach ($perms as $p) { if (in_array($p['permission_key'], $rolePermKeys, true)) $catGranted++; }
+                        $catTotal = count($perms);
+                    ?>
+                    <tr data-cat="<?= e($cat) ?>">
+                        <td class="cat-label-cell">
+                            <div class="cat-label-cell-inner">
+                            <span class="cat-label-inner">
+                                <?php if (isset($catIcons[$cat])): ?>
+                                    <span class="material-symbols-outlined"><?= e($catIcons[$cat]) ?></span>
+                                <?php endif; ?>
+                                <?= e($catLabels[$cat] ?? $cat) ?>
+                            </span>
+                            <span class="badge badge-info cat-badge"><?= $catGranted ?>/<?= $catTotal ?></span>
+                            </div>
+                        </td>
+                        <?php foreach ($orderedActions as $actionKey): ?>
+                            <?php if (isset($permMatrix[$actionKey][$cat])): ?>
+                                <?php $p = $permMatrix[$actionKey][$cat]; ?>
+                                <?php $checked = in_array($p['permission_key'], $rolePermKeys, true); ?>
+                                <td class="perm-cell">
+                                    <?php if ($checked): ?>
+                                    <span class="material-symbols-outlined" style="font-size:1.1rem;color:var(--success);">check_circle</span>
+                                    <?php else: ?>
+                                    <span class="material-symbols-outlined" style="font-size:1.1rem;color:var(--text-muted);opacity:0.35;">cancel</span>
+                                    <?php endif; ?>
+                                </td>
+                            <?php else: ?>
+                                <td class="perm-cell empty"></td>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+            </div>
+            <?php endif; ?>
         </div>
 
         <div class="table-actions" style="justify-content:flex-end;padding-top:16px;margin-top:8px;border-top:1px solid var(--line);">
