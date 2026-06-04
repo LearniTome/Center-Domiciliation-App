@@ -8,8 +8,9 @@ $showEdit = $editingRecord && isset($_GET['edit']);
 
 // Determine type
 $collabType = '';
+$overrideType = field_value($_GET, 'type', '');
 if ($editingRecord) {
-    $collabType = $editingRecord['collaborateur_type'] ?? '';
+    $collabType = $overrideType ?: ($editingRecord['collaborateur_type'] ?? '');
     if (!in_array($collabType, ['interne', 'externe-pm', 'externe-pp'], true)) {
         $ds = $editingRecord['den_ste'] ?? '';
         if ((int) ($editingRecord['can_login'] ?? 0) === 1) {
@@ -366,6 +367,14 @@ form.stack > article.card + article.card { margin-top: 0; }
             </div>
             <div class="form-grid">
                 <label class="field">
+                    <span>Type collaborateur</span>
+                    <select onchange="location.href='?page=collaborateur<?= $editingId ? '&id=' . $editingId . '&edit' : '' ?>&type='+this.value">
+                        <?php foreach (['interne', 'externe-pm', 'externe-pp'] as $t): ?>
+                        <option value="<?= e($t) ?>" <?= $collabType === $t ? 'selected' : '' ?>><?= e(['interne' => 'Interne', 'externe-pm' => 'Personne Morale', 'externe-pp' => 'Personne Physique'][$t]) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
+                <label class="field">
                     <span>R&ocirc;le / Type</span>
                     <select name="role_id">
                         <option value="">S&eacute;lectionner...</option>
@@ -512,6 +521,14 @@ form.stack > article.card + article.card { margin-top: 0; }
                     <h2>Identit&eacute; &amp; R&ocirc;le</h2>
                 </div>
                 <div class="form-grid">
+                    <label class="field">
+                        <span>Type collaborateur</span>
+                        <select onchange="location.href='?page=collaborateur&id=<?= $editingId ?>&edit&type='+this.value">
+                            <?php foreach (['interne', 'externe-pm', 'externe-pp'] as $t): ?>
+                            <option value="<?= e($t) ?>" <?= $collabType === $t ? 'selected' : '' ?>><?= e(['interne' => 'Interne', 'externe-pm' => 'Personne Morale', 'externe-pp' => 'Personne Physique'][$t]) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
                     <label class="field">
                         <span>R&ocirc;le / Type</span>
                         <select name="role_id">
