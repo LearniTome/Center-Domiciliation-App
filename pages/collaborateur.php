@@ -252,7 +252,7 @@ form.stack > article.card + article.card { margin-top: 0; }
 .collab-preview .section-title { padding: 16px 0 6px; margin:0; }
 .collab-preview .info-grid { gap: 12px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
 .collab-preview .info-grid > div {
-    display: flex; align-items: baseline; gap: 6px;
+    display: flex; flex-direction: column; gap: 4px;
     padding: 8px 0; border: none; background: none;
 }
 .collab-preview .info-grid span {
