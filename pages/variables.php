@@ -28,48 +28,6 @@ foreach ($templates as $tpl) {
 
 ksort($allVariables);
 
-$mappedCount = 0;
-$unmappedCount = 0;
-foreach ($allVariables as $upper => $original) {
-    if (isset($contextKeySet[$upper])) {
-        $mappedCount++;
-    } else {
-        $unmappedCount++;
-    }
-}
-$totalCount = count($allVariables);
-
-if (is_post() && isset($_POST['apply_mapping'])) {
-    verify_csrf();
-    $selected = $_POST['selected_vars'] ?? [];
-    $targets = $_POST['target_names'] ?? [];
-    $totalRenamed = 0;
-    $errors = [];
-
-    foreach ($selected as $oldUpper) {
-        $oldUpper = strtoupper(trim($oldUpper));
-        $newName = trim($targets[$oldUpper] ?? '');
-        if ($oldUpper === '' || $newName === '' || $oldUpper === strtoupper($newName)) {
-            continue;
-        }
-        $result = TemplateAnalyzer::renameVariable($oldUpper, $newName, $templatesDir);
-        $totalRenamed += $result['modified'];
-        if (!empty($result['errors'])) {
-            $errors = array_merge($errors, $result['errors']);
-        }
-    }
-
-    $count = count($selected);
-    $msg = "{$count} variable(s) traitee(s) dans {$totalRenamed} template(s).";
-    if (!empty($errors)) {
-        $msg .= ' Erreurs: ' . implode('; ', array_unique($errors));
-    }
-    set_flash('success', $msg);
-    redirect_to('variables');
-}
-
-$filter = $_GET['filter'] ?? 'all';
-
 // Build form variables data (variables from the application forms, not templates)
 $formFieldLabels = [
     'SOCIETE_RAISON_SOCIALE' => 'societe_raison_sociale',
@@ -131,11 +89,71 @@ $formFieldLabels = [
     'CONTRAT_RENOUV_ANNUEL_TTC' => 'contrat_renouv_annuel_ttc',
 ];
 
+$fieldLabels = [
+    'societe_raison_sociale' => 'Raison sociale',
+    'societe_forme_juridique' => 'Forme juridique',
+    'societe_ice' => 'ICE',
+    'societe_rc' => 'RC',
+    'societe_if' => 'IF',
+    'societe_capital' => 'Capital',
+    'societe_part_social' => 'Part social',
+    'societe_valeur_nominale' => 'Valeur nominale',
+    'societe_ville' => 'Ville',
+    'societe_tribunal' => 'Tribunal',
+    'societe_tribunal_type' => 'Type de tribunal',
+    'societe_adresse_siege' => 'Adresse de r&eacute;f&eacute;rence',
+    'societe_email' => 'Email',
+    'societe_telephone' => 'T&eacute;l&eacute;phone',
+    'societe_dossier' => 'Dossier domiciliation',
+    'societe_type_generation' => 'Type g&eacute;n&eacute;ration',
+    'societe_procedure_creation' => 'Proc&eacute;dure cr&eacute;ation',
+    'societe_mode_depot' => 'Mode d&eacute;p&ocirc;t cr&eacute;ation',
+    'societe_date_ice' => 'Date cert. n&eacute;gatif',
+    'societe_date_exp_cert_neg' => 'Date exp. cert. n&eacute;gatif',
+    'associe_nom_complet' => 'Nom complet',
+    'associe_nom' => 'Nom',
+    'associe_prenom' => 'Pr&eacute;nom',
+    'associe_civilite' => 'Civilit&eacute;',
+    'associe_cin' => 'N&deg; CIN/S&eacute;jour/Passeport',
+    'associe_date_validite_cin' => 'Date validit&eacute; CIN',
+    'associe_date_naissance' => 'Date naissance',
+    'associe_lieu_naissance' => 'Lieu naissance',
+    'associe_nationalite' => 'Nationalit&eacute;',
+    'associe_adresse' => 'Adresse',
+    'associe_telephone' => 'T&eacute;l&eacute;phone',
+    'associe_email' => 'Email',
+    'associe_qualite' => 'Qualit&eacute; associ&eacute;',
+    'associe_parts' => 'Parts',
+    'associe_capital_detenu' => 'Capital d&eacute;tenu (DH)',
+    'associe_est_gerant' => 'G&eacute;rant',
+    'contrat_type_domiciliation' => 'Type contrat domiciliation',
+    'contrat_date' => 'Date du contrat',
+    'contrat_date_debut' => 'Date de d&eacute;but',
+    'contrat_date_fin' => 'Date de fin',
+    'contrat_duree_mois' => 'Dur&eacute;e (mois)',
+    'contrat_loyer_ttc' => 'Loyer TTC (Mois)',
+    'contrat_loyer_ht' => 'Loyer HT (Mois)',
+    'contrat_tva_pourcent' => 'TVA %',
+    'contrat_total_ht' => 'Montant Total du Loyer',
+    'contrat_frais_intermediaire' => 'Frais interm&eacute;diaire',
+    'contrat_caution' => 'Caution',
+    'contrat_statut' => 'Statut',
+    'contrat_mode_signature' => 'Mode signature',
+    'contrat_pack_montant_ttc' => 'Pack montant TTC',
+    'contrat_pack_loyer_ttc' => 'Pack loyer TTC',
+    'contrat_type_renouvellement' => 'Type renouvellement',
+    'contrat_renouv_tva_pourcent' => 'TVA % (Renouvellement)',
+    'contrat_renouv_loyer_ht' => 'Loyer HT (Renouvellement)',
+    'contrat_renouv_loyer_ttc' => 'Loyer TTC (Renouvellement)',
+    'contrat_renouv_annuel_ttc' => 'Renouvellement annuel TTC',
+];
+
 $formVariables = [];
 foreach ($contextKeys as $ck) {
     $upper = strtoupper($ck);
     $section = TemplateAnalyzer::inferSection($ck);
     $fieldName = $formFieldLabels[$upper] ?? strtolower($ck);
+    $libelle = $fieldLabels[$fieldName] ?? '';
     $inTemplates = isset($allVariables[$upper]);
     $occurrences = $inTemplates ? ($variableOccurrences[$upper] ?? 0) : 0;
     $formVariables[] = [
@@ -143,6 +161,7 @@ foreach ($contextKeys as $ck) {
         'upper' => $upper,
         'section' => $section === 'autre' ? 'Date' : ucfirst($section),
         'field' => $fieldName,
+        'libelle' => $libelle,
         'in_templates' => $inTemplates,
         'occurrences' => $occurrences,
     ];
@@ -152,121 +171,20 @@ usort($formVariables, fn($a, $b) => [$a['section'], $a['name']] <=> [$b['section
 $formVarTotal = count($formVariables);
 $formVarMapped = count(array_filter($formVariables, fn($v) => $v['in_templates']));
 $formVarUnmapped = $formVarTotal - $formVarMapped;
+
+$allSections = ['Societe', 'Associe', 'Contrat', 'Date'];
+$formSection = $_GET['form_section'] ?? '';
+$formUsed = $_GET['form_used'] ?? '';
+$filteredFormVars = $formVariables;
+if ($formSection) {
+    $filteredFormVars = array_filter($filteredFormVars, fn($v) => $v['section'] === $formSection);
+}
+if ($formUsed === 'used') {
+    $filteredFormVars = array_filter($filteredFormVars, fn($v) => $v['in_templates']);
+} elseif ($formUsed === 'unused') {
+    $filteredFormVars = array_filter($filteredFormVars, fn($v) => !$v['in_templates']);
+}
 ?>
-<section class="card stack">
-    <div class="section-header">
-        <div>
-            <p class="help-text">Mapper les variables des templates vers les variables de l'application</p>
-        </div>
-        <div class="table-actions">
-            <button type="button" id="apply-btn" class="btn btn-next" disabled><span class="material-symbols-outlined">select_all</span> Appliquer la selection</button>
-        </div>
-    </div>
-
-    <div class="stats compact">
-        <article class="stat">
-            <span>Variables trouvees</span>
-            <strong><?= $totalCount ?></strong>
-        </article>
-        <article class="stat stat-success">
-            <span>Mappees</span>
-            <strong><?= $mappedCount ?></strong>
-        </article>
-        <article class="stat stat-danger">
-            <span>Non mappees</span>
-            <strong><?= $unmappedCount ?></strong>
-        </article>
-        <article class="stat">
-            <span>Templates analyses</span>
-            <strong><?= count($templates) ?></strong>
-        </article>
-    </div>
-
-    <div class="variables-filter-bar">
-        <a class="btn <?= $filter === 'all' ? 'btn-next' : '' ?>" href="?page=variables&filter=all">Tous</a>
-        <a class="btn <?= $filter === 'unmapped' ? 'btn-next' : '' ?>" href="?page=variables&filter=unmapped">Non mappes <span class="badge bg-danger"><?= $unmappedCount ?></span></a>
-        <a class="btn <?= $filter === 'mapped' ? 'btn-next' : '' ?>" href="?page=variables&filter=mapped">Mappes <span class="badge bg-success"><?= $mappedCount ?></span></a>
-        <input type="text" id="var-search" class="var-search" placeholder="Rechercher une variable...">
-    </div>
-
-    <?php if (!$totalCount): ?>
-        <p class="table-empty">Aucune variable trouvee. Ajoutez des templates sur la page <a href="<?= e(app_url('templates')) ?>">Templates</a>.</p>
-    <?php else: ?>
-    <form method="post" id="mapping-form">
-        <?= csrf_input() ?>
-        <input type="hidden" name="apply_mapping" value="1">
-        <div class="table-scroll">
-        <table>
-            <thead>
-                <tr>
-                    <th class="var-th-checkbox"><input type="checkbox" id="select-all" title="Tout cocher"></th>
-                    <th>Variable dans les templates</th>
-                    <th>Occurrences</th>
-                    <th>Templates</th>
-                    <th>Mapper vers</th>
-                    <th>Statut</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($allVariables as $upper => $original): ?>
-                    <?php
-                    $isMapped = isset($contextKeySet[$upper]);
-                    if ($filter === 'mapped' && !$isMapped) continue;
-                    if ($filter === 'unmapped' && $isMapped) continue;
-                    $tplPaths = $variableTemplates[$upper] ?? [];
-                    $tplCount = count($tplPaths);
-                    $tplNames = array_map('basename', $tplPaths);
-                    $firstTpl = $tplPaths[0] ?? null;
-                    ?>
-                    <tr class="<?= $isMapped ? 'row-mapped' : 'row-unmapped' ?>">
-                        <td><input type="checkbox" class="var-checkbox" value="<?= e($upper) ?>" <?= $isMapped ? 'disabled' : '' ?>></td>
-                        <td><code class="var-code-primary">{{ <?= e($original) ?> }}</code></td>
-                        <td><?= $variableOccurrences[$upper] ?></td>
-                        <td title="<?= e(implode(', ', $tplNames)) ?>" class="tpl-list"><?= $tplCount ?> template(s)</td>
-                        <td>
-                            <select name="target_names[<?= e($upper) ?>]" class="select-mapping" <?= $isMapped ? 'disabled' : '' ?>>
-                                <option value="">-- Choisir --</option>
-                                <?php foreach ($contextKeys as $ck): ?>
-                                <option value="<?= e($ck) ?>" <?= $isMapped && $upper === strtoupper($ck) ? 'selected' : '' ?>><?= e($ck) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </td>
-                        <td>
-                            <?php if ($isMapped): ?>
-                                <span class="statut-badge actif">Mappee</span>
-                            <?php else: ?>
-                                <span class="statut-badge resilie">Non mappee</span>
-                            <?php endif; ?>
-                        </td>
-                        <td>
-                            <?php if ($firstTpl): ?>
-                            <div class="action-links">
-                                <a class="btn-icon" href="<?= e(app_url('template', ['path' => $firstTpl])) ?>" title="Voir le template"><span class="material-symbols-outlined">visibility</span></a>
-                                <?php if ($tplCount > 1): ?>
-                                <div class="action-more">
-                                    <button type="button" class="btn-icon toggle-dropdown" title="Tous les templates">
-                                        <span class="material-symbols-outlined">more_horiz</span>
-                                    </button>
-                                    <div class="action-dropdown hidden">
-                                        <?php foreach ($tplPaths as $tplPath): ?>
-                                        <a href="<?= e(app_url('template', ['path' => $tplPath])) ?>" class="action-link"><?= e(basename($tplPath)) ?></a>
-                                        <?php endforeach; ?>
-                                    </div>
-                                </div>
-                                <?php endif; ?>
-                            </div>
-                            <?php endif; ?>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-        </div>
-    </form>
-    <?php endif; ?>
-</section>
-
 <section class="card stack">
     <div class="section-header">
         <div>
@@ -289,6 +207,22 @@ $formVarUnmapped = $formVarTotal - $formVarMapped;
         </article>
     </div>
 
+    <div class="filter-bar">
+        <a class="btn btn-info" href="?page=variables&form_section=&form_used=">Total <span class="badge"><?= $formVarTotal ?></span></a>
+        <?php foreach ($allSections as $sec): ?>
+        <a class="btn <?= $formSection === $sec && $formUsed === '' ? 'btn-next' : '' ?>" href="?page=variables&form_section=<?= e($sec) ?>&form_used=<?= e($formUsed) ?>"><?= e($sec) ?></a>
+        <?php endforeach; ?>
+        <span class="filter-sep"></span>
+        <a class="btn btn-next" href="?page=variables&form_section=<?= e($formSection) ?>&form_used=used">Utilisees <span class="badge bg-success"><?= $formVarMapped ?></span></a>
+        <a class="btn btn-danger" href="?page=variables&form_section=<?= e($formSection) ?>&form_used=unused">Non utilisees <span class="badge bg-danger"><?= $formVarUnmapped ?></span></a>
+    </div>
+    <div class="search-bar" style="margin-top:4px">
+        <input type="text" id="fv-search" class="var-search" placeholder="Rechercher une variable..." style="width:100%;padding:6px 10px;background:var(--bg);border:1px solid var(--line);border-radius:var(--radius-sm);color:var(--text);font-size:0.8rem">
+    </div>
+
+    <?php if (!count($filteredFormVars)): ?>
+        <p class="table-empty">Aucune variable pour cette section.</p>
+    <?php else: ?>
     <div class="table-scroll">
     <table data-sortable>
         <thead>
@@ -296,16 +230,18 @@ $formVarUnmapped = $formVarTotal - $formVarMapped;
                 <th data-col="variable">Variable</th>
                 <th data-col="section">Section</th>
                 <th data-col="field">Champ formulaire</th>
+                <th data-col="libelle">Libell&eacute;</th>
                 <th data-col="used" style="width:100px;text-align:center">Utilisee</th>
                 <th data-col="occurrences" style="width:100px;text-align:center">Occurrences</th>
             </tr>
         </thead>
         <tbody>
-            <?php foreach ($formVariables as $fv): ?>
+            <?php foreach ($filteredFormVars as $fv): ?>
             <tr class="<?= $fv['in_templates'] ? 'row-mapped' : 'row-unmapped' ?>">
                 <td><code class="var-code-primary">{{ <?= e($fv['name']) ?> }}</code></td>
                 <td><?= e($fv['section']) ?></td>
                 <td><code><?= e($fv['field']) ?></code></td>
+                <td><?= $fv['libelle'] ? e($fv['libelle']) : '<span class="text-muted">&mdash;</span>' ?></td>
                 <td style="text-align:center">
                     <?php if ($fv['in_templates']): ?>
                         <span class="statut-badge actif">Oui</span>
@@ -319,76 +255,22 @@ $formVarUnmapped = $formVarTotal - $formVarMapped;
         </tbody>
     </table>
     </div>
+    <?php endif; ?>
 </section>
 
 <script>
 (function(){
-    document.addEventListener('click', function(e){
-        var btn = e.target.closest('.toggle-dropdown');
-        document.querySelectorAll('.action-dropdown').forEach(function(d){
-            if (!btn || !btn.closest('.action-more').contains(d)) {
-                d.classList.add('hidden');
-            }
+    var searchInput = document.getElementById('fv-search');
+    if (!searchInput) return;
+    var table = document.querySelector('.table-scroll table');
+    if (!table) return;
+    searchInput.addEventListener('input', function(){
+        var q = this.value.toLowerCase();
+        table.querySelectorAll('tbody tr').forEach(function(row){
+            var code = row.querySelector('code');
+            if (!code) return;
+            row.style.display = code.textContent.toLowerCase().includes(q) ? '' : 'none';
         });
-        if (btn) {
-            var dd = btn.closest('.action-more').querySelector('.action-dropdown');
-            if (dd) dd.classList.toggle('hidden');
-        }
-    });
-
-    var searchInput = document.getElementById('var-search');
-    if (searchInput) {
-        searchInput.addEventListener('input', function(){
-            var q = this.value.toLowerCase();
-            document.querySelectorAll('#mapping-form tbody tr').forEach(function(row){
-                var code = row.querySelector('code');
-                if (!code) return;
-                row.style.display = code.textContent.toLowerCase().includes(q) ? '' : 'none';
-            });
-        });
-    }
-
-    var selectAll = document.getElementById('select-all');
-    var checkboxes = document.querySelectorAll('.var-checkbox:not([disabled])');
-    var applyBtn = document.getElementById('apply-btn');
-
-    function updateApplyBtn() {
-        var checked = document.querySelectorAll('.var-checkbox:not([disabled]):checked');
-        applyBtn.disabled = checked.length === 0;
-    }
-
-    if (selectAll) {
-        selectAll.addEventListener('change', function(){
-            checkboxes.forEach(function(cb){
-                cb.checked = selectAll.checked;
-            });
-            updateApplyBtn();
-        });
-    }
-
-    checkboxes.forEach(function(cb){
-        cb.addEventListener('change', updateApplyBtn);
-    });
-
-    applyBtn.addEventListener('click', function(){
-        var checked = document.querySelectorAll('.var-checkbox:not([disabled]):checked');
-        if (checked.length === 0) {
-            alert('Selectionnez au moins une variable non mappee.');
-            return;
-        }
-        var hasEmpty = false;
-        checked.forEach(function(cb){
-            var select = cb.closest('tr').querySelector('select[name^="target_names"]');
-            if (select && select.value === '') {
-                hasEmpty = true;
-            }
-        });
-        if (hasEmpty) {
-            if (!confirm('Certaines variables n\'ont pas de destination choisie. Les variables sans destination seront ignorees. Continuer ?')) {
-                return;
-            }
-        }
-        document.getElementById('mapping-form').submit();
     });
 })();
 </script>
