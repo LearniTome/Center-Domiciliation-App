@@ -239,6 +239,14 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
         }
         // Save collaborateur-specific permission overrides
         $targetId = $editingId;
+        $submittedRoleId = int_value($_POST, 'role_id');
+        // Get role's default permissions for diff comparison
+        $roleDefaultPerms = [];
+        if ($submittedRoleId) {
+            $stmt = $pdo->prepare('SELECT permission_key FROM role_permissions rp JOIN permissions p ON p.id = rp.permission_id WHERE rp.role_id = :rid');
+            $stmt->execute(['rid' => $submittedRoleId]);
+            $roleDefaultPerms = $stmt->fetchAll(\PDO::FETCH_COLUMN);
+        }
         $stmt = $pdo->prepare('DELETE FROM collaborateur_permissions WHERE collaborateur_id = :cid');
         $stmt->execute(['cid' => $targetId]);
         $submittedPerms = $_POST['perms'] ?? [];
@@ -252,7 +260,10 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
             foreach ($submittedPerms as $key => $val) {
                 if (isset($permMap[$key])) {
                     $granted = (int) ($val === '1');
-                    $insStmt->execute(['cid' => $targetId, 'pid' => (int) $permMap[$key], 'granted' => $granted]);
+                    $roleDefault = in_array($key, $roleDefaultPerms, true);
+                    if ($granted !== $roleDefault) {
+                        $insStmt->execute(['cid' => $targetId, 'pid' => (int) $permMap[$key], 'granted' => $granted]);
+                    }
                 }
             }
         }
