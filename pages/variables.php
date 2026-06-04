@@ -69,6 +69,89 @@ if (is_post() && isset($_POST['apply_mapping'])) {
 }
 
 $filter = $_GET['filter'] ?? 'all';
+
+// Build form variables data (variables from the application forms, not templates)
+$formFieldLabels = [
+    'SOCIETE_RAISON_SOCIALE' => 'societe_raison_sociale',
+    'SOCIETE_FORME_JURIDIQUE' => 'societe_forme_juridique',
+    'SOCIETE_ICE' => 'societe_ice',
+    'SOCIETE_RC' => 'societe_rc',
+    'SOCIETE_IF' => 'societe_if',
+    'SOCIETE_CAPITAL' => 'societe_capital',
+    'SOCIETE_PART_SOCIAL' => 'societe_part_social',
+    'SOCIETE_VALEUR_NOMINALE' => 'societe_valeur_nominale',
+    'SOCIETE_VILLE' => 'societe_ville',
+    'SOCIETE_TRIBUNAL' => 'societe_tribunal',
+    'SOCIETE_TRIBUNAL_TYPE' => 'societe_tribunal_type',
+    'SOCIETE_ADRESSE_SIEGE' => 'societe_adresse_siege',
+    'SOCIETE_EMAIL' => 'societe_email',
+    'SOCIETE_TELEPHONE' => 'societe_telephone',
+    'SOCIETE_DOSSIER' => 'societe_dossier',
+    'SOCIETE_TYPE_GENERATION' => 'societe_type_generation',
+    'SOCIETE_PROCEDURE_CREATION' => 'societe_procedure_creation',
+    'SOCIETE_MODE_DEPOT' => 'societe_mode_depot',
+    'SOCIETE_DATE_ICE' => 'societe_date_ice',
+    'SOCIETE_DATE_EXP_CERT_NEG' => 'societe_date_exp_cert_neg',
+    'ASSOCIE_NOM_COMPLET' => 'associe_nom_complet',
+    'ASSOCIE_NOM' => 'associe_nom',
+    'ASSOCIE_PRENOM' => 'associe_prenom',
+    'ASSOCIE_CIVILITE' => 'associe_civilite',
+    'ASSOCIE_CIN' => 'associe_cin',
+    'ASSOCIE_DATE_VALIDITE_CIN' => 'associe_date_validite_cin',
+    'ASSOCIE_DATE_NAISSANCE' => 'associe_date_naissance',
+    'ASSOCIE_LIEU_NAISSANCE' => 'associe_lieu_naissance',
+    'ASSOCIE_NATIONALITE' => 'associe_nationalite',
+    'ASSOCIE_ADRESSE' => 'associe_adresse',
+    'ASSOCIE_TELEPHONE' => 'associe_telephone',
+    'ASSOCIE_EMAIL' => 'associe_email',
+    'ASSOCIE_QUALITE' => 'associe_qualite',
+    'ASSOCIE_PARTS' => 'associe_parts',
+    'ASSOCIE_CAPITAL_DETENU' => 'associe_capital_detenu',
+    'ASSOCIE_EST_GERANT' => 'associe_est_gerant',
+    'CONTRAT_TYPE' => 'contrat_type_domiciliation',
+    'CONTRAT_TYPE_DOMICILIATION' => 'contrat_type_domiciliation',
+    'CONTRAT_DATE' => 'contrat_date',
+    'CONTRAT_DATE_DEBUT' => 'contrat_date_debut',
+    'CONTRAT_DATE_FIN' => 'contrat_date_fin',
+    'CONTRAT_DUREE_MOIS' => 'contrat_duree_mois',
+    'CONTRAT_LOYER_TTC' => 'contrat_loyer_ttc',
+    'CONTRAT_LOYER_HT' => 'contrat_loyer_ht',
+    'CONTRAT_TVA_POURCENT' => 'contrat_tva_pourcent',
+    'CONTRAT_TOTAL_HT' => 'contrat_total_ht',
+    'CONTRAT_FRAIS_INTERMEDIAIRE' => 'contrat_frais_intermediaire',
+    'CONTRAT_CAUTION' => 'contrat_caution',
+    'CONTRAT_STATUT' => 'contrat_statut',
+    'CONTRAT_MODE_SIGNATURE' => 'contrat_mode_signature',
+    'CONTRAT_PACK_MONTANT_TTC' => 'contrat_pack_montant_ttc',
+    'CONTRAT_PACK_LOYER_TTC' => 'contrat_pack_loyer_ttc',
+    'CONTRAT_TYPE_RENOUVELLEMENT' => 'contrat_type_renouvellement',
+    'CONTRAT_RENOUV_TVA_POURCENT' => 'contrat_renouv_tva_pourcent',
+    'CONTRAT_RENOUV_LOYER_HT' => 'contrat_renouv_loyer_ht',
+    'CONTRAT_RENOUV_LOYER_TTC' => 'contrat_renouv_loyer_ttc',
+    'CONTRAT_RENOUV_ANNUEL_TTC' => 'contrat_renouv_annuel_ttc',
+];
+
+$formVariables = [];
+foreach ($contextKeys as $ck) {
+    $upper = strtoupper($ck);
+    $section = TemplateAnalyzer::inferSection($ck);
+    $fieldName = $formFieldLabels[$upper] ?? strtolower($ck);
+    $inTemplates = isset($allVariables[$upper]);
+    $occurrences = $inTemplates ? ($variableOccurrences[$upper] ?? 0) : 0;
+    $formVariables[] = [
+        'name' => $ck,
+        'upper' => $upper,
+        'section' => $section === 'autre' ? 'Date' : ucfirst($section),
+        'field' => $fieldName,
+        'in_templates' => $inTemplates,
+        'occurrences' => $occurrences,
+    ];
+}
+usort($formVariables, fn($a, $b) => [$a['section'], $a['name']] <=> [$b['section'], $b['name']]);
+
+$formVarTotal = count($formVariables);
+$formVarMapped = count(array_filter($formVariables, fn($v) => $v['in_templates']));
+$formVarUnmapped = $formVarTotal - $formVarMapped;
 ?>
 <section class="card stack">
     <div class="section-header">
@@ -182,6 +265,60 @@ $filter = $_GET['filter'] ?? 'all';
         </div>
     </form>
     <?php endif; ?>
+</section>
+
+<section class="card stack">
+    <div class="section-header">
+        <div>
+            <p class="help-text">Variables disponibles dans les formulaires de l'application</p>
+        </div>
+    </div>
+
+    <div class="stats compact">
+        <article class="stat">
+            <span>Variables formulaire</span>
+            <strong><?= $formVarTotal ?></strong>
+        </article>
+        <article class="stat stat-success">
+            <span>Utilisees dans les templates</span>
+            <strong><?= $formVarMapped ?></strong>
+        </article>
+        <article class="stat stat-danger">
+            <span>Non utilisees</span>
+            <strong><?= $formVarUnmapped ?></strong>
+        </article>
+    </div>
+
+    <div class="table-scroll">
+    <table data-sortable>
+        <thead>
+            <tr>
+                <th data-col="variable">Variable</th>
+                <th data-col="section">Section</th>
+                <th data-col="field">Champ formulaire</th>
+                <th data-col="used" style="width:100px;text-align:center">Utilisee</th>
+                <th data-col="occurrences" style="width:100px;text-align:center">Occurrences</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($formVariables as $fv): ?>
+            <tr class="<?= $fv['in_templates'] ? 'row-mapped' : 'row-unmapped' ?>">
+                <td><code class="var-code-primary">{{ <?= e($fv['name']) ?> }}</code></td>
+                <td><?= e($fv['section']) ?></td>
+                <td><code><?= e($fv['field']) ?></code></td>
+                <td style="text-align:center">
+                    <?php if ($fv['in_templates']): ?>
+                        <span class="statut-badge actif">Oui</span>
+                    <?php else: ?>
+                        <span class="statut-badge resilie">Non</span>
+                    <?php endif; ?>
+                </td>
+                <td style="text-align:center"><?= $fv['occurrences'] ?></td>
+            </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+    </div>
 </section>
 
 <script>
