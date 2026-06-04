@@ -36,6 +36,7 @@ if (is_post()) {
         } else {
             $_SESSION['user_id'] = (int) $user['id'];
             clear_user_cache();
+            log_activity($pdo, 'connexion', 'auth', (int) $user['id'], $user['nom_complet']);
 
             // Update last_login
             $pdo->prepare('UPDATE collaborateurs SET last_login = NOW() WHERE id = :id')

@@ -32,6 +32,7 @@ if (is_post()) {
             }
             file_put_contents($defaultsFile, json_encode($defaults, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), LOCK_EX);
             set_flash('success', 'Valeurs par defaut enregistrees.');
+            log_activity($pdo, 'update', 'defaults', null, 'Section: ' . $section);
             redirect_to('defaults', ['tab' => $section]);
         }
     }
@@ -42,6 +43,7 @@ if (is_post()) {
             $defaults[$section] = [];
             file_put_contents($defaultsFile, json_encode($defaults, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), LOCK_EX);
             set_flash('success', 'Section reinitialisee.');
+            log_activity($pdo, 'reset', 'defaults', null, 'Section: ' . $section);
             redirect_to('defaults', ['tab' => $section]);
         }
     }
@@ -49,6 +51,7 @@ if (is_post()) {
     if ($action === 'reset-all') {
         file_put_contents($defaultsFile, json_encode([], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), LOCK_EX);
         set_flash('success', 'Toutes les valeurs par defaut ont ete reinitialisees.');
+        log_activity($pdo, 'reset', 'defaults', null, 'Toutes les sections');
         redirect_to('defaults');
     }
 }

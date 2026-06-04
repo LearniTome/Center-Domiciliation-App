@@ -12,6 +12,7 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
     if ($action === 'delete') {
         $stmt = $pdo->prepare('DELETE FROM associes WHERE id = :id');
         $stmt->execute(['id' => (int) $_POST['id']]);
+        log_activity($pdo, 'delete', 'associe', (int) $_POST['id']);
         set_flash('success', 'Associe supprime avec succes.');
         redirect_to('associes');
     }
@@ -47,6 +48,7 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
             'associe_est_gerant' => (field_value($_POST, 'associe_est_gerant') === '1') ? 1 : 0,
             'id' => $editId,
         ]);
+        log_activity($pdo, 'update', 'associe', $editId, field_value($_POST, 'associe_nom_complet'));
         set_flash('success', 'Associe mis a jour.');
         redirect_to('associes');
     }

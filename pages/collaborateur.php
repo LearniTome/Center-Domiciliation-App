@@ -231,11 +231,12 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
             $stmt = $pdo->prepare($sql);
             $stmt->execute($params);
             $newId = (int) $pdo->lastInsertId();
-            $who = ''; $cu = current_user(); if ($cu) $who = $cu['nom_complet'] ?? '';
-            $logStmt = $pdo->prepare('INSERT INTO collaborateur_log (action, collaborateur_nom, collaborateur_email, collaborateur_id, done_by) VALUES (\'ajout\', :nom, :email, :cid, :done_by)');
-            $logStmt->execute(['nom' => $payload['nom_complet'], 'email' => $payload['collaborateur_email'] ?: $payload['email'], 'cid' => $newId, 'done_by' => $who]);
             $editingId = $newId;
+            log_activity($pdo, 'create', 'collaborateur', $newId, $payload['nom_complet']);
             set_flash('success', 'Collaborateur ajoute.');
+        } else {
+            log_activity($pdo, 'update', 'collaborateur', $editingId, $payload['nom_complet']);
+            set_flash('success', 'Collaborateur mis a jour.');
         }
         // Save collaborateur-specific permission overrides
         $targetId = $editingId;
@@ -266,6 +267,13 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
                     }
                 }
             }
+        }
+        // Log permission changes
+        $cntStmt = $pdo->prepare('SELECT COUNT(*) FROM collaborateur_permissions WHERE collaborateur_id = :cid');
+        $cntStmt->execute(['cid' => $targetId]);
+        $diffCount = (int) $cntStmt->fetchColumn();
+        if ($diffCount > 0) {
+            log_activity($pdo, 'update', 'permissions', $targetId, 'Permissions mises à jour — ' . $diffCount . ' override(s)');
         }
         // Clear session cache for the affected user
         if ($targetId === (int) ($_SESSION['user_id'] ?? 0)) {

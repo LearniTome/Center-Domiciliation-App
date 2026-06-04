@@ -94,6 +94,7 @@ function _cleanup_tmp_uploads(): void
 if (isset($_GET['reset']) && $_GET['reset'] === '1') {
     _cleanup_tmp_uploads();
     unset($_SESSION['creation_wizard']);
+    log_activity($pdo, 'reset', 'wizard');
     set_flash('success', 'Assistant reinitialise.');
     redirect_to('creation');
 }
@@ -101,6 +102,7 @@ if (isset($_GET['reset']) && $_GET['reset'] === '1') {
 if (isset($_GET['cancel']) && $_GET['cancel'] === '1') {
     _cleanup_tmp_uploads();
     unset($_SESSION['creation_wizard']);
+    log_activity($pdo, 'cancel', 'wizard');
     set_flash('success', 'Creation annulee.');
     redirect_to('societes');
 }
@@ -341,6 +343,7 @@ if (is_post()) {
         }
 
         $wizard['uploaded_docs'] = $uploadedDocs;
+        log_activity($pdo, 'upload', 'document', null, 'Uploads étape 5 — ' . count($uploadedDocs) . ' fichier(s)', json_encode(array_map(fn($d) => $d['type'], $uploadedDocs)));
         redirect_to('creation', ['step' => 6]);
     }
 
@@ -539,6 +542,11 @@ if (is_post()) {
                 }
 
                 set_flash('success', 'Le dossier a ete cree avec succes.');
+                log_activity($pdo, 'create', 'dossier', $societeId, $wizard['societe']['societe_raison_sociale'] ?? ('Dossier #' . $societeId), json_encode([
+                    'forme_juridique' => $formeCrea,
+                    'nb_associes' => count($wizard['associes'] ?? []),
+                    'type_generation' => $wizard['societe']['societe_type_generation'] ?? '',
+                ]));
                 redirect_to('creation', ['step' => 6]);
             } catch (Throwable $exception) {
                 if ($pdo->inTransaction()) {

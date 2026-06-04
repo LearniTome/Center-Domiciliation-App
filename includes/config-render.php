@@ -87,6 +87,7 @@ if (is_post()) {
                 $stmt->execute(['val' => $value, 'so' => $max]);
             }
             set_flash('success', $label . ' ajoutee.');
+            log_activity($pdo, 'create', 'config_' . $tab, null, $label . ' — ' . $value);
         } else {
             set_flash('error', 'Le champ est obligatoire.');
         }
@@ -113,6 +114,7 @@ if (is_post()) {
                 $stmt->execute(['new' => $newValue, 'id' => $recordId]);
             }
             set_flash('success', $label . ' modifiee.');
+            log_activity($pdo, 'update', 'config_' . $tab, $recordId, $label);
         }
         redirect_to($tab);
     }
@@ -123,6 +125,7 @@ if (is_post()) {
             $stmt = $pdo->prepare("DELETE FROM {$table} WHERE id = :id");
             $stmt->execute(['id' => $recordId]);
             set_flash('success', $label . ' supprimee.');
+            log_activity($pdo, 'delete', 'config_' . $tab, $recordId, $label);
         }
         redirect_to($tab);
     }

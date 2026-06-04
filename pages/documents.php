@@ -23,6 +23,7 @@ if (is_post() && isset($_POST['delete_submit'])) {
         $stmt = $pdo->prepare("DELETE FROM documents_generes WHERE id IN ($placeholders)");
         $stmt->execute(array_map('intval', $selected));
         set_flash('error', count($selected) . ' document(s) supprime(s).');
+        log_activity($pdo, 'delete', 'document', null, count($selected) . ' doc(s)');
         $delParams = $filterSociete ? ['societe_id' => $filterSociete] : [];
         if ($filterDocType) $delParams['doc_type'] = $filterDocType;
         if ($filterStatut) $delParams['statut'] = $filterStatut;
@@ -76,6 +77,7 @@ if (is_post() && isset($_POST['validate_submit'])) {
         }
     }
     set_flash('success', count($selected) . ' document(s) valide(s).');
+    log_activity($pdo, 'validate', 'document', null, count($selected) . ' doc(s)');
     $valParams = $filterSociete ? ['societe_id' => $filterSociete] : [];
     if ($filterDocType) $valParams['doc_type'] = $filterDocType;
     if ($filterStatut) $valParams['statut'] = $filterStatut;

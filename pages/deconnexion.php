@@ -2,6 +2,12 @@
 
 declare(strict_types=1);
 
+// Log before destroying session
+$user = current_user();
+if ($user && $pdo) {
+    log_activity($pdo, 'deconnexion', 'auth', (int) $user['id'], $user['nom_complet']);
+}
+
 // Clear session
 $_SESSION = [];
 session_destroy();

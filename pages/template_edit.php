@@ -110,6 +110,7 @@ if (is_post()) {
         try {
             TemplateEditor::saveHtml($templatePath, $html);
             set_flash('success', 'Template enregistre avec succes.');
+            log_activity($pdo, 'update', 'template', null, $filename);
         } catch (Throwable $e) {
             set_flash('error', 'Erreur lors de l\'enregistrement : ' . $e->getMessage());
         }
@@ -129,6 +130,7 @@ if (is_post()) {
         try {
             TemplateEditor::createNewHtml($html, $newPath);
             set_flash('success', 'Nouveau template cree avec succes.');
+            log_activity($pdo, 'create', 'template', null, $newName);
             redirect_to('template_edit', ['path' => $newPath]);
         } catch (Throwable $e) {
             set_flash('error', 'Erreur lors de la creation : ' . $e->getMessage());
@@ -148,6 +150,7 @@ if (is_post()) {
         try {
             TemplateEditor::createNewHtml('', $newPath);
             set_flash('success', 'Template vierge cree.');
+            log_activity($pdo, 'create', 'template', null, $blankName);
             redirect_to('template_edit', ['path' => $newPath]);
         } catch (Throwable $e) {
             set_flash('error', 'Erreur : ' . $e->getMessage());

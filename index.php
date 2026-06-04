@@ -85,6 +85,7 @@ $pageTitleMap = [
     'deconnexion' => 'Deconnexion',
     'roles' => 'Gestion des roles',
     'role' => 'Fiche role',
+    'activite' => 'Journal d\'activite',
 ];
 
 // Public pages without sidebar layout

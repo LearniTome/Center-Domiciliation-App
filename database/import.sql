@@ -142,16 +142,6 @@ CREATE TABLE IF NOT EXISTS collaborateurs (
     INDEX idx_collaborateurs_can_login (can_login)
 );
 
-CREATE TABLE IF NOT EXISTS collaborateur_log (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    action VARCHAR(20) NOT NULL COMMENT 'add or delete',
-    collaborateur_nom VARCHAR(255) NOT NULL,
-    collaborateur_email VARCHAR(190) DEFAULT NULL,
-    collaborateur_id INT UNSIGNED DEFAULT NULL,
-    done_by VARCHAR(255) DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
 CREATE TABLE IF NOT EXISTS ref_formes_juridiques (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     forme_juridique VARCHAR(120) NOT NULL,
@@ -308,6 +298,23 @@ CREATE TABLE IF NOT EXISTS collaborateur_permissions (
     PRIMARY KEY (collaborateur_id, permission_id),
     CONSTRAINT fk_cp_collaborateur FOREIGN KEY (collaborateur_id) REFERENCES collaborateurs(id) ON DELETE CASCADE,
     CONSTRAINT fk_cp_permission FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS activity_logs (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED DEFAULT NULL,
+    user_nom VARCHAR(255) DEFAULT NULL,
+    action VARCHAR(50) NOT NULL,
+    entity_type VARCHAR(50) NOT NULL,
+    entity_id INT UNSIGNED DEFAULT NULL,
+    entity_label VARCHAR(255) DEFAULT NULL,
+    details TEXT DEFAULT NULL,
+    ip_address VARCHAR(45) DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_user (user_id),
+    INDEX idx_entity (entity_type, entity_id),
+    INDEX idx_action (action),
+    INDEX idx_created (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================

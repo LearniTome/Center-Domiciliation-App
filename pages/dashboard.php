@@ -268,12 +268,11 @@ if ($isConnected) {
 $alerteCount = count($sansAssocie) + count($sansContrat) + count($expirants) + count($sansDocuments) + count($cinExpire);
 $hasAlerts = $alerteCount > 0;
 
-// --- Activite collaborateurs (Super Admin only) ---
+// --- Activite recente ---
 $collabActivity = [];
-$isSuperAdmin = is_logged_in() && (int) (current_user()['role_id'] ?? 0) === 1;
-if ($isConnected && $isSuperAdmin) {
+if ($isConnected) {
     $collabActivity = $pdo->query("
-        SELECT * FROM collaborateur_log
+        SELECT * FROM activity_logs
         ORDER BY created_at DESC LIMIT 10
     ")->fetchAll();
 }
@@ -595,27 +594,44 @@ if ($isConnected) {
 
 <section class="grid two">
     <!-- Validation documents -->
-    <?php if ($isSuperAdmin && $collabActivity): ?>
+    <?php if ($collabActivity): ?>
     <article class="card">
         <div class="section-header">
-            <h2><span class="material-symbols-outlined" style="color:var(--primary)">work_history</span> Activite collaborateurs</h2>
+            <h2><span class="material-symbols-outlined" style="color:var(--primary)">work_history</span> Activite recente</h2>
+            <a class="btn btn-info" href="<?= e(app_url('activite')) ?>"><span class="material-symbols-outlined">history</span> Voir tout</a>
         </div>
         <div class="activity-feed">
             <?php foreach ($collabActivity as $ca):
-                $caIcon = $ca['action'] === 'ajout' ? 'person_add' : 'person_remove';
-                $caColor = $ca['action'] === 'ajout' ? 'var(--success)' : 'var(--danger)';
-                $caLabel = $ca['action'] === 'ajout' ? 'Ajoute' : 'Supprime';
+                $caAction = (string) ($ca['action'] ?? '');
+                $caIcon = match ($caAction) {
+                    'create', 'ajout' => 'add_circle',
+                    'update' => 'edit',
+                    'delete', 'suppression' => 'delete',
+                    'connexion' => 'login',
+                    'deconnexion' => 'logout',
+                    'generate' => 'description',
+                    default => 'radio_button_unchecked',
+                };
+                $caColor = match ($caAction) {
+                    'delete', 'suppression' => 'var(--danger)',
+                    'create', 'ajout' => 'var(--success)',
+                    'connexion' => 'var(--info)',
+                    default => 'var(--primary)',
+                };
                 $caDt = date('d/m/Y H:i', strtotime($ca['created_at']));
-                $caHref = $ca['collaborateur_id'] ? app_url('collaborateur', ['id' => (int) $ca['collaborateur_id']]) : '#';
             ?>
-                <a class="activity-item" href="<?= e($caHref) ?>">
+                <div class="activity-item">
                     <span class="activity-icon" style="color:<?= $caColor ?>"><span class="material-symbols-outlined"><?= $caIcon ?></span></span>
                     <span class="activity-text">
-                        <strong><?= e($ca['collaborateur_nom']) ?></strong> <?= $caLabel ?>
-                        <?php if ($ca['done_by']): ?><span class="help-text">par <?= e($ca['done_by']) ?></span><?php endif; ?>
+                        <strong><?= e((string) ($ca['user_nom'] ?? '—')) ?></strong>
+                        <span class="help-text"><?= e($caAction) ?></span>
+                        <?php if ($ca['entity_label']): ?>
+                            — <?= e($ca['entity_label']) ?>
+                        <?php endif; ?>
+                        <span class="help-text">(<?= e($ca['entity_type']) ?>)</span>
                     </span>
                     <span class="activity-meta"><?= $caDt ?></span>
-                </a>
+                </div>
             <?php endforeach; ?>
         </div>
     </article>

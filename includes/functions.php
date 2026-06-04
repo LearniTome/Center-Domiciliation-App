@@ -622,6 +622,8 @@ function get_page_permission(string $page): ?string
 
         'roles' => 'roles.manage',
         'role' => 'roles.manage',
+
+        'activite' => 'roles.manage',
     ];
 
     return $map[$page] ?? null;
@@ -644,4 +646,34 @@ function get_role_name(): string
 function clear_user_cache(): void
 {
     unset($_SESSION['_user_cache'], $_SESSION['_permissions_cache']);
+}
+
+function log_activity(
+    ?PDO $pdo,
+    string $action,
+    string $entity_type,
+    ?int $entity_id = null,
+    ?string $entity_label = null,
+    ?string $details = null,
+): void {
+    if (!$pdo) return;
+    $user = current_user();
+    try {
+        $stmt = $pdo->prepare(
+            'INSERT INTO activity_logs (user_id, user_nom, action, entity_type, entity_id, entity_label, details, ip_address, created_at)
+             VALUES (:uid, :unom, :act, :etype, :eid, :elabel, :det, :ip, NOW())'
+        );
+        $stmt->execute([
+            'uid'    => $user['id'] ?? null,
+            'unom'   => $user['nom_complet'] ?? null,
+            'act'    => $action,
+            'etype'  => $entity_type,
+            'eid'    => $entity_id,
+            'elabel' => $entity_label,
+            'det'    => $details,
+            'ip'     => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
+        ]);
+    } catch (PDOException) {
+        // silently fail – logging must never break the app
+    }
 }

@@ -164,6 +164,7 @@ if (is_post()) {
                 $msg .= ' Erreurs: ' . implode('; ', $result['errors']);
             }
             set_flash('success', $msg);
+            log_activity($pdo, 'rename', 'template_variable', null, "{$oldName} → {$newName} dans {$info['doc_type']}");
         }
         redirect_to('template', ['path' => $templatePath]);
     }
@@ -177,6 +178,7 @@ if (is_post()) {
                 $msg .= ' Erreurs: ' . implode('; ', $result['errors']);
             }
             set_flash('success', $msg);
+            log_activity($pdo, 'delete', 'template_variable', null, "{$varName} dans {$info['doc_type']}");
         }
         redirect_to('template', ['path' => $templatePath]);
     }

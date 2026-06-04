@@ -51,6 +51,7 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
         }
 
         clear_user_cache();
+        log_activity($pdo, ($editingId > 0 ? 'update' : 'create'), 'role', $editingId, $nom . ' (' . count($permissions) . ' permissions)');
         set_flash('success', 'Role ' . ($editingId > 0 ? 'mis a jour.' : 'cree.'));
         redirect_to('roles');
     } catch (PDOException $e) {

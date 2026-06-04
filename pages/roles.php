@@ -10,6 +10,7 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
         $stmt = $pdo->prepare('DELETE FROM roles WHERE id = :id AND is_system = 0');
         $stmt->execute(['id' => (int) $_POST['id']]);
         clear_user_cache();
+        log_activity($pdo, 'delete', 'role', (int) $_POST['id']);
         set_flash('success', 'Role supprime.');
         redirect_to('roles');
     }

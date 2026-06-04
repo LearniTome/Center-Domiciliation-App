@@ -14,13 +14,7 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
         $delRecord = $delStmt->fetch();
         $stmt = $pdo->prepare('DELETE FROM collaborateurs WHERE id = :id');
         $stmt->execute(['id' => (int) $_POST['id']]);
-        if ($delRecord) {
-            $who = '';
-            $cu = current_user();
-            if ($cu) $who = $cu['nom_complet'] ?? '';
-            $logStmt = $pdo->prepare('INSERT INTO collaborateur_log (action, collaborateur_nom, collaborateur_email, collaborateur_id, done_by) VALUES (\'suppression\', :nom, :email, :cid, :done_by)');
-            $logStmt->execute(['nom' => $delRecord['nom_complet'], 'email' => $delRecord['collaborateur_email'] ?? '', 'cid' => (int) $_POST['id'], 'done_by' => $who]);
-        }
+        log_activity($pdo, 'delete', 'collaborateur', (int) $_POST['id'], $delRecord['nom_complet'] ?? '');
         set_flash('success', 'Collaborateur supprime avec succes.');
         redirect_to('collaborateurs');
     }

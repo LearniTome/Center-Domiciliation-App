@@ -108,6 +108,7 @@ if (is_post() && isset($_POST['validate_submit']) && ($pdo ?? null) instanceof P
         $delStmt->execute(array_merge(array_map('intval', $selected), [$societeId], $cleanTypes));
     }
     set_flash('success', count($selected) . ' document(s) valide(s).');
+    log_activity($pdo, 'validate', 'document', $societeId, ($societe['societe_raison_sociale'] ?? '') . ' — ' . count($selected) . ' doc(s)', json_encode(['doc_ids' => array_map('intval', $selected)]));
     redirect_to('societe', ['id' => $societeId]);
 }
 
@@ -126,6 +127,7 @@ if (is_post() && isset($_POST['delete_submit']) && ($pdo ?? null) instanceof PDO
         $stmt = $pdo->prepare("DELETE FROM documents_generes WHERE id IN ($placeholders)");
         $stmt->execute(array_map('intval', $selected));
         set_flash('error', count($selected) . ' document(s) supprime(s).');
+        log_activity($pdo, 'delete', 'document', $societeId, ($societe['societe_raison_sociale'] ?? '') . ' — ' . count($selected) . ' doc(s)', json_encode(['doc_ids' => array_map('intval', $selected)]));
         redirect_to('societe', ['id' => $societeId]);
     }
 }
@@ -163,6 +165,7 @@ if (is_post() && isset($_POST['restore_submit']) && ($pdo ?? null) instanceof PD
         ]);
     }
     set_flash('success', count($selected) . ' document(s) restaure(s) en brouillon.');
+    log_activity($pdo, 'restore', 'document', $societeId, ($societe['societe_raison_sociale'] ?? '') . ' — ' . count($selected) . ' doc(s)', json_encode(['doc_ids' => array_map('intval', $selected)]));
     redirect_to('societe', ['id' => $societeId]);
 }
 
@@ -226,6 +229,7 @@ if (is_post() && !isset($_POST['validate_submit']) && !isset($_POST['delete_subm
         'id' => $societeId,
     ]);
     set_flash('success', 'Societe mise a jour.');
+    log_activity($pdo, 'update', 'societe', $societeId, field_value($_POST, 'societe_raison_sociale'));
     redirect_to('societe', ['id' => $societeId]);
 }
 

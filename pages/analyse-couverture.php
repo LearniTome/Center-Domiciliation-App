@@ -85,6 +85,67 @@ if ($templates) {
                 $msg .= ' Erreurs: ' . implode('; ', $result['errors']);
             }
             set_flash('success', $msg);
+            log_activity($pdo, 'rename', 'template_variable', null, "{$oldName} → {$newName}");
+        }
+        redirect_to('analyse-couverture');
+    }
+
+    if (is_post() && isset($_POST['delete_var'])) {
+        $varName = trim($_POST['var_name'] ?? '');
+        if ($varName !== '') {
+            $result = TemplateAnalyzer::deleteVariable($varName, $templatesDir);
+            $msg = "Variable {$varName} supprimee de {$result['modified']} template(s).";
+            if (!empty($result['errors'])) {
+                $msg .= ' Erreurs: ' . implode('; ', $result['errors']);
+            }
+            set_flash('success', $msg);
+            log_activity($pdo, 'delete', 'template_variable', null, $varName);
+        }
+        redirect_to('analyse-couverture');
+    }
+
+    if (is_post() && isset($_POST['bulk_rename'])) {
+        verify_csrf();
+        $oldNames = $_POST['old_names'] ?? [];
+        $newNames = $_POST['new_names'] ?? [];
+        if (is_array($oldNames) && is_array($newNames)) {
+            $total = 0;
+            $errors = [];
+            foreach ($oldNames as $i => $old) {
+                $new = $newNames[$i] ?? '';
+                $old = trim($old);
+                $new = trim($new);
+                if ($old !== '' && $new !== '' && $old !== $new) {
+                    $result = TemplateAnalyzer::renameVariable($old, $new, $templatesDir);
+                    $total += $result['modified'];
+                    if (!empty($result['errors'])) {
+                        $errors = array_merge($errors, $result['errors']);
+                    }
+                }
+            }
+            $count = count($oldNames);
+            $msg = "{$count} variable(s) renommee(s) dans {$total} template(s).";
+            if (!empty($errors)) {
+                $msg .= ' Erreurs: ' . implode('; ', $errors);
+            }
+            set_flash('success', $msg);
+            log_activity($pdo, 'bulk_rename', 'template_variable', null, $count . ' variable(s)');
+        }
+        redirect_to('analyse-couverture');
+    }
+
+    if (is_post() && isset($_POST['bulk_delete'])) {
+        verify_csrf();
+        $selected = $_POST['selected_vars'] ?? [];
+        if (is_array($selected) && !empty($selected)) {
+            $result = TemplateAnalyzer::deleteVariables($selected, $templatesDir);
+            $count = count($selected);
+            $msg = "{$count} variable(s) supprimee(s) de {$result['modified']} template(s).";
+            if (!empty($result['errors'])) {
+                $msg .= ' Erreurs: ' . implode('; ', $result['errors']);
+            }
+            set_flash('success', $msg);
+            log_activity($pdo, 'bulk_delete', 'template_variable', null, $count . ' variable(s)');
         }
         redirect_to('analyse-couverture');
     }
@@ -94,6 +155,7 @@ if ($templates) {
         $csvPath = $outputDir . DIRECTORY_SEPARATOR . 'analyse_templates_' . date('Y-m-d_His') . '.csv';
         TemplateAnalyzer::exportAnalysisCsv($analysis['variables'], $csvPath);
         set_flash('success', 'Analyse exportee dans output/');
+        log_activity($pdo, 'export', 'analysis');
         redirect_to('analyse-couverture');
     }
 
@@ -104,6 +166,7 @@ if ($templates) {
             $_SESSION['ai_analysis_suggestions'] = $result;
             if ($result !== null) {
                 set_flash('success', 'Suggestions IA generees.');
+                log_activity($pdo, 'ai_suggest', 'analysis');
             } else {
                 set_flash('error', "Erreur lors de la generation des suggestions IA.");
             }

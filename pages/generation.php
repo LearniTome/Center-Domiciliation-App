@@ -156,6 +156,7 @@ if (is_post() && !isset($_POST['delete_submit']) && !isset($_POST['validate_subm
             ]);
         }
         set_flash('success', count($generatedFiles) . ' document(s) genere(s).');
+        log_activity($pdo, 'generate', 'document', $societeId, 'Génération — ' . count($generatedFiles) . ' doc(s)', json_encode(['doc_types' => array_map(fn($f) => $f['doc_type'] ?? '', $generatedFiles)]));
         redirect_to('generation', ['societe_id' => $societeId]);
     }
 }
@@ -177,6 +178,7 @@ if (is_post() && isset($_POST['delete_submit']) && $societeId > 0) {
         $stmt->execute(array_map('intval', $selected));
         $_SESSION['gen_files'][$societeId] = array_values(array_filter($_SESSION['gen_files'][$societeId] ?? [], fn($f) => !in_array($f['docx'], array_column($docs, 'fichier_docx'))));
         set_flash('error', count($selected) . ' document(s) supprime(s).');
+        log_activity($pdo, 'delete', 'document_genere', $societeId, 'Suppression — ' . count($selected) . ' doc(s)');
         $params = ['societe_id' => $societeId];
         if ($statusFilter) $params['statut'] = $statusFilter;
         redirect_to('generation', $params);
@@ -229,6 +231,7 @@ if (is_post() && isset($_POST['validate_submit']) && $societeId > 0) {
             $delStmt->execute(array_merge(array_map('intval', $selected), [$societeId], $cleanTypes));
         }
         set_flash('success', count($selected) . ' document(s) valide(s).');
+        log_activity($pdo, 'validate', 'document_genere', $societeId, 'Validation — ' . count($selected) . ' doc(s)');
         $params = ['societe_id' => $societeId];
         if ($statusFilter) $params['statut'] = $statusFilter;
         redirect_to('generation', $params);

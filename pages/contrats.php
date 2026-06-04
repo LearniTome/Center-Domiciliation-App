@@ -12,6 +12,7 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
     if ($action === 'delete') {
         $stmt = $pdo->prepare('DELETE FROM contrats WHERE id = :id');
         $stmt->execute(['id' => (int) $_POST['id']]);
+        log_activity($pdo, 'delete', 'contrat', (int) $_POST['id']);
         set_flash('success', 'Contrat supprime avec succes.');
         redirect_to('contrats');
     }
@@ -62,6 +63,7 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
             'contrat_notes' => field_value($_POST, 'contrat_notes'),
             'id' => $editId,
         ]);
+        log_activity($pdo, 'update', 'contrat', $editId);
         set_flash('success', 'Contrat mis a jour.');
         redirect_to('contrats');
     }

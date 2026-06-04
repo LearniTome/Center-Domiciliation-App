@@ -13,6 +13,7 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
     if ($action === 'delete') {
         $stmt = $pdo->prepare('DELETE FROM societes WHERE id = :id');
         $stmt->execute(['id' => (int) $_POST['id']]);
+        log_activity($pdo, 'delete', 'societe', (int) $_POST['id']);
         set_flash('success', 'Societe supprimee avec succes.');
         redirect_to('societes');
     }
