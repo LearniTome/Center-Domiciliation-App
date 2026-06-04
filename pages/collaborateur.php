@@ -250,6 +250,7 @@ $isNew = !$editingRecord;
 .collab-preview .section-header { margin-bottom: 8px; }
 .collab-preview .section-title { padding: 10px 0 4px; }
 .collab-preview .info-grid { gap: 10px; }
+form.stack > article.card + article.card { margin-top: 0; }
 </style>
 <section class="grid two">
 <?php if ($isNew && !in_array($collabType, $typeOptions, true)): ?>
