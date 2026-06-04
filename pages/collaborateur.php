@@ -348,8 +348,8 @@ $isNew = !$editingRecord;
             <div class="form-grid">
                 <div style="grid-column:1/-1;">
                     <label style="display:flex;align-items:center;gap:8px;cursor:pointer;min-height:36px;">
-                        <input type="checkbox" name="can_login" value="1" data-toggle-password <?= (int) ($formData['can_login'] ?? 0) ? 'checked' : '' ?>>
-                        <span>Peut se connecter &agrave; l'application</span>
+                        <input type="checkbox" name="can_login" value="1" data-toggle-password style="width:auto;flex-shrink:0;" <?= (int) ($formData['can_login'] ?? 0) ? 'checked' : '' ?>>
+                        <span style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-secondary);">Peut se connecter &agrave; l'application</span>
                     </label>
                 </div>
 
@@ -497,8 +497,8 @@ $isNew = !$editingRecord;
                 <div class="form-grid">
                     <div style="grid-column:1/-1;">
                         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;min-height:36px;">
-                            <input type="checkbox" name="can_login" value="1" data-toggle-password <?= (int) ($formData['can_login'] ?? 0) ? 'checked' : '' ?>>
-                            <span>Peut se connecter &agrave; l'application</span>
+                            <input type="checkbox" name="can_login" value="1" data-toggle-password style="width:auto;flex-shrink:0;" <?= (int) ($formData['can_login'] ?? 0) ? 'checked' : '' ?>>
+                            <span style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-secondary);">Peut se connecter &agrave; l'application</span>
                         </label>
                     </div>
 
