@@ -54,6 +54,9 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
     $savedType = field_value($_POST, 'collaborateur_type');
     $roleId = int_value($_POST, 'role_id');
 
+    $password = field_value($_POST, 'password');
+    $passwordConfirm = field_value($_POST, 'password_confirm');
+
     // Build payload based on type
     if ($savedType === 'interne') {
         $nomComplet = field_value($_POST, 'nom_complet');
@@ -84,12 +87,6 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
             'can_login' => (int) ($_POST['can_login'] ?? 0),
             'collaborateur_type' => 'interne',
         ];
-        $password = field_value($_POST, 'password');
-        $passwordConfirm = field_value($_POST, 'password_confirm');
-        if ($payload['can_login'] && $password !== '') {
-            if (strlen($password) < 6) { set_flash('error', 'Le mot de passe doit contenir au moins 6 caracteres.'); redirect_to('collaborateur', $editingId ? ['id' => $editingId] : ['type' => 'interne']); }
-            if ($password !== $passwordConfirm) { set_flash('error', 'Les mots de passe ne correspondent pas.'); redirect_to('collaborateur', $editingId ? ['id' => $editingId] : ['type' => 'interne']); }
-        }
     } elseif ($savedType === 'externe-pm') {
         $denSte = field_value($_POST, 'den_ste');
         if ($denSte === '') {
@@ -149,6 +146,26 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
             'can_login' => (int) ($_POST['can_login'] ?? 0),
             'collaborateur_type' => $savedType,
         ];
+    }
+
+    // When can_login is enabled, validate email + password + role
+    if ($payload['can_login']) {
+        $loginEmail = $payload['collaborateur_email'] ?: $payload['email'];
+        if ($loginEmail === '') {
+            set_flash('error', 'Un email est requis pour l\'acces a l\'application.');
+            redirect_to('collaborateur', $editingId ? ['id' => $editingId] : ['type' => $savedType]);
+        }
+        if ($password !== '') {
+            if (strlen($password) < 6) { set_flash('error', 'Le mot de passe doit contenir au moins 6 caracteres.'); redirect_to('collaborateur', $editingId ? ['id' => $editingId] : ['type' => $savedType]); }
+            if ($password !== $passwordConfirm) { set_flash('error', 'Les mots de passe ne correspondent pas.'); redirect_to('collaborateur', $editingId ? ['id' => $editingId] : ['type' => $savedType]); }
+        } elseif (!$editingId) {
+            set_flash('error', 'Un mot de passe est requis pour l\'acces a l\'application.');
+            redirect_to('collaborateur', $editingId ? ['id' => $editingId] : ['type' => $savedType]);
+        }
+        if (empty($roleId)) {
+            set_flash('error', 'Un role est requis pour l\'acces a l\'application.');
+            redirect_to('collaborateur', $editingId ? ['id' => $editingId] : ['type' => $savedType]);
+        }
     }
 
     // Duplicate email check
