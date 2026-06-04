@@ -666,42 +666,41 @@ form.stack > article.card + article.card { margin-top: 0; }
         </div>
 
         <div class="info-grid">
-            <?php if ($formData['den_ste'] || $formData['nom_complet'] || $formData['fonction']): ?>
             <h3 class="section-title">Identit&eacute;</h3>
             <?php if ($formData['den_ste']): ?><div><span>Raison sociale</span><strong><?= e($formData['den_ste']) ?></strong></div><?php endif; ?>
             <?php if ($formData['nom_complet']): ?><div><span>Nom complet</span><strong><?= e($formData['nom_complet']) ?></strong></div><?php endif; ?>
+            <?php if ($formData['collaborateur_nom']): ?><div><span>Nom</span><strong><?= e($formData['collaborateur_nom']) ?></strong></div><?php endif; ?>
             <?php if ($formData['fonction']): ?><div><span>Fonction</span><strong><?= e($formData['fonction']) ?></strong></div><?php endif; ?>
-            <?php endif; ?>
 
-            <?php if ($formData['collaborateur_ice'] || $formData['collaborateur_rc'] || $formData['collaborateur_if'] || $formData['collaborateur_tp']): ?>
+            <?php if ($formData['collaborateur_ice'] || $formData['collaborateur_rc'] || $formData['collaborateur_if'] || $formData['collaborateur_tp'] || $formData['collaborateur_code']): ?>
             <h3 class="section-title">Identifiants l&eacute;gaux</h3>
+            <?php if ($formData['collaborateur_code']): ?><div><span>Code</span><strong><?= e($formData['collaborateur_code']) ?></strong></div><?php endif; ?>
             <?php if ($formData['collaborateur_ice']): ?><div><span>ICE</span><strong><?= e($formData['collaborateur_ice']) ?></strong></div><?php endif; ?>
+            <?php if ($formData['collaborateur_tp']): ?><div><span>TP</span><strong><?= e($formData['collaborateur_tp']) ?></strong></div><?php endif; ?>
             <?php if ($formData['collaborateur_rc']): ?><div><span>RC</span><strong><?= e($formData['collaborateur_rc']) ?></strong></div><?php endif; ?>
             <?php if ($formData['collaborateur_if']): ?><div><span>IF</span><strong><?= e($formData['collaborateur_if']) ?></strong></div><?php endif; ?>
-            <?php if ($formData['collaborateur_tp']): ?><div><span>TP</span><strong><?= e($formData['collaborateur_tp']) ?></strong></div><?php endif; ?>
             <?php endif; ?>
 
             <?php if ($formData['collaborateur_email'] || $formData['email'] || $formData['collaborateur_tel_mobile'] || $formData['collaborateur_tel_fixe'] || $formData['telephone'] || $formData['collaborateur_adresse']): ?>
             <h3 class="section-title">Contact</h3>
-            <div><span>Email</span><strong><?= e($formData['collaborateur_email'] ?: $formData['email'] ?: '-') ?></strong></div>
-            <?php
-                $tel = $formData['collaborateur_tel_mobile'] ?: $formData['collaborateur_tel_fixe'] ?: $formData['telephone'] ?: '';
-            ?>
-            <?php if ($tel): ?><div><span>T&eacute;l&eacute;phone</span><strong><?= e($tel) ?></strong></div><?php endif; ?>
+            <?php if ($formData['collaborateur_email']): ?><div><span>Email professionnel</span><strong><?= e($formData['collaborateur_email']) ?></strong></div><?php endif; ?>
+            <?php if ($formData['email']): ?><div><span>Email secondaire</span><strong><?= e($formData['email']) ?></strong></div><?php endif; ?>
+            <?php if ($formData['collaborateur_tel_fixe']): ?><div><span>T&eacute;l&eacute;phone fixe</span><strong><?= e($formData['collaborateur_tel_fixe']) ?></strong></div><?php endif; ?>
+            <?php if ($formData['collaborateur_tel_mobile']): ?><div><span>T&eacute;l&eacute;phone mobile</span><strong><?= e($formData['collaborateur_tel_mobile']) ?></strong></div><?php endif; ?>
+            <?php if (!$formData['collaborateur_tel_fixe'] && !$formData['collaborateur_tel_mobile'] && $formData['telephone']): ?><div><span>T&eacute;l&eacute;phone</span><strong><?= e($formData['telephone']) ?></strong></div><?php endif; ?>
             <?php if ($formData['collaborateur_adresse']): ?><div class="full"><span>Adresse</span><strong><?= e($formData['collaborateur_adresse']) ?></strong></div><?php endif; ?>
             <?php endif; ?>
 
             <h3 class="section-title">Informations</h3>
             <div><span>Statut</span><strong><?= e($formData['statut'] ?: '-') ?></strong></div>
             <?php if ($formData['date_debut']): ?><div><span>Date d&eacute;but</span><strong><?= e(format_date($formData['date_debut'] ?? null)) ?></strong></div><?php endif; ?>
-            <?php if ($formData['last_login']): ?><div><span>Derni&egrave;re connexion</span><strong><?= e(format_date($formData['last_login'])) ?></strong></div><?php endif; ?>
             <?php if ($formData['notes']): ?><div class="full notes-item"><span>Notes</span><strong><?= e($formData['notes']) ?></strong></div><?php endif; ?>
+            <?php if ($formData['last_login']): ?><div><span>Derni&egrave;re connexion</span><strong><?= e(format_date($formData['last_login'])) ?></strong></div><?php endif; ?>
 
             <?php if ($formData['can_login']): ?>
             <h3 class="section-title">Acc&egrave;s au syst&egrave;me</h3>
             <div><span>Connexion</span><strong>Activ&eacute;e</strong></div>
-            <div><span>Email</span><strong><?= e($formData['email'] ?: '-') ?></strong></div>
-            <?php if ($formData['last_login']): ?><div><span>Derni&egrave;re connexion</span><strong><?= e(format_date($formData['last_login'])) ?></strong></div><?php endif; ?>
+            <?php if ($formData['email']): ?><div><span>Email de connexion</span><strong><?= e($formData['email']) ?></strong></div><?php endif; ?>
             <?php endif; ?>
 
             <?php if (!empty($allPermsByCat) && ($formData['role_id'] ?? 0)): ?>
