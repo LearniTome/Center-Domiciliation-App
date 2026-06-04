@@ -250,24 +250,22 @@ $isNew = !$editingRecord;
 form.stack > article.card + article.card { margin-top: 0; }
 .collab-preview .section-header { margin-bottom: 0; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
 .collab-preview .section-title { padding: 16px 0 6px; margin:0; }
-.collab-preview .info-grid { gap: 0; grid-template-columns: 1fr; }
+.collab-preview .info-grid { gap: 12px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
 .collab-preview .info-grid > div {
-    display: flex; align-items: center; gap: 8px;
-    padding: 8px 0; border: none; background: none;
-    border-bottom: 1px solid var(--line);
+    display: flex; align-items: baseline; gap: 6px;
+    padding: 6px 10px; border: 1px solid var(--line);
+    border-radius: var(--radius-sm); background: var(--panel);
 }
-.collab-preview .info-grid > div:last-child { border-bottom: none; }
 .collab-preview .info-grid span {
-    font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em;
-    color: var(--text-secondary); min-width: 160px; flex-shrink: 0;
+    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--text-secondary); white-space: nowrap;
 }
 .collab-preview .info-grid strong {
-    font-size: 0.95rem; color: var(--text); font-weight: 500;
+    font-size: 0.85rem; color: var(--text); font-weight: 500;
 }
-.collab-preview .info-grid .full span { min-width: 120px; }
-.collab-preview .info-grid .notes-item { flex-direction: column; align-items: flex-start; }
-.collab-preview .info-grid .notes-item span { min-width: auto; }
-.collab-preview .info-grid .notes-item strong { font-weight: 400; line-height: 1.5; }
+.collab-preview .info-grid .full { grid-column: 1 / -1; }
+.collab-preview .info-grid .notes-item { display: grid; gap: 2px; }
+.collab-preview .info-grid .notes-item strong { font-weight: 400; line-height: 1.4; }
 </style>
 <section class="grid two">
 <?php if ($isNew && !in_array($collabType, $typeOptions, true)): ?>
