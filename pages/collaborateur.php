@@ -261,10 +261,12 @@ form.stack > article.card + article.card { margin-top: 0; }
 }
 .collab-preview .info-grid strong {
     font-size: 0.85rem; color: var(--text); font-weight: 500;
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius-sm); padding: 4px 10px;
 }
 .collab-preview .info-grid .full { grid-column: 1 / -1; }
 .collab-preview .info-grid .notes-item { display: grid; gap: 2px; }
-.collab-preview .info-grid .notes-item strong { font-weight: 400; line-height: 1.4; }
+.collab-preview .info-grid .notes-item strong { font-weight: 400; line-height: 1.4; border: none; background: none; padding: 0; }
 </style>
 <section class="grid two">
 <?php if ($isNew && !in_array($collabType, $typeOptions, true)): ?>
