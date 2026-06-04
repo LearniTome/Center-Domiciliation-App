@@ -245,7 +245,7 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
         if (!empty($submittedPerms) && is_array($submittedPerms)) {
             $allPermKeys = array_keys($submittedPerms);
             $placeholders = implode(',', array_fill(0, count($allPermKeys), '?'));
-            $stmt = $pdo->prepare("SELECT id, permission_key FROM permissions WHERE permission_key IN ($placeholders)");
+            $stmt = $pdo->prepare("SELECT permission_key, id FROM permissions WHERE permission_key IN ($placeholders)");
             $stmt->execute($allPermKeys);
             $permMap = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
             $insStmt = $pdo->prepare('INSERT INTO collaborateur_permissions (collaborateur_id, permission_id, granted) VALUES (:cid, :pid, :granted)');
