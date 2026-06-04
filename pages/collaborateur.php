@@ -288,7 +288,7 @@ $isNew = !$editingRecord;
             </div>
         </div>
 
-        <form method="post" class="stack">
+        <form method="post" class="stack" style="gap:4px;">
         <?= csrf_input() ?>
         <input type="hidden" name="id" value="<?= e((string) $formData['id']) ?>">
         <input type="hidden" name="collaborateur_type" value="<?= e($collabType) ?>">
@@ -339,7 +339,6 @@ $isNew = !$editingRecord;
             </div>
         </article>
 
-        <?php if ($collabType === 'interne'): ?>
         <article class="card">
             <div class="section-header">
                 <span class="material-symbols-outlined">lock</span>
@@ -364,7 +363,6 @@ $isNew = !$editingRecord;
                 </label>
             </div>
         </article>
-        <?php endif; ?>
 
         <?php if ($collabType === 'externe-pm'): ?>
         <article class="card">
@@ -437,7 +435,7 @@ $isNew = !$editingRecord;
             </div>
         </div>
 
-        <form method="post" class="stack">
+        <form method="post" class="stack" style="gap:4px;">
             <?= csrf_input() ?>
             <input type="hidden" name="id" value="<?= e((string) $formData['id']) ?>">
             <input type="hidden" name="collaborateur_type" value="<?= e($collabType) ?>">
@@ -488,7 +486,6 @@ $isNew = !$editingRecord;
                 </div>
             </article>
 
-            <?php if ($collabType === 'interne'): ?>
             <article class="card">
                 <div class="section-header">
                     <span class="material-symbols-outlined">lock</span>
@@ -520,7 +517,6 @@ $isNew = !$editingRecord;
                     <?php endif; ?>
                 </div>
             </article>
-            <?php endif; ?>
 
             <?php if ($collabType === 'externe-pm'): ?>
             <article class="card">
