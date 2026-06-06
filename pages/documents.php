@@ -161,7 +161,7 @@ if ($exportCsv && count($documents) > 0) {
                 <table data-sortable class="table-nowrap">
                     <thead>
                         <tr>
-                            <th class="col-check"></th>
+                            <th class="col-check"><input type="checkbox" id="select-all"></th>
                             <th data-col="societe">Societe</th>
                             <th data-col="type">Type</th>
                             <th data-col="document">Document</th>
@@ -228,13 +228,13 @@ if ($exportCsv && count($documents) > 0) {
                     <span class="material-symbols-outlined">delete</span> Supprimer la selection
                 </button>
             </div>
+            <script>
+            document.getElementById('select-all')?.addEventListener('change', function() {
+                const checkboxes = document.querySelectorAll('#documents-form input[name="selected_files[]"]');
+                checkboxes.forEach(c => c.checked = this.checked);
+            });
+            </script>
         </form>
-        <script>
-        document.getElementById('select-all')?.addEventListener('click', function() {
-            const checkboxes = document.querySelectorAll('#documents-form input[name="selected_files[]"]');
-            checkboxes.forEach(c => c.checked = this.checked);
-        });
-        </script>
     <?php else: ?>
         <div class="empty-state">
             <span class="material-symbols-outlined">description</span>
