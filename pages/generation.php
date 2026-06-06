@@ -323,7 +323,6 @@ $docxCount = $totalGenerated;
 
                 <div class="section-header">
                     <div class="table-actions">
-                        <a class="btn-icon" href="#" id="select-all" title="Tout selectionner"><span class="material-symbols-outlined">select_all</span></a>
                         <label class="pdf-toggle">
                             <input type="checkbox" name="pdf" value="1" checked>
                             <span class="material-symbols-outlined">picture_as_pdf</span> PDF
@@ -339,7 +338,7 @@ $docxCount = $totalGenerated;
                     <table data-sortable style="white-space: nowrap">
                         <thead>
                             <tr>
-                                <th class="col-check"></th>
+                                <th class="col-check"><a class="btn-icon" href="#" id="select-all" title="Tout selectionner"><span class="material-symbols-outlined">select_all</span></a></th>
                                 <th data-col="type">Type de document</th>
                                 <th data-col="fichier">Fichier</th>
                                 <th data-col="champs">Champs</th>
@@ -432,7 +431,6 @@ $docxCount = $totalGenerated;
             <input type="hidden" name="societe_id" value="<?= $societeId ?>">
             <div class="section-header">
                 <div class="table-actions">
-                    <a class="btn-icon" href="#" id="select-all-files" title="Selectionner tout"><span class="material-symbols-outlined">select_all</span></a>
                     <button type="submit" class="btn btn-next" name="validate_submit" value="1">
                         <span class="material-symbols-outlined">task_alt</span> Valider
                     </button>
@@ -445,7 +443,7 @@ $docxCount = $totalGenerated;
                 <table data-sortable style="white-space: nowrap">
                     <thead>
                         <tr>
-                            <th class="col-check"></th>
+                            <th class="col-check"><a class="btn-icon" href="#" id="select-all-files" title="Selectionner tout"><span class="material-symbols-outlined">select_all</span></a></th>
                             <th data-col="type">Type de document</th>
                             <th data-col="fichier">Fichier</th>
                             <th data-col="taille">Taille</th>
