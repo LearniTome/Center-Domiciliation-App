@@ -10,6 +10,16 @@
       "type": "local",
       "command": ["npx", "-y", "chrome-devtools-mcp@latest", "--no-usage-statistics"],
       "enabled": true
+    },
+    "mysql-dev": {
+      "type": "local",
+      "command": ["npx", "-y", "@berthojoris/mcp-mysql-server", "mysql://root@127.0.0.1:3306/center_domiciliation", "list,read,create,update,delete,ddl,transaction"],
+      "enabled": true
+    },
+    "mysql-prod": {
+      "type": "local",
+      "command": ["npx", "-y", "@berthojoris/mcp-mysql-server", "mysql://user:pass@host:3306/center_domiciliation", "list,read"],
+      "enabled": false
     }
   }
 }
