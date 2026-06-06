@@ -22,12 +22,56 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "[1/9] Projet detecte : $ProjectRoot" -ForegroundColor Gray
 
-# Verifier PHP dans PATH
+# ----- Verification des prerequis -----
+$prereqOk = $true
+Write-Host "      Verification des prerequis..." -ForegroundColor Gray
+
+# PowerShell 7+
+if ($PSVersionTable.PSVersion.Major -lt 7) {
+    Write-Host "      [ERREUR] PowerShell 7+ requis (version $($PSVersionTable.PSVersion.ToString()))" -ForegroundColor Red
+    Write-Host "      Installe PowerShell 7 : https://github.com/PowerShell/PowerShell/releases" -ForegroundColor Yellow
+    $prereqOk = $false
+}
+
+# PHP
 $phpCheck = Get-Command "php" -ErrorAction SilentlyContinue
 if (-not $phpCheck) {
     Write-Host "      [AVERTISSEMENT] PHP introuvable dans PATH" -ForegroundColor Yellow
-    Write-Host "      Ajoute $XamppPath\php au PATH systeme, ou utilise le PHP de XAMPP" -ForegroundColor Gray
+    Write-Host "      PHP sera fourni par XAMPP apres detection" -ForegroundColor Gray
+} else {
+    Write-Host "      PHP : $($phpCheck.Source)" -ForegroundColor Green
 }
+
+# Node.js >= 18
+$nodeCheck = Get-Command "node" -ErrorAction SilentlyContinue
+if ($nodeCheck) {
+    $nodeVer = & node --version
+    $nodeMajor = [int]($nodeVer -replace '[v.]', '' -replace '(\d+).*', '$1')
+    if ($nodeMajor -ge 18) {
+        Write-Host "      Node.js : $nodeVer" -ForegroundColor Green
+    } else {
+        Write-Host "      [AVERTISSEMENT] Node.js >= 18 requis (detecte : $nodeVer)" -ForegroundColor Yellow
+        Write-Host "      Telecharge : https://nodejs.org/" -ForegroundColor Gray
+    }
+} else {
+    Write-Host "      [AVERTISSEMENT] Node.js non trouve (requis pour les serveurs MCP)" -ForegroundColor Yellow
+    Write-Host "      Installe depuis https://nodejs.org/" -ForegroundColor Gray
+}
+
+# Git
+$gitCheck = Get-Command "git" -ErrorAction SilentlyContinue
+if ($gitCheck) {
+    Write-Host "      Git : $($gitCheck.Source)" -ForegroundColor Green
+} else {
+    Write-Host "      [AVERTISSEMENT] Git non trouve" -ForegroundColor Yellow
+    Write-Host "      Necessaire pour les mises a jour. Installe depuis https://git-scm.com/" -ForegroundColor Gray
+}
+
+if (-not $prereqOk) {
+    Write-Host "[ERREUR] Pre-requis manquants. Corrige les erreurs ci-dessus puis relance." -ForegroundColor Red
+    exit 1
+}
+Write-Host ""
 
 # Verifier que le projet et XAMPP sont sur le meme disque (pour le symlink)
 $projectDrive = (Get-Item $ProjectRoot).PSDrive.Name
