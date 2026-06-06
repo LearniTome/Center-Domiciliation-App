@@ -1,17 +1,65 @@
-$url = "http://localhost/Center-Domiciliation-App/"
-$apache = "C:\xampp\apache\bin\httpd.exe"
-$mysql = "C:\xampp\mysql\bin\mysqld.exe"
+param(
+    [string]$XamppPath = ""
+)
+
+# ==========================================
+#  Center Domiciliation - XAMPP Launcher
+#  Portable : auto-détection du chemin
+# ==========================================
+
+$ProjectRoot = $PSScriptRoot
+$ProjectName = Split-Path -Leaf $ProjectRoot
+$url = "http://localhost/$ProjectName/"
+
+# ----- Détection XAMPP -----
+if (-not $XamppPath) {
+    $candidates = @(
+        "C:\xampp",
+        "D:\xampp",
+        "E:\xampp",
+        "$env:ProgramFiles\xampp",
+        "${env:ProgramFiles(x86)}\xampp",
+        "$env:LOCALAPPDATA\xampp"
+    )
+
+    foreach ($candidate in $candidates) {
+        if (Test-Path "$candidate\apache\bin\httpd.exe" -PathType Leaf) {
+            $XamppPath = $candidate
+            break
+        }
+    }
+
+    # Registry fallback
+    if (-not $XamppPath) {
+        $reg = Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\XAMPP" -Name InstallDir -ErrorAction SilentlyContinue
+        if ($reg -and $reg.InstallDir) {
+            $XamppPath = $reg.InstallDir
+        }
+    }
+}
+
+if (-not $XamppPath) {
+    Write-Host "[ERREUR] XAMPP introuvable." -ForegroundColor Red
+    Write-Host "Relance avec : .\run.ps1 -XamppPath ""C:\chemin\vers\xampp""" -ForegroundColor Yellow
+    pause
+    exit 1
+}
+
+$ApacheBin = Join-Path $XamppPath "apache\bin\httpd.exe"
+$MysqlBin  = Join-Path $XamppPath "mysql\bin\mysqld.exe"
 
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  Center Domiciliation - XAMPP Launcher" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
+Write-Host "  XAMPP : $XamppPath" -ForegroundColor Gray
+Write-Host "  App   : $ProjectRoot" -ForegroundColor Gray
 Write-Host ""
 
 # MySQL
 $mysqlRunning = Get-Process -Name "mysqld" -ErrorAction SilentlyContinue
 if (-not $mysqlRunning) {
     Write-Host "[MySQL] Demarrage..." -ForegroundColor Yellow
-    Start-Process -FilePath $mysql -WindowStyle Hidden
+    Start-Process -FilePath $MysqlBin -WindowStyle Hidden
     Start-Sleep -Seconds 3
     Write-Host "[MySQL] Ok" -ForegroundColor Green
 } else {
@@ -22,7 +70,7 @@ if (-not $mysqlRunning) {
 $apacheRunning = Get-Process -Name "httpd" -ErrorAction SilentlyContinue
 if (-not $apacheRunning) {
     Write-Host "[Apache] Demarrage..." -ForegroundColor Yellow
-    Start-Process -FilePath $apache -WindowStyle Hidden
+    Start-Process -FilePath $ApacheBin -WindowStyle Hidden
     Start-Sleep -Seconds 3
     Write-Host "[Apache] Ok" -ForegroundColor Green
 } else {
@@ -31,7 +79,11 @@ if (-not $apacheRunning) {
 
 Write-Host ""
 Write-Host "Application ouverte : $url" -ForegroundColor Green
-Start-Process $url
+try {
+    Start-Process $url
+} catch {
+    Write-Host "Ouvre ce lien : $url" -ForegroundColor White
+}
 
 Write-Host ""
 Write-Host "Les services XAMPP tournent en arriere-plan." -ForegroundColor Cyan
