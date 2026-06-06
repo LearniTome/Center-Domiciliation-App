@@ -478,7 +478,7 @@ class DocumentRenderer
                     $word->Visible = false;
                     $word->DisplayAlerts = false;
                     $doc = $word->Documents->Open($absPath);
-                    $doc->SaveAs($pdfPath, 17);
+                    $doc->ExportAsFixedFormat($pdfPath, 17);
                     $doc->Close(false);
                     $word->Quit(false);
                     unset($doc, $word);
@@ -491,6 +491,30 @@ class DocumentRenderer
                     try { $word->Quit(false); } catch (\Throwable $ignore) {}
                     unset($word);
                 }
+            }
+        }
+
+        // Fallback: PHPWord → HTML → Dompdf
+        if (class_exists('\PhpOffice\PhpWord\IOFactory') && class_exists('\Dompdf\Dompdf')) {
+            try {
+                $phpWord = \PhpOffice\PhpWord\IOFactory::load($docxPath);
+                $htmlWriter = new \PhpOffice\PhpWord\Writer\HTML($phpWord);
+                $tmpHtml = tempnam(sys_get_temp_dir(), 'pw2pdf_') . '.html';
+                $htmlWriter->save($tmpHtml);
+                $html = file_get_contents($tmpHtml);
+                @unlink($tmpHtml);
+
+                $dompdf = new \Dompdf\Dompdf();
+                $dompdf->loadHtml($html);
+                $dompdf->setPaper('A4');
+                $dompdf->render();
+
+                file_put_contents($pdfPath, $dompdf->output());
+
+                if (file_exists($pdfPath)) {
+                    return $pdfPath;
+                }
+            } catch (\Throwable $e) {
             }
         }
 
