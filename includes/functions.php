@@ -607,6 +607,7 @@ function get_page_permission(string $page): ?string
         'lieux-naissance' => 'configuration.view',
         'adresses' => 'configuration.view',
         'qualites-associe' => 'configuration.view',
+        'fonctions' => 'configuration.view',
         'activites' => 'configuration.view',
         'activites-ompic' => 'configuration.view',
 

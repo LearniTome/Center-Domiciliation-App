@@ -21,7 +21,16 @@ $navPermissions = [
     'ai-assistant' => 'ai.use',
     'roles' => 'roles.manage',
     'activite' => 'roles.manage',
-    // Configuration sub-pages use configuration.view
+    'formes-juridiques' => 'configuration.view',
+    'tribunaux' => 'configuration.view',
+    'villes' => 'configuration.view',
+    'nationalites' => 'configuration.view',
+    'lieux-naissance' => 'configuration.view',
+    'adresses' => 'configuration.view',
+    'qualites-associe' => 'configuration.view',
+    'fonctions' => 'configuration.view',
+    'activites' => 'configuration.view',
+    'activites-ompic' => 'configuration.view',
 ];
 
 function nav_item_visible(string $page, array $permMap): bool
