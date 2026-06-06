@@ -473,9 +473,17 @@ if (is_post()) {
 
                 $_SESSION['creation_wizard']['societe_id'] = $societeId;
 
+                $formeCrea = $wizard['societe']['societe_forme_juridique'] ?? 'PP';
+                $raisonCrea = $wizard['societe']['societe_raison_sociale'] ?? 'Dossier-' . $societeId;
+                $clientCrea = trim(preg_replace('/[^a-zA-Z0-9-]/', '-', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $raisonCrea)));
+                $clientCrea = trim(preg_replace('/-+/', '-', $clientCrea), '-');
+                $folderDateCrea = $wizard['contrat']['contrat_date'] ?? date('Y-m-d');
+                $dossierName = $folderDateCrea . '_' . $formeCrea . '_' . $clientCrea;
+                $dossierName = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', $dossierName), '-');
+
                 $uploadedDocs = $wizard['uploaded_docs'] ?? [];
                 if ($uploadedDocs !== [] && ($pdo ?? null) instanceof PDO) {
-                    $dossierUploadDir = __DIR__ . '/../uploads/dossiers/' . $societeId;
+                    $dossierUploadDir = __DIR__ . '/../dossiers_dom/' . $dossierName . '/_uploads';
                     if (!is_dir($dossierUploadDir)) {
                         mkdir($dossierUploadDir, 0777, true);
                     }
@@ -532,13 +540,6 @@ if (is_post()) {
                     }
                 }
 
-                $formeCrea = $wizard['societe']['societe_forme_juridique'] ?? 'PP';
-                $raisonCrea = $wizard['societe']['societe_raison_sociale'] ?? 'Dossier-' . $societeId;
-                $clientCrea = trim(preg_replace('/[^a-zA-Z0-9-]/', '-', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $raisonCrea)));
-                $clientCrea = trim(preg_replace('/-+/', '-', $clientCrea), '-');
-                $folderDateCrea = $wizard['contrat']['contrat_date'] ?? date('Y-m-d');
-                $dossierName = $folderDateCrea . '_' . $formeCrea . '_' . $clientCrea;
-                $dossierName = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', $dossierName), '-');
                 $creaDir = __DIR__ . '/../dossiers_crea/' . $dossierName;
                 if (!is_dir($creaDir)) {
                     mkdir($creaDir, 0777, true);
