@@ -208,6 +208,7 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
             $sql .= ' WHERE id = :id';
             $stmt = $pdo->prepare($sql);
             $stmt->execute($params);
+            log_activity($pdo, 'update', 'collaborateur', $editingId, $payload['nom_complet']);
             set_flash('success', 'Collaborateur mis a jour.');
         } else {
             $cols = 'den_ste, nom_complet, fonction, collaborateur_code, collaborateur_nom,
@@ -234,9 +235,6 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
             $editingId = $newId;
             log_activity($pdo, 'create', 'collaborateur', $newId, $payload['nom_complet']);
             set_flash('success', 'Collaborateur ajoute.');
-        } else {
-            log_activity($pdo, 'update', 'collaborateur', $editingId, $payload['nom_complet']);
-            set_flash('success', 'Collaborateur mis a jour.');
         }
         // Save collaborateur-specific permission overrides
         $targetId = $editingId;
