@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../src/DocumentRenderer.php';
+
 $q = search_term();
 $filterSociete = int_value($_GET, 'societe_id');
 $filterDocType = field_value($_GET, 'doc_type');
@@ -50,18 +52,26 @@ if (is_post() && isset($_POST['validate_submit'])) {
         $newDocx = str_replace('_Brouillon.docx', '.docx', $oldDocx);
         if ($oldDocx !== $newDocx && file_exists($oldDocx)) {
             rename($oldDocx, $newDocx);
+        } elseif (!file_exists($newDocx)) {
+            $newDocx = $oldDocx;
         }
-        $newPdf = $doc['fichier_pdf'];
-        if ($newPdf !== null) {
-            $renamedPdf = str_replace('_Brouillon.pdf', '.pdf', $newPdf);
-            if ($newPdf !== $renamedPdf && file_exists($newPdf)) {
-                rename($newPdf, $renamedPdf);
-                $newPdf = $renamedPdf;
+
+        $pdfPath = $doc['fichier_pdf'];
+        if (file_exists($newDocx)) {
+            $pdfName = pathinfo($newDocx, PATHINFO_FILENAME) . '.pdf';
+            $renderer = new DocumentRenderer('', dirname($newDocx));
+            try {
+                $generatedPdf = $renderer->tryConvertToPdf($newDocx, $pdfName);
+                if ($generatedPdf && file_exists($generatedPdf)) {
+                    $pdfPath = $generatedPdf;
+                }
+            } catch (\Throwable $e) {
             }
         }
+
         $updateStmt->execute([
             'fichier_docx' => $newDocx,
-            'fichier_pdf' => $newPdf,
+            'fichier_pdf' => $pdfPath,
             'id' => $doc['id'],
         ]);
     }
@@ -82,6 +92,46 @@ if (is_post() && isset($_POST['validate_submit'])) {
     if ($filterDocType) $valParams['doc_type'] = $filterDocType;
     if ($filterStatut) $valParams['statut'] = $filterStatut;
     redirect_to('documents', $valParams);
+}
+
+if (is_post() && isset($_POST['generate_pdf_submit'])) {
+    verify_csrf();
+    $selected = $_POST['selected_files'] ?? [];
+    if (count($selected) > 0 && ($pdo ?? null) instanceof PDO) {
+        $docId = (int) $selected[0];
+        $stmt = $pdo->prepare("SELECT * FROM documents_generes WHERE id = ?");
+        $stmt->execute([$docId]);
+        $doc = $stmt->fetch();
+        if ($doc && file_exists($doc['fichier_docx'])) {
+            $docxPath = $doc['fichier_docx'];
+            $pdfName = pathinfo($docxPath, PATHINFO_FILENAME) . '.pdf';
+            $renderer = new DocumentRenderer('', dirname($docxPath));
+            try {
+                $pdfPath = $renderer->tryConvertToPdf($docxPath, $pdfName);
+                if ($pdfPath && file_exists($pdfPath)) {
+                    $updateStmt = $pdo->prepare("UPDATE documents_generes SET fichier_pdf = :pdf WHERE id = :id");
+                    $updateStmt->execute(['pdf' => $pdfPath, 'id' => $docId]);
+                    if (isset($_SESSION['gen_files'][(int) $doc['societe_id']])) {
+                        foreach ($_SESSION['gen_files'][(int) $doc['societe_id']] as &$sf) {
+                            if (isset($sf['docx']) && $sf['docx'] === $doc['fichier_docx']) {
+                                $sf['pdf'] = $pdfPath;
+                            }
+                        }
+                        unset($sf);
+                    }
+                    set_flash('success', 'PDF genere avec succes.');
+                } else {
+                    set_flash('error', 'Impossible de generer le PDF.');
+                }
+            } catch (\Throwable $e) {
+                set_flash('error', 'Erreur PDF : ' . $e->getMessage());
+            }
+        }
+    }
+    $backParams = $filterSociete ? ['societe_id' => $filterSociete] : [];
+    if ($filterDocType) $backParams['doc_type'] = $filterDocType;
+    if ($filterStatut) $backParams['statut'] = $filterStatut;
+    redirect_to('documents', $backParams);
 }
 
 $user = current_user();
@@ -204,6 +254,10 @@ if ($exportCsv && count($documents) > 0) {
                                             <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_pdf'])) ?>" download title="Telecharger PDF">
                                                 <span class="material-symbols-outlined">picture_as_pdf</span>
                                             </a>
+                                        <?php else: ?>
+                                            <a class="btn-icon" href="#" onclick="event.preventDefault(); (function(){ var f=document.getElementById('documents-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='generate_pdf_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Generation PDF en cours...'); f.submit();} })();" title="Generer PDF">
+                                                <span class="material-symbols-outlined">picture_as_pdf</span>
+                                            </a>
                                         <?php endif; ?>
                                         <?php if (!$doc['valide']): ?>
                                             <a class="btn-icon" href="#" onclick="event.preventDefault(); (function(){ var f=document.getElementById('documents-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='validate_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Validation en cours...'); f.submit();} })();" title="Valider">
@@ -263,6 +317,8 @@ if ($exportCsv && count($documents) > 0) {
         var btn = e.submitter;
         if(btn && btn.name === 'delete_submit'){
             window.showOverlay('Suppression en cours...');
+        } else if(btn && btn.name === 'generate_pdf_submit'){
+            window.showOverlay('Generation PDF en cours...');
         } else {
             window.showOverlay('Validation en cours...');
         }
