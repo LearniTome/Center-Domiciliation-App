@@ -79,7 +79,6 @@ if (is_post() && !isset($_POST['delete_submit']) && !isset($_POST['validate_subm
     verify_csrf();
 
     $selectedPaths = $_POST['templates'] ?? [];
-    $generatePdf = isset($_POST['pdf']);
 
     $context = DocumentRenderer::buildContextFromDb($pdo, $societeId);
     $forme = $selectedSociete['societe_forme_juridique'] ?? 'PP';
@@ -117,15 +116,8 @@ if (is_post() && !isset($_POST['delete_submit']) && !isset($_POST['validate_subm
 
             $result = [
                 'docx' => $docxPath,
-                'pdf' => null,
                 'name' => $outName,
             ];
-
-            if ($generatePdf) {
-                $pdfName = $base . '_Brouillon.pdf';
-                $pdfPath = $renderer->tryConvertToPdf($docxPath, $pdfName);
-                $result['pdf'] = $pdfPath;
-            }
 
             $generatedFiles[] = $result;
         } catch (\Throwable $e) {
@@ -202,24 +194,31 @@ if (is_post() && isset($_POST['validate_submit']) && $societeId > 0) {
             if ($oldDocx !== $newDocx && file_exists($oldDocx)) {
                 rename($oldDocx, $newDocx);
             }
-            $newPdf = $doc['fichier_pdf'];
-            if ($newPdf !== null) {
-                $renamedPdf = str_replace('_Brouillon.pdf', '.pdf', $newPdf);
-                if ($newPdf !== $renamedPdf && file_exists($newPdf)) {
-                    rename($newPdf, $renamedPdf);
-                    $newPdf = $renamedPdf;
+
+            // Generate PDF on validation
+            $pdfPath = null;
+            if (file_exists($newDocx)) {
+                $pdfName = pathinfo($newDocx, PATHINFO_FILENAME) . '.pdf';
+                $renderer = new DocumentRenderer('', dirname($newDocx));
+                try {
+                    $generatedPdf = $renderer->tryConvertToPdf($newDocx, $pdfName);
+                    if ($generatedPdf && file_exists($generatedPdf)) {
+                        $pdfPath = $generatedPdf;
+                    }
+                } catch (\Throwable $e) {
                 }
             }
+
             $updateStmt->execute([
                 'fichier_docx' => $newDocx,
-                'fichier_pdf' => $newPdf,
+                'fichier_pdf' => $pdfPath,
                 'id' => $doc['id'],
             ]);
             foreach ($_SESSION['gen_files'][$societeId] ?? [] as &$sf) {
                 if ($sf['docx'] === $oldDocx) {
                     $sf['docx'] = $newDocx;
                     $sf['name'] = str_replace('_Brouillon.docx', '.docx', $sf['name']);
-                    if ($newPdf !== $doc['fichier_pdf']) $sf['pdf'] = $newPdf;
+                    $sf['pdf'] = $pdfPath;
                 }
             }
             unset($sf);
@@ -302,13 +301,11 @@ $docTypesConfig = $templatesConfig['document_types'];
 
 $validatedCount = 0;
 $brouillonCount = 0;
-$pdfCount = 0;
 
 foreach ($sessionFiles as $gf) {
     $isValide = !str_contains($gf['name'] ?? '', '_Brouillon');
     if ($isValide) $validatedCount++;
     else $brouillonCount++;
-    if ($gf['pdf'] !== null) $pdfCount++;
 }
 $totalGenerated = count($sessionFiles);
 $docxCount = $totalGenerated;
@@ -360,10 +357,6 @@ $docxCount = $totalGenerated;
 
                 <div class="section-header">
                     <div class="table-actions">
-                        <label class="pdf-toggle">
-                            <input type="checkbox" name="pdf" value="1" checked>
-                            <span class="material-symbols-outlined">picture_as_pdf</span> PDF
-                        </label>
                         <button type="submit" class="btn btn-next">
                             <span class="material-symbols-outlined">sync</span>
                             Generer
@@ -441,10 +434,6 @@ $docxCount = $totalGenerated;
     <article class="stat">
         <span><span class="material-symbols-outlined">article</span> Word</span>
         <strong><?= $docxCount ?></strong>
-    </article>
-    <article class="stat">
-        <span><span class="material-symbols-outlined">picture_as_pdf</span> PDF</span>
-        <strong><?= $pdfCount ?></strong>
     </article>
 </section>
 <?php endif; ?>
