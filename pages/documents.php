@@ -250,14 +250,16 @@ if ($exportCsv && count($documents) > 0) {
                                         <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_docx'])) ?>" download title="Telecharger DOCX">
                                             <span class="material-symbols-outlined">download</span>
                                         </a>
-                                        <?php if ($doc['fichier_pdf']): ?>
-                                            <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_pdf'])) ?>" download title="Telecharger PDF">
-                                                <span class="material-symbols-outlined">picture_as_pdf</span>
-                                            </a>
-                                        <?php else: ?>
-                                            <a class="btn-icon" href="#" onclick="event.preventDefault(); (function(){ var f=document.getElementById('documents-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='generate_pdf_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Generation PDF en cours...'); f.submit();} })();" title="Generer PDF">
-                                                <span class="material-symbols-outlined">picture_as_pdf</span>
-                                            </a>
+                                        <?php if ($doc['valide']): ?>
+                                            <?php if ($doc['fichier_pdf']): ?>
+                                                <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_pdf'])) ?>" download title="Telecharger PDF">
+                                                    <span class="material-symbols-outlined">picture_as_pdf</span>
+                                                </a>
+                                            <?php else: ?>
+                                                <a class="btn-icon" href="#" onclick="event.preventDefault(); (function(){ var f=document.getElementById('documents-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='generate_pdf_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Generation PDF en cours...'); f.submit();} })();" title="Generer PDF">
+                                                    <span class="material-symbols-outlined">picture_as_pdf</span>
+                                                </a>
+                                            <?php endif; ?>
                                         <?php endif; ?>
                                         <?php if (!$doc['valide']): ?>
                                             <a class="btn-icon" href="#" onclick="event.preventDefault(); (function(){ var f=document.getElementById('documents-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='validate_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Validation en cours...'); f.submit();} })();" title="Valider">
