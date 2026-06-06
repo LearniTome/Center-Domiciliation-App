@@ -271,10 +271,16 @@ $hasAlerts = $alerteCount > 0;
 // --- Activite recente ---
 $collabActivity = [];
 if ($isConnected) {
-    $collabActivity = $pdo->query("
-        SELECT * FROM activity_logs
-        ORDER BY created_at DESC LIMIT 10
-    ")->fetchAll();
+    if ($userId !== null) {
+        $stmt = $pdo->prepare('SELECT * FROM activity_logs WHERE user_id = :uid ORDER BY created_at DESC LIMIT 10');
+        $stmt->execute(['uid' => $userId]);
+        $collabActivity = $stmt->fetchAll();
+    } else {
+        $collabActivity = $pdo->query("
+            SELECT * FROM activity_logs
+            ORDER BY created_at DESC LIMIT 10
+        ")->fetchAll();
+    }
 }
 
 // --- Fil d'activite ---

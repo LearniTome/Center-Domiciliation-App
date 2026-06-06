@@ -11,6 +11,13 @@ if (($pdo ?? null) instanceof PDO) {
     $dateFrom = $_GET['from'] ?? '';
     $dateTo = $_GET['to'] ?? '';
 
+    // Non-admin users can only see their own activity
+    $currentUser = current_user();
+    $isAdmin = $currentUser && in_array((int) $currentUser['role_id'], [1, 2], true);
+    if (!$isAdmin && $currentUser) {
+        $userFilter = (string) $currentUser['id'];
+    }
+
     $where = [];
     $params = [];
 
@@ -53,17 +60,38 @@ if (($pdo ?? null) instanceof PDO) {
     $logs = $stmt->fetchAll();
 
     // Distinct values for filters
-    $actionTypes = $pdo->query('SELECT DISTINCT action FROM activity_logs ORDER BY action')->fetchAll(\PDO::FETCH_COLUMN);
-    $entityTypes = $pdo->query('SELECT DISTINCT entity_type FROM activity_logs ORDER BY entity_type')->fetchAll(\PDO::FETCH_COLUMN);
-    $userList = $pdo->query('SELECT DISTINCT l.user_id, l.user_nom FROM activity_logs l WHERE l.user_id IS NOT NULL ORDER BY l.user_nom')->fetchAll();
+    if (!$isAdmin && $currentUser) {
+        $actionTypes = $pdo->prepare('SELECT DISTINCT action FROM activity_logs WHERE user_id = :uid ORDER BY action');
+        $actionTypes->execute(['uid' => $currentUser['id']]);
+        $actionTypes = $actionTypes->fetchAll(\PDO::FETCH_COLUMN);
+        $entityTypes = $pdo->prepare('SELECT DISTINCT entity_type FROM activity_logs WHERE user_id = :uid ORDER BY entity_type');
+        $entityTypes->execute(['uid' => $currentUser['id']]);
+        $entityTypes = $entityTypes->fetchAll(\PDO::FETCH_COLUMN);
+        $userList = [[ 'user_id' => $currentUser['id'], 'user_nom' => $currentUser['nom_complet'] ?? $currentUser['den_ste'] ]];
+    } else {
+        $actionTypes = $pdo->query('SELECT DISTINCT action FROM activity_logs ORDER BY action')->fetchAll(\PDO::FETCH_COLUMN);
+        $entityTypes = $pdo->query('SELECT DISTINCT entity_type FROM activity_logs ORDER BY entity_type')->fetchAll(\PDO::FETCH_COLUMN);
+        $userList = $pdo->query('SELECT DISTINCT l.user_id, l.user_nom FROM activity_logs l WHERE l.user_id IS NOT NULL ORDER BY l.user_nom')->fetchAll();
+    }
 
     // Stats
-    $totalToday = $pdo->query("SELECT COUNT(*) FROM activity_logs WHERE DATE(created_at) = CURDATE()")->fetchColumn();
-    $totalWeek = $pdo->query("SELECT COUNT(*) FROM activity_logs WHERE YEARWEEK(created_at, 1) = YEARWEEK(CURDATE(), 1)")->fetchColumn();
+    $uidFilter = (!$isAdmin && $currentUser) ? (int) $currentUser['id'] : null;
+    if ($uidFilter !== null) {
+        $stToday = $pdo->prepare("SELECT COUNT(*) FROM activity_logs WHERE DATE(created_at) = CURDATE() AND user_id = :uid");
+        $stToday->execute(['uid' => $uidFilter]);
+        $totalToday = $stToday->fetchColumn();
+
+        $stWeek = $pdo->prepare("SELECT COUNT(*) FROM activity_logs WHERE YEARWEEK(created_at, 1) = YEARWEEK(CURDATE(), 1) AND user_id = :uid");
+        $stWeek->execute(['uid' => $uidFilter]);
+        $totalWeek = $stWeek->fetchColumn();
+    } else {
+        $totalToday = $pdo->query("SELECT COUNT(*) FROM activity_logs WHERE DATE(created_at) = CURDATE()")->fetchColumn();
+        $totalWeek = $pdo->query("SELECT COUNT(*) FROM activity_logs WHERE YEARWEEK(created_at, 1) = YEARWEEK(CURDATE(), 1)")->fetchColumn();
+    }
 }
 
 $pageTitle = 'Journal d\'activite';
-$pageSubtitle = 'Traçabilite de toutes les actions utilisateurs';
+$pageSubtitle = $isAdmin ? 'Traçabilite de toutes les actions utilisateurs' : 'Votre activite recente';
 
 $actionLabels = [
     'connexion' => 'Connexion',
@@ -133,12 +161,14 @@ $actionIcons = [
                 <option value="<?= e($e) ?>" <?= $entityFilter === $e ? 'selected' : '' ?>><?= e($e) ?></option>
             <?php endforeach; ?>
         </select>
+        <?php if ($isAdmin || !$currentUser): ?>
         <select name="user_id" style="padding:4px 8px;font-size:0.8125rem;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface)">
             <option value="">Tous utilisateurs</option>
             <?php foreach ($userList as $u): ?>
                 <option value="<?= (int) $u['user_id'] ?>" <?= $userFilter === (string) $u['user_id'] ? 'selected' : '' ?>><?= e((string) $u['user_nom']) ?></option>
             <?php endforeach; ?>
         </select>
+        <?php endif; ?>
         <input type="date" name="from" value="<?= e($dateFrom) ?>" style="padding:4px 8px;font-size:0.8125rem;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface)">
         <input type="date" name="to" value="<?= e($dateTo) ?>" style="padding:4px 8px;font-size:0.8125rem;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface)">
         <button type="submit" class="btn btn-info"><span class="material-symbols-outlined">search</span> Filtrer</button>
