@@ -20,7 +20,7 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  Center Domiciliation - Setup" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "[1/7] Projet detecte : $ProjectRoot" -ForegroundColor Gray
+Write-Host "[1/9] Projet detecte : $ProjectRoot" -ForegroundColor Gray
 
 # ----- 2. Détection XAMPP -----
 if (-not $XamppPath) {
@@ -56,7 +56,7 @@ if (-not $XamppPath) {
     exit 1
 }
 
-Write-Host "[2/7] XAMPP detecte : $XamppPath" -ForegroundColor Green
+Write-Host "[2/9] XAMPP detecte : $XamppPath" -ForegroundColor Green
 
 $ApacheBin  = Join-Path $XamppPath "apache\bin\httpd.exe"
 $MysqlBin   = Join-Path $XamppPath "mysql\bin\mysqld.exe"
@@ -67,7 +67,7 @@ $HtdocsLink = Join-Path $Htdocs $ProjectName
 
 # ----- 3. Création du dossier htdocs si manquant -----
 if (-not (Test-Path $Htdocs -PathType Container)) {
-    Write-Host "[3/7] Creation de htdocs..." -ForegroundColor Yellow
+    Write-Host "[3/9] Creation de htdocs..." -ForegroundColor Yellow
     if (Test-Path $HtdocsBak -PathType Container) {
         Rename-Item -Path $HtdocsBak -NewName "htdocs"
         Write-Host "      htdocs_backup -> htdocs" -ForegroundColor Green
@@ -76,7 +76,7 @@ if (-not (Test-Path $Htdocs -PathType Container)) {
         Write-Host "      htdocs cree" -ForegroundColor Green
     }
 } else {
-    Write-Host "[3/7] htdocs existant" -ForegroundColor Green
+    Write-Host "[3/9] htdocs existant" -ForegroundColor Green
 }
 
 # ----- 4. Création du lien symbolique -----
@@ -85,15 +85,15 @@ if (Test-Path $HtdocsLink) {
     $linkTarget = (Get-Item $HtdocsLink).Target
     if ($linkTarget -and (Resolve-Path $linkTarget -ErrorAction SilentlyContinue).Path -eq $ProjectRoot) {
         $linkExists = $true
-        Write-Host "[4/7] Lien deja actif : $ProjectName -> $ProjectRoot" -ForegroundColor Green
+        Write-Host "[4/9] Lien deja actif : $ProjectName -> $ProjectRoot" -ForegroundColor Green
     } else {
-        Write-Host "[4/7] Re-creation du lien..." -ForegroundColor Yellow
+        Write-Host "[4/9] Re-creation du lien..." -ForegroundColor Yellow
         Remove-Item -Path $HtdocsLink -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
 
 if (-not $linkExists) {
-    Write-Host "[4/7] Creation du lien symbolique..." -ForegroundColor Yellow
+    Write-Host "[4/9] Creation du lien symbolique..." -ForegroundColor Yellow
     try {
         New-Item -ItemType Junction -Path $HtdocsLink -Target $ProjectRoot -Force | Out-Null
         Write-Host "      $HtdocsLink" -ForegroundColor Green
@@ -109,7 +109,7 @@ if (-not $linkExists) {
 
 # ----- 5. Base de donnees -----
 if (-not $NoImport) {
-    Write-Host "[5/7] Import de la base de donnees..." -ForegroundColor Yellow
+    Write-Host "[5/9] Import de la base de donnees..." -ForegroundColor Yellow
 
     # Vérifier si MySQL est en cours
     $mysqlRunning = Get-Process -Name "mysqld" -ErrorAction SilentlyContinue
@@ -164,11 +164,11 @@ if (-not $NoImport) {
         }
     }
 } else {
-    Write-Host "[5/7] Import ignore (-NoImport)" -ForegroundColor Gray
+    Write-Host "[5/9] Import ignore (-NoImport)" -ForegroundColor Gray
 }
 
 # ----- 6. Creation dossiers utiles -----
-Write-Host "[6/7] Verification des dossiers..." -ForegroundColor Yellow
+Write-Host "[6/9] Verification des dossiers..." -ForegroundColor Yellow
 $dirs = @("uploads", "output")
 foreach ($d in $dirs) {
     $p = Join-Path $ProjectRoot $d
@@ -179,8 +179,98 @@ foreach ($d in $dirs) {
 }
 Write-Host "      OK" -ForegroundColor Green
 
-# ----- 7. Demarrage Apache + MySQL -----
-Write-Host "[7/7] Demarrage des services..." -ForegroundColor Yellow
+# ----- 7. Convertisseur DOCX -> PDF -----
+Write-Host "[7/9] Configuration du convertisseur DOCX->PDF..." -ForegroundColor Yellow
+
+# Composer install
+$ComposerJson = Join-Path $ProjectRoot "composer.json"
+if (Test-Path $ComposerJson -PathType Leaf) {
+    $VendorDir = Join-Path $ProjectRoot "vendor"
+    if (-not (Test-Path $VendorDir -PathType Container)) {
+        Write-Host "      Installation des dependances Composer..." -ForegroundColor Yellow
+        try {
+            $composer = Get-Command "composer" -ErrorAction SilentlyContinue
+            if (-not $composer) {
+                # Fallback : composer.phar local
+                $composerPhar = Join-Path $ProjectRoot "composer.phar"
+                if (-not (Test-Path $composerPhar)) {
+                    Write-Host "      Telechargement de Composer..." -ForegroundColor Gray
+                    Invoke-WebRequest -Uri "https://getcomposer.org/composer.phar" -OutFile $composerPhar -UseBasicParsing
+                }
+                & php $composerPhar install --no-interaction --working-dir=$ProjectRoot 2>&1 | Out-Null
+            } else {
+                & composer install --no-interaction --working-dir=$ProjectRoot 2>&1 | Out-Null
+            }
+            Write-Host "      Dependances installees (phpword + dompdf)" -ForegroundColor Green
+        } catch {
+            Write-Host "      [AVERTISSEMENT] Echec composer install" -ForegroundColor Yellow
+            Write-Host "      Execute manuellement : cd $ProjectRoot && composer install" -ForegroundColor Gray
+        }
+    } else {
+        Write-Host "      Dependances deja presentes" -ForegroundColor Green
+    }
+} else {
+    Write-Host "      Pas de composer.json trouve" -ForegroundColor Gray
+}
+
+# php.ini : verifier extensions COM et zip
+$PhpIni = Join-Path $XamppPath "php\php.ini"
+if (Test-Path $PhpIni -PathType Leaf) {
+    $iniContent = Get-Content $PhpIni -Raw
+    $extensionsOk = $true
+
+    if ($iniContent -notmatch "extension=php_com_dotnet\.dll" -or $iniContent -match ";extension=php_com_dotnet\.dll") {
+        Write-Host "      [AVERTISSEMENT] extension=php_com_dotnet.dll est desactivee dans php.ini" -ForegroundColor Yellow
+        Write-Host "      Active-la manuellement dans : $PhpIni" -ForegroundColor Gray
+        $extensionsOk = $false
+    }
+    if ($iniContent -notmatch "extension=zip" -or $iniContent -match ";extension=zip") {
+        Write-Host "      [AVERTISSEMENT] extension=zip est desactivee dans php.ini" -ForegroundColor Yellow
+        Write-Host "      Active-la manuellement dans : $PhpIni" -ForegroundColor Gray
+        $extensionsOk = $false
+    }
+    if ($extensionsOk) {
+        Write-Host "      Extensions PHP OK (com_dotnet + zip)" -ForegroundColor Green
+    }
+} else {
+    Write-Host "      php.ini introuvable (pas bloque)" -ForegroundColor Gray
+}
+
+# ----- 8. MCP Servers (OpenCode) -----
+Write-Host "[8/9] Preparation des serveurs MCP..." -ForegroundColor Yellow
+
+# Vérifier Node.js
+$nodeCheck = Get-Command "node" -ErrorAction SilentlyContinue
+if ($nodeCheck) {
+    $nodeVersion = & node --version
+    Write-Host "      Node.js detecte : $nodeVersion" -ForegroundColor Green
+
+    # Pré-cache des packages MCP
+    $NeedPrecache = $false
+    $NpxCache = Join-Path $env:LOCALAPPDATA "npm-cache" -ErrorAction SilentlyContinue
+    if (-not (Test-Path $NpxCache)) { $NeedPrecache = $true }
+
+    if ($NeedPrecache) {
+        Write-Host "      Pre-cache des packages MCP..." -ForegroundColor Yellow
+        try {
+            # Lancement silencieux pour forcer le téléchargement npm
+            $null = & npx -y @modelcontextprotocol/server-memory --version 2>&1
+            $null = & npx -y @berthojoris/mcp-mysql-server "mysql://root@127.0.0.1:3306/center_domiciliation" "list,read" --version 2>&1
+            Write-Host "      Packages MCP pre-caches" -ForegroundColor Green
+        } catch {
+            Write-Host "      [INFO] Pre-cache non critique (les packages seront telecharges au 1er lancement)" -ForegroundColor Gray
+        }
+    } else {
+        Write-Host "      Cache npm deja present" -ForegroundColor Green
+    }
+} else {
+    Write-Host "      [AVERTISSEMENT] Node.js non trouve" -ForegroundColor Yellow
+    Write-Host "      Installe Node.js >= 18 depuis https://nodejs.org/" -ForegroundColor Gray
+    Write-Host "      Necessaire pour les serveurs MCP d'OpenCode" -ForegroundColor Gray
+}
+
+# ----- 9. Demarrage Apache + MySQL -----
+Write-Host "[9/9] Demarrage des services..." -ForegroundColor Yellow
 
 # MySQL
 $mysqlRunning = Get-Process -Name "mysqld" -ErrorAction SilentlyContinue

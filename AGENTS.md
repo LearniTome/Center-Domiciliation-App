@@ -1,7 +1,7 @@
 # Center Domiciliation App — PHP Project Guide
 
 ## Overview
-Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No framework, no Composer, no autoloader. Runs on XAMPP (Apache + MySQL).
+Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No framework, no autoloader. Runs on XAMPP (Apache + MySQL). Composer used only for PHPWord + Dompdf (DOCX→PDF fallback).
 
 ## Architecture
 - **Routing**: Single front controller `index.php?page=` with an allowlist of pages
@@ -194,6 +194,67 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - **Headers/footers**: Always scan `word/header*.xml` and `word/footer*.xml` too, not just `word/document.xml`
 - **ZipArchive**: Must be enabled in `C:\xampp\php\php.ini` (`extension=zip`) + Apache restart
 
+## Convertisseur DOCX → PDF
+
+Le rendu final des documents génère un PDF depuis un DOCX. Trois méthodes sont tentées dans cet ordre :
+
+1. **LibreOffice** (headless) — `libreoffice --headless --convert-to pdf`
+   - Installation : `choco install libreoffice` ou via libreoffice.org
+   - Apache doit redémarrer après l'install pour que `PATH` soit mis à jour
+
+2. **Word COM** (Windows uniquement) — `COM('Word.Application')` + `ExportAsFixedFormat`
+   - Active l'extension COM dans `C:\xampp\php\php.ini` :
+     ```
+     extension=php_com_dotnet.dll
+     ```
+   - Microsoft Word doit être installé sur le poste
+   - Redémarrer Apache après modification de php.ini
+
+3. **PHPWord → HTML → Dompdf** (fallback PHP pur)
+   - Ne nécessite aucun logiciel externe
+   - Installation : `composer install` à la racine du projet
+   - Dépendances : `phpoffice/phpword` + `dompdf/dompdf`
+   - Résultat : HTML simplifié, mise en page basique (sans les en-têtes/pieds de page Word)
+   - `vendor/autoload.php` est chargé dans `generation.php` et `creation.php`
+
+### Vérification rapide
+```powershell
+# php.ini : vérifier les extensions
+php -m | Select-String "com_dotnet|zip"
+
+# Composer : vérifier que les dépendances sont installées
+if (Test-Path vendor) { "vendor OK" }
+
+# Test de conversion
+php -r "require 'vendor/autoload.php'; echo class_exists('\PhpOffice\PhpWord\IOFactory') ? 'PHPWord OK' : 'PHPWord missing';"
+```
+
+## MCP Servers (OpenCode)
+
+Le projet utilise 3 serveurs MCP configurés dans `opencode.json` :
+
+| Serveur | Package npm | Rôle |
+|---------|------------|------|
+| **memory** | `@modelcontextprotocol/server-memory` | Mémoire contextuelle (knowledge graph) |
+| **chrome-devtools** | `chrome-devtools-mcp` | Automatisation navigateur (tests UI, debug visuel) |
+| **mysql-dev** | `@berthojoris/mcp-mysql-server` | Requêtes SQL directes sur la base locale |
+
+### Prérequis
+- **Node.js ≥ 18** installé et dans le `PATH`
+- Les packages sont téléchargés automatiquement par `npx` au premier lancement d'OpenCode
+
+### Installation manuelle (pré-cache)
+```powershell
+npx -y @modelcontextprotocol/server-memory --version
+npx -y chrome-devtools-mcp@latest --no-usage-statistics --version
+npx -y @berthojoris/mcp-mysql-server "mysql://root@127.0.0.1:3306/center_domiciliation" "list,read" --version
+```
+
+### Dépannage
+- Si un serveur MCP ne se lance pas, vérifie : `node --version`
+- `mysql-dev` nécessite MySQL en cours d'exécution sur le port 3306
+- `chrome-devtools` nécessite Chrome lancé avec : `.\chrome-debug.ps1`
+
 ## Root Directory Cleanliness
 - **No `.txt` or `.png` files in root** — place documentation text files in `docs/`, screenshots in `docs/screenshots/`
 - Root should only contain: `index.php`, `run.ps1`, `opencode.json`, `AGENTS.md`, `CLAUDE.md`, `.gitignore`, and directories
@@ -203,5 +264,4 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - PHP binary: `C:\xampp\php\php.exe`
 - Error log: `C:\xampp\php\logs\php_error_log` or Apache `error.log`
 - Quick test: create `_debug.php`, run via `php.exe _debug.php` (runs outside Apache, good for testing TemplateAnalyzer)
-- No `composer.json`, no autoloader — use `require_once` for classes
 - No lint/typecheck commands available (vanilla PHP project)

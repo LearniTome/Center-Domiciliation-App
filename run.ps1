@@ -55,6 +55,24 @@ Write-Host "  XAMPP : $XamppPath" -ForegroundColor Gray
 Write-Host "  App   : $ProjectRoot" -ForegroundColor Gray
 Write-Host ""
 
+# ----- Vérification convertisseur DOCX->PDF -----
+if (-not (Test-Path (Join-Path $ProjectRoot "vendor\autoload.php") -PathType Leaf)) {
+    Write-Host "[ATTENTION] Dependances Composer manquantes (phpword/dompdf)" -ForegroundColor Yellow
+    Write-Host "  Lance : cd $ProjectRoot && composer install" -ForegroundColor Gray
+    Write-Host "  Ou : .\setup.ps1 pour tout configurer automatiquement" -ForegroundColor Gray
+    Write-Host ""
+}
+$PhpIni = Join-Path $XamppPath "php\php.ini"
+if (Test-Path $PhpIni -PathType Leaf) {
+    $iniContent = Get-Content $PhpIni -Raw
+    if ($iniContent -match ";extension=php_com_dotnet\.dll" -or $iniContent -notmatch "extension=php_com_dotnet\.dll") {
+        Write-Host "[ATTENTION] extension=php_com_dotnet.dll desactivee" -ForegroundColor Yellow
+        Write-Host "  Active-la dans $PhpIni et redemarre Apache" -ForegroundColor Gray
+        Write-Host ""
+    }
+}
+Write-Host ""
+
 # MySQL
 $mysqlRunning = Get-Process -Name "mysqld" -ErrorAction SilentlyContinue
 if (-not $mysqlRunning) {
