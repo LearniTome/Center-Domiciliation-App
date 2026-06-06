@@ -55,7 +55,15 @@ Write-Host "  XAMPP : $XamppPath" -ForegroundColor Gray
 Write-Host "  App   : $ProjectRoot" -ForegroundColor Gray
 Write-Host ""
 
-# ----- Vérification convertisseur DOCX->PDF -----
+# ----- Verification du lien symlink -----
+$HtdocsLink = Join-Path (Join-Path $XamppPath "htdocs") $ProjectName
+if (-not (Test-Path $HtdocsLink)) {
+    Write-Host "[ATTENTION] Lien symbolique manquant dans htdocs" -ForegroundColor Yellow
+    Write-Host "  Lance .\setup.ps1 pour recreer le lien" -ForegroundColor Gray
+    Write-Host ""
+}
+
+# ----- Verification convertisseur DOCX->PDF -----
 if (-not (Test-Path (Join-Path $ProjectRoot "vendor\autoload.php") -PathType Leaf)) {
     Write-Host "[ATTENTION] Dependances Composer manquantes (phpword/dompdf)" -ForegroundColor Yellow
     Write-Host "  Lance : cd $ProjectRoot && composer install" -ForegroundColor Gray
@@ -67,10 +75,25 @@ if (Test-Path $PhpIni -PathType Leaf) {
     $iniContent = Get-Content $PhpIni -Raw
     if ($iniContent -match ";extension=php_com_dotnet\.dll" -or $iniContent -notmatch "extension=php_com_dotnet\.dll") {
         Write-Host "[ATTENTION] extension=php_com_dotnet.dll desactivee" -ForegroundColor Yellow
-        Write-Host "  Active-la dans $PhpIni et redemarre Apache" -ForegroundColor Gray
+        Write-Host "  Lance .\setup.ps1 pour l'activer automatiquement" -ForegroundColor Gray
         Write-Host ""
     }
 }
+
+# Detection LibreOffice
+$librePaths = @(
+    "${env:ProgramFiles}\LibreOffice\program\soffice.exe",
+    "${env:ProgramFiles(x86)}\LibreOffice\program\soffice.exe"
+)
+$libreFound = $false
+foreach ($lp in $librePaths) {
+    if (Test-Path $lp -PathType Leaf) { $libreFound = $true; break }
+}
+if (-not $libreFound) {
+    Write-Host "[INFO] LibreOffice non installe. Conversion PDF via fallback PHPWord/Dompdf." -ForegroundColor Gray
+    Write-Host ""
+}
+
 Write-Host ""
 
 # MySQL
