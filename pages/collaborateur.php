@@ -298,7 +298,7 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
         set_flash('error', 'Erreur : ' . $e->getMessage());
     }
 
-    redirect_to('collaborateurs');
+    redirect_to('collaborateur', ['id' => $editingId]);
 }
 
 // --- Display ---
