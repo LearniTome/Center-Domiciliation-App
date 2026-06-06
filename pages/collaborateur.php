@@ -48,6 +48,17 @@ if (($pdo ?? null) instanceof PDO) {
 
 $typeOptions = ['interne', 'externe-pm', 'externe-pp'];
 
+// Build role-permissions map for JS (auto-check on role change)
+$rolePermsMap = [];
+if (($pdo ?? null) instanceof PDO) {
+    $stmt = $pdo->query('SELECT rp.role_id, p.permission_key FROM role_permissions rp JOIN permissions p ON p.id = rp.permission_id');
+    foreach ($stmt->fetchAll() as $row) {
+        $rid = (int) $row['role_id'];
+        if (!isset($rolePermsMap[$rid])) $rolePermsMap[$rid] = [];
+        $rolePermsMap[$rid][] = $row['permission_key'];
+    }
+}
+
 // --- POST ---
 if (is_post() && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
@@ -147,6 +158,11 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
             'can_login' => (int) ($_POST['can_login'] ?? 0),
             'collaborateur_type' => $savedType,
         ];
+    }
+
+    // Normalize empty dates to NULL for MySQL
+    if (isset($payload['date_debut']) && $payload['date_debut'] === '') {
+        $payload['date_debut'] = null;
     }
 
     // When can_login is enabled, validate email + password + role
@@ -305,15 +321,17 @@ if ($editingRecord) {
 $rolePermKeys = [];
 $allPermsByCat = [];
 $collabOverridePerms = [];
-if (($pdo ?? null) instanceof PDO && ($formData['role_id'] ?? 0)) {
+if (($pdo ?? null) instanceof PDO) {
     $stmt = $pdo->query('SELECT * FROM permissions ORDER BY category, id');
     $allPerms = $stmt->fetchAll();
     foreach ($allPerms as $p) {
         $allPermsByCat[$p['category']][] = $p;
     }
-    $stmt = $pdo->prepare('SELECT p.permission_key FROM role_permissions rp JOIN permissions p ON p.id = rp.permission_id WHERE rp.role_id = :rid');
-    $stmt->execute(['rid' => (int) $formData['role_id']]);
-    $rolePermKeys = $stmt->fetchAll(\PDO::FETCH_COLUMN);
+    if ($formData['role_id'] ?? 0) {
+        $stmt = $pdo->prepare('SELECT p.permission_key FROM role_permissions rp JOIN permissions p ON p.id = rp.permission_id WHERE rp.role_id = :rid');
+        $stmt->execute(['rid' => (int) $formData['role_id']]);
+        $rolePermKeys = $stmt->fetchAll(\PDO::FETCH_COLUMN);
+    }
     // Fetch collaborateur-specific permission overrides
     if ($editingId > 0) {
         $stmt = $pdo->prepare('SELECT p.permission_key, cp.granted FROM collaborateur_permissions cp JOIN permissions p ON p.id = cp.permission_id WHERE cp.collaborateur_id = :cid');
@@ -473,7 +491,7 @@ form.stack > article.card + article.card { margin-top: 0; }
             <div class="form-grid">
                 <div style="grid-column:1/-1;">
                     <label style="display:flex;align-items:center;gap:8px;cursor:pointer;min-height:36px;">
-                        <input type="checkbox" name="can_login" value="1" data-toggle-password style="width:auto;flex-shrink:0;" <?= (int) ($formData['can_login'] ?? 0) ? 'checked' : '' ?>>
+                        <input type="checkbox" name="can_login" value="1" data-toggle-password data-toggle-permissions style="width:auto;flex-shrink:0;" <?= (int) ($formData['can_login'] ?? 0) ? 'checked' : '' ?>>
                         <span style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-secondary);">Peut se connecter &agrave; l'application</span>
                     </label>
                 </div>
@@ -545,6 +563,58 @@ form.stack > article.card + article.card { margin-top: 0; }
                 <label class="field full"><span>Notes</span><textarea name="notes"><?= e((string) $formData['notes']) ?></textarea></label>
             </div>
         </article>
+
+        <?php if (!empty($allPermsByCat)): ?>
+        <article class="card" data-permissions-section<?= (int) ($formData['can_login'] ?? 0) ? '' : ' style="display:none"' ?>>
+            <div class="section-header">
+                <span class="material-symbols-outlined">security</span>
+                <h2>Permissions</h2>
+            </div>
+            <div style="overflow-x:auto;">
+            <table class="perms-table">
+                <thead>
+                    <tr class="cat-row">
+                        <th></th>
+                        <?php foreach ($orderedActions as $actionKey): ?>
+                        <th data-col="<?= e($actionKey) ?>"><?= e($actionLabels[$actionKey]) ?></th>
+                        <?php endforeach; ?>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($allPermsByCat as $cat => $perms): ?>
+                    <tr data-cat="<?= e($cat) ?>">
+                        <td class="cat-label-cell">
+                            <div class="cat-label-cell-inner">
+                            <span class="cat-label-inner">
+                                <?php if (isset($catIcons[$cat])): ?>
+                                    <span class="material-symbols-outlined"><?= e($catIcons[$cat]) ?></span>
+                                <?php endif; ?>
+                                <?= e($catLabels[$cat] ?? $cat) ?>
+                            </span>
+                            </div>
+                        </td>
+                        <?php foreach ($orderedActions as $actionKey): ?>
+                            <?php if (isset($permMatrix[$actionKey][$cat])): ?>
+                                <?php $p = $permMatrix[$actionKey][$cat]; ?>
+                                <?php $roleHas = in_array($p['permission_key'], $rolePermKeys, true); ?>
+                                <?php $override = array_key_exists($p['permission_key'], $collabOverridePerms) ? $collabOverridePerms[$p['permission_key']] : null; ?>
+                                <?php $checked = $override !== null ? ($override === 1) : $roleHas; ?>
+                                <td class="perm-cell">
+                                    <input type="hidden" name="perms[<?= e($p['permission_key']) ?>]" value="0">
+                                    <input type="checkbox" name="perms[<?= e($p['permission_key']) ?>]" value="1" <?= $checked ? 'checked' : '' ?>>
+                                </td>
+                            <?php else: ?>
+                                <td class="perm-cell empty"></td>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+            </div>
+            <p class="help-text" style="margin:8px 0 0;font-size:0.75rem;">Les permissions du role sont pre-cochées. Decocher pour refuser, cocher pour accorder un acces supplementaire.</p>
+        </article>
+        <?php endif; ?>
 
         <div class="table-actions" style="justify-content:flex-end;">
             <a class="btn btn-cancel" href="<?= e(app_url('collaborateurs')) ?>"><span class="material-symbols-outlined">close</span> Annuler</a>
@@ -628,7 +698,7 @@ form.stack > article.card + article.card { margin-top: 0; }
                 <div class="form-grid">
                     <div style="grid-column:1/-1;">
                         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;min-height:36px;">
-                            <input type="checkbox" name="can_login" value="1" data-toggle-password style="width:auto;flex-shrink:0;" <?= (int) ($formData['can_login'] ?? 0) ? 'checked' : '' ?>>
+                            <input type="checkbox" name="can_login" value="1" data-toggle-password data-toggle-permissions style="width:auto;flex-shrink:0;" <?= (int) ($formData['can_login'] ?? 0) ? 'checked' : '' ?>>
                             <span style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-secondary);">Peut se connecter &agrave; l'application</span>
                         </label>
                     </div>
@@ -708,8 +778,8 @@ form.stack > article.card + article.card { margin-top: 0; }
                 </div>
             </article>
 
-            <?php if (!empty($allPermsByCat) && ($formData['role_id'] ?? 0)): ?>
-            <article class="card">
+            <?php if (!empty($allPermsByCat)): ?>
+            <article class="card" data-permissions-section<?= (int) ($formData['can_login'] ?? 0) ? '' : ' style="display:none"' ?>>
                 <div class="section-header">
                     <span class="material-symbols-outlined">security</span>
                     <h2>Permissions</h2>
@@ -838,7 +908,7 @@ form.stack > article.card + article.card { margin-top: 0; }
                 <tbody>
                     <?php foreach ($allPermsByCat as $cat => $perms):
                         $catGranted = 0;
-                        foreach ($perms as $p) { if (in_array($p['permission_key'], $rolePermKeys, true)) $catGranted++; }
+                        foreach ($perms as $p) { $eff = array_key_exists($p['permission_key'], $collabOverridePerms) ? $collabOverridePerms[$p['permission_key']] : (in_array($p['permission_key'], $rolePermKeys, true) ? 1 : 0); if ($eff) $catGranted++; }
                         $catTotal = count($perms);
                     ?>
                     <tr data-cat="<?= e($cat) ?>">
@@ -856,12 +926,13 @@ form.stack > article.card + article.card { margin-top: 0; }
                         <?php foreach ($orderedActions as $actionKey): ?>
                             <?php if (isset($permMatrix[$actionKey][$cat])): ?>
                                 <?php $p = $permMatrix[$actionKey][$cat]; ?>
-                                <?php $checked = in_array($p['permission_key'], $rolePermKeys, true); ?>
+                                <?php $overrideExists = array_key_exists($p['permission_key'], $collabOverridePerms); ?>
+                                <?php $checked = $overrideExists ? ($collabOverridePerms[$p['permission_key']] === 1) : in_array($p['permission_key'], $rolePermKeys, true); ?>
                                 <td class="perm-cell">
                                     <?php if ($checked): ?>
-                                    <span class="material-symbols-outlined" style="font-size:1.1rem;color:var(--success);">check_circle</span>
+                                    <span class="material-symbols-outlined <?= $overrideExists ? 'override-icon' : '' ?>" style="font-size:1.1rem;color:var(--success);">check_circle</span>
                                     <?php else: ?>
-                                    <span class="material-symbols-outlined" style="font-size:1.1rem;color:var(--text-muted);opacity:0.35;">cancel</span>
+                                    <span class="material-symbols-outlined <?= $overrideExists ? 'override-icon' : '' ?>" style="font-size:1.1rem;color:var(--text-muted);opacity:0.35;">cancel</span>
                                     <?php endif; ?>
                                 </td>
                             <?php else: ?>
@@ -885,6 +956,19 @@ form.stack > article.card + article.card { margin-top: 0; }
 </section>
 
 <script>
+var rolePermsMap = <?= json_encode($rolePermsMap, JSON_UNESCAPED_UNICODE) ?>;
+
+function updatePermsFromRole(roleId) {
+    var keys = rolePermsMap[roleId] || [];
+    document.querySelectorAll('[data-permissions-section] input[type="checkbox"][name^="perms["]').forEach(function(cb) {
+        // Extract permission_key from name="perms[KEY]"
+        var match = cb.name.match(/^perms\[(.+)\]$/);
+        if (match) {
+            cb.checked = keys.indexOf(match[1]) !== -1;
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     var toggle = document.querySelector('[data-toggle-password]');
     if (toggle) {
@@ -892,7 +976,17 @@ document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.password-field').forEach(function(el) {
                 el.style.display = this.checked ? '' : 'none';
             }.bind(this));
+            var permSection = document.querySelector('[data-permissions-section]');
+            if (permSection) {
+                permSection.style.display = this.checked ? '' : 'none';
+            }
         });
     }
+
+    document.querySelectorAll('select[name="role_id"]').forEach(function(sel) {
+        sel.addEventListener('change', function() {
+            updatePermsFromRole(this.value);
+        });
+    });
 });
 </script>
