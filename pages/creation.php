@@ -574,7 +574,6 @@ if (is_post()) {
             }
 
             $selectedPaths = $_POST['templates'] ?? [];
-            $generatePdf = isset($_POST['pdf']);
             $forme = $wizard['societe']['societe_forme_juridique'] ?? 'PP';
 
             $context = DocumentRenderer::buildContextFromSession($wizard, $pdo ?? null);
@@ -616,12 +615,6 @@ if (is_post()) {
                         'name' => $outName,
                     ];
 
-                    if ($generatePdf) {
-                        $pdfName = $base . '_Brouillon.pdf';
-                        $pdfPath = $renderer->tryConvertToPdf($docxPath, $pdfName);
-                        $result['pdf'] = $pdfPath;
-                    }
-
                     $generatedFiles[] = $result;
                 } catch (\Throwable $e) {
                     set_flash('error', 'Erreur sur ' . basename($path) . ' : ' . $e->getMessage());
@@ -642,7 +635,7 @@ if (is_post()) {
                             'template_source' => null,
                             'doc_type' => $docType,
                             'fichier_docx' => $gf['docx'],
-                            'fichier_pdf' => $gf['pdf'] ?? null,
+                            'fichier_pdf' => null,
                             'taille_ko' => file_exists((string) $gf['docx']) ? round(filesize((string) $gf['docx']) / 1024, 1) : null,
                         ]);
                     }
@@ -666,7 +659,6 @@ if (is_post()) {
                 if (!is_dir($outputDir)) mkdir($outputDir, 0777, true);
 
                 $path = $_POST['template_path'] ?? '';
-                $generatePdf = isset($_POST['pdf']);
 
                 $realTpl = realpath($templatesDir);
                 if (!file_exists($path) || !str_starts_with(realpath($path), $realTpl)) {
@@ -699,13 +691,7 @@ if (is_post()) {
                 $outName = $base . '_Brouillon.docx';
                 $docxPath = $renderer->render($context, $outName);
 
-                $pdfPath = null;
-                if ($generatePdf) {
-                    $pdfName = $base . '_Brouillon.pdf';
-                    $pdfPath = $renderer->tryConvertToPdf($docxPath, $pdfName);
-                }
-
-                $result = ['docx' => $docxPath, 'pdf' => $pdfPath, 'name' => $outName];
+                $result = ['docx' => $docxPath, 'pdf' => null, 'name' => $outName];
                 if (!isset($_SESSION['creation_wizard']['generated_files'])) {
                     $_SESSION['creation_wizard']['generated_files'] = [];
                 }
@@ -1899,7 +1885,7 @@ if ($aiSuggestions !== null) {
 
                             <div style="display:flex;align-items:center;gap:8px">
                                 <label class="pdf-toggle" style="margin:0">
-                                    <input type="checkbox" name="pdf" value="1" checked>
+                        
                                     <span class="material-symbols-outlined">picture_as_pdf</span> PDF
                                 </label>
                                 <a class="btn-icon" href="#" id="select-all-wizard" title="Tout selectionner"><span class="material-symbols-outlined">select_all</span></a>
@@ -2078,7 +2064,6 @@ if ($aiSuggestions !== null) {
             var form = this;
             var checkboxes = Array.from(form.querySelectorAll('.template-check:checked'));
             if (checkboxes.length === 0) return;
-            var generatePdf = form.querySelector('[name="pdf"]')?.checked || false;
             var csrf = form.querySelector('[name="csrf_token"]')?.value || '';
             var overlay = document.getElementById('gen-loading-overlay');
             var progressFill = overlay?.querySelector('.gen-progress-fill');
@@ -2103,7 +2088,6 @@ if ($aiSuggestions !== null) {
                 fd.append('step', '6');
                 fd.append('nav_action', 'generate_single');
                 fd.append('template_path', path);
-                fd.append('pdf', generatePdf ? '1' : '');
                 fetch(window.location.href, { method: 'POST', body: fd }).then(function (r) {
                     return r.json();
                 }).then(function (data) {

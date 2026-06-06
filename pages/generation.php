@@ -193,6 +193,10 @@ if (is_post() && isset($_POST['validate_submit']) && $societeId > 0) {
             $newDocx = str_replace('_Brouillon.docx', '.docx', $oldDocx);
             if ($oldDocx !== $newDocx && file_exists($oldDocx)) {
                 rename($oldDocx, $newDocx);
+                $oldPdf = str_replace('.docx', '.pdf', $oldDocx);
+                if ($oldPdf !== str_replace('.docx', '.pdf', $newDocx) && file_exists($oldPdf)) {
+                    unlink($oldPdf);
+                }
             }
 
             // Generate PDF on validation
@@ -505,11 +509,11 @@ $docxCount = $totalGenerated;
                                         <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_docx'])) ?>" download title="Telecharger DOCX">
                                             <span class="material-symbols-outlined">download</span>
                                         </a>
-                                        <?php if ($doc['fichier_pdf']): ?>
+                                        <?php if ($doc['valide'] && $doc['fichier_pdf']): ?>
                                             <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_pdf'])) ?>" download title="Telecharger PDF">
                                                 <span class="material-symbols-outlined">picture_as_pdf</span>
                                             </a>
-                                        <?php else: ?>
+                                        <?php elseif ($doc['valide']): ?>
                                             <a class="btn-icon" href="#" onclick="event.preventDefault(); (function(){ var f=document.getElementById('files-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='generate_pdf_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Generation PDF en cours...'); f.submit();} })();" title="Generer PDF">
                                                 <span class="material-symbols-outlined">picture_as_pdf</span>
                                             </a>

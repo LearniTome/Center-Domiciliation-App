@@ -52,6 +52,10 @@ if (is_post() && isset($_POST['validate_submit'])) {
         $newDocx = str_replace('_Brouillon.docx', '.docx', $oldDocx);
         if ($oldDocx !== $newDocx && file_exists($oldDocx)) {
             rename($oldDocx, $newDocx);
+            $oldPdf = str_replace('.docx', '.pdf', $oldDocx);
+            if ($oldPdf !== str_replace('.docx', '.pdf', $newDocx) && file_exists($oldPdf)) {
+                unlink($oldPdf);
+            }
         } elseif (!file_exists($newDocx)) {
             $newDocx = $oldDocx;
         }
