@@ -304,8 +304,8 @@ if (($pdo ?? null) instanceof PDO) {
                         <td><?= e($contrat['societe_raison_sociale']) ?></td>
                         <td><?= e($contrat['contrat_type']) ?></td>
 <td><?= e(format_date($contrat['contrat_date'] ?? null)) ?></td>
-                        <td><?= e($contrat['type_domiciliation'] ?? '-') ?></td>
                         <td><?= e((string) ($contrat['contrat_duree_mois'] ?? '-')) ?></td>
+                        <td><?= e($contrat['contrat_type_domiciliation'] ?? '-') ?></td>
                         <td><?= e(format_date($contrat['contrat_date_debut'] ?? null)) ?></td>
                         <td><?= e(format_date($contrat['contrat_date_fin'] ?? null)) ?></td>
                         <td><?= $contrat['contrat_loyer_ttc'] !== null ? e(number_format((float) $contrat['contrat_loyer_ttc'], 2, ',', ' ') . ' DH') : '-' ?></td>
