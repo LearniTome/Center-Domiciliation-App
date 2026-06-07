@@ -367,12 +367,13 @@ $isNew = !$editingRecord;
 
 <style>
 form.stack > article.card + article.card { margin-top: 0; }
-.collab-preview .section-header { margin-bottom: 0; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
-.collab-preview .section-title { padding: 16px 0 6px; margin:0; }
-.collab-preview .info-grid { gap: 12px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.collab-preview { gap: 0 !important; }
+.collab-preview .section-header { margin-bottom: 0; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.collab-preview .section-title { padding: 10px 0 2px; margin:0; font-size:0.75rem; }
+.collab-preview .info-grid { gap: 4px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
 .collab-preview .info-grid > div {
-    display: flex; flex-direction: column; gap: 4px;
-    padding: 8px 0; border: none; background: none;
+    display: flex; flex-direction: column; gap: 1px;
+    padding: 2px 0; border: none; background: none;
 }
 .collab-preview .info-grid span {
     font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em;
