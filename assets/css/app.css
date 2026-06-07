@@ -3258,7 +3258,7 @@ tr[data-coverage], .row-mapped {
 .card-link { display:block; text-decoration:none; cursor:pointer; transition:border-color .2s, transform .2s; }
 .card-link:hover { border-color:var(--primary) !important; transform:translateY(-2px); }
 .dash-ring-wrap { display:flex; flex-direction:row; align-items:center; gap:14px; padding:4px 0; }
-.dash-ring-wrap .dash-ring-big { order:1; width:90px; height:90px; }
+.dash-ring-wrap .dash-ring-big { width:90px; height:90px; }
 .dash-ring-wrap .dash-ring-big::before { inset:14px; }
 .dash-ring-big { width:100px; height:100px; border-radius:50%; display:flex; align-items:center; justify-content:center; position:relative; flex-shrink:0; }
 .dash-ring-big::before { content:''; position:absolute; inset:12px; border-radius:50%; background:var(--panel); }
