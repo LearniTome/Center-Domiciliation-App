@@ -563,7 +563,9 @@ if (is_post()) {
         }
 
         if ($navAction === 'generate') {
-            require_once __DIR__ . '/../vendor/autoload.php';
+            if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
+                require_once __DIR__ . '/../vendor/autoload.php';
+            }
             require_once __DIR__ . '/../src/TemplateAnalyzer.php';
             require_once __DIR__ . '/../src/DocumentRenderer.php';
 
@@ -650,7 +652,9 @@ if (is_post()) {
         if ($navAction === 'generate_single') {
             header('Content-Type: application/json');
             try {
-                require_once __DIR__ . '/../vendor/autoload.php';
+                if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
+                    require_once __DIR__ . '/../vendor/autoload.php';
+                }
                 require_once __DIR__ . '/../src/TemplateAnalyzer.php';
                 require_once __DIR__ . '/../src/DocumentRenderer.php';
 
