@@ -366,17 +366,15 @@ $isNew = !$editingRecord;
 ?>
 
 <style>
-form.stack > article.card + article.card { margin-top: 0; }
-.collab-edit-form > form > .card,
-form.collab-edit-form > .card { padding: 8px 12px; }
+.collab-edit-form .card { padding: 8px 10px; }
 .collab-edit-form .section-header { margin-bottom: 0; padding: 0 0 4px; }
 .collab-edit-form .section-header h2 { font-size: 0.75rem; }
-.collab-edit-form .form-grid { display: flex; flex-wrap: wrap; gap: 6px 10px; }
-.collab-edit-form .field { flex-direction: row; align-items: center; gap: 4px; flex: 1 1 140px; min-width: 0; }
-.collab-edit-form .field > span { font-size: 0.6rem; white-space: nowrap; flex-shrink: 0; }
+.collab-edit-form .form-grid { display: flex; flex-wrap: wrap; gap: 4px 8px; }
+.collab-edit-form .field { flex-direction: row; align-items: center; gap: 3px; flex: 1 1 120px; min-width: 0; }
+.collab-edit-form .field > span { font-size: 0.58rem; white-space: nowrap; flex-shrink: 0; }
 .collab-edit-form .field input,
 .collab-edit-form .field select,
-.collab-edit-form .field textarea { font-size: 0.72rem; padding: 2px 5px; flex: 1; min-width: 60px; }
+.collab-edit-form .field textarea { font-size: 0.7rem; padding: 2px 4px; flex: 1; min-width: 50px; }
 .collab-edit-form .field.full { flex: 1 1 100%; }
 .collab-edit-form .perms-table { font-size: 0.65rem; }
 .collab-edit-form .perms-table tbody td { padding: 2px 4px; }
@@ -443,7 +441,7 @@ form.collab-edit-form > .card { padding: 8px 12px; }
             </div>
         </div>
 
-        <form method="post" class="stack collab-edit-form" style="gap:3px;">
+        <form method="post" class="collab-edit-form" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
         <?= csrf_input() ?>
         <input type="hidden" name="id" value="<?= e((string) $formData['id']) ?>">
         <input type="hidden" name="collaborateur_type" value="<?= e($collabType) ?>">
@@ -501,22 +499,6 @@ form.collab-edit-form > .card { padding: 8px 12px; }
                 <?php endif; ?>
             </div>
         </article>
-
-        <?php if ($collabType === 'externe-pm'): ?>
-        <article class="card">
-            <div class="section-header">
-                <span class="material-symbols-outlined">assignment</span>
-                <h2>Identifiants l&eacute;gaux</h2>
-            </div>
-            <div class="form-grid">
-                <label class="field"><span>Code</span><input name="collaborateur_code" value="<?= e((string) $formData['collaborateur_code']) ?>"></label>
-                <label class="field"><span>ICE *</span><input name="collaborateur_ice" value="<?= e((string) $formData['collaborateur_ice']) ?>" placeholder="Identifiant ICE"></label>
-                <label class="field"><span>TP</span><input name="collaborateur_tp" value="<?= e((string) $formData['collaborateur_tp']) ?>"></label>
-                <label class="field"><span>RC</span><input name="collaborateur_rc" value="<?= e((string) $formData['collaborateur_rc']) ?>"></label>
-                <label class="field"><span>IF</span><input name="collaborateur_if" value="<?= e((string) $formData['collaborateur_if']) ?>"></label>
-            </div>
-        </article>
-        <?php endif; ?>
 
         <article class="card">
             <div class="section-header">
@@ -583,8 +565,24 @@ form.collab-edit-form > .card { padding: 8px 12px; }
             </div>
         </article>
 
+        <?php if ($collabType === 'externe-pm'): ?>
+        <article class="card" style="grid-column:1/-1;">
+            <div class="section-header">
+                <span class="material-symbols-outlined">assignment</span>
+                <h2>Identifiants l&eacute;gaux</h2>
+            </div>
+            <div class="form-grid">
+                <label class="field"><span>Code</span><input name="collaborateur_code" value="<?= e((string) $formData['collaborateur_code']) ?>"></label>
+                <label class="field"><span>ICE *</span><input name="collaborateur_ice" value="<?= e((string) $formData['collaborateur_ice']) ?>" placeholder="Identifiant ICE"></label>
+                <label class="field"><span>TP</span><input name="collaborateur_tp" value="<?= e((string) $formData['collaborateur_tp']) ?>"></label>
+                <label class="field"><span>RC</span><input name="collaborateur_rc" value="<?= e((string) $formData['collaborateur_rc']) ?>"></label>
+                <label class="field"><span>IF</span><input name="collaborateur_if" value="<?= e((string) $formData['collaborateur_if']) ?>"></label>
+            </div>
+        </article>
+        <?php endif; ?>
+
         <?php if (!empty($allPermsByCat)): ?>
-        <article class="card" data-permissions-section<?= (int) ($formData['can_login'] ?? 0) ? '' : ' style="display:none"' ?>>
+        <article class="card" style="grid-column:1/-1;" data-permissions-section<?= (int) ($formData['can_login'] ?? 0) ? '' : ' style="grid-column:1/-1;display:none"' ?>>
             <div class="section-header">
                 <span class="material-symbols-outlined">security</span>
                 <h2>Permissions</h2>
@@ -635,14 +633,14 @@ form.collab-edit-form > .card { padding: 8px 12px; }
         </article>
         <?php endif; ?>
 
-        <div class="table-actions" style="justify-content:flex-end;">
+        <div class="table-actions" style="grid-column:1/-1;justify-content:flex-end;">
             <a class="btn btn-cancel" href="<?= e(app_url('collaborateurs')) ?>"><span class="material-symbols-outlined">close</span> Annuler</a>
             <button type="submit" class="btn btn-next"><span class="material-symbols-outlined">save</span> Enregistrer</button>
         </div>
     </form>
 </div>
 <?php elseif ($editingRecord && $showEdit): ?>
-    <article class="card stack collab-edit-form" style="gap:3px;">
+    <article class="card stack collab-edit-form" style="gap:0;">
         <div class="section-header">
             <h2>Modifier un collaborateur</h2>
             <div class="table-actions">
@@ -650,7 +648,7 @@ form.collab-edit-form > .card { padding: 8px 12px; }
             </div>
         </div>
 
-        <form method="post" class="stack" style="gap:4px;">
+        <form method="post" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
             <?= csrf_input() ?>
             <input type="hidden" name="id" value="<?= e((string) $formData['id']) ?>">
             <input type="hidden" name="collaborateur_type" value="<?= e($collabType) ?>">
@@ -708,22 +706,6 @@ form.collab-edit-form > .card { padding: 8px 12px; }
                     <?php endif; ?>
                 </div>
             </article>
-
-            <?php if ($collabType === 'externe-pm'): ?>
-            <article class="card">
-                <div class="section-header">
-                    <span class="material-symbols-outlined">assignment</span>
-                    <h2>Identifiants l&eacute;gaux</h2>
-                </div>
-                <div class="form-grid">
-                    <label class="field"><span>Code</span><input name="collaborateur_code" value="<?= e((string) $formData['collaborateur_code']) ?>"></label>
-                    <label class="field"><span>ICE *</span><input name="collaborateur_ice" value="<?= e((string) $formData['collaborateur_ice']) ?>" placeholder="Identifiant ICE"></label>
-                    <label class="field"><span>TP</span><input name="collaborateur_tp" value="<?= e((string) $formData['collaborateur_tp']) ?>"></label>
-                    <label class="field"><span>RC</span><input name="collaborateur_rc" value="<?= e((string) $formData['collaborateur_rc']) ?>"></label>
-                    <label class="field"><span>IF</span><input name="collaborateur_if" value="<?= e((string) $formData['collaborateur_if']) ?>"></label>
-                </div>
-            </article>
-            <?php endif; ?>
 
             <article class="card">
                 <div class="section-header">
@@ -796,8 +778,24 @@ form.collab-edit-form > .card { padding: 8px 12px; }
                 </div>
             </article>
 
+            <?php if ($collabType === 'externe-pm'): ?>
+            <article class="card" style="grid-column:1/-1;">
+                <div class="section-header">
+                    <span class="material-symbols-outlined">assignment</span>
+                    <h2>Identifiants l&eacute;gaux</h2>
+                </div>
+                <div class="form-grid">
+                    <label class="field"><span>Code</span><input name="collaborateur_code" value="<?= e((string) $formData['collaborateur_code']) ?>"></label>
+                    <label class="field"><span>ICE *</span><input name="collaborateur_ice" value="<?= e((string) $formData['collaborateur_ice']) ?>" placeholder="Identifiant ICE"></label>
+                    <label class="field"><span>TP</span><input name="collaborateur_tp" value="<?= e((string) $formData['collaborateur_tp']) ?>"></label>
+                    <label class="field"><span>RC</span><input name="collaborateur_rc" value="<?= e((string) $formData['collaborateur_rc']) ?>"></label>
+                    <label class="field"><span>IF</span><input name="collaborateur_if" value="<?= e((string) $formData['collaborateur_if']) ?>"></label>
+                </div>
+            </article>
+            <?php endif; ?>
+
             <?php if (!empty($allPermsByCat)): ?>
-            <article class="card" data-permissions-section<?= (int) ($formData['can_login'] ?? 0) ? '' : ' style="display:none"' ?>>
+            <article class="card" style="grid-column:1/-1;" data-permissions-section<?= (int) ($formData['can_login'] ?? 0) ? '' : ' style="grid-column:1/-1;display:none"' ?>>
                 <div class="section-header">
                     <span class="material-symbols-outlined">security</span>
                     <h2>Permissions</h2>
@@ -848,7 +846,7 @@ form.collab-edit-form > .card { padding: 8px 12px; }
             </article>
             <?php endif; ?>
 
-            <div class="table-actions" style="justify-content:flex-end;">
+            <div class="table-actions" style="grid-column:1/-1;justify-content:flex-end;">
                 <a class="btn btn-cancel" href="<?= e(app_url('collaborateur', ['id' => $editingId])) ?>"><span class="material-symbols-outlined">close</span> Annuler</a>
                 <button type="submit" class="btn btn-next"><span class="material-symbols-outlined">save</span> Mettre &agrave; jour</button>
             </div>
