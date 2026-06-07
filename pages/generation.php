@@ -82,6 +82,13 @@ if (is_post() && !isset($_POST['delete_submit']) && !isset($_POST['validate_subm
 
     $selectedPaths = $_POST['templates'] ?? [];
 
+    $existingValidatedTypes = [];
+    $vStmt = $pdo->prepare("SELECT DISTINCT doc_type FROM documents_generes WHERE societe_id = ? AND valide = 1 AND doc_type IS NOT NULL AND doc_type != ''");
+    $vStmt->execute([$societeId]);
+    $existingValidatedTypes = array_column($vStmt->fetchAll(), 'doc_type');
+
+    $skipped = [];
+
     $context = DocumentRenderer::buildContextFromDb($pdo, $societeId);
     $forme = $selectedSociete['societe_forme_juridique'] ?? 'PP';
     $today = date('Y-m-d');
@@ -101,17 +108,24 @@ if (is_post() && !isset($_POST['delete_submit']) && !isset($_POST['validate_subm
         if (!file_exists($path)) continue;
         if (!str_starts_with(realpath($path), realpath($templatesDir))) continue;
 
+        $filename = pathinfo($path, PATHINFO_FILENAME);
+        $parts = explode('_', $filename);
+        $docType = '';
+        if (count($parts) >= 4) {
+            $docType = preg_replace('/_?Template$/i', '', implode('_', array_slice($parts, 2)));
+        } elseif (count($parts) === 3) {
+            $docType = preg_replace('/_?Template$/i', '', $parts[1]);
+        }
+
+        if ($docType !== '' && in_array($docType, $existingValidatedTypes, true)) {
+            $label = $templatesConfig['document_types'][$docType] ?? $docType;
+            $skipped[] = $label;
+            continue;
+        }
+
         try {
             $renderer = new DocumentRenderer($path, $outputDir);
 
-            $filename = pathinfo($path, PATHINFO_FILENAME);
-            $parts = explode('_', $filename);
-            $docType = '';
-            if (count($parts) >= 4) {
-                $docType = preg_replace('/_?Template$/i', '', implode('_', array_slice($parts, 2)));
-            } elseif (count($parts) === 3) {
-                $docType = preg_replace('/_?Template$/i', '', $parts[1]);
-            }
             $base = $forme . '_' . $today . '_' . $docType . '_' . $clientName;
             $outName = $base . '_Brouillon.docx';
             $docxPath = $renderer->render($context, $outName);
@@ -127,6 +141,7 @@ if (is_post() && !isset($_POST['delete_submit']) && !isset($_POST['validate_subm
         }
     }
 
+    $flashParts = [];
     if (count($generatedFiles) > 0) {
         $_SESSION['gen_files'][$societeId] = $generatedFiles;
         $insertStmt = $pdo->prepare('INSERT INTO documents_generes (societe_id, template_source, doc_type, fichier_docx, fichier_pdf, taille_ko) VALUES (:societe_id, :template_source, :doc_type, :fichier_docx, :fichier_pdf, :taille_ko)');
@@ -150,8 +165,17 @@ if (is_post() && !isset($_POST['delete_submit']) && !isset($_POST['validate_subm
                 'taille_ko' => file_exists((string) $gf['docx']) ? round(filesize((string) $gf['docx']) / 1024, 1) : null,
             ]);
         }
-        set_flash('success', count($generatedFiles) . ' document(s) genere(s).');
+        $flashParts[] = count($generatedFiles) . ' document(s) genere(s).';
         log_activity($pdo, 'generate', 'document', $societeId, 'Génération — ' . count($generatedFiles) . ' doc(s)', json_encode(['doc_types' => array_map(fn($f) => $f['doc_type'] ?? '', $generatedFiles)]));
+    }
+    if (count($skipped) > 0) {
+        $flashParts[] = count($skipped) . ' deja valide(s) ignore(s) : ' . implode(', ', $skipped) . '. Utilisez "Restaurer en brouillon" pour les modifier.';
+    }
+    if (count($flashParts) > 0) {
+        $hasGenerated = count($generatedFiles) > 0;
+        set_flash($hasGenerated ? 'info' : 'error', implode(' ', $flashParts));
+    }
+    if (count($generatedFiles) > 0 || count($skipped) > 0) {
         redirect_to('generation', ['societe_id' => $societeId]);
     }
 }
@@ -239,18 +263,66 @@ if (is_post() && isset($_POST['generate_pdf_submit']) && $societeId > 0) {
         $docs = $stmt->fetchAll();
         $generated = 0;
         $errors = 0;
-        $updateStmt = $pdo->prepare("UPDATE documents_generes SET fichier_pdf = :pdf WHERE id = :id");
+        $docxRegenCount = 0;
+        $updateStmt = $pdo->prepare("UPDATE documents_generes SET fichier_docx = :fichier_docx, fichier_pdf = :pdf WHERE id = :id");
+
+        $today = date('Y-m-d');
+        $clientName = trim(preg_replace('/[^a-zA-Z0-9-]/', '-', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $selectedSociete['societe_raison_sociale'] ?? 'Client')));
+        $clientName = preg_replace('/-+/', '-', $clientName);
+        $clientName = trim($clientName, '-');
+        $forme = $selectedSociete['societe_forme_juridique'] ?? 'PP';
+        $folderDate = $context['contrat_date'] ?? $today;
+        $folderName = $folderDate . '_' . $forme . '_' . $clientName;
+        $folderName = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', $folderName), '-');
+        $subfolderDir = __DIR__ . '/../dossiers_dom/' . $folderName;
+        if (!is_dir($subfolderDir)) {
+            mkdir($subfolderDir, 0777, true);
+        }
+
         foreach ($docs as $doc) {
-            if (!file_exists($doc['fichier_docx'])) { $errors++; continue; }
             $docxPath = $doc['fichier_docx'];
+            $docxDir = dirname($docxPath);
+            if (!is_dir($docxDir)) { @mkdir($docxDir, 0777, true); }
+
+            if (!file_exists($docxPath)) {
+                $templateSource = $doc['template_source'] ?? '';
+                if (($templateSource === '' || !file_exists($templateSource)) && !empty($doc['doc_type'])) {
+                    foreach ($allTemplates as $tpl) {
+                        if ($tpl['doc_type'] === $doc['doc_type']) {
+                            $templateSource = $tpl['path'];
+                            break;
+                        }
+                    }
+                }
+                if ($templateSource !== '' && file_exists($templateSource)) {
+                    try {
+                        $context = DocumentRenderer::buildContextFromDb($pdo, $societeId);
+                        $docxDir = $subfolderDir;
+                        $outName = basename($docxPath);
+                        $renderer = new DocumentRenderer($templateSource, $docxDir);
+                        $regenerated = $renderer->render($context, $outName);
+                        if ($regenerated && file_exists($regenerated)) {
+                            $docxPath = $regenerated;
+                            $docxRegenCount++;
+                        } else {
+                            $errors++; continue;
+                        }
+                    } catch (\Throwable $e) {
+                        $errors++; continue;
+                    }
+                } else {
+                    $errors++; continue;
+                }
+            }
             $pdfName = pathinfo($docxPath, PATHINFO_FILENAME) . '.pdf';
-            $renderer = new DocumentRenderer('', dirname($docxPath));
+            $renderer = new DocumentRenderer('', $docxDir);
             try {
                 $pdfPath = $renderer->tryConvertToPdf($docxPath, $pdfName);
                 if ($pdfPath && file_exists($pdfPath)) {
-                    $updateStmt->execute(['pdf' => $pdfPath, 'id' => $doc['id']]);
+                    $updateStmt->execute(['fichier_docx' => $docxPath, 'pdf' => $pdfPath, 'id' => $doc['id']]);
                     foreach ($_SESSION['gen_files'][$societeId] ?? [] as &$sf) {
                         if (isset($sf['docx']) && $sf['docx'] === $doc['fichier_docx']) {
+                            $sf['docx'] = $docxPath;
                             $sf['pdf'] = $pdfPath;
                         }
                     }
@@ -263,7 +335,9 @@ if (is_post() && isset($_POST['generate_pdf_submit']) && $societeId > 0) {
                 $errors++;
             }
         }
-        if ($generated > 0) {
+        if ($docxRegenCount > 0) {
+            set_flash('success', $docxRegenCount . ' DOCX regenere(s) et ' . ($generated - $docxRegenCount) . ' PDF genere(s).');
+        } elseif ($generated > 0) {
             set_flash('success', $generated . ' PDF genere(s).');
         }
         if ($errors > 0) {
@@ -327,14 +401,16 @@ $genTypeMapping = $templatesConfig['template_mapping'];
 
 $templatesByGenType = [];
 foreach ($filteredTemplates as $tpl) {
-    $gt = 'creation';
+    $matched = false;
     foreach ($genTypeMapping as $type => $docTypes) {
         if (in_array($tpl['doc_type'], $docTypes, true)) {
-            $gt = $type;
-            break;
+            $templatesByGenType[$type][] = $tpl;
+            $matched = true;
         }
     }
-    $templatesByGenType[$gt][] = $tpl;
+    if (!$matched) {
+        $templatesByGenType['creation'][] = $tpl;
+    }
 }
 
 $genTypeOrder = $genUser && $genUser['collaborateur_type'] !== 'interne'
@@ -534,14 +610,13 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
                                         <?= $doc['valide'] ? 'Valide' : 'Brouillon' ?>
                                     </span>
                                 </td>
-                                <td>
+                                <td class="col-pdf">
                                     <?php if ($doc['valide']): ?>
-                                        <div class="progress-bar" style="margin:0;min-width:100px">
-                                            <div class="progress-track" style="height:6px">
-                                                <div class="progress-fill <?= $doc['fichier_pdf'] ? '' : 'warning' ?>" style="width:<?= $doc['fichier_pdf'] ? '100' : '0' ?>%"></div>
-                                            </div>
-                                            <span class="progress-label"><?= $doc['fichier_pdf'] ? 'Genere' : 'En attente' ?></span>
-                                        </div>
+                                        <?php if ($doc['fichier_pdf']): ?>
+                                            <span class="material-symbols-outlined pdf-ok" title="PDF genere">check_circle</span>
+                                        <?php else: ?>
+                                            <span class="material-symbols-outlined pdf-pending" title="En attente">cancel</span>
+                                        <?php endif; ?>
                                     <?php else: ?>
                                         <span class="help-text">—</span>
                                     <?php endif; ?>
@@ -550,28 +625,28 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
                                 <td><span class="help-text"><?= $modifTime ? date('d/m/Y H:i', $modifTime) : '-' ?></span></td>
                                 <td>
                                     <div class="table-actions">
-                                        <a class="btn-icon" href="<?= e(word_url($doc['fichier_docx'])) ?>" title="Ouvrir dans Word">
+                                        <a class="btn-icon primary" href="<?= e(word_url($doc['fichier_docx'])) ?>" title="Ouvrir dans Word">
                                             <span class="material-symbols-outlined">article</span>
                                         </a>
-                                        <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_docx'])) ?>" download title="Telecharger DOCX">
+                                        <a class="btn-icon success" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_docx'])) ?>" download title="Telecharger DOCX">
                                             <span class="material-symbols-outlined">download</span>
                                         </a>
                                         <?php if ($doc['valide'] && $doc['fichier_pdf']): ?>
-                                            <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_pdf'])) ?>" download title="Telecharger PDF">
+                                            <a class="btn-icon danger" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_pdf'])) ?>" download title="Telecharger PDF">
                                                 <span class="material-symbols-outlined">picture_as_pdf</span>
                                             </a>
                                         <?php elseif ($doc['valide']): ?>
-                                            <a class="btn-icon" href="#" onclick="event.preventDefault(); (function(){ var f=document.getElementById('files-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='generate_pdf_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Generation PDF en cours...'); f.submit();} })();" title="Generer PDF">
+                                            <a class="btn-icon warning" href="#" onclick="event.preventDefault(); window.generateSinglePdf(<?= (int) $doc['id'] ?>)" title="Generer PDF">
                                                 <span class="material-symbols-outlined">picture_as_pdf</span>
                                             </a>
                                         <?php endif; ?>
                                         <?php if ($doc['valide']): ?>
-                                            <a class="btn-icon" href="#" onclick="event.preventDefault(); (function(){ var f=document.getElementById('files-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='restore_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Restauration en cours...'); f.submit();} })();" title="Restaurer en brouillon">
+                                            <a class="btn-icon warning" href="#" onclick="event.preventDefault(); (function(){ var f=document.getElementById('files-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='restore_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Restauration en cours...'); f.submit();} })();" title="Restaurer en brouillon">
                                                 <span class="material-symbols-outlined">restore</span>
                                             </a>
                                         <?php endif; ?>
                                         <?php if (!$doc['valide']): ?>
-                                            <a class="btn-icon" href="#" onclick="event.preventDefault(); (function(){ var f=document.getElementById('files-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='validate_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Validation en cours...'); f.submit();} })();" title="Valider">
+                                            <a class="btn-icon success" href="#" onclick="event.preventDefault(); (function(){ var f=document.getElementById('files-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='validate_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Validation en cours...'); f.submit();} })();" title="Valider">
                                                 <span class="material-symbols-outlined">task_alt</span>
                                             </a>
                                         <?php endif; ?>
@@ -625,28 +700,247 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
         <p id="loading-text">Traitement en cours...</p>
     </div>
 </div>
+
+<div id="gen-progress-overlay">
+    <div class="progress-modal">
+        <div class="progress-header">
+            <span class="material-symbols-outlined" style="color:var(--primary)">sync</span>
+            <h3>Generation en cours...</h3>
+            <span class="progress-pct" id="progress-pct">0%</span>
+        </div>
+        <div class="progress-total-bar">
+            <div class="progress-total-fill" id="progress-total-fill"></div>
+        </div>
+        <ul class="progress-file-list" id="progress-file-list"></ul>
+        <div class="progress-footer">
+            <div class="spinner-sm"></div>
+            <span id="progress-status">Preparation...</span>
+        </div>
+    </div>
+</div>
+
 <script>
 (function(){
+    /* ---- Simple overlay for quick actions ---- */
     var overlay = document.getElementById('loading-overlay');
     var text = document.getElementById('loading-text');
     window.showOverlay = function(msg){
         text.textContent = msg;
         overlay.classList.add('show');
     };
-    document.getElementById('gen-form')?.addEventListener('submit', function(){
-        window.showOverlay('Génération en cours...');
+
+    /* ---- Detailed progress overlay ---- */
+    var progressOverlay = document.getElementById('gen-progress-overlay');
+    var progressFileList = document.getElementById('progress-file-list');
+    var progressTotalFill = document.getElementById('progress-total-fill');
+    var progressPct = document.getElementById('progress-pct');
+    var progressStatus = document.getElementById('progress-status');
+
+    function getCsrfToken() {
+        var input = document.querySelector('input[name="csrf_token"]');
+        return input ? input.value : '';
+    }
+
+    function addProgressFile(name) {
+        var li = document.createElement('li');
+        li.className = 'progress-file-item';
+        li.innerHTML =
+            '<span class="pfi-icon"><span class="material-symbols-outlined">description</span></span>' +
+            '<span class="pfi-name">' + escapeHtml(name) + '</span>' +
+            '<div class="pfi-bar"><div class="pfi-fill waiting" style="width:0%"></div></div>' +
+            '<span class="pfi-pct">0%</span>';
+        progressFileList.appendChild(li);
+        return li;
+    }
+
+    function updateProgressFile(idx, pct, status) {
+        var items = progressFileList.querySelectorAll('.progress-file-item');
+        var item = items[idx];
+        if (!item) return;
+        var fill = item.querySelector('.pfi-fill');
+        var pctSpan = item.querySelector('.pfi-pct');
+        fill.style.width = pct + '%';
+        fill.className = 'pfi-fill ' + status;
+        pctSpan.textContent = pct + '%';
+        item.classList.remove('done', 'error', 'active');
+        if (status === 'done') item.classList.add('done');
+        if (status === 'error') item.classList.add('error');
+        if (status === 'active') item.classList.add('active');
+        updateTotals();
+    }
+
+    function updateTotals() {
+        var items = progressFileList.querySelectorAll('.progress-file-item');
+        var done = 0;
+        var total = items.length;
+        items.forEach(function(item) {
+            if (item.classList.contains('done') || item.classList.contains('error')) done++;
+        });
+        var pct = total > 0 ? Math.round(done / total * 100) : 0;
+        progressTotalFill.style.width = pct + '%';
+        progressPct.textContent = pct + '%';
+        progressStatus.textContent = done + '/' + total + ' traite(s) -- ' + (total - done) + ' restant(s)';
+    }
+
+    function showProgressOverlay(title) {
+        progressFileList.innerHTML = '';
+        progressTotalFill.style.width = '0%';
+        progressPct.textContent = '0%';
+        progressStatus.textContent = 'Preparation...';
+        document.querySelector('#gen-progress-overlay .progress-header h3').textContent = title;
+        progressOverlay.classList.add('show');
+    }
+
+    function hideProgressOverlay() {
+        progressOverlay.classList.remove('show');
+    }
+
+    function escapeHtml(str) {
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(str));
+        return div.innerHTML;
+    }
+
+    /* ---- DOCX Generation via AJAX ---- */
+    document.getElementById('gen-form')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var form = this;
+        var checkboxes = form.querySelectorAll('input[name="templates[]"]:checked');
+        if (checkboxes.length === 0) return;
+
+        var societeId = form.querySelector('input[name="societe_id"]').value;
+        var csrf = getCsrfToken();
+        var total = checkboxes.length;
+
+        showProgressOverlay('Generation des documents...');
+
+        checkboxes.forEach(function(cb) {
+            var name = cb.value.split('/').pop().split('\\').pop();
+            addProgressFile(name);
+        });
+
+        function processNext(idx) {
+            if (idx >= total) {
+                progressStatus.textContent = 'Termine -- ' + total + '/' + total;
+                setTimeout(function() { hideProgressOverlay(); window.location.reload(); }, 800);
+                return;
+            }
+
+            var cb = checkboxes[idx];
+            var tplPath = cb.value;
+            updateProgressFile(idx, 20, 'active');
+            progressStatus.textContent = (idx + 1) + '/' + total + ' -- Generation DOCX...';
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', 'ajax/generation.php', true);
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    try {
+                        var resp = JSON.parse(xhr.responseText);
+                        if (resp.success) {
+                            updateProgressFile(idx, 100, 'done');
+                        } else if (resp.skipped) {
+                            updateProgressFile(idx, 100, 'done');
+                            var items = progressFileList.querySelectorAll('.pfi-name');
+                            if (items[idx]) items[idx].textContent += ' (deja valide)';
+                        } else {
+                            updateProgressFile(idx, 100, 'error');
+                        }
+                    } catch(e) {
+                        updateProgressFile(idx, 100, 'error');
+                    }
+                } else {
+                    updateProgressFile(idx, 100, 'error');
+                }
+                setTimeout(function() { processNext(idx + 1); }, 300);
+            };
+            xhr.onerror = function() {
+                updateProgressFile(idx, 100, 'error');
+                setTimeout(function() { processNext(idx + 1); }, 300);
+            };
+            xhr.send(
+                'action=generate_docx' +
+                '&societe_id=' + encodeURIComponent(societeId) +
+                '&template_path=' + encodeURIComponent(tplPath) +
+                '&csrf_token=' + encodeURIComponent(csrf)
+            );
+        }
+
+        setTimeout(function() { processNext(0); }, 400);
     });
-    document.getElementById('files-form')?.addEventListener('submit', function(e){
+
+    /* ---- Detect action from submitter or hidden inputs ---- */
+    document.getElementById('files-form')?.addEventListener('submit', function(e) {
+        var action = null;
         var btn = e.submitter;
-        if(btn && btn.name === 'delete_submit'){
-            window.showOverlay('Suppression en cours...');
-        } else if(btn && btn.name === 'generate_pdf_submit'){
-            window.showOverlay('Generation PDF en cours...');
-        } else if(btn && btn.name === 'restore_submit'){
-            window.showOverlay('Restauration en cours...');
+        if (btn) {
+            action = btn.name;
         } else {
+            // Programmatic submit (per-row inline code)
+            if (this.querySelector('input[name="generate_pdf_submit"]')) action = 'generate_pdf_submit';
+            else if (this.querySelector('input[name="validate_submit"]')) action = 'validate_submit';
+            else if (this.querySelector('input[name="restore_submit"]')) action = 'restore_submit';
+            else if (this.querySelector('input[name="delete_submit"]')) action = 'delete_submit';
+        }
+
+        if (action === 'generate_pdf_submit') {
+            e.preventDefault();
+            var societeId = this.querySelector('input[name="societe_id"]').value;
+            var csrf = getCsrfToken();
+            var checkboxes = this.querySelectorAll('input[name="selected_files[]"]:checked');
+            if (checkboxes.length === 0) return;
+            var total = checkboxes.length;
+
+            showProgressOverlay('Generation PDF...');
+            checkboxes.forEach(function() { addProgressFile('Document PDF'); });
+
+            function processPdf(idx) {
+                if (idx >= total) {
+                    progressStatus.textContent = 'Termine -- ' + total + '/' + total;
+                    setTimeout(function() { hideProgressOverlay(); window.location.reload(); }, 800);
+                    return;
+                }
+                var cb = checkboxes[idx];
+                var docId = cb.value;
+                updateProgressFile(idx, 10, 'active');
+                progressStatus.textContent = (idx + 1) + '/' + total + ' -- Conversion PDF...';
+
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', 'ajax/generation.php', true);
+                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                xhr.onload = function() {
+                    if (xhr.status === 200) {
+                        try { var resp = JSON.parse(xhr.responseText); updateProgressFile(idx, 100, resp.success ? 'done' : 'error'); }
+                        catch(e) { updateProgressFile(idx, 100, 'error'); }
+                    } else { updateProgressFile(idx, 100, 'error'); }
+                    setTimeout(function() { processPdf(idx + 1); }, 300);
+                };
+                xhr.onerror = function() { updateProgressFile(idx, 100, 'error'); setTimeout(function() { processPdf(idx + 1); }, 300); };
+                xhr.send('action=generate_pdf&societe_id=' + encodeURIComponent(societeId) + '&doc_id=' + encodeURIComponent(docId) + '&csrf_token=' + encodeURIComponent(csrf));
+            }
+            setTimeout(function() { processPdf(0); }, 400);
+        } else if (action === 'delete_submit') {
+            window.showOverlay('Suppression en cours...');
+        } else if (action === 'restore_submit') {
+            window.showOverlay('Restauration en cours...');
+        } else if (action === 'validate_submit') {
             window.showOverlay('Validation en cours...');
         }
     });
+
+    /* ---- Single PDF generation (per-row) ---- */
+    window.generateSinglePdf = function(docId) {
+        var form = document.getElementById('files-form');
+        form.querySelectorAll('input[name="selected_files[]"]').forEach(function(c) { c.checked = false; });
+        var cb = form.querySelector('input[name="selected_files[]"][value="' + docId + '"]');
+        if (!cb) return;
+        cb.checked = true;
+        // Add hidden input and submit programmatically -> will be caught by submit handler
+        var h = document.createElement('input');
+        h.type = 'hidden'; h.name = 'generate_pdf_submit'; h.value = '1';
+        form.appendChild(h);
+        form.submit();
+    };
 })();
 </script>

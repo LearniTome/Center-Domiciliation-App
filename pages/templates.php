@@ -296,7 +296,7 @@ $sortedFolders = array_merge($nonEmpty, $empty);
                                     <td><?= e(number_format($tpl['size'] / 1024, 1)) ?> KB</td>
                                     <td><?= e(date('d/m/Y H:i', $tpl['modified'])) ?></td>
                                     <td class="table-actions">
-                                        <a class="btn-icon" href="<?= e(app_url('template', ['path' => $tpl['path']])) ?>" title="Voir"><span class="material-symbols-outlined">visibility</span></a>
+                                        <a class="btn-icon primary" href="<?= e(app_url('template', ['path' => $tpl['path']])) ?>" title="Voir"><span class="material-symbols-outlined">visibility</span></a>
                                         <form method="post">
                                             <?= csrf_input() ?>
                                             <input type="hidden" name="action" value="delete">

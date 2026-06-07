@@ -192,9 +192,9 @@ if (is_post()) {
                 <p class="help-text"><?= e($folderLabels[$info['folder']] ?? $info['folder']) ?></p>
             </div>
             <div class="table-actions">
-<a class="btn-icon" href="<?= e(app_url('template_edit', ['path' => $templatePath])) ?>" title="Editer"><span class="material-symbols-outlined">edit</span></a>
+<a class="btn-icon info" href="<?= e(app_url('template_edit', ['path' => $templatePath])) ?>" title="Editer"><span class="material-symbols-outlined">edit</span></a>
                 <a class="btn-icon" href="<?= e(app_url('templates')) ?>" title="Retour"><span class="material-symbols-outlined">arrow_back</span></a>
-                <a class="btn-icon" href="<?= e($templatePath) ?>" download title="Telecharger"><span class="material-symbols-outlined">download</span></a>
+                <a class="btn-icon success" href="<?= e($templatePath) ?>" download title="Telecharger"><span class="material-symbols-outlined">download</span></a>
             </div>
         </div>
 
@@ -258,7 +258,7 @@ if (is_post()) {
                                         <option value="<?= e($ck) ?>"><?= e($ck) ?></option>
                                         <?php endforeach; ?>
                                     </select>
-                                    <button type="submit" class="btn-icon" title="Renommer"><span class="material-symbols-outlined">drive_file_rename_outline</span></button>
+                                    <button type="submit" class="btn-icon info" title="Renommer"><span class="material-symbols-outlined">drive_file_rename_outline</span></button>
                                 </form>
                                 <form method="post" style="display:inline">
                                     <?= csrf_input() ?>

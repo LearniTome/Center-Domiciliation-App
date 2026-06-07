@@ -272,7 +272,7 @@ if ($aiSuggestions !== null) {
                                     <option value="<?= e($ck) ?>"><?= e($ck) ?></option>
                                     <?php endforeach; ?>
                                 </select>
-                                <button type="submit" name="rename" value="1" class="btn-icon" title="Renommer">
+                                <button type="submit" name="rename" value="1" class="btn-icon info" title="Renommer">
                                     <span class="material-symbols-outlined">drive_file_rename_outline</span>
                                 </button>
                             </form>

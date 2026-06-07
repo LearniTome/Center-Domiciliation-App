@@ -60,7 +60,7 @@ if ($templatePath === '' || !str_starts_with($templatePath, realpath($templatesD
                             <tr>
                                 <td><?= e(basename($f)) ?></td>
                                 <td>
-                                    <a class="btn-icon" href="<?= e(app_url('template_edit', ['path' => $f])) ?>" title="Editer">
+                                    <a class="btn-icon info" href="<?= e(app_url('template_edit', ['path' => $f])) ?>" title="Editer">
                                         <span class="material-symbols-outlined">edit</span>
                                     </a>
                                 </td>

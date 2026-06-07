@@ -680,23 +680,23 @@ $docTypeLabels = [
                             <td><span class="help-text"><?php $modifTime = file_exists($doc['fichier_docx']) ? filemtime($doc['fichier_docx']) : null; echo $modifTime ? date('d/m/Y H:i', $modifTime) : '-'; ?></span></td>
                                 <td>
                                     <div class="table-actions">
-                                        <a class="btn-icon" href="<?= e(word_url($doc['fichier_docx'])) ?>" title="Ouvrir dans Word">
+                                        <a class="btn-icon primary" href="<?= e(word_url($doc['fichier_docx'])) ?>" title="Ouvrir dans Word">
                                             <span class="material-symbols-outlined">article</span>
                                         </a>
-                                        <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_docx'])) ?>" download title="Telecharger DOCX">
+                                        <a class="btn-icon success" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_docx'])) ?>" download title="Telecharger DOCX">
                                             <span class="material-symbols-outlined">download</span>
                                         </a>
                                         <?php if ($doc['fichier_pdf']): ?>
-                                            <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_pdf'])) ?>" download title="Telecharger PDF">
+                                            <a class="btn-icon danger" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_pdf'])) ?>" download title="Telecharger PDF">
                                                 <span class="material-symbols-outlined">picture_as_pdf</span>
                                             </a>
                                         <?php endif; ?>
                                         <?php if (!$doc['valide']): ?>
-                                            <a class="btn-icon" href="#" onclick="event.preventDefault(); (function(){ var f=document.getElementById('docs-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='validate_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Validation en cours...'); f.submit();} })();" title="Valider">
+                                            <a class="btn-icon success" href="#" onclick="event.preventDefault(); (function(){ var f=document.getElementById('docs-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='validate_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Validation en cours...'); f.submit();} })();" title="Valider">
                                                 <span class="material-symbols-outlined">task_alt</span>
                                             </a>
                                         <?php else: ?>
-                                            <a class="btn-icon" href="#" onclick="event.preventDefault(); (function(){ var f=document.getElementById('docs-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='restore_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Restauration en cours...'); f.submit();} })();" title="Restaurer en brouillon">
+                                            <a class="btn-icon warning" href="#" onclick="event.preventDefault(); (function(){ var f=document.getElementById('docs-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='restore_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Restauration en cours...'); f.submit();} })();" title="Restaurer en brouillon">
                                                 <span class="material-symbols-outlined">restore</span>
                                             </a>
                                         <?php endif; ?>
@@ -766,10 +766,10 @@ $docTypeLabels = [
                     <td><?= e($ud['taille_ko'] ? number_format((float)$ud['taille_ko'], 1, ',', ' ') . ' Ko' : '-') ?></td>
                     <td><?= e(date('d/m/Y H:i', strtotime($ud['uploaded_at']))) ?></td>
                     <td>
-                        <a href="<?= e($relativePath) ?>" class="btn-icon" title="Voir" data-view-doc>
+                        <a href="<?= e($relativePath) ?>" class="btn-icon primary" title="Voir" data-view-doc>
                             <span class="material-symbols-outlined">visibility</span>
                         </a>
-                        <a href="<?= e($relativePath) ?>" class="btn-icon" download title="Telecharger">
+                        <a href="<?= e($relativePath) ?>" class="btn-icon success" download title="Telecharger">
                             <span class="material-symbols-outlined">download</span>
                         </a>
                     </td>

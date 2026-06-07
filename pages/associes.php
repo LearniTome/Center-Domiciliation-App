@@ -270,7 +270,7 @@ if (($pdo ?? null) instanceof PDO) {
                         <td><?= e(date('d/m/Y', strtotime((string) $associe['created_at']))) ?></td>
                         <td><?= e(date('d/m/Y', strtotime((string) $associe['updated_at']))) ?></td>
                         <td class="table-actions">
-                            <a class="btn-icon" href="<?= e(app_url('associes', ['edit' => (int) $associe['id']])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
+                            <a class="btn-icon info" href="<?= e(app_url('associes', ['edit' => (int) $associe['id']])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
                             <form method="post">
                                 <?= csrf_input() ?>
                                 <input type="hidden" name="action" value="delete">

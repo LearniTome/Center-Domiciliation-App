@@ -59,12 +59,17 @@ if ($isConnected) {
         ");
         $stmt->execute(['uid' => $userId]);
         $dossiersComplets = (int) $stmt->fetchColumn();
+
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM collaborateurs WHERE created_by = :uid');
+        $stmt->execute(['uid' => $userId]);
+        $collaborateursCount = (int) $stmt->fetchColumn();
     } else {
         $totalSocietes = (int) $pdo->query('SELECT COUNT(*) FROM societes')->fetchColumn();
         $contratsActifs = (int) $pdo->query("SELECT COUNT(*) FROM contrats WHERE contrat_statut = 'actif'")->fetchColumn();
         $contratsResilies = (int) $pdo->query("SELECT COUNT(*) FROM contrats WHERE contrat_statut = 'resilie'")->fetchColumn();
         $revenuMensuel = (float) $pdo->query("SELECT COALESCE(SUM(contrat_loyer_ttc), 0) FROM contrats WHERE contrat_statut = 'actif'")->fetchColumn();
         $creationsMois = (int) $pdo->query("SELECT COUNT(*) FROM societes WHERE MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE())")->fetchColumn();
+        $collaborateursCount = (int) $pdo->query("SELECT COUNT(*) FROM collaborateurs")->fetchColumn();
 
         $dossiersComplets = (int) $pdo->query("
             SELECT COUNT(*) FROM societes s
@@ -180,6 +185,26 @@ if ($isConnected) {
     }
 }
 
+$donutSliceColors = ['var(--primary)', 'var(--success)', 'var(--warning)', 'var(--danger)', 'var(--info)', '#fd79a8', '#00cec9', '#e17055'];
+
+function buildDonutGradient(array $items, string $countKey, array $colors): string {
+    if (!$items) return 'conic-gradient(var(--line) 0% 100%)';
+    $parts = [];
+    $cur = 0;
+    $total = array_sum(array_column($items, $countKey));
+    foreach ($items as $i => $item) {
+        $pct = $total > 0 ? ((int) $item[$countKey] / $total) * 100 : 0;
+        $color = $colors[$i % count($colors)];
+        $end = min(100, $cur + $pct);
+        if ($end > $cur) $parts[] = "$color $cur% $end%";
+        $cur = $end;
+    }
+    return $parts ? 'conic-gradient(' . implode(', ', $parts) . ')' : 'conic-gradient(var(--line) 0% 100%)';
+}
+
+$formesGradient = buildDonutGradient($repartitionFormes, 'total', $donutSliceColors);
+$contratsGradient = buildDonutGradient($repartitionContrats, 'total', $donutSliceColors);
+
 // --- Timeline (echeances 0-90 jours) ---
 $echeances = [];
 if ($isConnected) {
@@ -253,7 +278,7 @@ if ($isConnected) {
     $sansDocuments = $stmt->fetchAll();
 
     $stmt = $pdo->prepare("
-        SELECT a.associe_nom_complet, s.societe_raison_sociale, s.id AS societe_id
+        SELECT a.associe_nom_complet, s.societe_raison_sociale, s.id AS societe_id, a.associe_date_validite_cin
         FROM associes a
         INNER JOIN societes s ON s.id = a.societe_id
         WHERE a.associe_date_validite_cin IS NOT NULL
@@ -331,6 +356,8 @@ if ($isConnected) {
 // --- Validation documents ---
 $docsValides = 0;
 $docsEnAttente = 0;
+$docsTotal = 0;
+$valPct = 0;
 $docsAVerifier = [];
 if ($isConnected) {
     if ($userId !== null) {
@@ -361,365 +388,358 @@ if ($isConnected) {
             ORDER BY d.created_at DESC LIMIT 10
         ")->fetchAll();
     }
+    $docsTotal = $docsValides + $docsEnAttente;
+    $valPct = $docsTotal > 0 ? round(($docsValides / $docsTotal) * 100) : 0;
 }
 ?>
-<!-- Stats row -->
-<section class="stats small">
-    <article class="stat primary">
-        <span>Societes</span>
-        <strong><?= $totalSocietes ?></strong>
-        <small style="font-size:0.65rem;color:var(--text-secondary)">+<?= $creationsMois ?> ce mois</small>
-    </article>
-    <article class="stat success">
-        <span>Contrats actifs</span>
-        <strong><?= $contratsActifs ?></strong>
-        <small style="font-size:0.65rem;color:var(--text-secondary)"><?= $renouvelerCount ?> a renouveler</small>
-    </article>
-    <article class="stat danger">
-        <span>Contrats resilies</span>
-        <strong><?= $contratsResilies ?></strong>
-        <small style="font-size:0.65rem;color:var(--text-secondary)"><?= $resiliesMois ?> ce mois</small>
-    </article>
-    <article class="stat success">
-        <span>Revenu mensuel</span>
-        <strong><?= number_format($revenuMensuel, 2, ',', ' ') ?> DH</strong>
-    </article>
-    <article class="stat">
-        <span>Collaborateurs</span>
-        <strong><?= $collaborateursCount ?></strong>
-        <?php if ($collabMainType): ?>
-        <small style="font-size:0.65rem;color:var(--text-secondary)">Principal: <?= e($collabMainType) ?></small>
-        <?php endif; ?>
-    </article>
-    <article class="stat">
-        <span>Dossiers complets</span>
-        <strong><?= $dossiersComplets ?>/<?= $totalSocietes ?></strong>
-        <div class="progress-bar">
-            <div class="progress-track">
-                <div class="progress-fill <?= $pctClass ?>" style="width:<?= $pctComplets ?>%"></div>
-            </div>
-            <span class="progress-label"><?= $pctComplets ?>%</span>
+<!-- Welcome -->
+<section class="dash-header">
+    <div class="dash-header-left">
+        <p class="dash-greeting">👋 Bon retour, <?= e($user['nom_complet'] ?? '—') ?></p>
+        <div class="dash-header-meta">
+            <span class="material-symbols-outlined" style="font-size:0.75rem;color:var(--text-secondary)">calendar_today</span>
+            <?= date('d/m/Y') ?>
+            <a class="dash-pill" href="<?= e(app_url('societes')) ?>"><span class="material-symbols-outlined">business</span><?= $totalSocietes ?> societes</a>
+            <a class="dash-pill" href="<?= e(app_url('contrats')) ?>"><span class="material-symbols-outlined">signature</span><?= $contratsActifs ?> contrats</a>
+            <a class="dash-pill" href="<?= e(app_url('collaborateurs')) ?>"><span class="material-symbols-outlined">group</span><?= $collaborateursCount ?> collab.</a>
         </div>
-    </article>
+    </div>
 </section>
 
-<section class="quick-actions extra">
+<?php if ($hasAlerts): ?>
+<section class="dash-alert-bar">
+    <span class="material-symbols-outlined alert-bar-icon">warning</span>
+    <span><?= $alerteCount ?> point<?= $alerteCount > 1 ? 's' : '' ?> necessitant attention</span>
+</section>
+<?php endif; ?>
+
+<!-- Quick actions -->
+<section class="dash-actions">
     <?php if ($isAdmin): ?>
-    <a class="card quick-action" href="<?= e(app_url('creation')) ?>">
-        <span class="material-symbols-outlined quick-icon" style="color:var(--success)">add_circle</span>
-        <div>
-            <strong>Creer un dossier</strong>
-            <span class="help-text">Nouvelle societe + contrat</span>
-            <span class="quick-count"><?= $incompletsCount ?> dossiers incomplets</span>
-        </div>
+    <a class="dash-action dash-action-new" href="<?= e(app_url('creation')) ?>">
+        <span class="material-symbols-outlined">add_circle</span>
+        <strong>Creer un dossier</strong>
+        <small><?= $incompletsCount ?> dossiers incomplets</small>
     </a>
     <?php endif; ?>
     <?php if (has_permission('collaborateurs.create')): ?>
-    <a class="card quick-action" href="<?= e(app_url('collaborateur')) ?>">
-        <span class="material-symbols-outlined quick-icon" style="color:var(--primary)">person_add</span>
-        <div>
-            <strong>Nouveau collaborateur</strong>
-            <span class="help-text">Ajouter un expert, coursier...</span>
-            <span class="quick-count"><?= $collaborateursCount ?> collaborateurs</span>
-        </div>
+    <a class="dash-action dash-action-collab" href="<?= e(app_url('collaborateur')) ?>">
+        <span class="material-symbols-outlined">person_add</span>
+        <strong>Collaborateur</strong>
+        <small><?= $collaborateursCount ?> existants</small>
     </a>
     <?php endif; ?>
     <?php if (has_permission('templates.edit')): ?>
-    <a class="card quick-action" href="<?= e(app_url('template_edit', ['path' => ''])) ?>">
-        <span class="material-symbols-outlined quick-icon" style="color:var(--info)">edit_note</span>
-        <div>
-            <strong>Editeur de template</strong>
-            <span class="help-text">Modifier les documents Word</span>
-            <span class="quick-count"><?= $templateCount ?> templates</span>
-        </div>
+    <a class="dash-action dash-action-tpl" href="<?= e(app_url('template_edit', ['path' => ''])) ?>">
+        <span class="material-symbols-outlined">edit_note</span>
+        <strong>Editeur template</strong>
+        <small><?= $templateCount ?> documents</small>
     </a>
     <?php endif; ?>
     <?php if (has_permission('configuration.view')): ?>
-    <a class="card quick-action" href="<?= e(app_url('configuration')) ?>">
-        <span class="material-symbols-outlined quick-icon" style="color:var(--warning)">settings</span>
-        <div>
-            <strong>Configuration</strong>
-            <span class="help-text">Tables de reference</span>
-            <span class="quick-count"><?= $refTableCount ?> tables</span>
-        </div>
+    <a class="dash-action dash-action-cfg" href="<?= e(app_url('configuration')) ?>">
+        <span class="material-symbols-outlined">settings</span>
+        <strong>Configuration</strong>
+        <small><?= $refTableCount ?> tables</small>
     </a>
     <?php endif; ?>
 </section>
 
-<?php if ($hasAlerts || $echeances): ?>
-<section class="grid two">
+<!-- Metrics -->
+<section class="dash-metrics">
+    <a class="dash-metric" href="<?= e(app_url('societes')) ?>">
+        <div class="dm-icon dm-icon-soc"><span class="material-symbols-outlined">business</span></div>
+        <div class="dm-body">
+            <span class="dm-label">Societes</span>
+            <strong class="dm-value"><?= $totalSocietes ?></strong>
+            <span class="dm-delta up">+<?= $creationsMois ?> ce mois</span>
+        </div>
+    </a>
+    <a class="dash-metric" href="<?= e(app_url('contrats')) ?>">
+        <div class="dm-icon dm-icon-ctr"><span class="material-symbols-outlined">signature</span></div>
+        <div class="dm-body">
+            <span class="dm-label">Contrats actifs</span>
+            <strong class="dm-value"><?= $contratsActifs ?></strong>
+            <span class="dm-delta"><?= $contratsResilies ?> resilies</span>
+        </div>
+    </a>
+    <a class="dash-metric" href="<?= e(app_url('documents')) ?>">
+        <div class="dm-icon dm-icon-doc"><span class="material-symbols-outlined">description</span></div>
+        <div class="dm-body">
+            <span class="dm-label">Documents</span>
+            <strong class="dm-value"><?= $docsTotal ?></strong>
+            <span class="dm-delta up"><?= $docsValides ?> valides</span>
+        </div>
+    </a>
+    <a class="dash-metric" href="<?= e(app_url('contrats')) ?>">
+        <div class="dm-icon dm-icon-rev"><span class="material-symbols-outlined">payments</span></div>
+        <div class="dm-body">
+            <span class="dm-label">Revenu mensuel</span>
+            <strong class="dm-value"><?= number_format($revenuMensuel, 0, ',', ' ') ?> DH</strong>
+            <span class="dm-delta"><?= $renouvelerCount ?> a renouveler</span>
+        </div>
+    </a>
+</section>
+
+<!-- Charts: Ring + 2 Donuts -->
+<section class="dash-charts">
+    <a class="card card-link" href="<?= e(app_url('generation')) ?>">
+        <div class="section-header"><h3>Dossiers complets</h3></div>
+        <div class="dash-ring-wrap">
+            <div class="dash-ring-big" style="background: conic-gradient(var(--success) 0% <?= $pctComplets ?>%, rgba(255,255,255,0.06) <?= $pctComplets ?>% 100%)">
+                <div class="dash-ring-inner">
+                    <strong class="dash-ring-pct"><?= $pctComplets ?><small>%</small></strong>
+                    <span class="dash-ring-sub"><?= $dossiersComplets ?>/<?= $totalSocietes ?></span>
+                </div>
+            </div>
+            <div class="dash-ring-stats">
+                <div class="dash-rs-item">
+                    <span class="stat-dot success"></span>
+                    <span>Complets</span>
+                    <strong><?= $dossiersComplets ?></strong>
+                </div>
+                <div class="dash-rs-item">
+                    <span class="stat-dot warning"></span>
+                    <span>Incomplets</span>
+                    <strong><?= $dossiersIncomplets ?></strong>
+                </div>
+            </div>
+        </div>
+    </a>
+    <a class="card card-link" href="<?= e(app_url('societes')) ?>">
+        <div class="section-header"><h3>Formes juridiques</h3></div>
+        <?php if (!$repartitionFormes): ?>
+            <p class="table-empty">Aucune donnee</p>
+        <?php else:
+            $formesTotal = array_sum(array_column($repartitionFormes, 'total')); ?>
+            <div class="dash-donut-row">
+                <div class="dash-donut" style="background: <?= $formesGradient ?>">
+                    <span class="dash-donut-center"><?= $formesTotal ?></span>
+                </div>
+                <div class="dash-dlegend">
+                    <?php $ci = 0; foreach ($repartitionFormes as $r):
+                        $fpct = $formesTotal > 0 ? round(((int) $r['total'] / $formesTotal) * 100) : 0; ?>
+                        <div class="dash-dli">
+                            <span class="legend-dot" style="background:<?= $donutSliceColors[$ci % count($donutSliceColors)] ?>"></span>
+                            <span class="dli-label"><?= e($r['societe_forme_juridique'] ?: '-') ?></span>
+                            <span class="dli-val"><?= (int) $r['total'] ?></span>
+                            <span class="dli-pct"><?= $fpct ?>%</span>
+                        </div>
+                    <?php $ci++; endforeach; ?>
+                </div>
+            </div>
+        <?php endif; ?>
+    </a>
+    <a class="card card-link" href="<?= e(app_url('contrats')) ?>">
+        <div class="section-header"><h3>Types de contrat</h3></div>
+        <?php if (!$repartitionContrats): ?>
+            <p class="table-empty">Aucune donnee</p>
+        <?php else:
+            $contratsTotal = array_sum(array_column($repartitionContrats, 'total')); ?>
+            <div class="dash-donut-row">
+                <div class="dash-donut" style="background: <?= $contratsGradient ?>">
+                    <span class="dash-donut-center"><?= $contratsTotal ?></span>
+                </div>
+                <div class="dash-dlegend">
+                    <?php $ci = 0; foreach ($repartitionContrats as $r):
+                        $cpct = $contratsTotal > 0 ? round(((int) $r['total'] / $contratsTotal) * 100) : 0; ?>
+                        <div class="dash-dli">
+                            <span class="legend-dot" style="background:<?= $donutSliceColors[$ci % count($donutSliceColors)] ?>"></span>
+                            <span class="dli-label"><?= e($r['contrat_type'] ?: '-') ?></span>
+                            <span class="dli-val"><?= (int) $r['total'] ?></span>
+                            <span class="dli-pct"><?= $cpct ?>%</span>
+                        </div>
+                    <?php $ci++; endforeach; ?>
+                </div>
+            </div>
+        <?php endif; ?>
+    </a>
+</section>
+
+<!-- Alerts + Docs + Timeline -->
+<section class="dash-cards" id="alertes-section">
     <?php if ($hasAlerts): ?>
-    <article class="card">
+    <article class="card dash-acard">
         <div class="section-header">
-            <h2>
-                <span class="material-symbols-outlined" style="color:var(--warning)">warning</span> Alertes
-                <span class="alert-badge"><?= $alerteCount ?></span>
-            </h2>
+            <a class="dash-title-link" href="<?= e(app_url('societes')) ?>"><h4><span class="material-symbols-outlined" style="color:var(--warning)">warning</span> Alertes <span class="dash-badge"><?= $alerteCount ?></span></h4></a>
         </div>
-        <div class="alerts-list">
-            <?php if ($sansAssocie): ?>
-                <div class="alert-group">
-                    <span class="alert-label">Societes sans associe</span>
-                    <?php foreach ($sansAssocie as $s): ?>
-                        <a class="alert-item" href="<?= e(app_url('societe', ['id' => (int) $s['id']])) ?>">
-                            <span class="material-symbols-outlined" style="color:var(--danger)">person_remove</span>
-                            <?= e($s['societe_raison_sociale']) ?>
-                        </a>
-                    <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
-            <?php if ($sansContrat): ?>
-                <div class="alert-group">
-                    <span class="alert-label">Societes sans contrat</span>
-                    <?php foreach ($sansContrat as $s): ?>
-                        <a class="alert-item" href="<?= e(app_url('societe', ['id' => (int) $s['id']])) ?>">
-                            <span class="material-symbols-outlined" style="color:var(--warning)">note_remove</span>
-                            <?= e($s['societe_raison_sociale']) ?>
-                        </a>
-                    <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
-            <?php if ($sansDocuments): ?>
-                <div class="alert-group">
-                    <span class="alert-label">Dossiers complets sans documents generes</span>
-                    <?php foreach ($sansDocuments as $s): ?>
-                        <a class="alert-item" href="<?= e(app_url('societe', ['id' => (int) $s['id']])) ?>">
-                            <span class="material-symbols-outlined" style="color:var(--info)">remove_selection</span>
-                            <?= e($s['societe_raison_sociale']) ?>
-                        </a>
-                    <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
-            <?php if ($cinExpire): ?>
-                <div class="alert-group">
-                    <span class="alert-label">CIN associe expiree</span>
-                    <?php foreach ($cinExpire as $a): ?>
-                        <a class="alert-item" href="<?= e(app_url('societe', ['id' => (int) $a['societe_id']])) ?>">
-                            <span class="material-symbols-outlined" style="color:var(--danger)">badge</span>
-                            <?= e($a['associe_nom_complet']) ?> (<?= e($a['societe_raison_sociale']) ?>)
-                        </a>
-                    <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
-            <?php if ($expirants): ?>
-                <div class="alert-group">
-                    <span class="alert-label">Contrats expirant dans &lt; 30 jours</span>
-                    <?php foreach ($expirants as $c): ?>
-                        <a class="alert-item" href="<?= e(app_url('contrats')) ?>">
-                            <span class="material-symbols-outlined" style="color:var(--warning)">clock</span>
-                            <?= e($c['societe_raison_sociale']) ?> — <?= e($c['contrat_type']) ?> (<?= e(format_date($c['contrat_date_fin'] ?? null)) ?>)
-                        </a>
-                    <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
-        </div>
+        <table class="dash-table">
+            <thead><tr><th>Type</th><th>Societe / Personne</th><th>Detail</th><th class="col-action"></th></tr></thead>
+            <tbody>
+                <?php foreach ($sansAssocie as $s): ?>
+                <tr><td><span class="material-symbols-outlined" style="color:var(--danger)">person_remove</span> Sans associe</td><td><?= e($s['societe_raison_sociale']) ?></td><td>—</td><td class="col-action"><a class="btn-icon" href="<?= e(app_url('societe', ['id' => (int) $s['id']])) ?>"><span class="material-symbols-outlined" style="color:var(--info)">visibility</span></a></td></tr>
+                <?php endforeach; ?>
+                <?php foreach ($sansContrat as $s): ?>
+                <tr><td><span class="material-symbols-outlined" style="color:var(--warning)">note_remove</span> Sans contrat</td><td><?= e($s['societe_raison_sociale']) ?></td><td>—</td><td class="col-action"><a class="btn-icon" href="<?= e(app_url('societe', ['id' => (int) $s['id']])) ?>"><span class="material-symbols-outlined" style="color:var(--info)">visibility</span></a></td></tr>
+                <?php endforeach; ?>
+                <?php foreach ($sansDocuments as $s): ?>
+                <tr><td><span class="material-symbols-outlined" style="color:var(--info)">remove_selection</span> Sans documents</td><td><?= e($s['societe_raison_sociale']) ?></td><td>—</td><td class="col-action"><a class="btn-icon" href="<?= e(app_url('societe', ['id' => (int) $s['id']])) ?>"><span class="material-symbols-outlined" style="color:var(--info)">visibility</span></a></td></tr>
+                <?php endforeach; ?>
+                <?php foreach ($cinExpire as $a): ?>
+                <tr><td><span class="material-symbols-outlined" style="color:var(--danger)">badge</span> CIN expiree</td><td><?= e($a['associe_nom_complet']) ?></td><td><?= e($a['societe_raison_sociale']) ?> <small style="color:var(--text-muted)">exp. <?= e(format_date($a['associe_date_validite_cin'] ?? null)) ?></small></td><td class="col-action"><a class="btn-icon" href="<?= e(app_url('societe', ['id' => (int) $a['societe_id']])) ?>"><span class="material-symbols-outlined" style="color:var(--info)">visibility</span></a></td></tr>
+                <?php endforeach; ?>
+                <?php foreach ($expirants as $c): ?>
+                <tr><td><span class="material-symbols-outlined" style="color:var(--warning)">clock</span> Contrat expirant</td><td><?= e($c['societe_raison_sociale']) ?></td><td><?= e($c['contrat_type']) ?> <small style="color:var(--text-muted)">fin <?= e(format_date($c['contrat_date_fin'] ?? null)) ?></small></td><td class="col-action"><a class="btn-icon" href="<?= e(app_url('contrats')) ?>"><span class="material-symbols-outlined" style="color:var(--info)">visibility</span></a></td></tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
     </article>
     <?php endif; ?>
+
+    <article class="card">
+        <div class="section-header">
+            <a class="dash-title-link" href="<?= e(app_url('documents')) ?>"><h4><span class="material-symbols-outlined" style="color:var(--primary)">description</span> Derniers documents</h4></a>
+        </div>
+        <?php if (!$documentsRecents): ?>
+            <p class="table-empty">Aucun document genere.</p>
+        <?php else: ?>
+        <table class="dash-table">
+            <thead><tr><th>Document</th><th>Societe</th><th>Taille</th><th>Statut</th><th class="col-action"></th></tr></thead>
+            <tbody>
+            <?php foreach ($documentsRecents as $d):
+                $ddt = date('d/m/Y H:i', strtotime($d['created_at']));
+                $dsize = $d['taille_ko'] ? number_format((float) $d['taille_ko'], 1, ',', ' ') . ' Ko' : '—';
+                $dvalide = (int) ($d['valide'] ?? 0);
+            ?>
+                <tr>
+                    <td><strong><?= e($d['doc_type'] ?? 'Document') ?></strong></td>
+                    <td><?= e($d['societe_raison_sociale']) ?></td>
+                    <td><small style="color:var(--text-muted)"><?= $dsize ?></small></td>
+                    <td><?php if ($dvalide): ?><span class="dash-badge-sm success">Valide</span><?php else: ?><span class="dash-badge-sm warning">En attente</span><?php endif; ?></td>
+                    <td class="col-action"><a class="btn-icon" href="<?= e(app_url('societe', ['id' => (int) $d['societe_id']])) ?>"><span class="material-symbols-outlined" style="color:var(--info)">visibility</span></a></td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+        <?php endif; ?>
+    </article>
+
     <?php if ($echeances): ?>
     <article class="card">
         <div class="section-header">
-            <h2><span class="material-symbols-outlined" style="color:var(--warning)">calendar_clock</span> Echeances (90 jours)</h2>
-            <a class="btn btn-info" href="<?= e(app_url('contrats')) ?>"><span class="material-symbols-outlined">visibility</span> Voir tout</a>
+            <a class="dash-title-link" href="<?= e(app_url('contrats')) ?>"><h4><span class="material-symbols-outlined" style="color:var(--warning)">calendar_clock</span> Echeances</h4></a>
         </div>
         <div class="timeline-list">
             <?php foreach ($echeances as $e):
                 $j = (int) $e['jours_restants'];
                 $class = $j <= 15 ? 'urgent' : ($j <= 30 ? 'warning' : 'normal');
-                $icon = $j <= 15 ? 'error' : ($j <= 30 ? 'clock' : 'calendar_clock');
+                $tdotIcon = $j <= 15 ? 'error' : ($j <= 30 ? 'schedule' : 'event');
             ?>
                 <div class="timeline-item <?= $class ?>">
-                    <span class="material-symbols-outlined" style="color:<?= $j <= 15 ? 'var(--danger)' : ($j <= 30 ? 'var(--warning)' : 'var(--success)') ?>"><?= $icon ?></span>
+                    <span class="timeline-dot <?= $class ?>"><span class="material-symbols-outlined"><?= $tdotIcon ?></span></span>
                     <div class="timeline-content">
                         <strong><?= e($e['societe_raison_sociale']) ?></strong>
                         <span><?= e($e['contrat_type']) ?></span>
                     </div>
-                    <span class="timeline-date"><?= e(format_date($e['contrat_date_fin'] ?? null)) ?> (J-<?= $j ?>)</span>
+                    <span class="timeline-date"><?= e(format_date($e['contrat_date_fin'] ?? null)) ?> <span class="tl-jours">J-<?= $j ?></span></span>
                 </div>
             <?php endforeach; ?>
         </div>
     </article>
     <?php endif; ?>
 </section>
-<?php endif; ?>
 
-<section class="grid two">
+<!-- Activity + Validation -->
+<section class="grid two bottom-section">
     <article class="card">
         <div class="section-header">
-            <h2>Activite recente</h2>
-            <a class="btn btn-info" href="<?= e(app_url('societes')) ?>"><span class="material-symbols-outlined">visibility</span> Voir tout</a>
+            <a class="dash-title-link" href="<?= e(app_url('societes')) ?>"><h4>Activité recente</h4></a>
         </div>
         <?php if (!$activiteRecente): ?>
-            <p class="table-empty">Aucune activite recente.</p>
+            <p class="table-empty">Aucune activité recente.</p>
         <?php else: ?>
-            <div class="activity-feed">
-                <?php foreach ($activiteRecente as $a):
-                    $type = $a['type'];
-                    $icon = $type === 'societe' ? 'business' : ($type === 'contrat' ? 'signature' : 'person');
-                    $label = $type === 'societe' ? 'Societe creee' : ($type === 'contrat' ? 'Contrat ajoute' : 'Associe ajoute');
-                    $url = app_url('societe', ['id' => (int) $a['ref_id']]);
-                    $dt = date('d/m/Y H:i', strtotime($a['created_at']));
-                ?>
-                    <a class="activity-item" href="<?= e($url) ?>">
-                        <span class="activity-icon <?= $type ?>"><span class="material-symbols-outlined"><?= $icon ?></span></span>
-                        <span class="activity-text"><strong><?= e($label) ?></strong> <?= e($a['libelle'] ?? '-') ?></span>
-                        <span class="activity-meta"><?= $dt ?><br><span class="meta-ago"><?= time_ago($a['created_at']) ?></span></span>
-                    </a>
-                <?php endforeach; ?>
-            </div>
-        <?php endif; ?>
-    </article>
-
-    <article class="card">
-        <div class="section-header">
-            <h2><span class="material-symbols-outlined" style="color:var(--success)">fact_check</span> Derniers documents generes</h2>
-            <a class="btn btn-info" href="<?= e(app_url('documents')) ?>"><span class="material-symbols-outlined">visibility</span> Voir tout</a>
-        </div>
-        <?php if (!$documentsRecents): ?>
-            <p class="table-empty">Aucun document genere.</p>
-        <?php else: ?>
-            <div class="activity-feed">
-                <?php foreach ($documentsRecents as $d):
-                    $ddt = date('d/m/Y H:i', strtotime($d['created_at']));
-                    $dsize = $d['taille_ko'] ? number_format((float) $d['taille_ko'], 1, ',', ' ') . ' Ko' : '';
-                    $dvalide = (int) ($d['valide'] ?? 0);
-                ?>
-                    <a class="activity-item" href="<?= e(app_url('societe', ['id' => (int) $d['societe_id']])) ?>">
-                        <span class="activity-icon document"><span class="material-symbols-outlined">description</span></span>
-                        <span class="activity-text">
-                            <strong><?= e($d['doc_type']) ?></strong> <?= e($d['societe_raison_sociale']) ?>
-                            <?php if ($dsize): ?><span class="doc-size"><?= $dsize ?></span><?php endif; ?>
-                            <?php if (!$dvalide): ?><span class="doc-pending">En attente</span><?php endif; ?>
-                        </span>
-                        <span class="activity-meta"><?= $ddt ?><br><span class="meta-ago"><?= time_ago($d['created_at']) ?></span></span>
-                    </a>
-                <?php endforeach; ?>
-            </div>
-        <?php endif; ?>
-    </article>
-</section>
-
-<section class="grid two">
-    <!-- Validation documents -->
-    <?php if ($collabActivity): ?>
-    <article class="card">
-        <div class="section-header">
-            <h2><span class="material-symbols-outlined" style="color:var(--primary)">work_history</span> Activite recente</h2>
-            <a class="btn btn-info" href="<?= e(app_url('activite')) ?>"><span class="material-symbols-outlined">history</span> Voir tout</a>
-        </div>
-        <div class="activity-feed">
-            <?php foreach ($collabActivity as $ca):
-                $caAction = (string) ($ca['action'] ?? '');
-                $caIcon = match ($caAction) {
-                    'create', 'ajout' => 'add_circle',
-                    'update' => 'edit',
-                    'delete', 'suppression' => 'delete',
-                    'connexion' => 'login',
-                    'deconnexion' => 'logout',
-                    'generate' => 'description',
-                    default => 'radio_button_unchecked',
-                };
-                $caColor = match ($caAction) {
-                    'delete', 'suppression' => 'var(--danger)',
-                    'create', 'ajout' => 'var(--success)',
-                    'connexion' => 'var(--info)',
-                    default => 'var(--primary)',
-                };
-                $caDt = date('d/m/Y H:i', strtotime($ca['created_at']));
+        <table class="dash-table">
+            <thead><tr><th>Action</th><th>Societe</th><th>Date</th><th class="col-action"></th></tr></thead>
+            <tbody>
+            <?php foreach ($activiteRecente as $a):
+                $type = $a['type'];
+                $icon = $type === 'societe' ? 'business' : ($type === 'contrat' ? 'signature' : 'person');
+                $label = $type === 'societe' ? 'Societe creee' : ($type === 'contrat' ? 'Contrat ajoute' : 'Associe ajoute');
+                $url = app_url('societe', ['id' => (int) $a['ref_id']]);
             ?>
-                <div class="activity-item">
-                    <span class="activity-icon" style="color:<?= $caColor ?>"><span class="material-symbols-outlined"><?= $caIcon ?></span></span>
-                    <span class="activity-text">
-                        <strong><?= e((string) ($ca['user_nom'] ?? '—')) ?></strong>
-                        <span class="help-text"><?= e($caAction) ?></span>
-                        <?php if ($ca['entity_label']): ?>
-                            — <?= e($ca['entity_label']) ?>
-                        <?php endif; ?>
-                        <span class="help-text">(<?= e($ca['entity_type']) ?>)</span>
-                    </span>
-                    <span class="activity-meta"><?= $caDt ?></span>
+                <tr>
+                    <td><span class="material-symbols-outlined" style="color:var(--primary);font-size:0.9rem;vertical-align:middle;margin-right:4px"><?= $icon ?></span> <?= e($label) ?></td>
+                    <td><?= e($a['libelle'] ?? '-') ?></td>
+                    <td><small style="color:var(--text-muted)"><?= time_ago($a['created_at']) ?></small></td>
+                    <td class="col-action"><a class="btn-icon" href="<?= e($url) ?>"><span class="material-symbols-outlined" style="color:var(--info)">visibility</span></a></td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+        <?php endif; ?>
+    </article>
+
+    <article class="card">
+        <div class="section-header">
+            <a class="dash-title-link" href="<?= e(app_url('documents')) ?>"><h4><span class="material-symbols-outlined" style="color:var(--success)">fact_check</span> Validation</h4></a>
+        </div>
+        <div class="dash-validation">
+            <div class="dash-val-ring">
+                <div class="donut-sm" style="background: conic-gradient(var(--success) 0% <?= $valPct ?>%, var(--warning) <?= $valPct ?>% 100%)">
+                    <span class="donut-sm-value"><?= $valPct ?><small>%</small></span>
                 </div>
-            <?php endforeach; ?>
-        </div>
-    </article>
-    <?php endif; ?>
-
-    <?php if ($isConnected): ?>
-    <article class="card">
-        <div class="section-header">
-            <h2><span class="material-symbols-outlined" style="color:var(--primary)">check_circle</span> Validation des documents</h2>
-            <a class="btn btn-info" href="<?= e(app_url('documents')) ?>"><span class="material-symbols-outlined">visibility</span> Gerer</a>
-        </div>
-        <div class="validation-stats">
-            <div class="validation-stat">
-                <span>Valides</span>
-                <strong style="color:var(--success)"><?= $docsValides ?></strong>
+                <div class="dash-val-text">
+                    <strong><?= $docsValides ?></strong> valides
+                    <span>sur <?= $docsTotal ?> documents</span>
+                </div>
             </div>
-            <div class="validation-stat">
-                <span>En attente</span>
-                <strong style="color:var(--warning)"><?= $docsEnAttente ?></strong>
-            </div>
-        </div>
-        <?php if ($docsAVerifier): ?>
-        <div class="activity-feed">
-            <?php foreach ($docsAVerifier as $dv):
-                $dvdt = date('d/m/Y H:i', strtotime($dv['created_at']));
-            ?>
-                <a class="activity-item" href="<?= e(app_url('societe', ['id' => (int) $dv['societe_id']])) ?>">
-                    <span class="activity-icon document"><span class="material-symbols-outlined">description</span></span>
-                    <span class="activity-text"><strong><?= e($dv['doc_type']) ?></strong> <?= e($dv['societe_raison_sociale']) ?></span>
-                    <span class="activity-meta"><?= $dvdt ?></span>
-                </a>
-            <?php endforeach; ?>
-        </div>
-        <?php else: ?>
-        <p class="table-empty">Tous les documents sont valides.</p>
-        <?php endif; ?>
-    </article>
-    <?php endif; ?>
-
-    <article class="card stack">
-        <div class="section-header">
-            <h2>Formes juridiques</h2>
-        </div>
-        <?php if (!$repartitionFormes): ?>
-            <p class="table-empty">Aucune donnee disponible.</p>
-        <?php else: ?>
-            <table>
-                <thead><tr><th>Forme</th><th style="width:50px">Nb</th><th style="width:40px">%</th></tr></thead>
+            <?php if ($docsAVerifier): ?>
+            <table class="dash-table">
+                <thead><tr><th>Document</th><th>Societe</th><th>Date</th><th class="col-action"></th></tr></thead>
                 <tbody>
-                <?php $ci = 0; $formesTotal = array_sum(array_column($repartitionFormes, 'total')); foreach ($repartitionFormes as $r):
-                    $dotClass = 'c' . (($ci % 8) + 1); $ci++;
-                    $fpct = $formesTotal > 0 ? round(((int) $r['total'] / $formesTotal) * 100) : 0; ?>
+                <?php foreach ($docsAVerifier as $dv):
+                    $dvdt = date('d/m/Y H:i', strtotime($dv['created_at']));
+                ?>
                     <tr>
-                        <td><span class="repartition-dot <?= $dotClass ?>"></span><span class="repartition-label"><?= e($r['societe_forme_juridique'] ?: '-') ?><span class="mini-bar"><span class="mini-fill" style="width:<?= $fpct ?>%"></span></span></span></td>
-                        <td><strong><?= (int) $r['total'] ?></strong></td>
-                        <td class="text-muted"><?= $fpct ?>%</td>
+                        <td><span class="material-symbols-outlined" style="color:var(--warning);font-size:0.9rem;vertical-align:middle;margin-right:4px">pending</span> <?= e($dv['doc_type']) ?></td>
+                        <td><?= e($dv['societe_raison_sociale']) ?></td>
+                        <td><small style="color:var(--text-muted)"><?= $dvdt ?></small></td>
+                        <td class="col-action"><a class="btn-icon" href="<?= e(app_url('societe', ['id' => (int) $dv['societe_id']])) ?>"><span class="material-symbols-outlined" style="color:var(--info)">visibility</span></a></td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
             </table>
-        <?php endif; ?>
-
-        <div class="section-header" style="margin-top:1.25rem">
-            <h2>Types de contrat</h2>
+            <?php else: ?>
+            <p class="table-empty" style="margin-top:0.75rem">Tous les documents sont valides.</p>
+            <?php endif; ?>
         </div>
-        <?php if (!$repartitionContrats): ?>
-            <p class="table-empty">Aucune donnee disponible.</p>
-        <?php else: ?>
-            <table>
-                <thead><tr><th>Type</th><th style="width:50px">Nb</th><th style="width:40px">%</th></tr></thead>
-                <tbody>
-                <?php $ci = 0; $contratsTotal = array_sum(array_column($repartitionContrats, 'total')); foreach ($repartitionContrats as $r):
-                    $dotClass = 'c' . (($ci % 8) + 1); $ci++;
-                    $cpct = $contratsTotal > 0 ? round(((int) $r['total'] / $contratsTotal) * 100) : 0; ?>
-                    <tr>
-                        <td><span class="repartition-dot <?= $dotClass ?>"></span><span class="repartition-label"><?= e($r['contrat_type'] ?: '-') ?><span class="mini-bar"><span class="mini-fill" style="width:<?= $cpct ?>%"></span></span></span></td>
-                        <td><strong><?= (int) $r['total'] ?></strong></td>
-                        <td class="text-muted"><?= $cpct ?>%</td>
-                    </tr>
-                <?php endforeach; ?>
-                </tbody>
-            </table>
-        <?php endif; ?>
     </article>
 </section>
+
+<?php if ($collabActivity): ?>
+<section class="card bottom-section">
+    <div class="section-header">
+        <a class="dash-title-link" href="<?= e(app_url('activite')) ?>"><h4><span class="material-symbols-outlined" style="color:var(--primary)">work_history</span> Journal d'activite</h4></a>
+    </div>
+    <table class="dash-table">
+        <thead><tr><th>Utilisateur</th><th>Action</th><th>Date</th></tr></thead>
+        <tbody>
+        <?php foreach (array_slice($collabActivity, 0, 7) as $ca):
+            $caAction = (string) ($ca['action'] ?? '');
+            $caIcon = match ($caAction) {
+                'create', 'ajout' => 'add_circle',
+                'update' => 'edit',
+                'delete', 'suppression' => 'delete',
+                'connexion' => 'login',
+                'deconnexion' => 'logout',
+                'generate' => 'description',
+                default => 'radio_button_unchecked',
+            };
+            $caColor = match ($caAction) {
+                'delete', 'suppression' => 'var(--danger)',
+                'create', 'ajout' => 'var(--success)',
+                'connexion' => 'var(--info)',
+                default => 'var(--primary)',
+            };
+            $caDt = date('d/m/Y H:i', strtotime($ca['created_at']));
+        ?>
+            <tr>
+                <td><span class="material-symbols-outlined" style="color:<?= $caColor ?>;font-size:0.9rem;vertical-align:middle;margin-right:4px"><?= $caIcon ?></span> <?= e((string) ($ca['user_nom'] ?? '—')) ?></td>
+                <td><?= e($caAction) ?><?= $ca['entity_label'] ? ' — ' . e($ca['entity_label']) : '' ?></td>
+                <td><small style="color:var(--text-muted)"><?= $caDt ?></small></td>
+            </tr>
+        <?php endforeach; ?>
+        </tbody>
+    </table>
+</section>
+<?php endif; ?>

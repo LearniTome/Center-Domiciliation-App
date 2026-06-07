@@ -182,7 +182,7 @@ if (($pdo ?? null) instanceof PDO) {
                         <td><?= e(date('d/m/Y', strtotime((string) $c['created_at']))) ?></td>
                         <td><?= e($c['last_login'] ? date('d/m/Y H:i', strtotime($c['last_login'])) : '-') ?></td>
                         <td class="table-actions">
-                            <a class="btn-icon" href="<?= e(app_url('collaborateur', ['id' => (int) $c['id']])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
+                            <a class="btn-icon info" href="<?= e(app_url('collaborateur', ['id' => (int) $c['id']])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
                             <form method="post">
                                 <?= csrf_input() ?>
                                 <input type="hidden" name="action" value="delete">

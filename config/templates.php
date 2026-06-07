@@ -25,7 +25,7 @@ return [
     ],
 
     'template_mapping' => [
-        'creation' => ['Statuts', 'Annonce-Legale-Journal', 'Depot-Legal-Constitution', 'Declaration-Immatriculation-RC'],
+        'creation' => ['Statuts', 'Annonce-Legale-Journal', 'Depot-Legal-Constitution', 'Declaration-Immatriculation-RC', 'Attestation-Domiciliation-Initiale', 'Contrat-Domiciliation'],
         'domiciliation' => ['Contrat-Domiciliation', 'Attestation-Domiciliation-Initiale'],
     ],
 ];

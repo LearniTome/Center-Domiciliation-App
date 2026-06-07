@@ -118,7 +118,7 @@ $totalAvecCompte = array_reduce($roles, fn($c, $r) => $c + (int) ($r['nb_collabo
                                 <?php endif; ?>
                             </td>
                             <td class="table-actions">
-                                <a class="btn-icon" href="<?= e(app_url('role', ['id' => (int) $r['id']])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
+                                <a class="btn-icon info" href="<?= e(app_url('role', ['id' => (int) $r['id']])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
                                 <?php if (!(int) ($r['is_system'] ?? 0)): ?>
                                 <form method="post" style="display:inline">
                                     <?= csrf_input() ?>

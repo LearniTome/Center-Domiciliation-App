@@ -353,7 +353,7 @@ if ($editingId > 0 && ($pdo ?? null) instanceof PDO) {
                                 <?= e($u['last_login'] ? date('d/m/Y H:i', strtotime($u['last_login'])) : 'Jamais') ?>
                             </td>
                             <td class="table-actions">
-                                <a class="btn-icon" href="<?= e(app_url('collaborateur', ['id' => (int) $u['id']])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
+                                <a class="btn-icon info" href="<?= e(app_url('collaborateur', ['id' => (int) $u['id']])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
                             </td>
                         </tr>
                     <?php endforeach; ?>
