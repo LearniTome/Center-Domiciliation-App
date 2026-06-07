@@ -442,7 +442,7 @@ a:hover {
 .grid.two {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-    gap: 1.25rem;
+    gap: 10px;
 }
 
 .grid.two > .card {
@@ -3266,7 +3266,7 @@ tr[data-coverage], .row-mapped {
 .dm-delta { font-size:0.65rem; color:var(--text-muted); }
 .dm-delta.up { color:var(--success); }
 
-.dash-charts { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:1.25rem; }
+.dash-charts { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr); gap:10px; margin-bottom:1.25rem; }
 .card-link { display:block; text-decoration:none; cursor:pointer; transition:border-color .2s, transform .2s; }
 .card-link:hover { border-color:var(--primary) !important; transform:translateY(-2px); }
 .dash-ring-wrap { display:flex; flex-direction:column; align-items:center; gap:12px; padding:4px 0; }
@@ -3294,7 +3294,7 @@ tr[data-coverage], .row-mapped {
 .dli-val { font-weight:600; font-size:0.78rem; color:var(--text); }
 .dli-pct { font-size:0.68rem; color:var(--text-secondary); }
 
-.dash-cards { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:1rem; align-items:start; }
+.dash-cards { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr); gap:10px; margin-bottom:1.25rem; align-items:start; }
 .dash-table { width:100%; border-collapse:collapse; font-size:0.78rem; }
 .dash-table thead th { padding:6px 8px; font-size:0.65rem; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid var(--line); text-align:left; }
 .dash-table thead th.col-action { width:32px; }
@@ -3326,7 +3326,7 @@ tr[data-coverage], .row-mapped {
 .dash-ditem:hover .dash-ditem-icon { background:rgba(255,255,255,0.08); }
 
 .dash-validation { margin-top:2px; }
-.bottom-section { margin-top:1rem; }
+.bottom-section { margin-top:1.25rem; }
 .dash-val-ring { display:flex; align-items:center; gap:14px; padding:4px 0 10px; }
 .dash-val-text { font-size:0.78rem; color:var(--text-secondary); }
 .dash-val-text strong { display:block; font-size:1.1rem; color:var(--text); }
