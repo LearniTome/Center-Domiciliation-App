@@ -367,7 +367,8 @@ $isNew = !$editingRecord;
 
 <style>
 form.stack > article.card + article.card { margin-top: 0; }
-.collab-edit-form > .card { padding: 8px 12px; }
+.collab-edit-form > form > .card,
+form.collab-edit-form > .card { padding: 8px 12px; }
 .collab-edit-form .section-header { margin-bottom: 0; padding: 0 0 4px; }
 .collab-edit-form .section-header h2 { font-size: 0.75rem; }
 .collab-edit-form .form-grid { display: flex; flex-wrap: wrap; gap: 6px 10px; }
@@ -377,7 +378,13 @@ form.stack > article.card + article.card { margin-top: 0; }
 .collab-edit-form .field select,
 .collab-edit-form .field textarea { font-size: 0.72rem; padding: 2px 5px; flex: 1; min-width: 60px; }
 .collab-edit-form .field.full { flex: 1 1 100%; }
-.collab-edit-form .perms-table { font-size: 0.7rem; }
+.collab-edit-form .perms-table { font-size: 0.65rem; }
+.collab-edit-form .perms-table tbody td { padding: 2px 4px; }
+.collab-edit-form .perms-table tbody td.cat-label-cell { font-size: 0.65rem; min-width: 140px; }
+.collab-edit-form .perms-table tr.cat-row th { padding: 3px 4px; font-size: 0.55rem; min-width: 50px; }
+.collab-edit-form .perms-table tr.cat-row th:first-child { min-width: 100px; }
+.collab-edit-form .cat-label-inner .material-symbols-outlined { font-size: 0.85rem; }
+.collab-edit-form .perms-table tbody input[type="checkbox"] { width: 12px; height: 12px; }
 .collab-edit-form .help-text { font-size: 0.62rem; }
 .collab-preview { gap: 0 !important; }
 .collab-preview .section-header { margin-bottom: 0; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
