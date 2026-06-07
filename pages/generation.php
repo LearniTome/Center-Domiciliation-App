@@ -374,7 +374,7 @@ $docxCount = $totalGenerated;
                     <table data-sortable style="white-space: nowrap">
                         <thead>
                             <tr>
-                                <th class="col-check"><a class="btn-icon" href="#" id="select-all" title="Tout selectionner"><span class="material-symbols-outlined">select_all</span></a></th>
+                                <th class="col-check"><input type="checkbox" id="select-all" title="Tout selectionner"></th>
                                 <th data-col="type">Type de document</th>
                                 <th data-col="fichier">Fichier</th>
                                 <th data-col="champs">Champs</th>
@@ -405,12 +405,10 @@ $docxCount = $totalGenerated;
             </form>
 
             <script>
-            document.getElementById('select-all')?.addEventListener('click', function(e) {
-                e.preventDefault();
+            document.getElementById('select-all')?.addEventListener('change', function() {
                 const form = document.getElementById('gen-form');
                 const checkboxes = form.querySelectorAll('input[name="templates[]"]');
-                const allChecked = Array.from(checkboxes).every(c => c.checked);
-                checkboxes.forEach(c => c.checked = !allChecked);
+                checkboxes.forEach(c => c.checked = this.checked);
             });
             </script>
         <?php else: ?>
@@ -475,7 +473,7 @@ $docxCount = $totalGenerated;
                 <table data-sortable style="white-space: nowrap">
                     <thead>
                         <tr>
-                            <th class="col-check"><a class="btn-icon" href="#" id="select-all-files" title="Selectionner tout"><span class="material-symbols-outlined">select_all</span></a></th>
+                            <th class="col-check"><input type="checkbox" id="select-all-files" title="Selectionner tout"></th>
                             <th data-col="type">Type de document</th>
                             <th data-col="fichier">Fichier</th>
                             <th data-col="taille">Taille</th>
@@ -537,12 +535,10 @@ $docxCount = $totalGenerated;
             </div>
         </form>
         <script>
-        document.getElementById('select-all-files')?.addEventListener('click', function(e) {
-            e.preventDefault();
+        document.getElementById('select-all-files')?.addEventListener('change', function() {
             const form = document.getElementById('files-form');
             const checkboxes = form.querySelectorAll('input[name="selected_files[]"]');
-            const allChecked = Array.from(checkboxes).every(c => c.checked);
-            checkboxes.forEach(c => c.checked = !allChecked);
+            checkboxes.forEach(c => c.checked = this.checked);
         });
         </script>
     <?php else: ?>
