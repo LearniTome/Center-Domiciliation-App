@@ -370,11 +370,13 @@ form.stack > article.card + article.card { margin-top: 0; }
 .collab-edit-form > .card { padding: 8px 12px; }
 .collab-edit-form .section-header { margin-bottom: 0; padding: 0 0 4px; }
 .collab-edit-form .section-header h2 { font-size: 0.75rem; }
-.collab-edit-form .form-grid { gap: 6px 12px; grid-template-columns: 1fr 1fr; }
-.collab-edit-form .field > span { font-size: 0.62rem; }
+.collab-edit-form .form-grid { display: flex; flex-wrap: wrap; gap: 6px 10px; }
+.collab-edit-form .field { flex-direction: row; align-items: center; gap: 4px; flex: 1 1 140px; min-width: 0; }
+.collab-edit-form .field > span { font-size: 0.6rem; white-space: nowrap; flex-shrink: 0; }
 .collab-edit-form .field input,
 .collab-edit-form .field select,
-.collab-edit-form .field textarea { font-size: 0.75rem; padding: 3px 6px; }
+.collab-edit-form .field textarea { font-size: 0.72rem; padding: 2px 5px; flex: 1; min-width: 60px; }
+.collab-edit-form .field.full { flex: 1 1 100%; }
 .collab-edit-form .perms-table { font-size: 0.7rem; }
 .collab-edit-form .help-text { font-size: 0.62rem; }
 .collab-preview { gap: 0 !important; }
@@ -444,7 +446,7 @@ form.stack > article.card + article.card { margin-top: 0; }
                 <span class="material-symbols-outlined">badge</span>
                 <h2>Identit&eacute; &amp; R&ocirc;le</h2>
             </div>
-            <div class="form-grid" style="grid-template-columns:1fr">
+            <div class="form-grid">
                 <label class="field">
                     <span>Type collaborateur</span>
                     <select onchange="location.href='?page=collaborateur<?= $editingId ? '&id=' . $editingId . '&edit' : '' ?>&type='+this.value">
@@ -651,7 +653,7 @@ form.stack > article.card + article.card { margin-top: 0; }
                     <span class="material-symbols-outlined">badge</span>
                     <h2>Identit&eacute; &amp; R&ocirc;le</h2>
                 </div>
-                <div class="form-grid" style="grid-template-columns:1fr">
+                <div class="form-grid">
                     <label class="field">
                         <span>Type collaborateur</span>
                         <select onchange="location.href='?page=collaborateur&id=<?= $editingId ?>&edit&type='+this.value">
