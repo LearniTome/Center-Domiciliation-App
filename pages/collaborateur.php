@@ -874,8 +874,14 @@ form.stack > article.card + article.card { margin-top: 0; }
 
             <?php if ($formData['collaborateur_email'] || $formData['email'] || $formData['collaborateur_tel_mobile'] || $formData['collaborateur_tel_fixe'] || $formData['telephone'] || $formData['collaborateur_adresse']): ?>
             <h3 class="section-title">Contact</h3>
-            <?php if ($formData['collaborateur_email']): ?><div><span>Email professionnel</span><strong><?= e($formData['collaborateur_email']) ?></strong></div><?php endif; ?>
-            <?php if ($formData['email'] && $formData['email'] !== $formData['collaborateur_email']): ?><div><span>Email secondaire</span><strong><?= e($formData['email']) ?></strong></div><?php endif; ?>
+            <?php if ($formData['collaborateur_email'] && $formData['email'] && $formData['email'] !== $formData['collaborateur_email']): ?>
+                <div><span>Email professionnel</span><strong><?= e($formData['collaborateur_email']) ?></strong></div>
+                <div><span>Email secondaire</span><strong><?= e($formData['email']) ?></strong></div>
+            <?php elseif ($formData['collaborateur_email']): ?>
+                <div><span>Email professionnel</span><strong><?= e($formData['collaborateur_email']) ?></strong></div>
+            <?php elseif ($formData['email']): ?>
+                <div><span>Email</span><strong><?= e($formData['email']) ?></strong></div>
+            <?php endif; ?>
             <?php if ($formData['collaborateur_tel_fixe']): ?><div><span>T&eacute;l&eacute;phone fixe</span><strong><?= e($formData['collaborateur_tel_fixe']) ?></strong></div><?php endif; ?>
             <?php if ($formData['collaborateur_tel_mobile']): ?><div><span>T&eacute;l&eacute;phone mobile</span><strong><?= e($formData['collaborateur_tel_mobile']) ?></strong></div><?php endif; ?>
             <?php if (!$formData['collaborateur_tel_fixe'] && !$formData['collaborateur_tel_mobile'] && $formData['telephone']): ?><div><span>T&eacute;l&eacute;phone</span><strong><?= e($formData['telephone']) ?></strong></div><?php endif; ?>
