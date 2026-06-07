@@ -671,7 +671,7 @@ article.card + article.card {
     cursor: pointer;
 }
 .dash-title-link:hover h4 {
-    color: var(--primary);
+    opacity: 0.8;
 }
 .dash-title-link:hover h4 .material-symbols-outlined {
     transform: scale(1.1);

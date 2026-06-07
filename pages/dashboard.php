@@ -561,7 +561,7 @@ if ($isConnected) {
     <?php if ($hasAlerts): ?>
     <article class="card dash-acard">
         <div class="section-header">
-            <a class="dash-title-link" href="<?= e(app_url('societes')) ?>"><h4><span class="material-symbols-outlined" style="color:var(--warning)">warning</span> Alertes <span class="dash-badge"><?= $alerteCount ?></span></h4></a>
+            <a class="dash-title-link" href="<?= e(app_url('societes')) ?>"><h4 style="color:var(--warning)"><span class="material-symbols-outlined" style="color:var(--warning)">warning</span> Alertes <span class="dash-badge"><?= $alerteCount ?></span></h4></a>
         </div>
         <table class="dash-table">
             <thead><tr><th>Type</th><th>Societe / Personne</th><th>Detail</th><th class="col-action"></th></tr></thead>
@@ -588,7 +588,7 @@ if ($isConnected) {
 
     <article class="card">
         <div class="section-header">
-            <a class="dash-title-link" href="<?= e(app_url('documents')) ?>"><h4><span class="material-symbols-outlined" style="color:var(--primary)">description</span> Derniers documents</h4></a>
+            <a class="dash-title-link" href="<?= e(app_url('documents')) ?>"><h4 style="color:var(--primary)"><span class="material-symbols-outlined" style="color:var(--primary)">description</span> Derniers documents</h4></a>
         </div>
         <?php if (!$documentsRecents): ?>
             <p class="table-empty">Aucun document genere.</p>
@@ -617,7 +617,7 @@ if ($isConnected) {
     <?php if ($echeances): ?>
     <article class="card">
         <div class="section-header">
-            <a class="dash-title-link" href="<?= e(app_url('contrats')) ?>"><h4><span class="material-symbols-outlined" style="color:var(--warning)">calendar_clock</span> Echeances</h4></a>
+            <a class="dash-title-link" href="<?= e(app_url('contrats')) ?>"><h4 style="color:var(--warning)"><span class="material-symbols-outlined" style="color:var(--warning)">calendar_clock</span> Echeances</h4></a>
         </div>
         <div class="timeline-list">
             <?php foreach ($echeances as $e):
@@ -643,7 +643,7 @@ if ($isConnected) {
 <section class="grid two bottom-section">
     <article class="card">
         <div class="section-header">
-            <a class="dash-title-link" href="<?= e(app_url('societes')) ?>"><h4>Activité recente</h4></a>
+            <a class="dash-title-link" href="<?= e(app_url('societes')) ?>"><h4 style="color:var(--info)">Activité recente</h4></a>
         </div>
         <?php if (!$activiteRecente): ?>
             <p class="table-empty">Aucune activité recente.</p>
@@ -671,7 +671,7 @@ if ($isConnected) {
 
     <article class="card">
         <div class="section-header">
-            <a class="dash-title-link" href="<?= e(app_url('documents')) ?>"><h4><span class="material-symbols-outlined" style="color:var(--success)">fact_check</span> Validation</h4></a>
+            <a class="dash-title-link" href="<?= e(app_url('documents')) ?>"><h4 style="color:var(--success)"><span class="material-symbols-outlined" style="color:var(--success)">fact_check</span> Validation</h4></a>
             <div class="dash-val-ring">
                 <div class="donut-sm" style="background: conic-gradient(var(--success) 0% <?= $valPct ?>%, var(--warning) <?= $valPct ?>% 100%)">
                     <span class="donut-sm-value"><?= $valPct ?><small>%</small></span>
@@ -709,7 +709,7 @@ if ($isConnected) {
 <?php if ($collabActivity): ?>
 <section class="card bottom-section">
     <div class="section-header">
-        <a class="dash-title-link" href="<?= e(app_url('activite')) ?>"><h4><span class="material-symbols-outlined" style="color:var(--primary)">work_history</span> Journal d'activite</h4></a>
+        <a class="dash-title-link" href="<?= e(app_url('activite')) ?>"><h4 style="color:var(--primary)"><span class="material-symbols-outlined" style="color:var(--primary)">work_history</span> Journal d'activite</h4></a>
     </div>
     <table class="dash-table dash-table-journal">
         <thead><tr><th>Utilisateur</th><th>Action</th><th>Date</th></tr></thead>
