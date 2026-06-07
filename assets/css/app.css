@@ -3295,10 +3295,10 @@ tr[data-coverage], .row-mapped {
 .dli-pct { font-size:0.68rem; color:var(--text-secondary); }
 
 .dash-cards { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:1rem; align-items:start; }
-.dash-table { width:100%; border-collapse:collapse; font-size:0.78rem; }
-.dash-table thead th { padding:6px 8px; font-size:0.65rem; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid var(--line); text-align:left; }
+.dash-table { width:100%; border-collapse:separate; border-spacing:0; font-size:0.78rem; border:1px solid var(--line); border-radius:6px; overflow:hidden; }
+.dash-table thead th { padding:7px 10px; font-size:0.65rem; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid var(--line); text-align:left; background:color-mix(in srgb, var(--line) 30%, transparent); }
 .dash-table thead th.col-action { width:32px; }
-.dash-table tbody td { padding:7px 8px; border-bottom:1px solid color-mix(in srgb, var(--line) 50%, transparent); color:var(--text); vertical-align:middle; }
+.dash-table tbody td { padding:8px 10px; border-bottom:1px solid color-mix(in srgb, var(--line) 50%, transparent); color:var(--text); vertical-align:middle; }
 .dash-table tbody tr:last-child td { border-bottom:none; }
 .dash-table tbody tr:hover td { background:rgba(255,255,255,0.02); }
 .dash-table .btn-icon { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:4px; text-decoration:none; transition:background .15s; }
