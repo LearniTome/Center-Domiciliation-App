@@ -3257,21 +3257,6 @@ tr[data-coverage], .row-mapped {
 .dash-charts { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr); gap:10px; margin-bottom:1.25rem; }
 .card-link { display:block; text-decoration:none; cursor:pointer; transition:border-color .2s, transform .2s; }
 .card-link:hover { border-color:var(--primary) !important; transform:translateY(-2px); }
-.dash-ring-wrap { display:flex; flex-direction:row; align-items:center; gap:14px; padding:4px 0; }
-.dash-ring-wrap .dash-ring-big { width:90px; height:90px; }
-.dash-ring-wrap .dash-ring-big::before { inset:14px; }
-.dash-ring-big { width:100px; height:100px; border-radius:50%; display:flex; align-items:center; justify-content:center; position:relative; flex-shrink:0; }
-.dash-ring-big::before { content:''; position:absolute; inset:12px; border-radius:50%; background:var(--panel); }
-.dash-ring-inner { position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; line-height:1.2; }
-.dash-ring-pct { font-size:0.95rem; font-weight:700; color:var(--text); }
-.dash-ring-pct small { font-size:0.5rem; font-weight:400; color:var(--text-secondary); }
-.dash-ring-sub { font-size:0.62rem; color:var(--text-secondary); margin-top:2px; }
-.dash-ring-stats { display:flex; flex-direction:column; gap:3px; flex:1; min-width:0; }
-.dash-rs-item { display:flex; align-items:center; gap:6px; font-size:0.72rem; color:var(--text-secondary); }
-.dash-rs-item { display:flex; align-items:center; gap:6px; font-size:0.72rem; color:var(--text-secondary); }
-.dash-rs-item .rs-right { margin-left:auto; display:flex; align-items:baseline; gap:6px; }
-.dash-rs-item .rs-right strong { font-weight:600; font-size:0.78rem; color:var(--text); min-width:20px; text-align:right; }
-.dash-rs-item .rs-right .rs-pct { font-size:0.68rem; color:var(--text-secondary); min-width:35px; text-align:right; }
 .stat-dot { width:7px; height:7px; border-radius:50%; display:inline-block; flex-shrink:0; }
 .stat-dot.success { background:var(--success); }
 .stat-dot.warning { background:var(--warning); }

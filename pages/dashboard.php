@@ -485,23 +485,22 @@ if ($isConnected) {
 <section class="dash-charts">
     <a class="card card-link" href="<?= e(app_url('generation')) ?>">
         <div class="section-header"><h3>Dossiers complets</h3></div>
-        <div class="dash-ring-wrap">
-            <div class="dash-ring-big" style="background: conic-gradient(var(--success) 0% <?= $pctComplets ?>%, rgba(255,255,255,0.06) <?= $pctComplets ?>% 100%)">
-                <div class="dash-ring-inner">
-                    <strong class="dash-ring-pct"><?= $pctComplets ?><small>%</small></strong>
-                    <span class="dash-ring-sub"><?= $dossiersComplets ?>/<?= $totalSocietes ?></span>
-                </div>
+        <div class="dash-donut-row">
+            <div class="dash-donut" style="background: conic-gradient(var(--success) 0% <?= $pctComplets ?>%, rgba(255,255,255,0.06) <?= $pctComplets ?>% 100%)">
+                <span class="dash-donut-center"><?= $pctComplets ?><small>%</small></span>
             </div>
-            <div class="dash-ring-stats">
-                <div class="dash-rs-item">
-                    <span class="stat-dot success"></span>
-                    <span>Complets</span>
-                    <span class="rs-right"><strong><?= $dossiersComplets ?></strong><span class="rs-pct"><?= $pctComplets ?>%</span></span>
+            <div class="dash-dlegend">
+                <div class="dash-dli">
+                    <span class="legend-dot success"></span>
+                    <span class="dli-label">Complets</span>
+                    <span class="dli-val"><?= $dossiersComplets ?></span>
+                    <span class="dli-pct"><?= $pctComplets ?>%</span>
                 </div>
-                <div class="dash-rs-item">
-                    <span class="stat-dot warning"></span>
-                    <span>Incomplets</span>
-                    <span class="rs-right"><strong><?= $dossiersIncomplets ?></strong><span class="rs-pct"><?= 100 - $pctComplets ?>%</span></span>
+                <div class="dash-dli">
+                    <span class="legend-dot" style="background:var(--warning)"></span>
+                    <span class="dli-label">Incomplets</span>
+                    <span class="dli-val"><?= $dossiersIncomplets ?></span>
+                    <span class="dli-pct"><?= 100 - $pctComplets ?>%</span>
                 </div>
             </div>
         </div>
