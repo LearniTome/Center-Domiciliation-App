@@ -355,9 +355,12 @@ $totalGenerated = count($sessionFiles);
 $docxCount = $totalGenerated;
 
 $hasValidatedDocs = false;
+$hasPendingPdf = false;
 if (($pdo ?? null) instanceof PDO && $societeId > 0) {
     $allDocs = fetch_all_documents($pdo, $societeId);
-    $hasValidatedDocs = count(array_filter($allDocs, fn($d) => (int) $d['valide'] === 1)) > 0;
+    $validatedDocs = array_filter($allDocs, fn($d) => (int) $d['valide'] === 1);
+    $hasValidatedDocs = count($validatedDocs) > 0;
+    $hasPendingPdf = count(array_filter($validatedDocs, fn($d) => empty($d['fichier_pdf']))) > 0;
 }
 
 ?>
@@ -587,9 +590,11 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
                     <span class="material-symbols-outlined">task_alt</span> Valider
                 </button>
                 <?php if ($hasValidatedDocs): ?>
+                <?php if ($hasPendingPdf): ?>
                 <button type="submit" class="btn btn-info" name="generate_pdf_submit" value="1">
                     <span class="material-symbols-outlined">picture_as_pdf</span> Generer PDF
                 </button>
+                <?php endif; ?>
                 <button type="submit" class="btn btn-cancel" name="restore_submit" value="1">
                     <span class="material-symbols-outlined">restore</span> Restaurer en brouillon
                 </button>
