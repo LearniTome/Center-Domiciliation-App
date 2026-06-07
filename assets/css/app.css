@@ -3292,6 +3292,11 @@ tr[data-coverage], .row-mapped {
 .dash-table .btn-icon { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:4px; text-decoration:none; transition:background .15s; }
 .dash-table .btn-icon:hover { background:rgba(255,255,255,0.08); }
 .dash-table .btn-icon .material-symbols-outlined { font-size:1rem; }
+.dash-table .col-action-text { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.dash-table-journal { table-layout:fixed; }
+.dash-table-journal th:nth-child(1) { width:28%; }
+.dash-table-journal th:nth-child(2) { width:auto; }
+.dash-table-journal th:nth-child(3) { width:20%; white-space:nowrap; }
 .dash-acard .section-header { margin-bottom:10px; }
 .dash-badge { display:inline-flex; align-items:center; justify-content:center; min-width:18px; height:18px; padding:0 5px; border-radius:9px; font-size:0.62rem; font-weight:600; background:var(--danger); color:#fff; margin-left:4px; }
 .dash-badge-sm { display:inline-block; font-size:0.6rem; padding:2px 8px; border-radius:8px; font-weight:500; }

@@ -684,7 +684,7 @@ if ($isConnected) {
         </div>
         <div class="dash-validation">
             <?php if ($docsAVerifier): ?>
-            <table class="dash-table">
+    <table class="dash-table dash-table-journal">
                 <thead><tr><th>Document</th><th>Societe</th><th>Date</th><th class="col-action"></th></tr></thead>
                 <tbody>
                 <?php foreach ($docsAVerifier as $dv):
@@ -735,7 +735,7 @@ if ($isConnected) {
         ?>
             <tr>
                 <td><span class="material-symbols-outlined" style="color:<?= $caColor ?>;font-size:0.9rem;vertical-align:middle;margin-right:4px"><?= $caIcon ?></span> <?= e((string) ($ca['user_nom'] ?? '—')) ?></td>
-                <td><?= e($caAction) ?><?= $ca['entity_label'] ? ' — ' . e($ca['entity_label']) : '' ?></td>
+                <td class="col-action-text"><?= e($caAction) ?><?= $ca['entity_label'] ? ' — ' . e($ca['entity_label']) : '' ?></td>
                 <td><small style="color:var(--text-muted)"><?= $caDt ?></small></td>
             </tr>
         <?php endforeach; ?>
