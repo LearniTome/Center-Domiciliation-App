@@ -444,7 +444,7 @@ form.stack > article.card + article.card { margin-top: 0; }
                 <span class="material-symbols-outlined">badge</span>
                 <h2>Identit&eacute; &amp; R&ocirc;le</h2>
             </div>
-            <div class="form-grid">
+            <div class="form-grid" style="grid-template-columns:1fr">
                 <label class="field">
                     <span>Type collaborateur</span>
                     <select onchange="location.href='?page=collaborateur<?= $editingId ? '&id=' . $editingId . '&edit' : '' ?>&type='+this.value">
@@ -651,7 +651,7 @@ form.stack > article.card + article.card { margin-top: 0; }
                     <span class="material-symbols-outlined">badge</span>
                     <h2>Identit&eacute; &amp; R&ocirc;le</h2>
                 </div>
-                <div class="form-grid">
+                <div class="form-grid" style="grid-template-columns:1fr">
                     <label class="field">
                         <span>Type collaborateur</span>
                         <select onchange="location.href='?page=collaborateur&id=<?= $editingId ?>&edit&type='+this.value">
