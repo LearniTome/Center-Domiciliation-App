@@ -260,6 +260,20 @@ npx -y @berthojoris/mcp-mysql-server "mysql://root@127.0.0.1:3306/center_domicil
 - Root should only contain: `index.php`, `run.ps1`, `opencode.json`, `AGENTS.md`, `CLAUDE.md`, `.gitignore`, and directories
 - `.gitignore` already blocks `/*.txt` and `/*.png` from root to prevent accidental commits
 
+## Auto-Migration System
+
+Le système de migration automatique synchronise le schéma DB entre plusieurs PC (XAMPP local).
+
+- **Fonctionnement** : `includes/migrations.php` est appelé dans `bootstrap.php` après la connexion PDO
+- **Stockage** : Les fichiers SQL timestampés dans `database/migrations/` (format `YYYYMMDD_HHMMSS_description.sql`)
+- **Tracking** : Table `_migrations` enregistre les fichiers déjà appliqués
+- **Idempotence** : Les migrations `ALTER TABLE` sont protégées — les erreurs "duplicate column" sont ignorées
+- **Workflow multi-PC** :
+  1. Coder et tester sur PC1 → commit + push
+  2. `git pull` sur PC2 → rafraîchir le navigateur → migrations auto-appliquées
+  3. Si une migration échoue, un message d'erreur s'affiche en haut du tableau de bord
+- **Créer une migration** : Ajouter un fichier `database/migrations/<timestamp>_description.sql` — il sera exécuté automatiquement au prochain chargement de page
+
 ## XAMPP Debugging
 - PHP binary: `C:\xampp\php\php.exe`
 - Error log: `C:\xampp\php\logs\php_error_log` or Apache `error.log`
