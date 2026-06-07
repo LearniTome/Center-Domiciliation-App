@@ -361,15 +361,6 @@ $docxCount = $totalGenerated;
                 <?= csrf_input() ?>
                 <input type="hidden" name="societe_id" value="<?= $societeId ?>">
 
-                <div class="section-header">
-                    <div class="table-actions">
-                        <button type="submit" class="btn btn-next">
-                            <span class="material-symbols-outlined">sync</span>
-                            Generer
-                        </button>
-                    </div>
-                </div>
-
                 <div class="table-scroll">
                     <table data-sortable style="white-space: nowrap">
                         <thead>
@@ -399,13 +390,19 @@ $docxCount = $totalGenerated;
                                     </tr>
                                 <?php endforeach; ?>
                             <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </form>
+                    </tbody>
+                </table>
+            </div>
+            <div class="table-actions table-actions-top">
+                <button type="submit" class="btn btn-next">
+                    <span class="material-symbols-outlined">sync</span>
+                    Generer
+                </button>
+            </div>
+        </form>
 
-            <script>
-            document.getElementById('select-all')?.addEventListener('change', function() {
+        <script>
+        document.getElementById('select-all')?.addEventListener('change', function() {
                 const form = document.getElementById('gen-form');
                 const checkboxes = form.querySelectorAll('input[name="templates[]"]');
                 checkboxes.forEach(c => c.checked = this.checked);
@@ -459,16 +456,6 @@ $docxCount = $totalGenerated;
         <form method="post" id="files-form">
             <?= csrf_input() ?>
             <input type="hidden" name="societe_id" value="<?= $societeId ?>">
-            <div class="section-header">
-                <div class="table-actions">
-                    <button type="submit" class="btn btn-next" name="validate_submit" value="1">
-                        <span class="material-symbols-outlined">task_alt</span> Valider
-                    </button>
-                    <button type="submit" class="btn btn-back" name="delete_submit" value="1">
-                        <span class="material-symbols-outlined">delete</span> Supprimer
-                    </button>
-                </div>
-            </div>
             <div class="table-scroll">
                 <table data-sortable style="white-space: nowrap">
                     <thead>
@@ -532,6 +519,14 @@ $docxCount = $totalGenerated;
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+            </div>
+            <div class="table-actions table-actions-top">
+                <button type="submit" class="btn btn-next" name="validate_submit" value="1">
+                    <span class="material-symbols-outlined">task_alt</span> Valider
+                </button>
+                <button type="submit" class="btn btn-back" name="delete_submit" value="1">
+                    <span class="material-symbols-outlined">delete</span> Supprimer
+                </button>
             </div>
         </form>
         <script>
