@@ -366,7 +366,8 @@ $isNew = !$editingRecord;
 ?>
 
 <style>
-.collab-edit-form .card { padding: 8px 10px; }
+.collab-edit-form .card { padding: 8px 10px; height: 100%; }
+.collab-edit-form .card > .form-grid:last-child { min-height: 0; flex: 1; }
 .collab-edit-form .section-header { margin-bottom: 0; padding: 0 0 4px; }
 .collab-edit-form .section-header h2 { font-size: 0.75rem; }
 .collab-edit-form .form-grid { display: flex; flex-wrap: wrap; gap: 4px 8px; }
