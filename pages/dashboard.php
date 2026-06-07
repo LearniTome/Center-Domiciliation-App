@@ -684,7 +684,7 @@ if ($isConnected) {
         </div>
         <div class="dash-validation">
             <?php if ($docsAVerifier): ?>
-    <table class="dash-table dash-table-journal">
+            <table class="dash-table">
                 <thead><tr><th>Document</th><th>Societe</th><th>Date</th><th class="col-action"></th></tr></thead>
                 <tbody>
                 <?php foreach ($docsAVerifier as $dv):
@@ -711,7 +711,7 @@ if ($isConnected) {
     <div class="section-header">
         <a class="dash-title-link" href="<?= e(app_url('activite')) ?>"><h4><span class="material-symbols-outlined" style="color:var(--primary)">work_history</span> Journal d'activite</h4></a>
     </div>
-    <table class="dash-table">
+    <table class="dash-table dash-table-journal">
         <thead><tr><th>Utilisateur</th><th>Action</th><th>Date</th></tr></thead>
         <tbody>
         <?php foreach (array_slice($collabActivity, 0, 7) as $ca):
