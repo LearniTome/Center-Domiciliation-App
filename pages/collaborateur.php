@@ -763,7 +763,7 @@ form.stack > article.card + article.card { margin-top: 0; }
                     <span class="material-symbols-outlined">lock</span>
                     <h2>Acc&egrave;s au syst&egrave;me</h2>
                     <?php if ($isCurrentUser): ?>
-                    <p class="help-text" style="color:var(--info);font-size:0.7rem;margin:0 0 0 auto;display:flex;align-items:center;gap:4px;white-space:nowrap;">
+                    <p class="help-text" style="color:var(--info);font-size:0.7rem;margin:0;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;">
                         <span class="material-symbols-outlined" style="font-size:0.85rem;">info</span>
                         Vous modifiez votre propre compte.
                     </p>
