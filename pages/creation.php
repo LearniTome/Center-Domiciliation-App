@@ -711,7 +711,7 @@ if (is_post()) {
                         'template_source' => basename($path),
                         'doc_type' => $dt,
                         'fichier_docx' => $docxPath,
-                        'fichier_pdf' => $pdfPath,
+                        'fichier_pdf' => null,
                         'taille_ko' => file_exists($docxPath) ? round(filesize($docxPath) / 1024, 1) : null,
                     ]);
                 }
