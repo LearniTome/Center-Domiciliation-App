@@ -230,7 +230,7 @@ if ($exportCsv && count($documents) > 0) {
                         <?php foreach ($documents as $doc): ?>
                             <?php $modifTime = file_exists($doc['fichier_docx']) ? filemtime($doc['fichier_docx']) : null; ?>
                             <tr>
-                                <td><input type="checkbox" name="selected_files[]" value="<?= e((string) $doc['id']) ?>"></td>
+                                <td class="col-check"><input type="checkbox" name="selected_files[]" value="<?= e((string) $doc['id']) ?>"></td>
                                 <td>
                                     <a href="<?= e(app_url('societe', ['id' => (int) $doc['societe_id']])) ?>">
                                         <?= e($doc['societe_raison_sociale']) ?>

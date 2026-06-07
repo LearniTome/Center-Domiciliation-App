@@ -1911,7 +1911,7 @@ if ($aiSuggestions !== null) {
                                             <?php $tplCount = count($typeTemplates); ?>
                                             <?php foreach ($typeTemplates as $i => $tpl): ?>
                                                 <tr>
-                                                    <td><input type="checkbox" name="templates[]" value="<?= e($tpl['path']) ?>" checked class="template-check"></td>
+                                                    <td class="col-check"><input type="checkbox" name="templates[]" value="<?= e($tpl['path']) ?>" checked class="template-check"></td>
                                                     <?php if ($i === 0): ?>
                                                         <td rowspan="<?= $tplCount ?>" style="vertical-align:middle"><?= e($typeLabel) ?></td>
                                                     <?php endif; ?>

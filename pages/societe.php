@@ -667,7 +667,7 @@ $docTypeLabels = [
                     <tbody>
                     <?php foreach ($documents as $doc): ?>
                         <tr>
-                            <td><input type="checkbox" name="selected_files[]" value="<?= e((string) $doc['id']) ?>"></td>
+                            <td class="col-check"><input type="checkbox" name="selected_files[]" value="<?= e((string) $doc['id']) ?>"></td>
                             <td><?= e($doc['doc_type'] ?? '-') ?></td>
                             <td><?= e(basename($doc['fichier_docx'])) ?></td>
                             <td><?= $doc['taille_ko'] ? number_format((float) $doc['taille_ko'], 1) . ' Ko' : '-' ?></td>

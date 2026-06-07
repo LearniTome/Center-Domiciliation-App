@@ -385,7 +385,7 @@ $docxCount = $totalGenerated;
                             <?php foreach ($genTypeOrder as $gt): if (empty($templatesByGenType[$gt])) continue; ?>
                                 <?php foreach ($templatesByGenType[$gt] as $tpl): ?>
                                     <tr>
-                                        <td><input type="checkbox" name="templates[]" value="<?= e($tpl['path']) ?>" checked></td>
+                                        <td class="col-check"><input type="checkbox" name="templates[]" value="<?= e($tpl['path']) ?>" checked></td>
                                         <td>
                                             <span class="material-symbols-outlined" style="color:var(--primary);margin-right:6px">article</span>
                                             <?= e($docTypesConfig[$tpl['doc_type']] ?? $tpl['doc_type']) ?>
@@ -487,7 +487,7 @@ $docxCount = $totalGenerated;
                         <?php foreach ($dbDocs as $doc): ?>
                             <?php $modifTime = file_exists($doc['fichier_docx']) ? filemtime($doc['fichier_docx']) : null; ?>
                             <tr>
-                                <td><input type="checkbox" name="selected_files[]" value="<?= e((string) $doc['id']) ?>"></td>
+                                <td class="col-check"><input type="checkbox" name="selected_files[]" value="<?= e((string) $doc['id']) ?>"></td>
                                 <td>
                                     <span class="material-symbols-outlined" style="color:var(--primary);margin-right:6px">article</span>
                                     <?= e($docTypesConfig[$doc['doc_type']] ?? $doc['doc_type']) ?>

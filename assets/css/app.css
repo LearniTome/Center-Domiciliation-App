@@ -1009,16 +1009,20 @@ tbody tr:hover:nth-child(even) {
     background: var(--danger);
 }
 
-.col-check {
-    width: 32px;
+td.col-check,
+th.col-check {
+    width: 38px;
     text-align: center;
+    padding: 4px 0;
+    vertical-align: middle;
 }
-.col-check input[type="checkbox"] {
+td.col-check input[type="checkbox"],
+th.col-check input[type="checkbox"] {
     width: 14px;
     height: 14px;
-    margin: 0;
+    display: block;
+    margin: 0 auto;
     cursor: pointer;
-    vertical-align: middle;
 }
 
 .col-hidden {
