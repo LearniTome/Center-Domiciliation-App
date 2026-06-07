@@ -367,16 +367,16 @@ $isNew = !$editingRecord;
 
 <style>
 form.stack > article.card + article.card { margin-top: 0; }
-.card.stack.collab-edit-form > .card { padding: 10px 14px; }
-.card.stack.collab-edit-form .section-header { margin-bottom: 0; padding: 0 0 6px; }
-.card.stack.collab-edit-form .section-header h2 { font-size: 0.8rem; }
-.card.stack.collab-edit-form .form-grid { gap: 6px; }
-.card.stack.collab-edit-form .field > span { font-size: 0.65rem; }
-.card.stack.collab-edit-form .field input,
-.card.stack.collab-edit-form .field select,
-.card.stack.collab-edit-form .field textarea { font-size: 0.78rem; padding: 4px 8px; }
-.card.stack.collab-edit-form .perms-table { font-size: 0.72rem; }
-.card.stack.collab-edit-form .help-text { font-size: 0.65rem; }
+.collab-edit-form > .card { padding: 8px 12px; }
+.collab-edit-form .section-header { margin-bottom: 0; padding: 0 0 4px; }
+.collab-edit-form .section-header h2 { font-size: 0.75rem; }
+.collab-edit-form .form-grid { gap: 4px; }
+.collab-edit-form .field > span { font-size: 0.62rem; }
+.collab-edit-form .field input,
+.collab-edit-form .field select,
+.collab-edit-form .field textarea { font-size: 0.75rem; padding: 3px 6px; }
+.collab-edit-form .perms-table { font-size: 0.7rem; }
+.collab-edit-form .help-text { font-size: 0.62rem; }
 .collab-preview { gap: 0 !important; }
 .collab-preview .section-header { margin-bottom: 0; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
 .collab-preview .info-grid { gap: 3px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
@@ -434,7 +434,7 @@ form.stack > article.card + article.card { margin-top: 0; }
             </div>
         </div>
 
-        <form method="post" class="stack" style="gap:4px;">
+        <form method="post" class="stack collab-edit-form" style="gap:3px;">
         <?= csrf_input() ?>
         <input type="hidden" name="id" value="<?= e((string) $formData['id']) ?>">
         <input type="hidden" name="collaborateur_type" value="<?= e($collabType) ?>">
@@ -493,31 +493,6 @@ form.stack > article.card + article.card { margin-top: 0; }
             </div>
         </article>
 
-        <article class="card">
-            <div class="section-header">
-                <span class="material-symbols-outlined">lock</span>
-                <h2>Acc&egrave;s au syst&egrave;me</h2>
-            </div>
-            <div class="form-grid">
-                <div style="grid-column:1/-1;">
-                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;min-height:36px;">
-                        <input type="checkbox" name="can_login" value="1" data-toggle-password data-toggle-permissions style="width:auto;flex-shrink:0;" <?= (int) ($formData['can_login'] ?? 0) ? 'checked' : '' ?>>
-                        <span style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-secondary);">Peut se connecter &agrave; l'application</span>
-                    </label>
-                </div>
-
-                <label class="field password-field" <?= (int) ($formData['can_login'] ?? 0) ? '' : 'style="display:none"' ?>>
-                    <span>Mot de passe</span>
-                    <input type="password" name="password" autocomplete="new-password" placeholder="6 caract&egrave;res min">
-                </label>
-
-                <label class="field password-field" <?= (int) ($formData['can_login'] ?? 0) ? '' : 'style="display:none"' ?>>
-                    <span>Confirmer le mot de passe</span>
-                    <input type="password" name="password_confirm" autocomplete="new-password" placeholder="Retapez le mot de passe">
-                </label>
-            </div>
-        </article>
-
         <?php if ($collabType === 'externe-pm'): ?>
         <article class="card">
             <div class="section-header">
@@ -571,6 +546,31 @@ form.stack > article.card + article.card { margin-top: 0; }
                     </select>
                 </label>
                 <label class="field full"><span>Notes</span><textarea name="notes"><?= e((string) $formData['notes']) ?></textarea></label>
+            </div>
+        </article>
+
+        <article class="card">
+            <div class="section-header">
+                <span class="material-symbols-outlined">lock</span>
+                <h2>Acc&egrave;s au syst&egrave;me</h2>
+            </div>
+            <div class="form-grid">
+                <div style="grid-column:1/-1;">
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;min-height:36px;">
+                        <input type="checkbox" name="can_login" value="1" data-toggle-password data-toggle-permissions style="width:auto;flex-shrink:0;" <?= (int) ($formData['can_login'] ?? 0) ? 'checked' : '' ?>>
+                        <span style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-secondary);">Peut se connecter &agrave; l'application</span>
+                    </label>
+                </div>
+
+                <label class="field password-field" <?= (int) ($formData['can_login'] ?? 0) ? '' : 'style="display:none"' ?>>
+                    <span>Mot de passe</span>
+                    <input type="password" name="password" autocomplete="new-password" placeholder="6 caract&egrave;res min">
+                </label>
+
+                <label class="field password-field" <?= (int) ($formData['can_login'] ?? 0) ? '' : 'style="display:none"' ?>>
+                    <span>Confirmer le mot de passe</span>
+                    <input type="password" name="password_confirm" autocomplete="new-password" placeholder="Retapez le mot de passe">
+                </label>
             </div>
         </article>
 
@@ -700,38 +700,6 @@ form.stack > article.card + article.card { margin-top: 0; }
                 </div>
             </article>
 
-            <article class="card">
-                <div class="section-header">
-                    <span class="material-symbols-outlined">lock</span>
-                    <h2>Acc&egrave;s au syst&egrave;me</h2>
-                </div>
-                <div class="form-grid">
-                    <div style="grid-column:1/-1;">
-                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;min-height:36px;">
-                            <input type="checkbox" name="can_login" value="1" data-toggle-password data-toggle-permissions style="width:auto;flex-shrink:0;" <?= (int) ($formData['can_login'] ?? 0) ? 'checked' : '' ?>>
-                            <span style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-secondary);">Peut se connecter &agrave; l'application</span>
-                        </label>
-                    </div>
-
-                    <label class="field password-field" <?= (int) ($formData['can_login'] ?? 0) ? '' : 'style="display:none"' ?>>
-                        <span>Mot de passe <?= $editingRecord ? '(laisser vide pour conserver)' : '' ?></span>
-                        <input type="password" name="password" autocomplete="new-password" placeholder="6 caract&egrave;res min">
-                    </label>
-
-                    <label class="field password-field" <?= (int) ($formData['can_login'] ?? 0) ? '' : 'style="display:none"' ?>>
-                        <span>Confirmer le mot de passe</span>
-                        <input type="password" name="password_confirm" autocomplete="new-password" placeholder="Retapez le mot de passe">
-                    </label>
-
-                    <?php if ($isCurrentUser): ?>
-                        <p class="help-text" style="grid-column:1/-1;color:var(--info);font-size:0.8rem;margin:0;">
-                            <span class="material-symbols-outlined" style="font-size:0.9rem;vertical-align:middle;">info</span>
-                            Vous modifiez votre propre compte.
-                        </p>
-                    <?php endif; ?>
-                </div>
-            </article>
-
             <?php if ($collabType === 'externe-pm'): ?>
             <article class="card">
                 <div class="section-header">
@@ -785,6 +753,38 @@ form.stack > article.card + article.card { margin-top: 0; }
                         </select>
                     </label>
                     <label class="field full"><span>Notes</span><textarea name="notes"><?= e((string) $formData['notes']) ?></textarea></label>
+                </div>
+            </article>
+
+            <article class="card">
+                <div class="section-header">
+                    <span class="material-symbols-outlined">lock</span>
+                    <h2>Acc&egrave;s au syst&egrave;me</h2>
+                </div>
+                <div class="form-grid">
+                    <div style="grid-column:1/-1;">
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;min-height:36px;">
+                            <input type="checkbox" name="can_login" value="1" data-toggle-password data-toggle-permissions style="width:auto;flex-shrink:0;" <?= (int) ($formData['can_login'] ?? 0) ? 'checked' : '' ?>>
+                            <span style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-secondary);">Peut se connecter &agrave; l'application</span>
+                        </label>
+                    </div>
+
+                    <label class="field password-field" <?= (int) ($formData['can_login'] ?? 0) ? '' : 'style="display:none"' ?>>
+                        <span>Mot de passe <?= $editingRecord ? '(laisser vide pour conserver)' : '' ?></span>
+                        <input type="password" name="password" autocomplete="new-password" placeholder="6 caract&egrave;res min">
+                    </label>
+
+                    <label class="field password-field" <?= (int) ($formData['can_login'] ?? 0) ? '' : 'style="display:none"' ?>>
+                        <span>Confirmer le mot de passe</span>
+                        <input type="password" name="password_confirm" autocomplete="new-password" placeholder="Retapez le mot de passe">
+                    </label>
+
+                    <?php if ($isCurrentUser): ?>
+                        <p class="help-text" style="grid-column:1/-1;color:var(--info);font-size:0.8rem;margin:0;">
+                            <span class="material-symbols-outlined" style="font-size:0.9rem;vertical-align:middle;">info</span>
+                            Vous modifiez votre propre compte.
+                        </p>
+                    <?php endif; ?>
                 </div>
             </article>
 
