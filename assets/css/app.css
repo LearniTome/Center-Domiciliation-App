@@ -3315,9 +3315,9 @@ tr[data-coverage], .row-mapped {
 
 .dash-validation { margin-top:2px; }
 .bottom-section { margin-top:1.25rem; }
-.dash-val-ring { display:flex; align-items:center; gap:14px; padding:4px 0 10px; }
-.dash-val-text { font-size:0.78rem; color:var(--text-secondary); }
-.dash-val-text strong { display:block; font-size:1.1rem; color:var(--text); }
+.dash-val-ring { display:flex; align-items:center; gap:10px; padding:0 0 6px; }
+.dash-val-text { font-size:0.72rem; color:var(--text-secondary); display:flex; align-items:baseline; gap:4px; flex-wrap:wrap; }
+.dash-val-text strong { font-size:1rem; color:var(--text); }
 
 @media (max-width:820px) {
     .dash-actions { grid-template-columns:repeat(2,1fr); }
