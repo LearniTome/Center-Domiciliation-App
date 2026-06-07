@@ -3269,6 +3269,7 @@ tr[data-coverage], .row-mapped {
 .dash-ring-stats { display:flex; flex-direction:column; gap:3px; flex:1; min-width:0; }
 .dash-rs-item { display:flex; align-items:center; gap:6px; font-size:0.72rem; color:var(--text-secondary); }
 .dash-rs-item strong { margin-left:auto; font-weight:600; font-size:0.78rem; color:var(--text); }
+.dash-rs-item .rs-pct { font-size:0.68rem; color:var(--text-secondary); margin-left:4px; }
 .stat-dot { width:7px; height:7px; border-radius:50%; display:inline-block; flex-shrink:0; }
 .stat-dot.success { background:var(--success); }
 .stat-dot.warning { background:var(--warning); }
