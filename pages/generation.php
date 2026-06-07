@@ -201,30 +201,15 @@ if (is_post() && isset($_POST['validate_submit']) && $societeId > 0) {
                 }
             }
 
-            // Generate PDF on validation
-            $pdfPath = null;
-            if (file_exists($newDocx)) {
-                $pdfName = pathinfo($newDocx, PATHINFO_FILENAME) . '.pdf';
-                $renderer = new DocumentRenderer('', dirname($newDocx));
-                try {
-                    $generatedPdf = $renderer->tryConvertToPdf($newDocx, $pdfName);
-                    if ($generatedPdf && file_exists($generatedPdf)) {
-                        $pdfPath = $generatedPdf;
-                    }
-                } catch (\Throwable $e) {
-                }
-            }
-
             $updateStmt->execute([
                 'fichier_docx' => $newDocx,
-                'fichier_pdf' => $pdfPath,
+                'fichier_pdf' => $doc['fichier_pdf'],
                 'id' => $doc['id'],
             ]);
             foreach ($_SESSION['gen_files'][$societeId] ?? [] as &$sf) {
                 if ($sf['docx'] === $oldDocx) {
                     $sf['docx'] = $newDocx;
                     $sf['name'] = str_replace('_Brouillon.docx', '.docx', $sf['name']);
-                    $sf['pdf'] = $pdfPath;
                 }
             }
             unset($sf);
@@ -248,32 +233,41 @@ if (is_post() && isset($_POST['generate_pdf_submit']) && $societeId > 0) {
     verify_csrf();
     $selected = $_POST['selected_files'] ?? [];
     if (count($selected) > 0 && ($pdo ?? null) instanceof PDO) {
-        $docId = (int) $selected[0];
-        $stmt = $pdo->prepare("SELECT * FROM documents_generes WHERE id = ? AND societe_id = ?");
-        $stmt->execute([$docId, $societeId]);
-        $doc = $stmt->fetch();
-        if ($doc && file_exists($doc['fichier_docx'])) {
+        $placeholders = implode(',', array_fill(0, count($selected), '?'));
+        $stmt = $pdo->prepare("SELECT * FROM documents_generes WHERE id IN ($placeholders) AND societe_id = ? AND valide = 1");
+        $stmt->execute(array_merge(array_map('intval', $selected), [$societeId]));
+        $docs = $stmt->fetchAll();
+        $generated = 0;
+        $errors = 0;
+        $updateStmt = $pdo->prepare("UPDATE documents_generes SET fichier_pdf = :pdf WHERE id = :id");
+        foreach ($docs as $doc) {
+            if (!file_exists($doc['fichier_docx'])) { $errors++; continue; }
             $docxPath = $doc['fichier_docx'];
             $pdfName = pathinfo($docxPath, PATHINFO_FILENAME) . '.pdf';
             $renderer = new DocumentRenderer('', dirname($docxPath));
             try {
                 $pdfPath = $renderer->tryConvertToPdf($docxPath, $pdfName);
                 if ($pdfPath && file_exists($pdfPath)) {
-                    $updateStmt = $pdo->prepare("UPDATE documents_generes SET fichier_pdf = :pdf WHERE id = :id");
-                    $updateStmt->execute(['pdf' => $pdfPath, 'id' => $docId]);
+                    $updateStmt->execute(['pdf' => $pdfPath, 'id' => $doc['id']]);
                     foreach ($_SESSION['gen_files'][$societeId] ?? [] as &$sf) {
                         if (isset($sf['docx']) && $sf['docx'] === $doc['fichier_docx']) {
                             $sf['pdf'] = $pdfPath;
                         }
                     }
                     unset($sf);
-                    set_flash('success', 'PDF genere avec succes.');
+                    $generated++;
                 } else {
-                    set_flash('error', 'Impossible de generer le PDF.');
+                    $errors++;
                 }
             } catch (\Throwable $e) {
-                set_flash('error', 'Erreur PDF : ' . $e->getMessage());
+                $errors++;
             }
+        }
+        if ($generated > 0) {
+            set_flash('success', $generated . ' PDF genere(s).');
+        }
+        if ($errors > 0) {
+            set_flash('error', $errors . ' echec(s) PDF.');
         }
     }
     $params = ['societe_id' => $societeId];
@@ -315,6 +309,12 @@ foreach ($sessionFiles as $gf) {
 }
 $totalGenerated = count($sessionFiles);
 $docxCount = $totalGenerated;
+
+$hasValidatedDocs = false;
+if (($pdo ?? null) instanceof PDO && $societeId > 0) {
+    $allDocs = fetch_all_documents($pdo, $societeId);
+    $hasValidatedDocs = count(array_filter($allDocs, fn($d) => (int) $d['valide'] === 1)) > 0;
+}
 
 ?>
 
@@ -465,6 +465,7 @@ $docxCount = $totalGenerated;
                             <th data-col="fichier">Fichier</th>
                             <th data-col="taille">Taille</th>
                             <th data-col="statut">Statut</th>
+                            <th data-col="pdf">PDF</th>
                             <th data-col="date-creation">Date creation</th>
                             <th data-col="modification">Modification</th>
                             <th class="col-actions">Actions</th>
@@ -485,6 +486,18 @@ $docxCount = $totalGenerated;
                                     <span class="statut-badge <?= $doc['valide'] ? 'valide' : 'brouillon' ?>">
                                         <?= $doc['valide'] ? 'Valide' : 'Brouillon' ?>
                                     </span>
+                                </td>
+                                <td>
+                                    <?php if ($doc['valide']): ?>
+                                        <div class="progress-bar" style="margin:0;min-width:100px">
+                                            <div class="progress-track" style="height:6px">
+                                                <div class="progress-fill <?= $doc['fichier_pdf'] ? '' : 'warning' ?>" style="width:<?= $doc['fichier_pdf'] ? '100' : '0' ?>%"></div>
+                                            </div>
+                                            <span class="progress-label"><?= $doc['fichier_pdf'] ? 'Genere' : 'En attente' ?></span>
+                                        </div>
+                                    <?php else: ?>
+                                        <span class="help-text">—</span>
+                                    <?php endif; ?>
                                 </td>
                                 <td><?= e(date('d/m/Y H:i', strtotime((string) $doc['created_at']))) ?></td>
                                 <td><span class="help-text"><?= $modifTime ? date('d/m/Y H:i', $modifTime) : '-' ?></span></td>
@@ -524,6 +537,11 @@ $docxCount = $totalGenerated;
                 <button type="submit" class="btn btn-next" name="validate_submit" value="1">
                     <span class="material-symbols-outlined">task_alt</span> Valider
                 </button>
+                <?php if ($hasValidatedDocs): ?>
+                <button type="submit" class="btn btn-info" name="generate_pdf_submit" value="1">
+                    <span class="material-symbols-outlined">picture_as_pdf</span> Generer PDF
+                </button>
+                <?php endif; ?>
                 <button type="submit" class="btn btn-back" name="delete_submit" value="1">
                     <span class="material-symbols-outlined">delete</span> Supprimer
                 </button>
@@ -565,6 +583,8 @@ $docxCount = $totalGenerated;
         var btn = e.submitter;
         if(btn && btn.name === 'delete_submit'){
             window.showOverlay('Suppression en cours...');
+        } else if(btn && btn.name === 'generate_pdf_submit'){
+            window.showOverlay('Generation PDF en cours...');
         } else {
             window.showOverlay('Validation en cours...');
         }
