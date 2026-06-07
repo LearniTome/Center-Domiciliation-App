@@ -440,13 +440,9 @@ a:hover {
 }
 
 .grid.two {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    display: flex;
+    flex-direction: column;
     gap: 10px;
-}
-
-.grid.two > .card {
-    margin-top: 0 !important;
 }
 
 .stats {
@@ -460,10 +456,6 @@ a:hover {
     gap: 0.4rem;
 }
 
-.grid.two > .card {
-    margin-top: 0 !important;
-}
-
 .stats.compact {
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
@@ -473,12 +465,8 @@ a:hover {
     gap: 0.6rem;
 }
 
-.grid.two > .card {
-    margin-top: 0 !important;
-}
 
-
-
+    
 
 
 .stats {
@@ -3294,7 +3282,7 @@ tr[data-coverage], .row-mapped {
 .dli-val { font-weight:600; font-size:0.78rem; color:var(--text); }
 .dli-pct { font-size:0.68rem; color:var(--text-secondary); }
 
-.dash-cards { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr); gap:10px; margin-bottom:1.25rem; align-items:start; }
+.dash-cards { display:flex; flex-direction:column; gap:10px; margin-bottom:1.25rem; }
 .dash-table { width:100%; border-collapse:collapse; font-size:0.78rem; }
 .dash-table thead th { padding:6px 8px; font-size:0.65rem; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid var(--line); text-align:left; }
 .dash-table thead th.col-action { width:32px; }
