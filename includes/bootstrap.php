@@ -22,6 +22,20 @@ try {
     $dbError = $exception->getMessage();
 }
 
+// Auto-run pending migrations
+if ($pdo instanceof PDO) {
+    require_once __DIR__ . '/migrations.php';
+    $migrationResults = run_migrations($pdo);
+    $migrationErrors = array_filter($migrationResults, fn($r) => str_starts_with((string) $r, 'ERROR'));
+    if ($migrationErrors !== []) {
+        $dbError = 'Migrations echouees: ' . implode('; ', array_map(
+            fn($f, $e) => "$f: $e",
+            array_keys($migrationErrors),
+            $migrationErrors
+        ));
+    }
+}
+
 // Auth check: public pages don't require login
 $publicPages = ['connexion', 'setup', 'not-found'];
 $currentPage = $_GET['page'] ?? 'dashboard';

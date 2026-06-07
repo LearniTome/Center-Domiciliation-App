@@ -6,6 +6,7 @@
 /uploads/
 /.env
 /.env.local
+/composer.phar
 /*.log
 /*.txt
 /*.png
