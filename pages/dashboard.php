@@ -496,14 +496,12 @@ if ($isConnected) {
                 <div class="dash-rs-item">
                     <span class="stat-dot success"></span>
                     <span>Complets</span>
-                    <strong><?= $dossiersComplets ?></strong>
-                    <span class="rs-pct"><?= $pctComplets ?>%</span>
+                    <span class="rs-right"><strong><?= $dossiersComplets ?></strong><span class="rs-pct"><?= $pctComplets ?>%</span></span>
                 </div>
                 <div class="dash-rs-item">
                     <span class="stat-dot warning"></span>
                     <span>Incomplets</span>
-                    <strong><?= $dossiersIncomplets ?></strong>
-                    <span class="rs-pct"><?= 100 - $pctComplets ?>%</span>
+                    <span class="rs-right"><strong><?= $dossiersIncomplets ?></strong><span class="rs-pct"><?= 100 - $pctComplets ?>%</span></span>
                 </div>
             </div>
         </div>

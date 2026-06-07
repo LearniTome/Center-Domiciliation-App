@@ -3268,8 +3268,10 @@ tr[data-coverage], .row-mapped {
 .dash-ring-sub { font-size:0.62rem; color:var(--text-secondary); margin-top:2px; }
 .dash-ring-stats { display:flex; flex-direction:column; gap:3px; flex:1; min-width:0; }
 .dash-rs-item { display:flex; align-items:center; gap:6px; font-size:0.72rem; color:var(--text-secondary); }
-.dash-rs-item strong { margin-left:auto; font-weight:600; font-size:0.78rem; color:var(--text); }
-.dash-rs-item .rs-pct { font-size:0.68rem; color:var(--text-secondary); margin-left:4px; }
+.dash-rs-item { display:flex; align-items:center; gap:6px; font-size:0.72rem; color:var(--text-secondary); }
+.dash-rs-item .rs-right { margin-left:auto; display:flex; align-items:baseline; gap:6px; }
+.dash-rs-item .rs-right strong { font-weight:600; font-size:0.78rem; color:var(--text); min-width:20px; text-align:right; }
+.dash-rs-item .rs-right .rs-pct { font-size:0.68rem; color:var(--text-secondary); min-width:35px; text-align:right; }
 .stat-dot { width:7px; height:7px; border-radius:50%; display:inline-block; flex-shrink:0; }
 .stat-dot.success { background:var(--success); }
 .stat-dot.warning { background:var(--warning); }
