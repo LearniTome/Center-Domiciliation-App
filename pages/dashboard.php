@@ -672,8 +672,6 @@ if ($isConnected) {
     <article class="card">
         <div class="section-header">
             <a class="dash-title-link" href="<?= e(app_url('documents')) ?>"><h4><span class="material-symbols-outlined" style="color:var(--success)">fact_check</span> Validation</h4></a>
-        </div>
-        <div class="dash-validation">
             <div class="dash-val-ring">
                 <div class="donut-sm" style="background: conic-gradient(var(--success) 0% <?= $valPct ?>%, var(--warning) <?= $valPct ?>% 100%)">
                     <span class="donut-sm-value"><?= $valPct ?><small>%</small></span>
@@ -683,6 +681,8 @@ if ($isConnected) {
                     <span>sur <?= $docsTotal ?> documents</span>
                 </div>
             </div>
+        </div>
+        <div class="dash-validation">
             <?php if ($docsAVerifier): ?>
             <table class="dash-table">
                 <thead><tr><th>Document</th><th>Societe</th><th>Date</th><th class="col-action"></th></tr></thead>
