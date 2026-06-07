@@ -367,6 +367,16 @@ $isNew = !$editingRecord;
 
 <style>
 form.stack > article.card + article.card { margin-top: 0; }
+.card.stack.collab-edit-form > .card { padding: 10px 14px; }
+.card.stack.collab-edit-form .section-header { margin-bottom: 0; padding: 0 0 6px; }
+.card.stack.collab-edit-form .section-header h2 { font-size: 0.8rem; }
+.card.stack.collab-edit-form .form-grid { gap: 6px; }
+.card.stack.collab-edit-form .field > span { font-size: 0.65rem; }
+.card.stack.collab-edit-form .field input,
+.card.stack.collab-edit-form .field select,
+.card.stack.collab-edit-form .field textarea { font-size: 0.78rem; padding: 4px 8px; }
+.card.stack.collab-edit-form .perms-table { font-size: 0.72rem; }
+.card.stack.collab-edit-form .help-text { font-size: 0.65rem; }
 .collab-preview { gap: 0 !important; }
 .collab-preview .section-header { margin-bottom: 0; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
 .collab-preview .info-grid { gap: 3px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
@@ -623,7 +633,7 @@ form.stack > article.card + article.card { margin-top: 0; }
     </form>
 </div>
 <?php elseif ($editingRecord && $showEdit): ?>
-    <article class="card stack">
+    <article class="card stack collab-edit-form" style="gap:3px;">
         <div class="section-header">
             <h2>Modifier un collaborateur</h2>
             <div class="table-actions">
