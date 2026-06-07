@@ -370,7 +370,7 @@ form.stack > article.card + article.card { margin-top: 0; }
 .collab-edit-form > .card { padding: 8px 12px; }
 .collab-edit-form .section-header { margin-bottom: 0; padding: 0 0 4px; }
 .collab-edit-form .section-header h2 { font-size: 0.75rem; }
-.collab-edit-form .form-grid { gap: 4px; }
+.collab-edit-form .form-grid { gap: 6px 12px; grid-template-columns: 1fr 1fr; }
 .collab-edit-form .field > span { font-size: 0.62rem; }
 .collab-edit-form .field input,
 .collab-edit-form .field select,
