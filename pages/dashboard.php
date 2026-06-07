@@ -491,7 +491,6 @@ if ($isConnected) {
             </div>
             <div class="dash-dlegend">
                 <div class="dash-dli">
-                    <span class="legend-dot success"></span>
                     <span class="dli-label">Complets</span>
                     <span class="dli-val"><?= $dossiersComplets ?></span>
                     <span class="dli-pct"><?= $pctComplets ?>%</span>
