@@ -3236,7 +3236,7 @@ tr[data-coverage], .row-mapped {
 .dash-alert-bar { display:flex; align-items:center; gap:8px; padding:8px 14px; background:rgba(255,107,53,0.05); border:1px solid color-mix(in srgb, var(--warning) 30%, transparent); border-radius:var(--radius); margin-bottom:1rem; font-size:0.82rem; color:var(--warning); }
 .dash-alert-bar .alert-bar-icon { font-size:1.1rem; }
 
-.dash-actions { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:1.5rem; }
+.dash-actions { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:1.25rem; }
 .dash-action { display:flex; flex-direction:column; align-items:center; gap:6px; padding:14px 10px; border:1px solid var(--line); border-radius:var(--radius); background:var(--panel); text-decoration:none; transition:all .2s; text-align:center; }
 .dash-action:hover { transform:translateY(-3px); box-shadow:0 4px 20px rgba(0,0,0,0.12); }
 .dash-action .material-symbols-outlined { font-size:1.6rem; }
@@ -3251,7 +3251,7 @@ tr[data-coverage], .row-mapped {
 .dash-action-cfg .material-symbols-outlined { color:var(--warning); }
 .dash-action-cfg:hover { border-color:var(--warning); background:rgba(255,107,53,0.04); }
 
-.dash-metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:1.5rem; }
+.dash-metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:1.25rem; }
 .dash-metric { display:flex; align-items:center; gap:12px; padding:14px; border:1px solid var(--line); border-radius:var(--radius); background:var(--panel); transition:border-color .2s; }
 .dash-metric:hover { border-color:var(--text-secondary); transform:translateY(-2px); box-shadow:0 4px 16px rgba(0,0,0,0.1); }
 .dm-icon { width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
@@ -3266,7 +3266,7 @@ tr[data-coverage], .row-mapped {
 .dm-delta { font-size:0.65rem; color:var(--text-muted); }
 .dm-delta.up { color:var(--success); }
 
-.dash-charts { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:1.25rem; }
+.dash-charts { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:1.25rem; }
 .card-link { display:block; text-decoration:none; cursor:pointer; transition:border-color .2s, transform .2s; }
 .card-link:hover { border-color:var(--primary) !important; transform:translateY(-2px); }
 .dash-ring-wrap { display:flex; flex-direction:column; align-items:center; gap:12px; padding:4px 0; }
@@ -3294,11 +3294,11 @@ tr[data-coverage], .row-mapped {
 .dli-val { font-weight:600; font-size:0.78rem; color:var(--text); }
 .dli-pct { font-size:0.68rem; color:var(--text-secondary); }
 
-.dash-cards { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:1rem; align-items:start; }
-.dash-table { width:100%; border-collapse:separate; border-spacing:0; font-size:0.78rem; border:1px solid var(--line); border-radius:6px; overflow:hidden; }
-.dash-table thead th { padding:7px 10px; font-size:0.65rem; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid var(--line); text-align:left; background:color-mix(in srgb, var(--line) 30%, transparent); }
+.dash-cards { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:1rem; align-items:start; }
+.dash-table { width:100%; border-collapse:collapse; font-size:0.78rem; }
+.dash-table thead th { padding:6px 8px; font-size:0.65rem; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid var(--line); text-align:left; }
 .dash-table thead th.col-action { width:32px; }
-.dash-table tbody td { padding:8px 10px; border-bottom:1px solid color-mix(in srgb, var(--line) 50%, transparent); color:var(--text); vertical-align:middle; }
+.dash-table tbody td { padding:7px 8px; border-bottom:1px solid color-mix(in srgb, var(--line) 50%, transparent); color:var(--text); vertical-align:middle; }
 .dash-table tbody tr:last-child td { border-bottom:none; }
 .dash-table tbody tr:hover td { background:rgba(255,255,255,0.02); }
 .dash-table .btn-icon { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:4px; text-decoration:none; transition:background .15s; }
