@@ -77,7 +77,7 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
     }
 }
 
-if (is_post() && !isset($_POST['delete_submit']) && !isset($_POST['validate_submit']) && !isset($_POST['generate_pdf_submit']) && ($pdo ?? null) instanceof PDO && $selectedSociete) {
+if (is_post() && !isset($_POST['delete_submit']) && !isset($_POST['validate_submit']) && !isset($_POST['generate_pdf_submit']) && !isset($_POST['restore_submit']) && ($pdo ?? null) instanceof PDO && $selectedSociete) {
     verify_csrf();
 
     $selectedPaths = $_POST['templates'] ?? [];
@@ -273,6 +273,50 @@ if (is_post() && isset($_POST['generate_pdf_submit']) && $societeId > 0) {
     $params = ['societe_id' => $societeId];
     if ($statusFilter) $params['statut'] = $statusFilter;
     redirect_to('generation', $params);
+}
+
+if (is_post() && isset($_POST['restore_submit']) && $societeId > 0) {
+    verify_csrf();
+    $selected = $_POST['selected_files'] ?? [];
+    if (count($selected) > 0 && ($pdo ?? null) instanceof PDO) {
+        $placeholders = implode(',', array_fill(0, count($selected), '?'));
+        $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf FROM documents_generes WHERE valide = 1 AND id IN ($placeholders)");
+        $stmt->execute(array_map('intval', $selected));
+        $docs = $stmt->fetchAll();
+        $updateStmt = $pdo->prepare("UPDATE documents_generes SET valide = 0, fichier_docx = :fichier_docx, fichier_pdf = :fichier_pdf WHERE id = :id");
+        foreach ($docs as $doc) {
+            $oldDocx = $doc['fichier_docx'];
+            $newDocx = preg_replace('/\.docx$/i', '_Brouillon.docx', $oldDocx);
+            if ($oldDocx !== $newDocx && file_exists($oldDocx)) {
+                rename($oldDocx, $newDocx);
+            }
+            $newPdf = $doc['fichier_pdf'];
+            if ($newPdf !== null) {
+                $renamedPdf = preg_replace('/\.pdf$/i', '_Brouillon.pdf', $newPdf);
+                if ($newPdf !== $renamedPdf && file_exists($newPdf)) {
+                    rename($newPdf, $renamedPdf);
+                    $newPdf = $renamedPdf;
+                }
+            }
+            $updateStmt->execute([
+                'fichier_docx' => $newDocx,
+                'fichier_pdf' => $newPdf,
+                'id' => $doc['id'],
+            ]);
+            foreach ($_SESSION['gen_files'][$societeId] ?? [] as &$sf) {
+                if ($sf['docx'] === $oldDocx) {
+                    $sf['docx'] = $newDocx;
+                    $sf['name'] = str_replace('.docx', '_Brouillon.docx', $sf['name']);
+                }
+            }
+            unset($sf);
+        }
+        set_flash('success', count($selected) . ' document(s) restaure(s) en brouillon.');
+        log_activity($pdo, 'restore', 'document_genere', $societeId, 'Restauration brouillon — ' . count($selected) . ' doc(s)');
+        $params = ['societe_id' => $societeId];
+        if ($statusFilter) $params['statut'] = $statusFilter;
+        redirect_to('generation', $params);
+    }
 }
 
 $genTypeIcons = [
@@ -518,6 +562,11 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
                                                 <span class="material-symbols-outlined">picture_as_pdf</span>
                                             </a>
                                         <?php endif; ?>
+                                        <?php if ($doc['valide']): ?>
+                                            <a class="btn-icon" href="#" onclick="event.preventDefault(); (function(){ var f=document.getElementById('files-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='restore_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Restauration en cours...'); f.submit();} })();" title="Restaurer en brouillon">
+                                                <span class="material-symbols-outlined">restore</span>
+                                            </a>
+                                        <?php endif; ?>
                                         <?php if (!$doc['valide']): ?>
                                             <a class="btn-icon" href="#" onclick="event.preventDefault(); (function(){ var f=document.getElementById('files-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='validate_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Validation en cours...'); f.submit();} })();" title="Valider">
                                                 <span class="material-symbols-outlined">task_alt</span>
@@ -540,6 +589,9 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
                 <?php if ($hasValidatedDocs): ?>
                 <button type="submit" class="btn btn-info" name="generate_pdf_submit" value="1">
                     <span class="material-symbols-outlined">picture_as_pdf</span> Generer PDF
+                </button>
+                <button type="submit" class="btn btn-cancel" name="restore_submit" value="1">
+                    <span class="material-symbols-outlined">restore</span> Restaurer en brouillon
                 </button>
                 <?php endif; ?>
                 <button type="submit" class="btn btn-back" name="delete_submit" value="1">
@@ -585,6 +637,8 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
             window.showOverlay('Suppression en cours...');
         } else if(btn && btn.name === 'generate_pdf_submit'){
             window.showOverlay('Generation PDF en cours...');
+        } else if(btn && btn.name === 'restore_submit'){
+            window.showOverlay('Restauration en cours...');
         } else {
             window.showOverlay('Validation en cours...');
         }
