@@ -762,6 +762,12 @@ form.stack > article.card + article.card { margin-top: 0; }
                 <div class="section-header">
                     <span class="material-symbols-outlined">lock</span>
                     <h2>Acc&egrave;s au syst&egrave;me</h2>
+                    <?php if ($isCurrentUser): ?>
+                    <p class="help-text" style="color:var(--info);font-size:0.7rem;margin:0 0 0 auto;display:flex;align-items:center;gap:4px;white-space:nowrap;">
+                        <span class="material-symbols-outlined" style="font-size:0.85rem;">info</span>
+                        Vous modifiez votre propre compte.
+                    </p>
+                    <?php endif; ?>
                 </div>
                 <div class="form-grid">
                     <div style="grid-column:1/-1;">
@@ -780,13 +786,6 @@ form.stack > article.card + article.card { margin-top: 0; }
                         <span>Confirmer le mot de passe</span>
                         <input type="password" name="password_confirm" autocomplete="new-password" placeholder="Retapez le mot de passe">
                     </label>
-
-                    <?php if ($isCurrentUser): ?>
-                        <p class="help-text" style="grid-column:1/-1;color:var(--info);font-size:0.8rem;margin:0;">
-                            <span class="material-symbols-outlined" style="font-size:0.9rem;vertical-align:middle;">info</span>
-                            Vous modifiez votre propre compte.
-                        </p>
-                    <?php endif; ?>
                 </div>
             </article>
 
