@@ -895,9 +895,10 @@ form.stack > article.card + article.card { margin-top: 0; }
             <?php if ($formData['last_login']): ?><div><span>Derni&egrave;re connexion</span><strong><?= e(format_date($formData['last_login'])) ?></strong></div><?php endif; ?>
 
             <?php if ($formData['can_login']): ?>
+            <?php $loginEmailShownInContact = $formData['email'] && (!$formData['collaborateur_email'] || $formData['email'] === $formData['collaborateur_email']); ?>
             <h3 class="section-title">Acc&egrave;s au syst&egrave;me</h3>
             <div><span>Connexion</span><strong>Activ&eacute;e</strong></div>
-            <?php if ($formData['email'] && $formData['email'] !== $formData['collaborateur_email']): ?><div><span>Email de connexion</span><strong><?= e($formData['email']) ?></strong></div><?php endif; ?>
+            <?php if ($formData['email'] && !$loginEmailShownInContact): ?><div><span>Email de connexion</span><strong><?= e($formData['email']) ?></strong></div><?php endif; ?>
             <?php endif; ?>
 
             <?php if (!empty($allPermsByCat) && ($formData['role_id'] ?? 0)): ?>
