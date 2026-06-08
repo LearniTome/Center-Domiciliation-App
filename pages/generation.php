@@ -357,24 +357,19 @@ if (is_post() && isset($_POST['restore_submit']) && $societeId > 0) {
         $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf FROM documents_generes WHERE valide = 1 AND id IN ($placeholders)");
         $stmt->execute(array_map('intval', $selected));
         $docs = $stmt->fetchAll();
-        $updateStmt = $pdo->prepare("UPDATE documents_generes SET valide = 0, fichier_docx = :fichier_docx, fichier_pdf = :fichier_pdf WHERE id = :id");
+        $updateStmt = $pdo->prepare("UPDATE documents_generes SET valide = 0, fichier_docx = :fichier_docx, fichier_pdf = NULL WHERE id = :id");
         foreach ($docs as $doc) {
             $oldDocx = $doc['fichier_docx'];
             $newDocx = preg_replace('/\.docx$/i', '_Brouillon.docx', $oldDocx);
             if ($oldDocx !== $newDocx && file_exists($oldDocx)) {
                 rename($oldDocx, $newDocx);
             }
-            $newPdf = $doc['fichier_pdf'];
-            if ($newPdf !== null) {
-                $renamedPdf = preg_replace('/\.pdf$/i', '_Brouillon.pdf', $newPdf);
-                if ($newPdf !== $renamedPdf && file_exists($newPdf)) {
-                    rename($newPdf, $renamedPdf);
-                    $newPdf = $renamedPdf;
-                }
+            $pdfPath = $doc['fichier_pdf'];
+            if ($pdfPath !== null && file_exists($pdfPath)) {
+                unlink($pdfPath);
             }
             $updateStmt->execute([
                 'fichier_docx' => $newDocx,
-                'fichier_pdf' => $newPdf,
                 'id' => $doc['id'],
             ]);
             foreach ($_SESSION['gen_files'][$societeId] ?? [] as &$sf) {
@@ -603,7 +598,7 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
                         <?php foreach ($dbDocs as $doc): ?>
                             <?php $modifTime = file_exists($doc['fichier_docx']) ? filemtime($doc['fichier_docx']) : null; ?>
                             <tr>
-                                <td class="col-check"><input type="checkbox" name="selected_files[]" value="<?= e((string) $doc['id']) ?>"></td>
+                                <td class="col-check"><input type="checkbox" name="selected_files[]" value="<?= e((string) $doc['id']) ?>" data-doc-name="<?= e($doc['doc_type'] ?? 'Document') ?>"></td>
                                 <td>
                                     <span class="material-symbols-outlined" style="color:var(--primary);margin-right:6px">article</span>
                                     <?= e($docTypesConfig[$doc['doc_type']] ?? $doc['doc_type']) ?>
@@ -666,9 +661,11 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
                 </table>
             </div>
             <div class="table-actions table-actions-top">
+            <?php if ($brouillonCount > 0): ?>
                 <button type="submit" class="btn btn-next" name="validate_submit" value="1">
                     <span class="material-symbols-outlined">task_alt</span> Valider
                 </button>
+            <?php endif; ?>
                 <?php if ($hasValidatedDocs): ?>
                 <?php if ($hasPendingPdf): ?>
                 <button type="submit" class="btn btn-info" name="generate_pdf_submit" value="1">
@@ -898,7 +895,10 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
             var total = checkboxes.length;
 
             showProgressOverlay('Generation PDF...');
-            checkboxes.forEach(function() { addProgressFile('Document PDF'); });
+            checkboxes.forEach(function(cb) {
+                var name = cb.getAttribute('data-doc-name') || 'Document PDF';
+                addProgressFile(name);
+            });
 
             function processPdf(idx) {
                 if (idx >= total) {
@@ -928,9 +928,64 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
         } else if (action === 'delete_submit') {
             window.showOverlay('Suppression en cours...');
         } else if (action === 'restore_submit') {
-            window.showOverlay('Restauration en cours...');
+            e.preventDefault();
+            var societeId = this.querySelector('input[name="societe_id"]').value;
+            var csrf = getCsrfToken();
+            var checkboxes = this.querySelectorAll('input[name="selected_files[]"]:checked');
+            if (checkboxes.length === 0) return;
+            var total = checkboxes.length;
+            showProgressOverlay('Restauration en brouillon...');
+            checkboxes.forEach(function(cb) {
+                var name = cb.getAttribute('data-doc-name') || 'Document';
+                addProgressFile(name);
+            });
+            var formData = new FormData(this);
+            formData.append('restore_submit', '1');
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', window.location.href, true);
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    progressStatus.textContent = 'Termine -- ' + total + '/' + total;
+                    setTimeout(function() { window.location.reload(); }, 600);
+                } else {
+                    progressStatus.textContent = 'Erreur lors de la restauration';
+                    setTimeout(function() { hideProgressOverlay(); }, 2000);
+                }
+            };
+            xhr.onerror = function() {
+                progressStatus.textContent = 'Erreur reseau';
+                setTimeout(function() { hideProgressOverlay(); }, 2000);
+            };
+            xhr.send(formData);
         } else if (action === 'validate_submit') {
-            window.showOverlay('Validation en cours...');
+            e.preventDefault();
+            var societeId = this.querySelector('input[name="societe_id"]').value;
+            var checkboxes = this.querySelectorAll('input[name="selected_files[]"]:checked');
+            if (checkboxes.length === 0) return;
+            var total = checkboxes.length;
+            showProgressOverlay('Validation en cours...');
+            checkboxes.forEach(function(cb) {
+                var name = cb.getAttribute('data-doc-name') || 'Document';
+                addProgressFile(name);
+            });
+            var formData = new FormData(this);
+            formData.append('validate_submit', '1');
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', window.location.href, true);
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    progressStatus.textContent = 'Termine -- ' + total + '/' + total;
+                    setTimeout(function() { window.location.reload(); }, 600);
+                } else {
+                    progressStatus.textContent = 'Erreur lors de la validation';
+                    setTimeout(function() { hideProgressOverlay(); }, 2000);
+                }
+            };
+            xhr.onerror = function() {
+                progressStatus.textContent = 'Erreur reseau';
+                setTimeout(function() { hideProgressOverlay(); }, 2000);
+            };
+            xhr.send(formData);
         }
     });
 
