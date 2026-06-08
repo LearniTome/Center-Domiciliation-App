@@ -124,10 +124,6 @@ if (($pdo ?? null) instanceof PDO) {
     <article class="card">
         <div class="section-header">
             <span class="page-count"><?= count($associes) ?> enregistrement(s)</span>
-            <div class="table-actions">
-                <button class="btn btn-secondary" type="button" data-col-toggle-btn><span class="material-symbols-outlined">view_column</span> Colonnes <span class="col-toggle-count" data-col-count>0/0</span></button>
-                <a class="btn btn-info" href="<?= e(app_url('associes', ['export' => 'csv', 'q' => $query])) ?>"><span class="material-symbols-outlined">download</span> Exporter CSV</a>
-            </div>
         </div>
         <form method="get" class="stack search-bar">
             <input type="hidden" name="page" value="associes">
@@ -233,6 +229,9 @@ if (($pdo ?? null) instanceof PDO) {
         <?php if (!$associes): ?>
             <p class="table-empty">Aucun associe pour le moment.</p>
         <?php else: ?>
+            <div class="table-actions" style="margin-bottom:8px">
+                <button class="btn btn-secondary" type="button" data-col-toggle-btn><span class="material-symbols-outlined">view_column</span> Colonnes <span class="col-toggle-count" data-col-count>0/0</span></button>
+            </div>
             <div class="table-scroll">
             <table data-col-toggle data-sortable>
                 <thead>
@@ -282,6 +281,9 @@ if (($pdo ?? null) instanceof PDO) {
                 <?php endforeach; ?>
                 </tbody>
             </table>
+            </div>
+            <div class="table-actions" style="margin-top:12px">
+                <a class="btn btn-info" href="<?= e(app_url('associes', ['export' => 'csv', 'q' => $query])) ?>"><span class="material-symbols-outlined">download</span> Exporter CSV</a>
             </div>
         <?php endif; ?>
     </article>
