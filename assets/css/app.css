@@ -685,6 +685,14 @@ article.card + article.card {
     text-decoration: underline;
 }
 
+.table-link {
+    color: var(--text);
+    text-decoration: none;
+}
+.table-link:hover {
+    color: var(--primary);
+}
+
 .btn,
 button,
 input,
