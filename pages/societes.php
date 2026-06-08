@@ -146,7 +146,7 @@ if (($pdo ?? null) instanceof PDO) {
                 <?php foreach ($societes as $societe): ?>
                     <tr>
                         <td><?= e($societe['societe_dossier'] ?? '-') ?></td>
-                        <td><?= e($societe['societe_raison_sociale']) ?></td>
+                        <td><a href="<?= e(app_url('societe', ['id' => (int) $societe['id']])) ?>" style="color:var(--primary);text-decoration:none;font-weight:500"><?= e($societe['societe_raison_sociale']) ?></a></td>
                         <td><?= e($societe['societe_forme_juridique']) ?></td>
                         <td><?= e($societe['societe_ice'] ?? '-') ?></td>
                         <td><?= e(format_date($societe['societe_date_ice'] ?? null)) ?></td>

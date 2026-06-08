@@ -169,7 +169,25 @@ if (is_post() && isset($_POST['restore_submit']) && ($pdo ?? null) instanceof PD
     redirect_to('societe', ['id' => $societeId]);
 }
 
-if (is_post() && !isset($_POST['validate_submit']) && !isset($_POST['delete_submit']) && !isset($_POST['restore_submit']) && ($pdo ?? null) instanceof PDO) {
+if (is_post() && isset($_POST['delete_upload']) && ($pdo ?? null) instanceof PDO) {
+    verify_csrf();
+    $uploadId = (int) ($_POST['delete_upload'] ?? 0);
+    if ($uploadId > 0) {
+        $stmt = $pdo->prepare('SELECT * FROM uploaded_docs WHERE id = :id AND societe_id = :societe_id');
+        $stmt->execute(['id' => $uploadId, 'societe_id' => $societeId]);
+        $uploaded = $stmt->fetch();
+        if ($uploaded) {
+            if (file_exists($uploaded['filepath'])) {
+                unlink($uploaded['filepath']);
+            }
+            $pdo->prepare('DELETE FROM uploaded_docs WHERE id = :id')->execute(['id' => $uploadId]);
+            set_flash('success', 'Document uploade supprime.');
+        }
+    }
+    redirect_to('societe', ['id' => $societeId]);
+}
+
+if (is_post() && !isset($_POST['validate_submit']) && !isset($_POST['delete_submit']) && !isset($_POST['restore_submit']) && !isset($_POST['delete_upload']) && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
     $activitesStatuts = $_POST['societe_activites_statuts'] ?? [];
     $allStatuts = is_array($activitesStatuts) ? array_map('trim', $activitesStatuts) : [];
@@ -771,6 +789,11 @@ $docTypeLabels = [
                         <a href="<?= e($relativePath) ?>" class="btn-icon success" download title="Telecharger">
                             <span class="material-symbols-outlined">download</span>
                         </a>
+                        <form method="post" style="display:inline">
+                            <?= csrf_input() ?>
+                            <input type="hidden" name="delete_upload" value="<?= (int) $ud['id'] ?>">
+                            <button type="submit" class="btn-icon danger" title="Supprimer" data-confirm="Supprimer ce document uploade ?"><span class="material-symbols-outlined">delete</span></button>
+                        </form>
                     </td>
                 </tr>
                 <?php endforeach; ?>
