@@ -441,11 +441,13 @@ if (!empty($dbDocs)) {
 
 $hasValidatedDocs = false;
 $hasPendingPdf = false;
+$hasPdfDocs = false;
 if (($pdo ?? null) instanceof PDO && $societeId > 0) {
     $allDocs = fetch_all_documents($pdo, $societeId);
     $validatedDocs = array_filter($allDocs, fn($d) => (int) $d['valide'] === 1);
     $hasValidatedDocs = count($validatedDocs) > 0;
     $hasPendingPdf = count(array_filter($validatedDocs, fn($d) => empty($d['fichier_pdf']))) > 0;
+    $hasPdfDocs = count(array_filter($validatedDocs, fn($d) => !empty($d['fichier_pdf']))) > 0;
 }
 
 ?>
@@ -697,7 +699,7 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
                 <button type="submit" class="btn btn-back" name="delete_submit" value="1">
                     <span class="material-symbols-outlined">delete</span> Supprimer
                 </button>
-                <?php if ($totalGenerated > 0): ?>
+                <?php if ($hasValidatedDocs && $hasPdfDocs): ?>
                 <button type="button" class="btn btn-next" onclick="showDownloadModal()">
                     <span class="material-symbols-outlined">download</span> Telecharger tous
                 </button>
