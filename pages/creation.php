@@ -191,6 +191,7 @@ if (is_post()) {
                     'associe_adresse' => trim((string) ($associe['adresse'] ?? '')),
                     'associe_date_naissance' => trim((string) ($associe['date_naissance'] ?? '')),
                     'associe_lieu_naissance' => trim((string) ($associe['lieu_naissance'] ?? '')),
+                    'associe_nationalite' => trim((string) ($associe['nationalite'] ?? '')),
                     'associe_telephone' => trim((string) ($associe['telephone'] ?? '')),
                     'associe_email' => trim((string) ($associe['email'] ?? '')),
                     'associe_qualite' => trim((string) ($associe['qualite'] ?? '')),
@@ -1622,10 +1623,12 @@ if ($aiSuggestions !== null) {
                         <div class="item"><span class="label">Tribunal</span><span class="value"><?= e($societeData['societe_tribunal'] ?: '-') ?><?= $currentTribunalType ? ' ('.e($currentTribunalType).')' : '' ?></span></div>
                         <div class="item"><span class="label">Email</span><span class="value"><?= e($societeData['societe_email'] ?: '-') ?></span></div>
                         <div class="item"><span class="label">Telephone</span><span class="value"><?= e($societeData['societe_telephone'] ?: '-') ?></span></div>
-                        <div class="item full"><span class="label">Activites (Statuts)</span><span class="value"><?= e(!empty($societeData['societe_activites_statuts']) ? (string) $societeData['societe_activites_statuts'] : '-') ?></span></div>
+                        <?php if (($societeData['societe_type_generation'] ?? '') === 'creation'): ?>
+                            <div class="item full"><span class="label">Activites (Statuts)</span><span class="value"><?= e(!empty($societeData['societe_activites_statuts']) ? (string) $societeData['societe_activites_statuts'] : '-') ?></span></div>
+                        <?php endif; ?>
                         <div class="item full"><span class="label">Activites (OMPIC)</span><span class="value"><?= e(!empty($societeData['societe_activites_ompic']) ? fetch_activites_ompic_display($pdo ?? null, (string) $societeData['societe_activites_ompic']) : '-') ?></span></div>
                         <div class="item"><span class="label">Type generation</span><span class="value"><?= e($societeData['societe_type_generation'] ?: '-') ?></span></div>
-                        <?php if (($societeData['societe_type_generation'] ?? '') === 'domiciliation'): ?>
+                        <?php if (($societeData['societe_type_generation'] ?? '') === 'creation'): ?>
                             <div class="item"><span class="label">Procedure</span><span class="value"><?= e($societeData['societe_procedure_creation'] ?: '-') ?></span></div>
                             <div class="item"><span class="label">Mode depot</span><span class="value"><?= e($societeData['societe_mode_depot'] ?: '-') ?></span></div>
                         <?php endif; ?>
@@ -1765,6 +1768,27 @@ if ($aiSuggestions !== null) {
                 </div>
             </form>
         </div>
+
+        <script>
+        document.querySelectorAll('[type="file"]').forEach(function(input) {
+            input.addEventListener('change', function() {
+                var card = this.closest('.card');
+                if (!card) return;
+                var badge = card.querySelector('.step-badge');
+                if (!badge) return;
+                var hasFile = this.files && this.files.length > 0 && this.files[0].size > 0;
+                if (hasFile) {
+                    badge.innerHTML = '<span class="material-symbols-outlined">check_circle</span> Telecharge';
+                    badge.style.color = 'var(--success)';
+                    card.style.borderColor = 'var(--success)';
+                } else {
+                    badge.innerHTML = '<span class="material-symbols-outlined">cancel</span> Manquant';
+                    badge.style.color = 'var(--danger)';
+                    card.style.borderColor = 'var(--danger)';
+                }
+            });
+        });
+        </script>
 
     <?php elseif ($step === 6): ?>
         <?php

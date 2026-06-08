@@ -496,7 +496,7 @@ section + section {
 }
 
 .card {
-    padding: 1rem;
+    padding: 0.85rem;
 }
 
 article.card + article.card {
@@ -1228,8 +1228,8 @@ td.col-pdf .pdf-pending {
 
 .info-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
 }
 
 .form-grid > .info-grid {
@@ -1239,10 +1239,7 @@ td.col-pdf .pdf-pending {
 .info-grid > div {
     display: grid;
     gap: 4px;
-    padding: 12px 14px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-sm);
-    background: var(--panel);
+    padding: 6px 0;
 }
 
 .info-grid .full {

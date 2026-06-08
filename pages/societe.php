@@ -382,11 +382,11 @@ $docTypeLabels = [
                     <span>Date exp. cert. negatif</span>
                     <input type="date" name="societe_date_exp_cert_neg" placeholder="01/01/2026" value="<?= e((string) $societe['societe_date_exp_cert_neg']) ?>">
                 </label>
-                <label class="field">
+                <label class="field" style="display:none">
                     <span>RC</span>
                     <input name="societe_rc" value="<?= e((string) $societe['societe_rc']) ?>">
                 </label>
-                <label class="field">
+                <label class="field" style="display:none">
                     <span>IF</span>
                     <input name="societe_if" value="<?= e((string) $societe['societe_if']) ?>">
                 </label>
@@ -527,8 +527,10 @@ $docTypeLabels = [
             <h3 class="section-title">Procedure</h3>
             <div class="info-grid">
                 <div><span>Type generation</span><strong><?= e($societe['societe_type_generation'] ?: '-') ?></strong></div>
-                <div><span>Procedure creation</span><strong><?= e($societe['societe_procedure_creation'] ?: '-') ?></strong></div>
-                <div class="full"><span>Mode depot creation</span><strong><?= e($societe['societe_mode_depot'] ?: '-') ?></strong></div>
+                <?php if (($societe['societe_type_generation'] ?? '') === 'creation'): ?>
+                    <div><span>Procedure creation</span><strong><?= e($societe['societe_procedure_creation'] ?: '-') ?></strong></div>
+                    <div class="full"><span>Mode depot creation</span><strong><?= e($societe['societe_mode_depot'] ?: '-') ?></strong></div>
+                <?php endif; ?>
             </div>
 
             <h3 class="section-title">Identifiants</h3>
@@ -539,7 +541,9 @@ $docTypeLabels = [
                 <div><span>Date exp. cert. neg.</span><strong><?= format_date($societe['societe_date_exp_cert_neg'] ?? null) ?></strong></div>
                 <div><span>RC</span><strong><?= e($societe['societe_rc'] ?: '-') ?></strong></div>
                 <div><span>IF</span><strong><?= e($societe['societe_if'] ?: '-') ?></strong></div>
+                <?php if (($societe['societe_type_generation'] ?? '') === 'creation'): ?>
                 <div class="full"><span>Activites (Statuts)</span><strong><?= e(!empty($societe['societe_activites_statuts']) ? (string) $societe['societe_activites_statuts'] : '-') ?></strong></div>
+                <?php endif; ?>
                 <div class="full"><span>Activites (OMPIC)</span><strong><?= e(!empty($societe['societe_activites_ompic']) ? fetch_activites_ompic_display($pdo ?? null, (string) $societe['societe_activites_ompic']) : '-') ?></strong></div>
             </div>
 
@@ -568,8 +572,7 @@ $docTypeLabels = [
 
 <article class="card">
     <div class="section-header">
-        <h3>Associes lies (<?= count($associes) ?>)</h3>
-        <a class="btn btn-info" href="<?= e(app_url('associes')) ?>"><span class="material-symbols-outlined">visibility</span> Voir tout</a>
+        <a href="<?= e(app_url('associes')) ?>" style="color:inherit;text-decoration:none"><h3>Associes lies (<?= count($associes) ?>)</h3></a>
     </div>
     <?php if (!$associes): ?>
         <p class="table-empty">Aucun associe lie a cette societe.</p>
@@ -603,8 +606,7 @@ $docTypeLabels = [
 
 <article class="card">
     <div class="section-header">
-        <h3>Contrats lies (<?= count($contrats) ?>)</h3>
-        <a class="btn btn-info" href="<?= e(app_url('contrats')) ?>"><span class="material-symbols-outlined">visibility</span> Voir tout</a>
+        <a href="<?= e(app_url('contrats')) ?>" style="color:inherit;text-decoration:none"><h3>Contrats lies (<?= count($contrats) ?>)</h3></a>
     </div>
     <?php if (!$contrats): ?>
         <p class="table-empty">Aucun contrat lie a cette societe.</p>
@@ -636,10 +638,9 @@ $docTypeLabels = [
 
 <article class="card">
     <div class="section-header">
-        <h3>Documents generes (<?= count($documents) ?>)</h3>
+        <a href="<?= e(app_url('documents', ['societe_id' => $societeId])) ?>" style="color:inherit;text-decoration:none"><h3>Documents generes (<?= count($documents) ?>)</h3></a>
         <div class="table-actions">
             <a class="btn btn-info" href="<?= e(app_url('generation', ['societe_id' => $societeId])) ?>"><span class="material-symbols-outlined">sync</span> <?= count($documents) > 0 ? 'Regenerer documents' : 'Generer documents' ?></a>
-            <a class="btn btn-info" href="<?= e(app_url('documents', ['societe_id' => $societeId])) ?>"><span class="material-symbols-outlined">visibility</span> Voir tout</a>
         </div>
     </div>
     <?php if (!$documents): ?>
