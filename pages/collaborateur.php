@@ -649,11 +649,12 @@ $isNew = !$editingRecord;
             </div>
         </div>
 
-        <form method="post" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+        <form method="post" class="collab-edit-form__form">
             <?= csrf_input() ?>
             <input type="hidden" name="id" value="<?= e((string) $formData['id']) ?>">
             <input type="hidden" name="collaborateur_type" value="<?= e($collabType) ?>">
 
+            <div class="form-card-grid">
             <article class="card">
                 <div class="section-header">
                     <span class="material-symbols-outlined">badge</span>
@@ -778,6 +779,8 @@ $isNew = !$editingRecord;
                     </label>
                 </div>
             </article>
+
+            </div><!-- /.form-card-grid -->
 
             <?php if ($collabType === 'externe-pm'): ?>
             <article class="card" style="grid-column:1/-1;">
