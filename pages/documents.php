@@ -212,13 +212,16 @@ if ($exportCsv && count($documents) > 0) {
         <form method="post" id="documents-form">
             <?= csrf_input() ?>
             <div class="table-scroll">
-                <table data-sortable class="table-nowrap">
+                <table data-col-toggle data-sortable class="table-nowrap">
                     <thead>
                         <tr>
                             <th class="col-check"><input type="checkbox" id="select-all"></th>
+                            <th data-col="id">ID</th>
                             <th data-col="societe">Societe</th>
                             <th data-col="type">Type</th>
-                            <th data-col="document">Document</th>
+                            <th data-col="template">Template source</th>
+                            <th data-col="document">Fichier DOCX</th>
+                            <th data-col="pdf">Fichier PDF</th>
                             <th data-col="taille">Taille</th>
                             <th data-col="statut">Statut</th>
                             <th data-col="date-creation">Date creation</th>
@@ -231,13 +234,16 @@ if ($exportCsv && count($documents) > 0) {
                             <?php $modifTime = file_exists($doc['fichier_docx']) ? filemtime($doc['fichier_docx']) : null; ?>
                             <tr>
                                 <td class="col-check"><input type="checkbox" name="selected_files[]" value="<?= e((string) $doc['id']) ?>"></td>
+                                <td><span class="help-text">#<?= (int) $doc['id'] ?></span></td>
                                 <td>
                                     <a href="<?= e(app_url('societe', ['id' => (int) $doc['societe_id']])) ?>">
                                         <?= e($doc['societe_raison_sociale']) ?>
                                     </a>
                                 </td>
                                 <td><?= e($doc['doc_type'] ?? '-') ?></td>
+                                <td><span class="help-text" title="<?= e($doc['template_source'] ?? '') ?>"><?= e($doc['template_source'] ? basename($doc['template_source']) : '-') ?></span></td>
                                 <td><span class="help-text"><?= e(basename($doc['fichier_docx'])) ?></span></td>
+                                <td><span class="help-text"><?= $doc['fichier_pdf'] ? e(basename($doc['fichier_pdf'])) : '<span class="help-text">—</span>' ?></span></td>
                                 <td><?= $doc['taille_ko'] ? number_format((float) $doc['taille_ko'], 1) . ' Ko' : '-' ?></td>
                                 <td>
                                     <span class="statut-badge <?= $doc['valide'] ? 'valide' : 'brouillon' ?>">

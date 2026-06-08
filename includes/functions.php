@@ -171,7 +171,7 @@ function fetch_societes_options(?PDO $pdo, ?int $userId = null): array
         return [];
     }
 
-    $sql = 'SELECT id, societe_raison_sociale FROM societes';
+    $sql = 'SELECT id, societe_raison_sociale, societe_ice, societe_ville FROM societes';
     $params = [];
     if ($userId !== null) {
         $sql .= ' WHERE created_by = :user_id';

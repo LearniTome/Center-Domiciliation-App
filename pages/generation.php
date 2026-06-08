@@ -444,38 +444,43 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
 <section class="card stack">
     <div class="section-header">
         <div>
-            <p class="help-text">Selectionnez une societe puis les templates a generer.</p>
+            <p class="warning-text" style="color:var(--warning);font-weight:600;font-size:0.95rem;margin:0"><span class="material-symbols-outlined" style="font-size:1.1rem;vertical-align:middle">warning</span> Selectionnez une societe puis les templates a generer.</p>
         </div>
     </div>
 
-    <form method="get" class="inline-form">
+    <form method="get" class="inline-form" style="gap:6px;flex-wrap:nowrap;margin-top:-12px">
         <input type="hidden" name="page" value="generation">
-        <select name="societe_id" onchange="this.form.submit()">
+        <select name="societe_id" onchange="this.form.submit()" style="flex:1 1 280px;min-width:180px">
             <option value="">Choisir une societe...</option>
             <?php foreach ($societesOptions as $s): ?>
                 <option value="<?= e((string) $s['id']) ?>" <?= $societeId === (int) $s['id'] ? 'selected' : '' ?>>
-                    <?= e($s['societe_raison_sociale']) ?>
+                    <?= e($s['societe_raison_sociale']) ?> — <?= e($s['societe_ice'] ?: $s['societe_ville'] ?: '') ?>
                 </option>
             <?php endforeach; ?>
         </select>
         <?php if ($societeId > 0): ?>
-            <a class="btn btn-cancel" href="<?= e(app_url('generation')) ?>"><span class="material-symbols-outlined">close</span></a>
+            <a class="btn btn-cancel" href="<?= e(app_url('generation')) ?>" title="Effacer la selection" style="padding:4px 10px;flex-shrink:0;line-height:1;height:42px;box-sizing:border-box;display:inline-flex;align-items:center;gap:4px"><span class="material-symbols-outlined" style="font-size:1.1rem">filter_alt</span><span class="material-symbols-outlined" style="font-size:1.1rem">close</span></a>
         <?php endif; ?>
     </form>
 
     <?php if ($selectedSociete): ?>
         <div class="societe-summary">
             <div class="societe-summary-main">
-                <span class="material-symbols-outlined" style="color:var(--primary);font-size:1.3rem">business</span>
-                <div>
-                    <strong><?= e($selectedSociete['societe_raison_sociale']) ?></strong>
-                    <span class="help-text"><?= e($selectedSociete['societe_forme_juridique'] ?: '-') ?> — <?= e($selectedSociete['societe_ville'] ?: '-') ?></span>
-                </div>
+                <span class="material-symbols-outlined" style="color:var(--primary);font-size:1.2rem;line-height:1">business</span>
+                <strong><?= e($selectedSociete['societe_raison_sociale']) ?></strong>
+                <span class="help-text"><?= e($selectedSociete['societe_forme_juridique'] ?: '-') ?></span>
             </div>
             <div class="societe-summary-details">
-                <span><span class="help-text">ICE</span> <?= e($selectedSociete['societe_ice'] ?: '-') ?></span>
-                <span><span class="help-text">RC</span> <?= e($selectedSociete['societe_rc'] ?: '-') ?></span>
-                <span><span class="help-text">IF</span> <?= e($selectedSociete['societe_if'] ?: '-') ?></span>
+                <div class="detail-item"><span class="detail-label">Dossier</span><span class="detail-value"><?= e($selectedSociete['societe_dossier'] ?: '-') ?></span></div>
+                <div class="detail-item"><span class="detail-label">E-mail</span><span class="detail-value"><?= e($selectedSociete['societe_email'] ?: '-') ?></span></div>
+                <div class="detail-item"><span class="detail-label">ICE</span><span class="detail-value"><?= e($selectedSociete['societe_ice'] ?: '-') ?></span></div>
+                <div class="detail-item"><span class="detail-label">Tél</span><span class="detail-value"><?= e($selectedSociete['societe_telephone'] ?: '-') ?></span></div>
+                <div class="detail-item"><span class="detail-label">RC</span><span class="detail-value"><?= e($selectedSociete['societe_rc'] ?: '-') ?></span></div>
+                <div class="detail-item"><span class="detail-label">Tribunal</span><span class="detail-value"><?= e($selectedSociete['societe_tribunal'] ?: '-') ?></span></div>
+                <div class="detail-item"><span class="detail-label">IF</span><span class="detail-value"><?= e($selectedSociete['societe_if'] ?: '-') ?></span></div>
+                <div class="detail-item"><span class="detail-label">Capital</span><span class="detail-value"><?= $selectedSociete['societe_capital'] ? number_format((float) $selectedSociete['societe_capital'], 0, ',', ' ') . ' DH' : '-' ?></span></div>
+                <div class="detail-item"><span class="detail-label">Type</span><span class="detail-value"><?= e($selectedSociete['societe_type_generation'] ?: '-') ?></span></div>
+                <div class="detail-item full-width"><span class="detail-label">Adresse</span><span class="detail-value"><?= e($selectedSociete['societe_adresse_siege'] ?: $selectedSociete['societe_adresse'] ?: '-') ?></span></div>
             </div>
         </div>
 
