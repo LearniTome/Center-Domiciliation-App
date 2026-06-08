@@ -252,6 +252,15 @@ CREATE TABLE IF NOT EXISTS uploaded_docs (
     INDEX idx_uploaded_docs_type (doc_type)
 );
 
+CREATE TABLE IF NOT EXISTS ref_fonctions (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    fonction VARCHAR(150) NOT NULL,
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_ref_fonctions (fonction)
+);
+
 CREATE TABLE IF NOT EXISTS ref_qualites_associe (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     qualite_associe VARCHAR(150) NOT NULL,
@@ -413,6 +422,19 @@ INSERT INTO ref_lieux_naissance (lieu_naissance) VALUES
 ('Tangier'), ('Meknes'), ('Tetouan'), ('Oujda'), ('Beni Mellal'),
 ('Khouribga'), ('Essaouira'), ('Safi'), ('Azemmour'), ('Ouezzane'),
 ('Sefrou'), ('Taza'), ('Nador'), ('Hoceima'), ('Driouch');
+
+-- Fonctions
+INSERT INTO ref_fonctions (fonction, sort_order) VALUES
+('Gestion administrative', 1),
+('Support operationnel', 2),
+('Agent de traitement', 3),
+('Chef d''équipe', 4),
+('Superviseur', 5),
+('Comptable', 6),
+('Assistant juridique', 7),
+('Responsable clientèle', 8),
+('Coursier', 9),
+('Autre', 99);
 
 -- Qualites associe
 INSERT INTO ref_qualites_associe (qualite_associe) VALUES

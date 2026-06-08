@@ -44,18 +44,28 @@ if (-not $phpCheck) {
 
 # Node.js >= 18
 $nodeCheck = Get-Command "node" -ErrorAction SilentlyContinue
+$nodeOk = $false
 if ($nodeCheck) {
     $nodeVer = & node --version
     $nodeMajor = [int]($nodeVer -replace '[v.]', '' -replace '(\d+).*', '$1')
     if ($nodeMajor -ge 18) {
         Write-Host "      Node.js : $nodeVer" -ForegroundColor Green
+        $nodeOk = $true
     } else {
-        Write-Host "      [AVERTISSEMENT] Node.js >= 18 requis (detecte : $nodeVer)" -ForegroundColor Yellow
-        Write-Host "      Telecharge : https://nodejs.org/" -ForegroundColor Gray
+        Write-Host "      Node.js : $nodeVer (version obsolete)" -ForegroundColor Yellow
+        Write-Host "      Installation de Node.js via winget..." -ForegroundColor Yellow
+        if (Install-WithWinget -Name "Node.js" -WingetId "OpenJS.NodeJS") {
+            $nodeCheck = Get-Command "node" -ErrorAction SilentlyContinue
+            if ($nodeCheck) {
+                $nodeVer = & node --version
+                $nodeMajor = [int]($nodeVer -replace '[v.]', '' -replace '(\d+).*', '$1')
+                if ($nodeMajor -ge 18) { $nodeOk = $true }
+            }
+        }
     }
-} else {
-    Write-Host "      [AVERTISSEMENT] Node.js non trouve (requis pour les serveurs MCP)" -ForegroundColor Yellow
-    Write-Host "      Installe depuis https://nodejs.org/" -ForegroundColor Gray
+}
+if (-not $nodeOk) {
+    Write-Host "      [AVERTISSEMENT] Node.js >= 18 requis - installe depuis https://nodejs.org/" -ForegroundColor Yellow
 }
 
 # Git
@@ -63,8 +73,17 @@ $gitCheck = Get-Command "git" -ErrorAction SilentlyContinue
 if ($gitCheck) {
     Write-Host "      Git : $($gitCheck.Source)" -ForegroundColor Green
 } else {
-    Write-Host "      [AVERTISSEMENT] Git non trouve" -ForegroundColor Yellow
-    Write-Host "      Necessaire pour les mises a jour. Installe depuis https://git-scm.com/" -ForegroundColor Gray
+    Write-Host "      Git non trouve. Installation via winget..." -ForegroundColor Yellow
+    if (Install-WithWinget -Name "Git" -WingetId "Git.Git") {
+        $gitCheck = Get-Command "git" -ErrorAction SilentlyContinue
+        if ($gitCheck) {
+            Write-Host "      Git : $($gitCheck.Source)" -ForegroundColor Green
+        }
+    }
+    if (-not $gitCheck) {
+        Write-Host "      [AVERTISSEMENT] Git non installe. Necessaire pour les mises a jour." -ForegroundColor Yellow
+        Write-Host "      Installe depuis https://git-scm.com/" -ForegroundColor Gray
+    }
 }
 
 if (-not $prereqOk) {
@@ -73,13 +92,25 @@ if (-not $prereqOk) {
 }
 Write-Host ""
 
-# Verifier que le projet et XAMPP sont sur le meme disque (pour le symlink)
-$projectDrive = (Get-Item $ProjectRoot).PSDrive.Name
-$xamppDrive   = (Get-Item $XamppPath).PSDrive.Name
-if ($projectDrive -ne $xamppDrive) {
-    Write-Host "      [INFO] Projet et XAMPP sont sur des disques differents ($projectDrive vs $xamppDrive)" -ForegroundColor Yellow
-    Write-Host "      Les jonctions Windows ne fonctionnent pas entre disques." -ForegroundColor Yellow
-    Write-Host "      Utilisation d'un symlink de dossier a la place..." -ForegroundColor Gray
+# ----- Fonction d'installation winget -----
+function Install-WithWinget {
+    param([string]$Name, [string]$WingetId, [string]$CheckCommand, [string]$CheckPath)
+    Write-Host "      Installation de $Name via winget..." -ForegroundColor Yellow
+    try {
+        $proc = Start-Process -FilePath "winget" -ArgumentList "install --id $WingetId --silent --accept-package-agreements --accept-source-agreements" -NoNewWindow -Wait -PassThru
+        if ($proc.ExitCode -eq 0) {
+            Write-Host "      $Name installe avec succes" -ForegroundColor Green
+            # Rafraichir PATH
+            $env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [Environment]::GetEnvironmentVariable("Path", "User")
+            return $true
+        } else {
+            Write-Host "      [ERREUR] Echec installation $Name (code: $($proc.ExitCode))" -ForegroundColor Red
+            return $false
+        }
+    } catch {
+        Write-Host "      [ERREUR] Exception lors de l'installation de $Name : $_" -ForegroundColor Red
+        return $false
+    }
 }
 
 # ----- 2. Détection XAMPP -----
@@ -109,12 +140,44 @@ if (-not $XamppPath) {
     }
 }
 
+# Installation automatique via winget si XAMPP introuvable
 if (-not $XamppPath) {
-    Write-Host "[ERREUR] XAMPP introuvable." -ForegroundColor Red
-    Write-Host "Installe XAMPP depuis https://www.apachefriends.org/" -ForegroundColor Yellow
-    Write-Host "Ou relance avec : .\setup.ps1 -XamppPath ""C:\chemin\vers\xampp""" -ForegroundColor Yellow
-    exit 1
+    Write-Host "      XAMPP introuvable. Installation via winget..." -ForegroundColor Yellow
+    if (Install-WithWinget -Name "XAMPP 8.2" -WingetId "ApacheFriends.Xampp.8.2") {
+        # Chercher le chemin apres installation
+        $candidates = @(
+            "C:\xampp",
+            "D:\xampp",
+            "E:\xampp",
+            "$env:ProgramFiles\xampp",
+            "${env:ProgramFiles(x86)}\xampp",
+            "$env:LOCALAPPDATA\xampp"
+        )
+        foreach ($candidate in $candidates) {
+            if (Test-Path "$candidate\apache\bin\httpd.exe" -PathType Leaf) {
+                $XamppPath = $candidate
+                break
+            }
+        }
+    }
+    if (-not $XamppPath) {
+        Write-Host "[ERREUR] XAMPP introuvable meme apres installation." -ForegroundColor Red
+        Write-Host "Installe XAMPP manuellement depuis https://www.apachefriends.org/" -ForegroundColor Yellow
+        Write-Host "Ou relance avec : .\setup.ps1 -XamppPath ""C:\chemin\vers\xampp""" -ForegroundColor Yellow
+        exit 1
+    }
 }
+
+# Verifier que le projet et XAMPP sont sur le meme disque (pour le symlink)
+try {
+    $projectDrive = (Get-Item $ProjectRoot).PSDrive.Name
+    $xamppDrive   = (Get-Item $XamppPath).PSDrive.Name
+    if ($projectDrive -ne $xamppDrive) {
+        Write-Host "      [INFO] Projet et XAMPP sont sur des disques differents ($projectDrive vs $xamppDrive)" -ForegroundColor Yellow
+        Write-Host "      Les jonctions Windows ne fonctionnent pas entre disques." -ForegroundColor Yellow
+        Write-Host "      Utilisation d'un symlink de dossier a la place..." -ForegroundColor Gray
+    }
+} catch { }
 
 Write-Host "[2/9] XAMPP detecte : $XamppPath" -ForegroundColor Green
 
@@ -353,14 +416,18 @@ foreach ($lo in $libreofficePaths) {
     }
 }
 if (-not $libreFound) {
-    $hasChoco = Get-Command "choco" -ErrorAction SilentlyContinue
-    if ($hasChoco) {
-        Write-Host "      [SUGGESTION] LibreOffice peut etre installe via :" -ForegroundColor Gray
-        Write-Host "        choco install libreoffice" -ForegroundColor White
-    } else {
-        Write-Host "      [INFO] LibreOffice non trouve. Conversion PDF via PHPWord/Dompdf (fallback)." -ForegroundColor Gray
-        Write-Host "      Pour un meilleur rendu PDF, installe LibreOffice :" -ForegroundColor Gray
-        Write-Host "        https://www.libreoffice.org/download/" -ForegroundColor White
+    Write-Host "      LibreOffice non trouve. Installation via winget..." -ForegroundColor Yellow
+    if (Install-WithWinget -Name "LibreOffice" -WingetId "TheDocumentFoundation.LibreOffice") {
+        foreach ($lo in $libreofficePaths) {
+            if (Test-Path $lo -PathType Leaf) {
+                Write-Host "      LibreOffice detecte : $lo" -ForegroundColor Green
+                $libreFound = $true
+                break
+            }
+        }
+    }
+    if (-not $libreFound) {
+        Write-Host "      [INFO] LibreOffice non installe. Conversion PDF via PHPWord/Dompdf (fallback)." -ForegroundColor Gray
     }
 }
 

@@ -39,10 +39,33 @@ if (-not $XamppPath) {
 }
 
 if (-not $XamppPath) {
-    Write-Host "[ERREUR] XAMPP introuvable." -ForegroundColor Red
-    Write-Host "Relance avec : .\run.ps1 -XamppPath ""C:\chemin\vers\xampp""" -ForegroundColor Yellow
-    pause
-    exit 1
+    Write-Host "[XAMPP] Introuvable. Installation via winget..." -ForegroundColor Yellow
+    try {
+        $proc = Start-Process -FilePath "winget" -ArgumentList "install --id ApacheFriends.Xampp.8.2 --silent --accept-package-agreements --accept-source-agreements" -NoNewWindow -Wait -PassThru
+        if ($proc.ExitCode -eq 0) {
+            Write-Host "[XAMPP] Installation reussie. Detection du chemin..." -ForegroundColor Green
+            $candidates = @(
+                "C:\xampp", "D:\xampp", "E:\xampp",
+                "$env:ProgramFiles\xampp", "${env:ProgramFiles(x86)}\xampp",
+                "$env:LOCALAPPDATA\xampp"
+            )
+            foreach ($candidate in $candidates) {
+                if (Test-Path "$candidate\apache\bin\httpd.exe" -PathType Leaf) {
+                    $XamppPath = $candidate
+                    break
+                }
+            }
+        }
+    } catch {
+        Write-Host "[ERREUR] Echec installation XAMPP : $_" -ForegroundColor Red
+    }
+    if (-not $XamppPath) {
+        Write-Host "[ERREUR] XAMPP introuvable meme apres installation." -ForegroundColor Red
+        Write-Host "Installe XAMPP manuellement depuis https://www.apachefriends.org/" -ForegroundColor Yellow
+        Write-Host "Ou relance avec : .\run.ps1 -XamppPath ""C:\chemin\vers\xampp""" -ForegroundColor Yellow
+        pause
+        exit 1
+    }
 }
 
 $ApacheBin = Join-Path $XamppPath "apache\bin\httpd.exe"
@@ -58,16 +81,46 @@ Write-Host ""
 # ----- Verification du lien symlink -----
 $HtdocsLink = Join-Path (Join-Path $XamppPath "htdocs") $ProjectName
 if (-not (Test-Path $HtdocsLink)) {
-    Write-Host "[ATTENTION] Lien symbolique manquant dans htdocs" -ForegroundColor Yellow
-    Write-Host "  Lance .\setup.ps1 pour recreer le lien" -ForegroundColor Gray
+    Write-Host "[htdocs] Creation du lien symbolique..." -ForegroundColor Yellow
+    $Htdocs = Join-Path $XamppPath "htdocs"
+    if (-not (Test-Path $Htdocs -PathType Container)) {
+        New-Item -ItemType Directory -Path $Htdocs -Force | Out-Null
+    }
+    try {
+        $projectDrive = (Get-Item $ProjectRoot).PSDrive.Name
+        $xamppDrive   = (Get-Item $XamppPath).PSDrive.Name
+        if ($projectDrive -eq $xamppDrive) {
+            New-Item -ItemType Junction -Path $HtdocsLink -Target $ProjectRoot -Force | Out-Null
+        } else {
+            New-Item -ItemType SymbolicLink -Path $HtdocsLink -Target $ProjectRoot -Force | Out-Null
+        }
+        Write-Host "      $HtdocsLink -> $ProjectRoot" -ForegroundColor Green
+    } catch {
+        Write-Host "[ATTENTION] Impossible de creer le lien. Lance .\setup.ps1 en Admin." -ForegroundColor Yellow
+    }
     Write-Host ""
 }
 
 # ----- Verification convertisseur DOCX->PDF -----
 if (-not (Test-Path (Join-Path $ProjectRoot "vendor\autoload.php") -PathType Leaf)) {
-    Write-Host "[ATTENTION] Dependances Composer manquantes (phpword/dompdf)" -ForegroundColor Yellow
-    Write-Host "  Lance : cd $ProjectRoot && composer install" -ForegroundColor Gray
-    Write-Host "  Ou : .\setup.ps1 pour tout configurer automatiquement" -ForegroundColor Gray
+    Write-Host "[Composer] Installation des dependances (phpword/dompdf)..." -ForegroundColor Yellow
+    try {
+        $composer = Get-Command "composer" -ErrorAction SilentlyContinue
+        if ($composer) {
+            & composer install --no-interaction --working-dir=$ProjectRoot 2>&1 | Out-Null
+        } else {
+            $composerPhar = Join-Path $ProjectRoot "composer.phar"
+            if (-not (Test-Path $composerPhar)) {
+                Invoke-WebRequest -Uri "https://getcomposer.org/composer.phar" -OutFile $composerPhar -UseBasicParsing
+            }
+            & php $composerPhar install --no-interaction --working-dir=$ProjectRoot 2>&1 | Out-Null
+        }
+        if (Test-Path (Join-Path $ProjectRoot "vendor\autoload.php")) {
+            Write-Host "      Dependances installees" -ForegroundColor Green
+        }
+    } catch {
+        Write-Host "[ATTENTION] Echec composer install. Lance manuellement : cd $ProjectRoot && composer install" -ForegroundColor Yellow
+    }
     Write-Host ""
 }
 $PhpIni = Join-Path $XamppPath "php\php.ini"
@@ -90,8 +143,18 @@ foreach ($lp in $librePaths) {
     if (Test-Path $lp -PathType Leaf) { $libreFound = $true; break }
 }
 if (-not $libreFound) {
-    Write-Host "[INFO] LibreOffice non installe. Conversion PDF via fallback PHPWord/Dompdf." -ForegroundColor Gray
-    Write-Host ""
+    Write-Host "[LibreOffice] Installation via winget..." -ForegroundColor Yellow
+    try {
+        $proc = Start-Process -FilePath "winget" -ArgumentList "install --id TheDocumentFoundation.LibreOffice --silent --accept-package-agreements --accept-source-agreements" -NoNewWindow -Wait -PassThru
+        if ($proc.ExitCode -eq 0) {
+            foreach ($lp in $librePaths) {
+                if (Test-Path $lp -PathType Leaf) { $libreFound = $true; break }
+            }
+            if ($libreFound) { Write-Host "      LibreOffice installe" -ForegroundColor Green }
+        }
+    } catch {
+        Write-Host "[INFO] LibreOffice non installe. Conversion PDF via PHPWord/Dompdf (fallback)." -ForegroundColor Gray
+    }
 }
 
 Write-Host ""

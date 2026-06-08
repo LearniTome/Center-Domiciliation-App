@@ -54,6 +54,7 @@ function run_migrations(PDO $pdo): array
             // since the schema may already be up-to-date
             $duplicatePatterns = [
                 '42S21',   // Column already exists
+                '42S22',   // Column not found (rename migration on fresh schema)
                 '42S01',   // Table already exists
                 '42000',   // Duplicate key (MariaDB specific)
             ];
