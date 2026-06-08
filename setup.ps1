@@ -20,6 +20,42 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  Center Domiciliation - Setup" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
+
+# ----- Synchronisation Git (pull --rebase avant tout) -----
+$gitCheck = Get-Command "git" -ErrorAction SilentlyContinue
+if ($gitCheck) {
+    $gitDir = Join-Path $ProjectRoot ".git"
+    if (Test-Path $gitDir -PathType Container) {
+        Write-Host "[Git] Synchronisation avec le depot distant..." -ForegroundColor Yellow
+        Push-Location $ProjectRoot
+        try {
+            $hasChanges = & git status --porcelain 2>&1
+            $stashed = $false
+            if ($hasChanges) {
+                & git stash push -m "auto-stash setup.ps1 $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" 2>&1 | Out-Null
+                $stashed = $true
+                Write-Host "      Modifications locales mises de cote (stash)" -ForegroundColor Gray
+            }
+            & git pull --rebase 2>&1 | Out-Null
+            if ($LASTEXITCODE -eq 0) {
+                Write-Host "      Synchronise avec success" -ForegroundColor Green
+            } else {
+                Write-Host "      [ATTENTION] Echec pull --rebase. Verifie ta connexion ou les conflits." -ForegroundColor Yellow
+            }
+            if ($stashed) {
+                & git stash pop 2>&1 | Out-Null
+                Write-Host "      Modifications locales restaurees" -ForegroundColor Gray
+            }
+        } catch {
+            Write-Host "      [ATTENTION] Erreur Git : $_" -ForegroundColor Yellow
+        }
+        Pop-Location
+    }
+} else {
+    Write-Host "[Git] Git non trouve, synchronisation ignoree" -ForegroundColor Gray
+}
+Write-Host ""
+
 Write-Host "[1/9] Projet detecte : $ProjectRoot" -ForegroundColor Gray
 
 # ----- Verification des prerequis -----

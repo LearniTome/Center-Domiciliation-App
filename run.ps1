@@ -78,6 +78,44 @@ Write-Host "  XAMPP : $XamppPath" -ForegroundColor Gray
 Write-Host "  App   : $ProjectRoot" -ForegroundColor Gray
 Write-Host ""
 
+# ----- Synchronisation Git (pull --rebase avant de travailler) -----
+$gitCheck = Get-Command "git" -ErrorAction SilentlyContinue
+if ($gitCheck) {
+    $gitDir = Join-Path $ProjectRoot ".git"
+    if (Test-Path $gitDir -PathType Container) {
+        Write-Host "[Git] Synchronisation avec le depot distant..." -ForegroundColor Yellow
+        Push-Location $ProjectRoot
+        try {
+            # Stash les modifications locales si presentes
+            $hasChanges = & git status --porcelain 2>&1
+            $stashed = $false
+            if ($hasChanges) {
+                & git stash push -m "auto-stash run.ps1 $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" 2>&1 | Out-Null
+                $stashed = $true
+                Write-Host "      Modifications locales mises de cote (stash)" -ForegroundColor Gray
+            }
+            # Pull --rebase
+            & git pull --rebase 2>&1 | Out-Null
+            if ($LASTEXITCODE -eq 0) {
+                Write-Host "      Synchronise avec success" -ForegroundColor Green
+            } else {
+                Write-Host "      [ATTENTION] Echec pull --rebase. Verifie ta connexion ou les conflits." -ForegroundColor Yellow
+            }
+            # Restore stash
+            if ($stashed) {
+                & git stash pop 2>&1 | Out-Null
+                Write-Host "      Modifications locales restaurees" -ForegroundColor Gray
+            }
+        } catch {
+            Write-Host "      [ATTENTION] Erreur Git : $_" -ForegroundColor Yellow
+        }
+        Pop-Location
+    }
+} else {
+    Write-Host "[Git] Git non trouve, synchronisation ignoree" -ForegroundColor Gray
+}
+Write-Host ""
+
 # ----- Verification du lien symlink -----
 $HtdocsLink = Join-Path (Join-Path $XamppPath "htdocs") $ProjectName
 if (-not (Test-Path $HtdocsLink)) {
@@ -196,5 +234,10 @@ Write-Host ""
 Write-Host "Pour les arreter :" -ForegroundColor Yellow
 Write-Host "  taskkill /f /im httpd.exe" -ForegroundColor White
 Write-Host "  taskkill /f /im mysqld.exe" -ForegroundColor White
+Write-Host ""
+Write-Host "--- Apres avoir travaille, pousse tes changements :" -ForegroundColor Cyan
+Write-Host "  git add -A" -ForegroundColor White
+Write-Host "  git commit -m ""description du changement""" -ForegroundColor White
+Write-Host "  git push" -ForegroundColor White
 Write-Host ""
 pause
