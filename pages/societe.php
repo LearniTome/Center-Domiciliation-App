@@ -263,7 +263,7 @@ if ($editing) {
 
 $associes = ($pdo ?? null) instanceof PDO
     ? (function (PDO $pdo, int $societeId): array {
-        $stmt = $pdo->prepare('SELECT associe_nom_complet, associe_cin, associe_nationalite, associe_qualite, associe_parts, associe_est_gerant FROM associes WHERE societe_id = :societe_id ORDER BY id DESC');
+        $stmt = $pdo->prepare('SELECT id, associe_nom_complet, associe_cin, associe_nationalite, associe_qualite, associe_parts, associe_est_gerant FROM associes WHERE societe_id = :societe_id ORDER BY id DESC');
         $stmt->execute(['societe_id' => $societeId]);
         return $stmt->fetchAll();
     })($pdo, $societeId)
