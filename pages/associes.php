@@ -256,7 +256,7 @@ if (($pdo ?? null) instanceof PDO) {
                 <tbody>
                 <?php foreach ($associes as $associe): ?>
                     <tr>
-                        <td><?= e($associe['associe_nom_complet']) ?></td>
+                        <td><a href="<?= e(app_url('associes', ['edit' => (int) $associe['id']])) ?>" class="table-link"><?= e($associe['associe_nom_complet']) ?></a></td>
                         <td><?= e($associe['societe_raison_sociale']) ?></td>
                         <td><?= e($associe['associe_cin'] ?? '-') ?></td>
                         <td><?= e(format_date($associe['associe_date_naissance'] ?? null)) ?></td>
