@@ -236,7 +236,7 @@ if (is_post() && !isset($_POST['validate_submit']) && !isset($_POST['delete_subm
 if ($editing) {
     $villesOptions = fetch_reference_options($pdo ?? null, 'ref_villes', 'ville');
     $adressesOptions = fetch_reference_options($pdo ?? null, 'ref_ste_adresses', 'ste_adresse');
-    $formesJuridiquesOptions = fetch_reference_options($pdo ?? null, 'ref_formes_juridiques', 'societe_forme_juridique');
+    $formesJuridiquesOptions = fetch_reference_options($pdo ?? null, 'ref_formes_juridiques', 'forme_juridique');
     $activitesOptions = fetch_reference_options($pdo ?? null, 'ref_activites', 'activite');
     $ompicOptions = fetch_activites_ompic_options($pdo ?? null);
     $societeActivitesStatuts = !empty($societe['societe_activites_statuts']) ? array_map('trim', explode(',', (string) $societe['societe_activites_statuts'])) : [];
