@@ -1033,39 +1033,80 @@ tbody tr:hover:nth-child(even) {
     position: relative;
 }
 
-.download-options-panel {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    z-index: 100;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-sm);
-    padding: 6px 0;
-    min-width: 200px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+.dl-modal-overlay {
     display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
 }
-.download-options-panel.open {
-    display: block;
+.dl-modal-overlay.show {
+    display: flex;
 }
-.dl-option {
+.dl-modal-card {
+    background: var(--panel);
+    border-radius: 12px;
+    min-width: 340px;
+    max-width: 420px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+    overflow: hidden;
+}
+.dl-modal-header {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 8px 16px;
+    padding: 18px 20px 14px;
+    font-weight: 600;
+    font-size: 1rem;
     color: var(--text);
-    text-decoration: none;
-    font-size: 0.875rem;
-    transition: background var(--transition);
-    cursor: pointer;
+    border-bottom: 1px solid var(--line);
 }
-.dl-option:hover {
+.dl-modal-header .material-symbols-outlined {
+    color: var(--primary);
+}
+.dl-modal-close {
+    margin-left: auto;
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+}
+.dl-modal-close:hover {
+    color: var(--text);
+}
+.dl-modal-body {
+    padding: 8px;
+}
+.dl-modal-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    text-decoration: none;
+    color: var(--text);
+    border-radius: 8px;
+    transition: background var(--transition);
+}
+.dl-modal-option:hover {
     background: var(--panel-strong);
 }
-.dl-option .material-symbols-outlined {
-    font-size: 1.1rem;
+.dl-modal-option .material-symbols-outlined:first-child {
+    font-size: 1.3rem;
     color: var(--primary);
+}
+.dl-option-label {
+    flex: 1;
+    font-size: 0.925rem;
+    font-weight: 500;
+}
+.dl-arrow {
+    font-size: 1.1rem !important;
+    color: var(--text-muted) !important;
 }
 
 .col-toggle-panel {

@@ -698,22 +698,9 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
                     <span class="material-symbols-outlined">delete</span> Supprimer
                 </button>
                 <?php if ($totalGenerated > 0): ?>
-                <div style="position:relative">
-                    <button type="button" class="btn btn-next" onclick="toggleDownloadOptions()">
-                        <span class="material-symbols-outlined">download</span> Telecharger tous
-                    </button>
-                    <div id="download-options-panel" class="download-options-panel">
-                        <a class="dl-option" href="<?= e(app_url('download_all', ['societe_id' => $societeId, 'type' => 'word'])) ?>">
-                            <span class="material-symbols-outlined">description</span> Word
-                        </a>
-                        <a class="dl-option" href="<?= e(app_url('download_all', ['societe_id' => $societeId, 'type' => 'pdf'])) ?>">
-                            <span class="material-symbols-outlined">picture_as_pdf</span> PDF
-                        </a>
-                        <a class="dl-option" href="<?= e(app_url('download_all', ['societe_id' => $societeId, 'type' => 'both'])) ?>">
-                            <span class="material-symbols-outlined">folder_zip</span> Word &amp; PDF
-                        </a>
-                    </div>
-                </div>
+                <button type="button" class="btn btn-next" onclick="showDownloadModal()">
+                    <span class="material-symbols-outlined">download</span> Telecharger tous
+                </button>
                 <?php endif; ?>
             </div>
         </form>
@@ -723,16 +710,12 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
             const checkboxes = form.querySelectorAll('input[name="selected_files[]"]');
             checkboxes.forEach(c => c.checked = this.checked);
         });
-        function toggleDownloadOptions() {
-            const panel = document.getElementById('download-options-panel');
-            panel.classList.toggle('open');
+        function showDownloadModal() {
+            document.getElementById('dl-modal-overlay').classList.add('show');
         }
-        document.addEventListener('click', function(e) {
-            const container = document.querySelector('#download-options-panel')?.parentElement;
-            if (container && !container.contains(e.target)) {
-                document.getElementById('download-options-panel')?.classList.remove('open');
-            }
-        });
+        function hideDownloadModal() {
+            document.getElementById('dl-modal-overlay').classList.remove('show');
+        }
         </script>
     <?php else: ?>
         <div class="empty-state">
@@ -741,6 +724,33 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
         </div>
     <?php endif; ?>
 </section>
+
+<div id="dl-modal-overlay" class="dl-modal-overlay" onclick="if(event.target===this)hideDownloadModal()">
+    <div class="dl-modal-card">
+        <div class="dl-modal-header">
+            <span class="material-symbols-outlined">download</span>
+            <span>Telecharger tous les documents</span>
+            <button type="button" class="dl-modal-close" onclick="hideDownloadModal()">&times;</button>
+        </div>
+        <div class="dl-modal-body">
+            <a class="dl-modal-option" href="<?= e(app_url('download_all', ['societe_id' => $societeId, 'type' => 'word'])) ?>">
+                <span class="material-symbols-outlined">description</span>
+                <span class="dl-option-label">Word</span>
+                <span class="material-symbols-outlined dl-arrow">chevron_right</span>
+            </a>
+            <a class="dl-modal-option" href="<?= e(app_url('download_all', ['societe_id' => $societeId, 'type' => 'pdf'])) ?>">
+                <span class="material-symbols-outlined">picture_as_pdf</span>
+                <span class="dl-option-label">PDF</span>
+                <span class="material-symbols-outlined dl-arrow">chevron_right</span>
+            </a>
+            <a class="dl-modal-option" href="<?= e(app_url('download_all', ['societe_id' => $societeId, 'type' => 'both'])) ?>">
+                <span class="material-symbols-outlined">folder_zip</span>
+                <span class="dl-option-label">Word &amp; PDF</span>
+                <span class="material-symbols-outlined dl-arrow">chevron_right</span>
+            </a>
+        </div>
+    </div>
+</div>
 
 <div id="loading-overlay">
     <div class="loader-card">
