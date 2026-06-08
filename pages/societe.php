@@ -572,7 +572,7 @@ $docTypeLabels = [
 
 <article class="card">
     <div class="section-header">
-        <a href="<?= e(app_url('associes')) ?>" style="color:inherit;text-decoration:none"><h3>Associes lies (<?= count($associes) ?>)</h3></a>
+        <a href="<?= e(app_url('associes')) ?>" style="color:var(--primary);text-decoration:none"><h3>Associes lies (<?= count($associes) ?>)</h3></a>
     </div>
     <?php if (!$associes): ?>
         <p class="table-empty">Aucun associe lie a cette societe.</p>
@@ -606,7 +606,7 @@ $docTypeLabels = [
 
 <article class="card">
     <div class="section-header">
-        <a href="<?= e(app_url('contrats')) ?>" style="color:inherit;text-decoration:none"><h3>Contrats lies (<?= count($contrats) ?>)</h3></a>
+        <a href="<?= e(app_url('contrats')) ?>" style="color:var(--primary);text-decoration:none"><h3>Contrats lies (<?= count($contrats) ?>)</h3></a>
     </div>
     <?php if (!$contrats): ?>
         <p class="table-empty">Aucun contrat lie a cette societe.</p>
@@ -638,10 +638,7 @@ $docTypeLabels = [
 
 <article class="card">
     <div class="section-header">
-        <a href="<?= e(app_url('documents', ['societe_id' => $societeId])) ?>" style="color:inherit;text-decoration:none"><h3>Documents generes (<?= count($documents) ?>)</h3></a>
-        <div class="table-actions">
-            <a class="btn btn-info" href="<?= e(app_url('generation', ['societe_id' => $societeId])) ?>"><span class="material-symbols-outlined">sync</span> <?= count($documents) > 0 ? 'Regenerer documents' : 'Generer documents' ?></a>
-        </div>
+        <a href="<?= e(app_url('documents', ['societe_id' => $societeId])) ?>" style="color:var(--primary);text-decoration:none"><h3>Documents generes (<?= count($documents) ?>)</h3></a>
     </div>
     <?php if (!$documents): ?>
         <div class="empty-state">
@@ -712,7 +709,8 @@ $docTypeLabels = [
                 </table>
             </div>
             <div class="table-actions table-actions-top">
-            
+                <a class="btn btn-info" href="<?= e(app_url('generation', ['societe_id' => $societeId])) ?>"><span class="material-symbols-outlined">sync</span> <?= count($documents) > 0 ? 'Regenerer documents' : 'Generer documents' ?></a>
+
                 <?php
                 $allValides = count($documents) > 0 && count(array_filter($documents, fn($d) => !$d['valide'])) === 0;
                 ?>
