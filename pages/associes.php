@@ -5,6 +5,11 @@ declare(strict_types=1);
 $editId = isset($_GET['edit']) ? (int) $_GET['edit'] : 0;
 $editRecord = $editId > 0 ? fetch_record($pdo ?? null, 'associes', $editId) : null;
 
+$qualitesOptions = [];
+if ($editRecord && ($pdo ?? null) instanceof PDO) {
+    $qualitesOptions = fetch_reference_options($pdo, 'ref_qualites_associe', 'qualite_associe');
+}
+
 if (is_post() && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
     $action = $_POST['action'] ?? 'delete';
@@ -197,7 +202,12 @@ if (($pdo ?? null) instanceof PDO) {
                     </label>
                     <label class="field">
                         <span>Qualite associe</span>
-                        <input name="associe_qualite" value="<?= e((string) $editRecord['associe_qualite']) ?>">
+                        <select name="associe_qualite">
+                            <option value="">Selectionner</option>
+                            <?php foreach ($qualitesOptions as $option): ?>
+                                <option value="<?= e($option) ?>" <?= (string) $editRecord['associe_qualite'] === $option ? 'selected' : '' ?>><?= e($option) ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </label>
                     <label class="field">
                         <span>Parts</span>

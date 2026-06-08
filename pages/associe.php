@@ -26,6 +26,11 @@ if (!$associe) {
 
 $editing = isset($_GET['edit']) && $_GET['edit'] === '1';
 
+$qualitesOptions = [];
+if ($editing && ($pdo ?? null) instanceof PDO) {
+    $qualitesOptions = fetch_reference_options($pdo, 'ref_qualites_associe', 'qualite_associe');
+}
+
 if (is_post() && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
     $stmt = $pdo->prepare('
@@ -157,7 +162,12 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
                 <h3 class="section-title">Statut</h3>
                 <label class="field">
                     <span>Qualite associe</span>
-                    <input name="associe_qualite" value="<?= e((string) $associe['associe_qualite']) ?>">
+                    <select name="associe_qualite">
+                        <option value="">Selectionner</option>
+                        <?php foreach ($qualitesOptions as $option): ?>
+                            <option value="<?= e($option) ?>" <?= (string) $associe['associe_qualite'] === $option ? 'selected' : '' ?>><?= e($option) ?></option>
+                        <?php endforeach; ?>
+                    </select>
                 </label>
                 <label class="field">
                     <span>Parts</span>
