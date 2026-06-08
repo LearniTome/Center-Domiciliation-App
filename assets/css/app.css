@@ -1048,8 +1048,8 @@ tbody tr:hover:nth-child(even) {
 .dl-modal-card {
     background: var(--panel);
     border-radius: 12px;
-    min-width: 340px;
-    max-width: 420px;
+    min-width: 300px;
+    max-width: 360px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.35);
     overflow: hidden;
 }
@@ -1080,33 +1080,15 @@ tbody tr:hover:nth-child(even) {
     color: var(--text);
 }
 .dl-modal-body {
-    padding: 8px;
-}
-.dl-modal-option {
+    padding: 16px 20px 20px;
     display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 14px;
-    text-decoration: none;
-    color: var(--text);
-    border-radius: 8px;
-    transition: background var(--transition);
+    flex-direction: column;
+    gap: 10px;
 }
-.dl-modal-option:hover {
-    background: var(--panel-strong);
-}
-.dl-modal-option .material-symbols-outlined:first-child {
-    font-size: 1.3rem;
-    color: var(--primary);
-}
-.dl-option-label {
-    flex: 1;
-    font-size: 0.925rem;
-    font-weight: 500;
-}
-.dl-arrow {
-    font-size: 1.1rem !important;
-    color: var(--text-muted) !important;
+.dl-modal-btn {
+    justify-content: center;
+    padding: 10px 20px;
+    font-size: 0.95rem;
 }
 
 .col-toggle-panel {
