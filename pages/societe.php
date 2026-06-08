@@ -608,7 +608,7 @@ $docTypeLabels = [
                 </thead>
                 <tbody>
                 <?php foreach ($associes as $associe): ?>
-                    <tr>
+                    <tr data-href="<?= e(app_url('associes', ['edit' => (int) $associe['id']])) ?>">
                         <td><?= e($associe['associe_nom_complet']) ?></td>
                         <td><?= e($associe['associe_cin']) ?></td>
                         <td><?= e($associe['associe_nationalite']) ?></td>
@@ -641,7 +641,7 @@ $docTypeLabels = [
                 </thead>
                 <tbody>
                 <?php foreach ($contrats as $contrat): ?>
-                    <tr>
+                    <tr data-href="<?= e(app_url('contrats', ['edit' => (int) $contrat['id']])) ?>">
                         <td><?= e($contrat['contrat_type']) ?></td>
                         <td><?= e(format_date($contrat['contrat_date_debut'] ?? null) . ' -> ' . format_date($contrat['contrat_date_fin'] ?? null)) ?></td>
                         <td><span class="statut-badge <?= strtolower($contrat['contrat_statut']) === 'actif' ? 'actif' : 'resilie' ?>"><?= e($contrat['contrat_statut']) ?></span></td>
@@ -824,6 +824,12 @@ $docTypeLabels = [
         } else {
             window.showOverlay('Validation en cours...');
         }
+    });
+    document.querySelectorAll('tr[data-href]').forEach(function(tr){
+        tr.style.cursor = 'pointer';
+        tr.addEventListener('click', function(){
+            window.location.href = this.dataset.href;
+        });
     });
 })();
 </script>
