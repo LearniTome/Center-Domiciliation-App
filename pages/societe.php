@@ -611,8 +611,8 @@ $docTypeLabels = [
                 </thead>
                 <tbody>
                 <?php foreach ($associes as $associe): ?>
-                    <tr data-href="<?= e(app_url('associes', ['edit' => (int) $associe['id']])) ?>">
-                        <td><a href="<?= e(app_url('associes', ['edit' => (int) $associe['id']])) ?>" class="table-link"><?= e($associe['associe_nom_complet']) ?></a></td>
+                    <tr data-href="<?= e(app_url('associe', ['id' => (int) $associe['id']])) ?>">
+                        <td><a href="<?= e(app_url('associe', ['id' => (int) $associe['id']])) ?>" class="table-link"><?= e($associe['associe_nom_complet']) ?></a></td>
                         <td><?= e($associe['associe_cin']) ?></td>
                         <td><?= e($associe['associe_nationalite']) ?></td>
                         <td><?= e($associe['associe_qualite'] ?: '-') ?></td>

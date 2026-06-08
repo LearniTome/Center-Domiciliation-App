@@ -255,7 +255,7 @@ if (($pdo ?? null) instanceof PDO) {
                 <tbody>
                 <?php foreach ($associes as $associe): ?>
                     <tr>
-                        <td><a href="<?= e(app_url('associes', ['edit' => (int) $associe['id']])) ?>" class="table-link"><?= e($associe['associe_nom_complet']) ?></a></td>
+                        <td><a href="<?= e(app_url('associe', ['id' => (int) $associe['id']])) ?>" class="table-link"><?= e($associe['associe_nom_complet']) ?></a></td>
                         <td><?= e($associe['societe_raison_sociale']) ?></td>
                         <td><?= e($associe['associe_cin'] ?? '-') ?></td>
                         <td><?= e(format_date($associe['associe_date_naissance'] ?? null)) ?></td>
@@ -269,7 +269,7 @@ if (($pdo ?? null) instanceof PDO) {
                         <td><?= e(date('d/m/Y', strtotime((string) $associe['created_at']))) ?></td>
                         <td><?= e(date('d/m/Y', strtotime((string) $associe['updated_at']))) ?></td>
                         <td class="table-actions">
-                            <a class="btn-icon info" href="<?= e(app_url('associes', ['edit' => (int) $associe['id']])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
+                            <a class="btn-icon info" href="<?= e(app_url('associe', ['id' => (int) $associe['id'], 'edit' => '1'])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
                             <form method="post">
                                 <?= csrf_input() ?>
                                 <input type="hidden" name="action" value="delete">
