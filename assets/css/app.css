@@ -837,6 +837,14 @@ button.btn-icon.info:hover {
     color: var(--btn-back);
     border: 2px solid var(--btn-back);
 }
+.btn.btn-primary {
+    background: transparent;
+    color: var(--primary);
+    border: 2px solid var(--primary);
+}
+.btn.btn-primary:hover {
+    background: rgba(0, 144, 231, 0.12);
+}
 .btn.btn-back:hover {
     background: rgba(255, 107, 53, 0.12);
 }

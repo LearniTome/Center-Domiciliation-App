@@ -733,13 +733,13 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
             <button type="button" class="dl-modal-close" onclick="hideDownloadModal()">&times;</button>
         </div>
         <div class="dl-modal-body">
-            <a class="dl-modal-btn btn btn-next" href="<?= e(app_url('download_all', ['societe_id' => $societeId, 'type' => 'word'])) ?>" onclick="hideDownloadModal()">
+            <a class="dl-modal-btn btn btn-primary" href="<?= e(app_url('download_all', ['societe_id' => $societeId, 'type' => 'word'])) ?>" onclick="hideDownloadModal()">
                 <span class="material-symbols-outlined">description</span> Word
             </a>
-            <a class="dl-modal-btn btn btn-info" href="<?= e(app_url('download_all', ['societe_id' => $societeId, 'type' => 'pdf'])) ?>" onclick="hideDownloadModal()">
+            <a class="dl-modal-btn btn btn-danger" href="<?= e(app_url('download_all', ['societe_id' => $societeId, 'type' => 'pdf'])) ?>" onclick="hideDownloadModal()">
                 <span class="material-symbols-outlined">picture_as_pdf</span> PDF
             </a>
-            <a class="dl-modal-btn btn btn-next" href="<?= e(app_url('download_all', ['societe_id' => $societeId, 'type' => 'both'])) ?>" onclick="hideDownloadModal()">
+            <a class="dl-modal-btn btn btn-info" href="<?= e(app_url('download_all', ['societe_id' => $societeId, 'type' => 'both'])) ?>" onclick="hideDownloadModal()">
                 <span class="material-symbols-outlined">folder_zip</span> Word &amp; PDF
             </a>
         </div>
