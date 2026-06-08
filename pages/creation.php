@@ -233,6 +233,12 @@ if (is_post()) {
             redirect_to('creation', ['step' => 2]);
         }
 
+        $formeJuridique = $wizard['societe']['societe_forme_juridique'] ?? '';
+        if ($formeJuridique === 'SARL' && count($normalizedAssocies) < 2) {
+            $_SESSION['_sarl_modal'] = true;
+            redirect_to('creation', ['step' => 2]);
+        }
+
         redirect_to('creation', ['step' => 3]);
     }
 
@@ -782,13 +788,13 @@ $societeData = array_merge([
     'societe_email' => '',
     'societe_telephone' => '',
     'societe_capital' => '',
-    'societe_type_generation' => '',
+    'societe_type_generation' => 'domiciliation',
     'societe_procedure_creation' => '',
     'societe_mode_depot' => '',
 ], $wizard['societe']);
 
 $wizardUser = current_user();
-$isExterne = $wizardUser && $wizardUser['collaborateur_type'] !== 'interne';
+$isExterne = $wizardUser && $wizardUser['collaborateur_type'] !== 'interne' && ($wizardUser['role_id'] ?? 0) !== 1;
 if ($isExterne) {
     $societeData['societe_type_generation'] = 'domiciliation';
 }
@@ -913,21 +919,13 @@ if ($aiSuggestions !== null) {
                 <h3 class="section-title">Procedure</h3>
                 <label class="field">
                     <span>Type generation</span>
-                    <?php if ($isExterne): ?>
-                    <select name="societe_type_generation" disabled>
-                        <option value="domiciliation" selected>Domiciliation</option>
-                    </select>
-                    <input type="hidden" name="societe_type_generation" value="domiciliation">
-                    <?php else: ?>
-                    <select name="societe_type_generation">
+                    <select name="societe_type_generation" data-type-gen>
                         <option value="">Selectionner</option>
                         <option value="creation" <?= (string) $societeData['societe_type_generation'] === 'creation' ? 'selected' : '' ?>>Création</option>
                         <option value="domiciliation" <?= (string) $societeData['societe_type_generation'] === 'domiciliation' ? 'selected' : '' ?>>Domiciliation</option>
                     </select>
-                    <?php endif; ?>
                 </label>
-                <?php if (!$isExterne): ?>
-                <label class="field">
+                <label class="field" data-depends-type-gen style="<?= (string) $societeData['societe_type_generation'] !== 'creation' ? 'display:none' : '' ?>">
                     <span>Procedure creation</span>
                     <select name="societe_procedure_creation">
                         <option value="">Selectionner</option>
@@ -935,7 +933,7 @@ if ($aiSuggestions !== null) {
                         <option value="acceleree" <?= (string) $societeData['societe_procedure_creation'] === 'acceleree' ? 'selected' : '' ?>>Accélérer</option>
                     </select>
                 </label>
-                <label class="field">
+                <label class="field" data-depends-type-gen style="<?= (string) $societeData['societe_type_generation'] !== 'creation' ? 'display:none' : '' ?>">
                     <span>Mode depot creation</span>
                     <select name="societe_mode_depot">
                         <option value="">Selectionner</option>
@@ -943,7 +941,6 @@ if ($aiSuggestions !== null) {
                         <option value="depot_en_ligne" <?= (string) $societeData['societe_mode_depot'] === 'depot_en_ligne' ? 'selected' : '' ?>>Dépôt En Ligne</option>
                     </select>
                 </label>
-                <?php endif; ?>
 
                 <h3 class="section-title">Identifiants</h3>
                 <label class="field">
@@ -978,11 +975,11 @@ if ($aiSuggestions !== null) {
                     <span>Date exp. cert. negatif</span>
                     <input type="date" name="societe_date_exp_cert_neg" placeholder="18/05/2026" value="<?= e((string) $societeData['societe_date_exp_cert_neg']) ?>">
                 </label>
-                <label class="field">
+                <label class="field" style="display:none">
                     <span>RC</span>
                     <input name="societe_rc" value="<?= e((string) $societeData['societe_rc']) ?>">
                 </label>
-                <label class="field">
+                <label class="field" style="display:none">
                     <span>IF</span>
                     <input name="societe_if" value="<?= e((string) $societeData['societe_if']) ?>">
                 </label>
@@ -1423,6 +1420,33 @@ if ($aiSuggestions !== null) {
                 <button class="btn btn-next" type="submit" name="nav_action" value="next"><span class="material-symbols-outlined">arrow_forward</span> Suivant</button>
             </div>
         </form>
+
+        <div class="dl-modal-overlay" id="sarl-modal">
+            <div class="dl-modal-card">
+                <div class="dl-modal-header">
+                    <span class="material-symbols-outlined">info</span>
+                    Forme juridique SARL
+                    <button type="button" class="dl-modal-close" id="sarl-modal-close">&times;</button>
+                </div>
+                <div class="dl-modal-body">
+                    <p style="margin:0;line-height:1.5">Pour une <strong>SARL</strong>, vous devez ajouter au moins <strong>deux associés</strong>.</p>
+                    <p style="margin:0;line-height:1.5">Ajoutez un autre associé ou <a href="<?= e(app_url('creation', ['step' => 1])) ?>" style="color:var(--primary);text-decoration:underline">changez la forme juridique</a> à l'étape 1.</p>
+                </div>
+            </div>
+        </div>
+        <script>
+        (function() {
+            var modal = document.getElementById('sarl-modal');
+            var closeBtn = document.getElementById('sarl-modal-close');
+            <?php if (!empty($_SESSION['_sarl_modal'])): unset($_SESSION['_sarl_modal']); ?>
+            modal.classList.add('show');
+            <?php endif; ?>
+            closeBtn.addEventListener('click', function() { modal.classList.remove('show'); });
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) modal.classList.remove('show');
+            });
+        })();
+        </script>
     <?php elseif ($step === 3): ?>
         <form method="post" class="stack">
             <?= csrf_input() ?>
@@ -2152,6 +2176,14 @@ if ($aiSuggestions !== null) {
             element.classList.remove('recap-pdf-mode');
             document.getElementById('btn-pdf-recap').disabled = false;
             document.getElementById('btn-pdf-recap').innerHTML = '<span class="material-symbols-outlined">picture_as_pdf</span> Sauvegarder PDF';
+        });
+    });
+    </script>
+    <script>
+    document.querySelector('[data-type-gen]')?.addEventListener('change', function() {
+        var show = this.value === 'creation';
+        document.querySelectorAll('[data-depends-type-gen]').forEach(function(el) {
+            el.style.display = show ? '' : 'none';
         });
     });
     </script>

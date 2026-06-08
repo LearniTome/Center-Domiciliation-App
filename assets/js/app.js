@@ -356,12 +356,12 @@ if (associesContainer && associeTemplate && addAssocieButton) {
         var statutsSection = form.querySelector('[data-statuts-section]');
         if (!procCreation || !modeDepot) return;
         var isDomiciliation = typeGen.value === 'domiciliation';
-        procCreation.disabled = !isDomiciliation;
-        modeDepot.disabled = !isDomiciliation;
+        procCreation.disabled = isDomiciliation;
+        modeDepot.disabled = isDomiciliation;
         if (statutsSection) {
             statutsSection.style.display = isDomiciliation ? 'none' : '';
         }
-        if (!isDomiciliation) {
+        if (isDomiciliation) {
             procCreation.value = '';
             modeDepot.value = '';
         }
