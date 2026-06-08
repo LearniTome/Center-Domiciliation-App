@@ -698,15 +698,22 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
                     <span class="material-symbols-outlined">delete</span> Supprimer
                 </button>
                 <?php if ($totalGenerated > 0): ?>
-                <a class="btn btn-info" href="<?= e(app_url('download_all', ['societe_id' => $societeId, 'type' => 'word'])) ?>">
-                    <span class="material-symbols-outlined">description</span> Word
-                </a>
-                <a class="btn btn-info" href="<?= e(app_url('download_all', ['societe_id' => $societeId, 'type' => 'pdf'])) ?>">
-                    <span class="material-symbols-outlined">picture_as_pdf</span> PDF
-                </a>
-                <a class="btn btn-next" href="<?= e(app_url('download_all', ['societe_id' => $societeId, 'type' => 'both'])) ?>">
-                    <span class="material-symbols-outlined">download</span> Word &amp; PDF
-                </a>
+                <div style="position:relative">
+                    <button type="button" class="btn btn-next" onclick="toggleDownloadOptions()">
+                        <span class="material-symbols-outlined">download</span> Telecharger tous
+                    </button>
+                    <div id="download-options-panel" class="download-options-panel">
+                        <a class="dl-option" href="<?= e(app_url('download_all', ['societe_id' => $societeId, 'type' => 'word'])) ?>">
+                            <span class="material-symbols-outlined">description</span> Word
+                        </a>
+                        <a class="dl-option" href="<?= e(app_url('download_all', ['societe_id' => $societeId, 'type' => 'pdf'])) ?>">
+                            <span class="material-symbols-outlined">picture_as_pdf</span> PDF
+                        </a>
+                        <a class="dl-option" href="<?= e(app_url('download_all', ['societe_id' => $societeId, 'type' => 'both'])) ?>">
+                            <span class="material-symbols-outlined">folder_zip</span> Word &amp; PDF
+                        </a>
+                    </div>
+                </div>
                 <?php endif; ?>
             </div>
         </form>
@@ -715,6 +722,16 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
             const form = document.getElementById('files-form');
             const checkboxes = form.querySelectorAll('input[name="selected_files[]"]');
             checkboxes.forEach(c => c.checked = this.checked);
+        });
+        function toggleDownloadOptions() {
+            const panel = document.getElementById('download-options-panel');
+            panel.classList.toggle('open');
+        }
+        document.addEventListener('click', function(e) {
+            const container = document.querySelector('#download-options-panel')?.parentElement;
+            if (container && !container.contains(e.target)) {
+                document.getElementById('download-options-panel')?.classList.remove('open');
+            }
         });
         </script>
     <?php else: ?>
