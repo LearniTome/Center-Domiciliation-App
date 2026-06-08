@@ -1097,6 +1097,12 @@ tbody tr:hover:nth-child(even) {
     justify-content: center;
     padding: 10px 20px;
     font-size: 0.95rem;
+    gap: 6px;
+}
+.dl-count {
+    font-size: 0.8rem;
+    opacity: 0.75;
+    font-weight: 400;
 }
 
 .col-toggle-panel {

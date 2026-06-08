@@ -442,12 +442,16 @@ if (!empty($dbDocs)) {
 $hasValidatedDocs = false;
 $hasPendingPdf = false;
 $hasPdfDocs = false;
+$dlWordCount = 0;
+$dlPdfCount = 0;
 if (($pdo ?? null) instanceof PDO && $societeId > 0) {
     $allDocs = fetch_all_documents($pdo, $societeId);
     $validatedDocs = array_filter($allDocs, fn($d) => (int) $d['valide'] === 1);
     $hasValidatedDocs = count($validatedDocs) > 0;
     $hasPendingPdf = count(array_filter($validatedDocs, fn($d) => empty($d['fichier_pdf']))) > 0;
     $hasPdfDocs = count(array_filter($validatedDocs, fn($d) => !empty($d['fichier_pdf']))) > 0;
+    $dlWordCount = count(array_filter($validatedDocs, fn($d) => !empty($d['fichier_docx'])));
+    $dlPdfCount = count(array_filter($validatedDocs, fn($d) => !empty($d['fichier_pdf'])));
 }
 
 ?>
@@ -736,13 +740,13 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
         </div>
         <div class="dl-modal-body">
             <a class="dl-modal-btn btn btn-primary" href="<?= e(app_url('download_all', ['societe_id' => $societeId, 'type' => 'word'])) ?>" onclick="hideDownloadModal()">
-                <span class="material-symbols-outlined">description</span> Word
+                <span class="material-symbols-outlined">description</span> Word <span class="dl-count"><?= $dlWordCount ?> fichier<?= $dlWordCount > 1 ? 's' : '' ?></span>
             </a>
             <a class="dl-modal-btn btn btn-danger" href="<?= e(app_url('download_all', ['societe_id' => $societeId, 'type' => 'pdf'])) ?>" onclick="hideDownloadModal()">
-                <span class="material-symbols-outlined">picture_as_pdf</span> PDF
+                <span class="material-symbols-outlined">picture_as_pdf</span> PDF <span class="dl-count"><?= $dlPdfCount ?> fichier<?= $dlPdfCount > 1 ? 's' : '' ?></span>
             </a>
             <a class="dl-modal-btn btn btn-info" href="<?= e(app_url('download_all', ['societe_id' => $societeId, 'type' => 'both'])) ?>" onclick="hideDownloadModal()">
-                <span class="material-symbols-outlined">folder_zip</span> Word &amp; PDF
+                <span class="material-symbols-outlined">folder_zip</span> Word &amp; PDF <span class="dl-count"><?= $dlWordCount + $dlPdfCount ?> fichier<?= ($dlWordCount + $dlPdfCount) > 1 ? 's' : '' ?></span>
             </a>
         </div>
     </div>
