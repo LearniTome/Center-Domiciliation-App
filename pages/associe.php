@@ -7,7 +7,7 @@ $associe = $associeId > 0 ? fetch_record($pdo ?? null, 'associes', $associeId) :
 
 $societe = null;
 if ($associe && ($pdo ?? null) instanceof PDO) {
-    $stmt = $pdo->prepare('SELECT societe_raison_sociale FROM societes WHERE id = :id');
+    $stmt = $pdo->prepare('SELECT societe_raison_sociale, societe_forme_juridique, societe_ice, societe_ville FROM societes WHERE id = :id');
     $stmt->execute(['id' => $associe['societe_id']]);
     $societe = $stmt->fetch();
 }
@@ -227,4 +227,18 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
             </div>
         </div>
     </article>
+
+    <?php if ($societe): ?>
+    <article class="card">
+        <div class="section-header">
+            <a href="<?= e(app_url('societe', ['id' => (int) $associe['societe_id']])) ?>" class="section-link"><h3>Societe liee</h3></a>
+        </div>
+        <div class="info-grid">
+            <div><span>Raison sociale</span><strong><?= e($societe['societe_raison_sociale']) ?></strong></div>
+            <div><span>Forme juridique</span><strong><?= e($societe['societe_forme_juridique'] ?: '-') ?></strong></div>
+            <div><span>ICE</span><strong><?= e($societe['societe_ice'] ?: '-') ?></strong></div>
+            <div><span>Ville</span><strong><?= e($societe['societe_ville'] ?: '-') ?></strong></div>
+        </div>
+    </article>
+    <?php endif; ?>
 <?php endif; ?>
