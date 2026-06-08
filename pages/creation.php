@@ -904,7 +904,7 @@ if ($aiSuggestions !== null) {
             <?= csrf_input() ?>
             <input type="hidden" name="step" value="1">
             <?php if ($aiSuggestions && isset($aiSuggestions['step1'])): ?>
-            <div class="flash flash-info" style="margin-bottom:12px">
+            <div class="flash flash-info" style="margin-bottom:8px">
                 <span class="material-symbols-outlined">smart_toy</span>
                 Suggestions IA disponibles. <button type="button" class="btn btn-info" style="padding:2px 10px;font-size:0.8rem" data-apply-ai-fill="<?= e(json_encode($aiSuggestions['step1'], JSON_UNESCAPED_UNICODE)) ?>"><span class="material-symbols-outlined">auto_fix</span> Appliquer les suggestions</button>
             </div>
@@ -1141,7 +1141,7 @@ if ($aiSuggestions !== null) {
             <input type="hidden" id="societe-part-social" value="<?= e((string) ($societeData['societe_part_social'] ?? '')) ?>">
             <input type="hidden" name="forme_juridique" value="<?= e((string) ($societeData['societe_forme_juridique'] ?? '')) ?>">
             <?php if ($aiSuggestions && isset($aiSuggestions['step2'])): ?>
-            <div class="flash flash-info" style="margin-bottom:12px">
+            <div class="flash flash-info" style="margin-bottom:8px">
                 <span class="material-symbols-outlined">smart_toy</span>
                 Suggestions IA disponibles. <button type="button" class="btn btn-info" style="padding:2px 10px;font-size:0.8rem" data-apply-ai-fill="<?= e(json_encode($aiSuggestions['step2'], JSON_UNESCAPED_UNICODE)) ?>"><span class="material-symbols-outlined">auto_fix</span> Appliquer les suggestions</button>
             </div>
@@ -1428,7 +1428,7 @@ if ($aiSuggestions !== null) {
             <?= csrf_input() ?>
             <input type="hidden" name="step" value="3">
             <?php if ($aiSuggestions && isset($aiSuggestions['step3'])): ?>
-            <div class="flash flash-info" style="margin-bottom:12px">
+            <div class="flash flash-info" style="margin-bottom:8px">
                 <span class="material-symbols-outlined">smart_toy</span>
                 Suggestions IA disponibles. <button type="button" class="btn btn-info" style="padding:2px 10px;font-size:0.8rem" data-apply-ai-fill="<?= e(json_encode($aiSuggestions['step3'], JSON_UNESCAPED_UNICODE)) ?>"><span class="material-symbols-outlined">auto_fix</span> Appliquer les suggestions</button>
             </div>
@@ -1645,7 +1645,7 @@ if ($aiSuggestions !== null) {
                 </div>
             </div>
 
-            <form method="post" class="step-4-controls table-actions" style="margin-top:1rem">
+            <form method="post" class="step-4-controls table-actions" style="margin-top:0.75rem">
                 <?= csrf_input() ?>
                 <input type="hidden" name="step" value="4">
                 <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="material-symbols-outlined">arrow_back</span> Retour</button>
@@ -1735,7 +1735,7 @@ if ($aiSuggestions !== null) {
                     <?php endif; ?>
                 </article>
 
-                <div class="table-actions" style="margin-top:1rem">
+                <div class="table-actions" style="margin-top:0.75rem">
                     <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="material-symbols-outlined">arrow_back</span> Retour</button>
                     <button class="btn btn-next" type="submit" name="nav_action" value="next" <?= count($gerants) === 0 ? 'disabled' : '' ?>><span class="material-symbols-outlined">arrow_forward</span> Suivant</button>
                 </div>
@@ -2042,7 +2042,7 @@ if ($aiSuggestions !== null) {
                 </div>
             <?php endif; ?>
 
-            <form method="post" class="table-actions" style="margin-top:1rem">
+            <form method="post" class="table-actions" style="margin-top:0.75rem">
                 <?= csrf_input() ?>
                 <input type="hidden" name="step" value="6">
                 <button class="btn btn-next" type="submit" name="nav_action" value="terminer"><span class="material-symbols-outlined">check_circle</span> Terminer</button>
