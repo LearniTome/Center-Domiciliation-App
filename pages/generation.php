@@ -740,13 +740,13 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
         </div>
         <div class="dl-modal-body">
             <a class="dl-modal-btn btn btn-primary" href="<?= e(app_url('download_all', ['societe_id' => $societeId, 'type' => 'word'])) ?>" onclick="hideDownloadModal()">
-                <span class="material-symbols-outlined">description</span> Word <span class="dl-count">(<?= $dlWordCount ?> document<?= $dlWordCount > 1 ? 's' : '' ?>)</span>
+                <span class="material-symbols-outlined">description</span> Word <span class="dl-count">(<?= $dlWordCount ?>)</span>
             </a>
             <a class="dl-modal-btn btn btn-danger" href="<?= e(app_url('download_all', ['societe_id' => $societeId, 'type' => 'pdf'])) ?>" onclick="hideDownloadModal()">
-                <span class="material-symbols-outlined">picture_as_pdf</span> PDF <span class="dl-count">(<?= $dlPdfCount ?> document<?= $dlPdfCount > 1 ? 's' : '' ?>)</span>
+                <span class="material-symbols-outlined">picture_as_pdf</span> PDF <span class="dl-count">(<?= $dlPdfCount ?>)</span>
             </a>
             <a class="dl-modal-btn btn btn-info" href="<?= e(app_url('download_all', ['societe_id' => $societeId, 'type' => 'both'])) ?>" onclick="hideDownloadModal()">
-                <span class="material-symbols-outlined">folder_zip</span> Word &amp; PDF <span class="dl-count">(<?= $dlWordCount + $dlPdfCount ?> document<?= ($dlWordCount + $dlPdfCount) > 1 ? 's' : '' ?>)</span>
+                <span class="material-symbols-outlined">folder_zip</span> Word &amp; PDF <span class="dl-count">(<?= $dlWordCount + $dlPdfCount ?>)</span>
             </a>
         </div>
     </div>
