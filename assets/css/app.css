@@ -677,6 +677,14 @@ article.card + article.card {
     transform: scale(1.1);
 }
 
+.section-link {
+    color: var(--primary);
+    text-decoration: none;
+}
+.section-link:hover {
+    text-decoration: underline;
+}
+
 .btn,
 button,
 input,
@@ -916,6 +924,10 @@ button.btn-icon.info:hover {
 
 .field.full {
     grid-column: 1 / -1;
+}
+
+.hidden-field {
+    display: none !important;
 }
 
 .field span {

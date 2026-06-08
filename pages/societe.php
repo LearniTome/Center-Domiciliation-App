@@ -300,12 +300,12 @@ $docTypeLabels = [
     <h2><?= e($societe['societe_raison_sociale']) ?></h2>
     <div class="table-actions">
         <?php if ($editing): ?>
-            <a class="btn btn-secondary" href="<?= e(app_url('societe', ['id' => $societeId])) ?>"><span class="material-symbols-outlined">close</span> Annuler</a>
+            <a class="btn btn-cancel" href="<?= e(app_url('societe', ['id' => $societeId])) ?>"><span class="material-symbols-outlined">close</span> Annuler</a>
         <?php else: ?>
-            <a class="btn btn-secondary" href="<?= e(app_url('societe', ['id' => $societeId, 'edit' => '1'])) ?>"><span class="material-symbols-outlined">edit</span> Modifier</a>
-            <a class="btn btn-info" href="<?= e(app_url('generation', ['societe_id' => $societeId])) ?>"><span class="material-symbols-outlined">sync</span> <?= count($documents) > 0 ? 'Regenerer documents' : 'Generer documents' ?></a>
+            <a class="btn btn-info" href="<?= e(app_url('societe', ['id' => $societeId, 'edit' => '1'])) ?>"><span class="material-symbols-outlined">edit</span> Modifier</a>
+            <a class="btn btn-next" href="<?= e(app_url('generation', ['societe_id' => $societeId])) ?>"><span class="material-symbols-outlined">sync</span> <?= count($documents) > 0 ? 'Regenerer documents' : 'Generer documents' ?></a>
         <?php endif; ?>
-        <a class="btn btn-secondary" href="<?= e(app_url('societes')) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
+        <a class="btn btn-back" href="<?= e(app_url('societes')) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
     </div>
 </div>
 
@@ -400,11 +400,11 @@ $docTypeLabels = [
                     <span>Date exp. cert. negatif</span>
                     <input type="date" name="societe_date_exp_cert_neg" placeholder="01/01/2026" value="<?= e((string) $societe['societe_date_exp_cert_neg']) ?>">
                 </label>
-                <label class="field" style="display:none">
+                <label class="field hidden-field">
                     <span>RC</span>
                     <input name="societe_rc" value="<?= e((string) $societe['societe_rc']) ?>">
                 </label>
-                <label class="field" style="display:none">
+                <label class="field hidden-field">
                     <span>IF</span>
                     <input name="societe_if" value="<?= e((string) $societe['societe_if']) ?>">
                 </label>
@@ -590,10 +590,13 @@ $docTypeLabels = [
 
 <article class="card">
     <div class="section-header">
-        <a href="<?= e(app_url('associes')) ?>" style="color:var(--primary);text-decoration:none"><h3>Associes lies (<?= count($associes) ?>)</h3></a>
+        <a href="<?= e(app_url('associes')) ?>" class="section-link"><h3>Associes lies (<?= count($associes) ?>)</h3></a>
     </div>
     <?php if (!$associes): ?>
-        <p class="table-empty">Aucun associe lie a cette societe.</p>
+        <div class="empty-state">
+            <span class="material-symbols-outlined">group</span>
+            <p class="table-empty">Aucun associe lie a cette societe.</p>
+        </div>
     <?php else: ?>
         <div class="table-scroll">
             <table data-sortable>
@@ -624,10 +627,13 @@ $docTypeLabels = [
 
 <article class="card">
     <div class="section-header">
-        <a href="<?= e(app_url('contrats')) ?>" style="color:var(--primary);text-decoration:none"><h3>Contrats lies (<?= count($contrats) ?>)</h3></a>
+        <a href="<?= e(app_url('contrats')) ?>" class="section-link"><h3>Contrats lies (<?= count($contrats) ?>)</h3></a>
     </div>
     <?php if (!$contrats): ?>
-        <p class="table-empty">Aucun contrat lie a cette societe.</p>
+        <div class="empty-state">
+            <span class="material-symbols-outlined">description</span>
+            <p class="table-empty">Aucun contrat lie a cette societe.</p>
+        </div>
     <?php else: ?>
         <div class="table-scroll">
             <table data-sortable>
@@ -656,7 +662,7 @@ $docTypeLabels = [
 
 <article class="card">
     <div class="section-header">
-        <a href="<?= e(app_url('documents', ['societe_id' => $societeId])) ?>" style="color:var(--primary);text-decoration:none"><h3>Documents generes (<?= count($documents) ?>)</h3></a>
+        <a href="<?= e(app_url('documents', ['societe_id' => $societeId])) ?>" class="section-link"><h3>Documents generes (<?= count($documents) ?>)</h3></a>
     </div>
     <?php if (!$documents): ?>
         <div class="empty-state">
@@ -727,13 +733,13 @@ $docTypeLabels = [
                 </table>
             </div>
             <div class="table-actions table-actions-top">
-                <a class="btn btn-info" href="<?= e(app_url('generation', ['societe_id' => $societeId])) ?>"><span class="material-symbols-outlined">sync</span> <?= count($documents) > 0 ? 'Regenerer documents' : 'Generer documents' ?></a>
+                <a class="btn btn-next" href="<?= e(app_url('generation', ['societe_id' => $societeId])) ?>"><span class="material-symbols-outlined">sync</span> <?= count($documents) > 0 ? 'Regenerer documents' : 'Generer documents' ?></a>
 
                 <?php
                 $allValides = count($documents) > 0 && count(array_filter($documents, fn($d) => !$d['valide'])) === 0;
                 ?>
                 <?php if ($allValides): ?>
-                    <button class="btn btn-info" type="submit" name="restore_submit" value="1">
+                    <button class="btn btn-back" type="submit" name="restore_submit" value="1">
                         <span class="material-symbols-outlined">restore</span> Restaurer en brouillons
                     </button>
                 <?php else: ?>
@@ -741,7 +747,7 @@ $docTypeLabels = [
                         <span class="material-symbols-outlined">task_alt</span> Valider la selection
                     </button>
                 <?php endif; ?>
-                <button class="btn btn-back" type="submit" name="delete_submit" value="1">
+                <button class="btn btn-danger" type="submit" name="delete_submit" value="1">
                     <span class="material-symbols-outlined">delete</span> Supprimer la selection
                 </button>
             </div>
