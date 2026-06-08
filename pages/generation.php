@@ -432,6 +432,12 @@ if (!empty($dbDocs)) {
 }
 $totalGenerated = count($sessionFiles) > 0 ? count($sessionFiles) : count($dbDocs);
 $docxCount = $totalGenerated;
+$pdfCount = 0;
+if (!empty($dbDocs)) {
+    foreach ($dbDocs as $d) {
+        if (!empty($d['fichier_pdf'])) $pdfCount++;
+    }
+}
 
 $hasValidatedDocs = false;
 $hasPendingPdf = false;
@@ -566,6 +572,10 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
     <article class="stat">
         <span><span class="material-symbols-outlined">article</span> Word</span>
         <strong><?= $docxCount ?></strong>
+    </article>
+    <article class="stat">
+        <span><span class="material-symbols-outlined">picture_as_pdf</span> PDF</span>
+        <strong><?= $pdfCount ?></strong>
     </article>
 </section>
 <?php endif; ?>
