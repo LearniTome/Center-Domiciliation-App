@@ -417,12 +417,20 @@ $docTypesConfig = $templatesConfig['document_types'];
 $validatedCount = 0;
 $brouillonCount = 0;
 
-foreach ($sessionFiles as $gf) {
-    $isValide = !str_contains($gf['name'] ?? '', '_Brouillon');
-    if ($isValide) $validatedCount++;
-    else $brouillonCount++;
+// Priorite aux donnees BDD (plus fiable que la session)
+if (!empty($dbDocs)) {
+    foreach ($dbDocs as $d) {
+        if ((int) $d['valide'] === 1) $validatedCount++;
+        else $brouillonCount++;
+    }
+} else {
+    foreach ($sessionFiles as $gf) {
+        $isValide = !str_contains($gf['name'] ?? '', '_Brouillon');
+        if ($isValide) $validatedCount++;
+        else $brouillonCount++;
+    }
 }
-$totalGenerated = count($sessionFiles);
+$totalGenerated = count($sessionFiles) > 0 ? count($sessionFiles) : count($dbDocs);
 $docxCount = $totalGenerated;
 
 $hasValidatedDocs = false;
