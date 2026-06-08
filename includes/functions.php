@@ -596,6 +596,7 @@ function get_page_permission(string $page): ?string
         'template_edit' => 'templates.edit',
 
         'generation' => 'generation.use',
+        'download_all' => 'generation.use',
 
         'documents' => 'documents.view',
 

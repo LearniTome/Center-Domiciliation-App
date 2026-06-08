@@ -697,6 +697,17 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
                 <button type="submit" class="btn btn-back" name="delete_submit" value="1">
                     <span class="material-symbols-outlined">delete</span> Supprimer
                 </button>
+                <?php if ($totalGenerated > 0): ?>
+                <a class="btn btn-info" href="<?= e(app_url('download_all', ['societe_id' => $societeId, 'type' => 'word'])) ?>">
+                    <span class="material-symbols-outlined">description</span> Word
+                </a>
+                <a class="btn btn-info" href="<?= e(app_url('download_all', ['societe_id' => $societeId, 'type' => 'pdf'])) ?>">
+                    <span class="material-symbols-outlined">picture_as_pdf</span> PDF
+                </a>
+                <a class="btn btn-next" href="<?= e(app_url('download_all', ['societe_id' => $societeId, 'type' => 'both'])) ?>">
+                    <span class="material-symbols-outlined">download</span> Word &amp; PDF
+                </a>
+                <?php endif; ?>
             </div>
         </form>
         <script>
