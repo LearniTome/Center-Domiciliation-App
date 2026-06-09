@@ -1005,4 +1005,369 @@ document.addEventListener('click', function (event) {
     });
 });
 
+// ──────────────────────────────────────────────
+// Notification System (Dropdown, Polling, Toast)
+// ──────────────────────────────────────────────
+(function () {
+    var bell = document.querySelector('[data-notif-bell]');
+    var dropdown = document.querySelector('[data-notif-dropdown]');
+    var list = document.querySelector('[data-notif-dropdown-list]');
+    var countEl = document.querySelector('[data-notif-dropdown-count]');
+    var markAllBtn = document.querySelector('[data-notif-mark-all]');
+    var badge = document.querySelector('.notif-badge-count');
+    var toastContainer = document.querySelector('.notif-toast-container');
+    var csrfToken = null;
+    var lastCount = parseInt(badge ? badge.textContent : '0', 10) || 0;
+    var pollingInterval = null;
+
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.className = 'notif-toast-container';
+        document.body.appendChild(toastContainer);
+    }
+
+    function getCsrf() {
+        if (csrfToken) return csrfToken;
+        var inp = document.querySelector('input[name="csrf_token"]');
+        if (inp) csrfToken = inp.value;
+        return csrfToken || '';
+    }
+
+    function updateBadge(count) {
+        lastCount = count;
+        if (!badge && bell) {
+            badge = document.createElement('span');
+            badge.className = 'notif-badge notif-badge-count';
+            bell.appendChild(badge);
+        }
+        if (badge) {
+            badge.textContent = count > 99 ? '99+' : count;
+            badge.style.display = count > 0 ? 'inline-flex' : 'none';
+        }
+        var nb = document.querySelector('#nav-notif-badge');
+        if (nb) {
+            nb.textContent = count > 99 ? '99+' : count;
+            nb.style.display = count > 0 ? 'inline-flex' : 'none';
+        }
+    }
+
+    function renderEmpty() {
+        list.innerHTML = '<div class="notif-dropdown-empty"><span class="material-symbols-outlined">notifications_off</span>Aucune notification</div>';
+    }
+
+    function fetchNotifications() {
+        if (!list) return;
+        list.innerHTML = '<div class="notif-dropdown-loading"><span class="material-symbols-outlined">sync</span> Chargement...</div>';
+        fetch('index.php?page=notif-ajax&action=list&_=' + Date.now())
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (d.error) { list.innerHTML = '<div class="notif-dropdown-empty">Erreur</div>'; return; }
+                updateBadge(d.count);
+                if (countEl) countEl.textContent = d.total + ' non lue' + (d.total > 1 ? 's' : '');
+                if (d.total === 0) { renderEmpty(); return; }
+                list.innerHTML = d.html;
+                // Make items clickable: clicking anywhere navigates to link
+                list.querySelectorAll('.notif-item').forEach(function (item) {
+                    var markBtn = item.querySelector('[data-notif-mark]');
+                    var href = item.getAttribute('data-link');
+                    if (!href || href === '#') href = null;
+                    if (!href) return;
+                    item.style.cursor = 'pointer';
+                    item.addEventListener('click', function (e) {
+                        if (e.target.closest('[data-notif-mark]')) return;
+                        var id = item.getAttribute('data-notif-id');
+                        // Auto-mark as read before navigating (fire-and-forget)
+                        if (id) {
+                            var t = getCsrf();
+                            if (t) {
+                                var fd = new FormData();
+                                fd.append('csrf_token', t);
+                                fd.append('action', 'mark_read');
+                                fd.append('id', id);
+                                fetch('index.php?page=notif-ajax&action=mark_read', { method: 'POST', body: fd }).catch(function(){});
+                            }
+                        }
+                        window.location.href = href;
+                    });
+                });
+            })
+            .catch(function () { list.innerHTML = '<div class="notif-dropdown-empty">Erreur</div>'; });
+    }
+
+    function fetchCount() {
+        fetch('index.php?page=notif-ajax&action=count&_=' + Date.now())
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (d.count !== undefined && d.count !== lastCount) {
+                    updateBadge(d.count);
+                    if (d.count > lastCount) {
+                        if (bell) bell.classList.add('shake');
+                        setTimeout(function () { if (bell) bell.classList.remove('shake'); }, 600);
+                        showToast(d.count - lastCount);
+                    }
+                }
+            })
+            .catch(function () {});
+    }
+
+    function playChime() {
+        try {
+            var ctx = new (window.AudioContext || window.webkitAudioContext)();
+            var g = ctx.createGain();
+            g.connect(ctx.destination);
+            g.gain.value = 0.08;
+            var o = ctx.createOscillator();
+            o.type = 'sine';
+            o.frequency.value = 660;
+            o.connect(g);
+            o.start(0);
+            o.stop(ctx.currentTime + 0.12);
+            var o2 = ctx.createOscillator();
+            o2.type = 'sine';
+            o2.frequency.value = 880;
+            var g2 = ctx.createGain();
+            g2.connect(ctx.destination);
+            g2.gain.value = 0.06;
+            o2.connect(g2);
+            o2.start(ctx.currentTime + 0.1);
+            o2.stop(ctx.currentTime + 0.25);
+        } catch (e) {}
+    }
+
+    function showToast(newCount) {
+        fetch('index.php?page=notif-ajax&action=list&_=' + Date.now())
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (!d.html || d.total === 0) return;
+                var temp = document.createElement('div');
+                temp.innerHTML = d.html;
+                var items = temp.querySelectorAll('.notif-item');
+                for (var i = 0; i < Math.min(newCount, items.length); i++) {
+                    (function (item) {
+                        var t = document.createElement('div');
+                        t.className = 'notif-toast';
+                        var toastId = item.getAttribute('data-notif-id');
+                        t.innerHTML = item.innerHTML;
+                        var href = item.getAttribute('data-link');
+                        if (href && href !== '#') {
+                            t.style.cursor = 'pointer';
+                            t.addEventListener('click', function () {
+                                if (toastId) {
+                                    var t2 = getCsrf();
+                                    if (t2) {
+                                        var fd = new FormData();
+                                        fd.append('csrf_token', t2);
+                                        fd.append('action', 'mark_read');
+                                        fd.append('id', toastId);
+                                        fetch('index.php?page=notif-ajax&action=mark_read', { method: 'POST', body: fd }).catch(function(){});
+                                    }
+                                }
+                                window.location.href = href;
+                            });
+                        }
+                        var mb = t.querySelector('[data-notif-mark]');
+                        if (mb) mb.remove();
+                        toastContainer.appendChild(t);
+                        var timer = setTimeout(function () {
+                            t.classList.add('removing');
+                            setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 300);
+                        }, 5000);
+                        t.addEventListener('mouseenter', function () { clearTimeout(timer); });
+                        t.addEventListener('mouseleave', function () {
+                            timer = setTimeout(function () {
+                                t.classList.add('removing');
+                                setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 300);
+                            }, 2000);
+                        });
+                        })(items[i]);
+                    }
+                    playChime();
+                })
+            .catch(function () {});
+    }
+
+    // ── Dropdown toggle ──
+    if (bell && dropdown) {
+        bell.addEventListener('click', function (e) {
+            e.stopPropagation();
+            dropdown.classList.toggle('open');
+            if (dropdown.classList.contains('open')) fetchNotifications();
+        });
+
+        // Mark individual
+        dropdown.addEventListener('click', function (e) {
+            var btn = e.target.closest('[data-notif-mark]');
+            if (!btn) return;
+            e.stopPropagation();
+            var id = btn.getAttribute('data-notif-mark');
+            if (!id) return;
+            var t = getCsrf();
+            if (!t) return;
+            var fd = new FormData();
+            fd.append('csrf_token', t);
+            fd.append('action', 'mark_read');
+            fd.append('id', id);
+            fetch('index.php?page=notif-ajax&action=mark_read', { method: 'POST', body: fd })
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    if (!d.success) return;
+                    var item = btn.closest('.notif-item');
+                    if (item) item.remove();
+                    updateBadge(d.count);
+                    if (countEl) {
+                        var rem = list.querySelectorAll('.notif-item').length;
+                        countEl.textContent = rem + ' non lue' + (rem > 1 ? 's' : '');
+                    }
+                    if (list.querySelectorAll('.notif-item').length === 0) renderEmpty();
+                })
+                .catch(function () {});
+        });
+
+        // Close on "Voir tout"
+        dropdown.querySelector('a[href*="page=notifications"]')?.addEventListener('click', function () {
+            dropdown.classList.remove('open');
+        });
+    }
+
+    // ── Mark all ──
+    if (markAllBtn) {
+        markAllBtn.addEventListener('click', function () {
+            var t = getCsrf();
+            if (!t) return;
+            var fd = new FormData();
+            fd.append('csrf_token', t);
+            fd.append('action', 'mark_all_read');
+            fetch('index.php?page=notif-ajax&action=mark_all_read', { method: 'POST', body: fd })
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    if (!d.success) return;
+                    updateBadge(d.count);
+                    if (list) renderEmpty();
+                    if (countEl) countEl.textContent = '0 non lue';
+                })
+                .catch(function () {});
+        });
+    }
+
+    // ── Close on outside click ──
+    document.addEventListener('click', function (e) {
+        var wrap = document.querySelector('.notif-bell-wrap');
+        if (wrap && !wrap.contains(e.target) && dropdown) {
+            dropdown.classList.remove('open');
+        }
+    });
+
+    // ── Polling ──
+    function startPolling() {
+        if (pollingInterval) clearInterval(pollingInterval);
+        pollingInterval = setInterval(function () {
+            if (!document.hidden) fetchCount();
+        }, 30000);
+    }
+    startPolling();
+    document.addEventListener('visibilitychange', function () {
+        if (!document.hidden) { fetchCount(); startPolling(); }
+    });
+
+    // ── AJAX mark-read on notifications full page ──
+    var pageList = document.querySelector('.notif-list');
+    if (pageList) {
+        pageList.addEventListener('click', function (e) {
+            var btn = e.target.closest('button[type="submit"]');
+            if (!btn) return;
+            var form = btn.closest('form');
+            if (!form) return;
+            var ai = form.querySelector('input[name="action"]');
+            var ii = form.querySelector('input[name="id"]');
+            if (!ai || ai.value !== 'mark_read') return;
+            e.preventDefault();
+            var id = ii ? ii.value : null;
+            if (!id) return;
+            var tok = form.querySelector('input[name="csrf_token"]');
+            if (!tok) return;
+            var fd = new FormData();
+            fd.append('csrf_token', tok.value);
+            fd.append('action', 'mark_read');
+            fd.append('id', id);
+            fetch('index.php?page=notif-ajax&action=mark_read', { method: 'POST', body: fd })
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    if (!d.success) return;
+                    var item = btn.closest('.notif-item');
+                    if (item) {
+                        item.classList.remove('unread');
+                        var f = btn.closest('form');
+                        if (f) f.remove();
+                        // If no forms left, mark-all button might need updating
+                        if (!pageList.querySelector('button[type="submit"]')) {
+                            var headerForm = document.querySelector('.notif-page-header form');
+                            if (headerForm) headerForm.style.display = 'none';
+                        }
+                    }
+                    updateBadge(d.count);
+                })
+                .catch(function () {});
+        });
+
+        // Auto-mark read when clicking visibility link
+        pageList.addEventListener('click', function (e) {
+            var link = e.target.closest('a[title="Voir"]');
+            if (!link) return;
+            var item = link.closest('.notif-item');
+            if (!item) return;
+            var id = item.getAttribute('data-notif-id');
+            if (!id) return;
+            var t = getCsrf();
+            if (!t) return;
+            var fd = new FormData();
+            fd.append('csrf_token', t);
+            fd.append('action', 'mark_read');
+            fd.append('id', id);
+            fetch('index.php?page=notif-ajax&action=mark_read', { method: 'POST', body: fd })
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    if (!d.success) return;
+                    item.classList.remove('unread');
+                    var f = item.querySelector('form');
+                    if (f) f.remove();
+                    updateBadge(d.count);
+                    if (!pageList.querySelector('button[type="submit"]')) {
+                        var headerForm = document.querySelector('.notif-page-header form');
+                        if (headerForm) headerForm.style.display = 'none';
+                    }
+                })
+                .catch(function () {});
+        });
+
+        // AJAX mark-all on full page
+        var headerForm = document.querySelector('.notif-page-header form');
+        if (headerForm) {
+            headerForm.addEventListener('submit', function (e) {
+                var ai = headerForm.querySelector('input[name="action"]');
+                if (!ai || ai.value !== 'mark_all_read') return;
+                e.preventDefault();
+                var tok = headerForm.querySelector('input[name="csrf_token"]');
+                if (!tok) return;
+                var fd = new FormData();
+                fd.append('csrf_token', tok.value);
+                fd.append('action', 'mark_all_read');
+                fetch('index.php?page=notif-ajax&action=mark_all_read', { method: 'POST', body: fd })
+                    .then(function (r) { return r.json(); })
+                    .then(function (d) {
+                        if (!d.success) return;
+                        pageList.querySelectorAll('.notif-item').forEach(function (item) {
+                            item.classList.remove('unread');
+                        });
+                        pageList.querySelectorAll('.notif-item form').forEach(function (f) { f.remove(); });
+                        headerForm.style.display = 'none';
+                        updateBadge(d.count);
+                    })
+                    .catch(function () {});
+            });
+        }
+    }
+
+    // Refresh CSRF on focus
+    document.addEventListener('focus', function () { csrfToken = null; }, true);
+})();
 

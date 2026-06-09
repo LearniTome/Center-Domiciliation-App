@@ -429,6 +429,6 @@ SELECT 2, id FROM permissions WHERE id < 38;
 -- Super Admin collaborator (default password: admin123)
 INSERT INTO collaborateurs (nom_complet, fonction, role_id, collaborateur_email, email, can_login, password_hash, statut, notes)
 SELECT 'Super Admin', 'Administrateur système', 1, 'admin@center.test', 'admin@center.test', 1,
-       '$2y$10$QOZo9.7oOayIbJEsGwRxLuuS6BvQ9rJT6oX1rAsQoFG4cAvwyHZBG', 'actif',
+       '$2y$10$InXgIS0Eimx.ageF6OVGxu3J7pKvrtElbv2dnnWJsS0uBIfnQ6KTG', 'actif',
        'Compte super admin par defaut'
 WHERE NOT EXISTS (SELECT 1 FROM collaborateurs WHERE email = 'admin@center.test' OR collaborateur_email = 'admin@center.test');

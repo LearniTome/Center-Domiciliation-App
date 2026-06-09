@@ -5,17 +5,6 @@ declare(strict_types=1);
 $pdo = $pdo ?? null;
 $isConnected = $pdo instanceof PDO;
 
-function time_ago(string $date): string {
-    $sec = time() - strtotime($date);
-    if ($sec < 60) return 'a l\'instant';
-    if ($sec < 3600) return 'il y a ' . intdiv($sec, 60) . ' min';
-    if ($sec < 86400) return 'il y a ' . intdiv($sec, 3600) . 'h';
-    $j = intdiv($sec, 86400);
-    if ($j === 1) return 'hier';
-    if ($j < 7) return 'il y a ' . $j . ' jours';
-    return date('d/m/Y', strtotime($date));
-}
-
 // --- Stats ---
 $totalSocietes = 0;
 $contratsActifs = 0;

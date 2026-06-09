@@ -161,17 +161,21 @@ if (-not (Test-Path (Join-Path $ProjectRoot "vendor\autoload.php") -PathType Lea
     }
     Write-Host ""
 }
+# ----- Extension COM (optionnelle - conversion DOCX->PDF via Word) -----
 $PhpIni = Join-Path $XamppPath "php\php.ini"
 if (Test-Path $PhpIni -PathType Leaf) {
     $iniContent = Get-Content $PhpIni -Raw
     if ($iniContent -match ";extension=php_com_dotnet\.dll" -or $iniContent -notmatch "extension=php_com_dotnet\.dll") {
-        Write-Host "[ATTENTION] extension=php_com_dotnet.dll desactivee" -ForegroundColor Yellow
-        Write-Host "  Lance .\setup.ps1 pour l'activer automatiquement" -ForegroundColor Gray
+        Write-Host "[INFO] Extension PHP COM desactivee (php_com_dotnet.dll)" -ForegroundColor Yellow
+        Write-Host "  Utile : permet la conversion DOCX->PDF via Microsoft Word (alternative plus fidele)" -ForegroundColor Gray
+        Write-Host "  Optionnel : la conversion fonctionne deja via PHPWord/Dompdf (fallback)" -ForegroundColor Gray
+        Write-Host "  Pour activer : lance .\setup.ps1 (ou edite php.ini manuellement)" -ForegroundColor Gray
+        Write-Host "  Ignorer : aucune incidence sur le fonctionnement courant de l'app" -ForegroundColor Gray
         Write-Host ""
     }
 }
 
-# Detection LibreOffice
+# ----- Detection LibreOffice (optionnel - conversion DOCX->PDF de qualite) -----
 $librePaths = @(
     "${env:ProgramFiles}\LibreOffice\program\soffice.exe",
     "${env:ProgramFiles(x86)}\LibreOffice\program\soffice.exe"
@@ -181,17 +185,30 @@ foreach ($lp in $librePaths) {
     if (Test-Path $lp -PathType Leaf) { $libreFound = $true; break }
 }
 if (-not $libreFound) {
-    Write-Host "[LibreOffice] Installation via winget..." -ForegroundColor Yellow
-    try {
-        $proc = Start-Process -FilePath "winget" -ArgumentList "install --id TheDocumentFoundation.LibreOffice --silent --accept-package-agreements --accept-source-agreements" -NoNewWindow -Wait -PassThru
-        if ($proc.ExitCode -eq 0) {
-            foreach ($lp in $librePaths) {
-                if (Test-Path $lp -PathType Leaf) { $libreFound = $true; break }
+    Write-Host "[LibreOffice] Recommande pour la conversion DOCX->PDF de qualite." -ForegroundColor Cyan
+    Write-Host "  Taille : ~355 MB | Temps estimé : 2-5 min (selon le debit)" -ForegroundColor Gray
+    Write-Host "  Si tu installes maintenant, le script reprendra automatiquement apres." -ForegroundColor Gray
+    Write-Host "  Sinon, la conversion utilisera PHPWord/Dompdf (fallback) - suffisant dans la plupart des cas." -ForegroundColor Gray
+    Write-Host ""
+    $choice = Read-Host -Prompt "  Installer LibreOffice ? (o/N)"
+    Write-Host ""
+    if ($choice -eq "o" -or $choice -eq "O") {
+        Write-Host "[LibreOffice] Installation en cours (cela peut prendre plusieurs minutes)..." -ForegroundColor Yellow
+        try {
+            $proc = Start-Process -FilePath "winget" -ArgumentList "install --id TheDocumentFoundation.LibreOffice --silent --accept-package-agreements --accept-source-agreements" -NoNewWindow -Wait -PassThru
+            if ($proc.ExitCode -eq 0) {
+                foreach ($lp in $librePaths) {
+                    if (Test-Path $lp -PathType Leaf) { $libreFound = $true; break }
+                }
+                if ($libreFound) { Write-Host "      LibreOffice installe avec succes" -ForegroundColor Green }
+            } else {
+                Write-Host "      Echec de l'installation (code: $($proc.ExitCode))" -ForegroundColor Yellow
             }
-            if ($libreFound) { Write-Host "      LibreOffice installe" -ForegroundColor Green }
+        } catch {
+            Write-Host "[INFO] LibreOffice non installe. Conversion PDF via PHPWord/Dompdf (fallback)." -ForegroundColor Gray
         }
-    } catch {
-        Write-Host "[INFO] LibreOffice non installe. Conversion PDF via PHPWord/Dompdf (fallback)." -ForegroundColor Gray
+    } else {
+        Write-Host "[LibreOffice] Ignore. Conversion PDF via PHPWord/Dompdf." -ForegroundColor Gray
     }
 }
 

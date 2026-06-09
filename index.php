@@ -44,12 +44,23 @@ $allowedPages = [
     'roles',
     'role',
     'activite',
+    'notifications',
+    'notifications-manage',
+    'notif-ajax',
 ];
 
 $page = $_GET['page'] ?? 'dashboard';
 if (!in_array($page, $allowedPages, true)) {
     http_response_code(404);
     $page = 'not-found';
+}
+
+// JSON API endpoint — no HTML output at all
+if ($page === 'notif-ajax') {
+    ob_clean();
+    require __DIR__ . '/pages/notif-ajax.php';
+    ob_end_flush();
+    exit;
 }
 
 $pageTitleMap = [
@@ -91,6 +102,8 @@ $pageTitleMap = [
     'roles' => 'Gestion des roles',
     'role' => 'Fiche role',
     'activite' => 'Journal d\'activite',
+    'notifications' => 'Notifications',
+    'notifications-manage' => 'Gestion des notifications',
 ];
 
 // Public pages without sidebar layout

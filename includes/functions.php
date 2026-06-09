@@ -379,6 +379,21 @@ function format_date(?string $value): string
     }
 }
 
+function time_ago(string $datetime): string
+{
+    if (!$datetime) return '-';
+    $now = time();
+    $ts = strtotime($datetime);
+    if (!$ts) return '-';
+    $diff = $now - $ts;
+    if ($diff < 0) return "a l'instant";
+    if ($diff < 60) return 'il y a ' . $diff . 's';
+    if ($diff < 3600) return 'il y a ' . intdiv($diff, 60) . 'min';
+    if ($diff < 86400) return 'il y a ' . intdiv($diff, 3600) . 'h';
+    if ($diff < 604800) return 'il y a ' . intdiv($diff, 86400) . 'j';
+    return date('d/m/Y', $ts);
+}
+
 function load_defaults(?string $key = null): array
 {
     $defaultsFile = __DIR__ . '/../config/defaults.json';
@@ -679,4 +694,330 @@ function log_activity(
     } catch (PDOException) {
         // silently fail – logging must never break the app
     }
+}
+
+// ──────────────────────────────────────────────
+// Notification System Helpers
+// ──────────────────────────────────────────────
+
+function create_notification(?PDO $pdo, array $data): ?int
+{
+    if (!$pdo) return null;
+    try {
+        $stmt = $pdo->prepare('
+            INSERT INTO notifications (target_user_id, target_role_id, target_type, type, title, message, link, entity_type, entity_id, is_global, created_by, created_at)
+            VALUES (:target_user_id, :target_role_id, :target_type, :type, :title, :message, :link, :entity_type, :entity_id, :is_global, :created_by, NOW())
+        ');
+        $stmt->execute([
+            'target_user_id' => $data['target_user_id'] ?? null,
+            'target_role_id' => $data['target_role_id'] ?? null,
+            'target_type'    => $data['target_type'] ?? null,
+            'type'           => $data['type'] ?? 'info',
+            'title'          => $data['title'] ?? '',
+            'message'        => $data['message'] ?? null,
+            'link'           => $data['link'] ?? null,
+            'entity_type'    => $data['entity_type'] ?? null,
+            'entity_id'      => $data['entity_id'] ?? null,
+            'is_global'      => (int) ($data['is_global'] ?? 0),
+            'created_by'     => $data['created_by'] ?? null,
+        ]);
+        return (int) $pdo->lastInsertId();
+    } catch (PDOException) {
+        return null;
+    }
+}
+
+function get_user_notifications(?PDO $pdo, int $userId, int $roleId, ?string $collaboratorType, int $limit = 20, bool $unreadOnly = false): array
+{
+    if (!$pdo) return [];
+    try {
+        // A notification matches if:
+        // 1. Directly targeted to this user, OR
+        // 2. Targeted to this user's role (and no user-specific target), OR
+        // 3. Targeted to this collaborator type (and no user/role target), OR
+        // 4. Global (is_global = 1 and all targets are null)
+        $orParts = [
+            '(target_user_id = :uid)',
+            '(target_user_id IS NULL AND target_role_id = :rid)',
+        ];
+        $params = ['uid' => $userId, 'rid' => $roleId];
+
+        if ($collaboratorType !== null) {
+            $orParts[] = '(target_user_id IS NULL AND target_role_id IS NULL AND target_type = :ctype)';
+            $params['ctype'] = $collaboratorType;
+        }
+
+        $orParts[] = '(is_global = 1 AND target_user_id IS NULL AND target_role_id IS NULL AND target_type IS NULL)';
+
+        $conditions = ['(' . implode(' OR ', $orParts) . ')'];
+
+        if ($unreadOnly) {
+            $conditions[] = 'is_read = 0';
+        }
+
+        $where = implode(' AND ', $conditions);
+
+        $params['uid2'] = $userId;
+        $params['rid2'] = $roleId;
+        $params['lim'] = $limit;
+
+        $stmt = $pdo->prepare("
+            SELECT n.*, 
+                   CASE 
+                       WHEN n.target_user_id = :uid2 THEN 'direct'
+                       WHEN n.target_role_id = :rid2 THEN 'role'
+                       WHEN n.target_type IS NOT NULL THEN 'type'
+                       ELSE 'global'
+                   END AS delivery
+            FROM notifications n
+            WHERE $where
+            ORDER BY n.created_at DESC
+            LIMIT :lim
+        ");
+        $stmt->execute($params);
+
+        return $stmt->fetchAll();
+    } catch (PDOException) {
+        return [];
+    }
+}
+
+function count_unread_notifications(?PDO $pdo, int $userId, int $roleId, ?string $collaboratorType): int
+{
+    if (!$pdo) return 0;
+    try {
+        $orParts = [
+            '(target_user_id = :uid)',
+            '(target_user_id IS NULL AND target_role_id = :rid)',
+        ];
+        $params = ['uid' => $userId, 'rid' => $roleId];
+
+        if ($collaboratorType !== null) {
+            $orParts[] = '(target_user_id IS NULL AND target_role_id IS NULL AND target_type = :ctype)';
+            $params['ctype'] = $collaboratorType;
+        }
+
+        $orParts[] = '(is_global = 1 AND target_user_id IS NULL AND target_role_id IS NULL AND target_type IS NULL)';
+
+        $where = '(is_read = 0) AND (' . implode(' OR ', $orParts) . ')';
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM notifications n WHERE $where");
+        $stmt->execute($params);
+        return (int) $stmt->fetchColumn();
+    } catch (PDOException) {
+        return 0;
+    }
+}
+
+function mark_notification_read(?PDO $pdo, int $notifId, int $userId): bool
+{
+    if (!$pdo) return false;
+    try {
+        $stmt = $pdo->prepare('UPDATE notifications SET is_read = 1, read_at = NOW() WHERE id = :id AND (target_user_id = :uid OR target_user_id IS NULL)');
+        $stmt->execute(['id' => $notifId, 'uid' => $userId]);
+        return $stmt->rowCount() > 0;
+    } catch (PDOException) {
+        return false;
+    }
+}
+
+function mark_all_notifications_read(?PDO $pdo, int $userId, int $roleId, ?string $collaboratorType): bool
+{
+    if (!$pdo) return false;
+    try {
+        $orParts = [
+            '(target_user_id = :uid)',
+            '(target_user_id IS NULL AND target_role_id = :rid)',
+        ];
+        $params = ['uid' => $userId, 'rid' => $roleId];
+
+        if ($collaboratorType !== null) {
+            $orParts[] = '(target_user_id IS NULL AND target_role_id IS NULL AND target_type = :ctype)';
+            $params['ctype'] = $collaboratorType;
+        }
+
+        $orParts[] = '(is_global = 1 AND target_user_id IS NULL AND target_role_id IS NULL AND target_type IS NULL)';
+
+        $where = '(is_read = 0) AND (' . implode(' OR ', $orParts) . ')';
+        $stmt = $pdo->prepare("UPDATE notifications SET is_read = 1, read_at = NOW() WHERE $where");
+        $stmt->execute($params);
+        return true;
+    } catch (PDOException) {
+        return false;
+    }
+}
+
+function generate_auto_notifications(?PDO $pdo, int $createdBy): array
+{
+    if (!$pdo) return [];
+    $generated = [];
+    $today = date('Y-m-d');
+
+    try {
+        // 1. Societes sans associe (pour Super Admin + Admin)
+        $stmt = $pdo->query("
+            SELECT s.id, s.societe_raison_sociale FROM societes s
+            LEFT JOIN associes a ON a.societe_id = s.id
+            WHERE a.id IS NULL
+        ");
+        while ($row = $stmt->fetch()) {
+            $existing = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE entity_type = 'societe' AND entity_id = :eid AND title LIKE '%associe%' AND created_at >= CURDATE()");
+            $existing->execute(['eid' => $row['id']]);
+            if ((int) $existing->fetchColumn() === 0) {
+                create_notification($pdo, [
+                    'target_role_id' => 1,
+                    'target_type'    => 'interne',
+                    'type'           => 'warning',
+                    'title'          => 'Societe sans associe',
+                    'message'        => "{$row['societe_raison_sociale']} n'a pas encore d'associe.",
+                    'link'           => app_url('societe', ['id' => $row['id']]),
+                    'entity_type'    => 'societe',
+                    'entity_id'      => $row['id'],
+                    'is_global'      => 0,
+                    'created_by'     => $createdBy,
+                ]);
+                $generated[] = "sans-associe-{$row['id']}";
+            }
+        }
+
+        // 2. Societes sans contrat (Super Admin + Admin)
+        $stmt = $pdo->query("
+            SELECT s.id, s.societe_raison_sociale FROM societes s
+            LEFT JOIN contrats c ON c.societe_id = s.id
+            WHERE c.id IS NULL
+        ");
+        while ($row = $stmt->fetch()) {
+            $existing = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE entity_type = 'societe' AND entity_id = :eid AND title LIKE '%contrat%' AND created_at >= CURDATE()");
+            $existing->execute(['eid' => $row['id']]);
+            if ((int) $existing->fetchColumn() === 0) {
+                create_notification($pdo, [
+                    'target_role_id' => 1,
+                    'target_type'    => 'interne',
+                    'type'           => 'warning',
+                    'title'          => 'Societe sans contrat',
+                    'message'        => "{$row['societe_raison_sociale']} n'a pas encore de contrat.",
+                    'link'           => app_url('societe', ['id' => $row['id']]),
+                    'entity_type'    => 'societe',
+                    'entity_id'      => $row['id'],
+                    'is_global'      => 0,
+                    'created_by'     => $createdBy,
+                ]);
+                $generated[] = "sans-contrat-{$row['id']}";
+            }
+        }
+
+        // 3. CIN expirees (tous les internes)
+        $stmt = $pdo->query("
+            SELECT a.id, a.associe_nom_complet, a.associe_date_validite_cin, s.id AS sid, s.societe_raison_sociale
+            FROM associes a
+            JOIN societes s ON s.id = a.societe_id
+            WHERE a.associe_date_validite_cin IS NOT NULL AND a.associe_date_validite_cin < CURDATE()
+        ");
+        while ($row = $stmt->fetch()) {
+            $existing = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE entity_type = 'associe' AND entity_id = :eid AND title LIKE '%CIN%' AND created_at >= CURDATE()");
+            $existing->execute(['eid' => $row['id']]);
+            if ((int) $existing->fetchColumn() === 0) {
+                create_notification($pdo, [
+                    'target_role_id' => 1,
+                    'target_type'    => 'interne',
+                    'type'           => 'danger',
+                    'title'          => 'CIN expiree',
+                    'message'        => "CIN de {$row['associe_nom_complet']} ( {$row['societe_raison_sociale']} ) expiree depuis le " . date('d/m/Y', strtotime($row['associe_date_validite_cin'])),
+                    'link'           => app_url('societe', ['id' => $row['sid']]),
+                    'entity_type'    => 'associe',
+                    'entity_id'      => $row['id'],
+                    'is_global'      => 0,
+                    'created_by'     => $createdBy,
+                ]);
+                $generated[] = "cin-expiree-{$row['id']}";
+            }
+        }
+
+        // 4. Contrats expirant dans 30 jours (tous)
+        $stmt = $pdo->query("
+            SELECT c.id, c.contrat_date_fin, s.societe_raison_sociale, s.id AS sid
+            FROM contrats c
+            JOIN societes s ON s.id = c.societe_id
+            WHERE c.contrat_statut = 'actif' AND c.contrat_date_fin BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+        ");
+        while ($row = $stmt->fetch()) {
+            $existing = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE entity_type = 'contrat' AND entity_id = :eid AND title LIKE '%expire%' AND created_at >= CURDATE()");
+            $existing->execute(['eid' => $row['id']]);
+            if ((int) $existing->fetchColumn() === 0) {
+                $daysLeft = (int) ((strtotime($row['contrat_date_fin']) - time()) / 86400);
+                create_notification($pdo, [
+                    'target_type'    => 'interne',
+                    'type'           => $daysLeft <= 7 ? 'danger' : 'warning',
+                    'title'          => 'Contrat proche d\'expiration',
+                    'message'        => "Le contrat de {$row['societe_raison_sociale']} expire dans {$daysLeft} jours (" . date('d/m/Y', strtotime($row['contrat_date_fin'])) . ").",
+                    'link'           => app_url('societe', ['id' => $row['sid']]),
+                    'entity_type'    => 'contrat',
+                    'entity_id'      => $row['id'],
+                    'is_global'      => 0,
+                    'created_by'     => $createdBy,
+                ]);
+                $generated[] = "contrat-exp-{$row['id']}";
+            }
+        }
+
+        // 5. Societes sans documents (Super Admin + Admin)
+        $stmt = $pdo->query("
+            SELECT s.id, s.societe_raison_sociale FROM societes s
+            WHERE EXISTS (SELECT 1 FROM associes a WHERE a.societe_id = s.id)
+              AND EXISTS (SELECT 1 FROM contrats c WHERE c.societe_id = s.id)
+              AND NOT EXISTS (SELECT 1 FROM documents_generes d WHERE d.societe_id = s.id)
+        ");
+        while ($row = $stmt->fetch()) {
+            $existing = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE entity_type = 'societe' AND entity_id = :eid AND title LIKE '%document%' AND created_at >= CURDATE()");
+            $existing->execute(['eid' => $row['id']]);
+            if ((int) $existing->fetchColumn() === 0) {
+                create_notification($pdo, [
+                    'target_role_id' => 1,
+                    'target_type'    => 'interne',
+                    'type'           => 'info',
+                    'title'          => 'Documents manquants',
+                    'message'        => "{$row['societe_raison_sociale']} a des associes et un contrat mais aucun document genere.",
+                    'link'           => app_url('generation', ['societe_id' => $row['id']]),
+                    'entity_type'    => 'societe',
+                    'entity_id'      => $row['id'],
+                    'is_global'      => 0,
+                    'created_by'     => $createdBy,
+                ]);
+                $generated[] = "sans-docs-{$row['id']}";
+            }
+        }
+
+        // 6. Nouveaux collaborateurs externes (pour Super Admin)
+        $stmt = $pdo->prepare("
+            SELECT c.id, c.nom_complet, c.collaborateur_type, c.created_at
+            FROM collaborateurs c
+            WHERE c.collaborateur_type IN ('externe-pm', 'externe-pp')
+              AND c.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+              AND c.created_by != :cby
+            ORDER BY c.created_at DESC
+        ");
+        $stmt->execute(['cby' => $createdBy]);
+        while ($row = $stmt->fetch()) {
+            $existing = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE entity_type = 'collaborateur' AND entity_id = :eid AND created_at >= CURDATE()");
+            $existing->execute(['eid' => $row['id']]);
+            if ((int) $existing->fetchColumn() === 0) {
+                $typeLabel = $row['collaborateur_type'] === 'externe-pm' ? 'Personne Morale' : 'Personne Physique';
+                create_notification($pdo, [
+                    'target_role_id' => 1,
+                    'type'           => 'info',
+                    'title'          => 'Nouveau collaborateur externe',
+                    'message'        => "{$row['nom_complet']} ({$typeLabel}) a ete ajoute recemment.",
+                    'link'           => app_url('collaborateurs', ['id' => $row['id']]),
+                    'entity_type'    => 'collaborateur',
+                    'entity_id'      => $row['id'],
+                    'is_global'      => 0,
+                    'created_by'     => $createdBy,
+                ]);
+                $generated[] = "nv-collab-{$row['id']}";
+            }
+        }
+    } catch (PDOException) {
+        // silent
+    }
+
+    return $generated;
 }

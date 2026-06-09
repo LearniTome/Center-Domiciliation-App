@@ -5,6 +5,8 @@ declare(strict_types=1);
 // Map each nav item to a required permission (null = always visible)
 $navPermissions = [
     'creation' => 'wizard.create',
+    'notifications' => null,
+    'notifications-manage' => 'roles.manage',
     'dashboard' => 'dashboard.view',
     'societes' => 'societes.view',
     'associes' => 'associes.view',
@@ -48,6 +50,7 @@ $navSections = [
         'items' => [
             'creation' => ['Nouveau dossier', 'note_add'],
             'dashboard' => ['Tableau de bord', 'dashboard'],
+            'notifications' => ['Notifications', 'notifications'],
         ],
     ],
     'Dossiers' => [
@@ -83,6 +86,7 @@ $navSections = [
         'items' => [
             ['page' => 'roles', 'label' => 'Gestion des roles', 'icon' => 'admin_panel_settings'],
             ['page' => 'activite', 'label' => 'Journal d\'activite', 'icon' => 'history'],
+            ['page' => 'notifications-manage', 'label' => 'Gestion des notifications', 'icon' => 'notifications'],
             ['page' => 'formes-juridiques', 'label' => 'Formes juridiques', 'icon' => 'description'],
             ['page' => 'tribunaux', 'label' => 'Tribunaux', 'icon' => 'balance'],
             ['page' => 'villes', 'label' => 'Villes', 'icon' => 'location_city'],
@@ -111,6 +115,46 @@ $navSections = [
             <?php endif; ?>
         </div>
     </div>
+
+    <?php
+        $notifCount = 0;
+        if (is_logged_in()) {
+            $u = current_user();
+            global $pdo;
+            if ($u && $pdo) {
+                $notifCount = count_unread_notifications($pdo, (int) $u['id'], (int) ($u['role_id'] ?? 0), $u['collaborateur_type'] ?? null);
+            }
+        }
+    ?>
+    <div class="notif-bell-wrap">
+        <button type="button" class="notif-bell" data-notif-bell title="Notifications">
+            <span class="material-symbols-outlined">notifications</span>
+            <?php if ($notifCount > 0): ?>
+                <span class="notif-badge notif-badge-count"><?= $notifCount > 99 ? '99+' : $notifCount ?></span>
+            <?php endif; ?>
+            <span data-nav-label>Notifications</span>
+        </button>
+        <div class="notif-dropdown" data-notif-dropdown>
+            <div class="notif-dropdown-header">
+                <strong>Notifications</strong>
+                <span class="notif-dropdown-count" data-notif-dropdown-count></span>
+            </div>
+            <div class="notif-dropdown-list" data-notif-dropdown-list>
+                <div class="notif-dropdown-loading">
+                    <span class="material-symbols-outlined">sync</span> Chargement...
+                </div>
+            </div>
+            <div class="notif-dropdown-footer">
+                <button type="button" class="btn btn-info" data-notif-mark-all style="width:100%;padding:4px 10px;font-size:0.72rem;">
+                    <span class="material-symbols-outlined" style="font-size:0.85rem">done_all</span> Tout marquer comme lu
+                </button>
+                <a href="<?= e(app_url('notifications')) ?>" class="btn btn-next" style="width:100%;padding:4px 10px;font-size:0.72rem;">
+                    <span class="material-symbols-outlined" style="font-size:0.85rem">visibility</span> Voir tout
+                </a>
+            </div>
+        </div>
+    </div>
+
     <div class="nav-toggle-all">
         <button type="button" title="Tout réduire" data-collapse-all>
             <span class="material-symbols-outlined">collapse_all</span>
@@ -165,6 +209,9 @@ $navSections = [
                 <a class="<?= $isActive ? 'active' : '' ?>" href="<?= e($href) ?>" data-nav-link>
                     <span class="material-symbols-outlined"><?= e($itemIcon) ?></span>
                     <span data-nav-label><?= e($itemLabel) ?></span>
+                    <?php if ($navKey === 'notifications'): ?>
+                        <span class="notif-badge" id="nav-notif-badge" style="position:static;margin-left:auto;margin-right:8px;<?= $notifCount > 0 ? '' : 'display:none' ?>"><?= $notifCount > 99 ? '99+' : $notifCount ?></span>
+                    <?php endif; ?>
                 </a>
             <?php endforeach; ?>
             <?php if ($sectionLabel): ?>
