@@ -142,11 +142,8 @@ if (is_post()) {
     // Step 1: Société
     if ($step === 1) {
         $wizard['societe_id'] = (int) ($_POST['societe_id'] ?? 0);
-        if ($wizard['societe_id'] <= 0) {
-            set_flash('error', 'Veuillez selectionner une societe.');
-            redirect_to('cession', ['step' => 1]);
-        }
-        redirect_to('cession', ['step' => 2]);
+        $wizard['parts'] = [];
+        redirect_to('cession', ['step' => 1]);
     }
 
     // Step 2: Parts configuration
@@ -457,7 +454,7 @@ if ($wizard['societe_id'] > 0 && ($pdo ?? null) instanceof PDO) {
                 <div class="field">
                     <label for="societe_id">Societe concernee</label>
                     <div style="display:flex;gap:8px">
-                        <select name="societe_id" id="societe_id" required style="flex:1">
+                        <select name="societe_id" id="societe_id" style="flex:1" onchange="this.form.submit()">
                             <option value="">-- Selectionnez une societe --</option>
                             <?php foreach ($societesList as $s): ?>
                                 <option value="<?= (int) $s['id'] ?>" <?= $wizard['societe_id'] === (int) $s['id'] ? 'selected' : '' ?>>
@@ -478,7 +475,7 @@ if ($wizard['societe_id'] > 0 && ($pdo ?? null) instanceof PDO) {
                 <div><strong>Nombre de parts</strong><br><?= (int) ($selectedSociete['societe_part_social'] ?? 0) ?></div>
                 <div><strong>Ville</strong><br><?= e($selectedSociete['societe_ville'] ?? '-') ?></div>
             </div>
-            <?php if (!empty($selectedAssocies)): ?>
+            <?php if ($wizard['societe_id'] > 0 && !empty($selectedAssocies)): ?>
             <div style="margin-top:16px">
                 <strong>Repartition actuelle des parts :</strong>
                 <table data-sortable style="margin-top:8px">
