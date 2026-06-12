@@ -112,9 +112,11 @@ $docTypeLabels = [
                         <th data-col="cedant-cin">CIN</th>
                         <th data-col="cessionnaire">Cessionnaire</th>
                         <th data-col="cessionnaire-cin">CIN</th>
+                        <th data-col="pourcentage">%</th>
                         <th data-col="parts">Parts cedees</th>
                         <th data-col="prix-u">Prix unitaire</th>
                         <th data-col="prix-t">Prix total</th>
+                        <th>Gerant</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -124,18 +126,21 @@ $docTypeLabels = [
                         <td><?= e($p['cedant_cin'] ?: '-') ?></td>
                         <td><?= e($p['cessionnaire_nom_complet']) ?></td>
                         <td><?= e($p['cessionnaire_cin'] ?: '-') ?></td>
+                        <td><?= $p['pourcentage'] ? number_format((float) $p['pourcentage'], 1, ',', ' ') . '%' : '-' ?></td>
                         <td><?= (int) ($p['parts_cedees'] ?? 0) ?></td>
                         <td><?= format_money((float) ($p['prix_unitaire'] ?? 0)) ?></td>
                         <td><?= format_money((float) ($p['prix_total'] ?? 0)) ?></td>
+                        <td><?= !empty($p['nommer_gerant']) ? '<span class="material-symbols-outlined" style="color:var(--success);font-size:1.1rem">verified</span>' : '-' ?></td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
                 <tfoot>
                     <tr style="font-weight:600">
-                        <td colspan="4">Total</td>
+                        <td colspan="5">Total</td>
                         <td><?= array_sum(array_map(fn($p) => (int) ($p['parts_cedees'] ?? 0), $cessionParts)) ?></td>
                         <td></td>
                         <td><?= format_money(array_sum(array_map(fn($p) => (float) ($p['prix_total'] ?? 0), $cessionParts))) ?></td>
+                        <td></td>
                     </tr>
                 </tfoot>
             </table>

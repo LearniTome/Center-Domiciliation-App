@@ -105,11 +105,15 @@
         </div>
     </div>
 
-    <!-- Parts & Prix -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px">
+    <!-- Parts, Prix & Gérant -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-top:12px">
+        <div class="field">
+            <label style="font-size:0.75rem">% des parts</label>
+            <input type="text" name="pourcentage[<?= $partIndex ?>]" class="pourcentage-input" value="<?= e((string) ($part['pourcentage'] ?? '')) ?>" placeholder="50" data-part-index="<?= $partIndex ?>">
+        </div>
         <div class="field">
             <label style="font-size:0.75rem">Parts cedees</label>
-            <input type="number" name="parts_cedees[<?= $partIndex ?>]" value="<?= e((string) ($part['parts_cedees'] ?? '')) ?>" min="1" required>
+            <input type="number" name="parts_cedees[<?= $partIndex ?>]" class="parts-cedees-input" value="<?= e((string) ($part['parts_cedees'] ?? '')) ?>" min="1" data-part-index="<?= $partIndex ?>">
         </div>
         <div class="field">
             <label style="font-size:0.75rem">Prix unitaire (DH)</label>
@@ -119,5 +123,11 @@
             <label style="font-size:0.75rem">Prix total (DH)</label>
             <input type="text" name="prix_total[<?= $partIndex ?>]" value="<?= e((string) ($part['prix_total'] ?? '')) ?>" placeholder="Calcule automatiquement">
         </div>
+    </div>
+    <div style="margin-top:8px">
+        <label>
+            <input type="checkbox" name="nommer_gerant[<?= $partIndex ?>]" value="1" <?= !empty($part['nommer_gerant']) ? 'checked' : '' ?>>
+            <span style="font-size:0.85rem;color:var(--text-secondary)">Nommer ce cessionnaire comme gerant de la societe</span>
+        </label>
     </div>
 </div>

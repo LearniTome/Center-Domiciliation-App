@@ -143,6 +143,9 @@ if (is_post()) {
     if ($step === 1) {
         $wizard['societe_id'] = (int) ($_POST['societe_id'] ?? 0);
         $wizard['parts'] = [];
+        if ($wizard['societe_id'] > 0) {
+            redirect_to('cession', ['step' => 2]);
+        }
         redirect_to('cession', ['step' => 1]);
     }
 
@@ -164,9 +167,19 @@ if (is_post()) {
         $cessionnaireLieux = $_POST['cessionnaire_lieu_naissance'] ?? [];
         $cessionnaireNationalites = $_POST['cessionnaire_nationalite'] ?? [];
         $cessionnaireAdresses = $_POST['cessionnaire_adresse'] ?? [];
+        $partPourcentages = $_POST['pourcentage'] ?? [];
         $partsCedees = $_POST['parts_cedees'] ?? [];
         $prixUnitaires = $_POST['prix_unitaire'] ?? [];
         $prixTotaux = $_POST['prix_total'] ?? [];
+        $nommerGerant = $_POST['nommer_gerant'] ?? [];
+
+        // Total parts société pour le calcul % → parts
+        $totalSocieteParts = 0;
+        if ($wizard['societe_id'] > 0 && ($pdo ?? null) instanceof PDO) {
+            $stmt = $pdo->prepare('SELECT societe_part_social FROM societes WHERE id = :id');
+            $stmt->execute(['id' => $wizard['societe_id']]);
+            $totalSocieteParts = (int) ($stmt->fetchColumn() ?: 0);
+        }
 
         $wizard['parts'] = [];
         $count = max(count($cedantNoms), count($cessionnaireNoms), count($partsCedees));
@@ -195,7 +208,12 @@ if (is_post()) {
                 }
             }
 
+            // Calcul des parts: priorité au %, sinon parts directes
+            $pourcentage = money_value(['val' => $partPourcentages[$i] ?? '0'], 'val');
             $parts = (int) ($partsCedees[$i] ?? 0);
+            if ($pourcentage > 0 && $totalSocieteParts > 0) {
+                $parts = (int) round(($pourcentage / 100) * $totalSocieteParts);
+            }
 
             if ($cedNom === '' || $cessNom === '' || $parts <= 0) {
                 continue;
@@ -221,9 +239,11 @@ if (is_post()) {
                 'cessionnaire_lieu_naissance' => trim((string) ($cessionnaireLieux[$i] ?? '')),
                 'cessionnaire_nationalite' => trim((string) ($cessionnaireNationalites[$i] ?? '')),
                 'cessionnaire_adresse' => trim((string) ($cessionnaireAdresses[$i] ?? '')),
+                'pourcentage' => $pourcentage > 0 ? $pourcentage : null,
                 'parts_cedees' => $parts,
                 'prix_unitaire' => $pu,
                 'prix_total' => $pt,
+                'nommer_gerant' => !empty($nommerGerant[$i]) ? 1 : 0,
             ];
         }
 
@@ -300,7 +320,7 @@ if (is_post()) {
 
         // Insert cession_parts
         foreach ($wizard['parts'] as $p) {
-            $stmt = $pdo->prepare('INSERT INTO cession_parts (cession_id, cedant_associe_id, cedant_nom_complet, cedant_cin, cedant_type, cessionnaire_associe_id, cessionnaire_nom_complet, cessionnaire_cin, cessionnaire_type, cessionnaire_civilite, cessionnaire_date_naissance, cessionnaire_lieu_naissance, cessionnaire_nationalite, cessionnaire_adresse, parts_cedees, prix_unitaire, prix_total) VALUES (:cession_id, :cedant_associe_id, :cedant_nom, :cedant_cin, :cedant_type, :cess_associe_id, :cess_nom, :cess_cin, :cess_type, :cess_civilite, :cess_date_naiss, :cess_lieu_naiss, :cess_nationalite, :cess_adresse, :parts, :prix_u, :prix_t)');
+            $stmt = $pdo->prepare('INSERT INTO cession_parts (cession_id, cedant_associe_id, cedant_nom_complet, cedant_cin, cedant_type, cessionnaire_associe_id, cessionnaire_nom_complet, cessionnaire_cin, cessionnaire_type, cessionnaire_civilite, cessionnaire_date_naissance, cessionnaire_lieu_naissance, cessionnaire_nationalite, cessionnaire_adresse, parts_cedees, prix_unitaire, prix_total, pourcentage, nommer_gerant) VALUES (:cession_id, :cedant_associe_id, :cedant_nom, :cedant_cin, :cedant_type, :cess_associe_id, :cess_nom, :cess_cin, :cess_type, :cess_civilite, :cess_date_naiss, :cess_lieu_naiss, :cess_nationalite, :cess_adresse, :parts, :prix_u, :prix_t, :pourcentage, :nommer_gerant)');
             $stmt->execute([
                 'cession_id' => $cessionId,
                 'cedant_associe_id' => $p['cedant_associe_id'] ?: null,
@@ -319,12 +339,17 @@ if (is_post()) {
                 'parts' => $p['parts_cedees'],
                 'prix_u' => $p['prix_unitaire'] ?? 0,
                 'prix_t' => $p['prix_total'] ?? 0,
+                'pourcentage' => $p['pourcentage'] ?? null,
+                'nommer_gerant' => $p['nommer_gerant'] ?? 0,
             ]);
+            $cessionPartId = (int) $pdo->lastInsertId();
 
             // Si nouveau cessionnaire, le créer dans associes
+            $nouvelAssocieId = null;
             if (($p['cessionnaire_type'] ?? 'existant') === 'nouveau' && ($p['cessionnaire_associe_id'] ?? 0) <= 0) {
-                $stmtA = $pdo->prepare('INSERT INTO associes (societe_id, associe_civilite, associe_nom_complet, associe_cin, associe_date_naissance, associe_lieu_naissance, associe_nationalite, associe_adresse, associe_parts, associe_capital_detenu, associe_est_gerant) VALUES (:sid, :civ, :nom, :cin, :dn, :ln, :nat, :adr, :parts, :capital, 0)');
+                $stmtA = $pdo->prepare('INSERT INTO associes (societe_id, associe_civilite, associe_nom_complet, associe_cin, associe_date_naissance, associe_lieu_naissance, associe_nationalite, associe_adresse, associe_parts, associe_capital_detenu, associe_est_gerant) VALUES (:sid, :civ, :nom, :cin, :dn, :ln, :nat, :adr, :parts, :capital, :gerant)');
                 $capitalDetenu = $partsAvant > 0 ? round(($p['parts_cedees'] / max($partsAvant, 1)) * $capitalAvant, 2) : 0;
+                $isGerant = !empty($p['nommer_gerant']) ? 1 : 0;
                 $stmtA->execute([
                     'sid' => $wizard['societe_id'],
                     'civ' => $p['cessionnaire_civilite'] ?? 'M.',
@@ -336,7 +361,19 @@ if (is_post()) {
                     'adr' => $p['cessionnaire_adresse'] ?: null,
                     'parts' => $p['parts_cedees'],
                     'capital' => $capitalDetenu,
+                    'gerant' => $isGerant,
                 ]);
+                $nouvelAssocieId = (int) $pdo->lastInsertId();
+
+                // Mettre à jour cession_parts avec le nouvel ID
+                $stmtUp = $pdo->prepare('UPDATE cession_parts SET cessionnaire_associe_id = :aid WHERE id = :pid');
+                $stmtUp->execute(['aid' => $nouvelAssocieId, 'pid' => $cessionPartId]);
+            }
+
+            // Si cessionnaire existant + nommer gérant, mettre à jour
+            if (!empty($p['nommer_gerant']) && ($p['cessionnaire_associe_id'] ?? 0) > 0) {
+                $stmtU = $pdo->prepare('UPDATE associes SET associe_est_gerant = 1 WHERE id = :id');
+                $stmtU->execute(['id' => $p['cessionnaire_associe_id']]);
             }
 
             // Mise à jour des parts du cédant (réduction)
@@ -637,6 +674,9 @@ if ($wizard['societe_id'] > 0 && ($pdo ?? null) instanceof PDO) {
                 </div>
             </div>
 
+            <!-- Hidden input for JS pourcentage calculation -->
+            <input type="hidden" id="total-societe-parts" value="<?= (int) ($selectedSociete['societe_part_social'] ?? 0) ?>">
+
             <div style="margin-top:20px">
                 <strong>Lignes de cession</strong>
                 <div id="cession-parts-container">
@@ -720,9 +760,11 @@ if ($wizard['societe_id'] > 0 && ($pdo ?? null) instanceof PDO) {
                     <tr>
                         <th data-col="cedant">Cedant</th>
                         <th data-col="cessionnaire">Cessionnaire</th>
+                        <th data-col="pourcentage">%</th>
                         <th data-col="parts">Parts cedees</th>
                         <th data-col="prix-u">Prix unitaire</th>
                         <th data-col="prix-t">Prix total</th>
+                        <th>Gerant</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -730,18 +772,21 @@ if ($wizard['societe_id'] > 0 && ($pdo ?? null) instanceof PDO) {
                     <tr>
                         <td><?= e($p['cedant_nom_complet']) ?></td>
                         <td><?= e($p['cessionnaire_nom_complet']) ?></td>
+                        <td><?= isset($p['pourcentage']) ? number_format((float) $p['pourcentage'], 1, ',', ' ') . '%' : '-' ?></td>
                         <td><?= (int) ($p['parts_cedees'] ?? 0) ?></td>
                         <td><?= e(number_format((float) ($p['prix_unitaire'] ?? 0), 2, ',', ' ') . ' DH') ?></td>
                         <td><?= e(number_format((float) ($p['prix_total'] ?? 0), 2, ',', ' ') . ' DH') ?></td>
+                        <td><?= !empty($p['nommer_gerant']) ? '<span class="material-symbols-outlined" style="color:var(--success);font-size:1.1rem">verified</span>' : '-' ?></td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
                 <tfoot>
                     <tr style="font-weight:600">
-                        <td colspan="2">Total</td>
+                        <td colspan="3">Total</td>
                         <td><?= $totalParts ?></td>
                         <td></td>
                         <td><?= e(number_format($totalPrix, 2, ',', ' ') . ' DH') ?></td>
+                        <td></td>
                     </tr>
                 </tfoot>
             </table>
@@ -830,18 +875,48 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Calculate prix_total from parts * prix_unitaire
-    document.querySelectorAll('[name^="parts_cedees["], [name^="prix_unitaire["]').forEach(function(inp) {
-        inp.addEventListener('input', function() {
-            var row = this.closest('.cession-part-row');
-            var partsInput = row.querySelector('[name^="parts_cedees["]');
-            var puInput = row.querySelector('[name^="prix_unitaire["]');
-            var ptInput = row.querySelector('[name^="prix_total["]');
-            if (partsInput && puInput && ptInput) {
-                var parts = parseFloat(partsInput.value.replace(',', '.')) || 0;
-                var pu = parseFloat(puInput.value.replace(',', '.')) || 0;
-                ptInput.value = (parts * pu).toFixed(2).replace('.', ',');
-            }
+    function bindPrixTotal(row) {
+        var inputs = row.querySelectorAll('[name^="parts_cedees["], [name^="prix_unitaire["]');
+        inputs.forEach(function(inp) {
+            inp.removeEventListener('input', calcPrixTotal);
+            inp.addEventListener('input', calcPrixTotal);
         });
+    }
+    function calcPrixTotal() {
+        var row = this.closest('.cession-part-row');
+        var partsInput = row.querySelector('[name^="parts_cedees["]');
+        var puInput = row.querySelector('[name^="prix_unitaire["]');
+        var ptInput = row.querySelector('[name^="prix_total["]');
+        if (partsInput && puInput && ptInput) {
+            var parts = parseFloat(partsInput.value.replace(',', '.')) || 0;
+            var pu = parseFloat(puInput.value.replace(',', '.')) || 0;
+            ptInput.value = (parts * pu).toFixed(2).replace('.', ',');
+        }
+    }
+    document.querySelectorAll('.cession-part-row').forEach(function(row) {
+        bindPrixTotal(row);
+    });
+
+    // Calculate parts from pourcentage
+    function bindPourcentage(row) {
+        var inp = row.querySelector('[name^="pourcentage["]');
+        if (inp) {
+            inp.removeEventListener('input', calcPartsFromPct);
+            inp.addEventListener('input', calcPartsFromPct);
+        }
+    }
+    function calcPartsFromPct() {
+        var row = this.closest('.cession-part-row');
+        var pct = parseFloat(this.value.replace(',', '.')) || 0;
+        var totalParts = parseInt(document.getElementById('total-societe-parts')?.value) || 0;
+        var partsInput = row.querySelector('[name^="parts_cedees["]');
+        if (partsInput && pct > 0 && totalParts > 0) {
+            partsInput.value = Math.round((pct / 100) * totalParts);
+            calcPrixTotal.call(partsInput);
+        }
+    }
+    document.querySelectorAll('.cession-part-row').forEach(function(row) {
+        bindPourcentage(row);
     });
 
     // Add new part row
@@ -854,9 +929,11 @@ document.addEventListener('DOMContentLoaded', function() {
         clone.querySelectorAll('[name]').forEach(function(el) {
             var name = el.getAttribute('name') || '';
             el.name = name.replace(/\[\d+\]/g, '[' + index + ']');
-            if (el.tagName === 'INPUT' && el.type !== 'checkbox' && el.type !== 'radio') {
+            if (el.type === 'checkbox') {
+                el.checked = false;
+            } else if (el.tagName !== 'SELECT') {
                 el.value = '';
-            } else if (el.tagName === 'SELECT') {
+            } else {
                 el.selectedIndex = 0;
             }
         });
@@ -870,6 +947,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (cessNew) cessNew.style.display = 'none';
         if (cessExist) cessExist.style.display = '';
         container.appendChild(clone);
+        // Bind events on the new row
+        bindPrixTotal(clone);
+        bindPourcentage(clone);
         this.dataset.partIndex = index + 1;
     });
 });
