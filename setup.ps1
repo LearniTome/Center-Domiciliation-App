@@ -7,6 +7,7 @@ param(
 #  Center Domiciliation - Setup Automatique
 #  Portable : fonctionne depuis n'importe
 #  quel dossier, n'importe quel PC
+#  Support : Windows (XAMPP) + macOS (Homebrew)
 # ==========================================
 
 $ErrorActionPreference = "Continue"
@@ -15,11 +16,74 @@ $ErrorActionPreference = "Continue"
 $ProjectRoot = $PSScriptRoot  # Le dossier où se trouve setup.ps1
 $ProjectName = Split-Path -Leaf $ProjectRoot
 $HtdocsLink  = ""  # sera défini après détection XAMPP
+$isMacOS     = $IsMacOS -or ([System.Runtime.InteropServices.RuntimeInformation]::OSDescription -match "darwin")
+$isWindows   = (-not $isMacOS) -and ($IsWindows -or ($PSVersionTable.PSVersion.Major -ge 5))
+
+# ----- Fonction installation via Homebrew (macOS) -----
+function Install-WithBrew {
+    param([string]$Package, [string]$Name, [string]$Cask = "")
+    Write-Host "      Installation de $Name..." -ForegroundColor Yellow
+    try {
+        if ($Cask) {
+            & brew install --cask $Cask 2>&1 | Out-Null
+        } else {
+            & brew install $Package 2>&1 | Out-Null
+        }
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "      $Name installe avec succes" -ForegroundColor Green
+            return $true
+        } else {
+            Write-Host "      [ERREUR] Echec installation $Name (code: $LASTEXITCODE)" -ForegroundColor Red
+            return $false
+        }
+    } catch {
+        Write-Host "      [ERREUR] Exception lors de l'installation de $Name : $_" -ForegroundColor Red
+        return $false
+    }
+}
+
+# ----- Fonction installation via winget (Windows) -----
+function Install-WithWinget {
+    param([string]$Name, [string]$WingetId)
+    Write-Host "      Installation de $Name via winget..." -ForegroundColor Yellow
+    try {
+        $proc = Start-Process -FilePath "winget" -ArgumentList "install --id $WingetId --silent --accept-package-agreements --accept-source-agreements" -NoNewWindow -Wait -PassThru
+        if ($proc.ExitCode -eq 0) {
+            Write-Host "      $Name installe avec succes" -ForegroundColor Green
+            $env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [Environment]::GetEnvironmentVariable("Path", "User")
+            return $true
+        } else {
+            Write-Host "      [ERREUR] Echec installation $Name (code: $($proc.ExitCode))" -ForegroundColor Red
+            return $false
+        }
+    } catch {
+        Write-Host "      [ERREUR] Exception lors de l'installation de $Name : $_" -ForegroundColor Red
+        return $false
+    }
+}
+
+# ----- Fonction import SQL -----
+function Import-SqlFile($file, $mysqlCli) {
+    if (-not (Test-Path $file -PathType Leaf)) { return $false }
+    $output = Get-Content $file -Raw | & $mysqlCli -u root --default-character-set=utf8mb4 2>&1
+    if ($LASTEXITCODE -eq 0) { return $true }
+    Write-Host "      Erreur SQL : $output" -ForegroundColor Red
+    return $false
+}
 
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  Center Domiciliation - Setup" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
+
+if ($isMacOS) {
+    Write-Host "[OS] macOS detecte - utilisation de Homebrew" -ForegroundColor Green
+} elseif ($isWindows) {
+    Write-Host "[OS] Windows detecte - utilisation de XAMPP" -ForegroundColor Green
+} else {
+    Write-Host "[OS] Non reconnu (ni macOS ni Windows)" -ForegroundColor Yellow
+    Write-Host "      Installe PHP + MySQL manuellement, puis relance" -ForegroundColor Yellow
+}
 
 # ----- Synchronisation Git (pull --rebase avant tout) -----
 $gitCheck = Get-Command "git" -ErrorAction SilentlyContinue
@@ -55,6 +119,299 @@ if ($gitCheck) {
     Write-Host "[Git] Git non trouve, synchronisation ignoree" -ForegroundColor Gray
 }
 Write-Host ""
+
+Write-Host "[1/9] Projet detecte : $ProjectRoot" -ForegroundColor Gray
+
+# ====================================================================
+#  BRANCHE macOS (Homebrew)
+# ====================================================================
+if ($isMacOS) {
+
+    # ----- Homebrew -----
+    Write-Host "      Verification de Homebrew..." -ForegroundColor Gray
+    $brewCheck = Get-Command "brew" -ErrorAction SilentlyContinue
+    if (-not $brewCheck) {
+        Write-Host "      Homebrew introuvable. Installation..." -ForegroundColor Yellow
+        try {
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+            $env:PATH = "/opt/homebrew/bin:/usr/local/bin:$env:PATH"
+            $brewCheck = Get-Command "brew" -ErrorAction SilentlyContinue
+            if ($brewCheck) {
+                Write-Host "      Homebrew installe avec succes" -ForegroundColor Green
+            } else {
+                Write-Host "[ERREUR] Echec installation Homebrew. Installe-le manuellement :" -ForegroundColor Red
+                Write-Host "  /bin/bash -c '$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)'" -ForegroundColor White
+                exit 1
+            }
+        } catch {
+            Write-Host "[ERREUR] Echec installation Homebrew : $_" -ForegroundColor Red
+            exit 1
+        }
+    } else {
+        Write-Host "      Homebrew : present" -ForegroundColor Green
+    }
+
+    # Mise à jour Homebrew
+    Write-Host "      Mise a jour de Homebrew..." -ForegroundColor Gray
+    & brew update 2>&1 | Out-Null
+    Write-Host "      Homebrew a jour" -ForegroundColor Green
+
+    # ----- PHP -----
+    $phpCheck = Get-Command "php" -ErrorAction SilentlyContinue
+    if (-not $phpCheck) {
+        Install-WithBrew -Package "php" -Name "PHP 8.x"
+        $phpCheck = Get-Command "php" -ErrorAction SilentlyContinue
+    }
+    if ($phpCheck) {
+        $phpVer = & php -v 2>&1 | Select-Object -First 1
+        Write-Host "      PHP : $phpVer" -ForegroundColor Green
+    }
+
+    # ----- MySQL -----
+    $mysqlCheck = Get-Command "mysql" -ErrorAction SilentlyContinue
+    if (-not $mysqlCheck) {
+        Install-WithBrew -Package "mysql" -Name "MySQL"
+        $mysqlCheck = Get-Command "mysql" -ErrorAction SilentlyContinue
+    }
+    if ($mysqlCheck) {
+        $mysqlVer = & mysql --version
+        Write-Host "      MySQL : $mysqlVer" -ForegroundColor Green
+    }
+
+    # ----- Node.js -----
+    $nodeCheck = Get-Command "node" -ErrorAction SilentlyContinue
+    if (-not $nodeCheck) {
+        Install-WithBrew -Package "node" -Name "Node.js"
+        $nodeCheck = Get-Command "node" -ErrorAction SilentlyContinue
+    }
+    if ($nodeCheck) {
+        $nodeVer = & node --version
+        Write-Host "      Node.js : $nodeVer" -ForegroundColor Green
+    }
+
+    # ----- Git (deja verifie plus haut, installer si absent) -----
+    if (-not $gitCheck) {
+        Install-WithBrew -Package "git" -Name "Git"
+    }
+
+    # ----- Composer -----
+    $composerCheck = Get-Command "composer" -ErrorAction SilentlyContinue
+    if (-not $composerCheck) {
+        Install-WithBrew -Package "composer" -Name "Composer"
+        $composerCheck = Get-Command "composer" -ErrorAction SilentlyContinue
+    }
+    if ($composerCheck) {
+        Write-Host "      Composer : present" -ForegroundColor Green
+    }
+
+    Write-Host ""
+
+    # ----- Demarrage MySQL -----
+    Write-Host "[2/9] Demarrage de MySQL..." -ForegroundColor Yellow
+    $mysqlRunning = & brew services list 2>&1 | Select-String "mysql.*started"
+    if (-not $mysqlRunning) {
+        & brew services start mysql 2>&1 | Out-Null
+        Start-Sleep -Seconds 3
+        $retry = 0
+        while ($retry -lt 10) {
+            $test = & mysql -u root -e "SELECT 1" 2>&1
+            if ($LASTEXITCODE -eq 0) { break }
+            $retry++
+            Start-Sleep -Seconds 2
+        }
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "      [MySQL] Demarre" -ForegroundColor Green
+        } else {
+            Write-Host "      [MySQL] Echec demarrage. Lance manuellement : brew services start mysql" -ForegroundColor Red
+            exit 1
+        }
+    } else {
+        Write-Host "      [MySQL] Deja en cours" -ForegroundColor Green
+    }
+
+    $MysqlCli = "mysql"
+
+    # ----- Import base de donnees -----
+    if (-not $NoImport) {
+        Write-Host "[3/9] Import de la base de donnees..." -ForegroundColor Yellow
+
+        # Creer la base si elle n'existe pas
+        & $MysqlCli -u root -e "CREATE DATABASE IF NOT EXISTS center_domiciliation CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci" 2>&1 | Out-Null
+
+        $SchemaFile  = Join-Path $ProjectRoot "database" "schema.sql"
+        $SeedFile    = Join-Path $ProjectRoot "database" "seed.sql"
+        $ImportFile  = Join-Path $ProjectRoot "database" "import.sql"
+
+        if (Test-Path $ImportFile -PathType Leaf) {
+            if (Import-SqlFile $ImportFile $MysqlCli) {
+                Write-Host "      Base importee avec succes" -ForegroundColor Green
+            } else {
+                Write-Host "[ERREUR] Echec import" -ForegroundColor Red
+            }
+        } else {
+            $schemaOk = Import-SqlFile $SchemaFile $MysqlCli
+            $seedOk   = Import-SqlFile $SeedFile $MysqlCli
+            if ($schemaOk) { Write-Host "      Schema OK" -ForegroundColor Green }
+            else           { Write-Host "[ERREUR] Echec schema" -ForegroundColor Red }
+            if ($seedOk)   { Write-Host "      Seed OK" -ForegroundColor Green }
+            else           { Write-Host "[ERREUR] Echec seed" -ForegroundColor Red }
+        }
+
+        # Migrations
+        $migrations = @(
+            "migration_add_tribunal_type.sql",
+            "migration_rename_columns.sql",
+            "migration_rbac.sql"
+        )
+        foreach ($m in $migrations) {
+            $mPath = Join-Path $ProjectRoot "database" $m
+            if (Test-Path $mPath -PathType Leaf) {
+                Write-Host "      Migration : $m..." -ForegroundColor Gray
+                if (Import-SqlFile $mPath $MysqlCli) {
+                    Write-Host "        OK" -ForegroundColor Green
+                } else {
+                    Write-Host "        Ignoree (deja appliquee?)" -ForegroundColor Gray
+                }
+            }
+        }
+    } else {
+        Write-Host "[3/9] Import ignore (-NoImport)" -ForegroundColor Gray
+    }
+
+    # ----- Creation dossiers -----
+    Write-Host "[4/9] Verification des dossiers..." -ForegroundColor Yellow
+    $dirs = @("uploads", "output", "dossiers_dom", "templates")
+    foreach ($d in $dirs) {
+        $p = Join-Path $ProjectRoot $d
+        if (-not (Test-Path $p -PathType Container)) {
+            New-Item -ItemType Directory -Path $p -Force | Out-Null
+            Write-Host "      $d/ cree" -ForegroundColor Green
+        }
+    }
+    Write-Host "      OK" -ForegroundColor Green
+
+    # ----- Composer install -----
+    Write-Host "[5/9] Installation des dependances Composer..." -ForegroundColor Yellow
+    $VendorDir = Join-Path $ProjectRoot "vendor"
+    if (-not (Test-Path $VendorDir -PathType Container)) {
+        try {
+            if ($composerCheck) {
+                Push-Location $ProjectRoot
+                & composer install --no-interaction 2>&1 | Out-Null
+                Pop-Location
+            }
+            if (Test-Path $VendorDir -PathType Container) {
+                Write-Host "      Dependances installees (phpword + dompdf)" -ForegroundColor Green
+            } else {
+                Write-Host "      [ATTENTION] Echec composer install" -ForegroundColor Yellow
+            }
+        } catch {
+            Write-Host "      [ATTENTION] Echec composer install : $_" -ForegroundColor Yellow
+        }
+    } else {
+        Write-Host "      Dependances deja presentes" -ForegroundColor Green
+    }
+
+    # ----- LibreOffice (optionnel) -----
+    Write-Host "[6/9] Verification de LibreOffice..." -ForegroundColor Yellow
+    $libreCheck = Get-Command "soffice" -ErrorAction SilentlyContinue
+    if (-not $libreCheck) {
+        $librePaths = @(
+            "/Applications/LibreOffice.app/Contents/MacOS/soffice",
+            "$env:HOME/Applications/LibreOffice.app/Contents/MacOS/soffice"
+        )
+        foreach ($lp in $librePaths) {
+            if (Test-Path $lp -PathType Leaf) { $libreCheck = $true; break }
+        }
+    }
+    if (-not $libreCheck) {
+        Write-Host "      LibreOffice non trouve. Installation via Homebrew Cask..." -ForegroundColor Yellow
+        Install-WithBrew -Package "libreoffice" -Name "LibreOffice" -Cask "libreoffice"
+        $libreCheck = Get-Command "soffice" -ErrorAction SilentlyContinue
+        if (-not $libreCheck) {
+            Write-Host "      [INFO] LibreOffice non installe. Conversion PDF via PHPWord/Dompdf (fallback)." -ForegroundColor Gray
+        } else {
+            Write-Host "      LibreOffice : present" -ForegroundColor Green
+        }
+    } else {
+        Write-Host "      LibreOffice : present" -ForegroundColor Green
+    }
+
+    # ----- MCP Servers (OpenCode) -----
+    Write-Host "[7/9] Preparation des serveurs MCP..." -ForegroundColor Yellow
+    $nodeCheck = Get-Command "node" -ErrorAction SilentlyContinue
+    if ($nodeCheck) {
+        Write-Host "      Node.js : $(node --version)" -ForegroundColor Green
+        Write-Host "      Pre-cache des packages MCP (ignorer si deja fait)..." -ForegroundColor Gray
+        try {
+            $null = & npx -y @modelcontextprotocol/server-memory --version 2>&1
+            $null = & npx -y @berthojoris/mcp-mysql-server "mysql://root@127.0.0.1:3306/center_domiciliation" "list,read" --version 2>&1
+            Write-Host "      Packages MCP pre-caches" -ForegroundColor Green
+        } catch {
+            Write-Host "      [INFO] Pre-cache non critique" -ForegroundColor Gray
+        }
+    } else {
+        Write-Host "      [AVERTISSEMENT] Node.js non trouve" -ForegroundColor Yellow
+    }
+
+    # ----- Demarrage PHP Server -----
+    Write-Host "[8/9] Demarrage du serveur PHP..." -ForegroundColor Yellow
+    $phpPort = 8080
+    $url = "http://localhost:$phpPort/"
+
+    # Tuer un eventuel processus PHP existant sur le port
+    $existingPhp = & lsof -ti:$phpPort 2>&1
+    if ($existingPhp) {
+        & kill -9 $existingPhp 2>&1 | Out-Null
+        Start-Sleep -Seconds 1
+    }
+
+    # Lancer le serveur PHP en arriere-plan
+    $phpLog = Join-Path $ProjectRoot "php-server.log"
+    $phpServer = Start-Process -NoNewWindow -PassThru -FilePath "php" -ArgumentList "-S localhost:$phpPort -t `"$ProjectRoot`"" -RedirectStandardOutput $phpLog -RedirectStandardError $phpLog
+    Start-Sleep -Seconds 2
+
+    Write-Host "      Serveur PHP lance sur le port $phpPort" -ForegroundColor Green
+    Write-Host "      Logs : $phpLog" -ForegroundColor Gray
+
+    # ----- Verification finale -----
+    Write-Host ""
+    Write-Host "[9/9] Verification finale..." -ForegroundColor Yellow
+    try {
+        $req = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 5
+        if ($req.StatusCode -eq 200) {
+            Write-Host "[HTTP] Application repond (200 OK)" -ForegroundColor Green
+        } else {
+            Write-Host "[HTTP] Reponse $($req.StatusCode)" -ForegroundColor Yellow
+        }
+    } catch {
+        Write-Host "[HTTP] Application non accessible. Verifie le serveur PHP." -ForegroundColor Yellow
+        Write-Host "      Lance manuellement : php -S localhost:$phpPort -t `"$ProjectRoot`"" -ForegroundColor White
+    }
+
+    Write-Host ""
+    Write-Host "========================================" -ForegroundColor Cyan
+    Write-Host "  Setup termine avec succes !" -ForegroundColor Cyan
+    Write-Host "========================================" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "Application :  $url" -ForegroundColor Green
+    Write-Host "phpMyAdmin :   (non disponible sur macOS - utilise TablePlus ou Sequel Ace)" -ForegroundColor Green
+    Write-Host ""
+    Write-Host "Prochaine etape :" -ForegroundColor Yellow
+    Write-Host "  1. Configure l'API Claude dans config/ai.local.php (optionnel)" -ForegroundColor White
+    Write-Host "  2. Connecte-toi avec les identifiants de seed.sql" -ForegroundColor White
+    Write-Host ""
+
+    try {
+        open $url
+    } catch {}
+
+    return
+}
+
+# ====================================================================
+#  BRANCHE Windows (XAMPP) - code existant preserve
+# ====================================================================
 
 Write-Host "[1/9] Projet detecte : $ProjectRoot" -ForegroundColor Gray
 
@@ -128,27 +485,6 @@ if (-not $prereqOk) {
 }
 Write-Host ""
 
-# ----- Fonction d'installation winget -----
-function Install-WithWinget {
-    param([string]$Name, [string]$WingetId, [string]$CheckCommand, [string]$CheckPath)
-    Write-Host "      Installation de $Name via winget..." -ForegroundColor Yellow
-    try {
-        $proc = Start-Process -FilePath "winget" -ArgumentList "install --id $WingetId --silent --accept-package-agreements --accept-source-agreements" -NoNewWindow -Wait -PassThru
-        if ($proc.ExitCode -eq 0) {
-            Write-Host "      $Name installe avec succes" -ForegroundColor Green
-            # Rafraichir PATH
-            $env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [Environment]::GetEnvironmentVariable("Path", "User")
-            return $true
-        } else {
-            Write-Host "      [ERREUR] Echec installation $Name (code: $($proc.ExitCode))" -ForegroundColor Red
-            return $false
-        }
-    } catch {
-        Write-Host "      [ERREUR] Exception lors de l'installation de $Name : $_" -ForegroundColor Red
-        return $false
-    }
-}
-
 # ----- 2. Détection XAMPP -----
 if (-not $XamppPath) {
     $candidates = @(
@@ -180,7 +516,6 @@ if (-not $XamppPath) {
 if (-not $XamppPath) {
     Write-Host "      XAMPP introuvable. Installation via winget..." -ForegroundColor Yellow
     if (Install-WithWinget -Name "XAMPP 8.2" -WingetId "ApacheFriends.Xampp.8.2") {
-        # Chercher le chemin apres installation
         $candidates = @(
             "C:\xampp",
             "D:\xampp",
@@ -254,13 +589,11 @@ if (Test-Path $HtdocsLink) {
 if (-not $linkExists) {
     Write-Host "[4/9] Creation du lien symbolique..." -ForegroundColor Yellow
     try {
-        # Utiliser Junction si meme disque, sinon Directory symlink
         $projectDrive = (Get-Item $ProjectRoot).PSDrive.Name
         $xamppDrive   = (Get-Item $XamppPath).PSDrive.Name
         if ($projectDrive -eq $xamppDrive) {
             New-Item -ItemType Junction -Path $HtdocsLink -Target $ProjectRoot -Force | Out-Null
         } else {
-            # Symlink de dossier (necessite Admin ou mode Developpeur)
             New-Item -ItemType SymbolicLink -Path $HtdocsLink -Target $ProjectRoot -Force | Out-Null
         }
         Write-Host "      $HtdocsLink" -ForegroundColor Green
@@ -275,75 +608,64 @@ if (-not $linkExists) {
     }
 }
 
-    # ----- 5. Base de donnees -----
-    if (-not $NoImport) {
-        Write-Host "[5/9] Import de la base de donnees..." -ForegroundColor Yellow
+# ----- 5. Base de donnees -----
+if (-not $NoImport) {
+    Write-Host "[5/9] Import de la base de donnees..." -ForegroundColor Yellow
 
-        # Vérifier si MySQL est en cours
-        $mysqlRunning = Get-Process -Name "mysqld" -ErrorAction SilentlyContinue
-        if (-not $mysqlRunning) {
-            Write-Host "      Demarrage de MySQL..." -ForegroundColor Gray
-            Start-Process -FilePath $MysqlBin -WindowStyle Hidden
-            Start-Sleep -Seconds 4
-            # Verifier que MySQL a bien demarre
-            $retry = 0
-            while ($retry -lt 5) {
-                $test = & $MysqlCli -u root -e "SELECT 1" 2>&1
-                if ($LASTEXITCODE -eq 0) { break }
-                $retry++
-                Start-Sleep -Seconds 2
-            }
-            if ($LASTEXITCODE -ne 0) {
-                Write-Host "[ERREUR] MySQL n'a pas demarre. Verifie $XamppPath\mysql\data\*.err" -ForegroundColor Red
-                exit 1
-            }
+    $mysqlRunning = Get-Process -Name "mysqld" -ErrorAction SilentlyContinue
+    if (-not $mysqlRunning) {
+        Write-Host "      Demarrage de MySQL..." -ForegroundColor Gray
+        Start-Process -FilePath $MysqlBin -WindowStyle Hidden
+        Start-Sleep -Seconds 4
+        $retry = 0
+        while ($retry -lt 5) {
+            $test = & $MysqlCli -u root -e "SELECT 1" 2>&1
+            if ($LASTEXITCODE -eq 0) { break }
+            $retry++
+            Start-Sleep -Seconds 2
         }
-
-        $SchemaFile  = Join-Path $ProjectRoot "database\schema.sql"
-        $SeedFile    = Join-Path $ProjectRoot "database\seed.sql"
-        $ImportFile  = Join-Path $ProjectRoot "database\import.sql"
-
-        function Import-SqlFile($file) {
-            if (-not (Test-Path $file -PathType Leaf)) { return $false }
-            $output = Get-Content $file -Raw | & $MysqlCli -u root --default-character-set=utf8mb4 2>&1
-            if ($LASTEXITCODE -eq 0) { return $true }
-            Write-Host "      Erreur SQL : $output" -ForegroundColor Red
-            return $false
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "[ERREUR] MySQL n'a pas demarre. Verifie $XamppPath\mysql\data\*.err" -ForegroundColor Red
+            exit 1
         }
-
-        if (Import-SqlFile $ImportFile) {
-            Write-Host "      Base importee avec succes" -ForegroundColor Green
-        } elseif (Test-Path $ImportFile) {
-            Write-Host "[ERREUR] Echec import (verifie que MySQL est accessible)" -ForegroundColor Red
-        } else {
-            $schemaOk = Import-SqlFile $SchemaFile
-            $seedOk   = Import-SqlFile $SeedFile
-            if ($schemaOk) { Write-Host "      Schema OK" -ForegroundColor Green }
-            else           { Write-Host "[ERREUR] Echec schema" -ForegroundColor Red }
-            if ($seedOk)   { Write-Host "      Seed OK" -ForegroundColor Green }
-            else           { Write-Host "[ERREUR] Echec seed" -ForegroundColor Red }
-        }
-
-        # Migrations
-        $migrations = @(
-            "migration_add_tribunal_type.sql",
-            "migration_rename_columns.sql",
-            "migration_rbac.sql"
-        )
-        foreach ($m in $migrations) {
-            $mPath = Join-Path $ProjectRoot "database\$m"
-            if (Test-Path $mPath -PathType Leaf) {
-                Write-Host "      Migration : $m..." -ForegroundColor Gray
-                if (Import-SqlFile $mPath) {
-                    Write-Host "        OK" -ForegroundColor Green
-                } else {
-                    Write-Host "        Ignoree (deja appliquee?)" -ForegroundColor Gray
-                }
-            }
-        }
-    } else {
-        Write-Host "[5/9] Import ignore (-NoImport)" -ForegroundColor Gray
     }
+
+    $SchemaFile  = Join-Path $ProjectRoot "database\schema.sql"
+    $SeedFile    = Join-Path $ProjectRoot "database\seed.sql"
+    $ImportFile  = Join-Path $ProjectRoot "database\import.sql"
+
+    if (Import-SqlFile $ImportFile $MysqlCli) {
+        Write-Host "      Base importee avec succes" -ForegroundColor Green
+    } elseif (Test-Path $ImportFile) {
+        Write-Host "[ERREUR] Echec import (verifie que MySQL est accessible)" -ForegroundColor Red
+    } else {
+        $schemaOk = Import-SqlFile $SchemaFile $MysqlCli
+        $seedOk   = Import-SqlFile $SeedFile $MysqlCli
+        if ($schemaOk) { Write-Host "      Schema OK" -ForegroundColor Green }
+        else           { Write-Host "[ERREUR] Echec schema" -ForegroundColor Red }
+        if ($seedOk)   { Write-Host "      Seed OK" -ForegroundColor Green }
+        else           { Write-Host "[ERREUR] Echec seed" -ForegroundColor Red }
+    }
+
+    $migrations = @(
+        "migration_add_tribunal_type.sql",
+        "migration_rename_columns.sql",
+        "migration_rbac.sql"
+    )
+    foreach ($m in $migrations) {
+        $mPath = Join-Path $ProjectRoot "database\$m"
+        if (Test-Path $mPath -PathType Leaf) {
+            Write-Host "      Migration : $m..." -ForegroundColor Gray
+            if (Import-SqlFile $mPath $MysqlCli) {
+                Write-Host "        OK" -ForegroundColor Green
+            } else {
+                Write-Host "        Ignoree (deja appliquee?)" -ForegroundColor Gray
+            }
+        }
+    }
+} else {
+    Write-Host "[5/9] Import ignore (-NoImport)" -ForegroundColor Gray
+}
 
 # ----- 6. Creation dossiers utiles -----
 Write-Host "[6/9] Verification des dossiers..." -ForegroundColor Yellow
@@ -360,7 +682,6 @@ Write-Host "      OK" -ForegroundColor Green
 # ----- 7. Convertisseur DOCX -> PDF -----
 Write-Host "[7/9] Configuration du convertisseur DOCX->PDF..." -ForegroundColor Yellow
 
-# Composer install
 $ComposerJson = Join-Path $ProjectRoot "composer.json"
 if (Test-Path $ComposerJson -PathType Leaf) {
     $VendorDir = Join-Path $ProjectRoot "vendor"
@@ -369,7 +690,6 @@ if (Test-Path $ComposerJson -PathType Leaf) {
         try {
             $composer = Get-Command "composer" -ErrorAction SilentlyContinue
             if (-not $composer) {
-                # Fallback : composer.phar local
                 $composerPhar = Join-Path $ProjectRoot "composer.phar"
                 if (-not (Test-Path $composerPhar)) {
                     Write-Host "      Telechargement de Composer..." -ForegroundColor Gray
@@ -397,19 +717,16 @@ if (Test-Path $PhpIni -PathType Leaf) {
     $iniContent = Get-Content $PhpIni -Raw
     $modified = $false
 
-    # Activer extension=zip si desactive
     if ($iniContent -match ";extension=zip") {
         $iniContent = $iniContent -replace ";extension=zip", "extension=zip"
         $modified = $true
         Write-Host "      extension=zip activee" -ForegroundColor Green
     } elseif ($iniContent -notmatch "extension=zip") {
-        # Ajouter a la fin si absent
         $iniContent += "`r`nextension=zip"
         $modified = $true
         Write-Host "      extension=zip ajoutee" -ForegroundColor Green
     }
 
-    # Activer extension=php_com_dotnet.dll si desactive
     if ($iniContent -match ";extension=php_com_dotnet\.dll") {
         $iniContent = $iniContent -replace ";extension=php_com_dotnet\.dll", "extension=php_com_dotnet.dll"
         $modified = $true
@@ -420,7 +737,6 @@ if (Test-Path $PhpIni -PathType Leaf) {
         Write-Host "      extension=php_com_dotnet.dll ajoutee" -ForegroundColor Green
     }
 
-    # Verifier aussi extension=php_zip.dll
     if ($iniContent -match ";extension=php_zip\.dll") {
         $iniContent = $iniContent -replace ";extension=php_zip\.dll", "extension=php_zip.dll"
         $modified = $true
@@ -470,13 +786,11 @@ if (-not $libreFound) {
 # ----- 8. MCP Servers (OpenCode) -----
 Write-Host "[8/9] Preparation des serveurs MCP..." -ForegroundColor Yellow
 
-# Vérifier Node.js
 $nodeCheck = Get-Command "node" -ErrorAction SilentlyContinue
 if ($nodeCheck) {
     $nodeVersion = & node --version
     Write-Host "      Node.js detecte : $nodeVersion" -ForegroundColor Green
 
-    # Pré-cache des packages MCP
     $NeedPrecache = $false
     $NpxCache = Join-Path $env:LOCALAPPDATA "npm-cache" -ErrorAction SilentlyContinue
     if (-not (Test-Path $NpxCache)) { $NeedPrecache = $true }
@@ -484,7 +798,6 @@ if ($nodeCheck) {
     if ($NeedPrecache) {
         Write-Host "      Pre-cache des packages MCP..." -ForegroundColor Yellow
         try {
-            # Lancement silencieux pour forcer le téléchargement npm
             $null = & npx -y @modelcontextprotocol/server-memory --version 2>&1
             $null = & npx -y @berthojoris/mcp-mysql-server "mysql://root@127.0.0.1:3306/center_domiciliation" "list,read" --version 2>&1
             Write-Host "      Packages MCP pre-caches" -ForegroundColor Green
@@ -508,7 +821,6 @@ $mysqlRunning = Get-Process -Name "mysqld" -ErrorAction SilentlyContinue
 if (-not $mysqlRunning) {
     Start-Process -FilePath $MysqlBin -WindowStyle Hidden
     Start-Sleep -Seconds 3
-    # Verifier
     $retry = 0
     while ($retry -lt 5) {
         $test = & $MysqlCli -u root -e "SELECT 1" 2>&1
@@ -522,7 +834,7 @@ if (-not $mysqlRunning) {
         Write-Host "      [MySQL] Echec demarrage" -ForegroundColor Red
     }
 } else {
-    Write-Host "      [MySQL] Deja en cours" - ForegroundColor Green
+    Write-Host "      [MySQL] Deja en cours" -ForegroundColor Green
 }
 
 # Apache
@@ -543,7 +855,7 @@ if (-not $apacheRunning) {
         Write-Host "      [Apache] Echec demarrage" -ForegroundColor Red
     }
 } else {
-    Write-Host "      [Apache] Deja en cours" - ForegroundColor Green
+    Write-Host "      [Apache] Deja en cours" -ForegroundColor Green
 }
 
 # ----- Verification finale -----
@@ -551,7 +863,6 @@ Write-Host ""
 Write-Host "--- Verification finale ---" -ForegroundColor Cyan
 $url = "http://localhost/$ProjectName/"
 
-# Test HTTP
 try {
     $req = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 5
     if ($req.StatusCode -eq 200) {
@@ -571,6 +882,7 @@ Write-Host ""
 Write-Host "Application :  $url" -ForegroundColor Green
 Write-Host "phpMyAdmin :   http://localhost/phpmyadmin" -ForegroundColor Green
 Write-Host ""
+
 Write-Host "Prochaine etape :" -ForegroundColor Yellow
 Write-Host "  1. Configure l'API Claude dans config/ai.local.php (optionnel)" -ForegroundColor White
 Write-Host "  2. Connecte-toi avec les identifiants de seed.sql" -ForegroundColor White
