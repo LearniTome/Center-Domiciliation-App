@@ -551,8 +551,7 @@ if ($wizard['societe_id'] > 0 && ($pdo ?? null) instanceof PDO) {
                             <th data-col="parts">Parts</th>
                             <th data-col="capital">Capital detenu</th>
                             <th data-col="qualite">Qualite</th>
-                            <th data-col="cedant">Cedant</th>
-                            <th data-col="cessionnaire">Cessionnaire</th>
+                            <th data-col="type">Type</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -564,8 +563,7 @@ if ($wizard['societe_id'] > 0 && ($pdo ?? null) instanceof PDO) {
                             <td><?= (int) ($a['associe_parts'] ?? 0) ?></td>
                             <td><?= e(number_format((float) ($a['associe_capital_detenu'] ?? 0), 2, ',', ' ') . ' DH') ?></td>
                             <td><?= e($a['associe_qualite'] ?? '-') ?></td>
-                            <td><?= isset($cedantIds[$aid]) ? '<span class="material-symbols-outlined" style="color:var(--danger);font-size:1.1rem">arrow_upward</span>' : '-' ?></td>
-                            <td><?= isset($cessionnaireIds[$aid]) ? '<span class="material-symbols-outlined" style="color:var(--success);font-size:1.1rem">arrow_downward</span>' : '-' ?></td>
+                            <td><?= isset($cedantIds[$aid]) ? 'Cedant' : (isset($cessionnaireIds[$aid]) ? 'Cessionnaire' : '-') ?></td>
                         </tr>
                         <?php endforeach; ?>
                         <?php if (!empty($nouveauxCessionnaires)): ?>
@@ -576,8 +574,7 @@ if ($wizard['societe_id'] > 0 && ($pdo ?? null) instanceof PDO) {
                                 <td><?= (int) ($nc['parts_cedees'] ?? 0) ?></td>
                                 <td>-</td>
                                 <td><em>Nouveau</em></td>
-                                <td>-</td>
-                                <td><span class="material-symbols-outlined" style="color:var(--success);font-size:1.1rem">arrow_downward</span></td>
+                                <td>Cessionnaire</td>
                             </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
