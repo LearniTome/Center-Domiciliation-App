@@ -5,205 +5,10 @@ param(
 # ==========================================
 #  Center Domiciliation - XAMPP Launcher
 #  Portable : auto-détection du chemin
-#  Support : Windows (XAMPP) + macOS (Homebrew)
 # ==========================================
 
 $ProjectRoot = $PSScriptRoot
 $ProjectName = Split-Path -Leaf $ProjectRoot
-$isMacOS     = $IsMacOS -or ([System.Runtime.InteropServices.RuntimeInformation]::OSDescription -match "darwin")
-$isWindows   = (-not $isMacOS) -and ($IsWindows -or ($PSVersionTable.PSVersion.Major -ge 5))
-
-if ($isMacOS) {
-    # ====================================================================
-    #  BRANCHE macOS (Homebrew)
-    # ====================================================================
-    $phpPort = 8080
-    $url = "http://localhost:$phpPort/"
-
-    Write-Host "========================================" -ForegroundColor Cyan
-    Write-Host "  Center Domiciliation - Launcher macOS" -ForegroundColor Cyan
-    Write-Host "========================================" -ForegroundColor Cyan
-    Write-Host "  App   : $ProjectRoot" -ForegroundColor Gray
-    Write-Host ""
-
-    # ----- Synchronisation Git (pull --rebase avant de travailler) -----
-    $gitCheck = Get-Command "git" -ErrorAction SilentlyContinue
-    if ($gitCheck) {
-        $gitDir = Join-Path $ProjectRoot ".git"
-        if (Test-Path $gitDir -PathType Container) {
-            Write-Host "[Git] Synchronisation avec le depot distant..." -ForegroundColor Yellow
-            Push-Location $ProjectRoot
-            try {
-                $hasChanges = & git status --porcelain 2>&1
-                $stashed = $false
-                if ($hasChanges) {
-                    & git stash push -m "auto-stash run.ps1 $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" 2>&1 | Out-Null
-                    $stashed = $true
-                    Write-Host "      Modifications locales mises de cote (stash)" -ForegroundColor Gray
-                }
-                & git pull --rebase 2>&1 | Out-Null
-                if ($LASTEXITCODE -eq 0) {
-                    Write-Host "      Synchronise avec success" -ForegroundColor Green
-                } else {
-                    Write-Host "      [ATTENTION] Echec pull --rebase. Verifie ta connexion ou les conflits." -ForegroundColor Yellow
-                }
-                if ($stashed) {
-                    & git stash pop 2>&1 | Out-Null
-                    Write-Host "      Modifications locales restaurees" -ForegroundColor Gray
-                }
-            } catch {
-                Write-Host "      [ATTENTION] Erreur Git : $_" -ForegroundColor Yellow
-            }
-            Pop-Location
-        }
-    } else {
-        Write-Host "[Git] Git non trouve, synchronisation ignoree" -ForegroundColor Gray
-    }
-    Write-Host ""
-
-    # ----- Verification des prerequis -----
-    Write-Host "[Prerequis] Verification..." -ForegroundColor Yellow
-
-    # Homebrew
-    $brewCheck = Get-Command "brew" -ErrorAction SilentlyContinue
-    if (-not $brewCheck) {
-        Write-Host "      Homebrew manquant. Lance d'abord : ./setup.ps1" -ForegroundColor Red
-        exit 1
-    }
-    Write-Host "      Homebrew : present" -ForegroundColor Green
-
-    # PHP
-    $phpCheck = Get-Command "php" -ErrorAction SilentlyContinue
-    if (-not $phpCheck) {
-        Write-Host "      PHP manquant. Lance d'abord : ./setup.ps1" -ForegroundColor Red
-        exit 1
-    }
-    $phpVer = & php -v 2>&1 | Select-Object -First 1
-    Write-Host "      PHP : $phpVer" -ForegroundColor Green
-
-    # MySQL
-    $mysqlCheck = Get-Command "mysql" -ErrorAction SilentlyContinue
-    if (-not $mysqlCheck) {
-        Write-Host "      MySQL manquant. Lance d'abord : ./setup.ps1" -ForegroundColor Red
-        exit 1
-    }
-    Write-Host "      MySQL : present" -ForegroundColor Green
-
-    # Node.js
-    $nodeCheck = Get-Command "node" -ErrorAction SilentlyContinue
-    if ($nodeCheck) {
-        Write-Host "      Node.js : $(node --version)" -ForegroundColor Green
-    } else {
-        Write-Host "      Node.js : non trouve (optionnel)" -ForegroundColor Gray
-    }
-    Write-Host ""
-
-    # ----- MySQL -----
-    Write-Host "[MySQL] Demarrage du service..." -ForegroundColor Yellow
-    $mysqlRunning = & brew services list 2>&1 | Select-String "mysql.*started"
-    if (-not $mysqlRunning) {
-        & brew services start mysql 2>&1 | Out-Null
-        Start-Sleep -Seconds 3
-        $retry = 0
-        while ($retry -lt 10) {
-            $test = & mysql -u root -e "SELECT 1" 2>&1
-            if ($LASTEXITCODE -eq 0) { break }
-            $retry++
-            Start-Sleep -Seconds 2
-        }
-        if ($LASTEXITCODE -eq 0) {
-            Write-Host "      [MySQL] Demarre" -ForegroundColor Green
-        } else {
-            Write-Host "      [MySQL] Echec demarrage. Lance manuellement : brew services start mysql" -ForegroundColor Red
-        }
-    } else {
-        Write-Host "      [MySQL] Deja en cours" -ForegroundColor Green
-    }
-
-    # ----- Verification Composer -----
-    $vendorDir = Join-Path $ProjectRoot "vendor"
-    if (-not (Test-Path $vendorDir -PathType Container)) {
-        Write-Host "[Composer] Installation des dependances..." -ForegroundColor Yellow
-        try {
-            $composerCheck = Get-Command "composer" -ErrorAction SilentlyContinue
-            if ($composerCheck) {
-                Push-Location $ProjectRoot
-                & composer install --no-interaction 2>&1 | Out-Null
-                Pop-Location
-            }
-            if (Test-Path $vendorDir -PathType Container) {
-                Write-Host "      Dependances installees" -ForegroundColor Green
-            }
-        } catch {
-            Write-Host "[ATTENTION] Echec composer install. Lance manuellement : cd $ProjectRoot && composer install" -ForegroundColor Yellow
-        }
-        Write-Host ""
-    }
-
-    # ----- LibreOffice (optionnel) -----
-    $libreCheck = Get-Command "soffice" -ErrorAction SilentlyContinue
-    if (-not $libreCheck) {
-        $librePaths = @(
-            "/Applications/LibreOffice.app/Contents/MacOS/soffice",
-            "$env:HOME/Applications/LibreOffice.app/Contents/MacOS/soffice"
-        )
-        foreach ($lp in $librePaths) {
-            if (Test-Path $lp -PathType Leaf) { $libreCheck = $true; break }
-        }
-    }
-    if (-not $libreCheck) {
-        Write-Host "[LibreOffice] Recommande pour la conversion DOCX->PDF de qualite." -ForegroundColor Cyan
-        Write-Host "  Installation : brew install --cask libreoffice" -ForegroundColor Gray
-        Write-Host "  Sinon, conversion via PHPWord/Dompdf (fallback)." -ForegroundColor Gray
-        Write-Host ""
-    }
-
-    # ----- Demarrage PHP Server -----
-    Write-Host "[PHP] Demarrage du serveur..." -ForegroundColor Yellow
-
-    # Tuer un eventuel processus existant sur le port
-    $existingPhp = & lsof -ti:$phpPort 2>&1
-    if ($existingPhp) {
-        & kill -9 $existingPhp 2>&1 | Out-Null
-        Start-Sleep -Seconds 1
-    }
-
-    $phpLog = Join-Path $ProjectRoot "php-server.log"
-    $phpServer = Start-Process -NoNewWindow -PassThru -FilePath "php" -ArgumentList "-S localhost:$phpPort -t `"$ProjectRoot`"" -RedirectStandardOutput $phpLog -RedirectStandardError $phpLog
-    Start-Sleep -Seconds 2
-
-    Write-Host "      Serveur PHP lance sur le port $phpPort" -ForegroundColor Green
-    Write-Host ""
-
-    Write-Host "Application ouverte : $url" -ForegroundColor Green
-    try {
-        open $url
-    } catch {
-        Write-Host "Ouvre ce lien : $url" -ForegroundColor White
-    }
-
-    Write-Host ""
-    Write-Host "Le serveur PHP tourne en arriere-plan." -ForegroundColor Cyan
-    Write-Host "Logs : $phpLog" -ForegroundColor Gray
-    Write-Host ""
-    Write-Host "Pour arreter :" -ForegroundColor Yellow
-    Write-Host "  lsof -ti:$phpPort | xargs kill -9" -ForegroundColor White
-    Write-Host "  brew services stop mysql" -ForegroundColor White
-    Write-Host ""
-    Write-Host "--- Apres avoir travaille, pousse tes changements :" -ForegroundColor Cyan
-    Write-Host "  git add -A" -ForegroundColor White
-    Write-Host "  git commit -m \"description du changement\"" -ForegroundColor White
-    Write-Host "  git push" -ForegroundColor White
-    Write-Host ""
-
-    pause
-    return
-}
-
-# ====================================================================
-#  BRANCHE Windows (XAMPP)
-# ====================================================================
-
 $url = "http://localhost/$ProjectName/"
 
 # ----- Détection XAMPP -----
@@ -281,6 +86,7 @@ if ($gitCheck) {
         Write-Host "[Git] Synchronisation avec le depot distant..." -ForegroundColor Yellow
         Push-Location $ProjectRoot
         try {
+            # Stash les modifications locales si presentes
             $hasChanges = & git status --porcelain 2>&1
             $stashed = $false
             if ($hasChanges) {
@@ -288,12 +94,14 @@ if ($gitCheck) {
                 $stashed = $true
                 Write-Host "      Modifications locales mises de cote (stash)" -ForegroundColor Gray
             }
+            # Pull --rebase
             & git pull --rebase 2>&1 | Out-Null
             if ($LASTEXITCODE -eq 0) {
                 Write-Host "      Synchronise avec success" -ForegroundColor Green
             } else {
                 Write-Host "      [ATTENTION] Echec pull --rebase. Verifie ta connexion ou les conflits." -ForegroundColor Yellow
             }
+            # Restore stash
             if ($stashed) {
                 & git stash pop 2>&1 | Out-Null
                 Write-Host "      Modifications locales restaurees" -ForegroundColor Gray
