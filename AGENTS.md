@@ -147,8 +147,8 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - **renameVariable(old, new, dir)**: Renames `{{ OLD }}` → `{{ NEW }}` in all .docx files. Returns `['modified' => int, 'errors' => []]`
 - **deleteVariable(name, dir)** / **deleteVariables(names, dir)**: Removes `{{ NAME }}` from all .docx files
 - **replaceInDocxXml(xml, pattern, replacement)**: DOMDocument + XPath `//w:p` → concat all `<w:t>` text → `preg_replace` → put result in first `<w:t>`, clear others
-- **getExpectedContextKeys()**: Returns flat array of canonical variable names (SOCIETE_*, ASSOCIE_*, CONTRAT_*, ACTIVITES_*, DATE)
-- **inferSection(name)**: Maps a variable name to `societe|associe|contrat|collaborateur|autre`
+- **getExpectedContextKeys()**: Returns flat array of canonical variable names (SOCIETE_*, ASSOCIE_*, CONTRAT_*, ACTIVITES_*, CESSION_*, SESSION_*, CEDANT_*, CESSIONNAIRE_*, DATE)
+- **inferSection(name)**: Maps a variable name to `societe|associe|contrat|collaborateur|cession|autre`
 - **extractTemplateInfo(path)**: Parses filename parts (prefix_date_docType_Template.docx) into structured array
 - **groupByFolder(templates)**: Groups templates by parent folder name
 
@@ -188,6 +188,25 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - **Loader overlay**: `#loading-overlay` (fixed, rgba(0,0,0,0.6), spinner + message)
 - **CSRF + redirect-after-POST** on all actions
 - **Table sorting**: `data-sortable` + `data-col` on `<th>` (asc/desc on Variable, Occurrences, Templates, Section, Couverture)
+
+## Cession de Parts Sociales (pages/cessions.php, cession.php, cession_dossier.php)
+- **Pages**:
+  - `cessions` (`index.php?page=cessions`) — liste CRUD des cessions (recherche, tri, CSV, suppression)
+  - `cession` (`index.php?page=cession`) — wizard 3 étapes (Société → Cédant/Cessionnaire → Récapitulatif + Génération)
+  - `cession_dossier` (`index.php?page=cession_dossier&id=XX`) — détail dossier avec stats, infos, lignes de cession, documents téléchargeables
+- **Tables DB**: `cessions` + `cession_parts` (migration `20260612_000001_cession_parts.sql`)
+- **Permissions**: `cessions.view`, `cessions.create`, `cessions.edit`, `cessions.delete`, `cessions.export`
+- **Sidebar**: Section "Modification juridique" avec lien "Cession de parts sociales" (`nav.php`)
+- **Wizard 3 étapes** (`cession.php`):
+  - Étape 1 : Sélection/Nouvelle société (modal inline avec tous les champs, dropdowns ref_formes_juridiques/ref_villes/ref_tribunaux)
+  - Étape 2 : Lignes cédant/cessionnaire (noms depuis DB ou saisie libre, parts, prix unitaire)
+  - Étape 3 : Récapitulatif + Génération DOCX (via DocumentRenderer::buildContextFromCession())
+- **Numéro de dossier**: Auto-généré `CES-YYYY-NNN`
+- **Dossiers de sortie**: `dossiers_generer/dossiers_cession/{date}_{forme}_{raison}/{dossier_cession}/`
+- **Templates DOCX**: `templates/_Cession/` (4 fichiers : Acte-Cession-Parts, PV-AGE-Cession, Declaration-Modificative-RC, Annonce-Legale-Cession)
+- **DocumentRenderer** (`src/DocumentRenderer.php`): `buildContextFromCession()` construit le contexte avec `SESSION_*`, `CEDANT_*`, `CESSIONNAIRE_*`, boucle `{%p for c in cession_parts %}`
+- **TemplateAnalyzer**: clés contexte `CESSION_*` ajoutées dans `getExpectedContextKeys()`, section `cession` dans `inferSection()`
+- **Mise à jour parts**: après validation, met à jour `associe_parts` et `associe_capital_detenu` dans la table `associes`
 
 ## DOCX Manipulation Gotchas
 - **Underscore split**: `{{ CIVILITE_ASSOCIE }}` can be split across `<w:t>` as `{{ CIVILITE` + ` ` + `ASSOCIE }}`. Always use `[\s_]*` in regex patterns, not literal `_`.
