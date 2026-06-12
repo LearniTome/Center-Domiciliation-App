@@ -45,7 +45,7 @@ if ($action === 'generate_docx') {
         $folderDate = $context['contrat_date'] ?? $today;
         $folderName = $folderDate . '_' . $forme . '_' . $clientName;
         $folderName = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', $folderName), '-');
-        $outputDir = __DIR__ . '/../dossiers_dom/' . $folderName;
+        $outputDir = __DIR__ . '/../dossiers_generer/dossiers_domiciliation/' . $folderName;
         if (!is_dir($outputDir)) {
             mkdir($outputDir, 0777, true);
         }
@@ -122,7 +122,7 @@ if ($action === 'generate_pdf') {
             $folderDate = $context['contrat_date'] ?? $today;
             $folderName = $folderDate . '_' . $forme . '_' . $clientName;
             $folderName = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', $folderName), '-');
-            $docxDir = __DIR__ . '/../dossiers_dom/' . $folderName;
+            $docxDir = __DIR__ . '/../dossiers_generer/dossiers_domiciliation/' . $folderName;
             if (!is_dir($docxDir)) {
                 mkdir($docxDir, 0777, true);
             }

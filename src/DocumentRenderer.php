@@ -185,7 +185,35 @@ class DocumentRenderer
     {
         $xml = $this->processAssocieLoop($xml, $context);
         $xml = $this->processActivityLoop($xml, $context);
+        $xml = $this->processCessionPartsLoop($xml, $context);
         return $xml;
+    }
+
+    private function processCessionPartsLoop(string $xml, array $context): string
+    {
+        $pattern = '/\{\%p\s+for\s+c\s+in\s+cession_parts\s*\%\}(.*?)\{\%p\s+endfor\s*\%\}/s';
+        return preg_replace_callback($pattern, function ($matches) use ($context) {
+            $block = $matches[1];
+            $parts = $context['cession_parts'] ?? [];
+            $result = '';
+            foreach ($parts as $i => $part) {
+                $item = $block;
+                $item = str_replace('{{ c.CEDANT_NOM_COMPLET }}', $part['cedant_nom_complet'] ?? '', $item);
+                $item = str_replace('{{ c.CEDANT_CIN }}', $part['cedant_cin'] ?? '', $item);
+                $item = str_replace('{{ c.CEDANT_TYPE }}', $part['cedant_type'] ?? 'existant', $item);
+                $item = str_replace('{{ c.CESSIONNAIRE_NOM_COMPLET }}', $part['cessionnaire_nom_complet'] ?? '', $item);
+                $item = str_replace('{{ c.CESSIONNAIRE_CIN }}', $part['cessionnaire_cin'] ?? '', $item);
+                $item = str_replace('{{ c.CESSIONNAIRE_TYPE }}', $part['cessionnaire_type'] ?? 'existant', $item);
+                $item = str_replace('{{ c.PARTS_CEDEES }}', (string) ($part['parts_cedees'] ?? ''), $item);
+                $item = str_replace('{{ c.PRIX_UNITAIRE }}', (string) ($part['prix_unitaire'] ?? ''), $item);
+                $item = str_replace('{{ c.PRIX_TOTAL }}', (string) ($part['prix_total'] ?? ''), $item);
+                $result .= $item;
+                if ($i < count($parts) - 1) {
+                    $result .= "\n";
+                }
+            }
+            return $result;
+        }, $xml);
     }
 
     private function processAssocieLoop(string $xml, array $context): string
@@ -712,6 +740,135 @@ class DocumentRenderer
             'OMPIC_INLINE' => $certNegInline,
             'OMPIC_PUCES' => $certNegBullets,
             'NB_OMPIC' => (string) $certNegCount,
+            'DATE' => $now->format('d/m/Y'),
+            'DATE_LONG' => $now->format('d F Y'),
+            'ANNEE' => $now->format('Y'),
+            'MOIS' => $now->format('m'),
+            'JOUR' => $now->format('d'),
+        ];
+    }
+
+    public static function buildContextFromCession(PDO $pdo, int $cessionId): array
+    {
+        $stmt = $pdo->prepare('SELECT * FROM cessions WHERE id = :id');
+        $stmt->execute(['id' => $cessionId]);
+        $cession = $stmt->fetch();
+
+        if (!$cession) {
+            return [];
+        }
+
+        $societe = fetch_record($pdo, 'societes', (int) $cession['societe_id']);
+        if (!$societe) {
+            return [];
+        }
+
+        $stmt = $pdo->prepare('SELECT * FROM cession_parts WHERE cession_id = :id ORDER BY id');
+        $stmt->execute(['id' => $cessionId]);
+        $cessionParts = $stmt->fetchAll();
+
+        $stmt = $pdo->prepare('SELECT * FROM associes WHERE societe_id = :id ORDER BY id');
+        $stmt->execute(['id' => $societe['id']]);
+        $associes = $stmt->fetchAll();
+
+        $now = new DateTime();
+
+        $capitalAvant = (float) ($cession['capital_avant'] ?? $societe['societe_capital'] ?? 0);
+        $partsAvant = (int) ($cession['parts_avant'] ?? $societe['societe_part_social'] ?? 0);
+
+        $totalPartsCedees = 0;
+        $totalPrix = 0;
+        foreach ($cessionParts as $part) {
+            $totalPartsCedees += (int) ($part['parts_cedees'] ?? 0);
+            $totalPrix += (float) ($part['prix_total'] ?? 0);
+        }
+
+        $capitalApres = $capitalAvant;
+        $partsApres = $partsAvant - $totalPartsCedees;
+
+        $firstPart = $cessionParts[0] ?? [];
+        $associeList = [];
+        foreach ($associes as $a) {
+            $nomComplet = $a['associe_nom_complet'] ?? '';
+            $nomParts = explode(' ', $nomComplet, 2);
+            $prenom = count($nomParts) > 1 ? $nomParts[0] : '';
+            $nom = count($nomParts) > 1 ? $nomParts[1] : $nomComplet;
+            $associeList[] = [
+                'associe_nom' => $nom,
+                'associe_prenom' => $prenom,
+                'associe_cin' => $a['associe_cin'] ?? '',
+                'associe_nationalite' => $a['associe_nationalite'] ?? '',
+                'associe_qualite' => $a['associe_qualite'] ?? '',
+                'associe_parts' => $a['associe_parts'] ?? '',
+                'associe_est_gerant' => (int) ($a['associe_est_gerant'] ?? 0) === 1 ? 'Gerant' : 'Associe',
+                'associe_civilite' => $a['associe_civilite'] ?? 'M.',
+                'adresse' => $a['associe_adresse'] ?? '',
+                'email' => $a['associe_email'] ?? '',
+                'telephone' => $a['associe_telephone'] ?? '',
+                'associe_date_naissance' => $a['associe_date_naissance'] ?? '',
+                'associe_lieu_naissance' => $a['associe_lieu_naissance'] ?? '',
+                'associe_capital_detenu' => $a['associe_capital_detenu'] ?? '',
+            ];
+        }
+
+        $firstAssocie = $associeList[0] ?? [];
+        $fNom = $firstAssocie['associe_nom'] ?? '';
+        $fPrenom = $firstAssocie['associe_prenom'] ?? '';
+        $fCivilite = $firstAssocie['associe_civilite'] ?? 'M.';
+        $fNomComplet = trim("$fCivilite $fPrenom $fNom");
+
+        return [
+            'societe' => $societe,
+            'associes' => $associeList,
+            'cession_parts' => $cessionParts,
+            'cession' => $cession,
+            'SOCIETE_RAISON_SOCIALE' => $societe['societe_raison_sociale'] ?? '',
+            'SOCIETE_FORME_JURIDIQUE' => $societe['societe_forme_juridique'] ?? '',
+            'SOCIETE_ICE' => $societe['societe_ice'] ?? '',
+            'SOCIETE_RC' => $societe['societe_rc'] ?? '',
+            'SOCIETE_IF' => $societe['societe_if'] ?? '',
+            'SOCIETE_CAPITAL' => (string) ($societe['societe_capital'] ?? ''),
+            'SOCIETE_PART_SOCIAL' => (string) ($societe['societe_part_social'] ?? ''),
+            'SOCIETE_VALEUR_NOMINALE' => (string) ($societe['societe_valeur_nominale'] ?? ''),
+            'SOCIETE_VILLE' => $societe['societe_ville'] ?? '',
+            'SOCIETE_TRIBUNAL' => $societe['societe_tribunal'] ?? '',
+            'SOCIETE_ADRESSE_SIEGE' => $societe['societe_adresse_siege'] ?? '',
+            'SOCIETE_EMAIL' => $societe['societe_email'] ?? '',
+            'SOCIETE_TELEPHONE' => $societe['societe_telephone'] ?? '',
+            'SOCIETE_DOSSIER' => $societe['societe_dossier'] ?? '',
+            'ASSOCIE_NOM_COMPLET' => $fNomComplet,
+            'ASSOCIE_NOM' => $fNom,
+            'ASSOCIE_PRENOM' => $fPrenom,
+            'ASSOCIE_CIVILITE' => $fCivilite,
+            'ASSOCIE_CIN' => $firstAssocie['associe_cin'] ?? '',
+            'ASSOCIE_NATIONALITE' => $firstAssocie['associe_nationalite'] ?? '',
+            'ASSOCIE_ADRESSE' => $firstAssocie['adresse'] ?? '',
+            'ASSOCIE_QUALITE' => $firstAssocie['associe_qualite'] ?? '',
+            'ASSOCIE_PARTS' => (string) ($firstAssocie['associe_parts'] ?? ''),
+            'ASSOCIE_EST_GERANT' => $firstAssocie['associe_est_gerant'] ?? '',
+            'CESSION_DATE' => $cession['cession_date'] ?? $now->format('d/m/Y'),
+            'CESSION_DOSSIER' => $cession['cession_dossier'] ?? '',
+            'CESSION_STATUS' => $cession['cession_status'] ?? 'brouillon',
+            'CESSION_MOTIF' => $cession['cession_motif'] ?? '',
+            'CEDANT_NOM_COMPLET' => $firstPart['cedant_nom_complet'] ?? '',
+            'CEDANT_CIN' => $firstPart['cedant_cin'] ?? '',
+            'CEDANT_NATIONALITE' => $firstPart['cedant_nationalite'] ?? '',
+            'CESSIONNAIRE_NOM_COMPLET' => $firstPart['cessionnaire_nom_complet'] ?? '',
+            'CESSIONNAIRE_CIN' => $firstPart['cessionnaire_cin'] ?? '',
+            'CESSIONNAIRE_CIVILITE' => $firstPart['cessionnaire_civilite'] ?? '',
+            'CESSIONNAIRE_DATE_NAISSANCE' => $firstPart['cessionnaire_date_naissance'] ?? '',
+            'CESSIONNAIRE_LIEU_NAISSANCE' => $firstPart['cessionnaire_lieu_naissance'] ?? '',
+            'CESSIONNAIRE_NATIONALITE' => $firstPart['cessionnaire_nationalite'] ?? '',
+            'CESSIONNAIRE_ADRESSE' => $firstPart['cessionnaire_adresse'] ?? '',
+            'PARTS_CEDEES' => (string) $totalPartsCedees,
+            'PRIX_UNITAIRE' => (string) ($firstPart['prix_unitaire'] ?? ''),
+            'PRIX_TOTAL' => (string) $totalPrix,
+            'CAPITAL_AVANT' => (string) $capitalAvant,
+            'CAPITAL_APRES' => (string) $capitalApres,
+            'PARTS_AVANT' => (string) $partsAvant,
+            'PARTS_APRES' => (string) $partsApres,
+            'NB_CEDANTS' => (string) count($cessionParts),
+            'NB_CESSIONNAIRES' => (string) count($cessionParts),
             'DATE' => $now->format('d/m/Y'),
             'DATE_LONG' => $now->format('d F Y'),
             'ANNEE' => $now->format('Y'),

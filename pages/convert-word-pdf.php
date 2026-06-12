@@ -131,7 +131,7 @@ function pdf_create_zip(array $pdfPaths, string $zipPath): bool
 }
 
 $templatesDir = __DIR__ . '/../templates';
-$outputDir = __DIR__ . '/../dossiers_dom';
+$outputDir = __DIR__ . '/../dossiers_generer/dossiers_domiciliation';
 
 $engineName = pdf_detect_engine();
 $engineLabels = ['word' => 'Microsoft Word', 'libreoffice' => 'LibreOffice'];

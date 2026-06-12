@@ -642,6 +642,10 @@ function get_page_permission(string $page): ?string
         'role' => 'roles.manage',
 
         'activite' => 'roles.manage',
+
+        'cessions' => 'cessions.view',
+        'cession' => 'cessions.view',
+        'cession_dossier' => 'cessions.view',
     ];
 
     return $map[$page] ?? null;

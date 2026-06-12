@@ -490,7 +490,7 @@ if (is_post()) {
 
                 $uploadedDocs = $wizard['uploaded_docs'] ?? [];
                 if ($uploadedDocs !== [] && ($pdo ?? null) instanceof PDO) {
-                    $dossierUploadDir = __DIR__ . '/../dossiers_dom/' . $dossierName . '/_uploads';
+                    $dossierUploadDir = __DIR__ . '/../dossiers_generer/dossiers_domiciliation/' . $dossierName . '/_uploads';
                     if (!is_dir($dossierUploadDir)) {
                         mkdir($dossierUploadDir, 0777, true);
                     }
@@ -577,7 +577,7 @@ if (is_post()) {
             require_once __DIR__ . '/../src/DocumentRenderer.php';
 
             $templatesDir = __DIR__ . '/../templates';
-            $outputDir = __DIR__ . '/../dossiers_dom';
+            $outputDir = __DIR__ . '/../dossiers_generer/dossiers_domiciliation';
             if (!is_dir($outputDir)) {
                 mkdir($outputDir, 0777, true);
             }
@@ -594,7 +594,7 @@ if (is_post()) {
             $folderDate = $wizard['contrat']['contrat_date'] ?? $today;
             $folderName = $folderDate . '_' . $forme . '_' . $clientName;
             $folderName = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', $folderName), '-');
-            $outputDir = __DIR__ . '/../dossiers_dom/' . $folderName;
+            $outputDir = __DIR__ . '/../dossiers_generer/dossiers_domiciliation/' . $folderName;
             if (!is_dir($outputDir)) {
                 mkdir($outputDir, 0777, true);
             }
@@ -666,7 +666,7 @@ if (is_post()) {
                 require_once __DIR__ . '/../src/DocumentRenderer.php';
 
                 $templatesDir = __DIR__ . '/../templates';
-                $outputDir = __DIR__ . '/../dossiers_dom';
+                $outputDir = __DIR__ . '/../dossiers_generer/dossiers_domiciliation';
                 if (!is_dir($outputDir)) mkdir($outputDir, 0777, true);
 
                 $path = $_POST['template_path'] ?? '';
@@ -686,7 +686,7 @@ if (is_post()) {
                 $folderDate = $wizard['contrat']['contrat_date'] ?? $today;
                 $folderName = $folderDate . '_' . $forme . '_' . $clientName;
                 $folderName = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', $folderName), '-');
-                $outputDir = __DIR__ . '/../dossiers_dom/' . $folderName;
+                $outputDir = __DIR__ . '/../dossiers_generer/dossiers_domiciliation/' . $folderName;
                 if (!is_dir($outputDir)) mkdir($outputDir, 0777, true);
 
                 $renderer = new DocumentRenderer($path, $outputDir);
@@ -1799,7 +1799,7 @@ if ($aiSuggestions !== null) {
 
         $templatesConfig = require __DIR__ . '/../config/templates.php';
         $templatesDir = __DIR__ . '/../templates';
-        $outputDir = __DIR__ . '/../dossiers_dom';
+        $outputDir = __DIR__ . '/../dossiers_generer/dossiers_domiciliation';
 
         $legalForm = $societeData['societe_forme_juridique'] ?? '';
         $allTemplates = TemplateAnalyzer::scanTemplates($templatesDir);

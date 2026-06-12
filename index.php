@@ -47,6 +47,9 @@ $allowedPages = [
     'notifications',
     'notifications-manage',
     'notif-ajax',
+    'cessions',
+    'cession',
+    'cession_dossier',
 ];
 
 $page = $_GET['page'] ?? 'dashboard';
@@ -104,6 +107,9 @@ $pageTitleMap = [
     'activite' => 'Journal d\'activite',
     'notifications' => 'Notifications',
     'notifications-manage' => 'Gestion des notifications',
+    'cessions' => 'Cessions de parts sociales',
+    'cession' => 'Cession de parts sociales',
+    'cession_dossier' => 'Dossier de cession',
 ];
 
 // Public pages without sidebar layout

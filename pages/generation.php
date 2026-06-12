@@ -10,7 +10,7 @@ require_once __DIR__ . '/../src/DocumentRenderer.php';
 
 $templatesConfig = require __DIR__ . '/../config/templates.php';
 $templatesDir = __DIR__ . '/../templates';
-$outputDir = __DIR__ . '/../dossiers_dom';
+$outputDir = __DIR__ . '/../dossiers_generer/dossiers_domiciliation';
 
 if (!is_dir($outputDir)) {
     mkdir($outputDir, 0777, true);
@@ -99,7 +99,7 @@ if (is_post() && !isset($_POST['delete_submit']) && !isset($_POST['validate_subm
     $folderDate = $context['contrat_date'] ?? $today;
     $folderName = $folderDate . '_' . $forme . '_' . $clientName;
     $folderName = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', $folderName), '-');
-    $outputDir = __DIR__ . '/../dossiers_dom/' . $folderName;
+    $outputDir = __DIR__ . '/../dossiers_generer/dossiers_domiciliation/' . $folderName;
     if (!is_dir($outputDir)) {
         mkdir($outputDir, 0777, true);
     }
@@ -274,7 +274,7 @@ if (is_post() && isset($_POST['generate_pdf_submit']) && $societeId > 0) {
         $folderDate = $context['contrat_date'] ?? $today;
         $folderName = $folderDate . '_' . $forme . '_' . $clientName;
         $folderName = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', $folderName), '-');
-        $subfolderDir = __DIR__ . '/../dossiers_dom/' . $folderName;
+        $subfolderDir = __DIR__ . '/../dossiers_generer/dossiers_domiciliation/' . $folderName;
         if (!is_dir($subfolderDir)) {
             mkdir($subfolderDir, 0777, true);
         }

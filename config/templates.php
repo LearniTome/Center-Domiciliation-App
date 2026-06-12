@@ -17,15 +17,21 @@ return [
         'Declaration-Immatriculation-RC' => 'Declaration immatriculation RC',
         'Depot-Legal-Constitution' => 'Depot legal constitution',
         'Statuts' => 'Statuts',
+        'Acte-Cession-Parts' => 'Acte de cession de parts',
+        'PV-AGE-Cession' => "PV d'assemblee generale cession",
+        'Declaration-Modificative-RC' => 'Declaration modificative RC',
+        'Annonce-Legale-Cession' => 'Annonce legale cession',
     ],
 
     'generation_types' => [
         'creation' => 'Creation',
         'domiciliation' => 'Domiciliation',
+        'cession' => 'Cession de parts',
     ],
 
     'template_mapping' => [
         'creation' => ['Statuts', 'Annonce-Legale-Journal', 'Depot-Legal-Constitution', 'Declaration-Immatriculation-RC', 'Attestation-Domiciliation-Initiale', 'Contrat-Domiciliation'],
         'domiciliation' => ['Contrat-Domiciliation', 'Attestation-Domiciliation-Initiale'],
+        'cession' => ['Acte-Cession-Parts', 'PV-AGE-Cession', 'Declaration-Modificative-RC', 'Annonce-Legale-Cession'],
     ],
 ];

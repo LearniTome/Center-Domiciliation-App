@@ -321,6 +321,16 @@ class TemplateAnalyzer
             'ACTIVITES_SUITE_PUCES', 'NB_ACTIVITES',
             'ACTIVITES_OMPIC', 'OMPIC_INLINE', 'OMPIC_PUCES', 'NB_OMPIC',
             'ACTIVITY1', 'ACTIVITY2', 'ACTIVITY3', 'ACTIVITY4', 'ACTIVITY5', 'ACTIVITY6',
+            // Cession
+            'CESSION_DATE', 'CESSION_DOSSIER', 'CESSION_STATUS', 'CESSION_MOTIF',
+            'CEDANT_NOM_COMPLET', 'CEDANT_CIN', 'CEDANT_NATIONALITE',
+            'CESSIONNAIRE_NOM_COMPLET', 'CESSIONNAIRE_CIN', 'CESSIONNAIRE_CIVILITE',
+            'CESSIONNAIRE_DATE_NAISSANCE', 'CESSIONNAIRE_LIEU_NAISSANCE',
+            'CESSIONNAIRE_NATIONALITE', 'CESSIONNAIRE_ADRESSE',
+            'CESSIONNAIRE_QUALITE',
+            'PARTS_CEDEES', 'PRIX_UNITAIRE', 'PRIX_TOTAL',
+            'CAPITAL_APRES', 'PARTS_APRES',
+            'NB_CEDANTS', 'NB_CESSIONNAIRES',
             // Dates auto
             'DATE', 'DATE_LONG', 'ANNEE', 'MOIS', 'JOUR',
         ];
@@ -356,6 +366,13 @@ class TemplateAnalyzer
         foreach ($societeTokens as $token) {
             if (str_contains($name, $token)) {
                 return 'societe';
+            }
+        }
+
+        $cessionTokens = ['CESSION', 'CEDANT', 'CESSIONNAIRE', 'PARTS_CEDEES', 'PRIX_UNITAIRE', 'PRIX_TOTAL', 'CAPITAL_APRES', 'PARTS_APRES', 'NB_CEDANT', 'NB_CESSIONNAIRE'];
+        foreach ($cessionTokens as $token) {
+            if (str_contains($name, $token)) {
+                return 'cession';
             }
         }
 

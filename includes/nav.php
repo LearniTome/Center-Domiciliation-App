@@ -14,6 +14,8 @@ $navPermissions = [
     'collaborateurs' => 'collaborateurs.view',
     'templates' => 'templates.view',
     'template_edit' => 'templates.edit',
+    'cessions' => 'cessions.view',
+    'cession' => 'cessions.create',
     'generation' => 'generation.use',
     'documents' => 'documents.view',
     'analyse-couverture' => 'analyse.view',
@@ -60,6 +62,12 @@ $navSections = [
             'associes' => ['Associes', 'group'],
             'contrats' => ['Contrats', 'description'],
             'collaborateurs' => ['Collaborateurs', 'work'],
+        ],
+    ],
+    'Modification juridique' => [
+        'icon' => 'swap_horiz',
+        'items' => [
+            'cessions' => ['Cession de parts sociales', 'transfer_within_a_station'],
         ],
     ],
     'Templates de documents' => [
