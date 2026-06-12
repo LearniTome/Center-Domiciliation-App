@@ -1,0 +1,259 @@
+uid=20_0 RootWebArea "Cession de parts sociales | Center Domiciliation App" url="http://localhost:8080/index.php?page=cession&step=1"
+  uid=20_1 ignored
+    uid=20_2 ignored
+      uid=20_3 generic
+        uid=20_4 complementary
+          uid=20_5 ignored
+            uid=20_6 generic
+              uid=20_7 ignored
+                uid=20_8 StaticText "location_city"
+                  uid=20_9 InlineTextBox "location_city"
+          uid=20_10 ignored
+            uid=20_11 button "notifications" description="Notifications"
+              uid=20_12 ignored
+                uid=20_13 StaticText "notifications"
+                  uid=20_9 InlineTextBox "notifications"
+          uid=20_14 navigation
+            uid=20_15 link "note_add" url="http://localhost:8080/index.php?page=creation"
+              uid=20_16 ignored
+                uid=20_17 StaticText "note_add"
+                  uid=20_9 InlineTextBox "note_add"
+            uid=20_18 link "dashboard" url="http://localhost:8080/index.php?page=dashboard"
+              uid=20_19 ignored
+                uid=20_20 StaticText "dashboard"
+                  uid=20_9 InlineTextBox "dashboard"
+            uid=20_21 link "notifications" url="http://localhost:8080/index.php?page=notifications"
+              uid=20_22 ignored
+                uid=20_23 StaticText "notifications"
+                  uid=20_9 InlineTextBox "notifications"
+            uid=20_24 ignored
+              uid=20_25 generic
+                uid=20_26 link "business" url="http://localhost:8080/index.php?page=societes"
+                  uid=20_27 ignored
+                    uid=20_28 StaticText "business"
+                      uid=20_9 InlineTextBox "business"
+                uid=20_29 link "group" url="http://localhost:8080/index.php?page=associes"
+                  uid=20_30 ignored
+                    uid=20_31 StaticText "group"
+                      uid=20_9 InlineTextBox "group"
+                uid=20_32 link "description" url="http://localhost:8080/index.php?page=contrats"
+                  uid=20_33 ignored
+                    uid=20_34 StaticText "description"
+                      uid=20_9 InlineTextBox "description"
+                uid=20_35 link "work" url="http://localhost:8080/index.php?page=collaborateurs"
+                  uid=20_36 ignored
+                    uid=20_37 StaticText "work"
+                      uid=20_9 InlineTextBox "work"
+            uid=20_38 ignored
+              uid=20_39 generic
+                uid=20_40 link "list_alt" url="http://localhost:8080/index.php?page=modifications"
+                  uid=20_41 ignored
+                    uid=20_42 StaticText "list_alt"
+                      uid=20_9 InlineTextBox "list_alt"
+                uid=20_43 link "transfer_within_a_station" url="http://localhost:8080/index.php?page=cessions"
+                  uid=20_44 ignored
+                    uid=20_45 StaticText "transfer_within_a_station"
+                      uid=20_9 InlineTextBox "transfer_within_a_station"
+            uid=20_46 ignored
+              uid=20_47 generic
+                uid=20_48 link "edit_note" url="http://localhost:8080/index.php?page=templates"
+                  uid=20_49 ignored
+                    uid=20_50 StaticText "edit_note"
+                      uid=20_9 InlineTextBox "edit_note"
+                uid=20_51 link "edit" url="http://localhost:8080/index.php?page=template_edit"
+                  uid=20_52 ignored
+                    uid=20_53 StaticText "edit"
+                      uid=20_9 InlineTextBox "edit"
+                uid=20_54 link "sync" url="http://localhost:8080/index.php?page=generation"
+                  uid=20_55 ignored
+                    uid=20_56 StaticText "sync"
+                      uid=20_9 InlineTextBox "sync"
+                uid=20_57 link "article" url="http://localhost:8080/index.php?page=documents"
+                  uid=20_58 ignored
+                    uid=20_59 StaticText "article"
+                      uid=20_9 InlineTextBox "article"
+            uid=20_60 ignored
+              uid=20_61 generic
+                uid=20_62 link "bar_chart" url="http://localhost:8080/index.php?page=analyse-couverture"
+                  uid=20_63 ignored
+                    uid=20_64 StaticText "bar_chart"
+                      uid=20_9 InlineTextBox "bar_chart"
+                uid=20_65 link "tune" url="http://localhost:8080/index.php?page=defaults"
+                  uid=20_66 ignored
+                    uid=20_67 StaticText "tune"
+                      uid=20_9 InlineTextBox "tune"
+                uid=20_68 link "code" url="http://localhost:8080/index.php?page=variables"
+                  uid=20_69 ignored
+                    uid=20_70 StaticText "code"
+                      uid=20_9 InlineTextBox "code"
+                uid=20_71 link "picture_as_pdf" url="http://localhost:8080/index.php?page=convert-word-pdf"
+                  uid=20_72 ignored
+                    uid=20_73 StaticText "picture_as_pdf"
+                      uid=20_9 InlineTextBox "picture_as_pdf"
+                uid=20_74 link "smart_toy" url="http://localhost:8080/index.php?page=ai-assistant"
+                  uid=20_75 ignored
+                    uid=20_76 StaticText "smart_toy"
+                      uid=20_9 InlineTextBox "smart_toy"
+            uid=20_77 ignored
+              uid=20_78 generic
+                uid=20_79 link "admin_panel_settings" url="http://localhost:8080/index.php?page=roles"
+                  uid=20_80 ignored
+                    uid=20_81 StaticText "admin_panel_settings"
+                      uid=20_9 InlineTextBox "admin_panel_settings"
+                uid=20_82 link "history" url="http://localhost:8080/index.php?page=activite"
+                  uid=20_83 ignored
+                    uid=20_84 StaticText "history"
+                      uid=20_9 InlineTextBox "history"
+                uid=20_85 link "notifications" url="http://localhost:8080/index.php?page=notifications-manage"
+                  uid=20_86 ignored
+                    uid=20_87 StaticText "notifications"
+                      uid=20_9 InlineTextBox "notifications"
+                uid=20_88 link "description" url="http://localhost:8080/index.php?page=formes-juridiques"
+                  uid=20_89 ignored
+                    uid=20_90 StaticText "description"
+                      uid=20_9 InlineTextBox "description"
+                uid=20_91 link "balance" url="http://localhost:8080/index.php?page=tribunaux"
+                  uid=20_92 ignored
+                    uid=20_93 StaticText "balance"
+                      uid=20_9 InlineTextBox "balance"
+                uid=20_94 link "location_city" url="http://localhost:8080/index.php?page=villes"
+                  uid=20_95 ignored
+                    uid=20_96 StaticText "location_city"
+                      uid=20_9 InlineTextBox "location_city"
+                uid=20_97 link "flag" url="http://localhost:8080/index.php?page=nationalites"
+                  uid=20_98 ignored
+                    uid=20_99 StaticText "flag"
+                      uid=20_9 InlineTextBox "flag"
+                uid=20_100 link "location_on" url="http://localhost:8080/index.php?page=lieux-naissance"
+                  uid=20_101 ignored
+                    uid=20_102 StaticText "location_on"
+                      uid=20_9 InlineTextBox "location_on"
+                uid=20_103 link "home" url="http://localhost:8080/index.php?page=adresses"
+                  uid=20_104 ignored
+                    uid=20_105 StaticText "home"
+                      uid=20_9 InlineTextBox "home"
+                uid=20_106 link "badge" url="http://localhost:8080/index.php?page=qualites-associe"
+                  uid=20_107 ignored
+                    uid=20_108 StaticText "badge"
+                      uid=20_9 InlineTextBox "badge"
+                uid=20_109 link "assignment" url="http://localhost:8080/index.php?page=fonctions"
+                  uid=20_110 ignored
+                    uid=20_111 StaticText "assignment"
+                      uid=20_9 InlineTextBox "assignment"
+                uid=20_112 link "work" url="http://localhost:8080/index.php?page=activites"
+                  uid=20_113 ignored
+                    uid=20_114 StaticText "work"
+                      uid=20_9 InlineTextBox "work"
+                uid=20_115 link "verified" url="http://localhost:8080/index.php?page=activites-ompic"
+                  uid=20_116 ignored
+                    uid=20_117 StaticText "verified"
+                      uid=20_9 InlineTextBox "verified"
+          uid=20_118 ignored
+            uid=20_119 link "logout" url="http://localhost:8080/index.php?page=deconnexion"
+              uid=20_120 ignored
+                uid=20_121 StaticText "logout"
+                  uid=20_9 InlineTextBox "logout"
+        uid=20_122 button "chevron_right" description="Developper la barre de navigation"
+          uid=20_123 ignored
+            uid=20_124 StaticText "chevron_right"
+              uid=20_9 InlineTextBox "chevron_right"
+        uid=20_125 main
+          uid=20_126 sectionheader
+            uid=20_127 ignored
+              uid=20_128 heading "Cession de parts sociales" level="1"
+                uid=20_129 StaticText "Cession de parts sociales"
+                  uid=20_9 InlineTextBox "Cession de parts sociales"
+              uid=20_130 ignored
+          uid=20_131 generic
+            uid=20_132 article
+              uid=20_133 ignored
+                uid=20_134 heading "transfer_within_a_station CESSION DE PARTS SOCIALES" level="2"
+                  uid=20_135 ignored
+                    uid=20_136 StaticText "transfer_within_a_station"
+                      uid=20_9 InlineTextBox "transfer_within_a_station"
+                  uid=20_137 StaticText "CESSION DE PARTS SOCIALES"
+                    uid=20_9 InlineTextBox "CESSION DE PARTS SOCIALES"
+                uid=20_138 ignored
+                  uid=20_139 link "close Annuler" url="http://localhost:8080/index.php?page=cessions"
+                    uid=20_140 ignored
+                      uid=20_141 StaticText "close"
+                        uid=20_9 InlineTextBox "close"
+                    uid=20_142 StaticText "Annuler"
+                      uid=20_9 InlineTextBox "Annuler"
+                  uid=20_143 link "restart_alt Reinitialiser" url="http://localhost:8080/index.php?page=cession&reset=1"
+                    uid=20_144 ignored
+                      uid=20_145 StaticText "restart_alt"
+                        uid=20_9 InlineTextBox "restart_alt"
+                    uid=20_146 StaticText "Reinitialiser"
+                      uid=20_9 InlineTextBox "Reinitialiser"
+              uid=20_147 generic
+                uid=20_148 ignored
+                  uid=20_149 strong
+                    uid=20_150 StaticText "Etape 1"
+                      uid=20_9 InlineTextBox "Etape 1"
+                  uid=20_151 ignored
+                    uid=20_152 StaticText "Mode"
+                      uid=20_9 InlineTextBox "Mode"
+                uid=20_153 ignored
+                  uid=20_154 strong
+                    uid=20_155 StaticText "Etape 2"
+                      uid=20_9 InlineTextBox "Etape 2"
+                  uid=20_156 ignored
+                    uid=20_157 StaticText "Societe"
+                      uid=20_9 InlineTextBox "Societe"
+                uid=20_158 ignored
+                  uid=20_159 strong
+                    uid=20_160 StaticText "Etape 3"
+                      uid=20_9 InlineTextBox "Etape 3"
+                  uid=20_161 ignored
+                    uid=20_162 StaticText "Cession"
+                      uid=20_9 InlineTextBox "Cession"
+                uid=20_163 ignored
+                  uid=20_164 strong
+                    uid=20_165 StaticText "Etape 4"
+                      uid=20_9 InlineTextBox "Etape 4"
+                  uid=20_166 ignored
+                    uid=20_167 StaticText "Recapitulatif"
+                      uid=20_9 InlineTextBox "Recapitulatif"
+                uid=20_168 ignored
+                  uid=20_169 strong
+                    uid=20_170 StaticText "Etape 5"
+                      uid=20_9 InlineTextBox "Etape 5"
+                  uid=20_171 ignored
+                    uid=20_172 StaticText "Generation"
+                      uid=20_9 InlineTextBox "Generation"
+              uid=20_173 generic
+                uid=20_174 ignored
+                  uid=20_175 LabelText
+                    uid=20_176 StaticText "Societe concernee"
+                      uid=20_9 InlineTextBox "Societe concernee"
+                  uid=20_177 combobox "Societe concernee" expandable haspopup="menu" value="-- Selectionnez une societe --"
+                    uid=20_178 MenuListPopup
+                      uid=20_179 option "-- Selectionnez une societe --" selectable selected value="-- Selectionnez une societe --"
+                      uid=20_180 option "AMAR STE (DOM-2026-010) - SARL AU" selectable value="AMAR STE (DOM-2026-010) - SARL AU"
+                      uid=20_181 option "Atlas Domiciliation (DOM-2026-001) - SARL" selectable value="Atlas Domiciliation (DOM-2026-001) - SARL"
+                      uid=20_182 option "Atlas Domiciliation (DOM-2026-001) - SARL" selectable value="Atlas Domiciliation (DOM-2026-001) - SARL"
+                      uid=20_183 option "DOURIYA (DOM-2026-006) - SARL AU" selectable value="DOURIYA (DOM-2026-006) - SARL AU"
+                      uid=20_184 option "GITREIO (DOM-2026-011) - SARL AU" selectable value="GITREIO (DOM-2026-011) - SARL AU"
+                      uid=20_185 option "Maghreb Services (DOM-2026-002) - SARL AU" selectable value="Maghreb Services (DOM-2026-002) - SARL AU"
+                      uid=20_186 option "Maghreb Services (DOM-2026-002) - SARL AU" selectable value="Maghreb Services (DOM-2026-002) - SARL AU"
+                      uid=20_187 option "MALAOUI APP () - SARL AU" selectable value="MALAOUI APP () - SARL AU"
+                      uid=20_188 option "MOUAIOA (DOM-2026-003) - SARL AU" selectable value="MOUAIOA (DOM-2026-003) - SARL AU"
+                      uid=20_189 option "SEBTIYA (DOM-2026-009) - SARL AU" selectable value="SEBTIYA (DOM-2026-009) - SARL AU"
+                      uid=20_190 option "TEST SARL AU (DOM-2026-008) - SARL AU" selectable value="TEST SARL AU (DOM-2026-008) - SARL AU"
+                      uid=20_191 option "Test Wizard SARL AU (DOM-2026-012) - SARL AU" selectable value="Test Wizard SARL AU (DOM-2026-012) - SARL AU"
+                      uid=20_192 option "TRABAKHANDO (DOM-2026-007) - SARL AU" selectable value="TRABAKHANDO (DOM-2026-007) - SARL AU"
+                uid=20_193 generic
+                  uid=20_194 link "arrow_back Retour" url="http://localhost:8080/index.php?page=cession&step=0"
+                    uid=20_195 ignored
+                      uid=20_196 StaticText "arrow_back"
+                        uid=20_9 InlineTextBox "arrow_back"
+                    uid=20_197 StaticText "Retour"
+                      uid=20_9 InlineTextBox "Retour"
+                  uid=20_198 button "arrow_forward Suivant"
+                    uid=20_199 ignored
+                      uid=20_200 StaticText "arrow_forward"
+                        uid=20_9 InlineTextBox "arrow_forward"
+                    uid=20_201 StaticText "Suivant"
+                      uid=20_9 InlineTextBox "Suivant"
+      uid=20_202 generic

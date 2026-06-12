@@ -1060,6 +1060,12 @@ tbody tr:hover:nth-child(even) {
     white-space: nowrap;
     position: relative;
 }
+.footer-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
 
 .dl-modal-overlay {
     display: none;
@@ -3092,6 +3098,11 @@ tr[data-coverage], .row-mapped {
    Step cards (creation.php step 5)
    ========================================== */
 :root { --violet: var(--info); --rouge: #e74c3c; }
+.choice-card { cursor:pointer; padding:24px; text-align:center; border:2px solid var(--line); transition:border-color .2s ease, box-shadow .2s ease; }
+.choice-card:hover { box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+.choice-card h3, .choice-card h4 { margin:8px 0 4px; }
+.choice-card p { font-size:0.85rem; }
+.choice-card .material-symbols-outlined:first-child { font-size:2.5rem; }
 .step-card { transition: border-color .4s ease, box-shadow .4s ease, transform .3s ease, opacity .4s ease; }
 .step-card.done { border-color: var(--success) !important; }
 .step-card.done .step-num { background: var(--success) !important; color: #fff !important; animation: pop-done .5s ease; }

@@ -1,133 +1,104 @@
-<div class="cession-part-row" style="border:1px solid var(--line);border-radius:6px;padding:12px;margin-top:8px;background:var(--bg-card)">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <!-- Cédant -->
-        <div>
-            <strong style="font-size:0.85rem">Cedant</strong>
-            <div class="field" style="margin-top:4px">
-                <label style="font-size:0.75rem">Type</label>
-                <select name="cedant_type[<?= $partIndex ?>]" class="cedant-type-select">
-                    <option value="existant" <?= ($part['cedant_type'] ?? 'existant') === 'existant' ? 'selected' : '' ?>>Associe existant</option>
-                    <option value="nouveau" <?= ($part['cedant_type'] ?? '') === 'nouveau' ? 'selected' : '' ?>>Nouvel associe</option>
+<div class="cession-part-row card" style="margin-top:12px" data-part="<?= $partIndex ?? 0 ?>">
+    <div class="section-header" style="margin-bottom:8px">
+        <strong>Ligne de cession #<span class="part-number"><?= ($partIndex ?? 0) + 1 ?></span></strong>
+        <button type="button" class="btn-icon danger remove-part" title="Supprimer cette ligne">
+            <span class="material-symbols-outlined">delete</span>
+        </button>
+    </div>
+
+    <div class="info-grid" style="grid-template-columns:1fr 1fr;gap:16px">
+        <!-- Cedant -->
+        <div class="field">
+            <label>Cedant</label>
+            <select name="cedant_type[<?= $partIndex ?? 0 ?>]" class="cedant-type" style="margin-bottom:8px">
+                <option value="existant" <?= ($part['cedant_type'] ?? '') === 'existant' ? 'selected' : '' ?>>Associe existant</option>
+                <option value="nouveau" <?= ($part['cedant_type'] ?? '') === 'nouveau' ? 'selected' : '' ?>>Nouveau cedant</option>
+            </select>
+            <div class="cedant-existing-fields" <?= ($part['cedant_type'] ?? '') === 'nouveau' ? 'style="display:none"' : '' ?>>
+                <select name="cedant_associe_id[<?= $partIndex ?? 0 ?>]">
+                    <option value="">-- Selectionnez --</option>
+                    <?php foreach ($selectedAssocies as $assoc): ?>
+                        <option value="<?= (int) $assoc['id'] ?>" <?= ($part['cedant_associe_id'] ?? 0) === (int) $assoc['id'] ? 'selected' : '' ?>>
+                            <?= e($assoc['associe_nom_complet']) ?> (<?= (int) ($assoc['associe_parts'] ?? 0) ?> parts)
+                        </option>
+                    <?php endforeach; ?>
                 </select>
             </div>
-            <div class="cedant-existing-fields" <?= ($part['cedant_type'] ?? 'existant') === 'nouveau' ? 'style="display:none"' : '' ?>>
-                <div class="field">
-                    <label style="font-size:0.75rem">Associe</label>
-                    <select name="cedant_associe_id[<?= $partIndex ?>]">
-                        <option value="0">-- Selectionnez --</option>
-                        <?php foreach ($selectedAssocies as $a): ?>
-                            <option value="<?= (int) $a['id'] ?>" <?= ($part['cedant_associe_id'] ?? 0) === (int) $a['id'] ? 'selected' : '' ?>>
-                                <?= e($a['associe_nom_complet']) ?> (<?= (int) ($a['associe_parts'] ?? 0) ?> parts)
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-            </div>
-            <div class="cedant-new-fields" <?= ($part['cedant_type'] ?? 'existant') === 'nouveau' ? '' : 'style="display:none"' ?>>
-                <div class="field">
-                    <label style="font-size:0.75rem">Nom complet</label>
-                    <input type="text" name="cedant_nom_complet[<?= $partIndex ?>]" value="<?= e($part['cedant_nom_complet'] ?? '') ?>" placeholder="Prenom NOM">
-                </div>
-                <div class="field">
-                    <label style="font-size:0.75rem">CIN</label>
-                    <input type="text" name="cedant_cin[<?= $partIndex ?>]" value="<?= e($part['cedant_cin'] ?? '') ?>" placeholder="Numero CIN">
-                </div>
+            <div class="cedant-new-fields" <?= ($part['cedant_type'] ?? '') === 'nouveau' ? '' : 'style="display:none"' ?>>
+                <input type="text" name="cedant_nom_complet[<?= $partIndex ?? 0 ?>]" placeholder="Nom complet" value="<?= e($part['cedant_nom_complet'] ?? '') ?>">
+                <input type="text" name="cedant_cin[<?= $partIndex ?? 0 ?>]" placeholder="CIN" value="<?= e($part['cedant_cin'] ?? '') ?>">
             </div>
         </div>
 
         <!-- Cessionnaire -->
-        <div>
-            <strong style="font-size:0.85rem">Cessionnaire</strong>
-            <div class="field" style="margin-top:4px">
-                <label style="font-size:0.75rem">Type</label>
-                <select name="cessionnaire_type[<?= $partIndex ?>]" class="cessionnaire-type-select">
-                    <option value="existant" <?= ($part['cessionnaire_type'] ?? 'existant') === 'existant' ? 'selected' : '' ?>>Associe existant</option>
-                    <option value="nouveau" <?= ($part['cessionnaire_type'] ?? '') === 'nouveau' ? 'selected' : '' ?>>Nouvel associe</option>
+        <div class="field">
+            <label>Cessionnaire</label>
+            <select name="cessionnaire_type[<?= $partIndex ?? 0 ?>]" class="cessionnaire-type" style="margin-bottom:8px">
+                <option value="existant" <?= ($part['cessionnaire_type'] ?? '') === 'existant' ? 'selected' : '' ?>>Associe existant</option>
+                <option value="nouveau" <?= ($part['cessionnaire_type'] ?? '') === 'nouveau' ? 'selected' : '' ?>>Nouveau cessionnaire</option>
+            </select>
+            <div class="cessionnaire-existing-fields" <?= ($part['cessionnaire_type'] ?? '') === 'nouveau' ? 'style="display:none"' : '' ?>>
+                <select name="cessionnaire_associe_id[<?= $partIndex ?? 0 ?>]">
+                    <option value="">-- Selectionnez --</option>
+                    <?php foreach ($selectedAssocies as $assoc): ?>
+                        <option value="<?= (int) $assoc['id'] ?>" <?= ($part['cessionnaire_associe_id'] ?? 0) === (int) $assoc['id'] ? 'selected' : '' ?>>
+                            <?= e($assoc['associe_nom_complet']) ?> (<?= (int) ($assoc['associe_parts'] ?? 0) ?> parts)
+                        </option>
+                    <?php endforeach; ?>
                 </select>
             </div>
-            <div class="cessionnaire-existing-fields" <?= ($part['cessionnaire_type'] ?? 'existant') === 'nouveau' ? 'style="display:none"' : '' ?>>
-                <div class="field">
-                    <label style="font-size:0.75rem">Associe</label>
-                    <select name="cessionnaire_associe_id[<?= $partIndex ?>]">
-                        <option value="0">-- Selectionnez --</option>
-                        <?php foreach ($selectedAssocies as $a): ?>
-                            <option value="<?= (int) $a['id'] ?>" <?= ($part['cessionnaire_associe_id'] ?? 0) === (int) $a['id'] ? 'selected' : '' ?>>
-                                <?= e($a['associe_nom_complet']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-            </div>
-            <div class="cessionnaire-new-fields" <?= ($part['cessionnaire_type'] ?? 'existant') === 'nouveau' ? '' : 'style="display:none"' ?>>
-                <div class="field">
-                    <label style="font-size:0.75rem">Civilite</label>
-                    <select name="cessionnaire_civilite[<?= $partIndex ?>]">
+            <div class="cessionnaire-new-fields" <?= ($part['cessionnaire_type'] ?? '') === 'nouveau' ? '' : 'style="display:none"' ?>>
+                <div style="display:flex;gap:4px;margin-bottom:4px">
+                    <select name="cessionnaire_civilite[<?= $partIndex ?? 0 ?>]" style="flex:0 0 70px">
                         <option value="M." <?= ($part['cessionnaire_civilite'] ?? 'M.') === 'M.' ? 'selected' : '' ?>>M.</option>
                         <option value="Mme" <?= ($part['cessionnaire_civilite'] ?? '') === 'Mme' ? 'selected' : '' ?>>Mme</option>
                         <option value="Mlle" <?= ($part['cessionnaire_civilite'] ?? '') === 'Mlle' ? 'selected' : '' ?>>Mlle</option>
                     </select>
+                    <input type="text" name="cessionnaire_nom_complet[<?= $partIndex ?? 0 ?>]" placeholder="Nom complet" style="flex:1" value="<?= e($part['cessionnaire_nom_complet'] ?? '') ?>">
                 </div>
-                <div class="field">
-                    <label style="font-size:0.75rem">Nom complet</label>
-                    <input type="text" name="cessionnaire_nom_complet[<?= $partIndex ?>]" value="<?= e($part['cessionnaire_nom_complet'] ?? '') ?>" placeholder="Prenom NOM">
-                </div>
-                <div class="field">
-                    <label style="font-size:0.75rem">CIN</label>
-                    <input type="text" name="cessionnaire_cin[<?= $partIndex ?>]" value="<?= e($part['cessionnaire_cin'] ?? '') ?>" placeholder="Numero CIN">
-                </div>
-                <div class="field">
-                    <label style="font-size:0.75rem">Date naissance</label>
-                    <input type="date" name="cessionnaire_date_naissance[<?= $partIndex ?>]" value="<?= e($part['cessionnaire_date_naissance'] ?? '') ?>">
-                </div>
-                <div class="field">
-                    <label style="font-size:0.75rem">Lieu naissance</label>
-                    <select name="cessionnaire_lieu_naissance[<?= $partIndex ?>]">
-                        <option value="">-- Selectionnez --</option>
-                        <?php foreach ($lieuxNaissanceOptions as $ln): ?>
-                            <option value="<?= e($ln) ?>" <?= ($part['cessionnaire_lieu_naissance'] ?? '') === $ln ? 'selected' : '' ?>><?= e($ln) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="field">
-                    <label style="font-size:0.75rem">Nationalite</label>
-                    <select name="cessionnaire_nationalite[<?= $partIndex ?>]">
-                        <option value="">-- Selectionnez --</option>
-                        <?php foreach ($nationalitesOptions as $n): ?>
-                            <option value="<?= e($n) ?>" <?= ($part['cessionnaire_nationalite'] ?? '') === $n ? 'selected' : '' ?>><?= e($n) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="field">
-                    <label style="font-size:0.75rem">Adresse</label>
-                    <input type="text" name="cessionnaire_adresse[<?= $partIndex ?>]" value="<?= e($part['cessionnaire_adresse'] ?? '') ?>" placeholder="Adresse complete">
-                </div>
+                <input type="text" name="cessionnaire_cin[<?= $partIndex ?? 0 ?>]" placeholder="CIN" style="margin-bottom:4px" value="<?= e($part['cessionnaire_cin'] ?? '') ?>">
+                <input type="date" name="cessionnaire_date_naissance[<?= $partIndex ?? 0 ?>]" style="margin-bottom:4px" value="<?= e($part['cessionnaire_date_naissance'] ?? '') ?>">
+                <select name="cessionnaire_lieu_naissance[<?= $partIndex ?? 0 ?>]" style="margin-bottom:4px">
+                    <option value="">-- Lieu de naissance --</option>
+                    <?php foreach ($lieuxNaissanceOptions as $ln): ?>
+                        <option value="<?= e($ln) ?>" <?= ($part['cessionnaire_lieu_naissance'] ?? '') === $ln ? 'selected' : '' ?>><?= e($ln) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <select name="cessionnaire_nationalite[<?= $partIndex ?? 0 ?>]" style="margin-bottom:4px">
+                    <option value="">-- Nationalite --</option>
+                    <?php foreach ($nationalitesOptions as $nat): ?>
+                        <option value="<?= e($nat) ?>" <?= ($part['cessionnaire_nationalite'] ?? '') === $nat ? 'selected' : '' ?>><?= e($nat) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <textarea name="cessionnaire_adresse[<?= $partIndex ?? 0 ?>]" placeholder="Adresse" rows="2"><?= e($part['cessionnaire_adresse'] ?? '') ?></textarea>
             </div>
         </div>
     </div>
 
-    <!-- Parts, Prix & Gérant -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-top:12px">
+    <!-- Parts & Prix -->
+    <div class="info-grid" style="grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:12px;margin-top:12px">
         <div class="field">
-            <label style="font-size:0.75rem">% des parts</label>
-            <input type="text" name="pourcentage[<?= $partIndex ?>]" class="pourcentage-input" value="<?= e((string) ($part['pourcentage'] ?? '')) ?>" placeholder="50" data-part-index="<?= $partIndex ?>">
+            <label>%</label>
+            <input type="text" name="pourcentage[<?= $partIndex ?? 0 ?>]" class="pourcentage-input" placeholder="0,00" value="<?= e(isset($part['pourcentage']) ? number_format((float) $part['pourcentage'], 2, ',', '') : '') ?>">
         </div>
         <div class="field">
-            <label style="font-size:0.75rem">Parts cedees</label>
-            <input type="number" name="parts_cedees[<?= $partIndex ?>]" class="parts-cedees-input" value="<?= e((string) ($part['parts_cedees'] ?? '')) ?>" min="1" data-part-index="<?= $partIndex ?>">
+            <label>Parts cedees</label>
+            <input type="number" name="parts_cedees[<?= $partIndex ?? 0 ?>]" class="parts-cedees-input" value="<?= (int) ($part['parts_cedees'] ?? 0) ?>">
         </div>
         <div class="field">
-            <label style="font-size:0.75rem">Prix unitaire (DH)</label>
-            <input type="text" name="prix_unitaire[<?= $partIndex ?>]" value="<?= e((string) ($part['prix_unitaire'] ?? '')) ?>" placeholder="0,00">
+            <label>Prix unitaire (DH)</label>
+            <input type="text" name="prix_unitaire[<?= $partIndex ?? 0 ?>]" class="prix-unitaire-input" placeholder="0,00" value="<?= e(isset($part['prix_unitaire']) ? number_format((float) $part['prix_unitaire'], 2, ',', '') : '') ?>">
         </div>
         <div class="field">
-            <label style="font-size:0.75rem">Prix total (DH)</label>
-            <input type="text" name="prix_total[<?= $partIndex ?>]" value="<?= e((string) ($part['prix_total'] ?? '')) ?>" placeholder="Calcule automatiquement">
+            <label>Prix total (DH)</label>
+            <input type="text" name="prix_total[<?= $partIndex ?? 0 ?>]" class="prix-total-input" placeholder="0,00" value="<?= e(isset($part['prix_total']) ? number_format((float) $part['prix_total'], 2, ',', '') : '') ?>">
         </div>
-    </div>
-    <div style="margin-top:8px">
-        <label>
-            <input type="checkbox" name="nommer_gerant[<?= $partIndex ?>]" value="1" <?= !empty($part['nommer_gerant']) ? 'checked' : '' ?>>
-            <span style="font-size:0.85rem;color:var(--text-secondary)">Nommer ce cessionnaire comme gerant de la societe</span>
-        </label>
+        <div class="field">
+            <label>Nommer gerant</label>
+            <label style="display:flex;align-items:center;gap:4px;margin-top:4px">
+                <input type="checkbox" name="nommer_gerant[<?= $partIndex ?? 0 ?>]" value="1" <?= !empty($part['nommer_gerant']) ? 'checked' : '' ?>>
+                Oui
+            </label>
+        </div>
     </div>
 </div>
