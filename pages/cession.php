@@ -87,6 +87,34 @@ if ($wizard['societe_id'] > 0 && ($pdo ?? null) instanceof PDO) {
     $selectedAssocies = $stmt->fetchAll();
 }
 
+// Build cedant/cessionnaire lookup from wizard session
+$cedantIds = [];
+$cessionnaireIds = [];
+$nouveauxCessionnaires = [];
+if (!empty($wizard['parts'])) {
+    foreach ($wizard['parts'] as $p) {
+        if (!empty($p['cedant_associe_id'])) {
+            $cedantIds[(int) $p['cedant_associe_id']] = true;
+        }
+        if (!empty($p['cessionnaire_associe_id'])) {
+            $cessionnaireIds[(int) $p['cessionnaire_associe_id']] = true;
+        }
+        if (($p['cessionnaire_type'] ?? '') === 'nouveau' && !empty($p['cessionnaire_nom_complet'])) {
+            // Éviter les doublons si le cessionnaire existe déjà dans associes
+            $exists = false;
+            foreach ($selectedAssocies as $a) {
+                if ($a['associe_nom_complet'] === $p['cessionnaire_nom_complet']) {
+                    $exists = true;
+                    break;
+                }
+            }
+            if (!$exists) {
+                $nouveauxCessionnaires[] = $p;
+            }
+        }
+    }
+}
+
 // POST handling
 if (is_post()) {
     verify_csrf();
@@ -523,18 +551,36 @@ if ($wizard['societe_id'] > 0 && ($pdo ?? null) instanceof PDO) {
                             <th data-col="parts">Parts</th>
                             <th data-col="capital">Capital detenu</th>
                             <th data-col="qualite">Qualite</th>
+                            <th data-col="cedant">Cedant</th>
+                            <th data-col="cessionnaire">Cessionnaire</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($selectedAssocies as $a): ?>
+                        <?php $aid = (int) ($a['id'] ?? 0); ?>
                         <tr>
                             <td><?= e($a['associe_nom_complet']) ?></td>
                             <td><?= e($a['associe_cin'] ?? '-') ?></td>
                             <td><?= (int) ($a['associe_parts'] ?? 0) ?></td>
                             <td><?= e(number_format((float) ($a['associe_capital_detenu'] ?? 0), 2, ',', ' ') . ' DH') ?></td>
                             <td><?= e($a['associe_qualite'] ?? '-') ?></td>
+                            <td><?= isset($cedantIds[$aid]) ? '<span class="material-symbols-outlined" style="color:var(--danger);font-size:1.1rem">arrow_upward</span>' : '-' ?></td>
+                            <td><?= isset($cessionnaireIds[$aid]) ? '<span class="material-symbols-outlined" style="color:var(--success);font-size:1.1rem">arrow_downward</span>' : '-' ?></td>
                         </tr>
                         <?php endforeach; ?>
+                        <?php if (!empty($nouveauxCessionnaires)): ?>
+                            <?php foreach ($nouveauxCessionnaires as $nc): ?>
+                            <tr style="background:rgba(0,184,148,0.06)">
+                                <td><em><?= e($nc['cessionnaire_nom_complet']) ?></em></td>
+                                <td><?= e($nc['cessionnaire_cin'] ?? '-') ?></td>
+                                <td><?= (int) ($nc['parts_cedees'] ?? 0) ?></td>
+                                <td>-</td>
+                                <td><em>Nouveau</em></td>
+                                <td>-</td>
+                                <td><span class="material-symbols-outlined" style="color:var(--success);font-size:1.1rem">arrow_downward</span></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
