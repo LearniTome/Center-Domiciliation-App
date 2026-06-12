@@ -194,6 +194,12 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - **Headers/footers**: Always scan `word/header*.xml` and `word/footer*.xml` too, not just `word/document.xml`
 - **ZipArchive**: Must be enabled in `C:\xampp\php\php.ini` (`extension=zip`) + Apache restart
 
+## macOS Setup (Shell Scripts)
+- **`setup.sh`** : Installation complète via Homebrew (PHP, MySQL, Node.js, Composer, LibreOffice). Lance une seule fois.
+- **`run.sh`** : Démarre MySQL + serveur PHP intégré sur le port 8080.
+- Exécution : `chmod +x setup.sh run.sh && ./setup.sh` puis `./run.sh`
+- URL : `http://localhost:8080/`
+
 ## Convertisseur DOCX → PDF
 
 Le rendu final des documents génère un PDF depuis un DOCX. Trois méthodes sont tentées dans cet ordre :
@@ -257,7 +263,7 @@ npx -y @berthojoris/mcp-mysql-server "mysql://root@127.0.0.1:3306/center_domicil
 
 ## Root Directory Cleanliness
 - **No `.txt` or `.png` files in root** — place documentation text files in `docs/`, screenshots in `docs/screenshots/`
-- Root should only contain: `index.php`, `run.ps1`, `opencode.json`, `AGENTS.md`, `CLAUDE.md`, `.gitignore`, and directories
+- Root should only contain: `index.php`, `run.ps1`, `run.sh`, `setup.ps1`, `setup.sh`, `opencode.json`, `AGENTS.md`, `CLAUDE.md`, `.gitignore`, and directories
 - `.gitignore` already blocks `/*.txt` and `/*.png` from root to prevent accidental commits
 
 ## Auto-Migration System
