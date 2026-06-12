@@ -14,6 +14,7 @@ $navPermissions = [
     'collaborateurs' => 'collaborateurs.view',
     'templates' => 'templates.view',
     'template_edit' => 'templates.edit',
+    'modifications' => 'modifications.view',
     'cessions' => 'cessions.view',
     'cession' => 'cessions.create',
     'generation' => 'generation.use',
@@ -67,7 +68,8 @@ $navSections = [
     'Modification juridique' => [
         'icon' => 'swap_horiz',
         'items' => [
-            'cessions' => ['Cession de parts sociales', 'transfer_within_a_station'],
+            'modifications' => ['Toutes les modifications', 'list_alt'],
+            'cessions' => ['Cession de parts', 'transfer_within_a_station'],
         ],
     ],
     'Templates de documents' => [

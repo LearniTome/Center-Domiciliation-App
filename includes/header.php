@@ -20,6 +20,7 @@ $noSidebar = in_array($page ?? '', ['connexion', 'deconnexion'], true);
         .shell { grid-template-columns: 1fr; }
         .sidebar, .sidebar-toggle { display: none; }
         .main { padding: 2rem; }
+        .main::after { display: none !important; }
         <?php endif; ?>
     </style>
 </head>

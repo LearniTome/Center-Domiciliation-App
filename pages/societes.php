@@ -55,6 +55,7 @@ if (($pdo ?? null) instanceof PDO) {
                 $societe['societe_raison_sociale'],
                 $societe['societe_dossier'],
                 $societe['societe_forme_juridique'],
+                $societe['societe_source'] ?? 'creation',
                 $societe['societe_ice'],
                 $societe['societe_date_ice'],
                 $societe['societe_rc'],
@@ -74,6 +75,7 @@ if (($pdo ?? null) instanceof PDO) {
             'Raison sociale',
             'Dossier domiciliation',
             'Forme juridique',
+            'Origine',
             'ICE',
             'Date cert. negatif',
             'RC',
@@ -124,6 +126,7 @@ if (($pdo ?? null) instanceof PDO) {
                 <thead>
                 <tr>
                     <th data-col="dossier">Dossier</th>
+                    <th data-col="source">Origine</th>
                     <th data-col="raison-sociale">Raison sociale</th>
                     <th data-col="forme">Forme</th>
                     <th data-col="ice">ICE</th>
@@ -146,6 +149,16 @@ if (($pdo ?? null) instanceof PDO) {
                 <?php foreach ($societes as $societe): ?>
                     <tr>
                         <td><?= e($societe['societe_dossier'] ?? '-') ?></td>
+                        <td>
+                            <?php $src = $societe['societe_source'] ?? 'creation'; ?>
+                            <?php if ($src === 'cession'): ?>
+                                <span class="badge badge-info" style="font-size:0.65rem">Cession</span>
+                            <?php elseif ($src !== 'creation'): ?>
+                                <span class="badge badge-info" style="font-size:0.65rem"><?= e(ucfirst($src)) ?></span>
+                            <?php else: ?>
+                                <span class="badge badge-success" style="font-size:0.65rem">Creation</span>
+                            <?php endif; ?>
+                        </td>
                         <td><a href="<?= e(app_url('societe', ['id' => (int) $societe['id']])) ?>" style="color:var(--primary);text-decoration:none;font-weight:500"><?= e($societe['societe_raison_sociale']) ?></a></td>
                         <td><?= e($societe['societe_forme_juridique']) ?></td>
                         <td><?= e($societe['societe_ice'] ?? '-') ?></td>

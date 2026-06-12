@@ -643,6 +643,7 @@ function get_page_permission(string $page): ?string
 
         'activite' => 'roles.manage',
 
+        'modifications' => 'modifications.view',
         'cessions' => 'cessions.view',
         'cession' => 'cessions.view',
         'cession_dossier' => 'cessions.view',

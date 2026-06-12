@@ -142,10 +142,11 @@ if (is_post()) {
             $email = trim((string) ($_POST['email'] ?? ''));
             $telephone = trim((string) ($_POST['telephone'] ?? ''));
 
-            $stmt = $pdo->prepare('INSERT INTO societes (societe_raison_sociale, societe_forme_juridique, societe_capital, societe_part_social, societe_ville, societe_adresse, societe_ice, societe_rc, societe_if, societe_tribunal, societe_email, societe_telephone, created_by) VALUES (:raison, :forme, :capital, :parts, :ville, :adresse, :ice, :rc, :ifiscal, :tribunal, :email, :telephone, :created_by)');
+            $stmt = $pdo->prepare('INSERT INTO societes (societe_raison_sociale, societe_forme_juridique, societe_source, societe_capital, societe_part_social, societe_ville, societe_adresse, societe_ice, societe_rc, societe_if, societe_tribunal, societe_email, societe_telephone, created_by) VALUES (:raison, :forme, :source, :capital, :parts, :ville, :adresse, :ice, :rc, :ifiscal, :tribunal, :email, :telephone, :created_by)');
             $stmt->execute([
                 'raison' => $raison,
                 'forme' => $forme ?: null,
+                'source' => 'cession',
                 'capital' => $capital,
                 'parts' => $parts,
                 'ville' => $ville ?: null,
