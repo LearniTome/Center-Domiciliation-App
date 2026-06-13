@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+ob_start();
+
 $noSidebar = in_array($page ?? '', ['connexion', 'deconnexion'], true);
 ?>
 <!DOCTYPE html>

@@ -111,6 +111,7 @@ if (is_post()) {
 
     // AJAX: add new activity reference
     if (!empty($_POST['add_activite_ref']) && ($pdo ?? null) instanceof PDO) {
+        ob_clean();
         header('Content-Type: application/json');
         try {
             $name = trim((string) ($_POST['new_activite'] ?? ''));
