@@ -109,6 +109,24 @@ if ($editingId > 0 && !isset($_SESSION['_cession_loaded'])) {
 if (is_post()) {
     verify_csrf();
 
+    // AJAX: add new activity reference
+    if (!empty($_POST['add_activite_ref']) && ($pdo ?? null) instanceof PDO) {
+        header('Content-Type: application/json');
+        try {
+            $name = trim((string) ($_POST['new_activite'] ?? ''));
+            if ($name === '') {
+                echo json_encode(['success' => false, 'error' => 'Nom vide']);
+                exit;
+            }
+            $stmt = $pdo->prepare('INSERT IGNORE INTO ref_activites (activite) VALUES (:name)');
+            $stmt->execute(['name' => $name]);
+            echo json_encode(['success' => true, 'value' => $name]);
+        } catch (Throwable $e) {
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        }
+        exit;
+    }
+
     // Step 0: Mode choice
     if ($step === 0) {
         $mode = $_POST['mode'] ?? '';
@@ -846,58 +864,63 @@ $stepLabels = ['Societe', 'Associes', 'Cession', 'Recap', 'Validation', 'Generat
                         <input type="text" name="societe_telephone" value="<?= e($wizard['societe']['societe_telephone'] ?? '') ?>" placeholder="05XX-XXXXXX">
                     </label>
                     <h3 class="section-title">Activite</h3>
-                    <label class="field full">
+                    <div class="field full" style="flex-direction:column;align-items:stretch;gap:8px">
                         <span>Activites (statuts)</span>
-                        <div data-activites-group="statuts">
-                            <div data-activites-container>
-                                <?php
-                                $wizStatuts = !empty($wizard['societe']['societe_activites_statuts']) ? array_map('trim', explode(',', (string) $wizard['societe']['societe_activites_statuts'])) : [];
-                                if ($wizStatuts):
-                                    foreach ($wizStatuts as $act):
-                                ?>
-                                    <div data-activite-item style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
-                                        <select name="societe_activites_statuts[]" style="flex:1">
-                                            <option value="">Selectionner</option>
-                                            <?php foreach ($activitesOptions as $opt): ?>
-                                                <option value="<?= e($opt) ?>" <?= $act === $opt ? 'selected' : '' ?>><?= e($opt) ?></option>
-                                            <?php endforeach; ?>
-                                            <?php if (!in_array($act, $activitesOptions)): ?>
-                                                <option value="<?= e($act) ?>" selected><?= e($act) ?></option>
-                                            <?php endif; ?>
-                                        </select>
-                                        <button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="material-symbols-outlined">close</span></button>
-                                    </div>
-                                <?php
-                                    endforeach;
-                                else:
-                                ?>
-                                    <div data-activite-item style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
-                                        <select name="societe_activites_statuts[]" style="flex:1">
-                                            <option value="">Selectionner</option>
-                                            <?php foreach ($activitesOptions as $opt): ?>
-                                                <option value="<?= e($opt) ?>"><?= e($opt) ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="material-symbols-outlined">close</span></button>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
-                            <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-                                <button type="button" class="btn" data-add-activite><span class="material-symbols-outlined">add</span> Ajouter une activite</button>
-                            </div>
-                            <template data-activite-template>
-                                <div data-activite-item style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
-                                    <select name="societe_activites_statuts[]" style="flex:1">
-                                        <option value="">Selectionner</option>
-                                        <?php foreach ($activitesOptions as $opt): ?>
-                                            <option value="<?= e($opt) ?>"><?= e($opt) ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                    <button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="material-symbols-outlined">close</span></button>
-                                </div>
-                            </template>
+                        <div style="overflow:visible">
+                            <table id="activites-table">
+                                <thead>
+                                    <tr>
+                                        <th>Activite</th>
+                                        <th style="width:50px">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="activites-container">
+                                    <?php
+                                    $wizStatuts = !empty($wizard['societe']['societe_activites_statuts']) ? array_map('trim', explode(',', (string) $wizard['societe']['societe_activites_statuts'])) : [];
+                                    if ($wizStatuts):
+                                        foreach ($wizStatuts as $act):
+                                    ?>
+                                        <tr data-activite-row>
+                                            <td>
+                                                <div class="autocomplete-wrap" style="position:relative">
+                                                    <input type="text" name="societe_activites_statuts[]" style="width:100%" value="<?= e($act) ?>" placeholder="Saisissez ou selectionnez une activite" autocomplete="off">
+                                                    <div class="autocomplete-dropdown" style="position:absolute;top:100%;left:0;right:0;z-index:100;background:var(--panel);border:1px solid var(--line);border-radius:4px;max-height:200px;overflow-y:auto;display:none;box-shadow:0 4px 12px rgba(0,0,0,0.5)"></div>
+                                                </div>
+                                            </td>
+                                            <td><button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="material-symbols-outlined">close</span></button></td>
+                                        </tr>
+                                    <?php
+                                        endforeach;
+                                    else:
+                                    ?>
+                                        <tr data-activite-row>
+                                            <td>
+                                                <div class="autocomplete-wrap" style="position:relative">
+                                                    <input type="text" name="societe_activites_statuts[]" style="width:100%" placeholder="Saisissez ou selectionnez une activite" autocomplete="off">
+                                                    <div class="autocomplete-dropdown" style="position:absolute;top:100%;left:0;right:0;z-index:100;background:var(--panel);border:1px solid var(--line);border-radius:4px;max-height:200px;overflow-y:auto;display:none;box-shadow:0 4px 12px rgba(0,0,0,0.5)"></div>
+                                                </div>
+                                            </td>
+                                            <td><button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="material-symbols-outlined">close</span></button></td>
+                                        </tr>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
                         </div>
-                    </label>
+                        <div style="display:flex;gap:8px">
+                            <button type="button" class="btn" id="add-activite-row"><span class="material-symbols-outlined">add</span> Ajouter une activite</button>
+                        </div>
+                        <template id="activite-row-template">
+                            <tr data-activite-row>
+                                <td>
+                                    <div class="autocomplete-wrap" style="position:relative">
+                                        <input type="text" name="societe_activites_statuts[]" style="width:100%" placeholder="Saisissez ou selectionnez une activite" autocomplete="off">
+                                        <div class="autocomplete-dropdown" style="position:absolute;top:100%;left:0;right:0;z-index:100;background:var(--panel);border:1px solid var(--line);border-radius:4px;max-height:200px;overflow-y:auto;display:none;box-shadow:0 4px 12px rgba(0,0,0,0.5)"></div>
+                                    </div>
+                                </td>
+                                <td><button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="material-symbols-outlined">close</span></button></td>
+                            </tr>
+                        </template>
+                    </div>
                 </div>
             </article>
 
@@ -1746,6 +1769,152 @@ document.addEventListener('DOMContentLoaded', function() {
                 card.remove();
                 reindexAssocies();
             }
+        }
+    });
+
+    // ========== Activités autocomplete + add/remove ==========
+    var activitesContainer = document.getElementById('activites-container');
+    var activiteTemplate = document.getElementById('activite-row-template');
+    var allActivitesOptions = <?= json_encode(array_values($activitesOptions)) ?>;
+
+    function setupAutocomplete(wrap) {
+        var inp = wrap.querySelector('input');
+        var dd = wrap.querySelector('.autocomplete-dropdown');
+        if (!inp || !dd) return;
+
+        function normalizeStr(s) { return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+
+        function updateDropdown() {
+            var val = normalizeStr(inp.value.trim());
+            var matches = val === '' ? [] : allActivitesOptions.filter(function(o) { return normalizeStr(o).indexOf(val) !== -1; });
+            var exactMatch = matches.some(function(m) { return normalizeStr(m) === val; });
+
+            var selected = [];
+            activitesContainer.querySelectorAll('[data-activite-row] input').forEach(function(other) {
+                if (other !== inp) {
+                    var v = other.value.trim();
+                    if (v !== '') selected.push(normalizeStr(v));
+                }
+            });
+
+            dd.innerHTML = '';
+            if (matches.length === 0 && val === '') {
+                dd.style.display = 'none';
+                return;
+            }
+
+            matches.forEach(function(m) {
+                if (selected.indexOf(normalizeStr(m)) !== -1) return;
+                var item = document.createElement('div');
+                item.textContent = m;
+                item.style.cssText = 'padding:8px 10px;cursor:pointer;font-size:0.85rem;color:var(--text);background:transparent';
+                item.addEventListener('mouseenter', function() { this.style.background = 'rgba(255,255,255,0.06)'; });
+                item.addEventListener('mouseleave', function() { this.style.background = ''; });
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    inp.value = m;
+                    dd.style.display = 'none';
+                    inp.focus();
+                    checkAutoAdd();
+                });
+                dd.appendChild(item);
+            });
+
+            if (!exactMatch && val !== '') {
+                var divider = document.createElement('div');
+                divider.style.cssText = 'border-top:1px solid var(--line);margin:4px 0';
+                dd.appendChild(divider);
+                var createItem = document.createElement('div');
+                createItem.textContent = '+ Creer l activite "' + inp.value.trim() + '"';
+                createItem.style.cssText = 'padding:8px 10px;cursor:pointer;font-size:0.85rem;color:var(--primary);font-weight:500;background:transparent';
+                createItem.addEventListener('mouseenter', function() { this.style.background = 'rgba(255,255,255,0.06)'; });
+                createItem.addEventListener('mouseleave', function() { this.style.background = ''; });
+                createItem.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    var name = inp.value.trim();
+                    var form = inp.closest('form');
+                    var csrf = form ? form.querySelector('input[name="csrf_token"]') : null;
+                    if (!csrf) return;
+                    this.textContent = 'Creation en cours...';
+                    this.style.pointerEvents = 'none';
+                    fetch(window.location.href, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams({ csrf_token: csrf.value, add_activite_ref: '1', new_activite: name })
+                    })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.success) {
+                            allActivitesOptions.push(data.value);
+                            inp.value = data.value;
+                            dd.style.display = 'none';
+                            checkAutoAdd();
+                        }
+                    })
+                    .catch(function() {});
+                });
+                dd.appendChild(createItem);
+            }
+
+            dd.style.display = dd.children.length > 0 ? 'block' : 'none';
+        }
+
+        function checkAutoAdd() {
+            var rows = activitesContainer.querySelectorAll('[data-activite-row]');
+            var lastRow = rows[rows.length - 1];
+            var lastInp = lastRow ? lastRow.querySelector('input') : null;
+            if (lastInp && lastInp === inp && inp.value.trim() !== '') {
+                addActiviteRow();
+            }
+        }
+
+        var debounceTimer;
+        inp.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(updateDropdown, 80);
+        });
+        inp.addEventListener('focus', function() {
+            if (inp.value.trim() !== '') updateDropdown();
+        });
+        inp.addEventListener('blur', function() {
+            setTimeout(function() { dd.style.display = 'none'; }, 200);
+        });
+        inp.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') dd.style.display = 'none';
+            if (e.key === 'Enter' && dd.style.display === 'block') {
+                e.preventDefault();
+                var first = dd.querySelector('div');
+                if (first) { first.click(); }
+            }
+        });
+    }
+
+    function addActiviteRow(value) {
+        if (!activiteTemplate) return;
+        var clone = activiteTemplate.content.cloneNode(true);
+        var newRow = clone.querySelector('[data-activite-row]');
+        activitesContainer.appendChild(clone);
+        if (value) {
+            var inp = newRow.querySelector('input');
+            if (inp) inp.value = value;
+        }
+        var wrap = newRow.querySelector('.autocomplete-wrap');
+        if (wrap) setupAutocomplete(wrap);
+    }
+
+    document.getElementById('add-activite-row')?.addEventListener('click', function() { addActiviteRow(''); });
+
+    // Init existing rows
+    activitesContainer?.querySelectorAll('.autocomplete-wrap').forEach(setupAutocomplete);
+
+    // Remove row
+    activitesContainer?.addEventListener('click', function(e) {
+        var btn = e.target.closest('[data-remove-activite]');
+        if (btn) {
+            var rows = activitesContainer.querySelectorAll('[data-activite-row]');
+            if (rows.length <= 1) return;
+            var row = btn.closest('[data-activite-row]');
+            if (row) row.remove();
         }
     });
 });
