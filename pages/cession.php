@@ -893,7 +893,7 @@ $stepLabels = ['Societe', 'Associes', 'Cession', 'Recap', 'Validation', 'Generat
                                                     <div class="autocomplete-dropdown" style="position:absolute;top:100%;left:0;right:0;z-index:100;background:var(--panel);border:1px solid var(--line);border-radius:4px;max-height:200px;overflow-y:auto;display:none;box-shadow:0 4px 12px rgba(0,0,0,0.5)"></div>
                                                 </div>
                                             </td>
-                                            <td><button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="material-symbols-outlined">close</span></button></td>
+                                            <td><button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="material-symbols-outlined">delete</span></button></td>
                                         </tr>
                                     <?php
                                         endforeach;
@@ -906,14 +906,14 @@ $stepLabels = ['Societe', 'Associes', 'Cession', 'Recap', 'Validation', 'Generat
                                                     <div class="autocomplete-dropdown" style="position:absolute;top:100%;left:0;right:0;z-index:100;background:var(--panel);border:1px solid var(--line);border-radius:4px;max-height:200px;overflow-y:auto;display:none;box-shadow:0 4px 12px rgba(0,0,0,0.5)"></div>
                                                 </div>
                                             </td>
-                                            <td><button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="material-symbols-outlined">close</span></button></td>
+                                            <td><button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="material-symbols-outlined">delete</span></button></td>
                                         </tr>
                                     <?php endif; ?>
                                 </tbody>
                             </table>
                         </div>
                         <div style="display:flex;gap:8px">
-                            <button type="button" class="btn" id="add-activite-row"><span class="material-symbols-outlined">add</span> Ajouter une activite</button>
+                            <button type="button" class="btn" id="add-activite-row"><span class="material-symbols-outlined">playlist_add</span> Ajouter une activite</button>
                         </div>
                         <template id="activite-row-template">
                             <tr data-activite-row>
@@ -923,7 +923,7 @@ $stepLabels = ['Societe', 'Associes', 'Cession', 'Recap', 'Validation', 'Generat
                                         <div class="autocomplete-dropdown" style="position:absolute;top:100%;left:0;right:0;z-index:100;background:var(--panel);border:1px solid var(--line);border-radius:4px;max-height:200px;overflow-y:auto;display:none;box-shadow:0 4px 12px rgba(0,0,0,0.5)"></div>
                                     </div>
                                 </td>
-                                <td><button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="material-symbols-outlined">close</span></button></td>
+                                <td><button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="material-symbols-outlined">delete</span></button></td>
                             </tr>
                         </template>
                     </div>
