@@ -118,7 +118,13 @@ if (is_post()) {
                 echo json_encode(['success' => false, 'error' => 'Nom vide']);
                 exit;
             }
-            $stmt = $pdo->prepare('INSERT IGNORE INTO ref_activites (activite) VALUES (:name)');
+            $check = $pdo->prepare('SELECT COUNT(*) FROM ref_activites WHERE activite = :name');
+            $check->execute(['name' => $name]);
+            if ($check->fetchColumn() > 0) {
+                echo json_encode(['success' => false, 'error' => "L'activite \"$name\" existe deja"]);
+                exit;
+            }
+            $stmt = $pdo->prepare('INSERT INTO ref_activites (activite) VALUES (:name)');
             $stmt->execute(['name' => $name]);
             echo json_encode(['success' => true, 'value' => $name]);
         } catch (Throwable $e) {
@@ -1849,9 +1855,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             inp.value = data.value;
                             dd.style.display = 'none';
                             checkAutoAdd();
+                        } else {
+                            alert(data.error || 'Erreur lors de la creation');
+                            setupAutocomplete(wrap);
                         }
                     })
-                    .catch(function() {});
+                    .catch(function() { alert('Erreur reseau'); setupAutocomplete(wrap); });
                 });
                 dd.appendChild(createItem);
             }
