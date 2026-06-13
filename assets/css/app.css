@@ -810,9 +810,16 @@ button.btn-icon:hover {
     background: none;
 }
 
+a.btn-icon.danger,
+button.btn-icon.danger {
+    color: var(--danger);
+}
 a.btn-icon.danger:hover,
 button.btn-icon.danger:hover {
     color: var(--danger);
+}
+.btn-icon.danger .material-symbols-outlined {
+    font-size: 1.35rem;
 }
 
 a.btn-icon.primary,
