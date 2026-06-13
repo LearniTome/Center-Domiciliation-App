@@ -785,6 +785,7 @@ $stepLabels = ['Societe', 'Associes', 'Cession', 'Recap', 'Validation', 'Generat
             <article class="card">
                 <div class="section-header">
                     <div style="display:flex;align-items:center;gap:8px"><h2>Informations sur la societe</h2><p class="help-text" style="margin:0">Saisissez les details de la nouvelle societe</p></div>
+                    <button class="btn btn-info" type="button" data-fill-cession="1"><span class="material-symbols-outlined">auto_fix</span> Remplir automatiquement</button>
                 </div>
                 <div class="form-grid">
                     <h3 class="section-title">Identifiants</h3>
@@ -946,7 +947,10 @@ $stepLabels = ['Societe', 'Associes', 'Cession', 'Recap', 'Validation', 'Generat
 
             <div class="section-header">
                 <div style="display:flex;align-items:center;gap:8px"><h2>Associes</h2><p class="help-text" style="margin:0">Ajoutez les associes de la societe</p></div>
-                <button class="btn btn-info" type="button" id="add-associe-step2"><span class="material-symbols-outlined">add</span> Ajouter un associe</button>
+                <div style="display:flex;align-items:center;gap:8px">
+                    <button class="btn btn-info" type="button" data-fill-cession="2"><span class="material-symbols-outlined">auto_fix</span> Remplir automatiquement</button>
+                    <button class="btn btn-info" type="button" id="add-associe-step2"><span class="material-symbols-outlined">playlist_add</span> Ajouter un associe</button>
+                </div>
             </div>
 
             <div class="stack" id="cession-associes-container">
@@ -1260,7 +1264,10 @@ $stepLabels = ['Societe', 'Associes', 'Cession', 'Recap', 'Validation', 'Generat
             <input type="hidden" id="total-societe-parts" value="<?= (int) ($selectedSociete['societe_part_social'] ?? 0) ?>">
 
             <div style="margin-top:20px">
-                <strong>Lignes de cession</strong>
+                <div class="section-header" style="margin-bottom:12px">
+                    <strong>Lignes de cession</strong>
+                    <button class="btn btn-info" type="button" data-fill-cession="3"><span class="material-symbols-outlined">auto_fix</span> Remplir automatiquement</button>
+                </div>
                 <div id="cession-parts-container">
                     <?php $partIndex = 0; ?>
                     <?php if (!empty($wizard['parts'])): ?>
@@ -1926,6 +1933,162 @@ document.addEventListener('DOMContentLoaded', function() {
             var row = btn.closest('[data-activite-row]');
             if (row) row.remove();
         }
+    });
+
+    // --- Random auto-fill (all steps) ---
+    function randFrom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+    function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+    function pad(n) { return String(n).padStart(2, '0'); }
+    function randDate(start, end) {
+        var d = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+        return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+    }
+
+    var razSociete = [
+        'MALAOUI APP', 'FADAA DOI', 'ATLAS CONSULTING', 'TECHNOVA SARL',
+        'GREEN ECO SERVICES', 'NORTH AFRICA LOGISTICS', 'ALPHA BUSINESS',
+        'MEDITERRANEE INVEST', 'SAHARA ENERGIE', 'ATLANTIC TRADE'
+    ];
+    var icePrefixes = ['123456789', '987654321', '456789123', '789123456'];
+    var hommes = ['ALAOUI', 'BENALI', 'CHERKAOUI', 'DAHMANI', 'EL FASSI', 'FAHIMI', 'GHAZI', 'HAMMADI'];
+    var prenoms = ['Mohamed', 'Ahmed', 'Hassan', 'Omar', 'Youssef', 'Karim', 'Mehdi', 'Said'];
+
+    document.querySelectorAll('[data-fill-cession]').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            var step = parseInt(btn.getAttribute('data-fill-cession') || '0', 10);
+            var form = btn.closest('form');
+            if (!form) return;
+
+            if (step === 1) {
+                var rs = randFrom(razSociete);
+                form.querySelector('[name="societe_raison_sociale"]') && (form.querySelector('[name="societe_raison_sociale"]').value = rs);
+                var fj = form.querySelector('[name="societe_forme_juridique"]');
+                if (fj) {
+                    var opts = Array.from(fj.options).filter(function(o) { return o.value && o.value !== '-- Selectionnez --'; });
+                    if (opts.length) fj.value = randFrom(opts).value;
+                }
+                var pref = randFrom(icePrefixes);
+                form.querySelector('[name="societe_ice"]') && (form.querySelector('[name="societe_ice"]').value = pref + randInt(100000, 999999));
+                form.querySelector('[name="societe_rc"]') && (form.querySelector('[name="societe_rc"]').value = String(randInt(10000, 999999)));
+                form.querySelector('[name="societe_if"]') && (form.querySelector('[name="societe_if"]').value = String(randInt(1000000, 99999999)));
+                form.querySelector('[name="societe_tp"]') && (form.querySelector('[name="societe_tp"]').value = String(randInt(1000000, 99999999)));
+                form.querySelector('[name="societe_capital"]') && (form.querySelector('[name="societe_capital"]').value = String(randInt(50000, 500000)));
+                form.querySelector('[name="societe_part_social"]') && (form.querySelector('[name="societe_part_social"]').value = String(randInt(100, 5000)));
+                form.querySelector('[name="societe_valeur_nominale"]') && (form.querySelector('[name="societe_valeur_nominale"]').value = String(randInt(50, 1000)));
+                var ville = form.querySelector('[name="societe_ville"]');
+                if (ville) {
+                    var vOpts = Array.from(ville.options).filter(function(o) { return o.value && o.value !== '-- Selectionnez --'; });
+                    if (vOpts.length) ville.value = randFrom(vOpts).value;
+                }
+                var trib = form.querySelector('[name="societe_tribunal"]');
+                if (trib) {
+                    var tOpts = Array.from(trib.options).filter(function(o) { return o.value && o.value !== '-- Selectionnez --'; });
+                    if (tOpts.length) trib.value = randFrom(tOpts).value;
+                }
+                var tribType = form.querySelector('[name="societe_tribunal_type"]');
+                if (tribType) {
+                    var ttOpts = Array.from(tribType.options).filter(function(o) { return o.value; });
+                    if (ttOpts.length) tribType.value = randFrom(ttOpts).value;
+                }
+                form.querySelector('[name="societe_adresse_siege"]') && (form.querySelector('[name="societe_adresse_siege"]').value = randInt(1, 500) + ', Rue ' + randFrom(['Mohammed V', 'Hassan II', 'Oqba', 'Far', 'Moulay Ismail']) + ', ' + (ville ? ville.value : 'Casablanca'));
+                form.querySelector('[name="societe_email"]') && (form.querySelector('[name="societe_email"]').value = 'contact@' + rs.toLowerCase().replace(/[^a-z0-9]/g, '') + '.ma');
+                form.querySelector('[name="societe_telephone"]') && (form.querySelector('[name="societe_telephone"]').value = '0' + randInt(5,7) + String(randInt(10000000, 99999999)));
+
+            } else if (step === 2) {
+                var associeCards = form.querySelectorAll('[data-associe-item]');
+                if (associeCards.length === 0) {
+                    var addBtn = document.getElementById('add-associe-step2');
+                    if (addBtn) { addBtn.click(); }
+                    associeCards = form.querySelectorAll('[data-associe-item]');
+                }
+                associeCards.forEach(function(card) {
+                    var idx = card.querySelector('select[name^="associe_civilite"]');
+                    if (idx) {
+                        var civOpts = Array.from(idx.options).filter(function(o) { return o.value; });
+                        if (civOpts.length) idx.value = randFrom(civOpts).value;
+                    }
+                    var nom = randFrom(hommes);
+                    var prenom = randFrom(prenoms);
+                    card.querySelector('[name^="associe_nom_complet"]') && (card.querySelector('[name^="associe_nom_complet"]').value = prenom + ' ' + nom);
+                    card.querySelector('[name^="associe_cin"]') && (card.querySelector('[name^="associe_cin"]').value = 'AB' + randInt(100000, 999999));
+                    card.querySelector('[name^="associe_date_naissance"]') && (card.querySelector('[name^="associe_date_naissance"]').value = randDate(new Date(1960,0,1), new Date(1995,11,31)));
+                    var ln = card.querySelector('[name^="associe_lieu_naissance"]');
+                    if (ln) {
+                        var lnOpts = Array.from(ln.options).filter(function(o) { return o.value; });
+                        if (lnOpts.length) ln.value = randFrom(lnOpts).value;
+                    }
+                    var nat = card.querySelector('[name^="associe_nationalite"]');
+                    if (nat) {
+                        var natOpts = Array.from(nat.options).filter(function(o) { return o.value; });
+                        if (natOpts.length) nat.value = randFrom(natOpts).value;
+                    }
+                    card.querySelector('[name^="associe_telephone"]') && (card.querySelector('[name^="associe_telephone"]').value = '06' + randInt(10000000, 99999999));
+                    card.querySelector('[name^="associe_email"]') && (card.querySelector('[name^="associe_email"]').value = prenom.toLowerCase() + '.' + nom.toLowerCase() + '@email.ma');
+                    card.querySelector('[name^="associe_adresse"]') && (card.querySelector('[name^="associe_adresse"]').value = randInt(1, 200) + ' ' + randFrom(['Avenue', 'Rue', 'Boulevard']) + ' ' + randFrom(['Liberte', 'FAR', 'Hassan II', 'Mohammed VI', 'Resistance']));
+                    var ql = card.querySelector('[name^="associe_qualite"]');
+                    if (ql) {
+                        var qOpts = Array.from(ql.options).filter(function(o) { return o.value; });
+                        if (qOpts.length) ql.value = randFrom(qOpts).value;
+                    }
+                    card.querySelector('[name^="associe_parts"]') && (card.querySelector('[name^="associe_parts"]').value = String(randInt(100, 5000)));
+                    card.querySelector('[name^="associe_capital_detenu"]') && (card.querySelector('[name^="associe_capital_detenu"]').value = String(randInt(10000, 500000)));
+                    card.querySelector('[name^="associe_est_gerant"]') && (card.querySelector('[name^="associe_est_gerant"]').checked = Math.random() > 0.5);
+                });
+
+            } else if (step === 3) {
+                form.querySelector('[name="cession_motif"]') && (form.querySelector('[name="cession_motif"]').value = randFrom(['Cession entre associes', 'Retrait d\'un associe', 'Entree d\'un nouvel associe', 'Reorganisation du capital', 'Donation de parts']));
+                var rows = form.querySelectorAll('[data-part]');
+                rows.forEach(function(row) {
+                    var idx = row.getAttribute('data-part');
+                    // Set cedant type to "nouveau" and fill fields
+                    var cedantType = row.querySelector('.cedant-type');
+                    if (cedantType) {
+                        cedantType.value = 'nouveau';
+                        cedantType.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                    row.querySelector('input[name="cedant_nom_complet[' + idx + ']"]') && (row.querySelector('input[name="cedant_nom_complet[' + idx + ']"]').value = randFrom(hommes) + ' ' + randFrom(prenoms));
+                    row.querySelector('input[name="cedant_cin[' + idx + ']"]') && (row.querySelector('input[name="cedant_cin[' + idx + ']"]').value = 'AB' + randInt(100000, 999999));
+
+                    // Set cessionnaire type to "nouveau" and fill fields
+                    var cessType = row.querySelector('.cessionnaire-type');
+                    if (cessType) {
+                        cessType.value = 'nouveau';
+                        cessType.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                    var cessCivilite = row.querySelector('select[name="cessionnaire_civilite[' + idx + ']"]');
+                    if (cessCivilite) {
+                        var civOpts = Array.from(cessCivilite.options).filter(function(o) { return o.value; });
+                        if (civOpts.length) cessCivilite.value = randFrom(civOpts).value;
+                    }
+                    row.querySelector('input[name="cessionnaire_nom_complet[' + idx + ']"]') && (row.querySelector('input[name="cessionnaire_nom_complet[' + idx + ']"]').value = randFrom(hommes) + ' ' + randFrom(prenoms));
+                    row.querySelector('input[name="cessionnaire_cin[' + idx + ']"]') && (row.querySelector('input[name="cessionnaire_cin[' + idx + ']"]').value = 'CD' + randInt(100000, 999999));
+                    row.querySelector('input[name="cessionnaire_date_naissance[' + idx + ']"]') && (row.querySelector('input[name="cessionnaire_date_naissance[' + idx + ']"]').value = randDate(new Date(1960,0,1), new Date(1995,11,31)));
+                    var cessLn = row.querySelector('select[name="cessionnaire_lieu_naissance[' + idx + ']"]');
+                    if (cessLn) {
+                        var lnOpts = Array.from(cessLn.options).filter(function(o) { return o.value; });
+                        if (lnOpts.length) cessLn.value = randFrom(lnOpts).value;
+                    }
+                    var cessNat = row.querySelector('select[name="cessionnaire_nationalite[' + idx + ']"]');
+                    if (cessNat) {
+                        var natOpts = Array.from(cessNat.options).filter(function(o) { return o.value; });
+                        if (natOpts.length) cessNat.value = randFrom(natOpts).value;
+                    }
+                    row.querySelector('textarea[name="cessionnaire_adresse[' + idx + ']"]') && (row.querySelector('textarea[name="cessionnaire_adresse[' + idx + ']"]').value = randInt(1, 200) + ' ' + randFrom(['Avenue', 'Rue', 'Boulevard']) + ' ' + randFrom(['Liberte', 'FAR', 'Hassan II', 'Mohammed VI', 'Resistance']));
+
+                    // Parts & price
+                    row.querySelector('input[name="parts_cedees[' + idx + ']"]') && (row.querySelector('input[name="parts_cedees[' + idx + ']"]').value = String(randInt(50, 1000)));
+                    row.querySelector('input[name="prix_unitaire[' + idx + ']"]') && (row.querySelector('input[name="prix_unitaire[' + idx + ']"]').value = String(randInt(100, 2000)));
+                });
+            }
+
+            // Trigger input/change events
+            form.querySelectorAll('input, select, textarea').forEach(function(f) {
+                f.dispatchEvent(new Event('input', { bubbles: true }));
+                f.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+        });
     });
 });
 </script>
