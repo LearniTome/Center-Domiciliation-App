@@ -820,6 +820,7 @@ button.btn-icon.danger:hover {
 }
 .btn-icon.danger .material-symbols-outlined {
     font-size: 1.35rem;
+    color: var(--danger);
 }
 
 a.btn-icon.primary,
