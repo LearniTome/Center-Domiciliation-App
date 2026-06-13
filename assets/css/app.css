@@ -3102,6 +3102,64 @@ tr[data-coverage], .row-mapped {
     .recap-a4 .recap-section { page-break-inside: avoid; }
 }
 
+/* recap tables & cards */
+.recap-a4 .recap-table {
+    width: 100%; font-size: 0.75rem; border-collapse: collapse;
+}
+.recap-a4 .recap-table thead tr { border-bottom: 1px solid var(--border); }
+.recap-a4 .recap-table thead th {
+    text-align: left; padding: 4px 6px;
+}
+.recap-a4 .recap-table thead th.right { text-align: right; }
+.recap-a4 .recap-table thead th.center { text-align: center; }
+.recap-a4 .recap-table tbody tr { border-bottom: 1px dotted var(--border); }
+.recap-a4 .recap-table tbody td { padding: 4px 6px; }
+.recap-a4 .recap-table tbody td.right { text-align: right; }
+.recap-a4 .recap-table tbody td.center { text-align: center; }
+.recap-a4 .recap-table tbody td.mono { font-family: monospace; }
+.recap-a4 .recap-table tbody td.bold { font-weight: 600; }
+.recap-a4 .recap-table tfoot tr { font-weight: 700; border-top: 2px solid var(--text); background: var(--bg-alt); }
+.recap-a4 .recap-table tfoot td { padding: 4px 6px; }
+.recap-a4 .recap-table tfoot td.right { text-align: right; }
+.recap-a4 .recap-table tfoot td.center { text-align: center; }
+.recap-a4 .cession-resume {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.5rem; margin-bottom: 1rem; padding: 0.75rem;
+    background: var(--bg-alt); border-radius: 6px; border: 1px solid var(--border);
+}
+.recap-a4 .cession-resume .item {
+    display: flex; flex-direction: column; gap: 2px;
+}
+.recap-a4 .cession-resume .item .label {
+    font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted);
+}
+.recap-a4 .cession-resume .item .value {
+    font-size: 0.85rem; font-weight: 600;
+}
+.recap-a4 .recap-section-title {
+    font-size: 0.8rem; margin: 0 0 0.5rem;
+    color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;
+}
+.recap-a4 .badge-success { color: var(--success); font-weight: 600; }
+.recap-a4 .badge-danger { color: var(--danger); font-weight: 600; }
+.recap-a4 .icon-inline {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-size: 0.75rem;
+}
+.recap-a4 .icon-inline .material-symbols-outlined { font-size: 1rem; }
+.recap-a4 .capital-card {
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+}
+.recap-a4 .capital-card .label { color: var(--text-muted); }
+.recap-a4 .capital-card .value { font-size: 0.9rem; }
+.recap-a4 .valeur-nominale {
+    font-size: 0.7rem; margin: 0.5rem 0 0;
+    color: var(--text-muted);
+}
+.recap-a4 .valeur-nominale strong { font-weight: 600; }
+.recap-a4 .recap-table tbody td.small { font-size: 0.65rem; color: var(--text-muted); }
+
 /* ==========================================
    Step cards (creation.php step 5)
    ========================================== */

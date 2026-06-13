@@ -95,6 +95,12 @@ if ($editingId > 0 && !isset($_SESSION['_cession_loaded'])) {
                     'cessionnaire_lieu_naissance' => $p['cessionnaire_lieu_naissance'],
                     'cessionnaire_nationalite' => $p['cessionnaire_nationalite'],
                     'cessionnaire_adresse' => $p['cessionnaire_adresse'],
+                    'cessionnaire_telephone' => $p['cessionnaire_telephone'] ?? '',
+                    'cessionnaire_email' => $p['cessionnaire_email'] ?? '',
+                    'cessionnaire_qualite' => $p['cessionnaire_qualite'] ?? '',
+                    'cessionnaire_parts' => (int) ($p['cessionnaire_parts'] ?? 0),
+                    'cessionnaire_capital_detenu' => $p['cessionnaire_capital_detenu'] ?? '',
+                    'cessionnaire_est_gerant' => $p['cessionnaire_est_gerant'] ?? 0,
                     'parts_cedees' => (string) ($p['parts_cedees'] ?? ''),
                     'prix_unitaire' => (string) ($p['prix_unitaire'] ?? ''),
                     'prix_total' => (string) ($p['prix_total'] ?? ''),
@@ -263,6 +269,12 @@ if (is_post()) {
         $cessionnaireLieux = $_POST['cessionnaire_lieu_naissance'] ?? [];
         $cessionnaireNationalites = $_POST['cessionnaire_nationalite'] ?? [];
         $cessionnaireAdresses = $_POST['cessionnaire_adresse'] ?? [];
+        $cessionnaireTelephones = $_POST['cessionnaire_telephone'] ?? [];
+        $cessionnaireEmails = $_POST['cessionnaire_email'] ?? [];
+        $cessionnaireQualites = $_POST['cessionnaire_qualite'] ?? [];
+        $cessionnaireParts = $_POST['cessionnaire_parts'] ?? [];
+        $cessionnaireCapitals = $_POST['cessionnaire_capital_detenu'] ?? [];
+        $cessionnaireGerants = $_POST['cessionnaire_est_gerant'] ?? [];
         $pourcentages = $_POST['pourcentage'] ?? [];
         $partsCedees = $_POST['parts_cedees'] ?? [];
         $prixUnitaires = $_POST['prix_unitaire'] ?? [];
@@ -281,9 +293,20 @@ if (is_post()) {
             $cedAssocieId = (int) ($cedantAssocieIds[$i] ?? 0);
             $cedNom = trim((string) ($cedantNoms[$i] ?? ''));
             $cedCin = trim((string) ($cedantCins[$i] ?? ''));
-            if ($cedType === 'existant' && $cedAssocieId > 0 && $cedNom === '' && ($pdo ?? null) instanceof PDO) {
-                $a = fetch_record($pdo, 'associes', $cedAssocieId);
-                if ($a) { $cedNom = $a['associe_nom_complet'] ?? ''; $cedCin = $a['associe_cin'] ?? ''; }
+            if ($cedNom === '' && $cedAssocieId > 0) {
+                if (($pdo ?? null) instanceof PDO) {
+                    $a = fetch_record($pdo, 'associes', $cedAssocieId);
+                    if ($a) { $cedNom = $a['associe_nom_complet'] ?? ''; $cedCin = $a['associe_cin'] ?? ''; }
+                }
+                if ($cedNom === '' && !empty($wizard['associes'])) {
+                    foreach ($wizard['associes'] as $wa) {
+                        if (((int) ($wa['id'] ?? 0)) === $cedAssocieId) {
+                            $cedNom = $wa['associe_nom_complet'] ?? '';
+                            $cedCin = $wa['associe_cin'] ?? '';
+                            break;
+                        }
+                    }
+                }
             }
 
             $cessType = $cessionnaireTypes[$i] ?? 'existant';
@@ -293,6 +316,15 @@ if (is_post()) {
             if ($cessType === 'existant' && $cessAssocieId > 0 && $cessNom === '' && ($pdo ?? null) instanceof PDO) {
                 $a = fetch_record($pdo, 'associes', $cessAssocieId);
                 if ($a) { $cessNom = $a['associe_nom_complet'] ?? ''; $cessCin = $a['associe_cin'] ?? ''; }
+            }
+            if ($cessNom === '' && !empty($wizard['associes'])) {
+                foreach ($wizard['associes'] as $wa) {
+                    if (((int) ($wa['id'] ?? 0)) === $cessAssocieId) {
+                        $cessNom = $wa['associe_nom_complet'] ?? '';
+                        $cessCin = $wa['associe_cin'] ?? '';
+                        break;
+                    }
+                }
             }
 
             $pct = money_value(['v' => $pourcentages[$i] ?? '0'], 'v');
@@ -321,6 +353,12 @@ if (is_post()) {
                 'cessionnaire_lieu_naissance' => trim((string) ($cessionnaireLieux[$i] ?? '')),
                 'cessionnaire_nationalite' => trim((string) ($cessionnaireNationalites[$i] ?? '')),
                 'cessionnaire_adresse' => trim((string) ($cessionnaireAdresses[$i] ?? '')),
+                'cessionnaire_telephone' => trim((string) ($cessionnaireTelephones[$i] ?? '')),
+                'cessionnaire_email' => trim((string) ($cessionnaireEmails[$i] ?? '')),
+                'cessionnaire_qualite' => trim((string) ($cessionnaireQualites[$i] ?? '')),
+                'cessionnaire_parts' => (int) ($cessionnaireParts[$i] ?? 0),
+                'cessionnaire_capital_detenu' => trim((string) ($cessionnaireCapitals[$i] ?? '')),
+                'cessionnaire_est_gerant' => !empty($cessionnaireGerants[$i]) ? 1 : 0,
                 'pourcentage' => $pct > 0 ? $pct : null,
                 'parts_cedees' => $parts,
                 'prix_unitaire' => $pu,
@@ -479,7 +517,7 @@ if (is_post()) {
 
                 // Insert cession_parts
                 foreach ($wizard['parts'] as $p) {
-                    $stmt = $pdo->prepare('INSERT INTO cession_parts (cession_id, cedant_associe_id, cedant_nom_complet, cedant_cin, cedant_type, cessionnaire_associe_id, cessionnaire_nom_complet, cessionnaire_cin, cessionnaire_type, cessionnaire_civilite, cessionnaire_date_naissance, cessionnaire_lieu_naissance, cessionnaire_nationalite, cessionnaire_adresse, parts_cedees, prix_unitaire, prix_total, pourcentage, nommer_gerant) VALUES (:cid, :caid, :cnom, :ccin, :ctype, :csaid, :csnom, :cscin, :cstype, :csciv, :csdn, :csln, :csnat, :csadr, :parts, :pu, :pt, :pct, :ger)');
+                    $stmt = $pdo->prepare('INSERT INTO cession_parts (cession_id, cedant_associe_id, cedant_nom_complet, cedant_cin, cedant_type, cessionnaire_associe_id, cessionnaire_nom_complet, cessionnaire_cin, cessionnaire_type, cessionnaire_civilite, cessionnaire_date_naissance, cessionnaire_lieu_naissance, cessionnaire_nationalite, cessionnaire_adresse, cessionnaire_telephone, cessionnaire_email, cessionnaire_qualite, cessionnaire_parts, cessionnaire_capital_detenu, cessionnaire_est_gerant, parts_cedees, prix_unitaire, prix_total, pourcentage, nommer_gerant) VALUES (:cid, :caid, :cnom, :ccin, :ctype, :csaid, :csnom, :cscin, :cstype, :csciv, :csdn, :csln, :csnat, :csadr, :cstel, :cseml, :csql, :csparts, :cscap, :csger, :parts, :pu, :pt, :pct, :ger)');
                     $stmt->execute([
                         'cid' => $cessionId,
                         'caid' => $p['cedant_associe_id'] ?: null,
@@ -495,6 +533,12 @@ if (is_post()) {
                         'csln' => $p['cessionnaire_lieu_naissance'] ?: null,
                         'csnat' => $p['cessionnaire_nationalite'] ?: null,
                         'csadr' => $p['cessionnaire_adresse'] ?: null,
+                        'cstel' => $p['cessionnaire_telephone'] ?? '',
+                        'cseml' => $p['cessionnaire_email'] ?? '',
+                        'csql' => $p['cessionnaire_qualite'] ?? '',
+                        'csparts' => (int) ($p['cessionnaire_parts'] ?? 0),
+                        'cscap' => $p['cessionnaire_capital_detenu'] ?? 0,
+                        'csger' => $p['cessionnaire_est_gerant'] ?? 0,
                         'parts' => $p['parts_cedees'],
                         'pu' => $p['prix_unitaire'] ?? 0,
                         'pt' => $p['prix_total'] ?? 0,
@@ -506,7 +550,7 @@ if (is_post()) {
                     // Create new cessionnaire in associes if needed
                     if (($p['cessionnaire_type'] ?? 'existant') === 'nouveau' && ($p['cessionnaire_associe_id'] ?? 0) <= 0) {
                         $capDet = $partsAvant > 0 ? round(($p['parts_cedees'] / max($partsAvant, 1)) * $capitalAvant, 2) : 0;
-                        $stmtA = $pdo->prepare('INSERT INTO associes (societe_id, associe_civilite, associe_nom_complet, associe_cin, associe_date_naissance, associe_lieu_naissance, associe_nationalite, associe_adresse, associe_parts, associe_capital_detenu, associe_est_gerant) VALUES (:sid, :civ, :nom, :cin, :dn, :ln, :nat, :adr, :parts, :cap, :ger)');
+                        $stmtA = $pdo->prepare('INSERT INTO associes (societe_id, associe_civilite, associe_nom_complet, associe_cin, associe_date_naissance, associe_lieu_naissance, associe_nationalite, associe_adresse, associe_telephone, associe_email, associe_qualite, associe_parts, associe_capital_detenu, associe_est_gerant) VALUES (:sid, :civ, :nom, :cin, :dn, :ln, :nat, :adr, :tel, :eml, :ql, :parts, :cap, :ger)');
                         $stmtA->execute([
                             'sid' => $societeId,
                             'civ' => $p['cessionnaire_civilite'] ?? 'M.',
@@ -516,6 +560,9 @@ if (is_post()) {
                             'ln' => $p['cessionnaire_lieu_naissance'] ?: null,
                             'nat' => $p['cessionnaire_nationalite'] ?: null,
                             'adr' => $p['cessionnaire_adresse'] ?: null,
+                            'tel' => $p['cessionnaire_telephone'] ?? '',
+                            'eml' => $p['cessionnaire_email'] ?? '',
+                            'ql' => $p['cessionnaire_qualite'] ?? '',
                             'parts' => $p['parts_cedees'],
                             'cap' => $capDet,
                             'ger' => $p['nommer_gerant'] ?? 0,
@@ -639,8 +686,9 @@ foreach ($wizard['parts'] as $p) {
     $totalPartsCedees += (int) ($p['parts_cedees'] ?? 0);
     $totalPrix += (float) ($p['prix_total'] ?? 0);
 }
-$capitalAvant = (float) ($selectedSociete['societe_capital'] ?? 0);
-$partsAvant = (int) ($selectedSociete['societe_part_social'] ?? 0);
+$socForTotals = $selectedSociete ?: ($wizard['societe'] ?? []);
+$capitalAvant = (float) ($socForTotals['societe_capital'] ?? 0);
+$partsAvant = (int) ($socForTotals['societe_part_social'] ?? 0);
 $capitalApres = $capitalAvant;
 $partsApres = max(0, $partsAvant - $totalPartsCedees);
 
@@ -1246,7 +1294,11 @@ $stepLabels = ['Societe', 'Associes', 'Cession', 'Recap', 'Validation', 'Generat
 
         <!-- Step 3: Cession parts -->
         <?php elseif ($step === 3): ?>
-        <form method="post" id="cession-form">
+        <?php
+        $socForPrix = $selectedSociete ?: ($wizard['societe'] ?? []);
+        $valeurNominaleCession = (float) ($socForPrix['societe_valeur_nominale'] ?? 0);
+        ?>
+        <form method="post" id="cession-form" data-valeur-nominale="<?= $valeurNominaleCession ?>">
             <?= csrf_input() ?>
             <input type="hidden" name="nav_action" value="next">
 
@@ -1281,7 +1333,7 @@ $stepLabels = ['Societe', 'Associes', 'Cession', 'Recap', 'Validation', 'Generat
                                 'cedant_type' => 'existant', 'cedant_associe_id' => 0, 'cedant_nom_complet' => '', 'cedant_cin' => '',
                                 'cessionnaire_type' => 'existant', 'cessionnaire_associe_id' => 0, 'cessionnaire_nom_complet' => '', 'cessionnaire_cin' => '',
                                 'cessionnaire_civilite' => 'M.', 'cessionnaire_date_naissance' => '', 'cessionnaire_lieu_naissance' => '',
-                                'cessionnaire_nationalite' => '', 'cessionnaire_adresse' => '',
+                                'cessionnaire_nationalite' => '', 'cessionnaire_adresse' => '', 'cessionnaire_telephone' => '', 'cessionnaire_email' => '', 'cessionnaire_qualite' => '', 'cessionnaire_parts' => 0, 'cessionnaire_capital_detenu' => '', 'cessionnaire_est_gerant' => 0,
                                 'parts_cedees' => '', 'prix_unitaire' => '', 'prix_total' => '',
                             ];
                             $partIndex = 0; include __DIR__ . '/_cession_part_row.php';
@@ -1302,85 +1354,262 @@ $stepLabels = ['Societe', 'Associes', 'Cession', 'Recap', 'Validation', 'Generat
 
         <!-- Step 4: Recap -->
         <?php elseif ($step === 4): ?>
+        <?php
+        $socData = $wizard['mode'] === 'existante' ? $selectedSociete : ($wizard['societe'] ?? []);
+        $assocData = $wizard['mode'] === 'existante' ? $selectedAssocies : ($wizard['associes'] ?? []);
+        $raisonSlug = preg_replace('/[^a-zA-Z0-9\s-]/', '', ($socData['societe_raison_sociale'] ?? 'Dossier'));
+        $raisonSlug = preg_replace('/\s+/', '-', $raisonSlug);
+        $raisonSlug = preg_replace('/-+/', '-', $raisonSlug);
+        $raisonSlug = trim($raisonSlug, '-') ?: 'Dossier';
+        $forme = $socData['societe_forme_juridique'] ?? '';
+        $prefixMap = ['SARL AU' => 'SARL-AU', 'SARL' => 'SARL', 'SA' => 'SA', 'Personne Physique' => 'PP'];
+        $pdfPrefix = $prefixMap[$forme] ?? 'CESSION';
+        ?>
         <div class="stack">
-            <div class="stats" style="margin-bottom:16px">
-                <article class="stat">
-                    <span class="stat-value"><?= e($selectedSociete['societe_raison_sociale'] ?? '-') ?></span>
-                    <span class="stat-label">Societe concernee</span>
-                </article>
-                <article class="stat">
-                    <span class="stat-value"><?= e($wizard['cession_date'] ?? date('Y-m-d')) ?></span>
-                    <span class="stat-label">Date de cession</span>
-                </article>
-                <article class="stat">
-                    <span class="stat-value"><?= e($wizard['cession_motif'] ?: '-') ?></span>
-                    <span class="stat-label">Motif</span>
-                </article>
-            </div>
-
-            <strong>Details de la cession :</strong>
-            <table data-sortable>
-                <thead>
-                    <tr>
-                        <th data-col="cedant">Cedant</th>
-                        <th data-col="cessionnaire">Cessionnaire</th>
-                        <th data-col="pourcentage">%</th>
-                        <th data-col="parts">Parts cedees</th>
-                        <th data-col="prix-u">Prix unitaire</th>
-                        <th data-col="prix-t">Prix total</th>
-                        <th>Gerant</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($wizard['parts'] as $p): ?>
-                    <tr>
-                        <td><?= e($p['cedant_nom_complet']) ?></td>
-                        <td><?= e($p['cessionnaire_nom_complet']) ?></td>
-                        <td><?= isset($p['pourcentage']) ? number_format((float) $p['pourcentage'], 1, ',', ' ') . '%' : '-' ?></td>
-                        <td><?= (int) ($p['parts_cedees'] ?? 0) ?></td>
-                        <td><?= e(number_format((float) ($p['prix_unitaire'] ?? 0), 2, ',', ' ') . ' DH') ?></td>
-                        <td><?= e(number_format((float) ($p['prix_total'] ?? 0), 2, ',', ' ') . ' DH') ?></td>
-                        <td><?= !empty($p['nommer_gerant']) ? '<span class="material-symbols-outlined" style="color:var(--success)">verified</span>' : '-' ?></td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-                <tfoot>
-                    <tr style="font-weight:600">
-                        <td colspan="3">Total</td>
-                        <td><?= $totalPartsCedees ?></td>
-                        <td></td>
-                        <td><?= e(number_format($totalPrix, 2, ',', ' ') . ' DH') ?></td>
-                        <td></td>
-                    </tr>
-                </tfoot>
-            </table>
-
-            <div class="stats" style="margin:16px 0">
-                <article class="stat">
-                    <span class="stat-value"><?= e(number_format($capitalAvant, 2, ',', ' ') . ' DH') ?></span>
-                    <span class="stat-label">Capital avant cession</span>
-                </article>
-                <article class="stat">
-                    <span class="stat-value"><?= $partsAvant ?></span>
-                    <span class="stat-label">Parts avant cession</span>
-                </article>
-                <article class="stat">
-                    <span class="stat-value" style="color:var(--primary)"><?= e(number_format($capitalApres, 2, ',', ' ') . ' DH') ?></span>
-                    <span class="stat-label">Capital apres cession</span>
-                </article>
-                <article class="stat">
-                    <span class="stat-value" style="color:var(--primary)"><?= $partsApres ?></span>
-                    <span class="stat-label">Parts apres cession</span>
-                </article>
-            </div>
-
-            <form method="post" class="stack">
-                <?= csrf_input() ?>
-                <input type="hidden" name="nav_action" value="next">
-                <div class="footer-actions">
-                    <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="material-symbols-outlined">arrow_back</span> Retour</button>
-                    <button class="btn btn-next" type="submit"><span class="material-symbols-outlined">arrow_forward</span> Suivant</button>
+            <div class="section-header">
+                <div>
+                    <h2>Recapitulatif de la cession</h2>
+                    <p class="help-text">Verifiez les informations avant de generer les documents.</p>
                 </div>
+            </div>
+
+            <div class="step-4-controls table-actions" style="margin-bottom:0.75rem">
+                <button class="btn btn-info" onclick="window.print()"><span class="material-symbols-outlined">print</span> Imprimer</button>
+                <button class="btn btn-info" id="btn-pdf-recap-cession" data-prefix="<?= e($pdfPrefix) ?>" data-raison="<?= e($raisonSlug) ?>"><span class="material-symbols-outlined">picture_as_pdf</span> Sauvegarder PDF</button>
+                <a class="btn btn-back" href="<?= e(app_url('cession', ['step' => 1])) ?>"><span class="material-symbols-outlined">edit</span> Modifier societe</a>
+                <a class="btn btn-back" href="<?= e(app_url('cession', ['step' => 2])) ?>"><span class="material-symbols-outlined">edit</span> Modifier associes</a>
+                <a class="btn btn-back" href="<?= e(app_url('cession', ['step' => 3])) ?>"><span class="material-symbols-outlined">edit</span> Modifier cession</a>
+            </div>
+
+            <div class="recap-a4">
+                <div class="recap-header">
+                    <h2>Recapitulatif de cession de parts sociales</h2>
+                    <p>Societe : <?= e($socData['societe_raison_sociale'] ?? '-') ?> — Date : <?= e($wizard['cession_date'] ?? date('Y-m-d')) ?></p>
+                </div>
+
+                <div class="recap-section">
+                    <h3>Societe</h3>
+                    <div class="recap-grid">
+                        <div class="item"><span class="label">Raison sociale</span><span class="value"><?= e($socData['societe_raison_sociale'] ?: '-') ?></span></div>
+                        <div class="item"><span class="label">Forme juridique</span><span class="value"><?= e($socData['societe_forme_juridique'] ?: '-') ?></span></div>
+                        <div class="item"><span class="label">ICE</span><span class="value"><?= e($socData['societe_ice'] ?: '-') ?></span></div>
+                        <div class="item"><span class="label">Capital</span><span class="value"><?= e($socData['societe_capital'] ? number_format((float) $socData['societe_capital'], 2, ',', ' ') : '-') ?> DH</span></div>
+                        <div class="item"><span class="label">Nombre de parts</span><span class="value"><?= e($socData['societe_part_social'] ?: '-') ?></span></div>
+                        <div class="item"><span class="label">Ville</span><span class="value"><?= e($socData['societe_ville'] ?: '-') ?></span></div>
+                        <div class="item"><span class="label">Tribunal</span><span class="value"><?= e($socData['societe_tribunal'] ?: '-') ?></span></div>
+                        <div class="item"><span class="label">Email</span><span class="value"><?= e($socData['societe_email'] ?: '-') ?></span></div>
+                        <div class="item full"><span class="label">Adresse</span><span class="value"><?= e($socData['societe_adresse_siege'] ?: '-') ?></span></div>
+                    </div>
+                </div>
+
+                <div class="recap-section">
+                    <h3>Associes (<?= count($assocData) ?>)</h3>
+                    <?php
+                    $socCapital = (float) ($socData['societe_capital'] ?? 0);
+                    $socParts = (int) ($socData['societe_part_social'] ?? 0);
+
+                    $cedantNames = [];
+                    $cessionnaireNames = [];
+                    foreach (($wizard['parts'] ?? []) as $p) {
+                        $cedantNames[] = trim($p['cedant_nom_complet'] ?? '');
+                        $cessionnaireNames[] = trim($p['cessionnaire_nom_complet'] ?? '');
+                    }
+                    ?>
+                        <?php foreach ($assocData as $i => $assoc):
+                            $parts = (int) ($assoc['associe_parts'] ?? 0);
+                            $capital = (float) ($assoc['associe_capital_detenu'] ?? 0);
+                            $pct = $socParts > 0 ? round(($parts / $socParts) * 100, 1) : ($socCapital > 0 ? round(($capital / $socCapital) * 100, 1) : 0);
+                            $assocNom = trim($assoc['associe_nom_complet'] ?? '');
+                            $isCedant = in_array($assocNom, $cedantNames);
+                            $isCessionnaire = in_array($assocNom, $cessionnaireNames);
+                            $roleBadges = [];
+                            if ($isCedant) $roleBadges[] = '<span class="badge" style="background:var(--danger);color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:3px">Cedant</span>';
+                            if ($isCessionnaire) $roleBadges[] = '<span class="badge" style="background:var(--success);color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:3px">Cessionnaire</span>';
+                        ?>
+                        <div class="recap-associe">
+                            <div class="associe-num">
+                                Associe n°<?= $i + 1 ?> — <?= e($assoc['associe_civilite'] ?? '') ?> <?= e($assoc['associe_nom_complet'] ?: '') ?>
+                                <?= !empty($roleBadges) ? ' ' . implode(' ', $roleBadges) : '' ?>
+                            </div>
+                            <div class="recap-grid">
+                                <span class="item"><span class="label">CIN</span><span class="value" style="font-family:monospace"><?= e($assoc['associe_cin'] ?: '-') ?></span></span>
+                                <span class="item"><span class="label">Date naissance</span><span class="value"><?= !empty($assoc['associe_date_naissance']) ? e(date('d/m/Y', strtotime($assoc['associe_date_naissance']))) : '-' ?></span></span>
+                                <span class="item"><span class="label">Lieu naissance</span><span class="value"><?= e($assoc['associe_lieu_naissance'] ?? '-') ?></span></span>
+                                <span class="item"><span class="label">Nationalite</span><span class="value"><?= e($assoc['associe_nationalite'] ?? '-') ?></span></span>
+                                <span class="item"><span class="label">Telephone</span><span class="value"><?= e($assoc['associe_telephone'] ?? '-') ?></span></span>
+                                <span class="item"><span class="label">Email</span><span class="value"><?= e($assoc['associe_email'] ?? '-') ?></span></span>
+                                <span class="item"><span class="label">Adresse</span><span class="value"><?= e($assoc['associe_adresse'] ?? '-') ?></span></span>
+                                <span class="item"><span class="label">Qualite</span><span class="value"><?= e($assoc['associe_qualite'] ?: '-') ?></span></span>
+                                <span class="item"><span class="label">Parts</span><span class="value"><?= $parts ? number_format($parts, 0, ',', ' ') : '-' ?></span></span>
+                                <span class="item"><span class="label">Capital detenu</span><span class="value"><?= $capital ? number_format($capital, 2, ',', ' ') . ' DH' : '-' ?></span></span>
+                                <span class="item"><span class="label">% capital</span><span class="value"><?= $pct > 0 ? number_format($pct, 1, ',', ' ') . '%' : '-' ?></span></span>
+                                <span class="item"><span class="label">Gerant</span><span class="value"><?= ((string) ($assoc['associe_est_gerant'] ?? '0') === '1') ? 'Oui' : 'Non' ?></span></span>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+
+                    <?php
+                    // Cessionnaires cards (from parts, not in assocData)
+                    $cessionnairesInParts = [];
+                    foreach (($wizard['parts'] ?? []) as $p) {
+                        $key = $p['cessionnaire_nom_complet'] ?? '';
+                        if ($key === '' || in_array(trim($key), $cedantNames)) continue;
+                        if (!isset($cessionnairesInParts[$key])) {
+                            $cessionnairesInParts[$key] = [
+                                'nom' => $key,
+                                'cin' => $p['cessionnaire_cin'] ?? '',
+                                'civilite' => $p['cessionnaire_civilite'] ?? 'M.',
+                                'date_naissance' => $p['cessionnaire_date_naissance'] ?? '',
+                                'lieu_naissance' => $p['cessionnaire_lieu_naissance'] ?? '',
+                                'nationalite' => $p['cessionnaire_nationalite'] ?? '',
+                                'adresse' => $p['cessionnaire_adresse'] ?? '',
+                                'telephone' => $p['cessionnaire_telephone'] ?? '',
+                                'email' => $p['cessionnaire_email'] ?? '',
+                                'qualite' => $p['cessionnaire_qualite'] ?? '',
+                                'parts' => $p['cessionnaire_parts'] ?? 0,
+                                'capital_detenu' => $p['cessionnaire_capital_detenu'] ?? 0,
+                                'est_gerant' => $p['cessionnaire_est_gerant'] ?? 0,
+                            ];
+                        }
+                    }
+                    ?>
+                    <?php if (!empty($cessionnairesInParts)): ?>
+                        <?php foreach ($cessionnairesInParts as $ck => $cp): ?>
+                        <div class="recap-associe">
+                            <div class="associe-num">
+                                <?= e($cp['civilite']) ?> <?= e($cp['nom']) ?>
+                                <span class="badge" style="background:var(--success);color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:3px">Cessionnaire</span>
+                            </div>
+                            <div class="recap-grid">
+                                <span class="item"><span class="label">CIN</span><span class="value" style="font-family:monospace"><?= e($cp['cin'] ?: '-') ?></span></span>
+                                <span class="item"><span class="label">Date naissance</span><span class="value"><?= !empty($cp['date_naissance']) ? e(date('d/m/Y', strtotime($cp['date_naissance']))) : '-' ?></span></span>
+                                <span class="item"><span class="label">Lieu naissance</span><span class="value"><?= e($cp['lieu_naissance'] ?: '-') ?></span></span>
+                                <span class="item"><span class="label">Nationalite</span><span class="value"><?= e($cp['nationalite'] ?: '-') ?></span></span>
+                                <span class="item"><span class="label">Telephone</span><span class="value"><?= e($cp['telephone'] ?: '-') ?></span></span>
+                                <span class="item"><span class="label">Email</span><span class="value"><?= e($cp['email'] ?: '-') ?></span></span>
+                                <span class="item"><span class="label">Adresse</span><span class="value"><?= e($cp['adresse'] ?: '-') ?></span></span>
+                                <span class="item"><span class="label">Qualite</span><span class="value"><?= e($cp['qualite'] ?: '-') ?></span></span>
+                                <span class="item"><span class="label">Parts</span><span class="value"><?= $cp['parts'] > 0 ? number_format((int) $cp['parts'], 0, ',', ' ') : '-' ?></span></span>
+                                <span class="item"><span class="label">Capital detenu</span><span class="value"><?= (float) $cp['capital_detenu'] > 0 ? number_format((float) $cp['capital_detenu'], 2, ',', ' ') . ' DH' : '-' ?></span></span>
+                                <span class="item"><span class="label">Gerant</span><span class="value"><?= !empty($cp['est_gerant']) ? 'Oui' : 'Non' ?></span></span>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Repartition du capital apres cession -->
+                <div class="recap-section">
+                    <h3>Repartition du capital apres cession</h3>
+                    <?php
+                    // Build a map of cedant deductions
+                    $cedantDeductions = [];
+                    foreach ($wizard['parts'] as $p) {
+                        $key = $p['cedant_associe_id'] ?: $p['cedant_nom_complet'];
+                        if (!isset($cedantDeductions[$key])) {
+                            $cedantDeductions[$key] = ['nom' => $p['cedant_nom_complet'], 'parts' => 0, 'capital' => 0];
+                        }
+                        $capDed = $partsAvant > 0 ? round(($p['parts_cedees'] / max($partsAvant, 1)) * $capitalAvant, 2) : 0;
+                        $cedantDeductions[$key]['parts'] += (int) ($p['parts_cedees'] ?? 0);
+                        $cedantDeductions[$key]['capital'] += $capDed;
+                    }
+                    // Build a map of cessionnaire additions
+                    $cessionnaireAdditions = [];
+                    foreach ($wizard['parts'] as $p) {
+                        $key = $p['cessionnaire_associe_id'] ?: $p['cessionnaire_nom_complet'];
+                        if (!isset($cessionnaireAdditions[$key])) {
+                            $cessionnaireAdditions[$key] = ['nom' => $p['cessionnaire_nom_complet'], 'parts' => 0, 'capital' => 0];
+                        }
+                        $capAdd = $partsAvant > 0 ? round(($p['parts_cedees'] / max($partsAvant, 1)) * $capitalAvant, 2) : 0;
+                        $cessionnaireAdditions[$key]['parts'] += (int) ($p['parts_cedees'] ?? 0);
+                        $cessionnaireAdditions[$key]['capital'] += $capAdd;
+                    }
+                    ?>
+                    <table class="recap-table">
+                        <thead>
+                            <tr>
+                                <th>Associe</th>
+                                <th class="right">Parts avant</th>
+                                <th class="center">Operation</th>
+                                <th class="right">Parts ceded/recues</th>
+                                <th class="right">Parts apres</th>
+                                <th class="right">Capital apres</th>
+                                <th class="right">% apres</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php
+                            $allKeys = array_unique(array_merge(array_keys($cedantDeductions), array_keys($cessionnaireAdditions)));
+                            // Display cedants first
+                            foreach ($cedantDeductions as $key => $ded):
+                                $cedantPartsAvant = $partsAvant > 0 ? $ded['parts'] : 0;
+                            ?>
+                            <tr>
+                                <td class="bold"><?= e($ded['nom']) ?></td>
+                                <td class="right"><?= $cedantPartsAvant ?: '-' ?></td>
+                                <td class="center">
+                                    <span class="icon-inline" style="color:var(--danger)">
+                                        <span class="material-symbols-outlined">remove_circle</span> Cede
+                                    </span>
+                                </td>
+                                <td class="right badge-danger">-<?= $ded['parts'] ?></td>
+                                <td class="right bold"><?= max(0, $cedantPartsAvant - $ded['parts']) ?></td>
+                                <td class="right"><?= e(number_format(max(0, $cedantPartsAvant > 0 ? $capitalAvant - $ded['capital'] : 0), 2, ',', ' ') . ' DH') ?></td>
+                                <td class="right"><?= $partsAvant > 0 ? number_format((max(0, $cedantPartsAvant - $ded['parts']) / max($partsAvant, 1)) * 100, 1, ',', ' ') . '%' : '-' ?></td>
+                            </tr>
+                            <?php endforeach; ?>
+                            <?php
+                            // Display cessionnaires that are not also cedants
+                            foreach ($cessionnaireAdditions as $key => $add):
+                                if (isset($cedantDeductions[$key])) continue;
+                                $capAdd = $partsAvant > 0 ? round(($add['parts'] / max($partsAvant, 1)) * $capitalAvant, 2) : 0;
+                            ?>
+                            <tr>
+                                <td class="bold"><?= e($add['nom']) ?></td>
+                                <td class="right">-</td>
+                                <td class="center">
+                                    <span class="icon-inline" style="color:var(--success)">
+                                        <span class="material-symbols-outlined">add_circle</span> Recu
+                                    </span>
+                                </td>
+                                <td class="right badge-success">+<?= $add['parts'] ?></td>
+                                <td class="right bold"><?= $add['parts'] ?></td>
+                                <td class="right"><?= e(number_format($capAdd, 2, ',', ' ') . ' DH') ?></td>
+                                <td class="right"><?= $partsAvant > 0 ? number_format(($add['parts'] / max($partsAvant, 1)) * 100, 1, ',', ' ') . '%' : '-' ?></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td>Total</td>
+                                <td class="right"><?= $partsAvant ?></td>
+                                <td></td>
+                                <td></td>
+                                <td class="right"><?= $partsApres ?></td>
+                                <td class="right"><?= e(number_format($capitalApres, 2, ',', ' ') . ' DH') ?></td>
+                                <td class="right">100,0 %</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                    <div class="recap-grid" style="margin-top:0.75rem;grid-template-columns:1fr 1fr">
+                        <div class="capital-card">
+                            <span class="label">Avant cession</span>
+                            <span class="value"><strong>Capital :</strong> <?= e(number_format($capitalAvant, 2, ',', ' ') . ' DH') ?> &mdash; <strong>Parts :</strong> <?= $partsAvant ?></span>
+                        </div>
+                        <div class="capital-card">
+                            <span class="label">Apres cession</span>
+                            <span class="value"><strong>Capital :</strong> <?= e(number_format($capitalApres, 2, ',', ' ') . ' DH') ?> &mdash; <strong>Parts :</strong> <?= $partsApres ?></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <form method="post" class="step-4-controls table-actions" style="margin-top:0.75rem">
+                <?= csrf_input() ?>
+                <input type="hidden" name="step" value="4">
+                <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="material-symbols-outlined">arrow_back</span> Retour</button>
+                <button class="btn btn-next" type="submit" name="nav_action" value="next"><span class="material-symbols-outlined">arrow_forward</span> Suivant</button>
             </form>
         </div>
 
@@ -1613,14 +1842,17 @@ $stepLabels = ['Societe', 'Associes', 'Cession', 'Recap', 'Validation', 'Generat
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Toggle cedant fields
-    document.querySelectorAll('.cedant-type').forEach(function(sel) {
-        sel.addEventListener('change', function() {
-            var row = this.closest('.cession-part-row');
+    // Sync cedant hidden fields when selection changes
+    document.querySelectorAll('.cedant-select').forEach(function(sel) {
+        function syncCedant() {
+            var row = sel.closest('.cession-part-row');
             if (!row) return;
-            row.querySelector('.cedant-existing-fields').style.display = this.value === 'nouveau' ? 'none' : '';
-            row.querySelector('.cedant-new-fields').style.display = this.value === 'nouveau' ? '' : 'none';
-        });
+            var opt = sel.options[sel.selectedIndex];
+            row.querySelector('.cedant-nom-hidden').value = opt ? (opt.getAttribute('data-nom') || '') : '';
+            row.querySelector('.cedant-cin-hidden').value = opt ? (opt.getAttribute('data-cin') || '') : '';
+        }
+        sel.addEventListener('change', syncCedant);
+        syncCedant();
     });
 
     // Toggle cessionnaire fields
@@ -1682,10 +1914,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         // Reset display
-        var cedNew = clone.querySelector('.cedant-new-fields');
-        var cedExist = clone.querySelector('.cedant-existing-fields');
-        if (cedNew) cedNew.style.display = 'none';
-        if (cedExist) cedExist.style.display = '';
         var cessNew = clone.querySelector('.cessionnaire-new-fields');
         var cessExist = clone.querySelector('.cessionnaire-existing-fields');
         if (cessNew) cessNew.style.display = 'none';
@@ -1696,13 +1924,16 @@ document.addEventListener('DOMContentLoaded', function() {
         container.appendChild(clone);
 
         // Bind events
-        clone.querySelectorAll('.cedant-type').forEach(function(el) {
-            el.addEventListener('change', function() {
-                var r = this.closest('.cession-part-row');
-                if (!r) return;
-                r.querySelector('.cedant-existing-fields').style.display = this.value === 'nouveau' ? 'none' : '';
-                r.querySelector('.cedant-new-fields').style.display = this.value === 'nouveau' ? '' : 'none';
-            });
+        clone.querySelectorAll('.cedant-select').forEach(function(el) {
+            function syncCedant() {
+                var row = el.closest('.cession-part-row');
+                if (!row) return;
+                var opt = el.options[el.selectedIndex];
+                row.querySelector('.cedant-nom-hidden').value = opt ? (opt.getAttribute('data-nom') || '') : '';
+                row.querySelector('.cedant-cin-hidden').value = opt ? (opt.getAttribute('data-cin') || '') : '';
+            }
+            el.addEventListener('change', syncCedant);
+            syncCedant();
         });
         clone.querySelectorAll('.cessionnaire-type').forEach(function(el) {
             el.addEventListener('change', function() {
@@ -1996,6 +2227,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 form.querySelector('[name="societe_email"]') && (form.querySelector('[name="societe_email"]').value = 'contact@' + rs.toLowerCase().replace(/[^a-z0-9]/g, '') + '.ma');
                 form.querySelector('[name="societe_telephone"]') && (form.querySelector('[name="societe_telephone"]').value = '0' + randInt(5,7) + String(randInt(10000000, 99999999)));
 
+                // Activites (statuts)
+                var activiteRows = document.querySelectorAll('#activites-container [data-activite-row]');
+                if (activiteRows.length > 0 && typeof allActivitesOptions !== 'undefined' && allActivitesOptions.length > 0) {
+                    var used = [];
+                    activiteRows.forEach(function(row, idx) {
+                        var inp = row.querySelector('input');
+                        if (inp) {
+                            var avail = allActivitesOptions.filter(function(a) { return used.indexOf(a) === -1; });
+                            if (avail.length === 0) return;
+                            var picked = randFrom(avail);
+                            inp.value = picked;
+                            inp.dispatchEvent(new Event('input', { bubbles: true }));
+                            used.push(picked);
+                        }
+                    });
+                }
+
             } else if (step === 2) {
                 var associeCards = form.querySelectorAll('[data-associe-item]');
                 if (associeCards.length === 0) {
@@ -2042,14 +2290,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 var rows = form.querySelectorAll('[data-part]');
                 rows.forEach(function(row) {
                     var idx = row.getAttribute('data-part');
-                    // Set cedant type to "nouveau" and fill fields
-                    var cedantType = row.querySelector('.cedant-type');
-                    if (cedantType) {
-                        cedantType.value = 'nouveau';
-                        cedantType.dispatchEvent(new Event('change', { bubbles: true }));
+                    // Pick an existing associate as cedant
+                    var cedantSelect = row.querySelector('select[name="cedant_associe_id[' + idx + ']"]');
+                    if (cedantSelect) {
+                        var optns = Array.from(cedantSelect.options).filter(function(o) { return o.value; });
+                        if (optns.length) cedantSelect.value = randFrom(optns).value;
                     }
-                    row.querySelector('input[name="cedant_nom_complet[' + idx + ']"]') && (row.querySelector('input[name="cedant_nom_complet[' + idx + ']"]').value = randFrom(hommes) + ' ' + randFrom(prenoms));
-                    row.querySelector('input[name="cedant_cin[' + idx + ']"]') && (row.querySelector('input[name="cedant_cin[' + idx + ']"]').value = 'AB' + randInt(100000, 999999));
 
                     // Set cessionnaire type to "nouveau" and fill fields
                     var cessType = row.querySelector('.cessionnaire-type');
@@ -2076,10 +2322,21 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (natOpts.length) cessNat.value = randFrom(natOpts).value;
                     }
                     row.querySelector('textarea[name="cessionnaire_adresse[' + idx + ']"]') && (row.querySelector('textarea[name="cessionnaire_adresse[' + idx + ']"]').value = randInt(1, 200) + ' ' + randFrom(['Avenue', 'Rue', 'Boulevard']) + ' ' + randFrom(['Liberte', 'FAR', 'Hassan II', 'Mohammed VI', 'Resistance']));
+                    row.querySelector('input[name="cessionnaire_telephone[' + idx + ']"]') && (row.querySelector('input[name="cessionnaire_telephone[' + idx + ']"]').value = '06' + randInt(10000000, 99999999));
+                    row.querySelector('input[name="cessionnaire_email[' + idx + ']"]') && (row.querySelector('input[name="cessionnaire_email[' + idx + ']"]').value = 'cession.' + randInt(100, 999) + '@email.ma');
+                    var cessQl = row.querySelector('select[name="cessionnaire_qualite[' + idx + ']"]');
+                    if (cessQl) {
+                        var qOpts = Array.from(cessQl.options).filter(function(o) { return o.value; });
+                        if (qOpts.length) cessQl.value = randFrom(qOpts).value;
+                    }
+                    row.querySelector('input[name="cessionnaire_parts[' + idx + ']"]') && (row.querySelector('input[name="cessionnaire_parts[' + idx + ']"]').value = String(randInt(100, 5000)));
+                    row.querySelector('input[name="cessionnaire_capital_detenu[' + idx + ']"]') && (row.querySelector('input[name="cessionnaire_capital_detenu[' + idx + ']"]').value = String(randInt(10000, 500000)));
+                    row.querySelector('input[name="cessionnaire_est_gerant[' + idx + ']"]') && (row.querySelector('input[name="cessionnaire_est_gerant[' + idx + ']"]').checked = Math.random() > 0.5);
 
                     // Parts & price
                     row.querySelector('input[name="parts_cedees[' + idx + ']"]') && (row.querySelector('input[name="parts_cedees[' + idx + ']"]').value = String(randInt(50, 1000)));
-                    row.querySelector('input[name="prix_unitaire[' + idx + ']"]') && (row.querySelector('input[name="prix_unitaire[' + idx + ']"]').value = String(randInt(100, 2000)));
+                    var vnCession = parseFloat(form.getAttribute('data-valeur-nominale'));
+                    row.querySelector('input[name="prix_unitaire[' + idx + ']"]') && (row.querySelector('input[name="prix_unitaire[' + idx + ']"]').value = vnCession > 0 ? String(vnCession) : String(randInt(100, 2000)));
                 });
             }
 
@@ -2092,3 +2349,38 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+<?php if ($step === 4): ?>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+document.getElementById('btn-pdf-recap-cession')?.addEventListener('click', function () {
+    var element = document.querySelector('.recap-a4');
+    if (!element) return;
+
+    var prefix = this.getAttribute('data-prefix') || 'CESSION';
+    var raison = this.getAttribute('data-raison') || 'Dossier';
+    var now = new Date();
+    var yyyy = now.getFullYear();
+    var mm = String(now.getMonth() + 1).padStart(2, '0');
+    var filename = prefix + '_' + yyyy + '-' + mm + '_Recapitulatif-Cession-' + raison + '.pdf';
+
+    this.disabled = true;
+    this.innerHTML = '<span class="material-symbols-outlined spin">sync</span> Generation...';
+
+    element.classList.add('recap-pdf-mode');
+
+    var opt = {
+        margin:       10,
+        filename:     filename,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    html2pdf().set(opt).from(element).save().then(function () {
+        element.classList.remove('recap-pdf-mode');
+        document.getElementById('btn-pdf-recap-cession').disabled = false;
+        document.getElementById('btn-pdf-recap-cession').innerHTML = '<span class="material-symbols-outlined">picture_as_pdf</span> Sauvegarder PDF';
+    });
+});
+</script>
+<?php endif; ?>
