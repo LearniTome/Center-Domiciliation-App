@@ -26,7 +26,7 @@ if (!isset($_SESSION['cession_wizard']) || !is_array($_SESSION['cession_wizard']
 
 $editingId = (int) ($_GET['id'] ?? 0);
 $wizard = &$_SESSION['cession_wizard'];
-$step = max(0, min(4, (int) ($_GET['step'] ?? 0)));
+$step = max(0, min(6, (int) ($_GET['step'] ?? 0)));
 
 // ============ REFERENCE DATA ============
 $societesList = [];
@@ -120,13 +120,8 @@ if (is_post()) {
             $wizard['societe_id'] = 0;
             redirect_to('cession', ['step' => 1]);
         } elseif ($mode === 'nouvelle') {
-            $sous = $_POST['mode_nouvelle_sous'] ?? '';
-            if (!in_array($sous, ['associe_existant', 'nouvel_associe'], true)) {
-                set_flash('error', 'Veuillez choisir une option pour la nouvelle societe.');
-                redirect_to('cession', ['step' => 0]);
-            }
             $wizard['mode'] = 'nouvelle';
-            $wizard['mode_nouvelle_sous'] = $sous;
+            $wizard['mode_nouvelle_sous'] = '';
             $wizard['societe'] = [];
             $wizard['associes'] = [];
             $wizard['societe_id'] = 0;
@@ -162,43 +157,19 @@ if (is_post()) {
                 'societe_ice' => trim((string) ($_POST['societe_ice'] ?? '')),
                 'societe_rc' => trim((string) ($_POST['societe_rc'] ?? '')),
                 'societe_if' => trim((string) ($_POST['societe_if'] ?? '')),
+                'societe_tp' => trim((string) ($_POST['societe_tp'] ?? '')),
                 'societe_capital' => (string) ($_POST['societe_capital'] ?? ''),
                 'societe_part_social' => (string) ($_POST['societe_part_social'] ?? ''),
                 'societe_valeur_nominale' => (string) ($_POST['societe_valeur_nominale'] ?? ''),
                 'societe_adresse_siege' => trim((string) ($_POST['societe_adresse_siege'] ?? '')),
                 'societe_ville' => trim((string) ($_POST['societe_ville'] ?? '')),
                 'societe_tribunal' => trim((string) ($_POST['societe_tribunal'] ?? '')),
+                'societe_tribunal_type' => trim((string) ($_POST['societe_tribunal_type'] ?? '')),
                 'societe_email' => trim((string) ($_POST['societe_email'] ?? '')),
                 'societe_telephone' => trim((string) ($_POST['societe_telephone'] ?? '')),
-                'societe_activites_statuts' => trim((string) ($_POST['societe_activites_statuts'] ?? '')),
+                'societe_activites_statuts' => !empty($_POST['societe_activites_statuts']) && is_array($_POST['societe_activites_statuts']) ? implode(', ', array_unique(array_filter(array_map('trim', $_POST['societe_activites_statuts'])))) : '',
                 'societe_activites_ompic' => trim((string) ($_POST['societe_activites_ompic'] ?? '')),
             ];
-
-            // Save associé info if mode_nouvelle_sous = associe_existant
-            if ($wizard['mode_nouvelle_sous'] === 'associe_existant') {
-                $associeId = (int) ($_POST['associe_existant_id'] ?? 0);
-                if ($associeId <= 0) {
-                    set_flash('error', 'Veuillez selectionner un associe existant.');
-                    redirect_to('cession', ['step' => 1]);
-                }
-                $wizard['associes'] = [['associe_existant_id' => $associeId]];
-            } else {
-                $wizard['associes'] = [[
-                    'associe_civilite' => trim((string) ($_POST['associe_civilite'] ?? 'M.')),
-                    'associe_nom_complet' => trim((string) ($_POST['associe_nom_complet'] ?? '')),
-                    'associe_cin' => trim((string) ($_POST['associe_cin'] ?? '')),
-                    'associe_date_naissance' => trim((string) ($_POST['associe_date_naissance'] ?? '')),
-                    'associe_lieu_naissance' => trim((string) ($_POST['associe_lieu_naissance'] ?? '')),
-                    'associe_nationalite' => trim((string) ($_POST['associe_nationalite'] ?? '')),
-                    'associe_adresse' => trim((string) ($_POST['associe_adresse'] ?? '')),
-                    'associe_telephone' => trim((string) ($_POST['associe_telephone'] ?? '')),
-                    'associe_email' => trim((string) ($_POST['associe_email'] ?? '')),
-                    'associe_qualite' => trim((string) ($_POST['associe_qualite'] ?? 'Gerant')),
-                    'associe_parts' => (string) ($_POST['associe_parts'] ?? ''),
-                    'associe_capital_detenu' => (string) ($_POST['associe_capital_detenu'] ?? ''),
-                    'associe_est_gerant' => !empty($_POST['associe_est_gerant']) ? '1' : '0',
-                ]];
-            }
 
             $wizard['parts'] = [];
             redirect_to('cession', ['step' => 2]);
@@ -208,11 +179,47 @@ if (is_post()) {
         redirect_to('cession', ['step' => 0]);
     }
 
-    // Step 2: Cession parts
+    // Step 2: Associés
     if ($step === 2) {
         $navAction = $_POST['nav_action'] ?? 'next';
         if ($navAction === 'back') {
             redirect_to('cession', ['step' => 1]);
+        }
+
+        $wizard['associes'] = [];
+        $noms = $_POST['associe_nom_complet'] ?? [];
+        foreach ($noms as $i => $nom) {
+            $nom = trim((string) $nom);
+            if ($nom === '') continue;
+            $wizard['associes'][] = [
+                'associe_civilite' => trim((string) ($_POST['associe_civilite'][$i] ?? 'M.')),
+                'associe_nom_complet' => $nom,
+                'associe_cin' => trim((string) ($_POST['associe_cin'][$i] ?? '')),
+                'associe_date_naissance' => trim((string) ($_POST['associe_date_naissance'][$i] ?? '')),
+                'associe_lieu_naissance' => trim((string) ($_POST['associe_lieu_naissance'][$i] ?? '')),
+                'associe_nationalite' => trim((string) ($_POST['associe_nationalite'][$i] ?? '')),
+                'associe_adresse' => trim((string) ($_POST['associe_adresse'][$i] ?? '')),
+                'associe_telephone' => trim((string) ($_POST['associe_telephone'][$i] ?? '')),
+                'associe_email' => trim((string) ($_POST['associe_email'][$i] ?? '')),
+                'associe_qualite' => trim((string) ($_POST['associe_qualite'][$i] ?? 'Gerant')),
+                'associe_parts' => (string) ($_POST['associe_parts'][$i] ?? ''),
+                'associe_capital_detenu' => (string) ($_POST['associe_capital_detenu'][$i] ?? ''),
+                'associe_est_gerant' => !empty($_POST['associe_est_gerant'][$i]) ? '1' : '0',
+            ];
+        }
+
+        if (empty($wizard['associes'])) {
+            set_flash('error', 'Ajoutez au moins un associe.');
+            redirect_to('cession', ['step' => 2]);
+        }
+        redirect_to('cession', ['step' => 3]);
+    }
+
+    // Step 3: Cession parts
+    if ($step === 3) {
+        $navAction = $_POST['nav_action'] ?? 'next';
+        if ($navAction === 'back') {
+            redirect_to('cession', ['step' => 2]);
         }
 
         $wizard['cession_date'] = field_value($_POST, 'cession_date');
@@ -299,16 +306,25 @@ if (is_post()) {
 
         if (empty($wizard['parts'])) {
             set_flash('error', 'Ajoutez au moins une ligne de cession valide.');
-            redirect_to('cession', ['step' => 2]);
+            redirect_to('cession', ['step' => 3]);
         }
-        redirect_to('cession', ['step' => 3]);
+        redirect_to('cession', ['step' => 4]);
     }
 
-    // Step 3: Recap + Upload
-    if ($step === 3) {
+    // Step 4: Récap (just navigation)
+    if ($step === 4) {
         $navAction = $_POST['nav_action'] ?? 'next';
         if ($navAction === 'back') {
-            redirect_to('cession', ['step' => 2]);
+            redirect_to('cession', ['step' => 3]);
+        }
+        redirect_to('cession', ['step' => 5]);
+    }
+
+    // Step 5: Upload / Validation
+    if ($step === 5) {
+        $navAction = $_POST['nav_action'] ?? 'next';
+        if ($navAction === 'back') {
+            redirect_to('cession', ['step' => 4]);
         }
 
         $uploadDir = __DIR__ . '/../uploads';
@@ -317,32 +333,21 @@ if (is_post()) {
 
         $uploadedDocs = $wizard['uploaded_docs'] ?? [];
 
-        if (!empty($_FILES['certificat_negatif']['name']) && $_FILES['certificat_negatif']['error'] === UPLOAD_ERR_OK) {
-            $ext = pathinfo($_FILES['certificat_negatif']['name'], PATHINFO_EXTENSION);
-            $stored = 'cession_cn_' . date('Ymd_His') . '.' . $ext;
-            $dest = $tmpDir . '/' . $stored;
-            if (move_uploaded_file($_FILES['certificat_negatif']['tmp_name'], $dest)) {
-                $uploadedDocs['certificat_negatif'] = [
-                    'original' => $_FILES['certificat_negatif']['name'],
-                    'stored' => $stored,
-                    'path' => $dest,
-                    'taille_ko' => round(filesize($dest) / 1024, 1),
-                ];
-            }
-        }
+        $docFields = [
+            'ancien_statuts' => 'cession_as',
+            'cin_cedant' => 'cession_cinc',
+            'cin_cessionnaire' => 'cession_cincs',
+            'attestation_non_preemption' => 'cession_anp',
+        ];
 
-        if (!empty($_FILES['cin_gerants']['name'][0]) && is_array($_FILES['cin_gerants']['name'])) {
-            $files = $_FILES['cin_gerants'];
-            $associeIndexes = $_POST['cin_associe_index'] ?? [];
-            foreach ($files['name'] as $idx => $name) {
-                if ($name === '' || $files['error'][$idx] !== UPLOAD_ERR_OK) continue;
-                $ext = pathinfo($name, PATHINFO_EXTENSION);
-                $stored = 'cession_cin_' . $idx . '_' . date('Ymd_His') . '.' . $ext;
+        foreach ($docFields as $field => $prefix) {
+            if (!empty($_FILES[$field]['name']) && $_FILES[$field]['error'] === UPLOAD_ERR_OK) {
+                $ext = pathinfo($_FILES[$field]['name'], PATHINFO_EXTENSION);
+                $stored = $prefix . '_' . date('Ymd_His') . '.' . $ext;
                 $dest = $tmpDir . '/' . $stored;
-                if (move_uploaded_file($files['tmp_name'][$idx], $dest)) {
-                    $associeIdx = $associeIndexes[$idx] ?? $idx;
-                    $uploadedDocs['cin_gerants'][$associeIdx] = [
-                        'original' => $name,
+                if (move_uploaded_file($_FILES[$field]['tmp_name'], $dest)) {
+                    $uploadedDocs[$field] = [
+                        'original' => $_FILES[$field]['name'],
                         'stored' => $stored,
                         'path' => $dest,
                         'taille_ko' => round(filesize($dest) / 1024, 1),
@@ -352,20 +357,20 @@ if (is_post()) {
         }
 
         $wizard['uploaded_docs'] = $uploadedDocs;
-        redirect_to('cession', ['step' => 4]);
+        redirect_to('cession', ['step' => 6]);
     }
 
-    // Step 4: Generation
-    if ($step === 4) {
+    // Step 6: Generation
+    if ($step === 6) {
         $navAction = $_POST['nav_action'] ?? 'generate';
         if ($navAction === 'back') {
-            redirect_to('cession', ['step' => 3]);
+            redirect_to('cession', ['step' => 5]);
         }
 
         if ($navAction === 'create_dossier') {
             if (!(($pdo ?? null) instanceof PDO)) {
                 set_flash('error', 'Connexion MySQL indisponible.');
-                redirect_to('cession', ['step' => 4]);
+                redirect_to('cession', ['step' => 6]);
             }
 
             try {
@@ -374,7 +379,7 @@ if (is_post()) {
                 // Create société if new
                 if ($wizard['mode'] === 'nouvelle' && $wizard['societe_id'] <= 0) {
                     $soc = $wizard['societe'];
-                    $stmt = $pdo->prepare('INSERT INTO societes (societe_raison_sociale, societe_forme_juridique, societe_source, societe_ice, societe_rc, societe_if, societe_capital, societe_part_social, societe_valeur_nominale, societe_adresse_siege, societe_ville, societe_tribunal, societe_email, societe_telephone, societe_activites_statuts, created_by) VALUES (:raison, :forme, :source, :ice, :rc, :ifis, :capital, :parts, :vnom, :adr, :ville, :trib, :email, :tel, :activites, :created_by)');
+                    $stmt = $pdo->prepare('INSERT INTO societes (societe_raison_sociale, societe_forme_juridique, societe_source, societe_ice, societe_rc, societe_if, societe_tp, societe_capital, societe_part_social, societe_valeur_nominale, societe_adresse_siege, societe_ville, societe_tribunal, societe_tribunal_type, societe_email, societe_telephone, societe_activites_statuts, created_by) VALUES (:raison, :forme, :source, :ice, :rc, :ifis, :tp, :capital, :parts, :vnom, :adr, :ville, :trib, :trib_type, :email, :tel, :activites, :created_by)');
                     $stmt->execute([
                         'raison' => $soc['societe_raison_sociale'] ?? '',
                         'forme' => $soc['societe_forme_juridique'] ?? '',
@@ -382,12 +387,14 @@ if (is_post()) {
                         'ice' => $soc['societe_ice'] ?? '',
                         'rc' => $soc['societe_rc'] ?? '',
                         'ifis' => $soc['societe_if'] ?? '',
+                        'tp' => $soc['societe_tp'] ?? '',
                         'capital' => !empty($soc['societe_capital']) ? parse_money($soc['societe_capital']) : null,
                         'parts' => !empty($soc['societe_part_social']) ? (int) $soc['societe_part_social'] : null,
                         'vnom' => !empty($soc['societe_valeur_nominale']) ? parse_money($soc['societe_valeur_nominale']) : null,
                         'adr' => $soc['societe_adresse_siege'] ?? '',
                         'ville' => $soc['societe_ville'] ?? '',
                         'trib' => $soc['societe_tribunal'] ?? '',
+                        'trib_type' => $soc['societe_tribunal_type'] ?? '',
                         'email' => $soc['societe_email'] ?? '',
                         'tel' => $soc['societe_telephone'] ?? '',
                         'activites' => $soc['societe_activites_statuts'] ?? '',
@@ -396,11 +403,8 @@ if (is_post()) {
                     $newSocieteId = (int) $pdo->lastInsertId();
                     $wizard['societe_id'] = $newSocieteId;
 
-                    // Create associé
-                    if ($wizard['mode_nouvelle_sous'] === 'associe_existant' && !empty($wizard['associes'][0]['associe_existant_id'])) {
-                        // Use existing associé
-                    } elseif (!empty($wizard['associes'][0])) {
-                        $a = $wizard['associes'][0];
+                    // Create associés
+                    foreach ($wizard['associes'] as $a) {
                         $capitalDetenu = 0;
                         if (!empty($soc['societe_capital']) && !empty($a['associe_parts']) && !empty($soc['societe_part_social'])) {
                             $capitalDetenu = round(((int) $a['associe_parts'] / (int) $soc['societe_part_social']) * parse_money($soc['societe_capital']), 2);
@@ -514,16 +518,16 @@ if (is_post()) {
             } catch (Throwable $e) {
                 if ($pdo->inTransaction()) $pdo->rollBack();
                 set_flash('error', 'Erreur lors de la creation: ' . $e->getMessage());
-                redirect_to('cession', ['step' => 4]);
+                redirect_to('cession', ['step' => 6]);
             }
-            redirect_to('cession', ['step' => 4]);
+            redirect_to('cession', ['step' => 6]);
         }
 
         // Generate documents
         if ($navAction === 'generate') {
             if (!isset($wizard['cession_id']) || $wizard['cession_id'] <= 0) {
                 set_flash('error', 'Creez d abord le dossier avant de generer les documents.');
-                redirect_to('cession', ['step' => 4]);
+                redirect_to('cession', ['step' => 6]);
             }
 
             require_once __DIR__ . '/../src/TemplateAnalyzer.php';
@@ -535,7 +539,7 @@ if (is_post()) {
             $selectedDocs = $_POST['doc_types'] ?? [];
             if (empty($selectedDocs)) {
                 set_flash('error', 'Selectionnez au moins un type de document.');
-                redirect_to('cession', ['step' => 4]);
+                redirect_to('cession', ['step' => 6]);
             }
 
             $cessionId = $wizard['cession_id'];
@@ -586,7 +590,7 @@ if (is_post()) {
             }
 
             set_flash('success', count($generated) . ' document(s) genere(s).');
-            redirect_to('cession', ['step' => 4]);
+            redirect_to('cession', ['step' => 6]);
         }
 
         if ($navAction === 'terminer') {
@@ -596,6 +600,11 @@ if (is_post()) {
             redirect_to('cession_dossier', ['id' => $cessionId]);
         }
     }
+}
+
+// ============ GUARD: redirect to mode if no mode set ============
+if ($step >= 1 && $wizard['mode'] === '' && !is_post()) {
+    redirect_to('cession', ['step' => 0]);
 }
 
 // ============ COMPUTE TOTALS FOR RECAP ============
@@ -618,7 +627,7 @@ foreach ($selectedAssocies as $a) {
     }
 }
 
-$stepLabels = ['Mode', 'Societe', 'Cession', 'Recapitulatif', 'Generation'];
+$stepLabels = ['Societe', 'Associes', 'Cession', 'Recap', 'Validation', 'Generation'];
 ?>
 <!-- ============ HTML ============ -->
 <section>
@@ -634,14 +643,16 @@ $stepLabels = ['Mode', 'Societe', 'Cession', 'Recapitulatif', 'Generation'];
             </div>
         </div>
 
+        <?php if ($step >= 1): ?>
         <div class="wizard-steps" id="wizard-steps-top">
-            <?php for ($s = 0; $s <= 4; $s++): ?>
+            <?php for ($s = 1; $s <= 6; $s++): ?>
                 <div class="wizard-step <?= $step > $s ? 'done' : ($step === $s ? 'active' : 'waiting') ?>">
-                    <strong>Etape <?= $s + 1 ?></strong>
-                    <span><?= $stepLabels[$s] ?></span>
+                    <strong>Etape <?= $s ?></strong>
+                    <span><?= $stepLabels[$s - 1] ?></span>
                 </div>
             <?php endfor; ?>
         </div>
+        <?php endif; ?>
 
         <!-- Step 0: Mode choice -->
         <?php if ($step === 0): ?>
@@ -662,23 +673,6 @@ $stepLabels = ['Mode', 'Societe', 'Cession', 'Recapitulatif', 'Generation'];
                     <p class="help-text">Creer une nouvelle societe pour cette cession</p>
                 </label>
             </div>
-            <div id="sous-options" style="display:none">
-                <p class="help-text" style="margin-bottom:8px">Avec quel associe ?</p>
-                <div class="grid two">
-                    <label class="card choice-card" data-sous="associe_existant">
-                        <input type="radio" name="mode_nouvelle_sous" value="associe_existant" id="sous-associe-exist" style="display:none">
-                        <span class="material-symbols-outlined" style="font-size:1.5rem">person_search</span>
-                        <h4 style="margin:4px 0">Associe existant</h4>
-                        <p class="help-text">Lier a un associe deja enregistre</p>
-                    </label>
-                    <label class="card choice-card" data-sous="nouvel_associe">
-                        <input type="radio" name="mode_nouvelle_sous" value="nouvel_associe" id="sous-nouvel-associe" style="display:none">
-                        <span class="material-symbols-outlined" style="font-size:1.5rem">person_add</span>
-                        <h4 style="margin:4px 0">Nouvel associe</h4>
-                        <p class="help-text">Creer un nouvel associe</p>
-                    </label>
-                </div>
-            </div>
             <div class="table-actions" style="margin-top:20px">
                 <button class="btn btn-next" type="submit"><span class="material-symbols-outlined">arrow_forward</span> Suivant</button>
             </div>
@@ -691,13 +685,9 @@ $stepLabels = ['Mode', 'Societe', 'Cession', 'Recapitulatif', 'Generation'];
                 c.addEventListener('click', function(){
                     var radio = this.querySelector('input[type="radio"]');
                     if (radio) radio.checked = true;
-                    var isSous = this.closest('#sous-options') !== null;
-                    var group = isSous ? this.closest('#sous-options').querySelectorAll('.choice-card') : document.querySelectorAll('#mode-choice-grid .choice-card');
+                    var group = this.closest('#mode-choice-grid') ? document.querySelectorAll('#mode-choice-grid .choice-card') : [];
                     group.forEach(function(x){ x.style.borderColor = 'var(--line)'; });
-                    this.style.borderColor = isSous ? 'var(--success)' : (this.dataset.mode === 'nouvelle' ? 'var(--success)' : 'var(--primary)');
-                    if (!isSous) {
-                        document.getElementById('sous-options').style.display = this.dataset.mode === 'nouvelle' ? 'block' : 'none';
-                    }
+                    this.style.borderColor = this.dataset.mode === 'nouvelle' ? 'var(--success)' : 'var(--primary)';
                 });
             });
         })();
@@ -758,191 +748,158 @@ $stepLabels = ['Mode', 'Societe', 'Cession', 'Recapitulatif', 'Generation'];
             </div>
             <?php endif; ?>
             <?php endif; ?>
-            <div class="table-actions">
+            <div class="footer-actions">
                 <a class="btn btn-back" href="<?= e(app_url('cession', ['step' => 0])) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
                 <button class="btn btn-next" type="submit"><span class="material-symbols-outlined">arrow_forward</span> Suivant</button>
             </div>
         </form>
 
         <?php elseif ($wizard['mode'] === 'nouvelle'): ?>
-        <!-- Mode nouvelle: full société form (like creation step 1) -->
         <form method="post" class="stack">
             <?= csrf_input() ?>
-            <div class="section-header">
-                <div><h2>Informations sur la societe</h2><p class="help-text">Saisissez les details de la nouvelle societe</p></div>
-            </div>
-
-            <div class="form-grid">
-                <div class="field">
-                    <label for="societe_raison_sociale">Raison sociale *</label>
-                    <input type="text" name="societe_raison_sociale" id="societe_raison_sociale" required value="<?= e($wizard['societe']['societe_raison_sociale'] ?? '') ?>">
+            <article class="card">
+                <div class="section-header">
+                    <div style="display:flex;align-items:center;gap:8px"><h2>Informations sur la societe</h2><p class="help-text" style="margin:0">Saisissez les details de la nouvelle societe</p></div>
                 </div>
-                <div class="field">
-                    <label for="societe_forme_juridique">Forme juridique</label>
-                    <select name="societe_forme_juridique" id="societe_forme_juridique">
-                        <option value="">-- Selectionnez --</option>
-                        <?php foreach ($formesJuridiques as $fj): ?>
-                            <option value="<?= e($fj['forme_juridique']) ?>" <?= ($wizard['societe']['societe_forme_juridique'] ?? '') === $fj['forme_juridique'] ? 'selected' : '' ?>><?= e($fj['forme_juridique']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="field">
-                    <label for="societe_ice">ICE</label>
-                    <input type="text" name="societe_ice" id="societe_ice" value="<?= e($wizard['societe']['societe_ice'] ?? '') ?>">
-                </div>
-                <div class="field">
-                    <label for="societe_rc">RC</label>
-                    <input type="text" name="societe_rc" id="societe_rc" value="<?= e($wizard['societe']['societe_rc'] ?? '') ?>">
-                </div>
-                <div class="field">
-                    <label for="societe_if">IF</label>
-                    <input type="text" name="societe_if" id="societe_if" value="<?= e($wizard['societe']['societe_if'] ?? '') ?>">
-                </div>
-                <div class="field"></div>
-                <div class="field">
-                    <label for="societe_capital">Capital (DH)</label>
-                    <input type="text" name="societe_capital" id="societe_capital" value="<?= e($wizard['societe']['societe_capital'] ?? '') ?>" placeholder="100000">
-                </div>
-                <div class="field">
-                    <label for="societe_part_social">Nombre de parts</label>
-                    <input type="number" name="societe_part_social" id="societe_part_social" value="<?= e($wizard['societe']['societe_part_social'] ?? '') ?>" placeholder="100">
-                </div>
-                <div class="field">
-                    <label for="societe_valeur_nominale">Valeur nominale (DH)</label>
-                    <input type="text" name="societe_valeur_nominale" id="societe_valeur_nominale" value="<?= e($wizard['societe']['societe_valeur_nominale'] ?? '') ?>" placeholder="1000">
-                </div>
-                <div class="field">
-                    <label for="societe_ville">Ville</label>
-                    <select name="societe_ville" id="societe_ville">
-                        <option value="">-- Selectionnez --</option>
-                        <?php foreach ($villes as $v): ?>
-                            <option value="<?= e($v) ?>" <?= ($wizard['societe']['societe_ville'] ?? '') === $v ? 'selected' : '' ?>><?= e($v) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="field">
-                    <label for="societe_tribunal">Tribunal</label>
-                    <select name="societe_tribunal" id="societe_tribunal">
-                        <option value="">-- Selectionnez --</option>
-                        <?php foreach ($tribunaux as $t): ?>
-                            <option value="<?= e($t['tribunal']) ?>" <?= ($wizard['societe']['societe_tribunal'] ?? '') === $t['tribunal'] ? 'selected' : '' ?>><?= e($t['tribunal']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="field" style="grid-column:span 2">
-                    <label for="societe_adresse_siege">Adresse du siege</label>
-                    <textarea name="societe_adresse_siege" id="societe_adresse_siege" rows="2"><?= e($wizard['societe']['societe_adresse_siege'] ?? '') ?></textarea>
-                </div>
-                <div class="field">
-                    <label for="societe_email">Email</label>
-                    <input type="email" name="societe_email" id="societe_email" value="<?= e($wizard['societe']['societe_email'] ?? '') ?>" placeholder="contact@exemple.com">
-                </div>
-                <div class="field">
-                    <label for="societe_telephone">Telephone</label>
-                    <input type="text" name="societe_telephone" id="societe_telephone" value="<?= e($wizard['societe']['societe_telephone'] ?? '') ?>" placeholder="05XX-XXXXXX">
-                </div>
-                <div class="field" style="grid-column:span 2">
-                    <label for="societe_activites_statuts">Activites (statuts)</label>
-                    <textarea name="societe_activites_statuts" id="societe_activites_statuts" rows="2" placeholder="Objet social de la societe..."><?= e($wizard['societe']['societe_activites_statuts'] ?? '') ?></textarea>
-                </div>
-            </div>
-
-            <?php if ($wizard['mode_nouvelle_sous'] === 'associe_existant'): ?>
-            <!-- Select existing associé -->
-            <div class="card">
-                <div class="section-header"><div><h3>Associe existant</h3><p class="help-text">Selectionnez l associe a lier a cette societe</p></div></div>
-                <div class="field">
-                    <select name="associe_existant_id">
-                        <option value="">-- Selectionnez un associe --</option>
-                        <?php
-                        $allAssocies = [];
-                        if (($pdo ?? null) instanceof PDO) {
-                            $stmt = $pdo->query('SELECT id, associe_nom_complet, associe_cin FROM associes ORDER BY associe_nom_complet');
-                            $allAssocies = $stmt->fetchAll();
-                        }
-                        foreach ($allAssocies as $aa): ?>
-                            <option value="<?= (int) $aa['id'] ?>" <?= ($wizard['associes'][0]['associe_existant_id'] ?? 0) === (int) $aa['id'] ? 'selected' : '' ?>><?= e($aa['associe_nom_complet']) ?> (<?= e($aa['associe_cin'] ?? '-') ?>)</option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-            </div>
-            <?php elseif ($wizard['mode_nouvelle_sous'] === 'nouvel_associe'): ?>
-            <!-- New associé form -->
-            <div class="card">
-                <div class="section-header"><div><h3>Nouvel associe</h3><p class="help-text">Saisissez les informations du gerant/fondateur</p></div></div>
                 <div class="form-grid">
-                    <div class="field">
-                        <label for="associe_civilite">Civilite</label>
-                        <select name="associe_civilite" id="associe_civilite">
-                            <option value="M." <?= ($wizard['associes'][0]['associe_civilite'] ?? 'M.') === 'M.' ? 'selected' : '' ?>>M.</option>
-                            <option value="Mme" <?= ($wizard['associes'][0]['associe_civilite'] ?? '') === 'Mme' ? 'selected' : '' ?>>Mme</option>
-                            <option value="Mlle" <?= ($wizard['associes'][0]['associe_civilite'] ?? '') === 'Mlle' ? 'selected' : '' ?>>Mlle</option>
-                        </select>
-                    </div>
-                    <div class="field">
-                        <label for="associe_nom_complet">Nom complet *</label>
-                        <input type="text" name="associe_nom_complet" id="associe_nom_complet" required value="<?= e($wizard['associes'][0]['associe_nom_complet'] ?? '') ?>">
-                    </div>
-                    <div class="field">
-                        <label for="associe_cin">CIN</label>
-                        <input type="text" name="associe_cin" id="associe_cin" value="<?= e($wizard['associes'][0]['associe_cin'] ?? '') ?>">
-                    </div>
-                    <div class="field">
-                        <label for="associe_date_naissance">Date de naissance</label>
-                        <input type="date" name="associe_date_naissance" id="associe_date_naissance" value="<?= e($wizard['associes'][0]['associe_date_naissance'] ?? '') ?>">
-                    </div>
-                    <div class="field">
-                        <label for="associe_lieu_naissance">Lieu de naissance</label>
-                        <select name="associe_lieu_naissance" id="associe_lieu_naissance">
+                    <h3 class="section-title">Identifiants</h3>
+                    <label class="field">
+                        <span>Raison sociale *</span>
+                        <input type="text" name="societe_raison_sociale" required value="<?= e($wizard['societe']['societe_raison_sociale'] ?? '') ?>">
+                    </label>
+                    <label class="field">
+                        <span>Forme juridique</span>
+                        <select name="societe_forme_juridique">
                             <option value="">-- Selectionnez --</option>
-                            <?php foreach ($lieuxNaissanceOptions as $ln): ?>
-                                <option value="<?= e($ln) ?>" <?= ($wizard['associes'][0]['associe_lieu_naissance'] ?? '') === $ln ? 'selected' : '' ?>><?= e($ln) ?></option>
+                            <?php foreach ($formesJuridiques as $fj): ?>
+                                <option value="<?= e($fj['forme_juridique']) ?>" <?= ($wizard['societe']['societe_forme_juridique'] ?? '') === $fj['forme_juridique'] ? 'selected' : '' ?>><?= e($fj['forme_juridique']) ?></option>
                             <?php endforeach; ?>
                         </select>
-                    </div>
-                    <div class="field">
-                        <label for="associe_nationalite">Nationalite</label>
-                        <select name="associe_nationalite" id="associe_nationalite">
+                    </label>
+                    <label class="field">
+                        <span>ICE</span>
+                        <input type="text" name="societe_ice" value="<?= e($wizard['societe']['societe_ice'] ?? '') ?>">
+                    </label>
+                    <label class="field">
+                        <span>RC</span>
+                        <input type="text" name="societe_rc" value="<?= e($wizard['societe']['societe_rc'] ?? '') ?>">
+                    </label>
+                    <label class="field">
+                        <span>IF</span>
+                        <input type="text" name="societe_if" value="<?= e($wizard['societe']['societe_if'] ?? '') ?>">
+                    </label>
+                    <label class="field">
+                        <span>TP</span>
+                        <input type="text" name="societe_tp" value="<?= e($wizard['societe']['societe_tp'] ?? '') ?>">
+                    </label>
+                    <h3 class="section-title">Capital</h3>
+                    <label class="field">
+                        <span>Capital (DH)</span>
+                        <input type="text" name="societe_capital" value="<?= e($wizard['societe']['societe_capital'] ?? '') ?>" placeholder="100000">
+                    </label>
+                    <label class="field">
+                        <span>Nombre de parts</span>
+                        <input type="number" name="societe_part_social" value="<?= e($wizard['societe']['societe_part_social'] ?? '') ?>" placeholder="100">
+                    </label>
+                    <label class="field">
+                        <span>Valeur nominale (DH)</span>
+                        <input type="text" name="societe_valeur_nominale" value="<?= e($wizard['societe']['societe_valeur_nominale'] ?? '') ?>" placeholder="1000">
+                    </label>
+                    <h3 class="section-title">Localisation</h3>
+                    <label class="field">
+                        <span>Ville</span>
+                        <select name="societe_ville">
                             <option value="">-- Selectionnez --</option>
-                            <?php foreach ($nationalitesOptions as $nat): ?>
-                                <option value="<?= e($nat) ?>" <?= ($wizard['associes'][0]['associe_nationalite'] ?? '') === $nat ? 'selected' : '' ?>><?= e($nat) ?></option>
+                            <?php foreach ($villes as $v): ?>
+                                <option value="<?= e($v) ?>" <?= ($wizard['societe']['societe_ville'] ?? '') === $v ? 'selected' : '' ?>><?= e($v) ?></option>
                             <?php endforeach; ?>
                         </select>
-                    </div>
-                    <div class="field" style="grid-column:span 2">
-                        <label for="associe_adresse">Adresse</label>
-                        <textarea name="associe_adresse" id="associe_adresse" rows="2"><?= e($wizard['associes'][0]['associe_adresse'] ?? '') ?></textarea>
-                    </div>
-                    <div class="field">
-                        <label for="associe_telephone">Telephone</label>
-                        <input type="text" name="associe_telephone" id="associe_telephone" value="<?= e($wizard['associes'][0]['associe_telephone'] ?? '') ?>">
-                    </div>
-                    <div class="field">
-                        <label for="associe_email">Email</label>
-                        <input type="email" name="associe_email" id="associe_email" value="<?= e($wizard['associes'][0]['associe_email'] ?? '') ?>">
-                    </div>
-                    <div class="field">
-                        <label for="associe_qualite">Qualite</label>
-                        <select name="associe_qualite" id="associe_qualite">
+                    </label>
+                    <label class="field">
+                        <span>Tribunal</span>
+                        <select name="societe_tribunal">
                             <option value="">-- Selectionnez --</option>
-                            <?php foreach ($qualitesAssocieOptions as $qa): ?>
-                                <option value="<?= e($qa) ?>" <?= ($wizard['associes'][0]['associe_qualite'] ?? '') === $qa ? 'selected' : '' ?>><?= e($qa) ?></option>
+                            <?php foreach ($tribunaux as $t): ?>
+                                <option value="<?= e($t['tribunal']) ?>" <?= ($wizard['societe']['societe_tribunal'] ?? '') === $t['tribunal'] ? 'selected' : '' ?>><?= e($t['tribunal']) ?></option>
                             <?php endforeach; ?>
                         </select>
-                    </div>
-                    <div class="field">
-                        <label for="associe_parts">Nombre de parts</label>
-                        <input type="number" name="associe_parts" id="associe_parts" value="<?= e($wizard['associes'][0]['associe_parts'] ?? '') ?>" placeholder="100">
-                    </div>
-                    <div class="field">
-                        <label>
-                            <input type="checkbox" name="associe_est_gerant" value="1" <?= ($wizard['associes'][0]['associe_est_gerant'] ?? '0') === '1' ? 'checked' : '' ?>>
-                            Gerant
-                        </label>
-                    </div>
+                    </label>
+                    <label class="field">
+                        <span>Type de tribunal</span>
+                        <select name="societe_tribunal_type">
+                            <option value="">-- Selectionnez --</option>
+                            <option value="Tribunal de commerce" <?= ($wizard['societe']['societe_tribunal_type'] ?? '') === 'Tribunal de commerce' ? 'selected' : '' ?>>Tribunal de commerce</option>
+                            <option value="Tribunal de Première Instance" <?= ($wizard['societe']['societe_tribunal_type'] ?? '') === 'Tribunal de Première Instance' ? 'selected' : '' ?>>Tribunal de Première Instance</option>
+                        </select>
+                    </label>
+                    <label class="field full">
+                        <span>Adresse du siege</span>
+                        <textarea name="societe_adresse_siege" rows="2"><?= e($wizard['societe']['societe_adresse_siege'] ?? '') ?></textarea>
+                    </label>
+                    <h3 class="section-title">Contact</h3>
+                    <label class="field">
+                        <span>Email</span>
+                        <input type="email" name="societe_email" value="<?= e($wizard['societe']['societe_email'] ?? '') ?>" placeholder="contact@exemple.com">
+                    </label>
+                    <label class="field">
+                        <span>Telephone</span>
+                        <input type="text" name="societe_telephone" value="<?= e($wizard['societe']['societe_telephone'] ?? '') ?>" placeholder="05XX-XXXXXX">
+                    </label>
+                    <h3 class="section-title">Activite</h3>
+                    <label class="field full">
+                        <span>Activites (statuts)</span>
+                        <div data-activites-group="statuts">
+                            <div data-activites-container>
+                                <?php
+                                $wizStatuts = !empty($wizard['societe']['societe_activites_statuts']) ? array_map('trim', explode(',', (string) $wizard['societe']['societe_activites_statuts'])) : [];
+                                if ($wizStatuts):
+                                    foreach ($wizStatuts as $act):
+                                ?>
+                                    <div data-activite-item style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+                                        <select name="societe_activites_statuts[]" style="flex:1">
+                                            <option value="">Selectionner</option>
+                                            <?php foreach ($activitesOptions as $opt): ?>
+                                                <option value="<?= e($opt) ?>" <?= $act === $opt ? 'selected' : '' ?>><?= e($opt) ?></option>
+                                            <?php endforeach; ?>
+                                            <?php if (!in_array($act, $activitesOptions)): ?>
+                                                <option value="<?= e($act) ?>" selected><?= e($act) ?></option>
+                                            <?php endif; ?>
+                                        </select>
+                                        <button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="material-symbols-outlined">close</span></button>
+                                    </div>
+                                <?php
+                                    endforeach;
+                                else:
+                                ?>
+                                    <div data-activite-item style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+                                        <select name="societe_activites_statuts[]" style="flex:1">
+                                            <option value="">Selectionner</option>
+                                            <?php foreach ($activitesOptions as $opt): ?>
+                                                <option value="<?= e($opt) ?>"><?= e($opt) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="material-symbols-outlined">close</span></button>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                            <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+                                <button type="button" class="btn" data-add-activite><span class="material-symbols-outlined">add</span> Ajouter une activite</button>
+                            </div>
+                            <template data-activite-template>
+                                <div data-activite-item style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+                                    <select name="societe_activites_statuts[]" style="flex:1">
+                                        <option value="">Selectionner</option>
+                                        <?php foreach ($activitesOptions as $opt): ?>
+                                            <option value="<?= e($opt) ?>"><?= e($opt) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <button type="button" class="btn-icon danger" data-remove-activite title="Retirer"><span class="material-symbols-outlined">close</span></button>
+                                </div>
+                            </template>
+                        </div>
+                    </label>
                 </div>
-            </div>
-            <?php endif; ?>
+            </article>
 
             <div class="footer-actions">
                 <a class="btn btn-back" href="<?= e(app_url('cession', ['step' => 0])) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
@@ -951,8 +908,310 @@ $stepLabels = ['Mode', 'Societe', 'Cession', 'Recapitulatif', 'Generation'];
         </form>
         <?php endif; ?>
 
-        <!-- Step 2: Cession parts -->
+        <!-- Step 2: Associés -->
         <?php elseif ($step === 2): ?>
+        <form method="post" class="stack" id="associe-step-form">
+            <?= csrf_input() ?>
+            <input type="hidden" name="nav_action" value="next">
+
+            <div class="section-header">
+                <div style="display:flex;align-items:center;gap:8px"><h2>Associes</h2><p class="help-text" style="margin:0">Ajoutez les associes de la societe</p></div>
+                <button class="btn btn-info" type="button" id="add-associe-step2"><span class="material-symbols-outlined">add</span> Ajouter un associe</button>
+            </div>
+
+            <div class="stack" id="cession-associes-container">
+                <?php if (!empty($selectedAssocies) && $wizard['mode'] === 'existante'): ?>
+                <article class="card">
+                    <div class="section-header">
+                        <div><h3>Associes existants</h3></div>
+                    </div>
+                    <table data-sortable>
+                        <thead>
+                            <tr>
+                                <th data-col="associe">Associe</th>
+                                <th data-col="cin">CIN</th>
+                                <th data-col="parts">Parts</th>
+                                <th data-col="capital">Capital</th>
+                                <th data-col="qualite">Qualite</th>
+                                <th>Gerant</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($selectedAssocies as $a): ?>
+                            <tr>
+                                <td><?= e($a['associe_nom_complet']) ?></td>
+                                <td><?= e($a['associe_cin'] ?? '-') ?></td>
+                                <td><?= (int) ($a['associe_parts'] ?? 0) ?></td>
+                                <td><?= e(number_format((float) ($a['associe_capital_detenu'] ?? 0), 2, ',', ' ') . ' DH') ?></td>
+                                <td><?= e($a['associe_qualite'] ?? '-') ?></td>
+                                <td><?= ((string) ($a['associe_est_gerant'] ?? '0') === '1') ? '<span class="material-symbols-outlined" style="color:var(--success)">verified</span>' : '-' ?></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </article>
+                <?php endif; ?>
+
+                <?php
+                $savedAssocies = $wizard['associes'] ?? [];
+                if (!empty($savedAssocies)): ?>
+                    <?php foreach ($savedAssocies as $ai => $assoc): ?>
+                    <div class="associe-card" data-associe-item>
+                        <div class="associe-card-header">
+                            <strong data-associe-title>Associe <?= $ai + 1 ?></strong>
+                            <button class="btn btn-secondary btn-remove" type="button" data-remove-associe>Retirer</button>
+                        </div>
+                        <div class="form-grid">
+                            <h3 class="section-title">Identite</h3>
+                            <label class="field">
+                                <span>Civilite</span>
+                                <select name="associe_civilite[<?= $ai ?>]">
+                                    <option value="M." <?= ($assoc['associe_civilite'] ?? 'M.') === 'M.' ? 'selected' : '' ?>>M.</option>
+                                    <option value="Mme" <?= ($assoc['associe_civilite'] ?? '') === 'Mme' ? 'selected' : '' ?>>Mme</option>
+                                    <option value="Mlle" <?= ($assoc['associe_civilite'] ?? '') === 'Mlle' ? 'selected' : '' ?>>Mlle</option>
+                                </select>
+                            </label>
+                            <label class="field">
+                                <span>Nom complet *</span>
+                                <input type="text" name="associe_nom_complet[<?= $ai ?>]" required value="<?= e($assoc['associe_nom_complet'] ?? '') ?>">
+                            </label>
+                            <label class="field">
+                                <span>CIN</span>
+                                <input type="text" name="associe_cin[<?= $ai ?>]" value="<?= e($assoc['associe_cin'] ?? '') ?>">
+                            </label>
+                            <label class="field">
+                                <span>Date de naissance</span>
+                                <input type="date" name="associe_date_naissance[<?= $ai ?>]" value="<?= e($assoc['associe_date_naissance'] ?? '') ?>">
+                            </label>
+                            <label class="field">
+                                <span>Lieu de naissance</span>
+                                <select name="associe_lieu_naissance[<?= $ai ?>]">
+                                    <option value="">-- Selectionnez --</option>
+                                    <?php foreach ($lieuxNaissanceOptions as $ln): ?>
+                                        <option value="<?= e($ln) ?>" <?= ($assoc['associe_lieu_naissance'] ?? '') === $ln ? 'selected' : '' ?>><?= e($ln) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </label>
+                            <label class="field">
+                                <span>Nationalite</span>
+                                <select name="associe_nationalite[<?= $ai ?>]">
+                                    <option value="">-- Selectionnez --</option>
+                                    <?php foreach ($nationalitesOptions as $nat): ?>
+                                        <option value="<?= e($nat) ?>" <?= ($assoc['associe_nationalite'] ?? '') === $nat ? 'selected' : '' ?>><?= e($nat) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </label>
+                            <h3 class="section-title">Contact</h3>
+                            <label class="field">
+                                <span>Telephone</span>
+                                <input type="text" name="associe_telephone[<?= $ai ?>]" value="<?= e($assoc['associe_telephone'] ?? '') ?>">
+                            </label>
+                            <label class="field">
+                                <span>Email</span>
+                                <input type="email" name="associe_email[<?= $ai ?>]" value="<?= e($assoc['associe_email'] ?? '') ?>">
+                            </label>
+                            <label class="field full">
+                                <span>Adresse</span>
+                                <textarea name="associe_adresse[<?= $ai ?>]" rows="2"><?= e($assoc['associe_adresse'] ?? '') ?></textarea>
+                            </label>
+                            <h3 class="section-title">Participation</h3>
+                            <label class="field">
+                                <span>Qualite</span>
+                                <select name="associe_qualite[<?= $ai ?>]">
+                                    <option value="">-- Selectionnez --</option>
+                                    <?php foreach ($qualitesAssocieOptions as $qa): ?>
+                                        <option value="<?= e($qa) ?>" <?= ($assoc['associe_qualite'] ?? '') === $qa ? 'selected' : '' ?>><?= e($qa) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </label>
+                            <label class="field">
+                                <span>Nombre de parts</span>
+                                <input type="number" name="associe_parts[<?= $ai ?>]" value="<?= e($assoc['associe_parts'] ?? '') ?>" placeholder="100">
+                            </label>
+                            <label class="field" style="justify-content:center">
+                                <label style="display:flex;align-items:center;gap:6px;padding:6px 0">
+                                    <input type="checkbox" name="associe_est_gerant[<?= $ai ?>]" value="1" <?= ($assoc['associe_est_gerant'] ?? '0') === '1' ? 'checked' : '' ?>>
+                                    Gerant
+                                </label>
+                            </label>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div class="associe-card" data-associe-item>
+                        <div class="associe-card-header">
+                            <strong data-associe-title>Associe 1</strong>
+                            <button class="btn btn-secondary btn-remove" type="button" data-remove-associe>Retirer</button>
+                        </div>
+                        <div class="form-grid">
+                            <h3 class="section-title">Identite</h3>
+                            <label class="field">
+                                <span>Civilite</span>
+                                <select name="associe_civilite[0]">
+                                    <option value="M." selected>M.</option>
+                                    <option value="Mme">Mme</option>
+                                    <option value="Mlle">Mlle</option>
+                                </select>
+                            </label>
+                            <label class="field">
+                                <span>Nom complet *</span>
+                                <input type="text" name="associe_nom_complet[0]" required>
+                            </label>
+                            <label class="field">
+                                <span>CIN</span>
+                                <input type="text" name="associe_cin[0]">
+                            </label>
+                            <label class="field">
+                                <span>Date de naissance</span>
+                                <input type="date" name="associe_date_naissance[0]">
+                            </label>
+                            <label class="field">
+                                <span>Lieu de naissance</span>
+                                <select name="associe_lieu_naissance[0]">
+                                    <option value="">-- Selectionnez --</option>
+                                    <?php foreach ($lieuxNaissanceOptions as $ln): ?>
+                                        <option value="<?= e($ln) ?>"><?= e($ln) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </label>
+                            <label class="field">
+                                <span>Nationalite</span>
+                                <select name="associe_nationalite[0]">
+                                    <option value="">-- Selectionnez --</option>
+                                    <?php foreach ($nationalitesOptions as $nat): ?>
+                                        <option value="<?= e($nat) ?>"><?= e($nat) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </label>
+                            <h3 class="section-title">Contact</h3>
+                            <label class="field">
+                                <span>Telephone</span>
+                                <input type="text" name="associe_telephone[0]">
+                            </label>
+                            <label class="field">
+                                <span>Email</span>
+                                <input type="email" name="associe_email[0]">
+                            </label>
+                            <label class="field full">
+                                <span>Adresse</span>
+                                <textarea name="associe_adresse[0]" rows="2"></textarea>
+                            </label>
+                            <h3 class="section-title">Participation</h3>
+                            <label class="field">
+                                <span>Qualite</span>
+                                <select name="associe_qualite[0]">
+                                    <option value="">-- Selectionnez --</option>
+                                    <?php foreach ($qualitesAssocieOptions as $qa): ?>
+                                        <option value="<?= e($qa) ?>"><?= e($qa) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </label>
+                            <label class="field">
+                                <span>Nombre de parts</span>
+                                <input type="number" name="associe_parts[0]" placeholder="100">
+                            </label>
+                            <label class="field" style="justify-content:center">
+                                <label style="display:flex;align-items:center;gap:6px;padding:6px 0">
+                                    <input type="checkbox" name="associe_est_gerant[0]" value="1">
+                                    Gerant
+                                </label>
+                            </label>
+                        </div>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <template id="associe-step2-template">
+                <div class="associe-card" data-associe-item>
+                    <div class="associe-card-header">
+                        <strong data-associe-title>Associe</strong>
+                        <button class="btn btn-secondary btn-remove" type="button" data-remove-associe>Retirer</button>
+                    </div>
+                    <div class="form-grid">
+                        <h3 class="section-title">Identite</h3>
+                        <label class="field">
+                            <span>Civilite</span>
+                            <select data-field-name="associe_civilite">
+                                <option value="M.">M.</option>
+                                <option value="Mme">Mme</option>
+                                <option value="Mlle">Mlle</option>
+                            </select>
+                        </label>
+                        <label class="field">
+                            <span>Nom complet</span>
+                            <input data-field-name="associe_nom_complet" required>
+                        </label>
+                        <label class="field">
+                            <span>CIN</span>
+                            <input data-field-name="associe_cin">
+                        </label>
+                        <label class="field">
+                            <span>Date de naissance</span>
+                            <input data-field-name="associe_date_naissance" type="date">
+                        </label>
+                        <label class="field">
+                            <span>Lieu de naissance</span>
+                            <select data-field-name="associe_lieu_naissance">
+                                <option value="">-- Selectionnez --</option>
+                                <?php foreach ($lieuxNaissanceOptions as $ln): ?>
+                                <option value="<?= e($ln) ?>"><?= e($ln) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </label>
+                        <label class="field">
+                            <span>Nationalite</span>
+                            <select data-field-name="associe_nationalite">
+                                <option value="">-- Selectionnez --</option>
+                                <?php foreach ($nationalitesOptions as $nat): ?>
+                                <option value="<?= e($nat) ?>"><?= e($nat) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </label>
+                        <h3 class="section-title">Contact</h3>
+                        <label class="field">
+                            <span>Telephone</span>
+                            <input data-field-name="associe_telephone">
+                        </label>
+                        <label class="field">
+                            <span>Email</span>
+                            <input data-field-name="associe_email" type="email">
+                        </label>
+                        <label class="field full">
+                            <span>Adresse</span>
+                            <textarea data-field-name="associe_adresse" rows="2"></textarea>
+                        </label>
+                        <h3 class="section-title">Participation</h3>
+                        <label class="field">
+                            <span>Qualite</span>
+                            <select data-field-name="associe_qualite">
+                                <option value="">-- Selectionnez --</option>
+                                <?php foreach ($qualitesAssocieOptions as $qa): ?>
+                                <option value="<?= e($qa) ?>"><?= e($qa) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </label>
+                        <label class="field">
+                            <span>Nombre de parts</span>
+                            <input data-field-name="associe_parts" type="number" placeholder="100">
+                        </label>
+                        <label class="field" style="justify-content:center">
+                            <label style="display:flex;align-items:center;gap:6px;padding:6px 0">
+                                <input data-field-name="associe_est_gerant" type="checkbox" value="1">
+                                Gerant
+                            </label>
+                        </label>
+                    </div>
+                </div>
+            </template>
+
+            <div class="footer-actions" style="margin-top:12px">
+                <a class="btn btn-back" href="<?= e(app_url('cession', ['step' => 1])) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
+                <button class="btn btn-next" type="submit"><span class="material-symbols-outlined">arrow_forward</span> Suivant</button>
+            </div>
+        </form>
+
+        <!-- Step 3: Cession parts -->
+        <?php elseif ($step === 3): ?>
         <form method="post" id="cession-form">
             <?= csrf_input() ?>
             <input type="hidden" name="nav_action" value="next">
@@ -999,15 +1258,14 @@ $stepLabels = ['Mode', 'Societe', 'Cession', 'Recapitulatif', 'Generation'];
             </div>
 
             <div class="footer-actions">
-                <a class="btn btn-back" href="<?= e(app_url('cession', ['step' => 1])) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
+                <a class="btn btn-back" href="<?= e(app_url('cession', ['step' => 2])) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
                 <button class="btn btn-next" type="submit"><span class="material-symbols-outlined">arrow_forward</span> Suivant</button>
             </div>
         </form>
 
-        <!-- Step 3: Recap + Upload -->
-        <?php elseif ($step === 3): ?>
+        <!-- Step 4: Recap -->
+        <?php elseif ($step === 4): ?>
         <div class="stack">
-            <!-- Recap card -->
             <div class="stats" style="margin-bottom:16px">
                 <article class="stat">
                     <span class="stat-value"><?= e($selectedSociete['societe_raison_sociale'] ?? '-') ?></span>
@@ -1079,68 +1337,73 @@ $stepLabels = ['Mode', 'Societe', 'Cession', 'Recapitulatif', 'Generation'];
                 </article>
             </div>
 
-            <!-- Upload section (like creation step 5) -->
-            <?php $uploadedDocs = $wizard['uploaded_docs'] ?? []; ?>
-            <?php $hasCn = isset($uploadedDocs['certificat_negatif']); ?>
-            <?php $hasCin = isset($uploadedDocs['cin_gerants']); ?>
+            <form method="post" class="stack">
+                <?= csrf_input() ?>
+                <input type="hidden" name="nav_action" value="next">
+                <div class="footer-actions">
+                    <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="material-symbols-outlined">arrow_back</span> Retour</button>
+                    <button class="btn btn-next" type="submit"><span class="material-symbols-outlined">arrow_forward</span> Suivant</button>
+                </div>
+            </form>
+        </div>
 
+        <!-- Step 5: Validation / Upload -->
+        <?php elseif ($step === 5): ?>
+        <?php $uploadedDocs = $wizard['uploaded_docs'] ?? []; ?>
+        <div class="stack">
             <form method="post" class="stack" enctype="multipart/form-data">
                 <?= csrf_input() ?>
                 <input type="hidden" name="nav_action" value="next">
 
-                <article class="card" style="border-color:<?= $hasCn ? 'var(--success)' : 'var(--danger)' ?>">
-                    <div class="section-header">
-                        <div>
-                            <h3><span class="material-symbols-outlined">verified</span> Certificat Negatif</h3>
-                            <p class="help-text">Document delivre par l OMPIC (format PDF).</p>
-                        </div>
-                        <?php if ($hasCn): ?>
-                            <span class="step-badge" style="color:var(--success)"><span class="material-symbols-outlined">check_circle</span> Telecharge</span>
-                        <?php else: ?>
-                            <span class="step-badge" style="color:var(--danger)"><span class="material-symbols-outlined">cancel</span> Manquant</span>
-                        <?php endif; ?>
-                    </div>
-                    <label class="field" style="margin-top:8px">
-                        <span>Fichier</span>
-                        <input type="file" name="certificat_negatif" accept=".pdf" <?= $hasCn ? '' : '' ?>>
-                        <?php if ($hasCn): ?>
-                            <small style="color:var(--success)"><?= e($uploadedDocs['certificat_negatif']['original']) ?> deja uploade.</small>
-                        <?php endif; ?>
-                    </label>
-                </article>
+                <?php
+                $docItems = [
+                    'ancien_statuts' => [
+                        'label' => 'Anciens statuts',
+                        'icon' => 'description',
+                        'accept' => '.pdf',
+                    ],
+                    'cin_cedant' => [
+                        'label' => 'CIN Cédant',
+                        'icon' => 'badge',
+                        'accept' => '.pdf,.jpg,.jpeg,.png',
+                    ],
+                    'cin_cessionnaire' => [
+                        'label' => 'CIN Cessionnaire',
+                        'icon' => 'badge',
+                        'accept' => '.pdf,.jpg,.jpeg,.png',
+                    ],
+                    'attestation_non_preemption' => [
+                        'label' => 'Attestation non prépondérance immobilière',
+                        'icon' => 'gavel',
+                        'accept' => '.pdf',
+                    ],
+                ];
+                ?>
 
-                <article class="card" style="border-color:<?= !empty($gerantsList) ? ($hasCin ? 'var(--success)' : 'var(--danger)') : 'var(--line)' ?>">
+                <article class="card">
                     <div class="section-header">
-                        <div>
-                            <h3><span class="material-symbols-outlined">badge</span> CIN des Gerants</h3>
-                            <p class="help-text">Carte d identite nationale des gerants.</p>
-                        </div>
-                        <?php if (empty($gerantsList)): ?>
-                            <span class="step-badge"><span class="material-symbols-outlined">info</span> Aucun gerant</span>
-                        <?php elseif ($hasCin): ?>
-                            <span class="step-badge" style="color:var(--success)"><span class="material-symbols-outlined">check_circle</span> Telecharge(s)</span>
-                        <?php else: ?>
-                            <span class="step-badge" style="color:var(--danger)"><span class="material-symbols-outlined">cancel</span> Manquant(s)</span>
-                        <?php endif; ?>
+                        <h3>Documents à fournir</h3>
                     </div>
-                    <?php if (!empty($gerantsList)): ?>
-                        <div class="stack" style="margin-top:8px;gap:12px">
-                        <?php foreach ($gerantsList as $gIdx => $gerant): ?>
-                            <label class="field">
-                                <span><?= e('CIN de ' . ($gerant['associe_nom_complet'] ?? 'Gerant ' . ($gIdx + 1))) ?></span>
-                                <input type="file" name="cin_gerants[]" accept=".pdf,.jpg,.jpeg,.png">
-                                <input type="hidden" name="cin_associe_index[]" value="<?= $gIdx ?>">
-                                <?php if (isset($uploadedDocs['cin_gerants'][$gIdx])): ?>
-                                    <small style="color:var(--success)"><?= e($uploadedDocs['cin_gerants'][$gIdx]['original']) ?> deja uploade.</small>
+                    <div class="grid two" style="gap:16px;margin-top:8px">
+                    <?php foreach ($docItems as $field => $info): ?>
+                    <?php $hasDoc = isset($uploadedDocs[$field]); ?>
+                        <label class="field" style="border:1px solid <?= $hasDoc ? 'var(--success)' : 'var(--danger)' ?>;border-radius:6px;padding:10px 12px;cursor:pointer">
+                            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+                                <span class="material-symbols-outlined" style="font-size:18px;color:<?= $hasDoc ? 'var(--success)' : 'var(--danger)' ?>"><?= $info['icon'] ?></span>
+                                <strong style="flex:1;font-size:0.9rem"><?= $info['label'] ?></strong>
+                                <?php if ($hasDoc): ?>
+                                    <span style="color:var(--success);font-size:0.8rem"><span class="material-symbols-outlined" style="font-size:16px">check_circle</span></span>
+                                <?php else: ?>
+                                    <span style="color:var(--danger);font-size:0.8rem"><span class="material-symbols-outlined" style="font-size:16px">cancel</span></span>
                                 <?php endif; ?>
-                            </label>
-                        <?php endforeach; ?>
-                        </div>
-                    <?php else: ?>
-                        <p class="help-text" style="margin-top:8px;color:var(--warning)">
-                            <span class="material-symbols-outlined">warning</span> Aucun gerant designe. Passez outre si non requis.
-                        </p>
-                    <?php endif; ?>
+                            </div>
+                            <input type="file" name="<?= $field ?>" accept="<?= $info['accept'] ?>" style="font-size:0.85rem">
+                            <?php if ($hasDoc): ?>
+                                <div style="font-size:0.75rem;color:var(--success);margin-top:2px"><?= e($uploadedDocs[$field]['original']) ?></div>
+                            <?php endif; ?>
+                        </label>
+                    <?php endforeach; ?>
+                    </div>
                 </article>
 
                 <div class="footer-actions" style="margin-top:12px">
@@ -1150,8 +1413,8 @@ $stepLabels = ['Mode', 'Societe', 'Cession', 'Recapitulatif', 'Generation'];
             </form>
         </div>
 
-        <!-- Step 4: Generation -->
-        <?php elseif ($step === 4): ?>
+        <!-- Step 6: Generation -->
+        <?php elseif ($step === 6): ?>
         <?php
             $dossierCreated = isset($wizard['cession_id']) && $wizard['cession_id'] > 0;
             $cessionId = $wizard['cession_id'] ?? null;
@@ -1181,7 +1444,7 @@ $stepLabels = ['Mode', 'Societe', 'Cession', 'Recapitulatif', 'Generation'];
         <div class="stack">
             <div class="section-header">
                 <div>
-                    <h2>Etape 4 — Generation des documents</h2>
+                    <h2>Etape 6 — Generation des documents</h2>
                     <p class="help-text">Creez d abord le dossier, puis selectionnez les documents a generer.</p>
                 </div>
                 <?php if ($dossierCreated): ?>
@@ -1450,6 +1713,40 @@ document.addEventListener('DOMContentLoaded', function() {
         var checkboxes = form.querySelectorAll('.template-check');
         var allChecked = Array.from(checkboxes).every(function(cb) { return cb.checked; });
         checkboxes.forEach(function(cb) { cb.checked = !allChecked; });
+    });
+
+    // ========== Step 2: Associés dynamic add/remove ==========
+    var associeContainer = document.getElementById('cession-associes-container');
+    var associeTemplate = document.getElementById('associe-step2-template');
+
+    function reindexAssocies() {
+        var cards = associeContainer.querySelectorAll('[data-associe-item]');
+        cards.forEach(function(card, idx) {
+            var title = card.querySelector('[data-associe-title]');
+            if (title) title.textContent = 'Associe ' + (idx + 1);
+            card.querySelectorAll('[name]').forEach(function(el) {
+                var name = el.getAttribute('name') || '';
+                el.name = name.replace(/\[\d+\]/g, '[' + idx + ']');
+            });
+        });
+    }
+
+    document.getElementById('add-associe-step2')?.addEventListener('click', function() {
+        if (!associeTemplate) return;
+        var clone = associeTemplate.content.cloneNode(true);
+        associeContainer.appendChild(clone);
+        reindexAssocies();
+    });
+
+    associeContainer?.addEventListener('click', function(e) {
+        var btn = e.target.closest('[data-remove-associe]');
+        if (btn) {
+            var card = btn.closest('[data-associe-item]');
+            if (card && confirm('Retirer cet associe ?')) {
+                card.remove();
+                reindexAssocies();
+            }
+        }
     });
 });
 </script>
