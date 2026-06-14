@@ -79,7 +79,7 @@ $pageDir = [
 $pageFile = [
     'cessions' => 'cessions_liste',
     'cession' => 'cession_steps/_main',
-    'cession_dossier' => 'dossier_cession',
+    'cession_dossier' => 'cession_details_dossier',
     'modifications' => 'modifications_juridiques',
 ];
 
