@@ -75,6 +75,13 @@ $pageDir = [
     'setup' => 'configuration',
 ];
 
+// Custom filenames for pages where the file != the page name
+$pageFile = [
+    'cessions' => 'list',
+    'cession' => 'wizard',
+    'cession_dossier' => 'detail',
+];
+
 $page = $_GET['page'] ?? 'dashboard';
 if (!in_array($page, $allowedPages, true)) {
     http_response_code(404);
@@ -85,7 +92,8 @@ if (!in_array($page, $allowedPages, true)) {
 if ($page === 'notif-ajax') {
     ob_clean();
     $dir = $pageDir[$page] ?? '';
-    require __DIR__ . '/pages/' . ($dir ? $dir . '/' : '') . $page . '.php';
+    $file = $pageFile[$page] ?? $page;
+    require __DIR__ . '/pages/' . ($dir ? $dir . '/' : '') . $file . '.php';
     ob_end_flush();
     exit;
 }
@@ -144,7 +152,8 @@ if (in_array($page, $noLayoutPages, true)) {
     $pageTitle = $pageTitleMap[$page] ?? 'Center Domiciliation App';
     require __DIR__ . '/includes/header.php';
     $dir = $pageDir[$page] ?? '';
-    require __DIR__ . '/pages/' . ($dir ? $dir . '/' : '') . $page . '.php';
+    $file = $pageFile[$page] ?? $page;
+    require __DIR__ . '/pages/' . ($dir ? $dir . '/' : '') . $file . '.php';
     require __DIR__ . '/includes/footer.php';
     ob_end_flush();
     exit;
@@ -160,7 +169,8 @@ if (!in_array($page, $publicPages, true)) {
 
 require __DIR__ . '/includes/header.php';
 $dir = $pageDir[$page] ?? '';
-require __DIR__ . '/pages/' . ($dir ? $dir . '/' : '') . $page . '.php';
+$file = $pageFile[$page] ?? $page;
+require __DIR__ . '/pages/' . ($dir ? $dir . '/' : '') . $file . '.php';
 require __DIR__ . '/includes/footer.php';
 
 ob_end_flush();
