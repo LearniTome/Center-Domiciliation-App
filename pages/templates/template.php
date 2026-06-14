@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../src/TemplateAnalyzer.php';
+require_once __DIR__ . '/../../src/TemplateAnalyzer.php';
 
-$templatesConfig = require __DIR__ . '/../config/templates.php';
-$templatesDir = __DIR__ . '/../templates';
+$templatesConfig = require __DIR__ . '/../../config/templates.php';
+$templatesDir = __DIR__ . '/../../templates';
 $templatePath = isset($_GET['path']) ? realpath((string) $_GET['path']) : '';
 
 if ($templatePath === false || $templatePath === '' || !str_starts_with($templatePath, realpath($templatesDir)) || !file_exists($templatePath)) {

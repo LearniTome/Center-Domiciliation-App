@@ -4,9 +4,17 @@
 Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No framework, no autoloader. Runs on XAMPP (Apache + MySQL). Composer used only for PHPWord + Dompdf (DOCX→PDF fallback).
 
 ## Architecture
-- **Routing**: Single front controller `index.php?page=` with an allowlist of pages
+- **Routing**: Single front controller `index.php?page=` with an allowlist of pages + `$pageDir` mapping → subdirectory
 - **Globals available in pages**: `$pdo` (PDO|null), `$config` (app config), `$flash` (?array), `$dbError` (?string), `$pageTitle` (string)
-- **Page files** (`pages/*.php`): Self-contained — PHP logic at top (POST handling, data fetching), HTML at bottom
+- **Page files** (`pages/{group}/{page}.php`): Self-contained — PHP logic at top (POST handling, data fetching), HTML at bottom. Pages are grouped by sidebar section:
+  - `accueil/` — dashboard, creation wizard, notifications
+  - `dossiers/` — sociétés, associés, contrats, collaborateurs
+  - `modification-juridique/` — modifications, cessions
+  - `templates/` — templates, generation, documents
+  - `outils/` — analyse-couverture, defaults, variables, convert-word-pdf, ai-assistant
+  - `configuration/` — configuration tabs, roles, setup
+- **Step files** (`*/_steps/*.php`): Wizard steps split into separate files (e.g. `creation_steps/`, `cession_steps/`), included conditionally by `$step`. Each step file handles its own POST + HTML output. Paths from `_steps/` use `__DIR__ . '/../../..'` to reach project root.
+- **`__DIR__` convention**: From `pages/{group}/` use `__DIR__ . '/../..'` for project root; from `pages/{group}/_steps/` use `__DIR__ . '/../../..'`
 - **Includes**: `includes/bootstrap.php` (session, config, DB), `functions.php` (helpers), `header.php` + `nav.php` + `footer.php`
 
 ## Code Conventions
@@ -61,7 +69,7 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 ## Page Patterns
 - **List pages** (`societes`, `associes`, `contrats`): Table with search bar, CSV export link, delete button per row, "Voir" link to detail page
 - **Configuration** (`configuration.php`): Unified page with tabs for all 8 reference tables (formes-juridiques, villes, tribunaux, nationalites, lieux-naissance, adresses, qualites-associe, activites). Add/edit/delete inline. L'onglet `formes-juridiques` affiche une colonne **Dossier Templates** pour lier chaque forme juridique à un dossier dans `templates/`. Si le dossier n'existe pas, il est créé automatiquement lors de l'ajout ou la modification.
-- **Wizard** (`creation.php`): 6-step session-based wizard (Societe, Associes, Contrat, Recapitulatif, Documents, Generation) with JS dynamic associate forms. Step 5 "Documents" requires uploading Certificat Negatif (PDF) and CIN des Gerants (PDF/image) before generation.
+- **Wizard** (`creation.php`): 6-step session-based wizard (Societe, Associes, Contrat, Recapitulatif, Documents, Generation) with JS dynamic associate forms. Step 5 "Documents" requires uploading Certificat Negatif (PDF) and CIN des Gerants (PDF/image) before generation. Steps are in separate files under `creation_steps/`.
 - **Detail page** (`societe.php`): Single record view with related data tables (associates, contracts, collaborators inline)
 
 ## Template Patterns
@@ -177,7 +185,7 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - **Analyse de couverture** (`analyse-couverture.php`): "Suggérer avec IA" button → shows suggestions card with variable/action badges (rename/delete/keep)
 - **Assistant IA** (`ai-assistant.php`): Multi-turn chat with Claude, history stored in session
 
-## Analyse de Couverture (pages/analyse-couverture.php)
+## Analyse de Couverture (pages/outils/analyse-couverture.php)
 - Page: `index.php?page=analyse-couverture`
 - Reads templates from `templates/`, outputs analysis table
 - **Filtres**: Tous / Couvertes / Non couvertes (liens de navigation, pas JS pur)
@@ -189,7 +197,7 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - **CSRF + redirect-after-POST** on all actions
 - **Table sorting**: `data-sortable` + `data-col` on `<th>` (asc/desc on Variable, Occurrences, Templates, Section, Couverture)
 
-## Cession de Parts Sociales (pages/cessions.php, cession.php, cession_dossier.php)
+## Cession de Parts Sociales (pages/modification-juridique/cessions.php, cession.php, cession_dossier.php)
 - **Pages**:
   - `cessions` (`index.php?page=cessions`) — liste CRUD des cessions (recherche, tri, CSV, suppression)
   - `cession` (`index.php?page=cession`) — wizard 3 étapes (Société → Cédant/Cessionnaire → Récapitulatif + Génération)

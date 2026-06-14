@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../src/TemplateEditor.php';
+require_once __DIR__ . '/../../src/TemplateEditor.php';
 
-$templatesDir = __DIR__ . '/../templates';
+$templatesDir = __DIR__ . '/../../templates';
 $templatePath = isset($_GET['path']) ? realpath((string) $_GET['path']) : '';
 
-$folderLabels = require __DIR__ . '/../config/templates.php';
+$folderLabels = require __DIR__ . '/../../config/templates.php';
 $folderLabels = $folderLabels['folder_labels'];
 
 $templateDirs = array_filter(glob($templatesDir . '/*', GLOB_ONLYDIR), fn($d) => basename($d)[0] !== '_');
@@ -86,7 +86,7 @@ if ($templatePath === '' || !str_starts_with($templatePath, realpath($templatesD
 
 $filename = basename($templatePath);
 $folder = basename(dirname($templatePath));
-$templatesConfig = require __DIR__ . '/../config/templates.php';
+$templatesConfig = require __DIR__ . '/../../config/templates.php';
 $folderLabels = $templatesConfig['folder_labels'];
 $docTypes = $templatesConfig['document_types'];
 

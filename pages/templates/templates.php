@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../src/TemplateAnalyzer.php';
+require_once __DIR__ . '/../../src/TemplateAnalyzer.php';
 
-$templatesConfig = require __DIR__ . '/../config/templates.php';
-$templatesDir = __DIR__ . '/../templates';
+$templatesConfig = require __DIR__ . '/../../config/templates.php';
+$templatesDir = __DIR__ . '/../../templates';
 
 $folderLabels = $templatesConfig['folder_labels'];
 $docTypes = $templatesConfig['document_types'];
@@ -112,12 +112,12 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
 
     if ($action === 'backup_templates') {
         $folder = field_value($_POST, 'backup_folder');
-        $backupDir = __DIR__ . '/../backups';
+        $backupDir = __DIR__ . '/../../backups';
         if (!is_dir($backupDir)) {
             mkdir($backupDir, 0777, true);
         }
         $dateStr = date('Ymd_His');
-        $zipName = $folder === '_ALL_' ? "tous_templates_$dateStr.zip" : "templates_${folder}_$dateStr.zip";
+        $zipName = $folder === '_ALL_' ? "tous_templates_$dateStr.zip" : "templates_{$folder}_$dateStr.zip";
         $zipPath = $backupDir . DIRECTORY_SEPARATOR . $zipName;
 
         $zip = new ZipArchive();
