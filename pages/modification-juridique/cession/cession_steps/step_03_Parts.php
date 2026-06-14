@@ -21,7 +21,8 @@ if (is_post() && $step === 3) {
     $cedantCins = $_POST['cedant_cin'] ?? [];
     $cessionnaireTypes = $_POST['cessionnaire_type'] ?? [];
     $cessionnaireAssocieIds = $_POST['cessionnaire_associe_id'] ?? [];
-    $cessionnaireNoms = $_POST['cessionnaire_nom_complet'] ?? [];
+    $cessionnaireNoms = $_POST['cessionnaire_nom'] ?? [];
+    $cessionnairePrenoms = $_POST['cessionnaire_prenom'] ?? [];
     $cessionnaireCins = $_POST['cessionnaire_cin'] ?? [];
     $cessionnaireCivilites = $_POST['cessionnaire_civilite'] ?? [];
     $cessionnaireDates = $_POST['cessionnaire_date_naissance'] ?? [];
@@ -70,7 +71,7 @@ if (is_post() && $step === 3) {
 
         $cessType = $cessionnaireTypes[$i] ?? 'existant';
         $cessAssocieId = (int) ($cessionnaireAssocieIds[$i] ?? 0);
-        $cessNom = trim((string) ($cessionnaireNoms[$i] ?? ''));
+        $cessNom = trim((string) ($cessionnairePrenoms[$i] ?? '') . ' ' . (string) ($cessionnaireNoms[$i] ?? ''));
         $cessCin = trim((string) ($cessionnaireCins[$i] ?? ''));
         if ($cessType === 'existant' && $cessAssocieId > 0 && $cessNom === '' && ($pdo ?? null) instanceof PDO) {
             $a = fetch_record($pdo, 'associes', $cessAssocieId);
@@ -169,17 +170,24 @@ if ($step === 3):
                             if ((int) ($a['id'] ?? 0) === $selectedCedantId) { $selectedCedantData = $a; break; }
                         }
                     }
+                    $nomComplet = $part['cessionnaire_nom_complet'] ?? '';
+                    $cessPrenom = '';
+                    $cessNom = '';
+                    if ($nomComplet !== '') {
+                        $sp = explode(' ', $nomComplet, 2);
+                        $cessPrenom = $sp[0] ?? '';
+                        $cessNom = $sp[1] ?? '';
+                    }
                     ?>
 <div style="margin-top:16px" data-part="<?= $partIndex ?>">
     <div style="border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:12px">
         <div class="section-header" style="margin-bottom:8px">
             <strong>Cédant</strong>
-            <button type="button" class="btn-icon danger remove-part" title="Supprimer cette ligne"><span class="material-symbols-outlined">delete</span></button>
         </div>
         <input type="hidden" name="cedant_type[<?= $partIndex ?>]" value="existant">
         <input type="hidden" name="cedant_nom_complet[<?= $partIndex ?>]" class="cedant-nom-hidden" value="<?= e($part['cedant_nom_complet'] ?? '') ?>">
         <input type="hidden" name="cedant_cin[<?= $partIndex ?>]" class="cedant-cin-hidden" value="<?= e($part['cedant_cin'] ?? '') ?>">
-        <select name="cedant_associe_id[<?= $partIndex ?>]" class="cedant-select" data-part="<?= $partIndex ?>">
+        <select name="cedant_associe_id[<?= $partIndex ?>]" class="cedant-select">
             <option value="">-- Sélectionnez --</option>
             <?php foreach ($cedantList as $assoc): ?>
             <option value="<?= (int) ($assoc['id'] ?? 0) ?>"
@@ -200,19 +208,23 @@ if ($step === 3):
         </div>
     </div>
     <div style="border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:12px">
-        <div class="section-header" style="margin-bottom:8px"><strong>Cessionnaire</strong></div>
-        <input type="hidden" name="cessionnaire_type[<?= $partIndex ?>]" value="nouveau">
-        <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:4px">
-            <div style="display:flex;gap:4px"><select name="cessionnaire_civilite[<?= $partIndex ?>]" style="flex:0 0 70px"><option value="M." <?= ($part['cessionnaire_civilite'] ?? 'M.') === 'M.' ? 'selected' : '' ?>>M.</option><option value="Mme" <?= ($part['cessionnaire_civilite'] ?? '') === 'Mme' ? 'selected' : '' ?>>Mme</option><option value="Mlle" <?= ($part['cessionnaire_civilite'] ?? '') === 'Mlle' ? 'selected' : '' ?>>Mlle</option></select><input type="text" name="cessionnaire_nom_complet[<?= $partIndex ?>]" placeholder="Nom complet" style="flex:1" value="<?= e($part['cessionnaire_nom_complet'] ?? '') ?>"></div>
-            <input type="text" name="cessionnaire_cin[<?= $partIndex ?>]" placeholder="CIN" value="<?= e($part['cessionnaire_cin'] ?? '') ?>">
-            <input type="date" name="cessionnaire_date_naissance[<?= $partIndex ?>]" value="<?= e($part['cessionnaire_date_naissance'] ?? '') ?>">
-            <select name="cessionnaire_lieu_naissance[<?= $partIndex ?>]"><option value="">-- Lieu naissance --</option><?php foreach ($lieuxNaissanceOptions as $ln): ?><option value="<?= e($ln) ?>" <?= ($part['cessionnaire_lieu_naissance'] ?? '') === $ln ? 'selected' : '' ?>><?= e($ln) ?></option><?php endforeach; ?></select>
-            <select name="cessionnaire_nationalite[<?= $partIndex ?>]"><option value="">-- Nationalité --</option><?php foreach ($nationalitesOptions as $nat): ?><option value="<?= e($nat) ?>" <?= ($part['cessionnaire_nationalite'] ?? '') === $nat ? 'selected' : '' ?>><?= e($nat) ?></option><?php endforeach; ?></select>
-            <input type="text" name="cessionnaire_telephone[<?= $partIndex ?>]" placeholder="Téléphone" value="<?= e($part['cessionnaire_telephone'] ?? '') ?>">
-            <input type="email" name="cessionnaire_email[<?= $partIndex ?>]" placeholder="Email" value="<?= e($part['cessionnaire_email'] ?? '') ?>">
-            <select name="cessionnaire_qualite[<?= $partIndex ?>]"><option value="">-- Qualité --</option><?php foreach ($qualitesAssocieOptions as $q): ?><option value="<?= e($q) ?>" <?= ($part['cessionnaire_qualite'] ?? '') === $q ? 'selected' : '' ?>><?= e($q) ?></option><?php endforeach; ?></select>
-            <textarea name="cessionnaire_adresse[<?= $partIndex ?>]" placeholder="Adresse" rows="2"><?= e($part['cessionnaire_adresse'] ?? '') ?></textarea>
+        <div class="section-header" style="margin-bottom:8px"><strong>Cessionnaire</strong>
+            <button type="button" class="btn-icon danger remove-part" style="margin-left:auto" title="Supprimer cette ligne"><span class="material-symbols-outlined">delete</span></button>
         </div>
+        <input type="hidden" name="cessionnaire_type[<?= $partIndex ?>]" value="nouveau">
+        <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr;gap:8px">
+            <div class="field"><label>Civilité</label><select name="cessionnaire_civilite[<?= $partIndex ?>]"><option value="M." <?= ($part['cessionnaire_civilite'] ?? 'M.') === 'M.' ? 'selected' : '' ?>>M.</option><option value="Mme" <?= ($part['cessionnaire_civilite'] ?? '') === 'Mme' ? 'selected' : '' ?>>Mme</option><option value="Mlle" <?= ($part['cessionnaire_civilite'] ?? '') === 'Mlle' ? 'selected' : '' ?>>Mlle</option></select></div>
+            <div class="field"><label>Prénom</label><input type="text" name="cessionnaire_prenom[<?= $partIndex ?>]" value="<?= e($cessPrenom) ?>"></div>
+            <div class="field"><label>Nom</label><input type="text" name="cessionnaire_nom[<?= $partIndex ?>]" value="<?= e($cessNom) ?>"></div>
+            <div class="field"><label>CIN</label><input type="text" name="cessionnaire_cin[<?= $partIndex ?>]" value="<?= e($part['cessionnaire_cin'] ?? '') ?>"></div>
+            <div class="field"><label>Date naissance</label><input type="date" name="cessionnaire_date_naissance[<?= $partIndex ?>]" value="<?= e($part['cessionnaire_date_naissance'] ?? '') ?>"></div>
+            <div class="field"><label>Lieu naissance</label><select name="cessionnaire_lieu_naissance[<?= $partIndex ?>]"><option value="">-- Sélectionnez --</option><?php foreach ($lieuxNaissanceOptions as $ln): ?><option value="<?= e($ln) ?>" <?= ($part['cessionnaire_lieu_naissance'] ?? '') === $ln ? 'selected' : '' ?>><?= e($ln) ?></option><?php endforeach; ?></select></div>
+            <div class="field"><label>Nationalité</label><select name="cessionnaire_nationalite[<?= $partIndex ?>]"><option value="">-- Sélectionnez --</option><?php foreach ($nationalitesOptions as $nat): ?><option value="<?= e($nat) ?>" <?= ($part['cessionnaire_nationalite'] ?? '') === $nat ? 'selected' : '' ?>><?= e($nat) ?></option><?php endforeach; ?></select></div>
+            <div class="field"><label>Téléphone</label><input type="text" name="cessionnaire_telephone[<?= $partIndex ?>]" value="<?= e($part['cessionnaire_telephone'] ?? '') ?>"></div>
+            <div class="field"><label>Email</label><input type="email" name="cessionnaire_email[<?= $partIndex ?>]" value="<?= e($part['cessionnaire_email'] ?? '') ?>"></div>
+            <div class="field"><label>Qualité</label><select name="cessionnaire_qualite[<?= $partIndex ?>]"><option value="">-- Sélectionnez --</option><?php foreach ($qualitesAssocieOptions as $q): ?><option value="<?= e($q) ?>" <?= ($part['cessionnaire_qualite'] ?? '') === $q ? 'selected' : '' ?>><?= e($q) ?></option><?php endforeach; ?></select></div>
+        </div>
+        <div class="field" style="margin-top:8px"><label>Adresse</label><textarea name="cessionnaire_adresse[<?= $partIndex ?>]" rows="2"><?= e($part['cessionnaire_adresse'] ?? '') ?></textarea></div>
     </div>
     <div style="border:1px solid var(--line);border-radius:6px;padding:12px;margin-top:12px">
         <div class="section-header" style="margin-bottom:8px"><strong>Parts &amp; Prix</strong></div>
@@ -244,14 +256,11 @@ if ($step === 3):
                 ?>
 <div style="margin-top:16px" data-part="0">
     <div style="border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:12px">
-        <div class="section-header" style="margin-bottom:8px">
-            <strong>Cédant</strong>
-            <button type="button" class="btn-icon danger remove-part" title="Supprimer cette ligne"><span class="material-symbols-outlined">delete</span></button>
-        </div>
+        <div class="section-header" style="margin-bottom:8px"><strong>Cédant</strong></div>
         <input type="hidden" name="cedant_type[0]" value="existant">
         <input type="hidden" name="cedant_nom_complet[0]" class="cedant-nom-hidden" value="">
         <input type="hidden" name="cedant_cin[0]" class="cedant-cin-hidden" value="">
-        <select name="cedant_associe_id[0]" class="cedant-select" data-part="0">
+        <select name="cedant_associe_id[0]" class="cedant-select">
             <option value="">-- Sélectionnez --</option>
             <?php foreach ($cedantList as $assoc): ?>
             <option value="<?= (int) ($assoc['id'] ?? 0) ?>"
@@ -271,19 +280,23 @@ if ($step === 3):
         </div>
     </div>
     <div style="border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:12px">
-        <div class="section-header" style="margin-bottom:8px"><strong>Cessionnaire</strong></div>
-        <input type="hidden" name="cessionnaire_type[0]" value="nouveau">
-        <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:4px">
-            <div style="display:flex;gap:4px"><select name="cessionnaire_civilite[0]" style="flex:0 0 70px"><option value="M." selected>M.</option><option value="Mme">Mme</option><option value="Mlle">Mlle</option></select><input type="text" name="cessionnaire_nom_complet[0]" placeholder="Nom complet" style="flex:1" value=""></div>
-            <input type="text" name="cessionnaire_cin[0]" placeholder="CIN" value="">
-            <input type="date" name="cessionnaire_date_naissance[0]" value="">
-            <select name="cessionnaire_lieu_naissance[0]"><option value="">-- Lieu naissance --</option><?php foreach ($lieuxNaissanceOptions as $ln): ?><option value="<?= e($ln) ?>"><?= e($ln) ?></option><?php endforeach; ?></select>
-            <select name="cessionnaire_nationalite[0]"><option value="">-- Nationalité --</option><?php foreach ($nationalitesOptions as $nat): ?><option value="<?= e($nat) ?>"><?= e($nat) ?></option><?php endforeach; ?></select>
-            <input type="text" name="cessionnaire_telephone[0]" placeholder="Téléphone" value="">
-            <input type="email" name="cessionnaire_email[0]" placeholder="Email" value="">
-            <select name="cessionnaire_qualite[0]"><option value="">-- Qualité --</option><?php foreach ($qualitesAssocieOptions as $q): ?><option value="<?= e($q) ?>"><?= e($q) ?></option><?php endforeach; ?></select>
-            <textarea name="cessionnaire_adresse[0]" placeholder="Adresse" rows="2"></textarea>
+        <div class="section-header" style="margin-bottom:8px"><strong>Cessionnaire</strong>
+            <button type="button" class="btn-icon danger remove-part" style="margin-left:auto" title="Supprimer cette ligne"><span class="material-symbols-outlined">delete</span></button>
         </div>
+        <input type="hidden" name="cessionnaire_type[0]" value="nouveau">
+        <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr;gap:8px">
+            <div class="field"><label>Civilité</label><select name="cessionnaire_civilite[0]"><option value="M." selected>M.</option><option value="Mme">Mme</option><option value="Mlle">Mlle</option></select></div>
+            <div class="field"><label>Prénom</label><input type="text" name="cessionnaire_prenom[0]" value=""></div>
+            <div class="field"><label>Nom</label><input type="text" name="cessionnaire_nom[0]" value=""></div>
+            <div class="field"><label>CIN</label><input type="text" name="cessionnaire_cin[0]" value=""></div>
+            <div class="field"><label>Date naissance</label><input type="date" name="cessionnaire_date_naissance[0]" value=""></div>
+            <div class="field"><label>Lieu naissance</label><select name="cessionnaire_lieu_naissance[0]"><option value="">-- Sélectionnez --</option><?php foreach ($lieuxNaissanceOptions as $ln): ?><option value="<?= e($ln) ?>"><?= e($ln) ?></option><?php endforeach; ?></select></div>
+            <div class="field"><label>Nationalité</label><select name="cessionnaire_nationalite[0]"><option value="">-- Sélectionnez --</option><?php foreach ($nationalitesOptions as $nat): ?><option value="<?= e($nat) ?>"><?= e($nat) ?></option><?php endforeach; ?></select></div>
+            <div class="field"><label>Téléphone</label><input type="text" name="cessionnaire_telephone[0]" value=""></div>
+            <div class="field"><label>Email</label><input type="email" name="cessionnaire_email[0]" value=""></div>
+            <div class="field"><label>Qualité</label><select name="cessionnaire_qualite[0]"><option value="">-- Sélectionnez --</option><?php foreach ($qualitesAssocieOptions as $q): ?><option value="<?= e($q) ?>"><?= e($q) ?></option><?php endforeach; ?></select></div>
+        </div>
+        <div class="field" style="margin-top:8px"><label>Adresse</label><textarea name="cessionnaire_adresse[0]" rows="2"></textarea></div>
     </div>
     <div style="border:1px solid var(--line);border-radius:6px;padding:12px;margin-top:12px">
         <div class="section-header" style="margin-bottom:8px"><strong>Parts &amp; Prix</strong></div>
@@ -333,16 +346,22 @@ if ($step === 3):
         var row = sel.closest('[data-part]');
         if (!row) return;
         var opt = sel.options[sel.selectedIndex];
-        row.querySelector('.cedant-nom-hidden').value = opt ? (opt.getAttribute('data-nom') || '') : '';
-        row.querySelector('.cedant-cin-hidden').value = opt ? (opt.getAttribute('data-cin') || '') : '';
+        var nh = row.querySelector('.cedant-nom-hidden');
+        if (nh) nh.value = opt ? (opt.getAttribute('data-nom') || '') : '';
+        var ch = row.querySelector('.cedant-cin-hidden');
+        if (ch) ch.value = opt ? (opt.getAttribute('data-cin') || '') : '';
         var infoDiv = row.querySelector('.cedant-info');
         if (infoDiv) {
             if (opt && opt.value) {
                 infoDiv.style.display = 'grid';
-                infoDiv.querySelector('.cedant-display-nom').textContent = opt.getAttribute('data-nom') || '-';
-                infoDiv.querySelector('.cedant-display-cin').textContent = opt.getAttribute('data-cin') || '-';
-                infoDiv.querySelector('.cedant-display-parts').textContent = opt.getAttribute('data-parts') || '0';
-                infoDiv.querySelector('.cedant-display-capital').textContent = opt.getAttribute('data-capital') || '0';
+                var dn = infoDiv.querySelector('.cedant-display-nom');
+                if (dn) dn.textContent = opt.getAttribute('data-nom') || '-';
+                var dc = infoDiv.querySelector('.cedant-display-cin');
+                if (dc) dc.textContent = opt.getAttribute('data-cin') || '-';
+                var dp = infoDiv.querySelector('.cedant-display-parts');
+                if (dp) dp.textContent = opt.getAttribute('data-parts') || '0';
+                var dk = infoDiv.querySelector('.cedant-display-capital');
+                if (dk) dk.textContent = opt.getAttribute('data-capital') || '0';
             } else {
                 infoDiv.style.display = 'none';
             }
@@ -364,14 +383,28 @@ if ($step === 3):
         if (ptInput) ptInput.value = (parts * pu).toFixed(2).replace('.', ',');
     }
 
-    document.querySelectorAll('.parts-cedees-input, .prix-unitaire-input').forEach(function(inp) {
+    function calcPourcentage() {
+        var row = this.closest('[data-part]');
+        if (!row) return;
+        var parts = parseFloat(row.querySelector('.parts-cedees-input')?.value.replace(',', '.')) || 0;
+        var totalParts = parseInt(document.getElementById('total-societe-parts')?.value) || 0;
+        var pctInput = row.querySelector('.pourcentage-input');
+        if (pctInput && totalParts > 0) {
+            pctInput.value = ((parts / totalParts) * 100).toFixed(2).replace('.', ',');
+        }
+    }
+
+    document.querySelectorAll('.parts-cedees-input').forEach(function(inp) {
+        inp.addEventListener('input', function() { calcPrixTotal.call(this); calcPourcentage.call(this); });
+    });
+    document.querySelectorAll('.prix-unitaire-input').forEach(function(inp) {
         inp.addEventListener('input', calcPrixTotal);
     });
 
     // Calculate parts from pourcentage
     document.querySelectorAll('.pourcentage-input').forEach(function(inp) {
         inp.addEventListener('input', function() {
-            var row = this.closest('.cession-part-row');
+            var row = this.closest('[data-part]');
             if (!row) return;
             var pct = parseFloat(this.value.replace(',', '.')) || 0;
             var totalParts = parseInt(document.getElementById('total-societe-parts')?.value) || 0;
@@ -410,7 +443,10 @@ if ($step === 3):
             el.addEventListener('change', function() { syncCedant(el); });
             syncCedant(el);
         });
-        clone.querySelectorAll('.parts-cedees-input, .prix-unitaire-input').forEach(function(el) {
+        clone.querySelectorAll('.parts-cedees-input').forEach(function(el) {
+            el.addEventListener('input', function() { calcPrixTotal.call(this); calcPourcentage.call(this); });
+        });
+        clone.querySelectorAll('.prix-unitaire-input').forEach(function(el) {
             el.addEventListener('input', calcPrixTotal);
         });
         clone.querySelectorAll('.pourcentage-input').forEach(function(el) {
@@ -467,7 +503,8 @@ if ($step === 3):
                         var civOpts = Array.from(cessCivilite.options).filter(function(o) { return o.value; });
                         if (civOpts.length) cessCivilite.value = randFrom(civOpts).value;
                     }
-                    row.querySelector('input[name="cessionnaire_nom_complet[' + idx + ']"]') && (row.querySelector('input[name="cessionnaire_nom_complet[' + idx + ']"]').value = randFrom(hommes) + ' ' + randFrom(prenoms));
+                    row.querySelector('input[name="cessionnaire_prenom[' + idx + ']"]') && (row.querySelector('input[name="cessionnaire_prenom[' + idx + ']"]').value = randFrom(prenoms));
+                    row.querySelector('input[name="cessionnaire_nom[' + idx + ']"]') && (row.querySelector('input[name="cessionnaire_nom[' + idx + ']"]').value = randFrom(hommes));
                     row.querySelector('input[name="cessionnaire_cin[' + idx + ']"]') && (row.querySelector('input[name="cessionnaire_cin[' + idx + ']"]').value = 'CD' + randInt(100000, 999999));
                     row.querySelector('input[name="cessionnaire_date_naissance[' + idx + ']"]') && (row.querySelector('input[name="cessionnaire_date_naissance[' + idx + ']"]').value = randDate(new Date(1960,0,1), new Date(1995,11,31)));
                     var cessLn = row.querySelector('select[name="cessionnaire_lieu_naissance[' + idx + ']"]');

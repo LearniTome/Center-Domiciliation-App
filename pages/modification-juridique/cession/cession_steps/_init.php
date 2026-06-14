@@ -51,7 +51,51 @@ if (($pdo ?? null) instanceof PDO) {
     $qualitesAssocieOptions = fetch_reference_options($pdo, 'ref_qualites_associe', 'qualite_associe');
     $activitesOptions = fetch_reference_options($pdo, 'ref_activites', 'activite');
     $adressesOptions = fetch_reference_options($pdo, 'ref_ste_adresses', 'ste_adresse');
+    $ompicOptions = fetch_activites_ompic_options($pdo);
+    $tribunalTypes = fetch_tribunaux_types($pdo);
+    $allTribunaux = fetch_tribunaux_all($pdo);
 }
+
+$societeData = array_merge([
+    'societe_dossier' => '',
+    'societe_raison_sociale' => '',
+    'societe_forme_juridique' => '',
+    'societe_ice' => '',
+    'societe_date_ice' => '',
+    'societe_rc' => '',
+    'societe_if' => '',
+    'societe_activites_statuts' => '',
+    'societe_activites_ompic' => '',
+    'societe_part_social' => '',
+    'societe_valeur_nominale' => '',
+    'societe_date_exp_cert_neg' => '',
+    'societe_adresse_siege' => '',
+    'societe_ville' => '',
+    'societe_tribunal' => '',
+    'societe_tribunal_type' => '',
+    'societe_email' => '',
+    'societe_telephone' => '',
+    'societe_capital' => '',
+    'societe_type_generation' => 'cession',
+    'societe_procedure_creation' => '',
+    'societe_mode_depot' => '',
+], $wizard['societe'] ?? []);
+
+$currentTribunalType = $societeData['societe_tribunal_type'] ?? '';
+$societeTribunal = $societeData['societe_tribunal'] ?? '';
+if (!$currentTribunalType && $societeTribunal && !empty($allTribunaux)) {
+    foreach ($allTribunaux as $t) {
+        if ($t['tribunal'] === $societeTribunal && ($t['tribunal_type'] ?? '')) {
+            $currentTribunalType = $t['tribunal_type'];
+            break;
+        }
+    }
+}
+if (!$currentTribunalType) {
+    $currentTribunalType = 'Tribunal de commerce';
+}
+$defaultTribunal = $societeTribunal ?: 'Casablanca';
+$defaultVille = ($societeData['societe_ville'] ?? '') ?: 'Casablanca';
 
 // Associes de la société sélectionnée
 $selectedAssocies = [];
