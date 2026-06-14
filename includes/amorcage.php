@@ -9,8 +9,8 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 $config = require __DIR__ . '/../config/app.php';
 $dbConfig = require __DIR__ . '/../config/database.php';
 
-require __DIR__ . '/functions.php';
-require __DIR__ . '/db.php';
+require __DIR__ . '/fonctions.php';
+require __DIR__ . '/base_donnees.php';
 require_once __DIR__ . '/../src/service_claude.php';
 
 $flash = pull_flash();

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 ob_start();
 
-require __DIR__ . '/includes/bootstrap.php';
+require __DIR__ . '/includes/amorcage.php';
 
 $allowedPages = [
     'creation', 'configuration',
@@ -164,11 +164,11 @@ $noLayoutPages = ['connexion', 'deconnexion'];
 
 if (in_array($page, $noLayoutPages, true)) {
     $pageTitle = $pageTitleMap[$page] ?? 'Center Domiciliation App';
-    require __DIR__ . '/includes/header.php';
+    require __DIR__ . '/includes/entete.php';
     $dir = $pageDir[$page] ?? '';
     $file = $pageFile[$page] ?? $page;
     require __DIR__ . '/pages/' . ($dir ? $dir . '/' : '') . $file . '.php';
-    require __DIR__ . '/includes/footer.php';
+    require __DIR__ . '/includes/pied_page.php';
     ob_end_flush();
     exit;
 }
@@ -181,10 +181,10 @@ if (!in_array($page, $publicPages, true)) {
     require_page_access($page);
 }
 
-require __DIR__ . '/includes/header.php';
+require __DIR__ . '/includes/entete.php';
 $dir = $pageDir[$page] ?? '';
 $file = $pageFile[$page] ?? $page;
 require __DIR__ . '/pages/' . ($dir ? $dir . '/' : '') . $file . '.php';
-require __DIR__ . '/includes/footer.php';
+require __DIR__ . '/includes/pied_page.php';
 
 ob_end_flush();

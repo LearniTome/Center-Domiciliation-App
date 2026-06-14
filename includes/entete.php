@@ -29,7 +29,7 @@ $noSidebar = in_array($page ?? '', ['connexion', 'deconnexion'], true);
 <body>
 <div class="shell<?= $noSidebar ? '' : '' ?>">
     <?php if (!$noSidebar): ?>
-    <?php require __DIR__ . '/nav.php'; ?>
+    <?php require __DIR__ . '/navigation.php'; ?>
     <button class="sidebar-toggle" data-sidebar-toggle type="button" title="Reduire la barre de navigation">
         <span class="material-symbols-outlined">chevron_left</span>
     </button>
