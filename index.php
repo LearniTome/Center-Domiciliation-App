@@ -39,9 +39,9 @@ $pageDir = [
     'collaborateur' => 'dossiers',
     // Modification juridique
     'modifications' => 'modification-juridique',
-    'cessions' => 'modification-juridique',
-    'cession' => 'modification-juridique',
-    'cession_dossier' => 'modification-juridique',
+    'cessions' => 'modification-juridique/cession',
+    'cession' => 'modification-juridique/cession',
+    'cession_dossier' => 'modification-juridique/cession',
     // Templates de documents
     'templates' => 'templates',
     'template' => 'templates',

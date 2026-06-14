@@ -7,14 +7,15 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - **Routing**: Single front controller `index.php?page=` with an allowlist of pages + `$pageDir` mapping → subdirectory
 - **Globals available in pages**: `$pdo` (PDO|null), `$config` (app config), `$flash` (?array), `$dbError` (?string), `$pageTitle` (string)
 - **Page files** (`pages/{group}/{page}.php`): Self-contained — PHP logic at top (POST handling, data fetching), HTML at bottom. Pages are grouped by sidebar section:
-  - `accueil/` — dashboard, creation wizard, notifications
+  - `accueil/` — dashboard, notifications
   - `dossiers/` — sociétés, associés, contrats, collaborateurs
-  - `modification-juridique/` — modifications, cessions
+  - `modification-juridique/` — modifications
+  - `modification-juridique/cession/` — cessions, cession, cession_dossier, cession_steps
   - `templates/` — templates, generation, documents
   - `outils/` — analyse-couverture, defaults, variables, convert-word-pdf, ai-assistant
   - `configuration/` — configuration tabs, roles, setup
-- **Step files** (`*/_steps/*.php`): Wizard steps split into separate files (e.g. `creation_steps/`, `cession_steps/`), included conditionally by `$step`. Each step file handles its own POST + HTML output. Paths from `_steps/` use `__DIR__ . '/../../..'` to reach project root.
-- **`__DIR__` convention**: From `pages/{group}/` use `__DIR__ . '/../..'` for project root; from `pages/{group}/_steps/` use `__DIR__ . '/../../..'`
+- **Step files** (`*/_steps/*.php`): Wizard steps split into separate files (e.g. `creation_steps/`, `cession_steps/`), included conditionally by `$step`. Each step file handles its own POST + HTML output. Paths from `_steps/` use `__DIR__ . '/../../..'` to reach project root (3 niveaux) ; depuis `cessions/cession_steps/` utiliser `__DIR__ . '/../../../..'` (4 niveaux).
+- **`__DIR__` convention**: From `pages/{group}/` use `__DIR__ . '/../..'` (2 niveaux) ; from `pages/{group}/_steps/` use `__DIR__ . '/../../..'` (3 niveaux) ; from `pages/{group}/{subgroup}/_steps/` use `__DIR__ . '/../../../..'` (4 niveaux)
 - **Includes**: `includes/bootstrap.php` (session, config, DB), `functions.php` (helpers), `header.php` + `nav.php` + `footer.php`
 
 ## Code Conventions
@@ -197,7 +198,7 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - **CSRF + redirect-after-POST** on all actions
 - **Table sorting**: `data-sortable` + `data-col` on `<th>` (asc/desc on Variable, Occurrences, Templates, Section, Couverture)
 
-## Cession de Parts Sociales (pages/modification-juridique/cessions.php, cession.php, cession_dossier.php)
+## Cession de Parts Sociales (pages/modification-juridique/cession/)
 - **Pages**:
   - `cessions` (`index.php?page=cessions`) — liste CRUD des cessions (recherche, tri, CSV, suppression)
   - `cession` (`index.php?page=cession`) — wizard 3 étapes (Société → Cédant/Cessionnaire → Récapitulatif + Génération)
