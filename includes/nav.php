@@ -51,7 +51,6 @@ $navSections = [
     '' => [
         'icon' => null,
         'items' => [
-            'creation' => ['Nouveau dossier', 'note_add'],
             'dashboard' => ['Tableau de bord', 'dashboard'],
             'notifications' => ['Notifications', 'notifications'],
         ],
@@ -59,6 +58,7 @@ $navSections = [
     'Dossiers' => [
         'icon' => 'folder',
         'items' => [
+            'creation' => ['Nouveau dossier', 'note_add'],
             'societes' => ['Societes', 'business'],
             'associes' => ['Associes', 'group'],
             'contrats' => ['Contrats', 'description'],

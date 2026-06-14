@@ -26,10 +26,10 @@ $allowedPages = [
 
 $pageDir = [
     // Accueil
-    'creation' => 'accueil',
     'dashboard' => 'accueil',
     'notifications' => 'accueil',
     // Dossiers
+    'creation' => 'dossiers',
     'societes' => 'dossiers',
     'societe' => 'dossiers',
     'associes' => 'dossiers',
