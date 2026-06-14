@@ -132,8 +132,8 @@ if ($isConnected) {
         GROUP BY collaborateur_type ORDER BY COUNT(*) DESC LIMIT 1
     ")->fetchColumn();
 }
-$templateCount = is_dir(__DIR__ . '/../templates')
-    ? count(array_diff(scandir(__DIR__ . '/../templates'), ['.', '..']))
+$templateCount = is_dir(__DIR__ . '/../../templates')
+    ? count(array_diff(scandir(__DIR__ . '/../../templates'), ['.', '..']))
     : 0;
 $refTableCount = count(load_defaults());
 

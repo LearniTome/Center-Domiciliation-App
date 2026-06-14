@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-$defaultsFile = __DIR__ . '/../config/defaults.json';
+$defaultsFile = __DIR__ . '/../../config/defaults.json';
 
 $defaultSections = [
     'societe' => 'Societe',

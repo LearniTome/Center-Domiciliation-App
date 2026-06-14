@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../src/TemplateAnalyzer.php';
+require_once __DIR__ . '/../../src/TemplateAnalyzer.php';
 
-$templatesDir = __DIR__ . '/../templates';
-$outputDir = __DIR__ . '/../dossiers_generer/dossiers_domiciliation';
+$templatesDir = __DIR__ . '/../../templates';
+$outputDir = __DIR__ . '/../../dossiers_generer/dossiers_domiciliation';
 
 $pageSubtitle = 'Variables trouvees dans les templates vs. variables disponibles dans le contexte de rendu.';
 

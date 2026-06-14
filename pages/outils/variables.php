@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../src/TemplateAnalyzer.php';
+require_once __DIR__ . '/../../src/TemplateAnalyzer.php';
 
-$templatesDir = __DIR__ . '/../templates';
+$templatesDir = __DIR__ . '/../../templates';
 $templates = TemplateAnalyzer::scanTemplates($templatesDir);
 $contextKeys = TemplateAnalyzer::getExpectedContextKeys();
 $contextKeySet = array_flip(array_map('strtoupper', $contextKeys));

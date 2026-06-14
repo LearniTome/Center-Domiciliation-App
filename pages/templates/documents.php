@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../src/DocumentRenderer.php';
+require_once __DIR__ . '/../../src/DocumentRenderer.php';
 
 $q = search_term();
 $filterSociete = int_value($_GET, 'societe_id');
@@ -257,12 +257,12 @@ if ($exportCsv && count($documents) > 0) {
                                         <a class="btn-icon primary" href="<?= e(word_url($doc['fichier_docx'])) ?>" title="Ouvrir dans Word">
                                             <span class="material-symbols-outlined">article</span>
                                         </a>
-                                        <a class="btn-icon success" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_docx'])) ?>" download title="Telecharger DOCX">
+                                        <a class="btn-icon success" href="<?= e(str_replace(__DIR__ . '/../../', '', $doc['fichier_docx'])) ?>" download title="Telecharger DOCX">
                                             <span class="material-symbols-outlined">download</span>
                                         </a>
                                         <?php if ($doc['valide']): ?>
                                             <?php if ($doc['fichier_pdf']): ?>
-                                                <a class="btn-icon danger" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_pdf'])) ?>" download title="Telecharger PDF">
+                                                <a class="btn-icon danger" href="<?= e(str_replace(__DIR__ . '/../../', '', $doc['fichier_pdf'])) ?>" download title="Telecharger PDF">
                                                     <span class="material-symbols-outlined">picture_as_pdf</span>
                                                 </a>
                                             <?php else: ?>

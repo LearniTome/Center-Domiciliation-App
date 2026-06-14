@@ -81,7 +81,7 @@ if (is_post() && isset($_POST['add_activite_ref']) && ($pdo ?? null) instanceof 
 
 function _cleanup_tmp_uploads(): void
 {
-    $tmpDir = __DIR__ . '/../uploads/tmp/' . session_id();
+    $tmpDir = __DIR__ . '/../../uploads/tmp/' . session_id();
     if (is_dir($tmpDir)) {
         $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($tmpDir, RecursiveDirectoryIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST);
         foreach ($files as $f) {
@@ -307,7 +307,7 @@ if (is_post()) {
             redirect_to('creation', ['step' => 4]);
         }
 
-        $uploadDir = __DIR__ . '/../uploads';
+        $uploadDir = __DIR__ . '/../../uploads';
         $tmpDir = $uploadDir . '/tmp/' . session_id();
         if (!is_dir($tmpDir)) {
             mkdir($tmpDir, 0777, true);
@@ -490,7 +490,7 @@ if (is_post()) {
 
                 $uploadedDocs = $wizard['uploaded_docs'] ?? [];
                 if ($uploadedDocs !== [] && ($pdo ?? null) instanceof PDO) {
-                    $dossierUploadDir = __DIR__ . '/../dossiers_generer/dossiers_domiciliation/' . $dossierName . '/_uploads';
+                    $dossierUploadDir = __DIR__ . '/../../dossiers_generer/dossiers_domiciliation/' . $dossierName . '/_uploads';
                     if (!is_dir($dossierUploadDir)) {
                         mkdir($dossierUploadDir, 0777, true);
                     }
@@ -547,7 +547,7 @@ if (is_post()) {
                     }
                 }
 
-                $creaDir = __DIR__ . '/../dossiers_crea/' . $dossierName;
+                $creaDir = __DIR__ . '/../../dossiers_crea/' . $dossierName;
                 if (!is_dir($creaDir)) {
                     mkdir($creaDir, 0777, true);
                 }
@@ -570,14 +570,14 @@ if (is_post()) {
         }
 
         if ($navAction === 'generate') {
-            if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
-                require_once __DIR__ . '/../vendor/autoload.php';
+            if (file_exists(__DIR__ . '/../../vendor/autoload.php')) {
+                require_once __DIR__ . '/../../vendor/autoload.php';
             }
-            require_once __DIR__ . '/../src/TemplateAnalyzer.php';
-            require_once __DIR__ . '/../src/DocumentRenderer.php';
+            require_once __DIR__ . '/../../src/TemplateAnalyzer.php';
+            require_once __DIR__ . '/../../src/DocumentRenderer.php';
 
-            $templatesDir = __DIR__ . '/../templates';
-            $outputDir = __DIR__ . '/../dossiers_generer/dossiers_domiciliation';
+            $templatesDir = __DIR__ . '/../../templates';
+            $outputDir = __DIR__ . '/../../dossiers_generer/dossiers_domiciliation';
             if (!is_dir($outputDir)) {
                 mkdir($outputDir, 0777, true);
             }
@@ -594,7 +594,7 @@ if (is_post()) {
             $folderDate = $wizard['contrat']['contrat_date'] ?? $today;
             $folderName = $folderDate . '_' . $forme . '_' . $clientName;
             $folderName = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', $folderName), '-');
-            $outputDir = __DIR__ . '/../dossiers_generer/dossiers_domiciliation/' . $folderName;
+            $outputDir = __DIR__ . '/../../dossiers_generer/dossiers_domiciliation/' . $folderName;
             if (!is_dir($outputDir)) {
                 mkdir($outputDir, 0777, true);
             }
@@ -659,14 +659,14 @@ if (is_post()) {
         if ($navAction === 'generate_single') {
             header('Content-Type: application/json');
             try {
-                if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
-                    require_once __DIR__ . '/../vendor/autoload.php';
+                if (file_exists(__DIR__ . '/../../vendor/autoload.php')) {
+                    require_once __DIR__ . '/../../vendor/autoload.php';
                 }
-                require_once __DIR__ . '/../src/TemplateAnalyzer.php';
-                require_once __DIR__ . '/../src/DocumentRenderer.php';
+                require_once __DIR__ . '/../../src/TemplateAnalyzer.php';
+                require_once __DIR__ . '/../../src/DocumentRenderer.php';
 
-                $templatesDir = __DIR__ . '/../templates';
-                $outputDir = __DIR__ . '/../dossiers_generer/dossiers_domiciliation';
+                $templatesDir = __DIR__ . '/../../templates';
+                $outputDir = __DIR__ . '/../../dossiers_generer/dossiers_domiciliation';
                 if (!is_dir($outputDir)) mkdir($outputDir, 0777, true);
 
                 $path = $_POST['template_path'] ?? '';
@@ -686,7 +686,7 @@ if (is_post()) {
                 $folderDate = $wizard['contrat']['contrat_date'] ?? $today;
                 $folderName = $folderDate . '_' . $forme . '_' . $clientName;
                 $folderName = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', $folderName), '-');
-                $outputDir = __DIR__ . '/../dossiers_generer/dossiers_domiciliation/' . $folderName;
+                $outputDir = __DIR__ . '/../../dossiers_generer/dossiers_domiciliation/' . $folderName;
                 if (!is_dir($outputDir)) mkdir($outputDir, 0777, true);
 
                 $renderer = new DocumentRenderer($path, $outputDir);
@@ -1795,11 +1795,11 @@ if ($aiSuggestions !== null) {
         $dossierCreated = isset($wizard['societe_id']);
         $societeId = $wizard['societe_id'] ?? null;
 
-        require_once __DIR__ . '/../src/TemplateAnalyzer.php';
+        require_once __DIR__ . '/../../src/TemplateAnalyzer.php';
 
-        $templatesConfig = require __DIR__ . '/../config/templates.php';
-        $templatesDir = __DIR__ . '/../templates';
-        $outputDir = __DIR__ . '/../dossiers_generer/dossiers_domiciliation';
+        $templatesConfig = require __DIR__ . '/../../config/templates.php';
+        $templatesDir = __DIR__ . '/../../templates';
+        $outputDir = __DIR__ . '/../../dossiers_generer/dossiers_domiciliation';
 
         $legalForm = $societeData['societe_forme_juridique'] ?? '';
         $allTemplates = TemplateAnalyzer::scanTemplates($templatesDir);
@@ -2072,11 +2072,11 @@ if ($aiSuggestions !== null) {
                                         <td><?php if (file_exists($file['docx'])): ?><?= number_format(filesize($file['docx']) / 1024, 1) ?> Ko<?php else: ?>-<?php endif; ?></td>
                                         <td>
                                             <div class="table-actions">
-                                                <a class="btn btn-secondary" href="<?= e(str_replace(__DIR__ . '/../', '', $file['docx'])) ?>" download>
+                                                <a class="btn btn-secondary" href="<?= e(str_replace(__DIR__ . '/../../', '', $file['docx'])) ?>" download>
                                                     <span class="material-symbols-outlined">download</span> DOCX
                                                 </a>
                                                 <?php if ($file['pdf']): ?>
-                                                    <a class="btn" href="<?= e(str_replace(__DIR__ . '/../', '', $file['pdf'])) ?>" download>
+                                                    <a class="btn" href="<?= e(str_replace(__DIR__ . '/../../', '', $file['pdf'])) ?>" download>
                                                         <span class="material-symbols-outlined">picture_as_pdf</span> PDF
                                                     </a>
                                                 <?php endif; ?>

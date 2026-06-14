@@ -7,50 +7,72 @@ ob_start();
 require __DIR__ . '/includes/bootstrap.php';
 
 $allowedPages = [
-    'creation',
-    'configuration',
-    'formes-juridiques',
-    'tribunaux',
-    'adresses',
-    'villes',
-    'nationalites',
-    'lieux-naissance',
-    'qualites-associe',
-    'fonctions',
-    'activites',
-    'activites-ompic',
+    'creation', 'configuration',
+    'formes-juridiques', 'tribunaux', 'adresses', 'villes',
+    'nationalites', 'lieux-naissance', 'qualites-associe', 'fonctions',
+    'activites', 'activites-ompic',
     'dashboard',
-    'societe',
-    'societes',
-    'associe',
-    'associes',
-    'contrats',
-    'collaborateur',
-    'collaborateurs',
-    'generation',
-    'template',
-    'template_edit',
-    'templates',
-    'documents',
-    'download_all',
-    'defaults',
-    'analyse-couverture',
-    'variables',
-    'convert-word-pdf',
-    'ai-assistant',
-    'setup',
-    'connexion',
-    'deconnexion',
-    'roles',
-    'role',
-    'activite',
-    'notifications',
-    'notifications-manage',
-    'notif-ajax',
-    'modifications',
-    'cessions',
-    'cession',
-    'cession_dossier',
+    'societe', 'societes', 'associe', 'associes', 'contrats',
+    'collaborateur', 'collaborateurs',
+    'generation', 'template', 'template_edit', 'templates',
+    'documents', 'download_all',
+    'defaults', 'analyse-couverture', 'variables',
+    'convert-word-pdf', 'ai-assistant',
+    'setup', 'connexion', 'deconnexion',
+    'roles', 'role', 'activite',
+    'notifications', 'notifications-manage', 'notif-ajax',
+    'modifications', 'cessions', 'cession', 'cession_dossier',
+];
+
+$pageDir = [
+    // Accueil
+    'creation' => 'accueil',
+    'dashboard' => 'accueil',
+    'notifications' => 'accueil',
+    // Dossiers
+    'societes' => 'dossiers',
+    'societe' => 'dossiers',
+    'associes' => 'dossiers',
+    'associe' => 'dossiers',
+    'contrats' => 'dossiers',
+    'collaborateurs' => 'dossiers',
+    'collaborateur' => 'dossiers',
+    // Modification juridique
+    'modifications' => 'modification-juridique',
+    'cessions' => 'modification-juridique',
+    'cession' => 'modification-juridique',
+    'cession_dossier' => 'modification-juridique',
+    // Templates de documents
+    'templates' => 'templates',
+    'template' => 'templates',
+    'template_edit' => 'templates',
+    'generation' => 'templates',
+    'documents' => 'templates',
+    'download_all' => 'templates',
+    // Outils
+    'analyse-couverture' => 'outils',
+    'defaults' => 'outils',
+    'variables' => 'outils',
+    'convert-word-pdf' => 'outils',
+    'ai-assistant' => 'outils',
+    // Configuration
+    'configuration' => 'configuration',
+    'formes-juridiques' => 'configuration',
+    'tribunaux' => 'configuration',
+    'adresses' => 'configuration',
+    'villes' => 'configuration',
+    'nationalites' => 'configuration',
+    'lieux-naissance' => 'configuration',
+    'qualites-associe' => 'configuration',
+    'fonctions' => 'configuration',
+    'activites' => 'configuration',
+    'activites-ompic' => 'configuration',
+    'roles' => 'configuration',
+    'role' => 'configuration',
+    'activite' => 'configuration',
+    'notifications-manage' => 'configuration',
+    'notif-ajax' => 'configuration',
+    'setup' => 'configuration',
 ];
 
 $page = $_GET['page'] ?? 'dashboard';
@@ -62,7 +84,8 @@ if (!in_array($page, $allowedPages, true)) {
 // JSON API endpoint — no HTML output at all
 if ($page === 'notif-ajax') {
     ob_clean();
-    require __DIR__ . '/pages/notif-ajax.php';
+    $dir = $pageDir[$page] ?? '';
+    require __DIR__ . '/pages/' . ($dir ? $dir . '/' : '') . $page . '.php';
     ob_end_flush();
     exit;
 }
@@ -120,7 +143,8 @@ $noLayoutPages = ['connexion', 'deconnexion'];
 if (in_array($page, $noLayoutPages, true)) {
     $pageTitle = $pageTitleMap[$page] ?? 'Center Domiciliation App';
     require __DIR__ . '/includes/header.php';
-    require __DIR__ . '/pages/' . $page . '.php';
+    $dir = $pageDir[$page] ?? '';
+    require __DIR__ . '/pages/' . ($dir ? $dir . '/' : '') . $page . '.php';
     require __DIR__ . '/includes/footer.php';
     ob_end_flush();
     exit;
@@ -135,7 +159,8 @@ if (!in_array($page, $publicPages, true)) {
 }
 
 require __DIR__ . '/includes/header.php';
-require __DIR__ . '/pages/' . $page . '.php';
+$dir = $pageDir[$page] ?? '';
+require __DIR__ . '/pages/' . ($dir ? $dir . '/' : '') . $page . '.php';
 require __DIR__ . '/includes/footer.php';
 
 ob_end_flush();

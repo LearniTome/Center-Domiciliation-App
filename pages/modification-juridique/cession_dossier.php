@@ -182,12 +182,12 @@ $docTypeLabels = [
                         <td>
                             <div class="table-actions">
                                 <?php if ($doc['fichier_docx'] && file_exists($doc['fichier_docx'])): ?>
-                                <a class="btn-icon success" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_docx'])) ?>" download title="Telecharger DOCX">
+                                <a class="btn-icon success" href="<?= e(str_replace(__DIR__ . '/../../', '', $doc['fichier_docx'])) ?>" download title="Telecharger DOCX">
                                     <span class="material-symbols-outlined">download</span>
                                 </a>
                                 <?php endif; ?>
                                 <?php if ($doc['fichier_pdf'] && file_exists($doc['fichier_pdf'])): ?>
-                                <a class="btn-icon danger" href="<?= e(str_replace(__DIR__ . '/../', '', $doc['fichier_pdf'])) ?>" download title="Telecharger PDF">
+                                <a class="btn-icon danger" href="<?= e(str_replace(__DIR__ . '/../../', '', $doc['fichier_pdf'])) ?>" download title="Telecharger PDF">
                                     <span class="material-symbols-outlined">picture_as_pdf</span>
                                 </a>
                                 <?php endif; ?>
