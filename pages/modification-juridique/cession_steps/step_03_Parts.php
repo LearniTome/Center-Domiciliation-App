@@ -163,7 +163,7 @@ if ($step === 3):
             <?php $partIndex = 0; ?>
             <?php if (!empty($wizard['parts'])): ?>
                 <?php foreach ($wizard['parts'] as $pi => $part): ?>
-                    <?php $partIndex = $pi; include __DIR__ . '/_cession_part_row.php'; ?>
+                    <?php $partIndex = $pi; include __DIR__ . '/step_03_parts_row.php'; ?>
                     <?php $partIndex = $pi + 1; ?>
                 <?php endforeach; ?>
             <?php else: ?>
@@ -175,7 +175,7 @@ if ($step === 3):
                         'cessionnaire_nationalite' => '', 'cessionnaire_adresse' => '', 'cessionnaire_telephone' => '', 'cessionnaire_email' => '', 'cessionnaire_qualite' => '', 'cessionnaire_parts' => 0, 'cessionnaire_capital_detenu' => '', 'cessionnaire_est_gerant' => 0,
                         'parts_cedees' => '', 'prix_unitaire' => '', 'prix_total' => '',
                     ];
-                    $partIndex = 0; include __DIR__ . '/_cession_part_row.php';
+                    $partIndex = 0; include __DIR__ . '/step_03_parts_row.php';
                     $partIndex = 1;
                 ?>
             <?php endif; ?>
