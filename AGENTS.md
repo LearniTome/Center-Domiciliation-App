@@ -16,7 +16,7 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
   - `configuration/` — configuration tabs, roles, setup
 - **Step files** (`*/_steps/*.php`): Wizard steps split into separate files (e.g. `creation_steps/`, `cession_steps/`), included conditionally by `$step`. Each step file handles its own POST + HTML output. Paths from `_steps/` use `__DIR__ . '/../../..'` to reach project root (3 niveaux) ; depuis `cessions/cession_steps/` utiliser `__DIR__ . '/../../../..'` (4 niveaux).
 - **`__DIR__` convention**: From `pages/{group}/` use `__DIR__ . '/../..'` (2 niveaux) ; from `pages/{group}/_steps/` use `__DIR__ . '/../../..'` (3 niveaux) ; from `pages/{group}/{subgroup}/_steps/` use `__DIR__ . '/../../../..'` (4 niveaux)
-- **Includes**: `includes/bootstrap.php` (session, config, DB), `functions.php` (helpers), `header.php` + `nav.php` + `footer.php`
+   - **Includes**: `includes/amorcage.php` (session, config, DB), `includes/fonctions.php` (helpers), `includes/entete.php` + `includes/navigation.php` + `includes/pied_page.php`
 
 ## Code Conventions
 - Every PHP file starts with `declare(strict_types=1);`
@@ -27,7 +27,7 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - Flash messages via `set_flash('success'|'error', 'message')`
 - DB queries use PDO prepared statements with named params only
 
-## Helper Functions (includes/functions.php)
+## Helper Functions (includes/fonctions.php)
 - `e(?string): string` — HTML escape
 - `app_url(string $page, array $params): string` — build URL
 - `redirect_to(string $page, array $params): never`
@@ -68,10 +68,10 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
   ```
 
 ## Page Patterns
-- **List pages** (`societes`, `associes`, `contrats`): Table with search bar, CSV export link, delete button per row, "Voir" link to detail page
+- **List pages** (`societes_liste`, `associes_liste`, `contrats_liste`): Table with search bar, CSV export link, delete button per row, "Voir" link to detail page
 - **Configuration** (`configuration.php`): Unified page with tabs for all 8 reference tables (formes-juridiques, villes, tribunaux, nationalites, lieux-naissance, adresses, qualites-associe, activites). Add/edit/delete inline. L'onglet `formes-juridiques` affiche une colonne **Dossier Templates** pour lier chaque forme juridique à un dossier dans `templates/`. Si le dossier n'existe pas, il est créé automatiquement lors de l'ajout ou la modification.
-- **Wizard** (`creation.php`): 6-step session-based wizard (Societe, Associes, Contrat, Recapitulatif, Documents, Generation) with JS dynamic associate forms. Step 5 "Documents" requires uploading Certificat Negatif (PDF) and CIN des Gerants (PDF/image) before generation. Steps are in separate files under `creation_steps/`.
-- **Detail page** (`societe.php`): Single record view with related data tables (associates, contracts, collaborators inline)
+- **Wizard** (`creation_steps/_main.php`): 6-step session-based wizard (Societe, Associes, Contrat, Recapitulatif, Documents, Generation) with JS dynamic associate forms. Step 5 "Documents" requires uploading Certificat Negatif (PDF) and CIN des Gerants (PDF/image) before generation. Steps are in separate files under `creation_steps/`.
+- **Detail page** (`societe_details.php`): Single record view with related data tables (associates, contracts, collaborators inline)
 
 ## Template Patterns
 - Layout: `<section class="grid two">` for two-column, `<section class="card">` for single
@@ -148,7 +148,7 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - CSS: `assets/css/app.css` — custom design system (CSS variables, no framework)
 - JS: `assets/js/app.js` — vanilla JS: sidebar toggle, column toggle, table sorting, confirmation dialogs (`data-confirm`), dynamic associate form cloning (`data-associe-template`, `data-add-associe`, `data-remove-associe`), wizard capital distribution
 
-## TemplateAnalyzer (src/TemplateAnalyzer.php)
+## TemplateAnalyzer (src/analyseur_templates.php)
 - Static class for .docx template analysis and modification
 - **extractVariables(path)**: Reads `word/document.xml` via ZipArchive, strips XML tags, regex `{{ VAR }}`
 - **scanTemplates(dir)**: Recursively finds `.docx` files, returns array with filename/date/doc_type/variables
@@ -170,7 +170,7 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - **manual-test** — checklist pré-commit (PHP lint, navigation, formulaires, UI, DB)
 
 ## Claude AI Integration
-- **ClaudeService** (`src/ClaudeService.php`): Static class with cURL to Anthropic API
+- **ClaudeService** (`src/service_claude.php`): Static class with cURL to Anthropic API
   - `ask()`: generic prompt → response (session-cached)
   - `autoFill()`: suggests realistic values for wizard form fields
   - `analyzeTemplates()`: suggests improvements for template variables (rename/delete/keep)
@@ -182,7 +182,7 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - **Cache**: Responses cached in `$_SESSION['_claude_cache']` with configurable TTL
 
 ### AI Features by Page
-- **Wizard** (`creation.php`): "Remplir avec IA" button on steps 1-3 (stores suggestions in session, rendered as `data-apply-ai-fill` on button → JS fills fields). Step 5: "Valider avec IA" button (shows validation points), clause generation (3 types: objet social, mentions legales, siege social)
+- **Wizard** (`creation_steps/_main.php`): "Remplir avec IA" button on steps 1-3 (stores suggestions in session, rendered as `data-apply-ai-fill` on button → JS fills fields). Step 5: "Valider avec IA" button (shows validation points), clause generation (3 types: objet social, mentions legales, siege social)
 - **Analyse de couverture** (`analyse-couverture.php`): "Suggérer avec IA" button → shows suggestions card with variable/action badges (rename/delete/keep)
 - **Assistant IA** (`ai-assistant.php`): Multi-turn chat with Claude, history stored in session
 
@@ -205,7 +205,7 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
   - `cession_dossier` (`index.php?page=cession_dossier&id=XX`) — détail dossier avec stats, infos, lignes de cession, documents téléchargeables
 - **Tables DB**: `cessions` + `cession_parts` (migration `20260612_000001_cession_parts.sql`)
 - **Permissions**: `cessions.view`, `cessions.create`, `cessions.edit`, `cessions.delete`, `cessions.export`
-- **Sidebar**: Section "Modification juridique" avec lien "Cession de parts sociales" (`nav.php`)
+- **Sidebar**: Section "Modification juridique" avec lien "Cession de parts sociales" (`includes/navigation.php`)
 - **Wizard 3 étapes** (`cession.php`):
   - Étape 1 : Sélection/Nouvelle société (modal inline avec tous les champs, dropdowns ref_formes_juridiques/ref_villes/ref_tribunaux)
   - Étape 2 : Lignes cédant/cessionnaire (noms depuis DB ou saisie libre, parts, prix unitaire)
@@ -213,7 +213,7 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - **Numéro de dossier**: Auto-généré `CES-YYYY-NNN`
 - **Dossiers de sortie**: `dossiers_generer/dossiers_cession/{date}_{forme}_{raison}/{dossier_cession}/`
 - **Templates DOCX**: `templates/_Cession/` (4 fichiers : Acte-Cession-Parts, PV-AGE-Cession, Declaration-Modificative-RC, Annonce-Legale-Cession)
-- **DocumentRenderer** (`src/DocumentRenderer.php`): `buildContextFromCession()` construit le contexte avec `SESSION_*`, `CEDANT_*`, `CESSIONNAIRE_*`, boucle `{%p for c in cession_parts %}`
+- **DocumentRenderer** (`src/rendu_document.php`): `buildContextFromCession()` construit le contexte avec `SESSION_*`, `CEDANT_*`, `CESSIONNAIRE_*`, boucle `{%p for c in cession_parts %}`
 - **TemplateAnalyzer**: clés contexte `CESSION_*` ajoutées dans `getExpectedContextKeys()`, section `cession` dans `inferSection()`
 - **Mise à jour parts**: après validation, met à jour `associe_parts` et `associe_capital_detenu` dans la table `associes`
 
@@ -249,7 +249,7 @@ Le rendu final des documents génère un PDF depuis un DOCX. Trois méthodes son
    - Installation : `composer install` à la racine du projet
    - Dépendances : `phpoffice/phpword` + `dompdf/dompdf`
    - Résultat : HTML simplifié, mise en page basique (sans les en-têtes/pieds de page Word)
-   - `vendor/autoload.php` est chargé dans `generation.php` et `creation.php`
+   - `vendor/autoload.php` est chargé dans `pages/templates/generation.php` et `pages/dossiers/creation_steps/_main.php`
 
 ### Vérification rapide
 ```powershell
@@ -298,7 +298,7 @@ npx -y @berthojoris/mcp-mysql-server "mysql://root@127.0.0.1:3306/center_domicil
 
 Le système de migration automatique synchronise le schéma DB entre plusieurs PC (XAMPP local).
 
-- **Fonctionnement** : `includes/migrations.php` est appelé dans `bootstrap.php` après la connexion PDO
+- **Fonctionnement** : `includes/migrations.php` est appelé dans `includes/amorcage.php` après la connexion PDO
 - **Stockage** : Les fichiers SQL timestampés dans `database/migrations/` (format `YYYYMMDD_HHMMSS_description.sql`)
 - **Tracking** : Table `_migrations` enregistre les fichiers déjà appliqués
 - **Idempotence** : Les migrations `ALTER TABLE` sont protégées — les erreurs "duplicate column" sont ignorées

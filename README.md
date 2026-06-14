@@ -48,44 +48,91 @@ Application PHP compatible XAMPP pour la gestion des dossiers de domiciliation :
 │   └── import.sql         # Schema + seed combines
 │
 ├── includes/
-│   ├── bootstrap.php      # Session, config, connexion DB, flash
-│   ├── db.php             # Singleton PDO
-│   ├── functions.php      # 20+ fonctions utilitaires
-│   ├── header.php         # <head>, sidebar, flash/error display
-│   ├── nav.php            # Navigation laterale
-│   └── footer.php         # JS + fermeture HTML
+│   ├── amorcage.php          # Session, config, connexion DB, flash
+│   ├── base_donnees.php      # Singleton PDO
+│   ├── migrations.php        # Migration automatique du schema DB
+│   ├── fonctions.php         # 20+ fonctions utilitaires
+│   ├── rendu_configuration.php # Rendu onglets configuration
+│   ├── entete.php            # <head>, sidebar, flash/error display
+│   ├── navigation.php        # Navigation laterale
+│   └── pied_page.php         # JS + fermeture HTML
 │
-├── pages/                 # 22 pages
-│   ├── dashboard.php      # Tableau de bord avec statistiques
-│   ├── creation.php       # Assistant 3 etapes (wizard)
-│   ├── configuration.php  # Configuration unifiee (tables de reference)
-│   ├── societes.php       # Liste + recherche + export CSV
-│   ├── societe.php        # Fiche detail d'une societe
-│   ├── associes.php       # Liste des associes
-│   ├── contrats.php       # Liste des contrats
-│   ├── collaborateurs.php # Gestion des collaborateurs
-│   ├── collaborateur.php  # Fiche detail d'un collaborateur
-│   ├── templates.php      # Import, scan des templates DOCX
-│   ├── template.php       # Detail template (vars detectees, mapping)
-│   ├── template_edit.php  # Editeur WYSIWYG temps-reel
-│   ├── generation.php     # Generation de documents
-│   ├── documents.php      # Historique des documents generes
-│   ├── analyse-couverture.php # Analyse de couverture des variables
-│   ├── variables.php      # Gestion des variables
-│   ├── defaults.php       # Valeurs par defaut
-│   ├── convert-word-pdf.php # Conversion Word en PDF
-│   ├── formes-juridiques.php
-│   ├── adresses.php
-│   ├── villes.php
-│   ├── nationalites.php
-│   ├── lieux-naissance.php
-│   ├── qualites-associe.php
-│   ├── setup.php          # Instructions XAMPP
-│   └── not-found.php      # Page 404
+├── pages/
+│   ├── accueil/
+│   │   ├── dashboard.php     # Tableau de bord avec statistiques
+│   │   └── notifications.php # Notifications
+│   │
+│   ├── dossiers/
+│   │   ├── societes_liste.php       # Liste + recherche + export CSV
+│   │   ├── societe_details.php      # Fiche detail d'une societe
+│   │   ├── associes_liste.php       # Liste des associes
+│   │   ├── associe_details.php      # Fiche detail d'un associe
+│   │   ├── collaborateurs_liste.php # Gestion des collaborateurs
+│   │   ├── collaborateur_details.php# Fiche detail d'un collaborateur
+│   │   ├── contrats_liste.php       # Liste des contrats
+│   │   └── creation_steps/          # Wizard 6 etapes
+│   │       ├── _init.php
+│   │       ├── _main.php
+│   │       ├── step_01_Societe.php
+│   │       ├── step_02_Associes.php
+│   │       ├── step_03_Contrat.php
+│   │       ├── step_04_Recap.php
+│   │       ├── step_05_Upload.php
+│   │       └── step_06_Generation.php
+│   │
+│   ├── modification-juridique/
+│   │   ├── modifications_juridiques.php
+│   │   └── cession/
+│   │       ├── cessions_liste.php          # Liste des cessions
+│   │       ├── cession_details_dossier.php # Detail dossier cession
+│   │       └── cession_steps/              # Wizard 3 etapes
+│   │           ├── _init.php
+│   │           ├── _main.php
+│   │           ├── step_00_Mode.php
+│   │           ├── step_01_Societe.php
+│   │           ├── step_02_Associes.php
+│   │           ├── step_03_Parts.php
+│   │           ├── step_04_Recap.php
+│   │           ├── step_05_Upload.php
+│   │           └── step_06_Generation.php
+│   │
+│   ├── templates/
+│   │   ├── templates.php       # Import, scan des templates DOCX
+│   │   ├── template.php        # Detail template (vars detectees, mapping)
+│   │   ├── template_edit.php   # Editeur WYSIWYG temps-reel
+│   │   ├── generation.php      # Generation de documents
+│   │   ├── documents.php       # Historique des documents generes
+│   │   └── download_all.php    # Telechargement groupe
+│   │
+│   ├── outils/
+│   │   ├── analyse-couverture.php # Analyse de couverture des variables
+│   │   ├── variables.php          # Gestion des variables
+│   │   ├── defaults.php           # Valeurs par defaut
+│   │   ├── convert-word-pdf.php   # Conversion Word en PDF
+│   │   └── ai-assistant.php       # Assistant IA Claude
+│   │
+│   ├── configuration/
+│   │   ├── configuration.php  # Configuration unifiee (onglets)
+│   │   ├── setup.php          # Instructions XAMPP
+│   │   ├── roles.php / role.php # Gestion des roles
+│   │   ├── activites.php / activite.php
+│   │   ├── activites-ompic.php
+│   │   ├── notifications-manage.php / notif-ajax.php
+│   │   ├── adresses.php / villes.php / tribunaux.php
+│   │   ├── formes-juridiques.php
+│   │   ├── nationalites.php / lieux-naissance.php
+│   │   └── qualites-associe.php
+│   │
+│   └── auth/
+│       ├── connexion.php      # Page de connexion
+│       ├── deconnexion.php    # Deconnexion
+│       └── not-found.php      # Page 404
 │
 ├── src/
-│   ├── TemplateEditor.php # Editeur WYSIWYG DOCX (round-trip HTML <-> Word XML)
-│   └── TemplateAnalyzer.php # Analyse et detection de variables
+│   ├── analyseur_templates.php # TemplateAnalyzer : analyse et modification .docx
+│   ├── rendu_document.php      # DocumentRenderer : rendu DOCX avec contexte
+│   ├── service_claude.php      # ClaudeService : integration IA Anthropic
+│   └── editeur_templates.php   # TemplateEditor : edition WYSIWYG DOCX
 │
 ├── templates/             # Templates DOCX par forme juridique
 │   ├── _Racine-Actifs/
@@ -117,29 +164,29 @@ Application PHP compatible XAMPP pour la gestion des dossiers de domiciliation :
 | Page | URL | Description |
 |------|-----|-------------|
 | Tableau de bord | `?page=dashboard` | Stats, dernieres entrees, acces rapide |
-| Nouveau dossier | `?page=creation` | Assistant 3 etapes avec associes dynamiques |
-| Configuration | `?page=configuration` | Gestion unifiee de toutes les tables de reference (onglets) |
+| Nouveau dossier | `?page=creation` | Assistant 6 etapes avec associes dynamiques |
 | Societes | `?page=societes` | Liste + recherche + export CSV |
 | Fiche societe | `?page=societe&id=N` | Detail d'une societe (associes, contrats, collaborateurs) |
 | Associes | `?page=associes` | Liste + suppression |
-| Contrats | `?page=contrats` | Liste + suppression |
+| Fiche associe | `?page=associe&id=N` | Detail d'un associe |
 | Collaborateurs | `?page=collaborateurs` | Gestion (ajout, modification, suppression) |
 | Fiche collaborateur | `?page=collaborateur&id=N` | Fiche detail d'un collaborateur |
+| Contrats | `?page=contrats` | Liste + suppression |
+| Cessions | `?page=cessions` | Liste des cessions de parts |
+| Nouvelle cession | `?page=cession` | Wizard 3 etapes (societe, cedant/cessionnaire, recap) |
+| Detail cession | `?page=cession_dossier&id=N` | Detail dossier cession avec documents |
+| Modifications juridiques | `?page=modifications-juridiques` | Liste des modifications |
 | Templates | `?page=templates` | Liste, import, scan des templates DOCX |
 | Detail template | `?page=template&path=...` | Detection des variables, mapping DB |
 | Editeur template | `?page=template_edit&path=...` | Editeur WYSIWYG temps-reel (A4, toolbar complete) |
-| Analyse couverture | `?page=analyse-couverture` | Analyse de couverture des variables |
-| Variables | `?page=variables` | Gestion des variables et mapping |
 | Generation | `?page=generation` | Generation de documents depuis les templates |
 | Documents | `?page=documents` | Historique des documents generes |
-| Word to PDF | `?page=convert-word-pdf` | Conversion de documents Word en PDF |
+| Analyse couverture | `?page=analyse-couverture` | Analyse de couverture des variables |
+| Variables | `?page=variables` | Gestion des variables et mapping |
 | Valeurs par defaut | `?page=defaults` | Valeurs par defaut pour le wizard |
-| Formes juridiques | `?page=formes-juridiques` | Gestion des formes juridiques |
-| Adresses | `?page=adresses` | Adresses de reference |
-| Villes | `?page=villes` | Gestion des villes |
-| Nationalites | `?page=nationalites` | Gestion des nationalites |
-| Lieux naissance | `?page=lieux-naissance` | Lieux de naissance de reference |
-| Qualites associe | `?page=qualites-associe` | Qualites d'associe |
+| Word to PDF | `?page=convert-word-pdf` | Conversion de documents Word en PDF |
+| Assistant IA | `?page=ai-assistant` | Chat avec Claude (IA Anthropic) |
+| Configuration | `?page=configuration` | Gestion unifiee de toutes les tables de reference (onglets) |
 
 ## Technologie
 

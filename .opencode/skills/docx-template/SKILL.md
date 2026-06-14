@@ -10,8 +10,8 @@ compatibility: opencode
 Utilise cette skill pour toute manipulation de fichiers .docx (templates de documents juridiques).
 
 ## Classes
-- `src/TemplateAnalyzer.php` — classe statique pour analyse et modification des .docx
-- Chargement : `require_once __DIR__ . '/../src/TemplateAnalyzer.php';`
+- `src/analyseur_templates.php` — classe statique pour analyse et modification des .docx
+- Chargement : `require_once __DIR__ . '/../src/analyseur_templates.php';`
 
 ## Fonctions principales
 - `TemplateAnalyzer::extractVariables(path)` — lit `word/document.xml` via ZipArchive, regex `{{ VAR }}`

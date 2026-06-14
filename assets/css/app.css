@@ -2612,7 +2612,7 @@ td.col-pdf .pdf-pending {
 }
 
 /* ==========================================
-   Sticky Table Header + Drag (config-render.php)
+   Sticky Table Header + Drag (rendu_configuration.php)
    ========================================== */
 #config-table thead {
     position: sticky;

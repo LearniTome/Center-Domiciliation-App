@@ -16,10 +16,10 @@ Application PHP vanilla de gestion de dossiers de domiciliation d'entreprises.
 - Requêtes DB : PDO prepared statements avec paramètres nommés uniquement
 
 ## Architecture fichiers
-- `pages/*.php` — logique PHP en haut, HTML en bas
-- `includes/bootstrap.php` — amorçage (session, config, DB)
-- `includes/functions.php` — helpers (e, redirect_to, csrf_input, etc.)
-- `includes/header.php`, `nav.php`, `footer.php`
+- `pages/{groupe}/` — logique PHP en haut, HTML en bas (groupes : accueil, dossiers, modification-juridique, templates, outils, configuration, auth)
+- `includes/amorcage.php` — amorçage (session, config, DB)
+- `includes/fonctions.php` — helpers (e, redirect_to, csrf_input, etc.)
+- `includes/entete.php`, `navigation.php`, `pied_page.php`
 - `config/app.php`, `config/database.php`, `config/defaults.json`
 - `assets/css/app.css`, `assets/js/app.js`
 - `database/schema.sql`, `database/seed.sql`
@@ -28,7 +28,8 @@ Application PHP vanilla de gestion de dossiers de domiciliation d'entreprises.
 - `societes` — liste des sociétés avec recherche, CSV, suppression
 - `societe&id=X` — détail d'une société (associés, contrats, collaborateurs)
 - `associes`, `contrats` — listes similaires
-- `creation` — wizard 3 étapes avec formulaire dynamique JS
+- `creation` — wizard 6 étapes avec formulaire dynamique JS
+- `cession` — wizard 3 étapes cession de parts sociales
 - `configuration` — gestion des tables de référence (8 onglets)
 
 ## Base de données

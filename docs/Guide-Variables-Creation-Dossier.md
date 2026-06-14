@@ -1,6 +1,6 @@
 # Champs de l'Assistant de creation — Guide complet
 
-Tous les champs du formulaire de creation de dossier (`pages/creation.php`), etape par etape.
+Tous les champs du formulaire de creation de dossier (`pages/dossiers/creation_steps/_main.php`), etape par etape.
 
 **Legende :**
 - **Type** : type d'input HTML (text, number, date, select, hidden, textarea)

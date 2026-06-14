@@ -17,7 +17,7 @@
 |--------|-------|------|
 | **Routing** | Front controller `index.php?page=` + allowlist (21 pages) | OK |
 | **Pages** | 21 fichiers dans `pages/` (moy. 300-949 lignes) | PHP/HTML mélangé |
-| **Couche DB** | PDO via `includes/db.php` singleton, paramètres nommés | OK |
+| **Couche DB** | PDO via `includes/base_donnees.php` singleton, paramètres nommés | OK |
 | **CSS** | ~1116 lignes, custom design system dark, variables CSS | Bon |
 | **JS** | ~638 lignes vanilla : wizard, calculs loyers, auto-fill, drag-drop, sidebar toggle, column toggle, capital SARL | OK |
 | **Templates doc** | 3 classes dans `src/` (TemplateAnalyzer, DocumentRenderer, TemplateEditor) | Redondant |
@@ -38,40 +38,45 @@
 │   ├── database.php       # Credentials MySQL
 │   └── defaults.json      # Valeurs par défaut wizard
 ├── includes/
-│   ├── bootstrap.php      # Session, config, DB
-│   ├── functions.php      # 20 helpers
-│   ├── db.php             # Singleton PDO
-│   ├── header.php         # <head> + sidebar
-│   ├── nav.php            # Navigation sidebar
-│   └── footer.php         # Scripts + fermeture
-├── pages/                 # 21 pages
-│   ├── dashboard.php
-│   ├── societes.php       # Liste + recherche + CSV
-│   ├── societe.php        # Détail + édition (345 lignes)
-│   ├── associes.php
-│   ├── contrats.php
-│   ├── collaborateurs.php
-│   ├── collaborateur.php  # Détail
-│   ├── creation.php       # Wizard 3 étapes — 949 lignes
-│   ├── configuration.php  # Gestion 8 tables ref
-│   ├── villes.php         # REDONDANT → remplacé par configuration.php
-│   ├── nationalites.php   # REDONDANT
-│   ├── lieux-naissance.php# REDONDANT
-│   ├── adresses.php       # REDONDANT
-│   ├── formes-juridiques.php # REDONDANT
-│   ├── qualites-associe.php  # REDONDANT
-│   ├── templates.php
-│   ├── template_edit.php
-│   ├── generation.php
-│   ├── documents.php
-│   └── setup.php
+│   ├── amorcage.php          # Session, config, DB
+│   ├── fonctiobs.php         # 20 helpers
+│   ├── base_donnees.php      # Singleton PDO
+│   ├── entete.php            # <head> + sidebar
+│   ├── navigation.php        # Navigation sidebar
+│   └── pied_page.php         # Scripts + fermeture
+├── pages/                    # Pages organisées en sous-dossiers
+│   ├── accueil/
+│   │   ├── dashboard.php     # Tableau de bord
+│   │   └── notifications.php
+│   ├── dossiers/
+│   │   ├── societes_liste.php       # Liste + recherche + CSV
+│   │   ├── societe_details.php      # Détail + édition
+│   │   ├── associes_liste.php
+│   │   ├── associe_details.php
+│   │   ├── contrats_liste.php
+│   │   ├── collaborateurs_liste.php
+│   │   ├── collaborateur_details.php
+│   │   └── creation_steps/          # Wizard création 6 étapes
+│   ├── modification-juridique/
+│   │   ├── modifications_juridiques.php
+│   │   └── cession/                 # Cession de parts sociales
+│   ├── templates/
+│   │   ├── templates.php
+│   │   ├── generation.php
+│   │   └── documents.php
+│   ├── outils/
+│   │   ├── analyse-couverture.php
+│   │   ├── variables.php
+│   │   └── ai-assistant.php
+│   ├── configuration/        # Gestion onglets + tables ref
+│   └── auth/                 # Connexion, déconnexion, 404
 ├── assets/
 │   ├── css/app.css        # Design system 982 lignes
 │   └── js/app.js          # Scripts 419 lignes
 ├── src/                   # Classes templates
-│   ├── TemplateAnalyzer.php
-│   ├── DocumentRenderer.php
-│   └── TemplateEditor.php
+│   ├── analyseur_templates.php
+│   ├── rendu_document.php
+│   └── editeur_templates.php
 ├── database/
 │   ├── schema.sql         # 11 tables + FK + index
 │   └── seed.sql
@@ -100,9 +105,9 @@
 
 ### Backend
 
-- **`creation.php` : 949 lignes** — logique POST + requêtes DB + HTML + template JS, tout dans le même fichier
+- **`creation_steps/_main.php` : 949 lignes** — logique POST + requêtes DB + HTML + template JS, tout dans le même fichier
 - **6 pages redondantes** (`villes.php`, `nationalites.php`, `lieux-naissance.php`, `adresses.php`, `formes-juridiques.php`, `qualites-associe.php`) — elles dupliquent exactement les onglets de `configuration.php`
-- **SQL potentiellement injectable** dans `dashboard_count()` (`functions.php:107`) et `fetch_all_records()` (`functions.php:122`) — concaténation directe du nom de table (protégé partiellement par allowlist, mais pas de `prepare()`)
+- **SQL potentiellement injectable** dans `dashboard_count()` (`fonctions.php:107`) et `fetch_all_records()` (`fonctions.php:122`) — concaténation directe du nom de table (protégé partiellement par allowlist, mais pas de `prepare()`)
 - **Aucune pagination** — les listes chargent `SELECT * FROM table` sans LIMIT
 - **Duplication ZIP** — les 3 classes `src/` ont une logique de décompression quasi identique
 - **Erreurs SQL exposées** — `$exception->getMessage()` est affiché à l'utilisateur via `set_flash('error', ...)`
@@ -120,12 +125,12 @@
 | # | Amélioration | Fichiers impactés | Effort |
 |---|-------------|-------------------|--------|
 | 1 | **Responsive multi-breakpoints** (768, 1024, 1280px) | `app.css` | 2h |
-| 2 | **Indicateurs de chargement** sur soumissions POST | `app.js`, `header.php` | 1h |
+| 2 | **Indicateurs de chargement** sur soumissions POST | `app.js`, `entete.php` | 1h |
 | 3 | **Validation formulaires client** (regex email, téléphone, ICE, RC, IF) | Toutes les pages avec formulaires | 2h |
 | 4 | **Correction bug `adresse` dupliquée** dans testData | `app.js:25,64` | 5min |
 | 5 | **Remplacer `document.execCommand()`** par Clipboard API | `template_edit.php` | 30min |
-| 6 | **Autocomplete** sur barres de recherche | `societes.php`, `associes.php`, etc. | 1h |
-| 7 | **Notifications toast** plutôt que flash repositionnables | `header.php`, `app.js`, `app.css` | 1h30 |
+| 6 | **Autocomplete** sur barres de recherche | `societes_liste.php`, `associes_liste.php`, etc. | 1h |
+| 7 | **Notifications toast** plutôt que flash repositionnables | `entete.php`, `app.js`, `app.css` | 1h30 |
 | 8 | **Extraire CSS inline** de `configuration.php` vers `app.css` | `configuration.php`, `app.css` | 30min |
 | 9 | **Debounce sur calculs loyers** en JS | `app.js` | 15min |
 
@@ -133,14 +138,14 @@
 
 | # | Amélioration | Fichiers impactés | Effort |
 |---|-------------|-------------------|--------|
-| 1 | **Pagination** (LIMIT/OFFSET) sur toutes les listes | `societes.php`, `associes.php`, `contrats.php`, `collaborateurs.php`, `functions.php` | 3h |
-| 2 | **Refactor `creation.php`** — extraire handlers POST dans un fichier séparé | `creation.php` → `handlers/creation.php` | 2h |
+| 1 | **Pagination** (LIMIT/OFFSET) sur toutes les listes | `societes_liste.php`, `associes_liste.php`, `contrats_liste.php`, `collaborateurs_liste.php`, `fonctions.php` | 3h |
+| 2 | **Refactor `creation_steps/_main.php`** — extraire handlers POST dans un fichier séparé | `creation_steps/_main.php` → `handlers/creation.php` | 2h |
 | 3 | **Supprimer 6 pages redondantes** + redirection vers `configuration.php?tab=` | `villes.php`, `nationalites.php`, etc. + `index.php` | 30min |
-| 4 | **Sécuriser `dashboard_count()` et `fetch_all_records()`** avec `prepare()` | `functions.php` | 30min |
-| 5 | **Masquer les erreurs SQL** en production | `creation.php`, `societe.php`, toutes les pages avec catch | 30min |
+| 4 | **Sécuriser `dashboard_count()` et `fetch_all_records()`** avec `prepare()` | `fonctions.php` | 30min |
+| 5 | **Masquer les erreurs SQL** en production | `creation_steps/_main.php`, `societe.php`, toutes les pages avec catch | 30min |
 | 6 | **Dédupliquer logique ZIP** — classe utilitaire unique | `src/*.php` → `src/ZipHelper.php` | 1h |
 | 7 | **Validation email serveur** avec `filter_var()` | Tous les handlers POST | 1h |
-| 8 | **Logger les erreurs** dans un fichier (`logs/error.log`) | `bootstrap.php` | 30min |
+| 8 | **Logger les erreurs** dans un fichier (`logs/error.log`) | `amorcage.php` | 30min |
 | 9 | **Ajouter index DB manquants** — `raison_sociale`, `cin`, `email` | `schema.sql`, migration | 15min |
 
 ### Architecture — Priorité moyenne
@@ -149,7 +154,7 @@
 |---|-------------|--------|
 | 1 | **Autoloader PSR-4** pour les classes `src/` (actuellement `require` manuel) | 30min |
 | 2 | **Dockeriser** — `docker-compose.yml` avec PHP 8 + MySQL + phpMyAdmin | 1h |
-| 3 | **Tests unitaires** sur les helpers `functions.php` (PHPUnit ou simple assert) | 2h |
+| 3 | **Tests unitaires** sur les helpers `fonctions.php` (PHPUnit ou simple assert) | 2h |
 | 4 | **Système de logs structuré** — remplacer les `error_log()` dispersés | 1h |
 | 5 | **Config via variables d'environnement** — déplacer credentials DB | 1h |
 
@@ -160,30 +165,30 @@
 ### Frontend
 
 - [ ] **F-1** Responsive multi-breakpoints (768, 1024, 1280px) — `app.css`
-- [ ] **F-2** Indicateurs de chargement sur soumissions POST — `app.js`, `header.php`
+- [ ] **F-2** Indicateurs de chargement sur soumissions POST — `app.js`, `entete.php`
 - [ ] **F-3** Validation formulaires client (regex) — toutes les pages
 - [ ] **F-4** Corriger bug `adresse` dupliquée dans testData — `app.js:25,64`
-- [x] **F-4b** Ajout hidden `forme_juridique` à l'étape 2 — `creation.php`
+- [x] **F-4b** Ajout hidden `forme_juridique` à l'étape 2 — `creation_steps/_main.php`
 - [x] **F-4c** Helper JS `formatFR()` + séparateur milliers sur montants — `app.js`
-- [x] **F-4d** Helper PHP `parse_money()` + `format_money()` — `functions.php`
-- [x] **F-4e** Readonly loyers `type="text"` pour afficher format fr-FR — `creation.php`
-- [x] **F-4f** Capital SARL : distribution auto capital/parts/%, édition bidirectionnelle — `app.js`, `creation.php`
-- [x] **F-4g** Colonnes toggle (afficher/masquer) avec sauvegarde localStorage — `app.js`, `societes.php`, `associes.php`, `contrats.php`, `collaborateurs.php`, `app.css`
-- [x] **F-4h** Sidebar collapse toggle + scroll contenu uniquement — `nav.php`, `app.css`, `app.js`
+- [x] **F-4d** Helper PHP `parse_money()` + `format_money()` — `fonctions.php`
+- [x] **F-4e** Readonly loyers `type="text"` pour afficher format fr-FR — `creation_steps/_main.php`
+- [x] **F-4f** Capital SARL : distribution auto capital/parts/%, édition bidirectionnelle — `app.js`, `creation_steps/_main.php`
+- [x] **F-4g** Colonnes toggle (afficher/masquer) avec sauvegarde localStorage — `app.js`, `societes_liste.php`, `associes_liste.php`, `contrats_liste.php`, `collaborateurs_liste.php`, `app.css`
+- [x] **F-4h** Sidebar collapse toggle + scroll contenu uniquement — `navigation.php`, `app.css`, `app.js`
 - [x] **F-4i** Disable bouton Ajout associé pour SARL AU — `app.js`, `app.css`
-- [x] **F-4j** Wrap table-scroll sur associes + contrats — `associes.php`, `contrats.php`
+- [x] **F-4j** Wrap table-scroll sur associes + contrats — `associes_liste.php`, `contrats_liste.php`
 - [ ] **F-5** Remplacer `document.execCommand()` par Clipboard API — `template_edit.php`
 - [ ] **F-6** Autocomplete sur barres de recherche — pages listes
-- [ ] **F-7** Notifications toast au lieu de flash — `header.php`, `app.js`, `app.css`
+- [ ] **F-7** Notifications toast au lieu de flash — `entete.php`, `app.js`, `app.css`
 - [ ] **F-8** Extraire CSS inline de `configuration.php` — `app.css`
 - [ ] **F-9** Debounce sur calculs loyers JS — `app.js`
 
 ### Backend
 
-- [ ] **B-1** Pagination LIMIT/OFFSET — pages listes + `functions.php`
-- [ ] **B-2** Refactor `creation.php` — extraire handlers POST
+- [ ] **B-1** Pagination LIMIT/OFFSET — pages listes + `fonctions.php`
+- [ ] **B-2** Refactor `creation_steps/_main.php` — extraire handlers POST
 - [ ] **B-3** Supprimer 6 pages redondantes + redirections
-- [ ] **B-4** Sécuriser `dashboard_count()` / `fetch_all_records()` — `functions.php`
+- [ ] **B-4** Sécuriser `dashboard_count()` / `fetch_all_records()` — `fonctions.php`
 - [ ] **B-5** Masquer les erreurs SQL en production
 - [ ] **B-6** Dédupliquer logique ZIP — `src/ZipHelper.php`
 - [ ] **B-7** Validation email serveur (`filter_var`)
@@ -194,6 +199,6 @@
 
 - [ ] **A-1** Autoloader PSR-4 pour `src/`
 - [ ] **A-2** Dockeriser l'environnement
-- [ ] **A-3** Tests unitaires sur `functions.php`
+- [ ] **A-3** Tests unitaires sur `fonctions.php`
 - [ ] **A-4** Système de logs structuré
 - [ ] **A-5** Config via variables d'environnement
