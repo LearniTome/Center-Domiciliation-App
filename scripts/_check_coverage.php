@@ -1,5 +1,5 @@
 <?php
-require __DIR__ . '/src/TemplateAnalyzer.php';
+require __DIR__ . '/../src/analyseur_templates.php';
 $dir = __DIR__ . '/templates';
 $templates = TemplateAnalyzer::scanTemplates($dir);
 $analysis = TemplateAnalyzer::analyzeCoverage($templates);

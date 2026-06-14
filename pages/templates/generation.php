@@ -5,8 +5,8 @@ declare(strict_types=1);
 if (file_exists(__DIR__ . '/../../vendor/autoload.php')) {
     require_once __DIR__ . '/../../vendor/autoload.php';
 }
-require_once __DIR__ . '/../../src/TemplateAnalyzer.php';
-require_once __DIR__ . '/../../src/DocumentRenderer.php';
+require_once __DIR__ . '/../../src/analyseur_templates.php';
+require_once __DIR__ . '/../../src/rendu_document.php';
 
 $templatesConfig = require __DIR__ . '/../../config/templates.php';
 $templatesDir = __DIR__ . '/../../templates';

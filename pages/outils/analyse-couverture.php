@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../../src/TemplateAnalyzer.php';
+require_once __DIR__ . '/../../src/analyseur_templates.php';
 
 $templatesDir = __DIR__ . '/../../templates';
 $outputDir = __DIR__ . '/../../dossiers_generer/dossiers_domiciliation';

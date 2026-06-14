@@ -182,8 +182,8 @@ if (is_post() && $step === 6) {
             redirect_to('cession', ['step' => 6]);
         }
 
-        require_once __DIR__ . '/../../../../src/TemplateAnalyzer.php';
-        require_once __DIR__ . '/../../../../src/DocumentRenderer.php';
+        require_once __DIR__ . '/../../../../src/analyseur_templates.php';
+        require_once __DIR__ . '/../../../../src/rendu_document.php';
         if (file_exists(__DIR__ . '/../../../../vendor/autoload.php')) {
             require_once __DIR__ . '/../../../../vendor/autoload.php';
         }
@@ -262,7 +262,7 @@ if ($step === 6):
     $docTypes = $templatesConfig['document_types'] ?? [];
     $generatedFiles = $wizard['generated_files'] ?? [];
 
-    require_once __DIR__ . '/../../../../src/TemplateAnalyzer.php';
+    require_once __DIR__ . '/../../../../src/analyseur_templates.php';
     $cessionTemplateDir = __DIR__ . '/../../../../templates/_Cession';
     $templatesByType = [];
     foreach ($mapping as $docType) {

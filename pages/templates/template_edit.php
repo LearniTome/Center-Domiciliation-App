@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../../src/TemplateEditor.php';
+require_once __DIR__ . '/../../src/editeur_templates.php';
 
 $templatesDir = __DIR__ . '/../../templates';
 $templatePath = isset($_GET['path']) ? realpath((string) $_GET['path']) : '';

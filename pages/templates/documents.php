@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../../src/DocumentRenderer.php';
+require_once __DIR__ . '/../../src/rendu_document.php';
 
 $q = search_term();
 $filterSociete = int_value($_GET, 'societe_id');

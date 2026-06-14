@@ -223,8 +223,8 @@ if (is_post() && $step === 6) {
         if (file_exists(__DIR__ . '/../../../vendor/autoload.php')) {
             require_once __DIR__ . '/../../../vendor/autoload.php';
         }
-        require_once __DIR__ . '/../../../src/TemplateAnalyzer.php';
-        require_once __DIR__ . '/../../../src/DocumentRenderer.php';
+        require_once __DIR__ . '/../../../src/analyseur_templates.php';
+        require_once __DIR__ . '/../../../src/rendu_document.php';
 
         $templatesDir = __DIR__ . '/../../../templates';
         $outputDir = __DIR__ . '/../../../dossiers_generer/dossiers_domiciliation';
@@ -312,8 +312,8 @@ if (is_post() && $step === 6) {
             if (file_exists(__DIR__ . '/../../../vendor/autoload.php')) {
                 require_once __DIR__ . '/../../../vendor/autoload.php';
             }
-            require_once __DIR__ . '/../../../src/TemplateAnalyzer.php';
-            require_once __DIR__ . '/../../../src/DocumentRenderer.php';
+            require_once __DIR__ . '/../../../src/analyseur_templates.php';
+            require_once __DIR__ . '/../../../src/rendu_document.php';
 
             $templatesDir = __DIR__ . '/../../../templates';
             $outputDir = __DIR__ . '/../../../dossiers_generer/dossiers_domiciliation';
@@ -423,7 +423,7 @@ if ($step === 6):
     $dossierCreated = isset($wizard['societe_id']);
     $societeId = $wizard['societe_id'] ?? null;
 
-    require_once __DIR__ . '/../../../src/TemplateAnalyzer.php';
+    require_once __DIR__ . '/../../../src/analyseur_templates.php';
 
     $templatesConfig = require __DIR__ . '/../../../config/templates.php';
     $templatesDir = __DIR__ . '/../../../templates';

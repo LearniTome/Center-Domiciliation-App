@@ -11,7 +11,7 @@ $dbConfig = require __DIR__ . '/../config/database.php';
 
 require __DIR__ . '/functions.php';
 require __DIR__ . '/db.php';
-require_once __DIR__ . '/../src/ClaudeService.php';
+require_once __DIR__ . '/../src/service_claude.php';
 
 $flash = pull_flash();
 $dbError = null;
