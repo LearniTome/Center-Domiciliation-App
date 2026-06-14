@@ -182,10 +182,10 @@ if (is_post() && $step === 6) {
             redirect_to('cession', ['step' => 6]);
         }
 
-        require_once __DIR__ . '/../../src/TemplateAnalyzer.php';
-        require_once __DIR__ . '/../../src/DocumentRenderer.php';
-        if (file_exists(__DIR__ . '/../../vendor/autoload.php')) {
-            require_once __DIR__ . '/../../vendor/autoload.php';
+        require_once __DIR__ . '/../../../src/TemplateAnalyzer.php';
+        require_once __DIR__ . '/../../../src/DocumentRenderer.php';
+        if (file_exists(__DIR__ . '/../../../vendor/autoload.php')) {
+            require_once __DIR__ . '/../../../vendor/autoload.php';
         }
 
         $selectedDocs = $_POST['doc_types'] ?? [];
@@ -207,15 +207,15 @@ if (is_post() && $step === 6) {
         $clientName = trim($clientName, '-');
         $folderName = $wizard['cession_date'] . '_' . $forme . '_' . $clientName;
         $folderName = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', $folderName), '-');
-        $outputDir = __DIR__ . '/../../dossiers_generer/dossiers_cession/' . $folderName . '/' . $dossierCession;
+        $outputDir = __DIR__ . '/../../../dossiers_generer/dossiers_cession/' . $folderName . '/' . $dossierCession;
         if (!is_dir($outputDir)) mkdir($outputDir, 0777, true);
 
         $context = DocumentRenderer::buildContextFromCession($pdo, $cessionId);
 
-        $templatesConfig = require __DIR__ . '/../../config/templates.php';
+        $templatesConfig = require __DIR__ . '/../../../config/templates.php';
         $mapping = $templatesConfig['template_mapping']['cession'] ?? [];
 
-        $templateDir = __DIR__ . '/../../templates/_Cession';
+        $templateDir = __DIR__ . '/../../../templates/_Cession';
         $generated = [];
 
         foreach ($mapping as $docType) {
@@ -257,13 +257,13 @@ if (is_post() && $step === 6) {
 if ($step === 6):
     $dossierCreated = isset($wizard['cession_id']) && $wizard['cession_id'] > 0;
     $cessionId = $wizard['cession_id'] ?? null;
-    $templatesConfig = require __DIR__ . '/../../config/templates.php';
+    $templatesConfig = require __DIR__ . '/../../../config/templates.php';
     $mapping = $templatesConfig['template_mapping']['cession'] ?? [];
     $docTypes = $templatesConfig['document_types'] ?? [];
     $generatedFiles = $wizard['generated_files'] ?? [];
 
-    require_once __DIR__ . '/../../src/TemplateAnalyzer.php';
-    $cessionTemplateDir = __DIR__ . '/../../templates/_Cession';
+    require_once __DIR__ . '/../../../src/TemplateAnalyzer.php';
+    $cessionTemplateDir = __DIR__ . '/../../../templates/_Cession';
     $templatesByType = [];
     foreach ($mapping as $docType) {
         $matches = glob($cessionTemplateDir . '/*' . $docType . '*_Template.docx');

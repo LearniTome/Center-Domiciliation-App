@@ -12,7 +12,7 @@ if (is_post() && $step === 5) {
             redirect_to('cession', ['step' => 4]);
         }
 
-        $uploadDir = __DIR__ . '/../../uploads';
+        $uploadDir = __DIR__ . '/../../../uploads';
         $tmpDir = $uploadDir . '/tmp/' . session_id();
         if (!is_dir($tmpDir)) mkdir($tmpDir, 0777, true);
 
