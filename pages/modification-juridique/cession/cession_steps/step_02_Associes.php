@@ -46,8 +46,8 @@ if ($step === 2):
     <input type="hidden" name="nav_action" value="next">
 
     <div class="section-header">
-        <div style="display:flex;align-items:center;gap:8px"><h2>Associes</h2><p class="help-text" style="margin:0">Ajoutez les associes de la societe</p></div>
-        <div style="display:flex;align-items:center;gap:8px">
+        <h2>Associes</h2>
+        <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
             <button class="btn btn-info" type="button" data-fill-cession="2"><span class="material-symbols-outlined">auto_fix</span> Remplir automatiquement</button>
             <button class="btn btn-info" type="button" id="add-associe-step2"><span class="material-symbols-outlined">playlist_add</span> Ajouter un associe</button>
         </div>

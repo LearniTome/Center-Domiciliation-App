@@ -24,10 +24,7 @@ if ($step === 4):
 ?>
         <div class="stack">
             <div class="section-header">
-                <div>
-                    <h2>Recapitulatif de la cession</h2>
-                    <p class="help-text">Verifiez les informations avant de generer les documents.</p>
-                </div>
+                <h2>Recapitulatif de la cession</h2>
             </div>
 
             <div class="step-4-controls table-actions" style="margin-bottom:0.75rem">

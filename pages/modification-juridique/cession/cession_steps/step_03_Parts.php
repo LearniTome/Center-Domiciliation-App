@@ -14,7 +14,6 @@ if (is_post() && $step === 3) {
     }
 
     $wizard['cession_date'] = field_value($_POST, 'cession_date');
-    $wizard['cession_motif'] = field_value($_POST, 'cession_motif');
 
     $cedantTypes = $_POST['cedant_type'] ?? [];
     $cedantAssocieIds = $_POST['cedant_associe_id'] ?? [];
@@ -146,10 +145,6 @@ if ($step === 3):
             <label for="cession_date">Date de la cession</label>
             <input type="date" name="cession_date" id="cession_date" value="<?= e($wizard['cession_date'] ?? date('Y-m-d')) ?>" required>
         </div>
-        <div class="field">
-            <label for="cession_motif">Motif de la cession</label>
-            <input type="text" name="cession_motif" id="cession_motif" value="<?= e($wizard['cession_motif'] ?? '') ?>" placeholder="Ex: Cession entre associes">
-        </div>
     </div>
 
     <input type="hidden" id="total-societe-parts" value="<?= (int) ($selectedSociete['societe_part_social'] ?? 0) ?>">
@@ -157,7 +152,7 @@ if ($step === 3):
     <div style="margin-top:20px">
         <div class="section-header" style="margin-bottom:12px">
             <strong>Lignes de cession</strong>
-            <button class="btn btn-info" type="button" data-fill-cession="3"><span class="material-symbols-outlined">auto_fix</span> Remplir automatiquement</button>
+            <button class="btn btn-info" type="button" data-fill-cession="3" style="margin-left:auto"><span class="material-symbols-outlined">auto_fix</span> Remplir automatiquement</button>
         </div>
         <div id="cession-parts-container">
             <?php $partIndex = 0; ?>
@@ -348,7 +343,6 @@ if ($step === 3):
             if (!form) return;
 
             if (step === 3) {
-                form.querySelector('[name="cession_motif"]') && (form.querySelector('[name="cession_motif"]').value = randFrom(['Cession entre associes', 'Retrait d\'un associe', 'Entree d\'un nouvel associe', 'Reorganisation du capital', 'Donation de parts']));
                 var rows = form.querySelectorAll('[data-part]');
                 rows.forEach(function(row) {
                     var idx = row.getAttribute('data-part');

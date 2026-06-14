@@ -282,10 +282,7 @@ if ($step === 6):
 ?>
 <div class="stack">
     <div class="section-header">
-        <div>
-            <h2>Etape 6 — Generation des documents</h2>
-            <p class="help-text">Creez d abord le dossier, puis selectionnez les documents a generer.</p>
-        </div>
+        <h2>Etape 6 — Generation des documents</h2>
         <?php if ($dossierCreated): ?>
             <a class="btn btn-secondary" href="<?= e(app_url('cession_dossier', ['id' => $cessionId])) ?>">
                 <span class="material-symbols-outlined">visibility</span> Voir le dossier
@@ -299,7 +296,6 @@ if ($step === 6):
                 <span class="step-num">1</span>
                 <div>
                     <h3>Creer le dossier</h3>
-                    <p class="help-text">Enregistrez la cession en base de donnees.</p>
                 </div>
                 <?php if ($dossierCreated): ?>
                     <span class="step-badge" style="color:var(--success)">Fait</span>
@@ -321,12 +317,10 @@ if ($step === 6):
                 <span class="step-num">2</span>
                 <div>
                     <h3>Generer les documents</h3>
-                    <p class="help-text">Selectionnez les types de documents a generer.</p>
                 </div>
             </div>
 
             <?php if (!$dossierCreated): ?>
-                <p class="help-text" style="margin:12px 0 0;font-style:italic">Creez d abord le dossier pour acceder aux templates.</p>
             <?php else: ?>
                 <form method="post" class="stack" style="gap:8px;margin-top:8px">
                     <?= csrf_input() ?>

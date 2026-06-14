@@ -28,7 +28,6 @@ if ($step === 0):
 ?>
 <form method="post" class="stack">
     <?= csrf_input() ?>
-    <p class="help-text" style="margin-bottom:0">Comment souhaitez-vous procéder ?</p>
     <div id="mode-choice-grid">
         <label class="card choice-card" data-mode="existante">
             <input type="radio" name="mode" value="existante" hidden>
