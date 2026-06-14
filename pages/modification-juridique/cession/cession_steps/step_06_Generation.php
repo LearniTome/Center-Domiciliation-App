@@ -409,4 +409,15 @@ if ($step === 6):
     </form>
     <?php endif; ?>
 </div>
+
+<script>
+document.getElementById('select-all-wizard')?.addEventListener('click', function(e) {
+    e.preventDefault();
+    var form = this.closest('form');
+    if (!form) return;
+    var checkboxes = form.querySelectorAll('.template-check');
+    var allChecked = Array.from(checkboxes).every(function(cb) { return cb.checked; });
+    checkboxes.forEach(function(cb) { cb.checked = !allChecked; });
+});
+</script>
 <?php endif; ?>

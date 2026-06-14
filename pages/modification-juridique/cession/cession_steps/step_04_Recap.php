@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 // Step 4: Récap (just navigation)
-if ($step === 4) {
+if (is_post() && $step === 4) {
     $navAction = $_POST['nav_action'] ?? 'next';
     if ($navAction === 'back') {
         redirect_to('cession', ['step' => 3]);
@@ -51,7 +51,7 @@ if ($step === 4):
                         <div class="item"><span class="label">Forme juridique</span><span class="value"><?= e($socData['societe_forme_juridique'] ?: '-') ?></span></div>
                         <div class="item"><span class="label">ICE</span><span class="value"><?= e($socData['societe_ice'] ?: '-') ?></span></div>
                         <div class="item"><span class="label">Capital</span><span class="value"><?= e($socData['societe_capital'] ? number_format((float) $socData['societe_capital'], 2, ',', ' ') : '-') ?> DH</span></div>
-                        <div class="item"><span class="label">Nombre de parts</span><span class="value"><?= e($socData['societe_part_social'] ?: '-') ?></span></div>
+                        <div class="item"><span class="label">Nombre de parts</span><span class="value"><?= e((string) ($socData['societe_part_social'] ?: '-')) ?></span></div>
                         <div class="item"><span class="label">Ville</span><span class="value"><?= e($socData['societe_ville'] ?: '-') ?></span></div>
                         <div class="item"><span class="label">Tribunal</span><span class="value"><?= e($socData['societe_tribunal'] ?: '-') ?></span></div>
                         <div class="item"><span class="label">Email</span><span class="value"><?= e($socData['societe_email'] ?: '-') ?></span></div>
