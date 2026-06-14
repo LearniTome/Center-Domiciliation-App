@@ -77,6 +77,14 @@ $pageDir = [
 
 // Custom filenames for pages where the file != the page name
 $pageFile = [
+    'societes' => 'societes_liste',
+    'societe' => 'societe_details',
+    'associes' => 'associes_liste',
+    'associe' => 'associe_details',
+    'collaborateurs' => 'collaborateurs_liste',
+    'collaborateur' => 'collaborateur_details',
+    'contrats' => 'contrats_liste',
+    'creation' => 'creation_dossier',
     'cessions' => 'cessions_liste',
     'cession' => 'cession_steps/_main',
     'cession_dossier' => 'cession_details_dossier',
