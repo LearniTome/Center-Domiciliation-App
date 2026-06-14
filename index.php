@@ -77,9 +77,10 @@ $pageDir = [
 
 // Custom filenames for pages where the file != the page name
 $pageFile = [
-    'cessions' => 'list',
+    'cessions' => 'cessions_liste',
     'cession' => 'cession_steps/_main',
-    'cession_dossier' => 'detail',
+    'cession_dossier' => 'dossier_cession',
+    'modifications' => 'modifications_juridiques',
 ];
 
 $page = $_GET['page'] ?? 'dashboard';
