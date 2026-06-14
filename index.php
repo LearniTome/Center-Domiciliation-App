@@ -155,7 +155,7 @@ $pageTitleMap = [
     'notifications-manage' => 'Gestion des notifications',
     'modifications' => 'Modifications juridiques',
     'cessions' => 'Cessions de parts sociales',
-    'cession' => 'Cession de parts sociales',
+    'cession' => 'Choisir un mode cession',
     'cession_dossier' => 'Dossier de cession',
 ];
 

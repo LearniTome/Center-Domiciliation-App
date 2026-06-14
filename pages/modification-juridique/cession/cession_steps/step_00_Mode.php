@@ -43,15 +43,13 @@ if ($step === 0):
             <p>Créer une nouvelle société pour cette cession</p>
         </label>
     </div>
-    <div class="table-actions">
-        <button class="btn btn-next" type="submit"><span class="material-symbols-outlined">arrow_forward</span> Suivant</button>
-    </div>
 </form>
 
 <style>
 #mode-choice-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; }
 #mode-choice-grid .choice-card.selected[data-mode="existante"] { border-color: var(--primary); }
 #mode-choice-grid .choice-card.selected[data-mode="nouvelle"]  { border-color: var(--success); }
+#mode-choice-grid .choice-card { cursor:pointer; }
 </style>
 
 <script>
@@ -60,9 +58,12 @@ if ($step === 0):
     cards.forEach(function(c){
         c.addEventListener('click', function(){
             var radio = this.querySelector('input[type="radio"]');
-            if (radio) radio.checked = true;
-            cards.forEach(function(x){ x.classList.remove('selected'); });
-            this.classList.add('selected');
+            if (radio) {
+                radio.checked = true;
+                cards.forEach(function(x){ x.classList.remove('selected'); });
+                this.classList.add('selected');
+                this.closest('form').submit();
+            }
         });
     });
 })();

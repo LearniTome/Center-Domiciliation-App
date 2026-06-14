@@ -132,8 +132,12 @@ if ($step === 1):
     <?php endif; ?>
     <?php endif; ?>
     <div class="footer-actions">
-        <a class="btn btn-back" href="<?= e(app_url('cession', ['step' => 0])) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
-        <button class="btn btn-next" type="submit"><span class="material-symbols-outlined">arrow_forward</span> Suivant</button>
+        <div style="display:flex;gap:8px;margin-right:auto">
+            <a class="btn btn-back" href="<?= e(app_url('cession', ['step' => 0])) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
+            <button class="btn btn-next" type="submit"><span class="material-symbols-outlined">arrow_forward</span> Suivant</button>
+        </div>
+        <a class="btn btn-cancel" href="<?= e(app_url('cessions')) ?>"><span class="material-symbols-outlined">close</span> Annuler</a>
+        <a class="btn btn-back" href="<?= e(app_url('cession', ['reset' => '1'])) ?>" data-confirm="Reinitialiser l assistant ?"><span class="material-symbols-outlined">restart_alt</span> Reinitialiser</a>
     </div>
 </form>
 
@@ -142,8 +146,8 @@ if ($step === 1):
     <?= csrf_input() ?>
     <article class="card">
         <div class="section-header">
-            <div style="display:flex;align-items:center;gap:8px"><h2>Informations sur la societe</h2><p class="help-text" style="margin:0">Saisissez les details de la nouvelle societe</p></div>
-            <button class="btn btn-info" type="button" data-fill-cession="1"><span class="material-symbols-outlined">auto_fix</span> Remplir automatiquement</button>
+            <h2>Informations sur la societe</h2>
+            <button class="btn btn-info" type="button" data-fill-cession="1" style="margin-left:auto"><span class="material-symbols-outlined">auto_fix</span> Remplir automatiquement</button>
         </div>
         <div class="form-grid">
             <h3 class="section-title">Identifiants</h3>
@@ -291,8 +295,12 @@ if ($step === 1):
     </article>
 
     <div class="footer-actions">
-        <a class="btn btn-back" href="<?= e(app_url('cession', ['step' => 0])) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
-        <button class="btn btn-next" type="submit"><span class="material-symbols-outlined">arrow_forward</span> Suivant</button>
+        <div style="display:flex;gap:8px;margin-right:auto">
+            <a class="btn btn-back" href="<?= e(app_url('cession', ['step' => 0])) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
+            <button class="btn btn-next" type="submit"><span class="material-symbols-outlined">arrow_forward</span> Suivant</button>
+        </div>
+        <a class="btn btn-cancel" href="<?= e(app_url('cessions')) ?>"><span class="material-symbols-outlined">close</span> Annuler</a>
+        <a class="btn btn-back" href="<?= e(app_url('cession', ['reset' => '1'])) ?>" data-confirm="Reinitialiser l assistant ?"><span class="material-symbols-outlined">restart_alt</span> Reinitialiser</a>
     </div>
 </form>
 <?php endif; ?>

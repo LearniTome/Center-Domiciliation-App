@@ -5,16 +5,6 @@ require __DIR__ . '/_init.php';
 ?>
 <section>
     <article class="card stack">
-        <div class="section-header">
-            <h2 style="display:flex;align-items:center;gap:8px;margin:0">
-                <span class="material-symbols-outlined" style="color:var(--primary)">transfer_within_a_station</span>
-                Cession de parts sociales
-            </h2>
-            <div style="display:flex;gap:8px">
-                <a class="btn btn-cancel" href="<?= e(app_url('cessions')) ?>"><span class="material-symbols-outlined">close</span> Annuler</a>
-                <a class="btn btn-back" href="<?= e(app_url('cession', ['reset' => '1'])) ?>" data-confirm="Reinitialiser l assistant ?"><span class="material-symbols-outlined">restart_alt</span> Reinitialiser</a>
-            </div>
-        </div>
 
         <?php if ($step >= 1): ?>
         <div class="wizard-steps" id="wizard-steps-top">
