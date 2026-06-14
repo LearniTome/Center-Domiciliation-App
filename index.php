@@ -78,7 +78,7 @@ $pageDir = [
 // Custom filenames for pages where the file != the page name
 $pageFile = [
     'cessions' => 'list',
-    'cession' => 'wizard',
+    'cession' => 'cession_steps/cession',
     'cession_dossier' => 'detail',
 ];
 

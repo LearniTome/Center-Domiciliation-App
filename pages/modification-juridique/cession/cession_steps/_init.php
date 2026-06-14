@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 
 if (isset($_GET['reset']) && $_GET['reset'] === '1') {
@@ -137,40 +136,3 @@ foreach ($selectedAssocies as $a) {
 }
 
 $stepLabels = ['Societe', 'Associes', 'Cession', 'Recap', 'Validation', 'Generation'];
-?>
-<!-- ============ HTML ============ -->
-<section>
-    <article class="card stack">
-        <div class="section-header">
-            <h2 style="display:flex;align-items:center;gap:8px;margin:0">
-                <span class="material-symbols-outlined" style="color:var(--primary)">transfer_within_a_station</span>
-                Cession de parts sociales
-            </h2>
-            <div style="display:flex;gap:8px">
-                <a class="btn btn-cancel" href="<?= e(app_url('cessions')) ?>"><span class="material-symbols-outlined">close</span> Annuler</a>
-                <a class="btn btn-back" href="<?= e(app_url('cession', ['reset' => '1'])) ?>" data-confirm="Reinitialiser l assistant ?"><span class="material-symbols-outlined">restart_alt</span> Reinitialiser</a>
-            </div>
-        </div>
-
-        <?php if ($step >= 1): ?>
-        <div class="wizard-steps" id="wizard-steps-top">
-            <?php for ($s = 1; $s <= 6; $s++): ?>
-                <div class="wizard-step <?= $step > $s ? 'done' : ($step === $s ? 'active' : 'waiting') ?>">
-                    <strong>Etape <?= $s ?></strong>
-                    <span><?= $stepLabels[$s - 1] ?></span>
-                </div>
-            <?php endfor; ?>
-        </div>
-        <?php endif; ?>
-
-        <?php
-        require __DIR__ . '/cession_steps/step_00_Mode.php';
-        require __DIR__ . '/cession_steps/step_01_Societe.php';
-        require __DIR__ . '/cession_steps/step_02_Associes.php';
-        require __DIR__ . '/cession_steps/step_03_Parts.php';
-        require __DIR__ . '/cession_steps/step_04_Recap.php';
-        require __DIR__ . '/cession_steps/step_05_Upload.php';
-        require __DIR__ . '/cession_steps/step_06_Generation.php';
-        ?>
-    </article>
-</section>
