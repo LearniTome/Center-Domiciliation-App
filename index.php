@@ -38,6 +38,11 @@ $pageDir = [
     'collaborateurs' => 'dossiers',
     'collaborateur' => 'dossiers',
     // Modification juridique
+    // Auth
+    'connexion' => 'auth',
+    'deconnexion' => 'auth',
+    'not-found' => 'auth',
+    // Modification juridique
     'modifications' => 'modification-juridique',
     'cessions' => 'modification-juridique/cession',
     'cession' => 'modification-juridique/cession',
