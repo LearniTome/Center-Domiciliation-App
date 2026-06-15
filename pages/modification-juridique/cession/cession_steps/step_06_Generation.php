@@ -181,6 +181,67 @@ $stmt->execute([
     }
 
     // Generate documents
+    if ($navAction === 'generate_single') {
+        header('Content-Type: application/json');
+        try {
+            $docType = $_POST['doc_type'] ?? '';
+            $path = $_POST['template_path'] ?? '';
+            if ($docType === '' || $path === '' || !file_exists($path)) {
+                throw new \RuntimeException('Template invalide');
+            }
+            $cessionId = $wizard['cession_id'];
+            $templateDir = __DIR__ . '/../../../../templates/_Cession';
+            $realTemplateDir = realpath($templateDir);
+            $realPath = realpath($path);
+            if (!$realTemplateDir || !$realPath || !str_starts_with($realPath, $realTemplateDir)) {
+                throw new \RuntimeException('Template hors repertoire autorise');
+            }
+
+            $today = date('Y-m-d');
+            $socName = $selectedSociete['societe_raison_sociale'] ?? 'Client';
+            $forme = $selectedSociete['societe_forme_juridique'] ?? 'PP';
+            $clientName = trim(preg_replace('/[^a-zA-Z0-9-]/', '-', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $socName)));
+            $clientName = preg_replace('/-+/', '-', $clientName);
+            $clientName = trim($clientName, '-');
+            $folderName = $wizard['cession_date'] . '_' . $forme . '_' . $clientName;
+            $folderName = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', $folderName), '-');
+            $outputDir = __DIR__ . '/../../../../dossiers_generer/dossiers_cession/' . $folderName;
+            if (!is_dir($outputDir)) mkdir($outputDir, 0777, true);
+
+            $sanitizedForme = str_replace(' ', '_', $forme);
+            $outName = $sanitizedForme . '_' . $today . '_' . $docType . '_' . $clientName . '.docx';
+
+            require_once __DIR__ . '/../../../../src/analyseur_templates.php';
+            require_once __DIR__ . '/../../../../src/rendu_document.php';
+            $context = DocumentRenderer::buildContextFromCession($pdo, $cessionId);
+            $renderer = new DocumentRenderer($path, $outputDir);
+            $docxPath = $renderer->render($context, $outName);
+            $pdfPath = $renderer->tryConvertToPdf($docxPath);
+
+            $stmtD = $pdo->prepare('INSERT INTO documents_generes (societe_id, cession_id, template_source, doc_type, fichier_docx, fichier_pdf, taille_ko, valide) VALUES (:sid, :cid, :src, :type, :docx, :pdf, :taille, 1)');
+            $stmtD->execute([
+                'sid' => $wizard['societe_id'],
+                'cid' => $cessionId,
+                'src' => 'cession',
+                'type' => $docType,
+                'docx' => $docxPath,
+                'pdf' => $pdfPath ?? '',
+                'taille' => round(filesize($docxPath) / 1024, 2),
+            ]);
+
+            $result = ['name' => $outName, 'docx' => $docxPath];
+            if (!isset($_SESSION['cession_wizard']['generated_files'])) {
+                $_SESSION['cession_wizard']['generated_files'] = [];
+            }
+            $_SESSION['cession_wizard']['generated_files'][] = $result;
+
+            echo json_encode(['success' => true, 'name' => basename((string) $docxPath)]);
+        } catch (Throwable $e) {
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        }
+        exit;
+    }
+
     if ($navAction === 'generate') {
         if (!isset($wizard['cession_id']) || $wizard['cession_id'] <= 0) {
             set_flash('error', 'Creez d abord le dossier avant de generer les documents.');
@@ -325,6 +386,7 @@ if ($step === 6):
                 <span class="step-num">1</span>
                 <div>
                     <h3>Creer le dossier</h3>
+                    <p class="help-text">Enregistrez la societe, les cedants et cessionnaires en base de donnees.</p>
                 </div>
                 <?php if ($dossierCreated): ?>
                     <span class="step-badge" style="color:var(--success)">Fait</span>
@@ -346,6 +408,7 @@ if ($step === 6):
                 <span class="step-num">2</span>
                 <div>
                     <h3>Generer les documents</h3>
+                    <p class="help-text">Selectionnez les types de documents a generer pour la cession.</p>
                 </div>
             </div>
 
@@ -381,7 +444,7 @@ if ($step === 6):
                 <?php endif; ?>
 
                 <?php if (empty($overwriteFiles)): ?>
-                <form method="post" class="stack" style="gap:8px;margin-top:8px">
+                <form method="post" class="stack" style="gap:8px;margin-top:8px" id="wizard-gen-form">
                     <?= csrf_input() ?>
                     <input type="hidden" name="nav_action" value="generate">
 
@@ -407,7 +470,7 @@ if ($step === 6):
                                     <?php $tplCount = count($typeTemplates); ?>
                                     <?php foreach ($typeTemplates as $i => $tpl): ?>
                                         <tr>
-                                            <td class="col-check"><input type="checkbox" name="doc_types[]" value="<?= e($docType) ?>" checked class="template-check"></td>
+                                            <td class="col-check"><input type="checkbox" name="doc_types[]" value="<?= e($docType) ?>" data-template-path="<?= e($tpl['path']) ?>" checked class="template-check"></td>
                                             <?php if ($i === 0): ?>
                                                 <td rowspan="<?= $tplCount ?>" style="vertical-align:middle"><?= e($typeLabel) ?></td>
                                             <?php endif; ?>
@@ -437,41 +500,135 @@ if ($step === 6):
                 <?php endif; ?>
 
                 <?php if (!empty($generatedFiles)): ?>
-                <div class="card" style="margin-top:12px;border-color:var(--success)">
-                    <h4 style="color:var(--success)"><span class="material-symbols-outlined">check_circle</span> Documents generes</h4>
-                    <ul style="margin:8px 0 0;padding-left:1rem">
-                    <?php foreach ($generatedFiles as $gf): ?>
-                        <li><?= e(basename((string) ($gf['docx'] ?? ($gf['name'] ?? '')))) ?></li>
-                    <?php endforeach; ?>
-                    </ul>
+                <div class="step-card done" style="margin-top:16px">
+                    <div class="step-card-header">
+                        <span class="step-num">3</span>
+                        <div>
+                            <h3>Documents generes</h3>
+                            <p class="help-text"><?= count($generatedFiles) ?> fichier(s) genere(s)</p>
+                        </div>
+                    </div>
+                    <div class="table-scroll" style="overflow-x:auto;margin-top:8px">
+                        <table style="white-space:nowrap">
+                            <thead>
+                                <tr>
+                                    <th class="col-check"><input type="checkbox" id="select-all-generated"></th>
+                                    <th>Fichier</th>
+                                    <th>Taille</th>
+                                    <th class="col-actions">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($generatedFiles as $i => $file): ?>
+                                <tr>
+                                    <td><input type="checkbox" name="generated_files[]" value="<?= $i ?>" class="gen-file-check"></td>
+                                    <td>
+                                        <span class="material-symbols-outlined" style="color:var(--primary);vertical-align:middle;margin-right:6px">article</span>
+                                        <?= e(is_array($file) ? ($file['name'] ?? '') : $file) ?>
+                                    </td>
+                                    <td><?php if (is_array($file) && file_exists($file['docx'])): ?><?= number_format(filesize($file['docx']) / 1024, 1) ?> Ko<?php else: ?>-<?php endif; ?></td>
+                                    <td>
+                                        <div class="table-actions">
+                                        <?php if (is_array($file)): ?>
+                                            <a class="btn btn-secondary" href="<?= e(str_replace(dirname(__DIR__, 4) . '/', '', $file['docx'])) ?>" download>
+                                                <span class="material-symbols-outlined">download</span> DOCX
+                                            </a>
+                                            <?php if (!empty($file['pdf']) && file_exists($file['pdf'])): ?>
+                                            <a class="btn" href="<?= e(str_replace(dirname(__DIR__, 4) . '/', '', $file['pdf'])) ?>" download>
+                                                <span class="material-symbols-outlined">picture_as_pdf</span> PDF
+                                            </a>
+                                            <?php endif; ?>
+                                        <?php endif; ?>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
                 <?php endif; ?>
             <?php endif; ?>
         </div>
     </div>
 
-    <?php if ($dossierCreated): ?>
-    <form method="post" style="margin-top:16px">
+    <form method="post" class="footer-actions" style="margin-top:0.75rem">
         <?= csrf_input() ?>
-        <input type="hidden" name="nav_action" value="terminer">
-        <div class="footer-actions">
-            <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="material-symbols-outlined">arrow_back</span> Retour</button>
-            <button class="btn btn-next" type="submit">
-                <span class="material-symbols-outlined">check_circle</span> Terminer
-            </button>
-        </div>
+        <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="material-symbols-outlined">arrow_back</span> Retour</button>
+        <?php if ($dossierCreated): ?>
+        <button class="btn btn-next" type="submit" name="nav_action" value="terminer"><span class="material-symbols-outlined">check_circle</span> Terminer</button>
+        <?php endif; ?>
     </form>
-    <?php endif; ?>
 </div>
 
 <script>
+document.getElementById('select-all-generated')?.addEventListener('change', function(e) {
+    document.querySelectorAll('.gen-file-check').forEach(function(c) { c.checked = this.checked; }.bind(this));
+});
+
 document.getElementById('select-all-wizard')?.addEventListener('click', function(e) {
     e.preventDefault();
-    var form = this.closest('form');
+    var form = document.getElementById('wizard-gen-form');
     if (!form) return;
     var checkboxes = form.querySelectorAll('.template-check');
     var allChecked = Array.from(checkboxes).every(function(cb) { return cb.checked; });
     checkboxes.forEach(function(cb) { cb.checked = !allChecked; });
 });
+
+document.getElementById('wizard-gen-form')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    var form = this;
+    var checkboxes = Array.from(form.querySelectorAll('.template-check:checked'));
+    if (checkboxes.length === 0) return;
+    var csrf = form.querySelector('[name="csrf_token"]')?.value || '';
+    var overlay = document.getElementById('gen-loading-overlay');
+    var progressFill = overlay?.querySelector('.gen-progress-fill');
+    var progressText = overlay?.querySelector('.gen-progress-text');
+    var statusText = overlay?.querySelector('.gen-status-text');
+    var total = checkboxes.length;
+    var done = 0;
+    if (overlay) overlay.classList.add('show');
+    var next = function () {
+        if (done >= total) {
+            window.location.reload();
+            return;
+        }
+        var cb = checkboxes[done];
+        var docType = cb.value;
+        var path = cb.getAttribute('data-template-path') || '';
+        var pct = Math.round((done / total) * 100);
+        if (progressFill) progressFill.style.width = pct + '%';
+        if (progressText) progressText.textContent = done + '/' + total + ' documents';
+        if (statusText) statusText.textContent = 'Generation de : ' + docType;
+        var fd = new FormData();
+        fd.append('csrf_token', csrf);
+        fd.append('nav_action', 'generate_single');
+        fd.append('doc_type', docType);
+        fd.append('template_path', path);
+        fetch(window.location.href, { method: 'POST', body: fd }).then(function (r) {
+            return r.json();
+        }).then(function (data) {
+            done++;
+            if (!data.success) {
+                if (statusText) statusText.textContent = 'Erreur: ' + (data.error || 'inconnue');
+            }
+            next();
+        }).catch(function (err) {
+            done++;
+            if (statusText) statusText.textContent = 'Erreur: ' + err.message;
+            next();
+        });
+    };
+    next();
+});
 </script>
+
+<div id="gen-loading-overlay">
+    <div class="loader-card">
+        <div class="spinner"></div>
+        <div class="gen-progress-text">0/0 documents</div>
+        <div class="gen-progress-bar"><div class="gen-progress-fill"></div></div>
+        <p class="gen-status-text">Preparation...</p>
+    </div>
+</div>
 <?php endif; ?>
