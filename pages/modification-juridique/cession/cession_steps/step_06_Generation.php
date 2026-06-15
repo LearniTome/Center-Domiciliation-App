@@ -182,6 +182,7 @@ $stmt->execute([
 
     // Generate documents
     if ($navAction === 'generate_start') {
+        ob_clean();
         header('Content-Type: application/json');
         try {
             $cid = $wizard['cession_id'];
@@ -233,6 +234,7 @@ $stmt->execute([
     }
 
     if ($navAction === 'generate_single') {
+        ob_clean();
         header('Content-Type: application/json');
         try {
             $docType = $_POST['doc_type'] ?? '';
