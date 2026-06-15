@@ -21,3 +21,4 @@ backups/
 .opencode/skill_cache/
 tmp_test/
 *.DS_Store
+.opencode/tmp/
