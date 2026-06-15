@@ -974,6 +974,16 @@ textarea:focus {
     box-shadow: none;
 }
 
+input.input-error,
+select.input-error,
+textarea.input-error {
+    border-color: var(--danger);
+}
+
+.field.field-error span {
+    color: var(--danger);
+}
+
 input::placeholder,
 textarea::placeholder {
     color: var(--text-secondary);

@@ -22,15 +22,16 @@ if (is_post() && $step === 6) {
             // Create société if new
             if ($wizard['mode'] === 'nouvelle' && $wizard['societe_id'] <= 0) {
                 $soc = $wizard['societe'];
-                $stmt = $pdo->prepare('INSERT INTO societes (societe_raison_sociale, societe_forme_juridique, societe_source, societe_ice, societe_rc, societe_if, societe_tp, societe_capital, societe_part_social, societe_valeur_nominale, societe_adresse_siege, societe_ville, societe_tribunal, societe_tribunal_type, societe_email, societe_telephone, societe_activites_statuts, created_by) VALUES (:raison, :forme, :source, :ice, :rc, :ifis, :tp, :capital, :parts, :vnom, :adr, :ville, :trib, :trib_type, :email, :tel, :activites, :created_by)');
-                $stmt->execute([
-                    'raison' => $soc['societe_raison_sociale'] ?? '',
-                    'forme' => $soc['societe_forme_juridique'] ?? '',
-                    'source' => 'cession',
-                    'ice' => $soc['societe_ice'] ?? '',
-                    'rc' => $soc['societe_rc'] ?? '',
-                    'ifis' => $soc['societe_if'] ?? '',
-                    'tp' => $soc['societe_tp'] ?? '',
+$stmt = $pdo->prepare('INSERT INTO societes (societe_raison_sociale, societe_forme_juridique, societe_source, societe_ice, societe_rc, societe_if, societe_tp, societe_cnss, societe_capital, societe_part_social, societe_valeur_nominale, societe_adresse_siege, societe_ville, societe_tribunal, societe_tribunal_type, societe_email, societe_telephone, societe_activites_statuts, created_by) VALUES (:raison, :forme, :source, :ice, :rc, :ifis, :tp, :cnss, :capital, :parts, :vnom, :adr, :ville, :trib, :trib_type, :email, :tel, :activites, :created_by)');
+$stmt->execute([
+    'raison' => $soc['societe_raison_sociale'] ?? '',
+    'forme' => $soc['societe_forme_juridique'] ?? '',
+    'source' => 'cession',
+    'ice' => $soc['societe_ice'] ?? '',
+    'rc' => $soc['societe_rc'] ?? '',
+    'ifis' => $soc['societe_if'] ?? '',
+    'tp' => $soc['societe_tp'] ?? '',
+    'cnss' => $soc['societe_cnss'] ?? '',
                     'capital' => !empty($soc['societe_capital']) ? parse_money($soc['societe_capital']) : null,
                     'parts' => !empty($soc['societe_part_social']) ? (int) $soc['societe_part_social'] : null,
                     'vnom' => !empty($soc['societe_valeur_nominale']) ? parse_money($soc['societe_valeur_nominale']) : null,
@@ -73,6 +74,9 @@ if (is_post() && $step === 6) {
             }
 
             $societeId = $wizard['societe_id'];
+            if (!$selectedSociete && $societeId > 0 && ($pdo ?? null) instanceof PDO) {
+                $selectedSociete = fetch_record($pdo, 'societes', $societeId);
+            }
             $capitalAvant = (float) ($selectedSociete['societe_capital'] ?? 0);
             $partsAvant = (int) ($selectedSociete['societe_part_social'] ?? 0);
 
@@ -172,7 +176,7 @@ if (is_post() && $step === 6) {
             set_flash('error', 'Erreur lors de la creation: ' . $e->getMessage());
             redirect_to('cession', ['step' => 6]);
         }
-        redirect_to('cession', ['step' => 6]);
+        redirect_to('cession', ['step' => 6, 'id' => $cessionId, 'edit' => 1]);
     }
 
     // Generate documents
@@ -218,6 +222,25 @@ if (is_post() && $step === 6) {
         $templateDir = __DIR__ . '/../../../../templates/_Cession';
         $generated = [];
 
+        // Check for existing files before overwriting
+        $confirmOverwrite = ($_POST['confirm_overwrite'] ?? '') === '1';
+        $existingFiles = [];
+        foreach ($mapping as $docType) {
+            if (!in_array($docType, $selectedDocs, true)) continue;
+            $outName = $docType . '_' . $cessionId . '_' . date('Ymd') . '.docx';
+            $outPath = $outputDir . '/' . $outName;
+            if (file_exists($outPath)) {
+                $existingFiles[] = basename($outPath);
+            }
+        }
+        if (!empty($existingFiles) && !$confirmOverwrite) {
+            $_SESSION['_cession_overwrite_files'] = $existingFiles;
+            $_SESSION['_cession_overwrite_docs'] = $selectedDocs;
+            set_flash('warning', 'Des documents existent deja. Voulez-vous les ecraser ?');
+            redirect_to('cession', ['step' => 6, 'id' => $cessionId, 'edit' => 1]);
+        }
+        unset($_SESSION['_cession_overwrite_files'], $_SESSION['_cession_overwrite_docs']);
+
         foreach ($mapping as $docType) {
             if (!in_array($docType, $selectedDocs, true)) continue;
             $matches = glob($templateDir . '/*' . $docType . '*_Template.docx');
@@ -242,7 +265,7 @@ if (is_post() && $step === 6) {
         }
 
         set_flash('success', count($generated) . ' document(s) genere(s).');
-        redirect_to('cession', ['step' => 6]);
+        redirect_to('cession', ['step' => 6, 'id' => $cessionId, 'edit' => 1]);
     }
 
     if ($navAction === 'terminer') {
@@ -322,6 +345,36 @@ if ($step === 6):
 
             <?php if (!$dossierCreated): ?>
             <?php else: ?>
+
+                <?php $overwriteFiles = $_SESSION['_cession_overwrite_files'] ?? []; $overwriteDocs = $_SESSION['_cession_overwrite_docs'] ?? []; ?>
+                <?php unset($_SESSION['_cession_overwrite_files'], $_SESSION['_cession_overwrite_docs']); ?>
+                <?php if (!empty($overwriteFiles)): ?>
+                <div class="card" style="border-color:var(--warning);background:rgba(255,107,53,0.06);margin-top:8px">
+                    <div style="display:flex;align-items:flex-start;gap:12px">
+                        <span class="material-symbols-outlined" style="color:var(--warning);font-size:28px">warning</span>
+                        <div>
+                            <strong>Des documents existent deja dans ce dossier :</strong>
+                            <ul style="margin:4px 0 8px;padding-left:1.2rem">
+                                <?php foreach ($overwriteFiles as $of): ?>
+                                <li style="font-size:0.9rem"><?= e($of) ?></li>
+                                <?php endforeach; ?>
+                            </ul>
+                            <form method="post" style="display:inline">
+                                <?= csrf_input() ?>
+                                <input type="hidden" name="nav_action" value="generate">
+                                <input type="hidden" name="confirm_overwrite" value="1">
+                                <?php foreach ($overwriteDocs as $sd): ?>
+                                <input type="hidden" name="doc_types[]" value="<?= e($sd) ?>">
+                                <?php endforeach; ?>
+                                <button class="btn btn-danger" type="submit">
+                                    <span class="material-symbols-outlined">warning</span> Oui, ecraser les fichiers
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
+
                 <form method="post" class="stack" style="gap:8px;margin-top:8px">
                     <?= csrf_input() ?>
                     <input type="hidden" name="nav_action" value="generate">

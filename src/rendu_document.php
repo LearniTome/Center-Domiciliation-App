@@ -787,6 +787,19 @@ class DocumentRenderer
         $partsApres = $partsAvant - $totalPartsCedees;
 
         $firstPart = $cessionParts[0] ?? [];
+
+        // Look up cedant additional info from associes table
+        $cedantInfo = [];
+        $cedantAssocieId = $firstPart['cedant_associe_id'] ?? 0;
+        if ($cedantAssocieId > 0) {
+            $stmtCed = $pdo->prepare('SELECT * FROM associes WHERE id = :id');
+            $stmtCed->execute(['id' => $cedantAssocieId]);
+            $cedDb = $stmtCed->fetch();
+            if ($cedDb) {
+                $cedantInfo = $cedDb;
+            }
+        }
+
         $associeList = [];
         foreach ($associes as $a) {
             $nomComplet = $a['associe_nom_complet'] ?? '';
@@ -817,6 +830,12 @@ class DocumentRenderer
         $fCivilite = $firstAssocie['associe_civilite'] ?? 'M.';
         $fNomComplet = trim("$fCivilite $fPrenom $fNom");
 
+        $fmtDate = function($val): string {
+            if (empty($val)) return '';
+            $dt = \DateTime::createFromFormat('Y-m-d', $val);
+            return $dt ? $dt->format('d/m/Y') : $val;
+        };
+
         return [
             'societe' => $societe,
             'associes' => $associeList,
@@ -846,20 +865,30 @@ class DocumentRenderer
             'ASSOCIE_QUALITE' => $firstAssocie['associe_qualite'] ?? '',
             'ASSOCIE_PARTS' => (string) ($firstAssocie['associe_parts'] ?? ''),
             'ASSOCIE_EST_GERANT' => $firstAssocie['associe_est_gerant'] ?? '',
-            'CESSION_DATE' => $cession['cession_date'] ?? $now->format('d/m/Y'),
+            'CESSION_DATE' => $fmtDate($cession['cession_date'] ?? $now->format('d/m/Y')),
             'CESSION_DOSSIER' => $cession['cession_dossier'] ?? '',
             'CESSION_STATUS' => $cession['cession_status'] ?? 'brouillon',
             'CESSION_MOTIF' => $cession['cession_motif'] ?? '',
             'CEDANT_NOM_COMPLET' => $firstPart['cedant_nom_complet'] ?? '',
             'CEDANT_CIN' => $firstPart['cedant_cin'] ?? '',
-            'CEDANT_NATIONALITE' => $firstPart['cedant_nationalite'] ?? '',
+            'CEDANT_CIVILITE' => $cedantInfo['associe_civilite'] ?? '',
+            'CEDANT_DATE_NAISSANCE' => $fmtDate($cedantInfo['associe_date_naissance'] ?? ''),
+            'CEDANT_LIEU_NAISSANCE' => $cedantInfo['associe_lieu_naissance'] ?? '',
+            'CEDANT_NATIONALITE' => $cedantInfo['associe_nationalite'] ?? $firstPart['cedant_nationalite'] ?? '',
+            'CEDANT_ADRESSE' => $cedantInfo['associe_adresse'] ?? '',
             'CESSIONNAIRE_NOM_COMPLET' => $firstPart['cessionnaire_nom_complet'] ?? '',
             'CESSIONNAIRE_CIN' => $firstPart['cessionnaire_cin'] ?? '',
             'CESSIONNAIRE_CIVILITE' => $firstPart['cessionnaire_civilite'] ?? '',
-            'CESSIONNAIRE_DATE_NAISSANCE' => $firstPart['cessionnaire_date_naissance'] ?? '',
+            'CESSIONNAIRE_DATE_NAISSANCE' => $fmtDate($firstPart['cessionnaire_date_naissance'] ?? ''),
             'CESSIONNAIRE_LIEU_NAISSANCE' => $firstPart['cessionnaire_lieu_naissance'] ?? '',
             'CESSIONNAIRE_NATIONALITE' => $firstPart['cessionnaire_nationalite'] ?? '',
             'CESSIONNAIRE_ADRESSE' => $firstPart['cessionnaire_adresse'] ?? '',
+            'CESSIONNAIRE_TELEPHONE' => $firstPart['cessionnaire_telephone'] ?? '',
+            'CESSIONNAIRE_EMAIL' => $firstPart['cessionnaire_email'] ?? '',
+            'CESSIONNAIRE_QUALITE' => $firstPart['cessionnaire_qualite'] ?? '',
+            'CESSIONNAIRE_PARTS' => (string) ($firstPart['cessionnaire_parts'] ?? ''),
+            'CESSIONNAIRE_CAPITAL_DETENU' => (string) ($firstPart['cessionnaire_capital_detenu'] ?? ''),
+            'CESSIONNAIRE_EST_GERANT' => $firstPart['cessionnaire_est_gerant'] ?? '',
             'PARTS_CEDEES' => (string) $totalPartsCedees,
             'PRIX_UNITAIRE' => (string) ($firstPart['prix_unitaire'] ?? ''),
             'PRIX_TOTAL' => (string) $totalPrix,

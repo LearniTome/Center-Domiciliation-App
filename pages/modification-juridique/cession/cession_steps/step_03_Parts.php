@@ -99,6 +99,18 @@ if (is_post() && $step === 3) {
         $pt = money_value(['v' => $prixTotaux[$i] ?? '0'], 'v');
         if ($pt === null || $pt <= 0) $pt = $pu * $parts;
 
+        $cessionnairePartsVal = (int) ($cessionnaireParts[$i] ?? 0);
+        $cessionnaireCapitalVal = trim((string) ($cessionnaireCapitals[$i] ?? ''));
+        if ($cessionnairePartsVal <= 0 && $parts > 0) {
+            $cessionnairePartsVal = $parts;
+        }
+        if (($cessionnaireCapitalVal === '' || (float) str_replace(',', '.', $cessionnaireCapitalVal) <= 0) && $parts > 0 && $totalParts > 0) {
+            $totalCapital = (float) ($selectedSociete['societe_capital'] ?? 0);
+            if ($totalCapital > 0) {
+                $cessionnaireCapitalVal = number_format(($parts / $totalParts) * $totalCapital, 2, '.', '');
+            }
+        }
+
         $wizard['parts'][] = [
             'cedant_type' => $cedType,
             'cedant_associe_id' => $cedAssocieId,
@@ -116,8 +128,8 @@ if (is_post() && $step === 3) {
             'cessionnaire_telephone' => trim((string) ($cessionnaireTelephones[$i] ?? '')),
             'cessionnaire_email' => trim((string) ($cessionnaireEmails[$i] ?? '')),
             'cessionnaire_qualite' => trim((string) ($cessionnaireQualites[$i] ?? '')),
-            'cessionnaire_parts' => (int) ($cessionnaireParts[$i] ?? 0),
-            'cessionnaire_capital_detenu' => trim((string) ($cessionnaireCapitals[$i] ?? '')),
+            'cessionnaire_parts' => $cessionnairePartsVal,
+            'cessionnaire_capital_detenu' => $cessionnaireCapitalVal,
             'cessionnaire_est_gerant' => !empty($nommerGerant[$i]) ? 1 : 0,
             'pourcentage' => $pct > 0 ? $pct : null,
             'parts_cedees' => $parts,
@@ -142,6 +154,7 @@ if ($step === 3):
     <input type="hidden" name="nav_action" value="next">
 
     <input type="hidden" id="total-societe-parts" value="<?= (int) ($selectedSociete['societe_part_social'] ?? 0) ?>">
+    <input type="hidden" id="total-societe-capital" value="<?= e(number_format((float) ($selectedSociete['societe_capital'] ?? 0), 2, ',', '')) ?>">
 
     <div style="margin-top:12px">
         <div class="section-header" style="margin-bottom:12px">
@@ -394,8 +407,23 @@ if ($step === 3):
         }
     }
 
+    function calcCessionnaireFields() {
+        var row = this.closest('[data-part]');
+        if (!row) return;
+        var parts = parseFloat(row.querySelector('.parts-cedees-input')?.value.replace(',', '.')) || 0;
+        var totalParts = parseInt(document.getElementById('total-societe-parts')?.value) || 0;
+        var totalCapital = parseFloat(document.getElementById('total-societe-capital')?.value.replace(',', '.')) || 0;
+        var idx = row.getAttribute('data-part');
+        var partsInput = row.querySelector('input[name="cessionnaire_parts[' + idx + ']"]');
+        if (partsInput) partsInput.value = parts;
+        var capInput = row.querySelector('input[name="cessionnaire_capital_detenu[' + idx + ']"]');
+        if (capInput && totalParts > 0) {
+            capInput.value = ((parts / totalParts) * totalCapital).toFixed(2).replace('.', ',');
+        }
+    }
+
     document.querySelectorAll('.parts-cedees-input').forEach(function(inp) {
-        inp.addEventListener('input', function() { calcPrixTotal.call(this); calcPourcentage.call(this); });
+        inp.addEventListener('input', function() { calcPrixTotal.call(this); calcPourcentage.call(this); calcCessionnaireFields.call(this); });
     });
     document.querySelectorAll('.prix-unitaire-input').forEach(function(inp) {
         inp.addEventListener('input', calcPrixTotal);
@@ -444,7 +472,7 @@ if ($step === 3):
             syncCedant(el);
         });
         clone.querySelectorAll('.parts-cedees-input').forEach(function(el) {
-            el.addEventListener('input', function() { calcPrixTotal.call(this); calcPourcentage.call(this); });
+            el.addEventListener('input', function() { calcPrixTotal.call(this); calcPourcentage.call(this); calcCessionnaireFields.call(this); });
         });
         clone.querySelectorAll('.prix-unitaire-input').forEach(function(el) {
             el.addEventListener('input', calcPrixTotal);
@@ -459,6 +487,7 @@ if ($step === 3):
                 if (pi && pct > 0 && totalParts > 0) {
                     pi.value = Math.round((pct / 100) * totalParts);
                     calcPrixTotal.call(pi);
+                    calcCessionnaireFields.call(pi);
                 }
             });
         });

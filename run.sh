@@ -111,7 +111,7 @@ lsof -ti:$PHP_PORT 2>/dev/null | xargs kill -9 2>/dev/null || true
 sleep 1
 
 PHP_LOG="$PROJECT_ROOT/php-server.log"
-nohup php -S "localhost:$PHP_PORT" -t "$PROJECT_ROOT" > "$PHP_LOG" 2>&1 &
+nohup php -S "localhost:$PHP_PORT" -t "$PROJECT_ROOT" "$PROJECT_ROOT/router.php" > "$PHP_LOG" 2>&1 &
 PHP_PID=$!
 sleep 2
 

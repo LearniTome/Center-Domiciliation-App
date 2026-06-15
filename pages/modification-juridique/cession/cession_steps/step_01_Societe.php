@@ -67,6 +67,21 @@ if (is_post() && $step === 1) {
         $allStatuts = is_array($activitesStatuts) ? array_map('trim', $activitesStatuts) : [];
         $allStatuts = array_unique(array_filter($allStatuts));
 
+        $capital = (string) ($_POST['societe_capital'] ?? '');
+        $partSocial = (string) ($_POST['societe_part_social'] ?? '');
+        $valeurNominale = (string) ($_POST['societe_valeur_nominale'] ?? '');
+
+        if ($capital !== '' && $partSocial !== '' && $valeurNominale !== '') {
+            $capVal = (float) str_replace(',', '.', $capital);
+            $psVal = (float) $partSocial;
+            $vnVal = (float) str_replace(',', '.', $valeurNominale);
+            $expected = round($psVal * $vnVal, 2);
+            if (abs($capVal - $expected) > 0.01) {
+                set_flash('warning', 'Le capital doit etre egal a Part social × Valeur nominale.');
+                $_SESSION['_capital_error'] = true;
+            }
+        }
+
         $wizard['societe'] = [
             'societe_raison_sociale' => $raison,
             'societe_forme_juridique' => trim((string) ($_POST['societe_forme_juridique'] ?? '')),
@@ -77,9 +92,9 @@ if (is_post() && $step === 1) {
             'societe_if' => trim((string) ($_POST['societe_if'] ?? '')),
             'societe_tp' => trim((string) ($_POST['societe_tp'] ?? '')),
             'societe_cnss' => trim((string) ($_POST['societe_cnss'] ?? '')),
-            'societe_capital' => (string) ($_POST['societe_capital'] ?? ''),
-            'societe_part_social' => (string) ($_POST['societe_part_social'] ?? ''),
-            'societe_valeur_nominale' => (string) ($_POST['societe_valeur_nominale'] ?? ''),
+            'societe_capital' => $capital,
+            'societe_part_social' => $partSocial,
+            'societe_valeur_nominale' => $valeurNominale,
             'societe_adresse_siege' => trim((string) ($_POST['societe_adresse_siege'] ?? '')),
             'societe_ville' => trim((string) ($_POST['societe_ville'] ?? '')),
             'societe_tribunal' => trim((string) ($_POST['societe_tribunal'] ?? '')),
@@ -279,18 +294,25 @@ if ($step === 1):
             </div>
 
             <h3 class="section-title">Capital</h3>
-            <label class="field">
+            <?php $hasCapitalError = !empty($_SESSION['_capital_error']); ?>
+            <label class="field <?= $hasCapitalError ? 'field-error' : '' ?>">
                 <span>Capital</span>
-                <input type="number" step="0.01" name="societe_capital" value="<?= e((string) $societeData['societe_capital']) ?>">
+                <input type="number" step="0.01" name="societe_capital" class="<?= $hasCapitalError ? 'input-error' : '' ?>" value="<?= e((string) $societeData['societe_capital']) ?>">
             </label>
-            <label class="field">
+            <label class="field <?= $hasCapitalError ? 'field-error' : '' ?>">
                 <span>Part social</span>
-                <input type="number" name="societe_part_social" value="<?= e((string) $societeData['societe_part_social']) ?>">
+                <input type="number" name="societe_part_social" class="<?= $hasCapitalError ? 'input-error' : '' ?>" value="<?= e((string) $societeData['societe_part_social']) ?>">
             </label>
-            <label class="field">
+            <label class="field <?= $hasCapitalError ? 'field-error' : '' ?>">
                 <span>Valeur nominale</span>
-                <input type="number" step="0.01" name="societe_valeur_nominale" value="<?= e((string) $societeData['societe_valeur_nominale']) ?>">
+                <input type="number" step="0.01" name="societe_valeur_nominale" class="<?= $hasCapitalError ? 'input-error' : '' ?>" value="<?= e((string) $societeData['societe_valeur_nominale']) ?>">
             </label>
+            <div style="grid-column:1/-1;display:flex;gap:8px;align-items:center;margin-top:4px">
+                <button type="button" class="btn btn-next" data-recalc-capital><span class="material-symbols-outlined">calculate</span> Recalculer le capital</button>
+            </div>
+            <?php if ($hasCapitalError): ?>
+            <p class="field-warning" style="grid-column:1/-1;color:var(--danger);margin:0 0 8px 0">Le capital doit etre egal a Part social × Valeur nominale.</p>
+            <?php unset($_SESSION['_capital_error']); endif; ?>
 
             <h3 class="section-title">Adresse</h3>
             <label class="field full">
@@ -361,6 +383,70 @@ if ($step === 1):
 
 <script>
 (function(){
+    // Auto-calcul capital = part social × valeur nominale
+    var capInput = document.querySelector('[name="societe_capital"]');
+    var psInput = document.querySelector('[name="societe_part_social"]');
+    var vnInput = document.querySelector('[name="societe_valeur_nominale"]');
+    function recalcCapital() {
+        if (!capInput || !psInput || !vnInput) return;
+        var ps = parseFloat(psInput.value.replace(',', '.')) || 0;
+        var vn = parseFloat(vnInput.value.replace(',', '.')) || 0;
+        if (ps > 0 && vn > 0) {
+            capInput.value = (ps * vn).toFixed(2);
+        }
+    }
+    if (psInput) psInput.addEventListener('input', recalcCapital);
+    if (vnInput) vnInput.addEventListener('input', recalcCapital);
+
+    // Recalculer le capital button
+    document.querySelector('[data-recalc-capital]') && document.querySelector('[data-recalc-capital]').addEventListener('click', function() {
+        if (psInput && vnInput && capInput) {
+            var ps = parseFloat(psInput.value.replace(',', '.')) || 0;
+            var vn = parseFloat(vnInput.value.replace(',', '.')) || 0;
+            if (ps > 0 && vn > 0) {
+                capInput.value = (ps * vn).toFixed(2);
+            }
+        }
+        // Clear error states
+        [capInput, psInput, vnInput].forEach(function(f) {
+            if (f) { f.classList.remove('input-error'); f.closest('.field') && f.closest('.field').classList.remove('field-error'); }
+        });
+        var ow = document.querySelector('.field-warning-custom');
+        if (ow) ow.remove();
+    });
+
+    // Client-side validation: capital = part social × valeur nominale
+    var stepForm = document.getElementById('wizard-step1');
+    if (stepForm) {
+        stepForm.addEventListener('submit', function(e) {
+            var c = parseFloat((stepForm.querySelector('[name="societe_capital"]').value || '0').replace(',', '.'));
+            var ps = parseFloat((stepForm.querySelector('[name="societe_part_social"]').value || '0').replace(',', '.'));
+            var vn = parseFloat((stepForm.querySelector('[name="societe_valeur_nominale"]').value || '0').replace(',', '.'));
+            var capFields = [stepForm.querySelector('[name="societe_capital"]'), stepForm.querySelector('[name="societe_part_social"]'), stepForm.querySelector('[name="societe_valeur_nominale"]')];
+            // Remove previous error state
+            capFields.forEach(function(f) { if (f) { f.classList.remove('input-error'); f.closest('.field') && f.closest('.field').classList.remove('field-error'); } });
+            var oldWarning = stepForm.querySelector('.field-warning-custom');
+            if (oldWarning) oldWarning.remove();
+            if (c && ps && vn) {
+                var expected = Math.round(ps * vn * 100) / 100;
+                if (Math.abs(c - expected) > 0.01) {
+                    e.preventDefault();
+                    capFields.forEach(function(f) { if (f) { f.classList.add('input-error'); f.closest('.field') && f.closest('.field').classList.add('field-error'); } });
+                    var warn = document.createElement('p');
+                    warn.className = 'field-warning-custom';
+                    warn.style.cssText = 'grid-column:1/-1;color:var(--danger);margin:4px 0 8px 0';
+                    warn.textContent = 'Le capital doit etre egal a Part social × Valeur nominale.';
+                    var grid = capFields[0].closest('.form-grid');
+                    if (grid) {
+                        var adresseTitle = Array.from(grid.querySelectorAll('.section-title')).find(function(h) { return h.textContent.trim() === 'Adresse'; });
+                        if (adresseTitle) grid.insertBefore(warn, adresseTitle);
+                        else grid.appendChild(warn);
+                    }
+                }
+            }
+        });
+    }
+
     var allActivitesOptions = <?= json_encode(array_values($activitesOptions)) ?>;
     var razSociete = [
         'MALAOUI APP', 'FADAA DOI', 'ATLAS CONSULTING', 'TECHNOVA SARL',
@@ -389,9 +475,11 @@ if ($step === 1):
             }
             var pref = randFrom(icePrefixes);
             form.querySelector('[name="societe_ice"]') && (form.querySelector('[name="societe_ice"]').value = pref + randInt(100000, 999999));
-            form.querySelector('[name="societe_capital"]') && (form.querySelector('[name="societe_capital"]').value = String(randInt(50000, 500000)));
-            form.querySelector('[name="societe_part_social"]') && (form.querySelector('[name="societe_part_social"]').value = String(randInt(100, 5000)));
-            form.querySelector('[name="societe_valeur_nominale"]') && (form.querySelector('[name="societe_valeur_nominale"]').value = String(randInt(50, 1000)));
+            var ps = randInt(100, 5000);
+            var vn = randInt(50, 1000);
+            form.querySelector('[name="societe_part_social"]') && (form.querySelector('[name="societe_part_social"]').value = String(ps));
+            form.querySelector('[name="societe_valeur_nominale"]') && (form.querySelector('[name="societe_valeur_nominale"]').value = String(vn));
+            form.querySelector('[name="societe_capital"]') && (form.querySelector('[name="societe_capital"]').value = String(ps * vn));
             var ville = form.querySelector('[name="societe_ville"]');
             if (ville) {
                 var vOpts = Array.from(ville.options).filter(function(o) { return o.value; });
@@ -415,6 +503,10 @@ if ($step === 1):
             }
             form.querySelector('[name="societe_email"]') && (form.querySelector('[name="societe_email"]').value = 'contact@' + rs.toLowerCase().replace(/[^a-z0-9]/g, '') + '.ma');
             form.querySelector('[name="societe_telephone"]') && (form.querySelector('[name="societe_telephone"]').value = '0' + randInt(5,7) + String(randInt(10000000, 99999999)));
+            form.querySelector('[name="societe_rc"]') && (form.querySelector('[name="societe_rc"]').value = String(randInt(100000, 999999)));
+            form.querySelector('[name="societe_if"]') && (form.querySelector('[name="societe_if"]').value = String(randInt(100000, 999999)));
+            form.querySelector('[name="societe_tp"]') && (form.querySelector('[name="societe_tp"]').value = String(randInt(100000, 999999)));
+            form.querySelector('[name="societe_cnss"]') && (form.querySelector('[name="societe_cnss"]').value = 'CNSS-' + String(randInt(10000000, 99999999)));
 
             // Activites (statuts) - fill selects
             var activiteItems = document.querySelectorAll('[data-activites-container] [data-activite-item] select');
