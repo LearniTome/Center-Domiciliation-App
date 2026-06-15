@@ -200,19 +200,18 @@ $stmt->execute([
         }
 
         $cessionId = $wizard['cession_id'];
-        $stmtDos = $pdo->prepare('SELECT cession_dossier, societe_id FROM cessions WHERE id = :id');
+        $stmtDos = $pdo->prepare('SELECT societe_id FROM cessions WHERE id = :id');
         $stmtDos->execute(['id' => $cessionId]);
-        $row = $stmtDos->fetch();
-        $dossierCession = $row ? $row['cession_dossier'] : ('CES-' . $cessionId);
 
         $socName = $selectedSociete['societe_raison_sociale'] ?? 'Client';
         $forme = $selectedSociete['societe_forme_juridique'] ?? 'PP';
         $clientName = trim(preg_replace('/[^a-zA-Z0-9-]/', '-', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $socName)));
         $clientName = preg_replace('/-+/', '-', $clientName);
         $clientName = trim($clientName, '-');
+        $today = date('Y-m-d');
         $folderName = $wizard['cession_date'] . '_' . $forme . '_' . $clientName;
         $folderName = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', $folderName), '-');
-        $outputDir = __DIR__ . '/../../../../dossiers_generer/dossiers_cession/' . $folderName . '/' . $dossierCession;
+        $outputDir = __DIR__ . '/../../../../dossiers_generer/dossiers_cession/' . $folderName;
         if (!is_dir($outputDir)) mkdir($outputDir, 0777, true);
 
         $context = DocumentRenderer::buildContextFromCession($pdo, $cessionId);
@@ -228,7 +227,7 @@ $stmt->execute([
         $existingFiles = [];
         foreach ($mapping as $docType) {
             if (!in_array($docType, $selectedDocs, true)) continue;
-            $outName = $docType . '_' . $cessionId . '_' . date('Ymd') . '.docx';
+            $outName = $forme . '_' . $today . '_' . $docType . '_' . $clientName . '_Cession.docx';
             $outPath = $outputDir . '/' . $outName;
             if (file_exists($outPath)) {
                 $existingFiles[] = basename($outPath);
@@ -251,7 +250,7 @@ $stmt->execute([
             if (empty($matches)) continue;
             try {
                 $renderer = new DocumentRenderer($matches[0], $outputDir);
-                $outName = $docType . '_' . $cessionId . '_' . date('Ymd') . '.docx';
+                $outName = $forme . '_' . $today . '_' . $docType . '_' . $clientName . '_Cession.docx';
                 $docxPath = $renderer->render($context, $outName);
                 $pdfPath = $renderer->tryConvertToPdf($docxPath);
 
