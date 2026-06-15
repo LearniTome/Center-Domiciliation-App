@@ -196,13 +196,16 @@ $stmt->execute([
                 if (empty($societeData['societe_raison_sociale']) && !empty($wizard['societe']['societe_raison_sociale'])) {
                     $societeData = $wizard['societe'];
                 }
-                $clientName = trim(preg_replace('/[^a-zA-Z0-9-]/', '-', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $societeData['societe_raison_sociale'] ?? 'Client')));
+                $socName = $societeData['societe_raison_sociale'] ?? 'Client';
+                $forme = $societeData['societe_forme_juridique'] ?? 'PP';
+                $clientName = trim(preg_replace('/[^a-zA-Z0-9-]/', '-', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $socName)));
                 $clientName = preg_replace('/-+/', '-', $clientName);
                 $clientName = trim($clientName, '-');
-                $sanitizedForme = str_replace(' ', '_', $societeData['societe_forme_juridique'] ?? 'PP');
+                $folderName = $wizard['cession_date'] . '_' . $forme . '_' . $clientName;
+                $folderName = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', $folderName), '-');
+                $outputDir = __DIR__ . '/../../../../dossiers_generer/dossiers_cession/' . $folderName;
+                $sanitizedForme = str_replace(' ', '_', $forme);
                 $today = date('Y-m-d');
-                $outputDir = __DIR__ . '/../../../../dossiers_generer/dossiers_cession/' . $wizard['cession_date'] . '_' . $societeData['societe_forme_juridique'] . '_' . $clientName;
-                $outputDir = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', $outputDir), '-');
 
                 $existingFiles = [];
                 foreach (['Acte-Cession-Parts', 'PV-AGE-Cession', 'Declaration-Modificative-RC', 'Annonce-Legale-Cession'] as $dt) {
