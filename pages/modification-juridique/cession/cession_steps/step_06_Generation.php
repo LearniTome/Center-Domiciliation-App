@@ -229,7 +229,7 @@ $stmt->execute([
                 'taille' => round(filesize($docxPath) / 1024, 2),
             ]);
 
-            $result = ['name' => $outName, 'docx' => $docxPath];
+            $result = ['name' => $outName, 'docx' => $docxPath, 'pdf' => $pdfPath ?? ''];
             if (!isset($_SESSION['cession_wizard']['generated_files'])) {
                 $_SESSION['cession_wizard']['generated_files'] = [];
             }
@@ -326,7 +326,7 @@ $stmt->execute([
                     'pdf' => $pdfPath ?? '',
                     'taille' => round(filesize($docxPath) / 1024, 2),
                 ]);
-                $generated[] = ['name' => $outName, 'docx' => $docxPath];
+                $generated[] = ['name' => $outName, 'docx' => $docxPath, 'pdf' => $pdfPath ?? ''];
             } catch (Throwable $e) {}
         }
 
