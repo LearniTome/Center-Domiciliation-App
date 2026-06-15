@@ -230,6 +230,9 @@ $stmt->execute([
             $sanitizedForme = str_replace(' ', '_', $forme);
             $outName = $sanitizedForme . '_' . $today . '_' . $docType . '_' . $clientName . '.docx';
 
+            if (file_exists(__DIR__ . '/../../../../vendor/autoload.php')) {
+                require_once __DIR__ . '/../../../../vendor/autoload.php';
+            }
             require_once __DIR__ . '/../../../../src/analyseur_templates.php';
             require_once __DIR__ . '/../../../../src/rendu_document.php';
             $context = DocumentRenderer::buildContextFromCession($pdo, $cessionId);
