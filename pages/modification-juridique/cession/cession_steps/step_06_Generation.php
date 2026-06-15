@@ -224,10 +224,11 @@ $stmt->execute([
 
         // Check for existing files before overwriting
         $confirmOverwrite = ($_POST['confirm_overwrite'] ?? '') === '1';
+        $sanitizedForme = str_replace(' ', '_', $forme);
         $existingFiles = [];
         foreach ($mapping as $docType) {
             if (!in_array($docType, $selectedDocs, true)) continue;
-            $outName = $forme . '_' . $today . '_' . $docType . '_' . $clientName . '_Cession.docx';
+            $outName = $sanitizedForme . '_' . $today . '_' . $docType . '_' . $clientName . '.docx';
             $outPath = $outputDir . '/' . $outName;
             if (file_exists($outPath)) {
                 $existingFiles[] = basename($outPath);
@@ -250,7 +251,7 @@ $stmt->execute([
             if (empty($matches)) continue;
             try {
                 $renderer = new DocumentRenderer($matches[0], $outputDir);
-                $outName = $forme . '_' . $today . '_' . $docType . '_' . $clientName . '_Cession.docx';
+                $outName = $sanitizedForme . '_' . $today . '_' . $docType . '_' . $clientName . '.docx';
                 $docxPath = $renderer->render($context, $outName);
                 $pdfPath = $renderer->tryConvertToPdf($docxPath);
 
@@ -264,7 +265,7 @@ $stmt->execute([
                     'pdf' => $pdfPath ?? '',
                     'taille' => round(filesize($docxPath) / 1024, 2),
                 ]);
-                $generated[] = $docType;
+                $generated[] = ['name' => $outName, 'docx' => $docxPath];
             } catch (Throwable $e) {}
         }
 
