@@ -185,6 +185,39 @@ $stmt->execute([
         header('Content-Type: application/json');
         try {
             $cid = $wizard['cession_id'];
+            $confirmed = ($_POST['confirmed'] ?? '') === '1';
+
+            if (!$confirmed && $cid > 0 && ($pdo ?? null) instanceof PDO) {
+                $existingDocs = $pdo->prepare('SELECT doc_type FROM documents_generes WHERE cession_id = :cid AND template_source = :src');
+                $existingDocs->execute(['cid' => $cid, 'src' => 'cession']);
+                $existing = $existingDocs->fetchAll(PDO::FETCH_COLUMN);
+
+                $societeData = $selectedSociete ?: [];
+                if (empty($societeData['societe_raison_sociale']) && !empty($wizard['societe']['societe_raison_sociale'])) {
+                    $societeData = $wizard['societe'];
+                }
+                $clientName = trim(preg_replace('/[^a-zA-Z0-9-]/', '-', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $societeData['societe_raison_sociale'] ?? 'Client')));
+                $clientName = preg_replace('/-+/', '-', $clientName);
+                $clientName = trim($clientName, '-');
+                $sanitizedForme = str_replace(' ', '_', $societeData['societe_forme_juridique'] ?? 'PP');
+                $today = date('Y-m-d');
+                $outputDir = __DIR__ . '/../../../../dossiers_generer/dossiers_cession/' . $wizard['cession_date'] . '_' . $societeData['societe_forme_juridique'] . '_' . $clientName;
+                $outputDir = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', $outputDir), '-');
+
+                $existingFiles = [];
+                foreach (['Acte-Cession-Parts', 'PV-AGE-Cession', 'Declaration-Modificative-RC', 'Annonce-Legale-Cession'] as $dt) {
+                    $f = $outputDir . '/' . $sanitizedForme . '_' . $today . '_' . $dt . '_' . $clientName . '.docx';
+                    if (file_exists($f)) {
+                        $existingFiles[] = basename($f);
+                    }
+                }
+
+                if (!empty($existing) || !empty($existingFiles)) {
+                    echo json_encode(['confirm_required' => true, 'db_types' => $existing, 'files' => $existingFiles]);
+                    exit;
+                }
+            }
+
             $_SESSION['cession_wizard']['generated_files'] = [];
             if ($cid > 0 && ($pdo ?? null) instanceof PDO) {
                 $pdo->prepare('DELETE FROM documents_generes WHERE cession_id = :cid AND template_source = :src')->execute(['cid' => $cid, 'src' => 'cession']);
@@ -614,13 +647,26 @@ document.getElementById('wizard-gen-form')?.addEventListener('submit', function(
     var total = checkboxes.length;
     var done = 0;
     if (overlay) overlay.classList.add('show');
-    var startGen = function () {
+    var startGen = function (confirmed) {
         var fd = new FormData();
         fd.append('csrf_token', csrf);
         fd.append('nav_action', 'generate_start');
+        if (confirmed) fd.append('confirmed', '1');
         fetch(window.location.href, { method: 'POST', body: fd }).then(function (r) {
             return r.json();
         }).then(function (data) {
+            if (data.confirm_required) {
+                var msg = 'Des documents existent deja :\n';
+                if (data.db_types && data.db_types.length) msg += '- En base : ' + data.db_types.join(', ') + '\n';
+                if (data.files && data.files.length) msg += '- Fichiers : ' + data.files.join(', ') + '\n';
+                msg += '\nVoulez-vous les ecraser ?';
+                if (confirm(msg)) {
+                    startGen(true);
+                } else {
+                    if (overlay) overlay.classList.remove('show');
+                }
+                return;
+            }
             if (!data.success) {
                 if (statusText) statusText.textContent = 'Erreur: ' + (data.error || 'inconnue');
                 return;
