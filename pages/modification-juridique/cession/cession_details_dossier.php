@@ -24,8 +24,8 @@ if ($cessionId > 0 && ($pdo ?? null) instanceof PDO) {
         $stmt->execute(['id' => $cessionId]);
         $cessionParts = $stmt->fetchAll();
 
-        $stmt = $pdo->prepare("SELECT id, doc_type, fichier_docx, fichier_pdf, taille_ko, valide, created_at FROM documents_generes WHERE societe_id = :sid AND template_source = 'cession' ORDER BY created_at DESC");
-        $stmt->execute(['sid' => $cession['societe_id']]);
+        $stmt = $pdo->prepare("SELECT id, doc_type, fichier_docx, fichier_pdf, taille_ko, valide, created_at FROM documents_generes WHERE cession_id = :cid AND template_source = 'cession' ORDER BY created_at DESC");
+        $stmt->execute(['cid' => $cessionId]);
         $documents = $stmt->fetchAll();
     }
 }

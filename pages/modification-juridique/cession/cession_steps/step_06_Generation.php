@@ -242,6 +242,9 @@ $stmt->execute([
         }
         unset($_SESSION['_cession_overwrite_files'], $_SESSION['_cession_overwrite_docs']);
 
+        // Delete old records for this cession before re-inserting
+        $pdo->prepare('DELETE FROM documents_generes WHERE cession_id = :cid AND template_source = :src')->execute(['cid' => $cessionId, 'src' => 'cession']);
+
         foreach ($mapping as $docType) {
             if (!in_array($docType, $selectedDocs, true)) continue;
             $matches = glob($templateDir . '/*' . $docType . '*_Template.docx');
@@ -252,9 +255,10 @@ $stmt->execute([
                 $docxPath = $renderer->render($context, $outName);
                 $pdfPath = $renderer->tryConvertToPdf($docxPath);
 
-                $stmtD = $pdo->prepare('INSERT INTO documents_generes (societe_id, template_source, doc_type, fichier_docx, fichier_pdf, taille_ko, valide) VALUES (:sid, :src, :type, :docx, :pdf, :taille, 1)');
+                $stmtD = $pdo->prepare('INSERT INTO documents_generes (societe_id, cession_id, template_source, doc_type, fichier_docx, fichier_pdf, taille_ko, valide) VALUES (:sid, :cid, :src, :type, :docx, :pdf, :taille, 1)');
                 $stmtD->execute([
                     'sid' => $wizard['societe_id'],
+                    'cid' => $cessionId,
                     'src' => 'cession',
                     'type' => $docType,
                     'docx' => $docxPath,
