@@ -5,6 +5,7 @@ declare(strict_types=1);
 $cessionId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 $cession = null;
 $societe = null;
+$societeId = 0;
 $cessionParts = [];
 $documents = [];
 
@@ -24,8 +25,9 @@ if ($cessionId > 0 && ($pdo ?? null) instanceof PDO) {
         $stmt->execute(['id' => $cessionId]);
         $cessionParts = $stmt->fetchAll();
 
-        $stmt = $pdo->prepare("SELECT id, doc_type, fichier_docx, fichier_pdf, taille_ko, valide, created_at FROM documents_generes WHERE cession_id = :cid AND template_source = 'cession' ORDER BY created_at DESC");
-        $stmt->execute(['cid' => $cessionId]);
+        $societeId = (int) ($cession['societe_id'] ?? 0);
+        $stmt = $pdo->prepare("SELECT id, doc_type, fichier_docx, fichier_pdf, taille_ko, valide, created_at, template_source FROM documents_generes WHERE societe_id = :sid ORDER BY created_at DESC");
+        $stmt->execute(['sid' => $societeId]);
         $documents = $stmt->fetchAll();
     }
 }
@@ -50,8 +52,8 @@ if (is_post() && isset($_POST['validate_submit']) && ($pdo ?? null) instanceof P
         redirect_to('cession_dossier', ['id' => $cessionId]);
     }
     $placeholders = implode(',', array_fill(0, count($selected), '?'));
-    $stmt = $pdo->prepare("UPDATE documents_generes SET valide = 1 WHERE cession_id = ? AND id IN ($placeholders)");
-    $stmt->execute(array_merge([$cessionId], array_map('intval', $selected)));
+    $stmt = $pdo->prepare("UPDATE documents_generes SET valide = 1 WHERE societe_id = ? AND id IN ($placeholders)");
+    $stmt->execute(array_merge([$societeId], array_map('intval', $selected)));
     set_flash('success', count($selected) . ' document(s) valide(s).');
     redirect_to('cession_dossier', ['id' => $cessionId]);
 }
@@ -61,8 +63,8 @@ if (is_post() && isset($_POST['delete_submit']) && ($pdo ?? null) instanceof PDO
     $selected = $_POST['selected_files'] ?? [];
     if (count($selected) > 0) {
         $placeholders = implode(',', array_fill(0, count($selected), '?'));
-        $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf FROM documents_generes WHERE cession_id = ? AND id IN ($placeholders)");
-        $stmt->execute(array_merge([$cessionId], array_map('intval', $selected)));
+        $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf FROM documents_generes WHERE societe_id = ? AND id IN ($placeholders)");
+        $stmt->execute(array_merge([$societeId], array_map('intval', $selected)));
         $docs = $stmt->fetchAll();
         foreach ($docs as $doc) {
             if (file_exists($doc['fichier_docx'])) unlink($doc['fichier_docx']);
@@ -83,8 +85,8 @@ if (is_post() && isset($_POST['restore_submit']) && ($pdo ?? null) instanceof PD
         redirect_to('cession_dossier', ['id' => $cessionId]);
     }
     $placeholders = implode(',', array_fill(0, count($selected), '?'));
-    $stmt = $pdo->prepare("UPDATE documents_generes SET valide = 0 WHERE cession_id = ? AND id IN ($placeholders)");
-    $stmt->execute(array_merge([$cessionId], array_map('intval', $selected)));
+    $stmt = $pdo->prepare("UPDATE documents_generes SET valide = 0 WHERE societe_id = ? AND id IN ($placeholders)");
+    $stmt->execute(array_merge([$societeId], array_map('intval', $selected)));
     set_flash('success', count($selected) . ' document(s) restaure(s) en brouillon.');
     redirect_to('cession_dossier', ['id' => $cessionId]);
 }
@@ -94,6 +96,10 @@ $docTypeLabels = [
     'PV-AGE-Cession' => "PV d'assemblee generale cession",
     'Declaration-Modificative-RC' => "Declaration modificative RC",
     'Annonce-Legale-Cession' => "Annonce legale cession",
+];
+
+$sourceLabels = [
+    'cession' => 'Cession',
 ];
 ?>
 <div class="section-title-row">
@@ -213,6 +219,7 @@ $docTypeLabels = [
                     <tr>
                         <th class="col-check"><input type="checkbox" id="select-all-docs"></th>
                         <th data-col="type">Type</th>
+                        <th data-col="source">Source</th>
                         <th data-col="fichier">Fichier</th>
                         <th data-col="taille">Taille</th>
                         <th data-col="statut">Statut</th>
@@ -225,6 +232,7 @@ $docTypeLabels = [
                     <tr>
                         <td class="col-check"><input type="checkbox" name="selected_files[]" value="<?= e((string) $doc['id']) ?>"></td>
                         <td><?= e($docTypeLabels[$doc['doc_type']] ?? $doc['doc_type']) ?></td>
+                        <td><?= e($sourceLabels[$doc['template_source']] ?? 'Creation') ?></td>
                         <td><?= e(basename((string) ($doc['fichier_docx'] ?? '-'))) ?></td>
                         <td><?= $doc['taille_ko'] ? number_format((float) $doc['taille_ko'], 1) . ' Ko' : '-' ?></td>
                         <td>
