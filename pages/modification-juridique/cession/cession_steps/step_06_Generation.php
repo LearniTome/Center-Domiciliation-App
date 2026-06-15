@@ -181,6 +181,21 @@ $stmt->execute([
     }
 
     // Generate documents
+    if ($navAction === 'generate_start') {
+        header('Content-Type: application/json');
+        try {
+            $cid = $wizard['cession_id'];
+            $_SESSION['cession_wizard']['generated_files'] = [];
+            if ($cid > 0 && ($pdo ?? null) instanceof PDO) {
+                $pdo->prepare('DELETE FROM documents_generes WHERE cession_id = :cid AND template_source = :src')->execute(['cid' => $cid, 'src' => 'cession']);
+            }
+            echo json_encode(['success' => true]);
+        } catch (Throwable $e) {
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        }
+        exit;
+    }
+
     if ($navAction === 'generate_single') {
         header('Content-Type: application/json');
         try {
@@ -198,8 +213,12 @@ $stmt->execute([
             }
 
             $today = date('Y-m-d');
-            $socName = $selectedSociete['societe_raison_sociale'] ?? 'Client';
-            $forme = $selectedSociete['societe_forme_juridique'] ?? 'PP';
+            $societeData = $selectedSociete ?: [];
+            if (empty($societeData['societe_raison_sociale']) && !empty($wizard['societe']['societe_raison_sociale'])) {
+                $societeData = $wizard['societe'];
+            }
+            $socName = $societeData['societe_raison_sociale'] ?? 'Client';
+            $forme = $societeData['societe_forme_juridique'] ?? 'PP';
             $clientName = trim(preg_replace('/[^a-zA-Z0-9-]/', '-', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $socName)));
             $clientName = preg_replace('/-+/', '-', $clientName);
             $clientName = trim($clientName, '-');
@@ -264,8 +283,12 @@ $stmt->execute([
         $stmtDos = $pdo->prepare('SELECT societe_id FROM cessions WHERE id = :id');
         $stmtDos->execute(['id' => $cessionId]);
 
-        $socName = $selectedSociete['societe_raison_sociale'] ?? 'Client';
-        $forme = $selectedSociete['societe_forme_juridique'] ?? 'PP';
+        $societeData = $selectedSociete ?: [];
+        if (empty($societeData['societe_raison_sociale']) && !empty($wizard['societe']['societe_raison_sociale'])) {
+            $societeData = $wizard['societe'];
+        }
+        $socName = $societeData['societe_raison_sociale'] ?? 'Client';
+        $forme = $societeData['societe_forme_juridique'] ?? 'PP';
         $clientName = trim(preg_replace('/[^a-zA-Z0-9-]/', '-', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $socName)));
         $clientName = preg_replace('/-+/', '-', $clientName);
         $clientName = trim($clientName, '-');
@@ -588,6 +611,22 @@ document.getElementById('wizard-gen-form')?.addEventListener('submit', function(
     var total = checkboxes.length;
     var done = 0;
     if (overlay) overlay.classList.add('show');
+    var startGen = function () {
+        var fd = new FormData();
+        fd.append('csrf_token', csrf);
+        fd.append('nav_action', 'generate_start');
+        fetch(window.location.href, { method: 'POST', body: fd }).then(function (r) {
+            return r.json();
+        }).then(function (data) {
+            if (!data.success) {
+                if (statusText) statusText.textContent = 'Erreur: ' + (data.error || 'inconnue');
+                return;
+            }
+            next();
+        }).catch(function (err) {
+            if (statusText) statusText.textContent = 'Erreur: ' + err.message;
+        });
+    };
     var next = function () {
         if (done >= total) {
             window.location.reload();
@@ -619,7 +658,7 @@ document.getElementById('wizard-gen-form')?.addEventListener('submit', function(
             next();
         });
     };
-    next();
+    startGen();
 });
 </script>
 
