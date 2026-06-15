@@ -92,7 +92,6 @@ $docTypeLabels = [
             <div><span>Parts avant cession</span><strong><?= $cession['parts_avant'] ?? '-' ?></strong></div>
             <div><span>Capital avant cession</span><strong><?= format_money($cession['capital_avant'] !== null ? (float) $cession['capital_avant'] : null) ?></strong></div>
             <div><span>Date de cession</span><strong><?= format_date($cession['cession_date'] ?? null) ?></strong></div>
-            <div class="full"><span>Motif</span><strong><?= e($cession['cession_motif'] ?: '-') ?></strong></div>
         </div>
     </div>
 </article>
