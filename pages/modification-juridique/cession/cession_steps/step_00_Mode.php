@@ -10,6 +10,7 @@ if (is_post() && $step === 0) {
         $wizard['societe'] = [];
         $wizard['associes'] = [];
         $wizard['societe_id'] = 0;
+        unset($wizard['cession_id']);
         redirect_to('cession', ['step' => 1]);
     } elseif ($mode === 'nouvelle') {
         $wizard['mode'] = 'nouvelle';
@@ -18,6 +19,7 @@ if (is_post() && $step === 0) {
         $wizard['associes'] = [];
         $wizard['societe_id'] = 0;
         $wizard['parts'] = [];
+        unset($wizard['cession_id']);
         redirect_to('cession', ['step' => 1]);
     }
     set_flash('error', 'Veuillez choisir un mode.');

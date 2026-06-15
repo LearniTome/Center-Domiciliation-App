@@ -120,6 +120,7 @@ if ($editingId > 0 && !isset($_SESSION['_cession_loaded'])) {
         $dbCession = $stmt->fetch();
         if ($dbCession) {
             $wizard['societe_id'] = (int) $dbCession['societe_id'];
+            $wizard['cession_id'] = (int) $dbCession['id'];
             $wizard['cession_date'] = $dbCession['cession_date'] ?? date('Y-m-d');
             $wizard['cession_motif'] = $dbCession['cession_motif'] ?? '';
             $wizard['mode'] = 'existante';
