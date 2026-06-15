@@ -128,7 +128,7 @@ if (($pdo ?? null) instanceof PDO) {
                         <td><?= e(format_date($cession['cession_date'] ?? null)) ?></td>
                         <td>
                             <?php if (($cession['cession_status'] ?? 'brouillon') === 'finalise'): ?>
-                                <span style="color:var(--success);font-weight:500">Finalise</span>
+                                <span style="color:var(--success);font-weight:500">Valider</span>
                             <?php else: ?>
                                 <span style="color:var(--warning);font-weight:500">Brouillon</span>
                             <?php endif; ?>
