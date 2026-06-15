@@ -5,10 +5,10 @@ declare(strict_types=1);
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
 $ext = strtolower(pathinfo($uri, PATHINFO_EXTENSION));
-$staticExtensions = ['css', 'js', 'png', 'jpg', 'jpeg', 'gif', 'svg', 'ico', 'woff', 'woff2', 'ttf', 'eot', 'webp', 'pdf', 'zip'];
+$staticExtensions = ['css', 'js', 'png', 'jpg', 'jpeg', 'gif', 'svg', 'ico', 'woff', 'woff2', 'ttf', 'eot', 'webp', 'pdf', 'zip', 'docx'];
 
 if (in_array($ext, $staticExtensions, true)) {
-    $filePath = __DIR__ . $uri;
+    $filePath = __DIR__ . urldecode($uri);
     if (file_exists($filePath)) {
         $mimeTypes = [
             'css' => 'text/css',
@@ -26,6 +26,7 @@ if (in_array($ext, $staticExtensions, true)) {
             'webp' => 'image/webp',
             'pdf' => 'application/pdf',
             'zip' => 'application/zip',
+            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         ];
         header('Content-Type: ' . ($mimeTypes[$ext] ?? 'application/octet-stream'));
         header('Cache-Control: public, max-age=86400');

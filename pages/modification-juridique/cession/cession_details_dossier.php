@@ -42,6 +42,53 @@ if (!$cession) {
     return;
 }
 
+if (is_post() && isset($_POST['validate_submit']) && ($pdo ?? null) instanceof PDO) {
+    verify_csrf();
+    $selected = $_POST['selected_files'] ?? [];
+    if (count($selected) === 0) {
+        set_flash('error', 'Selectionnez au moins un document.');
+        redirect_to('cession_dossier', ['id' => $cessionId]);
+    }
+    $placeholders = implode(',', array_fill(0, count($selected), '?'));
+    $stmt = $pdo->prepare("UPDATE documents_generes SET valide = 1 WHERE cession_id = ? AND id IN ($placeholders)");
+    $stmt->execute(array_merge([$cessionId], array_map('intval', $selected)));
+    set_flash('success', count($selected) . ' document(s) valide(s).');
+    redirect_to('cession_dossier', ['id' => $cessionId]);
+}
+
+if (is_post() && isset($_POST['delete_submit']) && ($pdo ?? null) instanceof PDO) {
+    verify_csrf();
+    $selected = $_POST['selected_files'] ?? [];
+    if (count($selected) > 0) {
+        $placeholders = implode(',', array_fill(0, count($selected), '?'));
+        $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf FROM documents_generes WHERE cession_id = ? AND id IN ($placeholders)");
+        $stmt->execute(array_merge([$cessionId], array_map('intval', $selected)));
+        $docs = $stmt->fetchAll();
+        foreach ($docs as $doc) {
+            if (file_exists($doc['fichier_docx'])) unlink($doc['fichier_docx']);
+            if ($doc['fichier_pdf'] && file_exists($doc['fichier_pdf'])) unlink($doc['fichier_pdf']);
+        }
+        $stmt = $pdo->prepare("DELETE FROM documents_generes WHERE id IN ($placeholders)");
+        $stmt->execute(array_map('intval', $selected));
+        set_flash('error', count($selected) . ' document(s) supprime(s).');
+        redirect_to('cession_dossier', ['id' => $cessionId]);
+    }
+}
+
+if (is_post() && isset($_POST['restore_submit']) && ($pdo ?? null) instanceof PDO) {
+    verify_csrf();
+    $selected = $_POST['selected_files'] ?? [];
+    if (count($selected) === 0) {
+        set_flash('error', 'Selectionnez au moins un document.');
+        redirect_to('cession_dossier', ['id' => $cessionId]);
+    }
+    $placeholders = implode(',', array_fill(0, count($selected), '?'));
+    $stmt = $pdo->prepare("UPDATE documents_generes SET valide = 0 WHERE cession_id = ? AND id IN ($placeholders)");
+    $stmt->execute(array_merge([$cessionId], array_map('intval', $selected)));
+    set_flash('success', count($selected) . ' document(s) restaure(s) en brouillon.');
+    redirect_to('cession_dossier', ['id' => $cessionId]);
+}
+
 $docTypeLabels = [
     'Acte-Cession-Parts' => "Acte de cession de parts",
     'PV-AGE-Cession' => "PV d'assemblee generale cession",
@@ -53,6 +100,7 @@ $docTypeLabels = [
     <h2><?= e($cession['cession_dossier']) ?> — <?= e($cession['societe_raison_sociale'] ?? '-') ?></h2>
     <div class="table-actions">
         <a class="btn btn-info" href="<?= e(app_url('cession', ['id' => $cessionId, 'edit' => '1'])) ?>"><span class="material-symbols-outlined">edit</span> Modifier</a>
+        <a class="btn btn-next" href="<?= e(app_url('cession', ['step' => 6, 'id' => $cessionId, 'edit' => '1'])) ?>"><span class="material-symbols-outlined">sync</span> <?= count($documents) > 0 ? 'Regenerer documents' : 'Generer documents' ?></a>
         <a class="btn btn-back" href="<?= e(app_url('cessions')) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
     </div>
 </div>
@@ -152,23 +200,30 @@ $docTypeLabels = [
         <h3>Documents generes (<?= count($documents) ?>)</h3>
     </div>
     <?php if (!$documents): ?>
-        <p class="table-empty">Aucun document genere pour cette cession.</p>
+        <div class="empty-state">
+            <span class="material-symbols-outlined">description</span>
+            <p class="table-empty">Aucun document genere pour cette cession.</p>
+        </div>
     <?php else: ?>
-        <div class="table-scroll">
+        <form method="post" id="docs-form">
+            <?= csrf_input() ?>
+            <div class="table-scroll">
             <table data-sortable>
                 <thead>
                     <tr>
+                        <th class="col-check"><input type="checkbox" id="select-all-docs"></th>
                         <th data-col="type">Type</th>
                         <th data-col="fichier">Fichier</th>
                         <th data-col="taille">Taille</th>
                         <th data-col="statut">Statut</th>
                         <th data-col="date">Date</th>
-                        <th>Actions</th>
+                        <th class="col-actions">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach ($documents as $doc): ?>
                     <tr>
+                        <td class="col-check"><input type="checkbox" name="selected_files[]" value="<?= e((string) $doc['id']) ?>"></td>
                         <td><?= e($docTypeLabels[$doc['doc_type']] ?? $doc['doc_type']) ?></td>
                         <td><?= e(basename((string) ($doc['fichier_docx'] ?? '-'))) ?></td>
                         <td><?= $doc['taille_ko'] ? number_format((float) $doc['taille_ko'], 1) . ' Ko' : '-' ?></td>
@@ -181,21 +236,83 @@ $docTypeLabels = [
                         <td>
                             <div class="table-actions">
                                 <?php if ($doc['fichier_docx'] && file_exists($doc['fichier_docx'])): ?>
-                                <a class="btn-icon success" href="<?= e(str_replace(__DIR__ . '/../../../', '', $doc['fichier_docx'])) ?>" download title="Telecharger DOCX">
+                                <a class="btn-icon primary" href="<?= e(word_url($doc['fichier_docx'])) ?>" title="Ouvrir dans Word">
+                                    <span class="material-symbols-outlined">article</span>
+                                </a>
+                                <a class="btn-icon success" href="<?= e(str_replace(dirname(__DIR__, 3) . '/', '', $doc['fichier_docx'])) ?>" download title="Telecharger DOCX">
                                     <span class="material-symbols-outlined">download</span>
                                 </a>
                                 <?php endif; ?>
                                 <?php if ($doc['fichier_pdf'] && file_exists($doc['fichier_pdf'])): ?>
-                                <a class="btn-icon danger" href="<?= e(str_replace(__DIR__ . '/../../../', '', $doc['fichier_pdf'])) ?>" download title="Telecharger PDF">
+                                <a class="btn-icon danger" href="<?= e(str_replace(dirname(__DIR__, 3) . '/', '', $doc['fichier_pdf'])) ?>" download title="Telecharger PDF">
                                     <span class="material-symbols-outlined">picture_as_pdf</span>
                                 </a>
                                 <?php endif; ?>
+                                <?php if (!$doc['valide']): ?>
+                                <a class="btn-icon success" href="#" onclick="event.preventDefault(); (function(){ var f=document.getElementById('docs-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='validate_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Validation en cours...'); f.submit();} })();" title="Valider">
+                                    <span class="material-symbols-outlined">task_alt</span>
+                                </a>
+                                <?php else: ?>
+                                <a class="btn-icon warning" href="#" onclick="event.preventDefault(); (function(){ var f=document.getElementById('docs-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='restore_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Restauration en cours...'); f.submit();} })();" title="Restaurer en brouillon">
+                                    <span class="material-symbols-outlined">restore</span>
+                                </a>
+                                <?php endif; ?>
+                                <a class="btn-icon danger" href="#" onclick="event.preventDefault(); if(!confirm('Supprimer ce document ?')) return; (function(){ var f=document.getElementById('docs-form'); var c=f.querySelector('input[name=\'selected_files[]\'][value=\'<?= e((string) $doc['id']) ?>\']'); if(c){c.checked=true; var h=document.createElement('input'); h.type='hidden'; h.name='delete_submit'; h.value='1'; f.appendChild(h); window.showOverlay('Suppression en cours...'); f.submit();} })();" title="Supprimer">
+                                    <span class="material-symbols-outlined">delete</span>
+                                </a>
                             </div>
                         </td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
-        </div>
+            </div>
+            <div class="table-actions table-actions-top">
+                <?php $allValides = count($documents) > 0 && count(array_filter($documents, fn($d) => !$d['valide'])) === 0; ?>
+                <?php if ($allValides): ?>
+                    <button class="btn btn-back" type="submit" name="restore_submit" value="1">
+                        <span class="material-symbols-outlined">restore</span> Restaurer en brouillons
+                    </button>
+                <?php else: ?>
+                    <button class="btn btn-next" type="submit" name="validate_submit" value="1">
+                        <span class="material-symbols-outlined">task_alt</span> Valider la selection
+                    </button>
+                <?php endif; ?>
+                <button class="btn btn-danger" type="submit" name="delete_submit" value="1">
+                    <span class="material-symbols-outlined">delete</span> Supprimer la selection
+                </button>
+            </div>
+        </form>
+        <script>
+        document.getElementById('select-all-docs')?.addEventListener('click', function() {
+            var checkboxes = document.querySelectorAll('#docs-form input[name="selected_files[]"]');
+            checkboxes.forEach(function(c) { c.checked = this.checked; }.bind(this));
+        });
+        </script>
     <?php endif; ?>
 </article>
+
+<div id="loading-overlay">
+    <div class="loader-card">
+        <div class="spinner"></div>
+        <p id="loading-text">Traitement en cours...</p>
+    </div>
+</div>
+<script>
+(function(){
+    var overlay = document.getElementById('loading-overlay');
+    var text = document.getElementById('loading-text');
+    window.showOverlay = function(msg){
+        text.textContent = msg;
+        overlay.classList.add('show');
+    };
+    document.getElementById('docs-form')?.addEventListener('submit', function(e){
+        var btn = e.submitter;
+        if(btn && btn.name === 'delete_submit'){
+            window.showOverlay('Suppression en cours...');
+        } else {
+            window.showOverlay('Validation en cours...');
+        }
+    });
+})();
+</script>

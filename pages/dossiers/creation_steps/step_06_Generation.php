@@ -248,6 +248,7 @@ if (is_post() && $step === 6) {
         if (!is_dir($outputDir)) {
             mkdir($outputDir, 0777, true);
         }
+        $sanitizedForme = str_replace(' ', '_', $forme);
         $generatedFiles = [];
 
         foreach ($selectedPaths as $path) {
@@ -264,7 +265,7 @@ if (is_post() && $step === 6) {
                 } elseif (count($parts) === 3) {
                     $docType = preg_replace('/_?Template$/i', '', $parts[1]);
                 }
-                $base = $forme . '_' . $today . '_' . $docType . '_' . $clientName;
+                $base = $sanitizedForme . '_' . $today . '_' . $docType . '_' . $clientName;
                 $outName = $base . '_Brouillon.docx';
                 $docxPath = $renderer->render($context, $outName);
 
@@ -699,11 +700,11 @@ if ($step === 6):
                                 <td><?php if (file_exists($file['docx'])): ?><?= number_format(filesize($file['docx']) / 1024, 1) ?> Ko<?php else: ?>-<?php endif; ?></td>
                                 <td>
                                     <div class="table-actions">
-                                        <a class="btn btn-secondary" href="<?= e(str_replace(__DIR__ . '/../../../', '', $file['docx'])) ?>" download>
+                                        <a class="btn btn-secondary" href="<?= e(str_replace(dirname(__DIR__, 3) . '/', '', $file['docx'])) ?>" download>
                                             <span class="material-symbols-outlined">download</span> DOCX
                                         </a>
                                         <?php if ($file['pdf']): ?>
-                                            <a class="btn" href="<?= e(str_replace(__DIR__ . '/../../../', '', $file['pdf'])) ?>" download>
+                                            <a class="btn" href="<?= e(str_replace(dirname(__DIR__, 3) . '/', '', $file['pdf'])) ?>" download>
                                                 <span class="material-symbols-outlined">picture_as_pdf</span> PDF
                                             </a>
                                         <?php endif; ?>

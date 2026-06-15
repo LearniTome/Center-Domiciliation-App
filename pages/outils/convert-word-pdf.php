@@ -273,7 +273,7 @@ if (is_post()) {
             $zipName = 'conversions_' . date('Ymd_His') . '.zip';
             $zipPathFull = $outputDir . DIRECTORY_SEPARATOR . $zipName;
             if (pdf_create_zip($successPdfs, $zipPathFull)) {
-                $zipPath = str_replace(__DIR__ . '/../../', '', $zipPathFull);
+                $zipPath = str_replace(dirname(__DIR__, 2) . '/', '', $zipPathFull);
             }
         }
 
@@ -598,10 +598,10 @@ if (is_dir($outputDir)) {
                             <td><?= e(basename($e['source_docx'])) ?></td>
                             <td>
                                 <?php if ($e['status'] === 'ok' && file_exists($e['out_pdf'])): ?>
-                                    <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../../', '', $e['out_pdf'])) ?>" target="_blank" title="Voir le PDF">
+                                    <a class="btn-icon" href="<?= e(str_replace(dirname(__DIR__, 2) . '/', '', $e['out_pdf'])) ?>" target="_blank" title="Voir le PDF">
                                         <span class="material-symbols-outlined">visibility</span>
                                     </a>
-                                    <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../../', '', $e['out_pdf'])) ?>" download title="Telecharger le PDF">
+                                    <a class="btn-icon" href="<?= e(str_replace(dirname(__DIR__, 2) . '/', '', $e['out_pdf'])) ?>" download title="Telecharger le PDF">
                                         <span class="material-symbols-outlined">download</span>
                                     </a>
                                 <?php else: ?>
@@ -643,10 +643,10 @@ if (is_dir($outputDir)) {
                             <td><?= e($rc['size']) ?></td>
                             <td style="font-size:0.8rem"><?= e(date('d/m/Y H:i', $rc['mtime'])) ?></td>
                             <td>
-                                <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../../', '', $rc['path'])) ?>" target="_blank" title="Voir le PDF">
+                                <a class="btn-icon" href="<?= e(str_replace(dirname(__DIR__, 2) . '/', '', $rc['path'])) ?>" target="_blank" title="Voir le PDF">
                                     <span class="material-symbols-outlined">visibility</span>
                                 </a>
-                                <a class="btn-icon" href="<?= e(str_replace(__DIR__ . '/../../', '', $rc['path'])) ?>" download title="Telecharger le PDF">
+                                <a class="btn-icon" href="<?= e(str_replace(dirname(__DIR__, 2) . '/', '', $rc['path'])) ?>" download title="Telecharger le PDF">
                                     <span class="material-symbols-outlined">download</span>
                                 </a>
                             </td>
