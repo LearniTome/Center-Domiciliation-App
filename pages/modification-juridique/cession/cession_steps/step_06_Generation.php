@@ -498,59 +498,59 @@ if ($step === 6):
                     <?php endif; ?>
                 </form>
                 <?php endif; ?>
-
-                <?php if (!empty($generatedFiles)): ?>
-                <div class="step-card done" style="margin-top:16px">
-                    <div class="step-card-header">
-                        <span class="step-num">3</span>
-                        <div>
-                            <h3>Documents generes</h3>
-                            <p class="help-text"><?= count($generatedFiles) ?> fichier(s) genere(s)</p>
-                        </div>
-                    </div>
-                    <div class="table-scroll" style="overflow-x:auto;margin-top:8px">
-                        <table style="white-space:nowrap">
-                            <thead>
-                                <tr>
-                                    <th class="col-check"><input type="checkbox" id="select-all-generated"></th>
-                                    <th>Fichier</th>
-                                    <th>Taille</th>
-                                    <th class="col-actions">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($generatedFiles as $i => $file): ?>
-                                <tr>
-                                    <td><input type="checkbox" name="generated_files[]" value="<?= $i ?>" class="gen-file-check"></td>
-                                    <td>
-                                        <span class="material-symbols-outlined" style="color:var(--primary);vertical-align:middle;margin-right:6px">article</span>
-                                        <?= e(is_array($file) ? ($file['name'] ?? '') : $file) ?>
-                                    </td>
-                                    <td><?php if (is_array($file) && file_exists($file['docx'])): ?><?= number_format(filesize($file['docx']) / 1024, 1) ?> Ko<?php else: ?>-<?php endif; ?></td>
-                                    <td>
-                                        <div class="table-actions">
-                                        <?php if (is_array($file)): ?>
-                                            <a class="btn btn-secondary" href="<?= e(str_replace(dirname(__DIR__, 4) . '/', '', $file['docx'])) ?>" download>
-                                                <span class="material-symbols-outlined">download</span> DOCX
-                                            </a>
-                                            <?php if (!empty($file['pdf']) && file_exists($file['pdf'])): ?>
-                                            <a class="btn" href="<?= e(str_replace(dirname(__DIR__, 4) . '/', '', $file['pdf'])) ?>" download>
-                                                <span class="material-symbols-outlined">picture_as_pdf</span> PDF
-                                            </a>
-                                            <?php endif; ?>
-                                        <?php endif; ?>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <?php endif; ?>
             <?php endif; ?>
         </div>
     </div>
+
+    <?php if (!empty($generatedFiles)): ?>
+    <div class="step-card done" style="margin-top:16px">
+        <div class="step-card-header">
+            <span class="step-num">3</span>
+            <div>
+                <h3>Documents generes</h3>
+                <p class="help-text"><?= count($generatedFiles) ?> fichier(s) genere(s)</p>
+            </div>
+        </div>
+        <div class="table-scroll" style="overflow-x:auto;margin-top:8px">
+            <table style="white-space:nowrap">
+                <thead>
+                    <tr>
+                        <th class="col-check"><input type="checkbox" id="select-all-generated"></th>
+                        <th>Fichier</th>
+                        <th>Taille</th>
+                        <th class="col-actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($generatedFiles as $i => $file): ?>
+                    <tr>
+                        <td><input type="checkbox" name="generated_files[]" value="<?= $i ?>" class="gen-file-check"></td>
+                        <td>
+                            <span class="material-symbols-outlined" style="color:var(--primary);vertical-align:middle;margin-right:6px">article</span>
+                            <?= e(is_array($file) ? ($file['name'] ?? '') : $file) ?>
+                        </td>
+                        <td><?php if (is_array($file) && file_exists($file['docx'])): ?><?= number_format(filesize($file['docx']) / 1024, 1) ?> Ko<?php else: ?>-<?php endif; ?></td>
+                        <td>
+                            <div class="table-actions">
+                            <?php if (is_array($file)): ?>
+                                <a class="btn btn-secondary" href="<?= e(str_replace(dirname(__DIR__, 4) . '/', '', $file['docx'])) ?>" download>
+                                    <span class="material-symbols-outlined">download</span> DOCX
+                                </a>
+                                <?php if (!empty($file['pdf']) && file_exists($file['pdf'])): ?>
+                                <a class="btn" href="<?= e(str_replace(dirname(__DIR__, 4) . '/', '', $file['pdf'])) ?>" download>
+                                    <span class="material-symbols-outlined">picture_as_pdf</span> PDF
+                                </a>
+                                <?php endif; ?>
+                            <?php endif; ?>
+                            </div>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <form method="post" class="footer-actions" style="margin-top:0.75rem">
         <?= csrf_input() ?>
