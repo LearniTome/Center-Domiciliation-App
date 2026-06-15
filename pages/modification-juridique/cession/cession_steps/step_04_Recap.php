@@ -38,7 +38,7 @@ if ($step === 4):
             <div class="recap-a4">
                 <div class="recap-header">
                     <h2>Recapitulatif de cession de parts sociales</h2>
-                    <p>Societe : <?= e($socData['societe_raison_sociale'] ?? '-') ?> — Date : <?= e($wizard['cession_date'] ?? date('Y-m-d')) ?></p>
+                    <p>Societe : <?= e($socData['societe_raison_sociale'] ?? '-') ?> — Date : <?= e(format_date($wizard['cession_date'] ?? '')) ?></p>
                 </div>
 
                 <div class="recap-section">

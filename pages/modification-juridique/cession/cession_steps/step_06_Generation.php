@@ -7,6 +7,7 @@ if (is_post() && $step === 6) {
     verify_csrf();
     $navAction = $_POST['nav_action'] ?? 'generate';
     if ($navAction === 'back') {
+        unset($_SESSION['_cession_overwrite_files'], $_SESSION['_cession_overwrite_docs']);
         redirect_to('cession', ['step' => 5]);
     }
 
@@ -264,14 +265,15 @@ $stmt->execute([
             } catch (Throwable $e) {}
         }
 
-        set_flash('success', count($generated) . ' document(s) genere(s).');
-        redirect_to('cession', ['step' => 6, 'id' => $cessionId, 'edit' => 1]);
+            $_SESSION['cession_wizard']['generated_files'] = $generated;
+            set_flash('success', count($generated) . ' document(s) genere(s).');
+            redirect_to('cession', ['step' => 6, 'id' => $cessionId, 'edit' => 1]);
     }
 
     if ($navAction === 'terminer') {
         $societeId = $wizard['societe_id'] ?? 0;
         $cessionId = $wizard['cession_id'] ?? 0;
-        unset($_SESSION['cession_wizard'], $_SESSION['_cession_loaded']);
+        unset($_SESSION['cession_wizard'], $_SESSION['_cession_loaded'], $_SESSION['_cession_overwrite_files'], $_SESSION['_cession_overwrite_docs']);
         redirect_to('cession_dossier', ['id' => $cessionId]);
     }
 }
@@ -347,7 +349,6 @@ if ($step === 6):
             <?php else: ?>
 
                 <?php $overwriteFiles = $_SESSION['_cession_overwrite_files'] ?? []; $overwriteDocs = $_SESSION['_cession_overwrite_docs'] ?? []; ?>
-                <?php unset($_SESSION['_cession_overwrite_files'], $_SESSION['_cession_overwrite_docs']); ?>
                 <?php if (!empty($overwriteFiles)): ?>
                 <div class="card" style="border-color:var(--warning);background:rgba(255,107,53,0.06);margin-top:8px">
                     <div style="display:flex;align-items:flex-start;gap:12px">
@@ -375,6 +376,7 @@ if ($step === 6):
                 </div>
                 <?php endif; ?>
 
+                <?php if (empty($overwriteFiles)): ?>
                 <form method="post" class="stack" style="gap:8px;margin-top:8px">
                     <?= csrf_input() ?>
                     <input type="hidden" name="nav_action" value="generate">
@@ -428,6 +430,7 @@ if ($step === 6):
                         </p>
                     <?php endif; ?>
                 </form>
+                <?php endif; ?>
 
                 <?php if (!empty($generatedFiles)): ?>
                 <div class="card" style="margin-top:12px;border-color:var(--success)">

@@ -34,6 +34,17 @@ document.querySelectorAll('[data-confirm]').forEach((element) => {
     toggleTrigger('[data-sidebar-toggle]');
     toggleTrigger('.brand-badge');
     updateToggleTitle();
+
+    const main = document.querySelector('.main');
+    if (shell && main) {
+        main.addEventListener('click', function (e) {
+            if (!shell.classList.contains('collapsed')) {
+                shell.classList.add('collapsed');
+                saveSidebarState();
+                updateToggleTitle();
+            }
+        });
+    }
 })();
 (function () {
     function saveState() {

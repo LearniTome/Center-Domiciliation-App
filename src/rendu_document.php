@@ -7,6 +7,13 @@ class DocumentRenderer
     private string $templatePath;
     private string $outputDir;
 
+    private static function formatDate(?string $val): string
+    {
+        if (empty($val)) return '';
+        $dt = \DateTime::createFromFormat('Y-m-d', $val);
+        return $dt ? $dt->format('d/m/Y') : $val;
+    }
+
     public function __construct(string $templatePath, string $outputDir)
     {
         $this->templatePath = $templatePath;
@@ -691,15 +698,15 @@ class DocumentRenderer
             'SOCIETE_PROCEDURE_CREATION' => $societe['societe_procedure_creation'] ?? '',
             'SOCIETE_MODE_DEPOT' => $societe['societe_mode_depot'] ?? '',
             'SOCIETE_TRIBUNAL_TYPE' => $societe['societe_tribunal_type'] ?? '',
-            'SOCIETE_DATE_ICE' => $societe['societe_date_ice'] ?? '',
-            'SOCIETE_DATE_EXP_CERT_NEG' => $societe['societe_date_exp_cert_neg'] ?? '',
+            'SOCIETE_DATE_ICE' => self::formatDate($societe['societe_date_ice'] ?? ''),
+            'SOCIETE_DATE_EXP_CERT_NEG' => self::formatDate($societe['societe_date_exp_cert_neg'] ?? ''),
             'ASSOCIE_NOM_COMPLET' => $fNomComplet,
             'ASSOCIE_NOM' => $fNom,
             'ASSOCIE_PRENOM' => $fPrenom,
             'ASSOCIE_CIVILITE' => $fCivilite,
             'ASSOCIE_CIN' => $firstAssocie['associe_cin'] ?? '',
-            'ASSOCIE_DATE_VALIDITE_CIN' => $firstAssocie['associe_date_validite_cin'] ?? '',
-            'ASSOCIE_DATE_NAISSANCE' => $firstAssocie['associe_date_naissance'] ?? '',
+            'ASSOCIE_DATE_VALIDITE_CIN' => self::formatDate($firstAssocie['associe_date_validite_cin'] ?? ''),
+            'ASSOCIE_DATE_NAISSANCE' => self::formatDate($firstAssocie['associe_date_naissance'] ?? ''),
             'ASSOCIE_LIEU_NAISSANCE' => $firstAssocie['associe_lieu_naissance'] ?? '',
             'ASSOCIE_NATIONALITE' => $firstAssocie['associe_nationalite'] ?? '',
             'ASSOCIE_ADRESSE' => $firstAssocie['associe_adresse'] ?? '',
@@ -711,9 +718,9 @@ class DocumentRenderer
             'ASSOCIE_EST_GERANT' => $firstAssocie['associe_est_gerant'] ?? '',
             'CONTRAT_TYPE' => $contrat['contrat_type'] ?? '',
             'CONTRAT_TYPE_DOMICILIATION' => $contrat['contrat_type_domiciliation'] ?? '',
-            'CONTRAT_DATE' => $dateContrat,
-            'CONTRAT_DATE_DEBUT' => $dateDebut,
-            'CONTRAT_DATE_FIN' => $dateFin,
+            'CONTRAT_DATE' => self::formatDate($dateContrat),
+            'CONTRAT_DATE_DEBUT' => self::formatDate($dateDebut),
+            'CONTRAT_DATE_FIN' => self::formatDate($dateFin),
             'CONTRAT_DUREE_MOIS' => $dureeMois,
             'CONTRAT_LOYER_TTC' => $contrat['contrat_loyer_ttc'] ?? '',
             'CONTRAT_LOYER_HT' => $contrat['contrat_loyer_ht'] ?? '',
@@ -741,7 +748,12 @@ class DocumentRenderer
             'OMPIC_PUCES' => $certNegBullets,
             'NB_OMPIC' => (string) $certNegCount,
             'DATE' => $now->format('d/m/Y'),
-            'DATE_LONG' => $now->format('d F Y'),
+            'DATE_LONG' => strtr($now->format('d F Y'), [
+                'January' => 'Janvier', 'February' => 'Fevrier', 'March' => 'Mars',
+                'April' => 'Avril', 'May' => 'Mai', 'June' => 'Juin',
+                'July' => 'Juillet', 'August' => 'Aout', 'September' => 'Septembre',
+                'October' => 'Octobre', 'November' => 'Novembre', 'December' => 'Decembre',
+            ]),
             'ANNEE' => $now->format('Y'),
             'MOIS' => $now->format('m'),
             'JOUR' => $now->format('d'),
@@ -830,12 +842,6 @@ class DocumentRenderer
         $fCivilite = $firstAssocie['associe_civilite'] ?? 'M.';
         $fNomComplet = trim("$fCivilite $fPrenom $fNom");
 
-        $fmtDate = function($val): string {
-            if (empty($val)) return '';
-            $dt = \DateTime::createFromFormat('Y-m-d', $val);
-            return $dt ? $dt->format('d/m/Y') : $val;
-        };
-
         return [
             'societe' => $societe,
             'associes' => $associeList,
@@ -846,6 +852,8 @@ class DocumentRenderer
             'SOCIETE_ICE' => $societe['societe_ice'] ?? '',
             'SOCIETE_RC' => $societe['societe_rc'] ?? '',
             'SOCIETE_IF' => $societe['societe_if'] ?? '',
+            'SOCIETE_TP' => $societe['societe_tp'] ?? '',
+            'SOCIETE_CNSS' => $societe['societe_cnss'] ?? '',
             'SOCIETE_CAPITAL' => (string) ($societe['societe_capital'] ?? ''),
             'SOCIETE_PART_SOCIAL' => (string) ($societe['societe_part_social'] ?? ''),
             'SOCIETE_VALEUR_NOMINALE' => (string) ($societe['societe_valeur_nominale'] ?? ''),
@@ -855,31 +863,35 @@ class DocumentRenderer
             'SOCIETE_EMAIL' => $societe['societe_email'] ?? '',
             'SOCIETE_TELEPHONE' => $societe['societe_telephone'] ?? '',
             'SOCIETE_DOSSIER' => $societe['societe_dossier'] ?? '',
+            'SOCIETE_DATE_ICE' => self::formatDate($societe['societe_date_ice'] ?? ''),
+            'SOCIETE_DATE_EXP_CERT_NEG' => self::formatDate($societe['societe_date_exp_cert_neg'] ?? ''),
             'ASSOCIE_NOM_COMPLET' => $fNomComplet,
             'ASSOCIE_NOM' => $fNom,
             'ASSOCIE_PRENOM' => $fPrenom,
             'ASSOCIE_CIVILITE' => $fCivilite,
             'ASSOCIE_CIN' => $firstAssocie['associe_cin'] ?? '',
+            'ASSOCIE_DATE_VALIDITE_CIN' => self::formatDate($firstAssocie['associe_date_validite_cin'] ?? ''),
+            'ASSOCIE_DATE_NAISSANCE' => self::formatDate($firstAssocie['associe_date_naissance'] ?? ''),
             'ASSOCIE_NATIONALITE' => $firstAssocie['associe_nationalite'] ?? '',
             'ASSOCIE_ADRESSE' => $firstAssocie['adresse'] ?? '',
             'ASSOCIE_QUALITE' => $firstAssocie['associe_qualite'] ?? '',
             'ASSOCIE_PARTS' => (string) ($firstAssocie['associe_parts'] ?? ''),
             'ASSOCIE_EST_GERANT' => $firstAssocie['associe_est_gerant'] ?? '',
-            'CESSION_DATE' => $fmtDate($cession['cession_date'] ?? $now->format('d/m/Y')),
+            'CESSION_DATE' => self::formatDate($cession['cession_date'] ?? ''),
             'CESSION_DOSSIER' => $cession['cession_dossier'] ?? '',
             'CESSION_STATUS' => $cession['cession_status'] ?? 'brouillon',
             'CESSION_MOTIF' => $cession['cession_motif'] ?? '',
             'CEDANT_NOM_COMPLET' => $firstPart['cedant_nom_complet'] ?? '',
             'CEDANT_CIN' => $firstPart['cedant_cin'] ?? '',
             'CEDANT_CIVILITE' => $cedantInfo['associe_civilite'] ?? '',
-            'CEDANT_DATE_NAISSANCE' => $fmtDate($cedantInfo['associe_date_naissance'] ?? ''),
+            'CEDANT_DATE_NAISSANCE' => self::formatDate($cedantInfo['associe_date_naissance'] ?? ''),
             'CEDANT_LIEU_NAISSANCE' => $cedantInfo['associe_lieu_naissance'] ?? '',
             'CEDANT_NATIONALITE' => $cedantInfo['associe_nationalite'] ?? $firstPart['cedant_nationalite'] ?? '',
             'CEDANT_ADRESSE' => $cedantInfo['associe_adresse'] ?? '',
             'CESSIONNAIRE_NOM_COMPLET' => $firstPart['cessionnaire_nom_complet'] ?? '',
             'CESSIONNAIRE_CIN' => $firstPart['cessionnaire_cin'] ?? '',
             'CESSIONNAIRE_CIVILITE' => $firstPart['cessionnaire_civilite'] ?? '',
-            'CESSIONNAIRE_DATE_NAISSANCE' => $fmtDate($firstPart['cessionnaire_date_naissance'] ?? ''),
+            'CESSIONNAIRE_DATE_NAISSANCE' => self::formatDate($firstPart['cessionnaire_date_naissance'] ?? ''),
             'CESSIONNAIRE_LIEU_NAISSANCE' => $firstPart['cessionnaire_lieu_naissance'] ?? '',
             'CESSIONNAIRE_NATIONALITE' => $firstPart['cessionnaire_nationalite'] ?? '',
             'CESSIONNAIRE_ADRESSE' => $firstPart['cessionnaire_adresse'] ?? '',
@@ -899,7 +911,12 @@ class DocumentRenderer
             'NB_CEDANTS' => (string) count($cessionParts),
             'NB_CESSIONNAIRES' => (string) count($cessionParts),
             'DATE' => $now->format('d/m/Y'),
-            'DATE_LONG' => $now->format('d F Y'),
+            'DATE_LONG' => strtr($now->format('d F Y'), [
+                'January' => 'Janvier', 'February' => 'Fevrier', 'March' => 'Mars',
+                'April' => 'Avril', 'May' => 'Mai', 'June' => 'Juin',
+                'July' => 'Juillet', 'August' => 'Aout', 'September' => 'Septembre',
+                'October' => 'Octobre', 'November' => 'Novembre', 'December' => 'Decembre',
+            ]),
             'ANNEE' => $now->format('Y'),
             'MOIS' => $now->format('m'),
             'JOUR' => $now->format('d'),
