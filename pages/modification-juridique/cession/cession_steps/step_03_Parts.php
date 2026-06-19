@@ -41,10 +41,7 @@ if (is_post() && $step === 3) {
     $prixTotaux = $_POST['prix_total'] ?? [];
     $nommerGerant = $_POST['nommer_gerant'] ?? [];
 
-    $totalParts = 0;
-    if ($selectedSociete) {
-        $totalParts = (int) ($selectedSociete['societe_part_social'] ?? 0);
-    }
+    $totalParts = (int) ($socForPrix['societe_part_social'] ?? 0);
 
     $wizard['parts'] = [];
     $count = max(count($cedantNoms), count($cessionnaireNoms), count($partsCedees));
@@ -104,7 +101,7 @@ if (is_post() && $step === 3) {
         // Toujours recalculer parts acquises et capital a partir des parts cedees
         if ($parts > 0) {
             $cessionnairePartsVal = $parts;
-            $totalCapitalSociete = (float) ($selectedSociete['societe_capital'] ?? 0);
+            $totalCapitalSociete = (float) ($socForPrix['societe_capital'] ?? 0);
             if ($totalParts > 0 && $totalCapitalSociete > 0) {
                 $cessionnaireCapitalVal = number_format(($parts / $totalParts) * $totalCapitalSociete, 2, '.', '');
             }
@@ -152,9 +149,9 @@ if ($step === 3):
     <?= csrf_input() ?>
     <input type="hidden" name="nav_action" value="next">
 
-    <input type="hidden" id="total-societe-parts" value="<?= (int) ($selectedSociete['societe_part_social'] ?? 0) ?>">
-    <input type="hidden" id="total-societe-capital" value="<?= e(number_format((float) ($selectedSociete['societe_capital'] ?? 0), 2, ',', '')) ?>">
-    <input type="hidden" id="total-valeur-nominale" value="<?= e(number_format((float) ($selectedSociete['societe_valeur_nominale'] ?? 0), 2, ',', '')) ?>">
+    <input type="hidden" id="total-societe-parts" value="<?= (int) ($socForPrix['societe_part_social'] ?? 0) ?>">
+    <input type="hidden" id="total-societe-capital" value="<?= e(number_format((float) ($socForPrix['societe_capital'] ?? 0), 2, ',', '')) ?>">
+    <input type="hidden" id="total-valeur-nominale" value="<?= e(number_format((float) ($socForPrix['societe_valeur_nominale'] ?? 0), 2, ',', '')) ?>">
 
     <div style="margin-top:12px">
         <div class="section-header" style="margin-bottom:12px">
