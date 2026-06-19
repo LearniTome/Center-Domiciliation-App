@@ -1085,6 +1085,15 @@ tbody tr:hover:nth-child(even) {
     justify-content: flex-end;
     margin-top: 20px;
 }
+.pv-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+    padding: 12px 0;
+}
+.pv-actions .btn-back { margin-right: auto; }
+.pv-actions .btn-cancel { margin-left: auto; }
 
 .dl-modal-overlay {
     display: none;
