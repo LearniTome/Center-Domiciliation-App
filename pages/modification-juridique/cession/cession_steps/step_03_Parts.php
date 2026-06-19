@@ -154,6 +154,7 @@ if ($step === 3):
 
     <input type="hidden" id="total-societe-parts" value="<?= (int) ($selectedSociete['societe_part_social'] ?? 0) ?>">
     <input type="hidden" id="total-societe-capital" value="<?= e(number_format((float) ($selectedSociete['societe_capital'] ?? 0), 2, ',', '')) ?>">
+    <input type="hidden" id="total-valeur-nominale" value="<?= e(number_format((float) ($selectedSociete['societe_valeur_nominale'] ?? 0), 2, ',', '')) ?>">
 
     <div style="margin-top:12px">
         <div class="section-header" style="margin-bottom:12px">
@@ -421,6 +422,28 @@ if ($step === 3):
         }
     }
 
+    function calcAllFromPct(pctInput) {
+        var row = pctInput.closest('[data-part]');
+        if (!row) return;
+        var pct = parseFloat(pctInput.value.replace(',', '.')) || 0;
+        var totalParts = parseInt(document.getElementById('total-societe-parts')?.value) || 0;
+        var partsInput = row.querySelector('.parts-cedees-input');
+        if (!partsInput) return;
+        if (pct > 0 && totalParts > 0) {
+            partsInput.value = Math.round((pct / 100) * totalParts);
+        } else {
+            partsInput.value = '';
+        }
+        // Auto-fill prix unitaire from valeur nominale if empty
+        var puInput = row.querySelector('.prix-unitaire-input');
+        if (puInput && !puInput.value) {
+            var vn = parseFloat(document.getElementById('total-valeur-nominale')?.value.replace(',', '.')) || 0;
+            if (vn > 0) puInput.value = vn.toFixed(2).replace('.', ',');
+        }
+        calcPrixTotal.call(partsInput);
+        calcCessionnaireFields.call(partsInput);
+    }
+
     document.querySelectorAll('.parts-cedees-input').forEach(function(inp) {
         inp.addEventListener('input', function() { calcPrixTotal.call(this); calcPourcentage.call(this); calcCessionnaireFields.call(this); });
     });
@@ -430,18 +453,7 @@ if ($step === 3):
 
     // Calculate parts from pourcentage
     document.querySelectorAll('.pourcentage-input').forEach(function(inp) {
-        inp.addEventListener('input', function() {
-            var row = this.closest('[data-part]');
-            if (!row) return;
-            var pct = parseFloat(this.value.replace(',', '.')) || 0;
-            var totalParts = parseInt(document.getElementById('total-societe-parts')?.value) || 0;
-            var partsInput = row.querySelector('.parts-cedees-input');
-            if (partsInput && pct > 0 && totalParts > 0) {
-                partsInput.value = Math.round((pct / 100) * totalParts);
-                calcPrixTotal.call(partsInput);
-                calcCessionnaireFields.call(partsInput);
-            }
-        });
+        inp.addEventListener('input', function() { calcAllFromPct(this); });
     });
 
     // Add new part row
@@ -478,18 +490,7 @@ if ($step === 3):
             el.addEventListener('input', calcPrixTotal);
         });
         clone.querySelectorAll('.pourcentage-input').forEach(function(el) {
-            el.addEventListener('input', function() {
-                var r = this.closest('[data-part]');
-                if (!r) return;
-                var pct = parseFloat(this.value.replace(',', '.')) || 0;
-                var totalParts = parseInt(document.getElementById('total-societe-parts')?.value) || 0;
-                var pi = r.querySelector('.parts-cedees-input');
-                if (pi && pct > 0 && totalParts > 0) {
-                    pi.value = Math.round((pct / 100) * totalParts);
-                    calcPrixTotal.call(pi);
-                    calcCessionnaireFields.call(pi);
-                }
-            });
+            el.addEventListener('input', function() { calcAllFromPct(this); });
         });
         this.dataset.partIndex = index + 1;
     });
