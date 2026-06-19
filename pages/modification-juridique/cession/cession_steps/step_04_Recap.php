@@ -109,6 +109,8 @@ if ($step === 4):
                         $key = $p['cessionnaire_nom_complet'] ?? '';
                         if ($key === '' || in_array(trim($key), $cedantNames)) continue;
                         if (!isset($cessionnairesInParts[$key])) {
+                            $partsRecues = (int) ($p['parts_cedees'] ?? 0);
+                            $capitalRecalcule = $totalParts > 0 ? round(($partsRecues / $totalParts) * $totalCapital, 2) : 0;
                             $cessionnairesInParts[$key] = [
                                 'nom' => $key,
                                 'cin' => $p['cessionnaire_cin'] ?? '',
@@ -120,8 +122,8 @@ if ($step === 4):
                                 'telephone' => $p['cessionnaire_telephone'] ?? '',
                                 'email' => $p['cessionnaire_email'] ?? '',
                                 'qualite' => $p['cessionnaire_qualite'] ?? '',
-                                'parts' => $p['cessionnaire_parts'] ?? 0,
-                                'capital_detenu' => $p['cessionnaire_capital_detenu'] ?? 0,
+                                'parts' => $partsRecues,
+                                'capital_detenu' => $capitalRecalcule,
                                 'est_gerant' => $p['cessionnaire_est_gerant'] ?? 0,
                             ];
                         }
@@ -205,26 +207,12 @@ if ($step === 4):
                             $cessionnaireAdditions[$ck] = [
                                 'nom' => $p['cessionnaire_nom_complet'],
                                 'parts' => 0,
-                                'capital' => 0,
                             ];
                         }
-                        $cessionnaireAdditions[$ck]['parts'] += (int) ($p['parts_cedees'] ?? 0);
-                        $cessionnaireAdditions[$ck]['capital'] += (float) ($p['cessionnaire_capital_detenu'] ?? 0);
+                        $partsRecues = (int) ($p['parts_cedees'] ?? 0);
+                        $cessionnaireAdditions[$ck]['parts'] += $partsRecues;
                     }
 
-                    $partsAvant = $totalParts;
-                    $capitalAvant = $totalCapital;
-
-                    // Calculate totals after
-                    $totalPartsApres = $totalParts;
-                    $totalCapitalApres = 0;
-                    foreach ($cedantDeductions as $d) {
-                        $totalCapitalApres += max(0, $d['capital_avant'] - $d['capital']);
-                    }
-                    foreach ($cessionnaireAdditions as $a) {
-                        $totalCapitalApres += $a['capital'];
-                    }
-                    $totalCapitalApres = $totalCapitalAvant = $totalCapital;
                     ?>
                     <table class="recap-table">
                         <thead>
@@ -261,7 +249,7 @@ if ($step === 4):
                             <?php
                             foreach ($cessionnaireAdditions as $key => $add):
                                 if (isset($cedantDeductions[$key])) continue;
-                                $capApres = $add['capital'] > 0 ? $add['capital'] : ($totalParts > 0 ? round(($add['parts'] / $totalParts) * $totalCapital, 2) : 0);
+                                $capApres = $totalParts > 0 ? round(($add['parts'] / $totalParts) * $totalCapital, 2) : 0;
                                 $pctApres = $totalParts > 0 ? ($add['parts'] / $totalParts) * 100 : 0;
                             ?>
                             <tr>
