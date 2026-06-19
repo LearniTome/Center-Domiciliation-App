@@ -167,6 +167,36 @@ $htmlContent = TemplateEditor::extractHtml($templatePath);
 $variables = TemplateEditor::getAvailableVariables();
 ?>
 
+<style>
+.main { overflow: hidden !important; }
+.template-editor-layout {
+    min-height: calc(100vh - 3rem);
+    align-items: stretch;
+}
+.template-editor-layout .editor-main {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    height: 100%;
+}
+.template-editor-layout .editor-main > form#editor-form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+.template-editor-layout .editor-toolbar {
+    flex-shrink: 0;
+}
+.template-editor-layout .editor-wrapper {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+}
+.template-editor-layout .editor-content {
+    min-height: 100%;
+}
+</style>
 <section class="template-editor-layout">
     <div class="editor-main card stack">
         <div class="section-header">
