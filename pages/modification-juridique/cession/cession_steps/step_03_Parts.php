@@ -240,7 +240,7 @@ if ($step === 3):
         <div class="field" style="margin-top:8px"><label>Adresse</label><textarea name="cessionnaire_adresse[<?= $partIndex ?>]" rows="2"><?= e($part['cessionnaire_adresse'] ?? '') ?></textarea></div>
     </div>
     <div style="border:1px solid var(--line);border-radius:6px;padding:12px;margin-top:12px">
-        <div class="section-header" style="margin-bottom:8px"><strong>Parts &amp; Prix</strong></div>
+        <div class="section-header" style="margin-bottom:8px"><strong style="color:var(--info)">Parts &amp; Prix</strong></div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px">
             <div class="field"><label>%</label><input type="text" name="pourcentage[<?= $partIndex ?>]" class="pourcentage-input" placeholder="0,00" value="<?= e(isset($part['pourcentage']) ? number_format((float) $part['pourcentage'], 2, ',', '') : '') ?>"></div>
             <div class="field"><label>Parts cédées</label><input type="number" name="parts_cedees[<?= $partIndex ?>]" class="parts-cedees-input" value="<?= (int) ($part['parts_cedees'] ?? 0) ?>"></div>
@@ -312,7 +312,7 @@ if ($step === 3):
         <div class="field" style="margin-top:8px"><label>Adresse</label><textarea name="cessionnaire_adresse[0]" rows="2"></textarea></div>
     </div>
     <div style="border:1px solid var(--line);border-radius:6px;padding:12px;margin-top:12px">
-        <div class="section-header" style="margin-bottom:8px"><strong>Parts &amp; Prix</strong></div>
+        <div class="section-header" style="margin-bottom:8px"><strong style="color:var(--info)">Parts &amp; Prix</strong></div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px">
             <div class="field"><label>%</label><input type="text" name="pourcentage[0]" class="pourcentage-input" placeholder="0,00" value=""></div>
             <div class="field"><label>Parts cédées</label><input type="number" name="parts_cedees[0]" class="parts-cedees-input" value=""></div>
