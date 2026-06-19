@@ -34,11 +34,9 @@ $cessionnaireAdresse = $firstPart['cessionnaire_adresse'] ?? '';
 <div class="recap-a4" id="pv-content">
     <div class="recap-header">
         <h2>Procès-Verbal de l'Assemblée Générale Ordinaire</h2>
-        <p>Société : <?= e($socData['societe_raison_sociale'] ?? '-') ?></p>
     </div>
 
     <div class="recap-section">
-        <p><strong><?= e($socData['societe_forme_juridique'] ?? '') ?></strong></p>
         <div class="recap-grid">
             <div class="item"><span class="label">Dénomination sociale</span><span class="value"><?= e($socData['societe_raison_sociale'] ?: '-') ?></span></div>
             <div class="item"><span class="label">Forme juridique</span><span class="value"><?= e($socData['societe_forme_juridique'] ?: '-') ?></span></div>

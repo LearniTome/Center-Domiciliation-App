@@ -3108,18 +3108,33 @@ tr[data-coverage], .row-mapped {
 .recap-a4.recap-pdf-mode .recap-section h3 { border-bottom-color: #ccc !important; }
 .recap-a4.recap-pdf-mode .recap-header h2 { color: #1a4b8c !important; }
 @media print {
-    .recap-a4 body { background: #fff !important; }
-    .recap-a4 .sidebar, .recap-a4 .page-header, .recap-a4 .section-header,
-    .recap-a4 .step-4-controls { display: none !important; }
-    .recap-a4 .shell { display: block !important; }
-    .recap-a4 .main { overflow: visible !important; height: auto !important; padding: 0 !important; }
-    .recap-a4 .stack { display: block !important; }
-    .recap-a4 { box-shadow: none !important; padding: 0 !important; max-width: none !important; background: #fff !important; }
+    .sidebar, .page-header, .pv-actions, .footer-actions,
+    .wizard-steps, .section-header, .step-4-controls,
+    .card, nav, header, .shell > nav { display: none !important; }
+    .shell { display: block !important; }
+    .main { overflow: visible !important; height: auto !important; padding: 0 !important; }
+    .stack { display: block !important; }
+    .recap-a4 {
+        box-shadow: none !important; padding: 0 !important;
+        max-width: none !important; background: #fff !important;
+        font-size: 10pt !important;
+    }
+    .recap-a4 .recap-header { padding-bottom: 0.4rem !important; margin-bottom: 0.5rem !important; }
+    .recap-a4 .recap-header h2 { font-size: 12pt !important; }
+    .recap-a4 .recap-section { margin-bottom: 0.5rem !important; page-break-inside: avoid; }
+    .recap-a4 .recap-section h3 { font-size: 10pt !important; margin-bottom: 0.2rem !important; }
+    .recap-a4 .recap-section p { margin-bottom: 0.25rem !important; }
+    .recap-a4 .recap-section ol { margin: 0.15rem 0 0.15rem 1.2rem !important; }
+    .recap-a4 .recap-section ul { margin: 0.15rem 0 0.15rem 1.2rem !important; }
+    .recap-a4 .recap-section li { margin-bottom: 0.1rem !important; }
+    .recap-a4 .recap-grid { gap: 0.1rem 1rem !important; }
+    .recap-a4 .recap-grid .item { padding: 0.05rem 0 !important; font-size: 9pt !important; }
     .recap-a4 .recap-grid .item .value { color: #222 !important; }
-    .recap-a4 .recap-grid .item .label { color: #666 !important; }
+    .recap-a4 .recap-grid .item .label { color: #555 !important; }
     .recap-a4 .recap-header { border-bottom-color: #222 !important; }
-    .recap-a4 .recap-header p { color: #666 !important; }
-    .recap-a4 .recap-section { page-break-inside: avoid; }
+    .recap-a4 .recap-section h3 { border-bottom-color: #ccc !important; }
+    .recap-a4 .recap-section { padding: 0 !important; }
+    body { background: #fff !important; font-size: 10pt !important; }
 }
 
 /* recap tables & cards */
