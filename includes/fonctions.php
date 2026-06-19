@@ -7,6 +7,15 @@ function e(?string $value): string
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 }
 
+function download_url(string $absolutePath): string
+{
+    global $config;
+    $projectDir = dirname(__DIR__);
+    $relative = str_replace([$projectDir . '/', $projectDir . '\\'], '', $absolutePath);
+    $relative = str_replace('\\', '/', $relative);
+    return ltrim($relative, '/');
+}
+
 function word_url(string $filePath): string
 {
     static $baseUrl = null;
