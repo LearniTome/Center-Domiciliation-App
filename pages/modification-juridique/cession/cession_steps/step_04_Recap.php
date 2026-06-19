@@ -156,28 +156,75 @@ if ($step === 4):
                 <div class="recap-section">
                     <h3>Repartition du capital apres cession</h3>
                     <?php
-                    // Build a map of cedant deductions
+                    $totalParts = (int) ($socData['societe_part_social'] ?? 0);
+                    $totalCapital = (float) ($socData['societe_capital'] ?? 0);
+
+                    // Build a map of each associate's actual holdings from assocData
+                    $assocHoldings = [];
+                    foreach ($assocData as $a) {
+                        $aid = (int) ($a['id'] ?? 0);
+                        $anom = trim($a['associe_nom_complet'] ?? '');
+                        $assocHoldings[$aid] = $assocHoldings[$anom] = [
+                            'parts' => (int) ($a['associe_parts'] ?? 0),
+                            'capital' => (float) ($a['associe_capital_detenu'] ?? 0),
+                            'nom' => $anom,
+                        ];
+                    }
+
+                    // Build cedant deductions using their actual holdings
                     $cedantDeductions = [];
                     foreach ($wizard['parts'] as $p) {
-                        $key = $p['cedant_associe_id'] ?: $p['cedant_nom_complet'];
-                        if (!isset($cedantDeductions[$key])) {
-                            $cedantDeductions[$key] = ['nom' => $p['cedant_nom_complet'], 'parts' => 0, 'capital' => 0];
+                        $ck = $p['cedant_associe_id'] ?: $p['cedant_nom_complet'];
+                        if (!isset($cedantDeductions[$ck])) {
+                            $h = $assocHoldings[$ck] ?? ['parts' => 0, 'capital' => 0, 'nom' => $p['cedant_nom_complet']];
+                            $cedantDeductions[$ck] = [
+                                'nom' => $p['cedant_nom_complet'],
+                                'parts_avant' => $h['parts'],
+                                'capital_avant' => $h['capital'],
+                                'parts' => 0,
+                                'capital' => 0,
+                            ];
                         }
-                        $capDed = $partsAvant > 0 ? round(($p['parts_cedees'] / max($partsAvant, 1)) * $capitalAvant, 2) : 0;
-                        $cedantDeductions[$key]['parts'] += (int) ($p['parts_cedees'] ?? 0);
-                        $cedantDeductions[$key]['capital'] += $capDed;
+                        $dedParts = (int) ($p['parts_cedees'] ?? 0);
+                        $cedantDeductions[$ck]['parts'] += $dedParts;
+                        $pa = $cedantDeductions[$ck]['parts_avant'];
+                        $ca = $cedantDeductions[$ck]['capital_avant'];
+                        if ($pa > 0 && $ca > 0) {
+                            $capDed = round(($dedParts / $pa) * $ca, 2);
+                        } else {
+                            $capDed = $totalParts > 0 ? round(($dedParts / $totalParts) * $totalCapital, 2) : 0;
+                        }
+                        $cedantDeductions[$ck]['capital'] += $capDed;
                     }
-                    // Build a map of cessionnaire additions
+
+                    // Build cessionnaire additions
                     $cessionnaireAdditions = [];
                     foreach ($wizard['parts'] as $p) {
-                        $key = $p['cessionnaire_associe_id'] ?: $p['cessionnaire_nom_complet'];
-                        if (!isset($cessionnaireAdditions[$key])) {
-                            $cessionnaireAdditions[$key] = ['nom' => $p['cessionnaire_nom_complet'], 'parts' => 0, 'capital' => 0];
+                        $ck = $p['cessionnaire_associe_id'] ?: $p['cessionnaire_nom_complet'];
+                        if (!isset($cessionnaireAdditions[$ck])) {
+                            $cessionnaireAdditions[$ck] = [
+                                'nom' => $p['cessionnaire_nom_complet'],
+                                'parts' => 0,
+                                'capital' => 0,
+                            ];
                         }
-                        $capAdd = $partsAvant > 0 ? round(($p['parts_cedees'] / max($partsAvant, 1)) * $capitalAvant, 2) : 0;
-                        $cessionnaireAdditions[$key]['parts'] += (int) ($p['parts_cedees'] ?? 0);
-                        $cessionnaireAdditions[$key]['capital'] += $capAdd;
+                        $cessionnaireAdditions[$ck]['parts'] += (int) ($p['parts_cedees'] ?? 0);
+                        $cessionnaireAdditions[$ck]['capital'] += (float) ($p['cessionnaire_capital_detenu'] ?? 0);
                     }
+
+                    $partsAvant = $totalParts;
+                    $capitalAvant = $totalCapital;
+
+                    // Calculate totals after
+                    $totalPartsApres = $totalParts;
+                    $totalCapitalApres = 0;
+                    foreach ($cedantDeductions as $d) {
+                        $totalCapitalApres += max(0, $d['capital_avant'] - $d['capital']);
+                    }
+                    foreach ($cessionnaireAdditions as $a) {
+                        $totalCapitalApres += $a['capital'];
+                    }
+                    $totalCapitalApres = $totalCapitalAvant = $totalCapital;
                     ?>
                     <table class="recap-table">
                         <thead>
@@ -185,38 +232,37 @@ if ($step === 4):
                                 <th>Associe</th>
                                 <th class="right">Parts avant</th>
                                 <th class="center">Operation</th>
-                                <th class="right">Parts ceded/recues</th>
+                                <th class="right">Parts cedees/recues</th>
                                 <th class="right">Parts apres</th>
                                 <th class="right">Capital apres</th>
                                 <th class="right">% apres</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php
-                            $allKeys = array_unique(array_merge(array_keys($cedantDeductions), array_keys($cessionnaireAdditions)));
-                            // Display cedants first
-                            foreach ($cedantDeductions as $key => $ded):
-                                $cedantPartsAvant = $partsAvant > 0 ? $ded['parts'] : 0;
+                            <?php foreach ($cedantDeductions as $ded):
+                                $partsApres = max(0, $ded['parts_avant'] - $ded['parts']);
+                                $capitalApres = max(0, $ded['capital_avant'] - $ded['capital']);
+                                $pctApres = $totalParts > 0 ? ($partsApres / $totalParts) * 100 : 0;
                             ?>
                             <tr>
                                 <td class="bold"><?= e($ded['nom']) ?></td>
-                                <td class="right"><?= $cedantPartsAvant ?: '-' ?></td>
+                                <td class="right"><?= $ded['parts_avant'] ?: '-' ?></td>
                                 <td class="center">
                                     <span class="icon-inline" style="color:var(--danger)">
                                         <span class="material-symbols-outlined">remove_circle</span> Cede
                                     </span>
                                 </td>
                                 <td class="right badge-danger">-<?= $ded['parts'] ?></td>
-                                <td class="right bold"><?= max(0, $cedantPartsAvant - $ded['parts']) ?></td>
-                                <td class="right"><?= e(number_format(max(0, $cedantPartsAvant > 0 ? $capitalAvant - $ded['capital'] : 0), 2, ',', ' ') . ' DH') ?></td>
-                                <td class="right"><?= $partsAvant > 0 ? number_format((max(0, $cedantPartsAvant - $ded['parts']) / max($partsAvant, 1)) * 100, 1, ',', ' ') . '%' : '-' ?></td>
+                                <td class="right bold"><?= $partsApres ?></td>
+                                <td class="right"><?= e(number_format($capitalApres, 2, ',', ' ') . ' DH') ?></td>
+                                <td class="right"><?= number_format($pctApres, 1, ',', ' ') . '%' ?></td>
                             </tr>
                             <?php endforeach; ?>
                             <?php
-                            // Display cessionnaires that are not also cedants
                             foreach ($cessionnaireAdditions as $key => $add):
                                 if (isset($cedantDeductions[$key])) continue;
-                                $capAdd = $partsAvant > 0 ? round(($add['parts'] / max($partsAvant, 1)) * $capitalAvant, 2) : 0;
+                                $capApres = $add['capital'] > 0 ? $add['capital'] : ($totalParts > 0 ? round(($add['parts'] / $totalParts) * $totalCapital, 2) : 0);
+                                $pctApres = $totalParts > 0 ? ($add['parts'] / $totalParts) * 100 : 0;
                             ?>
                             <tr>
                                 <td class="bold"><?= e($add['nom']) ?></td>
@@ -228,19 +274,19 @@ if ($step === 4):
                                 </td>
                                 <td class="right badge-success">+<?= $add['parts'] ?></td>
                                 <td class="right bold"><?= $add['parts'] ?></td>
-                                <td class="right"><?= e(number_format($capAdd, 2, ',', ' ') . ' DH') ?></td>
-                                <td class="right"><?= $partsAvant > 0 ? number_format(($add['parts'] / max($partsAvant, 1)) * 100, 1, ',', ' ') . '%' : '-' ?></td>
+                                <td class="right"><?= e(number_format($capApres, 2, ',', ' ') . ' DH') ?></td>
+                                <td class="right"><?= number_format($pctApres, 1, ',', ' ') . '%' ?></td>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>
                         <tfoot>
                             <tr>
                                 <td>Total</td>
-                                <td class="right"><?= $partsAvant ?></td>
+                                <td class="right"><?= $totalParts ?></td>
                                 <td></td>
                                 <td></td>
-                                <td class="right"><?= $partsApres ?></td>
-                                <td class="right"><?= e(number_format($capitalApres, 2, ',', ' ') . ' DH') ?></td>
+                                <td class="right"><?= $totalParts ?></td>
+                                <td class="right"><?= e(number_format($totalCapital, 2, ',', ' ') . ' DH') ?></td>
                                 <td class="right">100,0 %</td>
                             </tr>
                         </tfoot>
@@ -249,11 +295,11 @@ if ($step === 4):
                     <div class="recap-grid" style="margin-top:0.75rem;grid-template-columns:1fr 1fr">
                         <div class="capital-card">
                             <span class="label">Avant cession</span>
-                            <span class="value"><strong>Capital :</strong> <?= e(number_format($capitalAvant, 2, ',', ' ') . ' DH') ?> &mdash; <strong>Parts :</strong> <?= $partsAvant ?></span>
+                            <span class="value"><strong>Capital :</strong> <?= e(number_format($totalCapital, 2, ',', ' ') . ' DH') ?> &mdash; <strong>Parts :</strong> <?= $totalParts ?></span>
                         </div>
                         <div class="capital-card">
                             <span class="label">Apres cession</span>
-                            <span class="value"><strong>Capital :</strong> <?= e(number_format($capitalApres, 2, ',', ' ') . ' DH') ?> &mdash; <strong>Parts :</strong> <?= $partsApres ?></span>
+                            <span class="value"><strong>Capital :</strong> <?= e(number_format($totalCapital, 2, ',', ' ') . ' DH') ?> &mdash; <strong>Parts :</strong> <?= $totalParts ?></span>
                         </div>
                     </div>
                 </div>
