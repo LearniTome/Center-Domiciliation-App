@@ -168,7 +168,6 @@ $variables = TemplateEditor::getAvailableVariables();
 ?>
 
 <style>
-.main { overflow: hidden !important; }
 .template-editor-layout {
     min-height: calc(100vh - 3rem);
     align-items: stretch;
