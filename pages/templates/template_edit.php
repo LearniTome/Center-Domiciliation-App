@@ -13,7 +13,7 @@ $folderLabels = $folderLabels['folder_labels'];
 $templateDirs = array_filter(glob($templatesDir . '/*', GLOB_ONLYDIR), fn($d) => basename($d)[0] !== '_');
 $racineDir = $templatesDir . '/_Racine-Actifs';
 
-if ($templatePath === '' || !str_starts_with($templatePath, realpath($templatesDir)) || !file_exists($templatePath)) {
+if ($templatePath === '' || !str_starts_with($templatePath, realpath($templatesDir)) || !is_file($templatePath)) {
     ?>
     <section class="card stack">
         <div class="section-header">
