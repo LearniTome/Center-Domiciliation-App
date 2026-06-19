@@ -13,7 +13,6 @@ $navPermissions = [
     'contrats' => 'contrats.view',
     'collaborateurs' => 'collaborateurs.view',
     'templates' => 'templates.view',
-    'templates.edit' => 'templates.edit',
     'modifications' => 'modifications.view',
     'cessions' => 'cessions.view',
     'cession' => 'cessions.create',
@@ -76,7 +75,6 @@ $navSections = [
         'icon' => 'article',
         'items' => [
             'templates' => ['Templates', 'edit_note'],
-            'templates_edit' => ['page' => 'templates', 'label' => 'Editeur de template', 'icon' => 'edit', 'params' => ['action' => 'editeur'], 'perm' => 'templates.edit'],
             'generation' => ['Generateur de dossiers', 'sync'],
             'documents' => ['Documents generes', 'article'],
         ],
@@ -183,12 +181,10 @@ $navSections = [
                 foreach ($items as $navKey => $item) {
                     if (is_array($item) && isset($item['page'])) {
                         $itemPage = $item['page'];
-                        $permKey = $item['perm'] ?? $itemPage;
                     } else {
                         $itemPage = $navKey;
-                        $permKey = $itemPage;
                     }
-                    $perm = $navPermissions[$permKey] ?? null;
+                    $perm = $navPermissions[$itemPage] ?? null;
                     if ($perm !== null && !has_permission($perm)) continue;
                     $visibleItems[$navKey] = $item;
                 }
@@ -205,12 +201,11 @@ $navSections = [
             <?php endif; ?>
             <?php foreach ($visibleItems as $navKey => $item): ?>
                 <?php
-                    if (is_array($item) && isset($item['label'])) {
+                    if (is_array($item) && isset($item['page'])) {
                         $itemPage = $item['page'];
                         $itemLabel = $item['label'];
                         $itemIcon = $item['icon'];
-                        $extraParams = $item['params'] ?? [];
-                        $href = app_url($itemPage, $extraParams);
+                        $href = app_url($itemPage);
                         $isActive = $page === $itemPage;
                     } else {
                         $itemLabel = $item[0];
