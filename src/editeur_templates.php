@@ -871,20 +871,7 @@ class TemplateEditor
                 'ACTIVITES_PLAIN' => 'Activites en ligne (,)',
                 'ACTIVITES_PUCES' => 'Activites en puces',
                 'ACTIVITES_SUITE_PUCES' => 'Suite des puces',
-                'NB_ACTIVITES' => 'Nombre d\'activites',
-            ],
-            'OMPIC' => [
-                'ACTIVITES_OMPIC' => 'Liste des activites OMPIC',
-                'OMPIC_INLINE' => 'Activites OMPIC en ligne',
-                'OMPIC_PUCES' => 'Activites OMPIC en puces',
-                'NB_OMPIC' => 'Nombre d\'activites OMPIC',
-            ],
-            'Activite' => [
-                'ACTIVITY1' => 'Activite 1',
-                'ACTIVITY2' => 'Activite 2',
-                'ACTIVITY3' => 'Activite 3',
-                'ACTIVITY4' => 'Activite 4',
-                'ACTIVITY5' => 'Activite 5',
+                'NB_ACTIVITES' => "Nombre d'activites",
             ],
             'Dates' => [
                 'DATE' => 'Date du jour (court)',
