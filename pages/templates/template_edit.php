@@ -537,8 +537,11 @@ $varExamples = [
                 <button type="button" class="btn btn-secondary btn-sm" onclick="clearFormatting()" title="Effacer la mise en forme">
                     <span class="material-symbols-outlined">format_clear</span>
                 </button>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="printEditor()" title="Imprimer / PDF (Ctrl+P)">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="printEditor()" title="Imprimer (Ctrl+P)">
                     <span class="material-symbols-outlined">print</span>
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="exportPDF()" title="Exporter en PDF">
+                    <span class="material-symbols-outlined">picture_as_pdf</span>
                 </button>
                 <span class="toolbar-sep"></span>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="insertPageBreak()" title="Nouvelle page">
@@ -1235,6 +1238,39 @@ function printEditor() {
     printWin.document.close();
     printWin.focus();
     setTimeout(function() { printWin.print(); }, 500);
+}
+
+function exportPDF() {
+    beforeSave();
+    const pages = document.querySelectorAll('#editor-content .a4-page');
+    let content = '';
+    pages.forEach(p => { content += '<div class="a4-print-page">' + p.innerHTML + '</div>'; });
+    const html = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'
+        + '<title>Exporter PDF</title><style>'
+        + 'body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; line-height: 1.5; margin: 0; color: #000; }'
+        + 'h1 { font-size: 18pt; font-weight: 700; margin: 12pt 0 6pt; }'
+        + 'h2 { font-size: 16pt; font-weight: 700; margin: 10pt 0 4pt; }'
+        + 'h3 { font-size: 14pt; font-weight: 600; margin: 8pt 0 4pt; }'
+        + 'h4 { font-size: 12pt; font-weight: 600; margin: 6pt 0 3pt; }'
+        + 'p { margin: 0 0 6pt; }'
+        + 'table { width: 100%; border-collapse: collapse; margin: 6pt 0; }'
+        + 'td, th { border: 1px solid #999; padding: 4pt; }'
+        + 'var { color: #0090e7; font-style: normal; font-family: "Courier New", monospace; }'
+        + '.a4-print-page { page-break-after: always; break-after: page; padding: 2cm; }'
+        + '.a4-print-page:last-child { page-break-after: auto; }'
+        + '@page { margin: 0; size: A4; }'
+        + '@media print { body { margin: 0; padding: 0; } }'
+        + '</style></head><body>' + content + '</body></html>';
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const name = document.querySelector('.section-header h2')?.textContent?.trim() || 'template';
+    a.download = name + '.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 document.getElementById('var-search')?.addEventListener('input', function() {
