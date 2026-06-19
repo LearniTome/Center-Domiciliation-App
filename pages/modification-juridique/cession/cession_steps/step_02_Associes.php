@@ -423,7 +423,7 @@ if ($step === 2):
             </div>
         </div>
     </div>
-    <div id="parts-status" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:0 0 var(--radius) var(--radius);font-size:0.85rem;background:var(--panel);border:1px solid var(--line);border-top:none">&nbsp;</div>
+    <div id="parts-status" style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:0.85rem">&nbsp;</div>
 
     <div class="footer-actions" style="margin-top:12px">
         <div style="display:flex;gap:8px;margin-right:auto">
