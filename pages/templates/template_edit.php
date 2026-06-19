@@ -1242,10 +1242,14 @@ function printEditor() {
 
 function exportPDF() {
     beforeSave();
-    const pages = document.querySelectorAll('#editor-content .a4-page');
-    let content = '';
-    pages.forEach(p => { content += '<div class="a4-print-page">' + p.innerHTML + '</div>'; });
-    const html = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'
+    const editor = document.getElementById('editor-content');
+    const source = document.getElementById('editor-source');
+    const html = source.classList.contains('hidden') ? editor.innerHTML : source.value;
+    const paginated = buildPaginatedPreview(html);
+    const content = paginated.split('<hr class="page-break">').map(function(chunk) {
+        return '<div class="a4-print-page">' + chunk + '</div>';
+    }).join('');
+    const htmlOut = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'
         + '<title>Exporter PDF</title><style>'
         + 'body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; line-height: 1.5; margin: 0; color: #000; }'
         + 'h1 { font-size: 18pt; font-weight: 700; margin: 12pt 0 6pt; }'
