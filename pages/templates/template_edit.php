@@ -1218,8 +1218,14 @@ function clearFormatting() {
 function printEditor() {
     beforeSave();
     const pages = document.querySelectorAll('#editor-content .a4-page');
+    const total = pages.length;
     let content = '';
-    pages.forEach(p => { content += '<div class="a4-print-page">' + p.innerHTML + '</div>'; });
+    pages.forEach(function(p, idx) {
+        content += '<div class="a4-print-page">'
+            + p.innerHTML
+            + '<div class="print-page-footer">Page ' + (idx + 1) + ' / ' + total + '</div>'
+            + '</div>';
+    });
     const printWin = window.open('', '_blank', 'width=800,height=600');
     if (!printWin) {
         window.print();
@@ -1237,8 +1243,9 @@ function printEditor() {
     printWin.document.write('table { width: 100%; border-collapse: collapse; margin: 6pt 0; }');
     printWin.document.write('td, th { border: 1px solid #999; padding: 4pt; }');
     printWin.document.write('var { color: #0090e7; font-style: normal; font-family: "Courier New", monospace; }');
-    printWin.document.write('.a4-print-page { page-break-after: always; break-after: page; padding: 1.5cm 2cm; }');
+    printWin.document.write('.a4-print-page { position:relative; page-break-after:always; break-after:page; padding:1.5cm 2cm 2.5cm; }');
     printWin.document.write('.a4-print-page:last-child { page-break-after: auto; }');
+    printWin.document.write('.print-page-footer { position:absolute; bottom:1cm; left:2cm; right:2cm; text-align:center; font-size:9pt; color:#999; border-top:1px solid #ddd; padding-top:4pt; }');
     printWin.document.write('@page { margin: 0; size: A4; }');
     printWin.document.write('@media print { body { margin: 0; padding: 0; } }');
     printWin.document.write('</style></head><body>');
