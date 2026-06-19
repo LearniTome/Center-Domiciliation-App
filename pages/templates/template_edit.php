@@ -165,6 +165,118 @@ if (is_post()) {
 
 $htmlContent = TemplateEditor::extractHtml($templatePath);
 $variables = TemplateEditor::getAvailableVariables();
+
+// Auto-filter: masquer categories cession pour templates non-cession
+$isCession = $folder === '_Cession';
+$visibleCategories = [];
+foreach ($variables as $cat => $vars) {
+    if (!$isCession && in_array($cat, ['Cession', 'Cedant', 'Cessionnaire'])) continue;
+    $visibleCategories[$cat] = $vars;
+}
+
+// Exemples pour tooltips
+$varExamples = [
+    'SOCIETE_RAISON_SOCIALE' => 'Mon Centre SARL',
+    'SOCIETE_FORME_JURIDIQUE' => 'SARL',
+    'SOCIETE_ICE' => '123456789',
+    'SOCIETE_RC' => '12345',
+    'SOCIETE_IF' => '12345678',
+    'SOCIETE_TP' => '12345678',
+    'SOCIETE_CNSS' => '1234567',
+    'SOCIETE_CAPITAL' => '100 000',
+    'SOCIETE_PART_SOCIAL' => '1000',
+    'SOCIETE_VALEUR_NOMINALE' => '100',
+    'SOCIETE_VILLE' => 'Casablanca',
+    'SOCIETE_TRIBUNAL' => 'Tribunal de Commerce de Casablanca',
+    'SOCIETE_ADRESSE_SIEGE' => '123, Rue Mohammed V',
+    'SOCIETE_EMAIL' => 'contact@exemple.ma',
+    'SOCIETE_TELEPHONE' => '+212 6 00 00 00 00',
+    'SOCIETE_DOSSIER' => 'DOS-2024-001',
+    'SOCIETE_TYPE_GENERATION' => 'Creation',
+    'SOCIETE_PROCEDURE_CREATION' => 'Normale',
+    'SOCIETE_MODE_DEPOT' => 'Electronique',
+    'SOCIETE_DATE_ICE' => '15/01/2024',
+    'SOCIETE_DATE_EXP_CERT_NEG' => '15/07/2024',
+    'ASSOCIE_NOM_COMPLET' => 'Ahmed Alaoui',
+    'ASSOCIE_NOM' => 'Alaoui',
+    'ASSOCIE_PRENOM' => 'Ahmed',
+    'ASSOCIE_CIVILITE' => 'M.',
+    'ASSOCIE_CIN' => 'AB123456',
+    'ASSOCIE_DATE_VALIDITE_CIN' => '01/01/2030',
+    'ASSOCIE_DATE_NAISSANCE' => '15/06/1985',
+    'ASSOCIE_LIEU_NAISSANCE' => 'Casablanca',
+    'ASSOCIE_NATIONALITE' => 'Marocaine',
+    'ASSOCIE_ADRESSE' => '45, Rue Hassan II',
+    'ASSOCIE_TELEPHONE' => '+212 6 11 22 33 44',
+    'ASSOCIE_EMAIL' => 'ahmed@exemple.ma',
+    'ASSOCIE_QUALITE' => 'Gerant',
+    'ASSOCIE_PARTS' => '500',
+    'ASSOCIE_CAPITAL_DETENU' => '50 000',
+    'ASSOCIE_EST_GERANT' => 'Oui',
+    'CONTRAT_TYPE' => 'Domiciliation',
+    'CONTRAT_TYPE_DOMICILIATION' => 'Standard',
+    'CONTRAT_DATE' => '01/01/2024',
+    'CONTRAT_DATE_DEBUT' => '01/01/2024',
+    'CONTRAT_DATE_FIN' => '31/12/2024',
+    'CONTRAT_DUREE_MOIS' => '12',
+    'CONTRAT_LOYER_TTC' => '15 000',
+    'CONTRAT_LOYER_HT' => '12 500',
+    'CONTRAT_TVA_POURCENT' => '20',
+    'CONTRAT_TOTAL_HT' => '150 000',
+    'CONTRAT_FRAIS_INTERMEDIAIRE' => '5 000',
+    'CONTRAT_CAUTION' => '15 000',
+    'CONTRAT_STATUT' => 'Actif',
+    'CONTRAT_MODE_SIGNATURE' => 'Electronique',
+    'CONTRAT_PACK_MONTANT_TTC' => '25 000',
+    'CONTRAT_PACK_LOYER_TTC' => '15 000',
+    'CONTRAT_TYPE_RENOUVELLEMENT' => 'Tacite',
+    'CONTRAT_RENOUV_TVA_POURCENT' => '20',
+    'CONTRAT_RENOUV_LOYER_HT' => '12 500',
+    'CONTRAT_RENOUV_LOYER_TTC' => '15 000',
+    'CONTRAT_RENOUV_ANNUEL_TTC' => '180 000',
+    'ACTIVITES' => 'Activite 1, Activite 2',
+    'ACTIVITES_INLINE' => 'Activite 1; Activite 2',
+    'ACTIVITES_PLAIN' => 'Activite 1, Activite 2',
+    'ACTIVITES_PUCES' => "- Activite 1\n- Activite 2",
+    'ACTIVITES_SUITE_PUCES' => "- Activite 3\n- Activite 4",
+    'NB_ACTIVITES' => '2',
+    'CESSION_DATE' => '15/06/2024',
+    'CESSION_DOSSIER' => 'CES-2024-001',
+    'CESSION_STATUS' => 'En cours',
+    'CESSION_MOTIF' => 'Cession totale',
+    'PARTS_CEDEES' => '500',
+    'PRIX_UNITAIRE' => '100',
+    'PRIX_TOTAL' => '50 000',
+    'CAPITAL_APRES' => '150 000',
+    'PARTS_APRES' => '1500',
+    'NB_CEDANTS' => '1',
+    'NB_CESSIONNAIRES' => '1',
+    'CEDANT_NOM_COMPLET' => 'Ahmed Alaoui',
+    'CEDANT_CIN' => 'AB123456',
+    'CEDANT_CIVILITE' => 'M.',
+    'CEDANT_DATE_NAISSANCE' => '15/06/1985',
+    'CEDANT_LIEU_NAISSANCE' => 'Casablanca',
+    'CEDANT_NATIONALITE' => 'Marocaine',
+    'CEDANT_ADRESSE' => '45, Rue Hassan II',
+    'CESSIONNAIRE_NOM_COMPLET' => 'Fatima Benali',
+    'CESSIONNAIRE_CIN' => 'CD789012',
+    'CESSIONNAIRE_CIVILITE' => 'Mme',
+    'CESSIONNAIRE_DATE_NAISSANCE' => '20/03/1990',
+    'CESSIONNAIRE_LIEU_NAISSANCE' => 'Rabat',
+    'CESSIONNAIRE_NATIONALITE' => 'Marocaine',
+    'CESSIONNAIRE_ADRESSE' => '12, Avenue Mohammed VI',
+    'CESSIONNAIRE_TELEPHONE' => '+212 6 22 33 44 55',
+    'CESSIONNAIRE_EMAIL' => 'fatima@exemple.ma',
+    'CESSIONNAIRE_QUALITE' => 'Gerant',
+    'CESSIONNAIRE_PARTS' => '500',
+    'CESSIONNAIRE_CAPITAL_DETENU' => '50 000',
+    'CESSIONNAIRE_EST_GERANT' => 'Oui',
+    'DATE' => '19/06/2026',
+    'DATE_LONG' => '19 juin 2026',
+    'ANNEE' => '2026',
+    'MOIS' => 'juin',
+    'JOUR' => '19',
+];
 ?>
 
 <style>
@@ -210,6 +322,49 @@ $variables = TemplateEditor::getAvailableVariables();
 .variables-panel.collapsed .section-header p {
     display: none;
 }
+.var-actions {
+    display: flex; align-items: center; gap: 4px; margin-bottom: 0.5rem;
+}
+.var-actions .btn-sm {
+    font-size: 0.7rem; padding: 2px 6px; min-width: auto;
+}
+.var-actions .btn-sm .material-symbols-outlined {
+    font-size: 14px;
+}
+.var-filter-toggle {
+    margin-left: auto; display: flex; align-items: center; gap: 3px;
+    font-size: 0.72rem; color: var(--text-secondary); cursor: pointer;
+    user-select: none;
+}
+.var-filter-toggle input[type="checkbox"] {
+    margin: 0; cursor: pointer;
+}
+.var-btn[draggable="true"] {
+    cursor: grab;
+}
+.var-btn[draggable="true"]:active {
+    cursor: grabbing;
+}
+.var-btn.drag-over {
+    border-color: var(--primary); background: rgba(74,108,247,0.08);
+}
+.var-usage {
+    margin-left: auto; font-size: 0.62rem; color: var(--text-secondary);
+    background: var(--panel-strong); padding: 0 0.35rem; border-radius: 6px;
+    line-height: 1.6; min-width: 14px; text-align: center;
+}
+#recent-vars .var-list {
+    flex-direction: row; flex-wrap: wrap; gap: 3px;
+}
+#recent-vars .var-list .var-btn {
+    flex-direction: row; gap: 2px; padding: 0.15rem 0.4rem;
+    font-size: 0.7rem;
+}
+#recent-vars .var-list .var-btn code {
+    font-size: 0.7rem;
+}
+.cat-cession { display: none; }
+.show-all-cession .cat-cession { display: block; }
 </style>
 <section class="template-editor-layout">
     <div class="editor-main card stack">
@@ -425,28 +580,55 @@ $variables = TemplateEditor::getAvailableVariables();
 <div class="variables-panel card stack" id="editor-sidebar">
     <div class="section-header" onclick="toggleSidebar()">
         <h3>Variables</h3>
-        <p class="help-text">Cliquez pour insérer</p>
+        <p class="help-text">Cliquez ou glissez pour insérer</p>
         <button type="button" class="btn-icon" id="sidebar-toggle-btn">
             <span class="material-symbols-outlined">expand_less</span>
         </button>
     </div>
     <div class="sidebar-body">
         <div class="variable-search">
-            <input type="text" id="var-search" placeholder="Rechercher..." class="input-full">
+            <input type="text" id="var-search" placeholder="Rechercher..." class="input-full" autocomplete="off">
         </div>
-        <div class="variable-categories">
-            <?php foreach ($variables as $category => $vars): ?>
-                <div class="var-category">
+        <div class="var-actions">
+            <button type="button" class="btn btn-sm" onclick="expandAll()" title="Tout ouvrir">
+                <span class="material-symbols-outlined">expand_more</span> Ouvrir
+            </button>
+            <button type="button" class="btn btn-sm" onclick="collapseAll()" title="Tout fermer">
+                <span class="material-symbols-outlined">chevron_right</span> Fermer
+            </button>
+            <label class="var-filter-toggle" title="Afficher toutes les variables">
+                <input type="checkbox" id="show-all-vars" onchange="toggleAllVars()">
+                <span>Toutes</span>
+            </label>
+        </div>
+        <div id="recent-vars" class="var-category" style="display:none">
+            <h4 class="var-category-title" onclick="toggleCategory(this)">
+                <span class="material-symbols-outlined">schedule</span>
+                Recentes
+                <span class="var-count" id="recent-count">0</span>
+            </h4>
+            <div class="var-list" id="recent-list"></div>
+        </div>
+        <div class="variable-categories" id="var-categories">
+            <?php foreach ($variables as $category => $vars):
+                $hide = !$isCession && in_array($category, ['Cession', 'Cedant', 'Cessionnaire']);
+            ?>
+                <div class="var-category<?= $hide ? ' cat-cession' : '' ?>">
                     <h4 class="var-category-title" onclick="toggleCategory(this)">
                         <span class="material-symbols-outlined">expand_more</span>
                         <?= e($category) ?>
                         <span class="var-count"><?= count($vars) ?></span>
                     </h4>
                     <div class="var-list">
-                        <?php foreach ($vars as $varName => $varLabel): ?>
-                            <button type="button" class="var-btn" onclick="insertVar('{{ <?= e($varName) ?> }}')" title="<?= e($varLabel) ?>">
+                        <?php foreach ($vars as $varName => $varLabel):
+                            $example = $varExamples[$varName] ?? '';
+                        ?>
+                            <button type="button" class="var-btn" draggable="true"
+                                data-var="{{ <?= e($varName) ?> }}"
+                                title="<?= e($varLabel) ?><?= $example ? '  ex: ' . e($example) : '' ?>">
                                 <code>{{ <?= e($varName) ?> }}</code>
                                 <small><?= e($varLabel) ?></small>
+                                <span class="var-usage" style="display:none">0</span>
                             </button>
                         <?php endforeach; ?>
                     </div>
@@ -458,6 +640,7 @@ $variables = TemplateEditor::getAvailableVariables();
 
 <script>
 let savedRange = null;
+
 
 function saveSelection() {
     const editor = document.getElementById('editor-content');
@@ -500,6 +683,7 @@ function insertVar(text) {
             sel.addRange(range);
         }
     }
+    trackVarUsage(text);
 }
 
 function toggleCategory(titleEl) {
@@ -681,6 +865,120 @@ function toggleSidebar() {
     icon.textContent = panel.classList.contains('collapsed') ? 'expand_more' : 'expand_less';
 }
 
+function expandAll() {
+    document.querySelectorAll('.var-list').forEach(function(el) {
+        el.style.display = 'flex';
+    });
+    document.querySelectorAll('.var-category-title .material-symbols-outlined').forEach(function(icon) {
+        icon.textContent = 'expand_more';
+    });
+}
+
+function collapseAll() {
+    document.querySelectorAll('.var-list').forEach(function(el) {
+        el.style.display = 'none';
+    });
+    document.querySelectorAll('.var-category-title .material-symbols-outlined').forEach(function(icon) {
+        icon.textContent = 'chevron_right';
+    });
+}
+
+function toggleAllVars() {
+    document.getElementById('var-categories').classList.toggle('show-all-cession', document.getElementById('show-all-vars').checked);
+}
+
+// Drag & drop
+function initDragDrop() {
+    const editor = document.getElementById('editor-content');
+    document.querySelectorAll('.var-btn[draggable]').forEach(function(btn) {
+        btn.addEventListener('dragstart', function(e) {
+            e.dataTransfer.setData('text/plain', btn.getAttribute('data-var'));
+            e.dataTransfer.effectAllowed = 'copy';
+        });
+    });
+    editor.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+    });
+    editor.addEventListener('drop', function(e) {
+        e.preventDefault();
+        const text = e.dataTransfer.getData('text/plain');
+        if (!text) return;
+        let range;
+        if (document.caretRangeFromPoint) {
+            range = document.caretRangeFromPoint(e.clientX, e.clientY);
+        } else if (e.rangeParent) {
+            range = document.createRange();
+            range.setStart(e.rangeParent, e.rangeOffset);
+        }
+        if (range) {
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+            savedRange = range.cloneRange();
+        }
+        insertVar(text);
+    });
+}
+
+// Recent / Favorites
+function getRecent() {
+    try { return JSON.parse(localStorage.getItem('template_var_recent') || '[]'); } catch(e) { return []; }
+}
+
+function saveRecent(recent) {
+    try { localStorage.setItem('template_var_recent', JSON.stringify(recent.slice(0, 20))); } catch(e) {}
+}
+
+function trackVarUsage(varText) {
+    const name = varText.trim();
+    let recent = getRecent();
+    recent = recent.filter(function(n) { return n !== name; });
+    recent.unshift(name);
+    saveRecent(recent);
+    renderRecent();
+}
+
+function renderRecent() {
+    const recent = getRecent();
+    const container = document.getElementById('recent-vars');
+    const list = document.getElementById('recent-list');
+    const count = document.getElementById('recent-count');
+    if (recent.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+    container.style.display = '';
+    count.textContent = recent.length;
+    list.innerHTML = recent.map(function(name) {
+        const escaped = name.replace(/'/g, "\\'");
+        return '<button type="button" class="var-btn" onclick="insertVar(\'' + escaped + '\')" title="Cliquer pour ins\u00e9rer"><code>' + name.replace(/</g, '&lt;') + '</code></button>';
+    }).join('');
+}
+
+// Usage counter
+function countUsage() {
+    const editor = document.getElementById('editor-content');
+    const source = document.getElementById('editor-source');
+    const content = source.classList.contains('hidden') ? editor.innerHTML : source.value;
+    document.querySelectorAll('.var-btn').forEach(function(btn) {
+        const varName = btn.getAttribute('data-var');
+        if (!varName) return;
+        let count = 0;
+        let idx = 0;
+        const searchStr = varName.trim();
+        while ((idx = content.indexOf(searchStr, idx)) !== -1) {
+            count++;
+            idx += searchStr.length;
+        }
+        const badge = btn.querySelector('.var-usage');
+        if (badge) {
+            badge.style.display = count > 0 ? 'inline' : 'none';
+            badge.textContent = count;
+        }
+    });
+}
+
 function beforeSave() {
     const editor = document.getElementById('editor-content');
     const source = document.getElementById('editor-source');
@@ -805,10 +1103,6 @@ document.querySelector('.editor-toolbar')?.addEventListener('mousedown', functio
     if (e.target.closest('button, .color-btn input')) saveSelection();
 });
 
-document.querySelector('.var-grid')?.addEventListener('mousedown', function(e) {
-    if (e.target.closest('.var-btn')) saveSelection();
-});
-
 setTimeout(checkPaginate, 100);
 
 function clearFormatting() {
@@ -876,5 +1170,20 @@ document.addEventListener('keydown', function(e) {
         e.preventDefault();
         printEditor();
     }
+    if ((e.ctrlKey || e.metaKey) && e.code === 'Space') {
+        e.preventDefault();
+        const input = document.getElementById('var-search');
+        input.focus();
+        input.select();
+    }
+});
+
+// Init enhancements
+document.addEventListener('DOMContentLoaded', function() {
+    initDragDrop();
+    renderRecent();
+    countUsage();
+    document.getElementById('editor-content').addEventListener('input', countUsage);
+    document.getElementById('editor-source').addEventListener('input', countUsage);
 });
 </script>
