@@ -27,7 +27,7 @@ if (is_post() && $step === 2) {
             'associe_qualite' => trim((string) ($_POST['associe_qualite'][$i] ?? 'Gerant')),
             'associe_parts' => (string) ($_POST['associe_parts'][$i] ?? ''),
             'associe_capital_detenu' => (string) ($_POST['associe_capital_detenu'][$i] ?? ''),
-            'associe_est_gerant' => !empty($_POST['associe_est_gerant'][$i]) ? '1' : '0',
+            'associe_est_gerant' => ($_POST['associe_est_gerant'][$i] ?? '0') === '1' ? '1' : '0',
         ];
     }
 
@@ -206,11 +206,12 @@ if ($step === 2):
                         <span>Capital detenu (DH)</span>
                         <input type="number" step="0.01" name="associe_capital_detenu[<?= $ai ?>]" value="<?= e($assoc['associe_capital_detenu'] ?? '') ?>" placeholder="50000" class="<?= $hasCapitalError ? 'input-error' : '' ?>">
                     </label>
-                    <label class="field" style="justify-content:center">
-                        <label style="display:flex;align-items:center;gap:6px;padding:6px 0">
-                            <input type="checkbox" name="associe_est_gerant[<?= $ai ?>]" value="1" <?= ($assoc['associe_est_gerant'] ?? '0') === '1' ? 'checked' : '' ?>>
-                            Gerant
-                        </label>
+                    <label class="field">
+                        <span>Gerant</span>
+                        <select name="associe_est_gerant[<?= $ai ?>]">
+                            <option value="0" <?= ($assoc['associe_est_gerant'] ?? '0') === '0' ? 'selected' : '' ?>>Non</option>
+                            <option value="1" <?= ($assoc['associe_est_gerant'] ?? '0') === '1' ? 'selected' : '' ?>>Oui</option>
+                        </select>
                     </label>
                 </div>
             </div>
@@ -292,11 +293,12 @@ if ($step === 2):
                         <span>Capital detenu (DH)</span>
                         <input type="number" step="0.01" name="associe_capital_detenu[0]" placeholder="50000">
                     </label>
-                    <label class="field" style="justify-content:center">
-                        <label style="display:flex;align-items:center;gap:6px;padding:6px 0">
-                            <input type="checkbox" name="associe_est_gerant[0]" value="1">
-                            Gerant
-                        </label>
+                    <label class="field">
+                        <span>Gerant</span>
+                        <select name="associe_est_gerant[0]">
+                            <option value="0" selected>Non</option>
+                            <option value="1">Oui</option>
+                        </select>
                     </label>
                 </div>
             </div>
@@ -380,11 +382,12 @@ if ($step === 2):
                     <span>Capital detenu (DH)</span>
                     <input data-field-name="associe_capital_detenu" type="number" step="0.01" placeholder="50000">
                 </label>
-                <label class="field" style="justify-content:center">
-                    <label style="display:flex;align-items:center;gap:6px;padding:6px 0">
-                        <input data-field-name="associe_est_gerant" type="checkbox" value="1">
-                        Gerant
-                    </label>
+                <label class="field">
+                    <span>Gerant</span>
+                    <select data-field-name="associe_est_gerant">
+                        <option value="0" selected>Non</option>
+                        <option value="1">Oui</option>
+                    </select>
                 </label>
             </div>
         </div>
@@ -618,7 +621,7 @@ if ($step === 2):
                 }
                 var parts = partBase + (idx === associeCards.length - 1 ? partRem : 0);
                 card.querySelector('[name^="associe_parts"]') && (card.querySelector('[name^="associe_parts"]').value = String(parts));
-                card.querySelector('[name^="associe_est_gerant"]') && (card.querySelector('[name^="associe_est_gerant"]').checked = Math.random() > 0.5);
+                card.querySelector('[name^="associe_est_gerant"]') && (card.querySelector('[name^="associe_est_gerant"]').value = Math.random() > 0.5 ? '1' : '0');
             });
 
             updateTotals();
