@@ -354,11 +354,11 @@ $varExamples = [
     line-height: 1.6; min-width: 14px; text-align: center;
 }
 #recent-vars .var-list {
-    flex-direction: row; flex-wrap: wrap; gap: 3px;
+    display: flex; flex-direction: row; flex-wrap: wrap; gap: 3px;
 }
 #recent-vars .var-list .var-btn {
-    flex-direction: row; gap: 2px; padding: 0.15rem 0.4rem;
-    font-size: 0.7rem;
+    display: inline-flex; grid-template-columns: none; gap: 2px; padding: 0.15rem 0.4rem;
+    font-size: 0.7rem; border-left: none;
 }
 #recent-vars .var-list .var-btn code {
     font-size: 0.7rem;
@@ -627,7 +627,7 @@ $varExamples = [
                                 data-var="{{ <?= e($varName) ?> }}"
                                 title="<?= e($varLabel) ?><?= $example ? '  ex: ' . e($example) : '' ?>">
                                 <code>{{ <?= e($varName) ?> }}</code>
-                                <small><?= e($varLabel) ?></small>
+                                <span class="var-label"><?= e($varLabel) ?></span>
                                 <span class="var-usage" style="display:none">0</span>
                             </button>
                         <?php endforeach; ?>
@@ -976,6 +976,7 @@ function countUsage() {
             badge.style.display = count > 0 ? 'inline' : 'none';
             badge.textContent = count;
         }
+        btn.classList.toggle('var-used', count > 0);
     });
 }
 
