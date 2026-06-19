@@ -396,6 +396,19 @@ $varExamples = [
 }
 .cat-cession { display: none; }
 
+.preview-page {
+    width: 794px; min-height: 1123px; padding: 2cm 2.5cm;
+    background: white; color: #1a1a1a;
+    font-family: Calibri, 'Segoe UI', Arial, sans-serif; font-size: 11pt;
+    line-height: 1.5; box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+    box-sizing: border-box; position: relative; margin-bottom: 24px;
+    overflow: hidden;
+}
+.preview-page-footer {
+    position: absolute; bottom: 1cm; left: 2.5cm; right: 2.5cm;
+    text-align: center; font-size: 9pt; color: #999;
+    border-top: 1px solid #ddd; padding-top: 4pt;
+}
 </style>
 <section class="template-editor-layout">
     <div class="editor-main card stack">
@@ -821,7 +834,14 @@ function buildPaginatedPreview(html) {
     }
 
     document.body.removeChild(measurer);
-    return pageChunks.join('<hr class="page-break">');
+
+    var total = pageChunks.length;
+    return pageChunks.map(function(chunk, idx) {
+        return '<div class="preview-page">'
+            + chunk
+            + '<div class="preview-page-footer">Page ' + (idx + 1) + ' / ' + total + '</div>'
+            + '</div>';
+    }).join('<hr class="page-break">');
 }
 
 function togglePreview() {
