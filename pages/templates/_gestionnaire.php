@@ -297,6 +297,9 @@ $sortedFolders = array_merge($nonEmpty, $empty);
                                     <td><?= e(date('d/m/Y H:i', $tpl['modified'])) ?></td>
                                     <td class="table-actions">
                                         <a class="btn-icon primary" href="<?= e(app_url('templates', ['action' => 'inspecteur', 'path' => $tpl['path']])) ?>" title="Voir"><span class="material-symbols-outlined">visibility</span></a>
+                                        <?php if (has_permission('templates.edit')): ?>
+                                        <a class="btn-icon primary" href="<?= e(app_url('templates', ['action' => 'editeur', 'path' => $tpl['path']])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
+                                        <?php endif; ?>
                                         <form method="post">
                                             <?= csrf_input() ?>
                                             <input type="hidden" name="action" value="delete">
