@@ -426,7 +426,7 @@ $varExamples = [
                 <p class="help-text"><?= e($folderLabels[$folder] ?? $folder) ?> &mdash; <?= e($filename) ?></p>
             </div>
             <div class="table-actions">
-                <a class="btn btn-back" href="<?= e(app_url('templates', ['action' => 'inspecteur', 'path' => $templatePath])) ?>" title="Retour aux infos template">
+                <a class="btn btn-back" href="<?= e(app_url('templates')) ?>" title="Retour à la liste des templates">
                     <span class="material-symbols-outlined">arrow_back</span> Retour
                 </a>
                 <a class="btn-icon" href="<?= e(app_url('templates', ['action' => 'editeur'])) ?>" title="Changer de template">
