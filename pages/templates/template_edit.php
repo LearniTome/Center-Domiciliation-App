@@ -769,6 +769,61 @@ function toggleSource() {
     }
 }
 
+function buildPaginatedPreview(html) {
+    var styled = html
+        .replace(/<var>/g, '<var style="color:#0090e7;font-style:normal;font-family:\'Courier New\',monospace;background:#e8f4fd;padding:0 2px;border-radius:2px">')
+        .replace(/<table/g, '<table style="width:100%;border-collapse:collapse;margin:0.5em 0"')
+        .replace(/<td/g, '<td style="border:1px solid #999;padding:6px"')
+        .replace(/<th/g, '<th style="border:1px solid #999;padding:6px;background:#f0f0f0"');
+
+    var temp = document.createElement('div');
+    temp.innerHTML = styled;
+
+    var blocks = [];
+    var children = Array.from(temp.children);
+    if (children.length === 1 && children[0].classList.contains('a4-page')) {
+        blocks = Array.from(children[0].children);
+    } else {
+        for (var i = 0; i < children.length; i++) {
+            var c = children[i];
+            if (c.classList && c.classList.contains('a4-page')) {
+                blocks = blocks.concat(Array.from(c.children));
+            } else {
+                blocks.push(c);
+            }
+        }
+    }
+
+    if (blocks.length === 0) return '<p style="color:#999;padding:2cm">(vide)</p>';
+
+    var measurer = document.createElement('div');
+    measurer.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;padding:2cm 2.5cm;font-family:Calibri,sans-serif;font-size:11pt;line-height:1.5;overflow:hidden;';
+    document.body.appendChild(measurer);
+
+    var pageChunks = [];
+    measurer.innerHTML = '';
+
+    for (var i = 0; i < blocks.length; i++) {
+        var clone = blocks[i].cloneNode(true);
+        measurer.appendChild(clone);
+        if (measurer.scrollHeight > measurer.clientHeight + 2) {
+            measurer.removeChild(clone);
+            if (measurer.children.length > 0) {
+                pageChunks.push(measurer.innerHTML);
+                measurer.innerHTML = '';
+            }
+            measurer.appendChild(clone);
+        }
+    }
+
+    if (measurer.innerHTML.trim()) {
+        pageChunks.push(measurer.innerHTML);
+    }
+
+    document.body.removeChild(measurer);
+    return pageChunks.join('<hr class="page-break">');
+}
+
 function togglePreview() {
     const editor = document.getElementById('editor-content');
     const wrappers = getEditorWrappers();
@@ -782,18 +837,7 @@ function togglePreview() {
         html = editor.innerHTML;
     }
     if (preview.classList.contains('hidden')) {
-        let display = html
-            .replace(/<var>/g, '<var style="color:#0090e7;font-style:normal;font-family:\'Courier New\',monospace;background:#e8f4fd;padding:0 2px;border-radius:2px">')
-            .replace(/<table/g, '<table style="width:100%;border-collapse:collapse;margin:0.5em 0"')
-            .replace(/<td/g, '<td style="border:1px solid #999;padding:6px"')
-            .replace(/<th/g, '<th style="border:1px solid #999;padding:6px;background:#f0f0f0"');
-        let temp = document.createElement('div');
-        temp.innerHTML = display;
-        let a4Pages = temp.querySelectorAll('.a4-page');
-        if (a4Pages.length > 0) {
-            display = Array.from(a4Pages).map(function(p) { return p.innerHTML; }).join('<hr class="page-break">');
-        }
-        preview.innerHTML = display || '<p style="color:#999">(vide)</p>';
+        preview.innerHTML = buildPaginatedPreview(html);
         preview.classList.remove('hidden');
         pvWrapper.style.display = '';
         currentZoom = 1;
@@ -1092,7 +1136,16 @@ function checkPaginate() {
 
 document.getElementById('editor-content')?.addEventListener('input', function() {
     clearTimeout(this._pageTimer);
-    this._pageTimer = setTimeout(checkPaginate, 300);
+    this._pageTimer = setTimeout(function() {
+        checkPaginate();
+        var prev = document.getElementById('editor-preview');
+        if (prev && !prev.classList.contains('hidden')) {
+            var source = document.getElementById('editor-source');
+            var editor = document.getElementById('editor-content');
+            var html = source.classList.contains('hidden') ? editor.innerHTML : source.value;
+            prev.innerHTML = buildPaginatedPreview(html);
+        }
+    }, 300);
 });
 
 document.querySelector('.editor-toolbar')?.addEventListener('mousedown', function(e) {
