@@ -195,7 +195,7 @@ if ($step === 3):
 <div style="margin-top:16px" data-part="<?= $partIndex ?>">
     <div style="border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:12px">
         <div class="section-header" style="margin-bottom:8px">
-            <strong>Cédant</strong>
+            <strong style="color:var(--danger)">Cédant</strong>
         </div>
         <input type="hidden" name="cedant_type[<?= $partIndex ?>]" value="existant">
         <input type="hidden" name="cedant_nom_complet[<?= $partIndex ?>]" class="cedant-nom-hidden" value="<?= e($part['cedant_nom_complet'] ?? '') ?>">
@@ -221,7 +221,7 @@ if ($step === 3):
         </div>
     </div>
     <div style="border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:12px">
-        <div class="section-header" style="margin-bottom:8px"><strong>Cessionnaire</strong>
+        <div class="section-header" style="margin-bottom:8px"><strong style="color:var(--success)">Cessionnaire</strong>
             <button type="button" class="btn-icon danger remove-part" style="margin-left:auto" title="Supprimer cette ligne"><span class="material-symbols-outlined">delete</span></button>
         </div>
         <input type="hidden" name="cessionnaire_type[<?= $partIndex ?>]" value="nouveau">
@@ -269,7 +269,7 @@ if ($step === 3):
                 ?>
 <div style="margin-top:16px" data-part="0">
     <div style="border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:12px">
-        <div class="section-header" style="margin-bottom:8px"><strong>Cédant</strong></div>
+        <div class="section-header" style="margin-bottom:8px"><strong style="color:var(--danger)">Cédant</strong></div>
         <input type="hidden" name="cedant_type[0]" value="existant">
         <input type="hidden" name="cedant_nom_complet[0]" class="cedant-nom-hidden" value="">
         <input type="hidden" name="cedant_cin[0]" class="cedant-cin-hidden" value="">
@@ -293,7 +293,7 @@ if ($step === 3):
         </div>
     </div>
     <div style="border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:12px">
-        <div class="section-header" style="margin-bottom:8px"><strong>Cessionnaire</strong>
+        <div class="section-header" style="margin-bottom:8px"><strong style="color:var(--success)">Cessionnaire</strong>
             <button type="button" class="btn-icon danger remove-part" style="margin-left:auto" title="Supprimer cette ligne"><span class="material-symbols-outlined">delete</span></button>
         </div>
         <input type="hidden" name="cessionnaire_type[0]" value="nouveau">
