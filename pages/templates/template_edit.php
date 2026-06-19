@@ -1266,7 +1266,7 @@ function exportPDF() {
         + '.page-footer { position:absolute; bottom:1cm; left:2.5cm; right:2.5cm; text-align:center; font-size:9pt; color:#999; border-top:1px solid #ddd; padding-top:4pt; }'
         + '@media print { body { background:white; padding:0; } .a4-page-visuel { width:auto; min-height:auto; padding:2cm; box-shadow:none; margin:0; page-break-after:always; } .a4-page-visuel:last-child { page-break-after:auto; } .page-footer { display:none; } }'
         + '</style></head><body>' + content + '</body></html>';
-    const blob = new Blob([html], { type: 'text/html' });
+    const blob = new Blob([htmlOut], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
