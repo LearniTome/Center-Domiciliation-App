@@ -820,26 +820,35 @@ function buildPaginatedPreview(html) {
     if (blocks.length === 0) return '<p style="color:#999;padding:2cm">(vide)</p>';
 
     var measurer = document.createElement('div');
-    measurer.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;height:1123px;padding:1.5cm 2cm;font-family:Calibri,sans-serif;font-size:11pt;line-height:1.5;overflow:hidden;';
+    measurer.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;height:1123px;padding:1.5cm 2cm;font-family:Calibri,sans-serif;font-size:11pt;line-height:1.15;overflow:hidden;';
     document.body.appendChild(measurer);
 
+    var measurerStyle = document.createElement('style');
+    measurerStyle.textContent = 'p{margin:0 0 8pt}';
+    measurer.appendChild(measurerStyle);
+
+    function resetMeasurer() {
+        measurer.innerHTML = '';
+        measurer.appendChild(measurerStyle.cloneNode(true));
+    }
+
     var pageChunks = [];
-    measurer.innerHTML = '';
+    resetMeasurer();
 
     for (var i = 0; i < blocks.length; i++) {
         var clone = blocks[i].cloneNode(true);
         measurer.appendChild(clone);
         if (measurer.scrollHeight > measurer.clientHeight + 2) {
             measurer.removeChild(clone);
-            if (measurer.children.length > 0) {
+            if (measurer.children.length > 1) {
                 pageChunks.push(measurer.innerHTML);
-                measurer.innerHTML = '';
+                resetMeasurer();
             }
             measurer.appendChild(clone);
         }
     }
 
-    if (measurer.innerHTML.trim()) {
+    if (measurer.children.length > 1) {
         pageChunks.push(measurer.innerHTML);
     }
 
@@ -1253,12 +1262,12 @@ function exportPDF() {
     }).join('');
     const htmlOut = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'
         + '<title>Exporter PDF</title><style>'
-        + 'body { font-family: Calibri, \'Segoe UI\', Arial, sans-serif; font-size:11pt; line-height:1.5; margin: 0; color: #000; background:#f0f0f0; display:flex; flex-direction:column; align-items:center; padding:24px 0; }'
+        + 'body { font-family: Calibri, \'Segoe UI\', Arial, sans-serif; font-size:11pt; line-height:1.15; margin: 0; color: #000; background:#f0f0f0; display:flex; flex-direction:column; align-items:center; padding:24px 0; }'
         + 'h1 { font-size: 18pt; font-weight: 700; margin: 12pt 0 6pt; }'
         + 'h2 { font-size: 16pt; font-weight: 700; margin: 10pt 0 4pt; }'
         + 'h3 { font-size: 14pt; font-weight: 600; margin: 8pt 0 4pt; }'
         + 'h4 { font-size: 12pt; font-weight: 600; margin: 6pt 0 3pt; }'
-        + 'p { margin: 1em 0; }'
+        + 'p { margin: 0 0 8pt; }'
         + 'table { width: 100%; border-collapse: collapse; margin: 6pt 0; }'
         + 'td, th { border: 1px solid #999; padding: 4pt; }'
         + 'var { color: #0090e7; font-style: normal; font-family: "Courier New", monospace; background:#e8f4fd; padding:0 2px; border-radius:2px; }'
