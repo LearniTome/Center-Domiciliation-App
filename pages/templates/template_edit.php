@@ -400,10 +400,10 @@ $varExamples = [
 .cat-cession { display: none; }
 
 .preview-page {
-    width: 794px; min-height: 1123px; padding: 2cm 2.5cm;
+    width: 794px; min-height: 1123px; padding: 1.5cm 2cm;
     background: white; color: #1a1a1a;
     font-family: Calibri, 'Segoe UI', Arial, sans-serif; font-size: 11pt;
-    line-height: 1.5; box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+    line-height: 1.15; box-shadow: 0 2px 10px rgba(0,0,0,0.25);
     box-sizing: border-box; position: relative; margin-bottom: 24px;
     overflow: hidden;
 }
@@ -411,6 +411,11 @@ $varExamples = [
     position: absolute; bottom: 1cm; left: 2.5cm; right: 2.5cm;
     text-align: center; font-size: 9pt; color: #999;
     border-top: 1px solid #ddd; padding-top: 4pt;
+}
+.page-count-badge {
+    font-size: 0.75rem; color: var(--text-secondary);
+    white-space: nowrap; padding: 2px 6px;
+    background: var(--panel-strong); border-radius: 8px;
 }
 </style>
 <section class="template-editor-layout">
@@ -551,6 +556,8 @@ $varExamples = [
                 <button type="button" class="btn btn-next btn-sm" onclick="beforeSave();document.getElementById('editor-form').submit()" title="Enregistrer (Ctrl+S)">
                     <span class="material-symbols-outlined">save</span>
                 </button>
+                <span class="toolbar-sep"></span>
+                <span id="page-count" class="page-count-badge">1 page</span>
             </div>
 
             <div class="editor-wrapper">
@@ -1186,10 +1193,18 @@ function repageAll() {
     }
 }
 
+function updatePageCount() {
+    var el = document.getElementById('page-count');
+    if (!el) return;
+    var n = document.querySelectorAll('.editor-content .a4-page').length || 1;
+    el.textContent = n + ' page' + (n > 1 ? 's' : '');
+}
+
 document.getElementById('editor-content')?.addEventListener('input', function() {
     clearTimeout(this._pageTimer);
     this._pageTimer = setTimeout(function() {
         checkPaginate();
+        updatePageCount();
         var prev = document.getElementById('editor-preview');
         if (prev && !prev.classList.contains('hidden')) {
             var source = document.getElementById('editor-source');
@@ -1204,7 +1219,7 @@ document.querySelector('.editor-toolbar')?.addEventListener('mousedown', functio
     if (e.target.closest('button, .color-btn input')) saveSelection();
 });
 
-setTimeout(repageAll, 100);
+setTimeout(function() { repageAll(); updatePageCount(); }, 100);
 
 function clearFormatting() {
     const sel = window.getSelection();

@@ -3581,13 +3581,22 @@ tr[data-coverage], .row-mapped {
     display: flex; flex-direction: column; align-items: center;
     gap: 24px; min-height: 100%;
     outline: none; box-sizing: border-box;
+    counter-reset: page-num;
 }
 .a4-page {
     width: 21cm; height: 29.7cm; padding: 1.5cm 2cm;
     background: white; color: #1a1a1a;
     font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; font-size: 11pt;
     line-height: 1.15; box-shadow: 0 2px 10px rgba(0,0,0,0.25);
-    box-sizing: border-box; overflow: hidden;
+    box-sizing: border-box; overflow: hidden; position: relative;
+    counter-increment: page-num;
+}
+.a4-page::after {
+    content: "Page " counter(page-num);
+    position: absolute; bottom: 0.4cm; right: 0.6cm;
+    font-size: 8pt; color: #bbb;
+    font-family: Calibri, Arial, sans-serif;
+    pointer-events: none;
 }
 .a4-page hr.page-break {
     border: 0; border-top: 2px dashed #ccc; margin: 2cm 0;
