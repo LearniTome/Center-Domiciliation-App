@@ -3543,25 +3543,16 @@ tr[data-coverage], .row-mapped {
     gap: 1rem;
     align-items: start;
 }
-.editor-sidebar {
-    position: sticky;
-    top: 0.5rem;
-    max-height: calc(100vh - 40px);
-    overflow-y: auto;
+.variables-panel {
     display: flex;
     flex-direction: column;
-    transition: width 0.2s ease, min-width 0.2s ease;
-    min-width: 0;
-    width: 280px;
+    transition: all 0.2s ease;
 }
-.editor-sidebar.collapsed { width: 44px; min-width: 44px; }
-.editor-sidebar.collapsed > .sidebar-body { display: none; }
-.editor-sidebar.collapsed > .section-header h3,
-.editor-sidebar.collapsed > .section-header p { display: none; }
-.editor-sidebar.collapsed > .section-header { justify-content: center; padding: 0.5rem; }
+.variables-panel.collapsed > .sidebar-body { display: none; }
+.variables-panel.collapsed > .section-header h3,
+.variables-panel.collapsed > .section-header p { display: none; }
+.variables-panel.collapsed > .section-header { justify-content: flex-end; padding: 0.5rem; }
 #sidebar-toggle-btn { flex-shrink: 0; margin-left: auto; }
-.editor-sidebar::-webkit-scrollbar { width: 4px; }
-.editor-sidebar::-webkit-scrollbar-thumb { background: var(--line); border-radius: 2px; }
 .variable-search { margin-bottom: 0.75rem; }
 .input-full {
     width: 100%; padding: 0.5rem; background: var(--bg); border: 1px solid var(--line);
@@ -3728,16 +3719,16 @@ tr[data-coverage], .row-mapped {
 }
 @media (max-width: 900px) {
     .template-editor-layout { grid-template-columns: 1fr; }
-    .editor-sidebar { position: static; max-height: none; }
 }
 @media print {
     .template-editor-layout body { background: white !important; margin: 0 !important; padding: 0 !important; }
     .template-editor-layout .sidebar, .template-editor-layout .page-header, .template-editor-layout .flash,
-    .template-editor-layout .editor-sidebar, .template-editor-layout .editor-toolbar,
+    .template-editor-layout .editor-toolbar,
     .template-editor-layout .editor-actions, .template-editor-layout .editor-source,
     .template-editor-layout #table-dialog, .template-editor-layout #save-as-form,
     .template-editor-layout #blank-form,
-    .template-editor-layout .section-header .table-actions { display: none !important; }
+    .template-editor-layout .section-header .table-actions,
+    .variables-panel { display: none !important; }
     .template-editor-layout { display: block !important; }
     .template-editor-layout .editor-main { border: none !important; padding: 0 !important; box-shadow: none !important; }
     .template-editor-layout .editor-wrapper { background: none !important; padding: 0 !important; max-height: none !important; box-shadow: none !important; }

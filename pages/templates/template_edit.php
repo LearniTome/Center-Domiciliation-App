@@ -171,6 +171,7 @@ $variables = TemplateEditor::getAvailableVariables();
 .template-editor-layout {
     min-height: calc(100vh - 3rem);
     align-items: stretch;
+    grid-template-columns: 1fr;
 }
 .template-editor-layout .editor-main {
     display: flex;
@@ -194,6 +195,20 @@ $variables = TemplateEditor::getAvailableVariables();
 }
 .template-editor-layout .editor-content {
     min-height: 100%;
+}
+.variables-panel {
+    margin-top: 1rem;
+}
+.variables-panel .section-header {
+    cursor: pointer;
+    user-select: none;
+}
+.variables-panel.collapsed .sidebar-body {
+    display: none;
+}
+.variables-panel.collapsed .section-header h3,
+.variables-panel.collapsed .section-header p {
+    display: none;
 }
 </style>
 <section class="template-editor-layout">
@@ -405,41 +420,41 @@ $variables = TemplateEditor::getAvailableVariables();
             <input type="hidden" name="blank_name" value="">
         </form>
     </div>
+</section>
 
-    <div class="editor-sidebar card stack" id="editor-sidebar">
-        <div class="section-header">
-            <h3>Variables</h3>
-            <p class="help-text">Cliquez pour insérer</p>
-            <button type="button" class="btn-icon" onclick="toggleSidebar()" title="Réduire/Agrandir le panneau" id="sidebar-toggle-btn">
-                <span class="material-symbols-outlined">chevron_right</span>
-            </button>
+<div class="variables-panel card stack" id="editor-sidebar">
+    <div class="section-header" onclick="toggleSidebar()">
+        <h3>Variables</h3>
+        <p class="help-text">Cliquez pour insérer</p>
+        <button type="button" class="btn-icon" id="sidebar-toggle-btn">
+            <span class="material-symbols-outlined">expand_less</span>
+        </button>
+    </div>
+    <div class="sidebar-body">
+        <div class="variable-search">
+            <input type="text" id="var-search" placeholder="Rechercher..." class="input-full">
         </div>
-        <div class="sidebar-body">
-            <div class="variable-search">
-                <input type="text" id="var-search" placeholder="Rechercher..." class="input-full">
-            </div>
-            <div class="variable-categories">
-                <?php foreach ($variables as $category => $vars): ?>
-                    <div class="var-category">
-                        <h4 class="var-category-title" onclick="toggleCategory(this)">
-                            <span class="material-symbols-outlined">expand_more</span>
-                            <?= e($category) ?>
-                            <span class="var-count"><?= count($vars) ?></span>
-                        </h4>
-                        <div class="var-list">
-                            <?php foreach ($vars as $varName => $varLabel): ?>
-                                <button type="button" class="var-btn" onclick="insertVar('{{ <?= e($varName) ?> }}')" title="<?= e($varLabel) ?>">
-                                    <code>{{ <?= e($varName) ?> }}</code>
-                                    <small><?= e($varLabel) ?></small>
-                                </button>
-                            <?php endforeach; ?>
-                        </div>
+        <div class="variable-categories">
+            <?php foreach ($variables as $category => $vars): ?>
+                <div class="var-category">
+                    <h4 class="var-category-title" onclick="toggleCategory(this)">
+                        <span class="material-symbols-outlined">expand_more</span>
+                        <?= e($category) ?>
+                        <span class="var-count"><?= count($vars) ?></span>
+                    </h4>
+                    <div class="var-list">
+                        <?php foreach ($vars as $varName => $varLabel): ?>
+                            <button type="button" class="var-btn" onclick="insertVar('{{ <?= e($varName) ?> }}')" title="<?= e($varLabel) ?>">
+                                <code>{{ <?= e($varName) ?> }}</code>
+                                <small><?= e($varLabel) ?></small>
+                            </button>
+                        <?php endforeach; ?>
                     </div>
-                <?php endforeach; ?>
-            </div>
+                </div>
+            <?php endforeach; ?>
         </div>
     </div>
-</section>
+</div>
 
 <script>
 let savedRange = null;
@@ -660,10 +675,10 @@ function applyEditorZoom() {
 }
 
 function toggleSidebar() {
-    const sidebar = document.getElementById('editor-sidebar');
-    sidebar.classList.toggle('collapsed');
+    const panel = document.getElementById('editor-sidebar');
+    panel.classList.toggle('collapsed');
     const icon = document.querySelector('#sidebar-toggle-btn .material-symbols-outlined');
-    icon.textContent = sidebar.classList.contains('collapsed') ? 'chevron_left' : 'chevron_right';
+    icon.textContent = panel.classList.contains('collapsed') ? 'expand_more' : 'expand_less';
 }
 
 function beforeSave() {
