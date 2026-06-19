@@ -544,6 +544,10 @@ $varExamples = [
                 <button type="button" class="btn btn-secondary btn-sm" onclick="insertPageBreak()" title="Nouvelle page">
                     <span class="material-symbols-outlined">note_add</span>
                 </button>
+                <span class="toolbar-sep"></span>
+                <button type="button" class="btn btn-next btn-sm" onclick="beforeSave();document.getElementById('editor-form').submit()" title="Enregistrer (Ctrl+S)">
+                    <span class="material-symbols-outlined">save</span> Enregistrer
+                </button>
             </div>
 
             <div class="editor-wrapper">
