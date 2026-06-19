@@ -176,26 +176,41 @@ $variables = TemplateEditor::getAvailableVariables();
         <div class="variable-search">
             <input type="text" id="var-search" placeholder="Rechercher..." class="input-full">
         </div>
-        <div class="variable-categories">
-            <?php foreach ($variables as $category => $vars): ?>
-                <div class="var-category">
-                    <h4 class="var-category-title" onclick="toggleCategory(this)">
-                        <span class="material-symbols-outlined">expand_more</span>
-                        <?= e($category) ?>
-                        <span class="var-count"><?= count($vars) ?></span>
-                    </h4>
-                    <div class="var-list">
-                        <?php foreach ($vars as $varName => $varLabel): ?>
-                            <button type="button" class="var-btn" onclick="insertVar('{{ <?= e($varName) ?> }}')" title="<?= e($varLabel) ?>">
-                                <code>{{ <?= e($varName) ?> }}</code>
-                                <small><?= e($varLabel) ?></small>
-                            </button>
-                        <?php endforeach; ?>
+            <div class="variable-categories">
+                <?php foreach ($variables as $category => $vars): ?>
+                    <div class="var-category">
+                        <h4 class="var-category-title" onclick="toggleCategory(this)">
+                            <span class="material-symbols-outlined">expand_more</span>
+                            <?= e($category) ?>
+                            <span class="var-count"><?= count($vars) ?></span>
+                        </h4>
+                        <div class="var-list">
+                            <?php foreach ($vars as $varName => $varLabel): ?>
+                                <button type="button" class="var-btn" onclick="insertVar('{{ <?= e($varName) ?> }}')" title="<?= e($varLabel) ?>">
+                                    <code>{{ <?= e($varName) ?> }}</code>
+                                    <small><?= e($varLabel) ?></small>
+                                </button>
+                            <?php endforeach; ?>
+                        </div>
                     </div>
+                <?php endforeach; ?>
+            </div>
+            <div class="sidebar-zoom-controls">
+                <span class="sidebar-zoom-label">Zoom éditeur</span>
+                <div class="sidebar-zoom-buttons">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="editorZoomOut()" title="Zoom arrière">
+                        <span class="material-symbols-outlined">zoom_out</span>
+                    </button>
+                    <span id="editor-zoom-level" class="preview-zoom-level">100%</span>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="editorZoomIn()" title="Zoom avant">
+                        <span class="material-symbols-outlined">zoom_in</span>
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="editorZoomReset()" title="Rétablir le zoom">
+                        <span class="material-symbols-outlined">fit_screen</span>
+                    </button>
                 </div>
-            <?php endforeach; ?>
+            </div>
         </div>
-    </div>
 
     <div class="editor-main card stack">
         <div class="section-header">
@@ -591,6 +606,32 @@ function applyZoom(preview) {
     preview.style.transform = 'scale(' + currentZoom + ')';
     preview.style.transformOrigin = 'top center';
     document.getElementById('zoom-level').textContent = Math.round(currentZoom * 100) + '%';
+}
+
+let editorZoom = 1;
+const EDITOR_ZOOM_MIN = 0.3;
+const EDITOR_ZOOM_MAX = 2;
+const EDITOR_ZOOM_STEP = 0.1;
+
+function editorZoomIn() {
+    editorZoom = Math.min(EDITOR_ZOOM_MAX, +(editorZoom + EDITOR_ZOOM_STEP).toFixed(1));
+    applyEditorZoom();
+}
+
+function editorZoomOut() {
+    editorZoom = Math.max(EDITOR_ZOOM_MIN, +(editorZoom - EDITOR_ZOOM_STEP).toFixed(1));
+    applyEditorZoom();
+}
+
+function editorZoomReset() {
+    editorZoom = 1;
+    applyEditorZoom();
+}
+
+function applyEditorZoom() {
+    const editor = document.getElementById('editor-content');
+    editor.style.zoom = editorZoom;
+    document.getElementById('editor-zoom-level').textContent = Math.round(editorZoom * 100) + '%';
 }
 
 function beforeSave() {

@@ -3548,6 +3548,8 @@ tr[data-coverage], .row-mapped {
     top: 1rem;
     max-height: calc(100vh - 140px);
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
 }
 .editor-sidebar::-webkit-scrollbar { width: 4px; }
 .editor-sidebar::-webkit-scrollbar-thumb { background: var(--line); border-radius: 2px; }
@@ -3578,6 +3580,19 @@ tr[data-coverage], .row-mapped {
 .var-btn:hover { background: var(--panel-strong); border-color: var(--line); }
 .var-btn code { font-size: 0.78rem; color: var(--primary); font-family: 'Courier New', monospace; }
 .var-btn small { font-size: 0.68rem; color: var(--text-secondary); }
+.variable-categories { flex: 1; }
+.sidebar-zoom-controls {
+    padding: 0.75rem 0 0; margin-top: auto; border-top: 1px solid var(--line);
+}
+.sidebar-zoom-label {
+    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--text-secondary); margin-bottom: 0.4rem; display: block;
+}
+.sidebar-zoom-buttons {
+    display: flex; align-items: center; gap: 0.25rem;
+}
+.sidebar-zoom-buttons .btn { padding: 4px 8px; }
+.sidebar-zoom-buttons .preview-zoom-level { font-size: 0.78rem; min-width: 2.5rem; text-align: center; }
 .editor-main { min-height: 400px; }
 .editor-toolbar {
     display: flex; align-items: center; gap: 0.25rem;
