@@ -3589,7 +3589,8 @@ tr[data-coverage], .row-mapped {
 .var-btn:hover { background: var(--panel-strong); border-color: var(--line); }
 .var-btn code { font-size: 0.78rem; color: var(--primary); font-family: 'Courier New', monospace; }
 .var-btn small { font-size: 0.68rem; color: var(--text-secondary); }
-.sidebar-body { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+.sidebar-body { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow-x: hidden; }
+.variable-categories { flex: 1; overflow-y: auto; min-height: 0; }
 .editor-main { min-height: 400px; }
 .editor-toolbar {
     display: flex; align-items: center; gap: 0.25rem;
