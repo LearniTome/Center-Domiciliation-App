@@ -101,13 +101,12 @@ if (is_post() && $step === 3) {
 
         $cessionnairePartsVal = (int) ($cessionnaireParts[$i] ?? 0);
         $cessionnaireCapitalVal = trim((string) ($cessionnaireCapitals[$i] ?? ''));
-        if ($cessionnairePartsVal <= 0 && $parts > 0) {
+        // Toujours recalculer parts acquises et capital a partir des parts cedees
+        if ($parts > 0) {
             $cessionnairePartsVal = $parts;
-        }
-        if (($cessionnaireCapitalVal === '' || (float) str_replace(',', '.', $cessionnaireCapitalVal) <= 0) && $parts > 0 && $totalParts > 0) {
-            $totalCapital = (float) ($selectedSociete['societe_capital'] ?? 0);
-            if ($totalCapital > 0) {
-                $cessionnaireCapitalVal = number_format(($parts / $totalParts) * $totalCapital, 2, '.', '');
+            $totalCapitalSociete = (float) ($selectedSociete['societe_capital'] ?? 0);
+            if ($totalParts > 0 && $totalCapitalSociete > 0) {
+                $cessionnaireCapitalVal = number_format(($parts / $totalParts) * $totalCapitalSociete, 2, '.', '');
             }
         }
 
@@ -440,6 +439,7 @@ if ($step === 3):
             if (partsInput && pct > 0 && totalParts > 0) {
                 partsInput.value = Math.round((pct / 100) * totalParts);
                 calcPrixTotal.call(partsInput);
+                calcCessionnaireFields.call(partsInput);
             }
         });
     });
