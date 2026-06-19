@@ -3573,7 +3573,7 @@ tr[data-coverage], .row-mapped {
 }
 .var-list { display: grid; grid-template-columns: 1fr; margin-bottom: 0.5rem; }
 .var-btn {
-    display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 0.5rem;
+    display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 0.5rem;
     padding: 0.2rem 0.5rem; background: transparent; border: 1px solid transparent;
     border-left: 2px solid var(--line); cursor: pointer; text-align: left;
     transition: all 0.1s; font-size: 0.78rem;
@@ -3581,9 +3581,9 @@ tr[data-coverage], .row-mapped {
 .var-btn:hover { background: var(--panel-strong); border-left-color: var(--primary); }
 .var-btn.var-used { border-left-color: var(--success); background: rgba(0,184,148,0.06); }
 .var-btn.var-used code { color: var(--success); }
-.var-btn code { color: var(--primary); font-family: 'Courier New', monospace; }
-.var-btn .var-label { color: var(--text-secondary); font-size: 0.72rem; }
-.var-btn .var-usage { font-size: 0.65rem; padding: 0 4px; }
+.var-btn code { color: var(--primary); font-family: 'Courier New', monospace; white-space: nowrap; }
+.var-btn .var-label { color: var(--text-secondary); font-size: 0.72rem; text-align: right; }
+.var-btn .var-usage { justify-self: end; font-size: 0.62rem; color: var(--text-secondary); background: var(--panel-strong); padding: 0 0.35rem; border-radius: 6px; line-height: 1.6; min-width: 14px; text-align: center; }
 .sidebar-body { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow-x: hidden; }
 .variable-categories { flex: 1; overflow-y: auto; min-height: 0; }
 .editor-main { min-height: 400px; }

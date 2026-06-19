@@ -348,11 +348,6 @@ $varExamples = [
 .var-btn.drag-over {
     border-color: var(--primary); background: rgba(74,108,247,0.08);
 }
-.var-usage {
-    margin-left: auto; font-size: 0.62rem; color: var(--text-secondary);
-    background: var(--panel-strong); padding: 0 0.35rem; border-radius: 6px;
-    line-height: 1.6; min-width: 14px; text-align: center;
-}
 #recent-vars .var-list {
     display: flex; flex-direction: row; flex-wrap: wrap; gap: 3px;
 }
