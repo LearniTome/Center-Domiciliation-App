@@ -531,14 +531,14 @@ $varExamples = [
                     <span class="material-symbols-outlined">code</span>
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="togglePreview()" title="Aperçu">
-                    <span class="material-symbols-outlined">visibility</span> Aperçu
+                    <span class="material-symbols-outlined">visibility</span>
                 </button>
                 <span class="toolbar-sep"></span>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="clearFormatting()" title="Effacer la mise en forme">
                     <span class="material-symbols-outlined">format_clear</span>
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="printEditor()" title="Imprimer / PDF (Ctrl+P)">
-                    <span class="material-symbols-outlined">print</span> PDF
+                    <span class="material-symbols-outlined">print</span>
                 </button>
                 <span class="toolbar-sep"></span>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="insertPageBreak()" title="Nouvelle page">
@@ -546,7 +546,7 @@ $varExamples = [
                 </button>
                 <span class="toolbar-sep"></span>
                 <button type="button" class="btn btn-next btn-sm" onclick="beforeSave();document.getElementById('editor-form').submit()" title="Enregistrer (Ctrl+S)">
-                    <span class="material-symbols-outlined">save</span> Enregistrer
+                    <span class="material-symbols-outlined">save</span>
                 </button>
             </div>
 
