@@ -4,7 +4,15 @@ declare(strict_types=1);
 require __DIR__ . '/_init.php';
 ?>
 <section>
-    <article class="card stack">
+    <style>
+        .cession-wizard input,
+        .cession-wizard select,
+        .cession-wizard textarea { padding: 6px 10px; font-size: 0.82rem; }
+        .cession-wizard .field { gap: 3px; }
+        .cession-wizard .field span { font-size: 0.7rem; }
+        .cession-wizard .form-grid { gap: 8px; }
+    </style>
+    <article class="card stack cession-wizard">
 
         <?php if ($step >= 1): ?>
         <div class="wizard-steps" id="wizard-steps-top">
