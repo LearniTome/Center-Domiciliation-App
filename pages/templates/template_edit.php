@@ -360,6 +360,8 @@ $varExamples = [
 }
 .cat-cession { display: none; }
 .show-all-cession .cat-cession { display: block; }
+#var-categories.used-filter .var-btn:not(.var-used) { display: none; }
+.used-toggle { margin-left: auto; }
 </style>
 <section class="template-editor-layout">
     <div class="editor-main card stack">
@@ -594,6 +596,10 @@ $varExamples = [
             <label class="var-filter-toggle" title="Afficher toutes les variables">
                 <input type="checkbox" id="show-all-vars" onchange="toggleAllVars()">
                 <span>Toutes</span>
+            </label>
+            <label class="var-filter-toggle used-toggle" title="Masquer les variables non utilisées">
+                <input type="checkbox" id="used-filter" onchange="toggleUsedFilter()">
+                <span>Utilisées</span>
             </label>
         </div>
         <div id="recent-vars" class="var-category" style="display:none">
@@ -882,6 +888,26 @@ function toggleAllVars() {
     document.getElementById('var-categories').classList.toggle('show-all-cession', document.getElementById('show-all-vars').checked);
 }
 
+function toggleUsedFilter() {
+    const checked = document.getElementById('used-filter').checked;
+    document.getElementById('var-categories').classList.toggle('used-filter', checked);
+    updateVarHeaderCounts(checked);
+}
+
+function updateVarHeaderCounts(showUsedOnly) {
+    document.querySelectorAll('#var-categories .var-category').forEach(function(cat) {
+        const countEl = cat.querySelector('.var-count');
+        const buttons = cat.querySelectorAll('.var-btn');
+        const total = buttons.length;
+        if (showUsedOnly) {
+            const used = cat.querySelectorAll('.var-btn.var-used').length;
+            countEl.textContent = used + '/' + total;
+        } else {
+            countEl.textContent = total;
+        }
+    });
+}
+
 // Drag & drop
 function initDragDrop() {
     const editor = document.getElementById('editor-content');
@@ -972,6 +998,9 @@ function countUsage() {
             badge.textContent = count;
         }
         btn.classList.toggle('var-used', count > 0);
+    });
+    if (document.getElementById('used-filter').checked) {
+        updateVarHeaderCounts(true);
     });
 }
 
