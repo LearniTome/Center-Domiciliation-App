@@ -393,18 +393,21 @@ if ($step === 2):
         </div>
     </template>
 
-    <div class="card" style="margin-top:12px">
-        <div style="display:flex;gap:24px;align-items:center;padding:8px 0;flex-wrap:wrap">
-            <span style="color:var(--text-secondary);text-transform:uppercase;font-size:0.8rem">Parts societe:</span>
+    <div class="stats small" style="margin-top:12px">
+        <div class="stat">
+            <span>Parts societe</span>
             <strong><?= (int) ($wizard['societe']['societe_part_social'] ?? 0) ?></strong>
-            <span style="color:var(--text-secondary);text-transform:uppercase;font-size:0.8rem">Capital societe:</span>
-            <strong><?= e(number_format((float) ($wizard['societe']['societe_capital'] ?? 0), 2, ',', ' ')) ?> DH</strong>
-            <span style="color:var(--text-secondary);text-transform:uppercase;font-size:0.8rem">Total associes:</span>
-            <strong>Parts: <span id="total-parts-display">0</span></strong>
-            <strong>Capital: <span id="total-capital-display">0,00 DH</span></strong>
         </div>
-        <div id="parts-status" style="margin-top:6px;font-size:0.85rem;font-weight:500">&nbsp;</div>
+        <div class="stat">
+            <span>Capital societe</span>
+            <strong><?= e(number_format((float) ($wizard['societe']['societe_capital'] ?? 0), 2, ',', ' ')) ?> DH</strong>
+        </div>
+        <div class="stat">
+            <span>Total associes</span>
+            <strong>Parts: <span id="total-parts-display">0</span> &ndash; Capital: <span id="total-capital-display">0,00</span> DH</strong>
+        </div>
     </div>
+    <div id="parts-status" style="margin-top:8px;font-size:0.85rem;font-weight:500">&nbsp;</div>
 
     <div class="footer-actions" style="margin-top:12px">
         <div style="display:flex;gap:8px;margin-right:auto">
@@ -446,7 +449,7 @@ if ($step === 2):
         partInputs.forEach(function(inp) { totalP += parseInt(inp.value) || 0; });
         capInputs.forEach(function(inp) { totalC += parseFloat((inp.value || '0').replace(',', '.')) || 0; });
         if (totalPartsDisplay) totalPartsDisplay.textContent = totalP;
-        if (totalCapitalDisplay) totalCapitalDisplay.textContent = totalC.toFixed(2).replace('.', ',') + ' DH';
+        if (totalCapitalDisplay) totalCapitalDisplay.textContent = totalC.toFixed(2).replace('.', ',');
         if (partsStatus) {
             var ok = true;
             if (totalPartsExpected > 0 && totalP !== totalPartsExpected) ok = false;
