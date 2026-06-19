@@ -360,8 +360,6 @@ $varExamples = [
 }
 .cat-cession { display: none; }
 .show-all-cession .cat-cession { display: block; }
-#var-categories.used-filter .var-btn:not(.var-used) { display: none; }
-.used-toggle { margin-left: auto; }
 </style>
 <section class="template-editor-layout">
     <div class="editor-main card stack">
@@ -597,10 +595,6 @@ $varExamples = [
                 <input type="checkbox" id="show-all-vars" onchange="toggleAllVars()">
                 <span>Toutes</span>
             </label>
-            <label class="var-filter-toggle used-toggle" title="Masquer les variables non utilisées">
-                <input type="checkbox" id="used-filter" onchange="toggleUsedFilter()">
-                <span>Utilisées</span>
-            </label>
         </div>
         <div id="recent-vars" class="var-category" style="display:none">
             <h4 class="var-category-title" onclick="toggleCategory(this)">
@@ -691,7 +685,7 @@ function toggleCategory(titleEl) {
     const list = titleEl.nextElementSibling;
     const icon = titleEl.querySelector('.material-symbols-outlined');
     if (list.style.display === 'none') {
-        list.style.display = 'flex';
+        list.style.display = '';
         icon.textContent = 'expand_more';
     } else {
         list.style.display = 'none';
@@ -868,7 +862,7 @@ function toggleSidebar() {
 
 function expandAll() {
     document.querySelectorAll('.var-list').forEach(function(el) {
-        el.style.display = 'flex';
+        el.style.display = '';
     });
     document.querySelectorAll('.var-category-title .material-symbols-outlined').forEach(function(icon) {
         icon.textContent = 'expand_more';
@@ -886,26 +880,6 @@ function collapseAll() {
 
 function toggleAllVars() {
     document.getElementById('var-categories').classList.toggle('show-all-cession', document.getElementById('show-all-vars').checked);
-}
-
-function toggleUsedFilter() {
-    const checked = document.getElementById('used-filter').checked;
-    document.getElementById('var-categories').classList.toggle('used-filter', checked);
-    updateVarHeaderCounts(checked);
-}
-
-function updateVarHeaderCounts(showUsedOnly) {
-    document.querySelectorAll('#var-categories .var-category').forEach(function(cat) {
-        const countEl = cat.querySelector('.var-count');
-        const buttons = cat.querySelectorAll('.var-btn');
-        const total = buttons.length;
-        if (showUsedOnly) {
-            const used = cat.querySelectorAll('.var-btn.var-used').length;
-            countEl.textContent = used + '/' + total;
-        } else {
-            countEl.textContent = total;
-        }
-    });
 }
 
 // Drag & drop
@@ -998,9 +972,6 @@ function countUsage() {
             badge.textContent = count;
         }
         btn.classList.toggle('var-used', count > 0);
-    });
-    if (document.getElementById('used-filter').checked) {
-        updateVarHeaderCounts(true);
     });
 }
 
