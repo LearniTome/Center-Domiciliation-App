@@ -402,8 +402,8 @@ if ($step === 2):
             <span style="color:var(--text-secondary);text-transform:uppercase;font-size:0.8rem">Total associes:</span>
             <strong>Parts: <span id="total-parts-display">0</span></strong>
             <strong>Capital: <span id="total-capital-display">0,00 DH</span></strong>
-            <span id="parts-status" style="color:var(--success)">✓</span>
         </div>
+        <div id="parts-status" style="margin-top:6px;font-size:0.85rem;font-weight:500">&nbsp;</div>
     </div>
 
     <div class="footer-actions" style="margin-top:12px">
@@ -452,14 +452,12 @@ if ($step === 2):
             if (totalPartsExpected > 0 && totalP !== totalPartsExpected) ok = false;
             if (totalCapitalExpected > 0 && Math.abs(totalC - totalCapitalExpected) > 0.01) ok = false;
             if (ok) {
-                partsStatus.textContent = '✓';
-                partsStatus.style.color = 'var(--success)';
+                partsStatus.innerHTML = '<span style="color:var(--success)">✓ Le total des parts et du capital correspond a la societe.</span>';
             } else {
                 var msgs = [];
                 if (totalPartsExpected > 0 && totalP !== totalPartsExpected) msgs.push('parts: ' + totalP + '/' + totalPartsExpected);
                 if (totalCapitalExpected > 0 && Math.abs(totalC - totalCapitalExpected) > 0.01) msgs.push('capital: ' + totalC.toFixed(0) + '/' + totalCapitalExpected.toFixed(0));
-                partsStatus.textContent = '✗ ' + msgs.join(', ');
-                partsStatus.style.color = 'var(--danger)';
+                partsStatus.innerHTML = '<span style="color:var(--danger)">✗ Le total des ' + msgs.join(' et ') + ' des associes ne correspond pas a la societe.</span>';
             }
         }
         // Highlight error fields
