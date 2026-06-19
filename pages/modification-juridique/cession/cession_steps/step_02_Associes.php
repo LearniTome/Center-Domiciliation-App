@@ -423,7 +423,7 @@ if ($step === 2):
             </div>
         </div>
     </div>
-    <div id="parts-status" style="margin-top:8px;padding:6px 12px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);font-size:0.82rem;font-weight:500">&nbsp;</div>
+    <div id="parts-status" style="display:flex;align-items:center;gap:8px;margin-top:10px;padding:10px 14px;border-radius:var(--radius);font-size:0.85rem;background:var(--panel);border:1px solid var(--line)">&nbsp;</div>
 
     <div class="footer-actions" style="margin-top:12px">
         <div style="display:flex;gap:8px;margin-right:auto">
@@ -471,14 +471,12 @@ if ($step === 2):
             if (totalPartsExpected > 0 && totalP !== totalPartsExpected) ok = false;
             if (totalCapitalExpected > 0 && Math.abs(totalC - totalCapitalExpected) > 0.01) ok = false;
             if (ok) {
-                partsStatus.innerHTML = '✓ Le total correspond';
-                partsStatus.style.color = 'var(--success)';
+                partsStatus.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;color:var(--success);vertical-align:text-bottom;margin-right:4px">check_circle</span> <span style="color:var(--success)">Le total des parts et du capital correspond a la societe.</span>';
             } else {
                 var msgs = [];
                 if (totalPartsExpected > 0 && totalP !== totalPartsExpected) msgs.push('parts: ' + totalP + '/' + totalPartsExpected);
                 if (totalCapitalExpected > 0 && Math.abs(totalC - totalCapitalExpected) > 0.01) msgs.push('capital: ' + totalC.toFixed(0) + '/' + totalCapitalExpected.toFixed(0));
-                partsStatus.innerHTML = '✗ ' + msgs.join(', ');
-                partsStatus.style.color = 'var(--danger)';
+                partsStatus.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;color:var(--danger);vertical-align:text-bottom;margin-right:4px">error</span> <span style="color:var(--danger)">Le total des ' + msgs.join(' et ') + ' des associes ne correspond pas a la societe.</span>';
             }
         }
         // Highlight error fields
