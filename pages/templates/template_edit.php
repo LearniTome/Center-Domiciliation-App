@@ -299,6 +299,9 @@ $varExamples = [
 }
 .template-editor-layout .editor-toolbar {
     flex-shrink: 0;
+    position: sticky; top: 0; z-index: 5;
+    background: var(--bg); padding-bottom: 2px;
+    border-bottom: 1px solid var(--line);
 }
 .template-editor-layout .editor-wrapper {
     flex: 1;
