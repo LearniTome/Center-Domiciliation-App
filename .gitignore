@@ -18,6 +18,7 @@ backups/
 
 /dossiers_dom/
 /dossiers_crea/
+/dossiers_generer/
 .opencode/skill_cache/
 tmp_test/
 *.DS_Store

@@ -15,6 +15,14 @@ require __DIR__ . '/_init.php';
                 </div>
             <?php endfor; ?>
         </div>
+        <?php
+        $raisonSociale = $societeData['societe_raison_sociale'] ?? '';
+        if ($raisonSociale !== ''):
+        ?>
+        <div style="margin:12px 0 4px;font-size:0.9rem;color:var(--text-secondary)">
+            <strong>Etape <?= $step ?></strong> — <?= e($stepLabels[$step - 1]) ?> de la société : <?= e($raisonSociale) ?>
+        </div>
+        <?php endif; ?>
         <?php endif; ?>
 
         <?php
