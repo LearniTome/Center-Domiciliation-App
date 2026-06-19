@@ -1246,12 +1246,14 @@ function exportPDF() {
     const source = document.getElementById('editor-source');
     const html = source.classList.contains('hidden') ? editor.innerHTML : source.value;
     const paginated = buildPaginatedPreview(html);
-    const content = paginated.split('<hr class="page-break">').map(function(chunk) {
-        return '<div class="a4-print-page">' + chunk + '</div>';
+    const pageHtmls = paginated.split('<hr class="page-break">');
+    const content = pageHtmls.map(function(chunk, idx) {
+        var inner = chunk.replace(/<div class="preview-page">/, '').replace(/<div class="preview-page-footer">.*?<\/div><\/div>$/s, '');
+        return '<div class="a4-page-visuel">' + inner + '<div class="page-footer">Page ' + (idx + 1) + ' / ' + pageHtmls.length + '</div></div>';
     }).join('');
     const htmlOut = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'
         + '<title>Exporter PDF</title><style>'
-        + 'body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; line-height: 1.5; margin: 0; color: #000; }'
+        + 'body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; line-height: 1.5; margin: 0; color: #000; background:#f0f0f0; display:flex; flex-direction:column; align-items:center; padding:24px 0; }'
         + 'h1 { font-size: 18pt; font-weight: 700; margin: 12pt 0 6pt; }'
         + 'h2 { font-size: 16pt; font-weight: 700; margin: 10pt 0 4pt; }'
         + 'h3 { font-size: 14pt; font-weight: 600; margin: 8pt 0 4pt; }'
@@ -1259,11 +1261,10 @@ function exportPDF() {
         + 'p { margin: 0 0 6pt; }'
         + 'table { width: 100%; border-collapse: collapse; margin: 6pt 0; }'
         + 'td, th { border: 1px solid #999; padding: 4pt; }'
-        + 'var { color: #0090e7; font-style: normal; font-family: "Courier New", monospace; }'
-        + '.a4-print-page { page-break-after: always; break-after: page; padding: 2cm; }'
-        + '.a4-print-page:last-child { page-break-after: auto; }'
-        + '@page { margin: 0; size: A4; }'
-        + '@media print { body { margin: 0; padding: 0; } }'
+        + 'var { color: #0090e7; font-style: normal; font-family: "Courier New", monospace; background:#e8f4fd; padding:0 2px; border-radius:2px; }'
+        + '.a4-page-visuel { width:21cm; min-height:29.7cm; padding:2cm 2.5cm; background:white; box-shadow:0 2px 10px rgba(0,0,0,0.25); box-sizing:border-box; margin-bottom:24px; position:relative; }'
+        + '.page-footer { position:absolute; bottom:1cm; left:2.5cm; right:2.5cm; text-align:center; font-size:9pt; color:#999; border-top:1px solid #ddd; padding-top:4pt; }'
+        + '@media print { body { background:white; padding:0; } .a4-page-visuel { width:auto; min-height:auto; padding:2cm; box-shadow:none; margin:0; page-break-after:always; } .a4-page-visuel:last-child { page-break-after:auto; } .page-footer { display:none; } }'
         + '</style></head><body>' + content + '</body></html>';
     const blob = new Blob([html], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
