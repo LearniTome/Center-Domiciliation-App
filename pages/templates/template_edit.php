@@ -27,9 +27,13 @@ if ($templatePath === '' || !str_starts_with($templatePath, realpath($templatesD
         </div>
         <?php
         $allFolders = [];
-        if (is_dir($racineDir)) {
-            $racineFiles = glob($racineDir . '/*.docx');
-            $allFolders[] = ['name' => '_Racine-Actifs', 'label' => $folderLabels['_Racine-Actifs'] ?? 'Toutes formes', 'files' => $racineFiles];
+        $specialFolders = ['_Racine-Actifs', '_Cession'];
+        foreach ($specialFolders as $sf) {
+            $sfDir = $templatesDir . '/' . $sf;
+            if (is_dir($sfDir)) {
+                $sfFiles = glob($sfDir . '/*.docx');
+                $allFolders[] = ['name' => $sf, 'label' => $folderLabels[$sf] ?? $sf, 'files' => $sfFiles];
+            }
         }
         foreach ($templateDirs as $dir) {
             $folderName = basename($dir);
@@ -334,6 +338,21 @@ $variables = TemplateEditor::getAvailableVariables();
             <textarea id="editor-source" class="editor-source hidden" spellcheck="false"><?= e($htmlContent) ?></textarea>
 
             <div class="editor-wrapper" id="preview-wrapper" style="display:none">
+                <div class="preview-toolbar">
+                    <span class="preview-zoom-label">Aperçu</span>
+                    <div class="preview-zoom-controls">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="zoomOut()" title="Zoom arrière">
+                            <span class="material-symbols-outlined">zoom_out</span>
+                        </button>
+                        <span id="zoom-level" class="preview-zoom-level">100%</span>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="zoomIn()" title="Zoom avant">
+                            <span class="material-symbols-outlined">zoom_in</span>
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="zoomReset()" title="Rétablir le zoom">
+                            <span class="material-symbols-outlined">fit_screen</span>
+                        </button>
+                    </div>
+                </div>
                 <div id="editor-preview" class="editor-preview hidden"></div>
             </div>
 
@@ -474,9 +493,15 @@ function insertTable() {
     closeTableDialog();
 }
 
+function getEditorWrappers() {
+    return Array.from(document.querySelectorAll('.editor-wrapper')).filter(function(w) {
+        return w.id !== 'preview-wrapper';
+    });
+}
+
 function toggleSource() {
     const editor = document.getElementById('editor-content');
-    const wrappers = document.querySelectorAll('.editor-wrapper');
+    const wrappers = getEditorWrappers();
     const source = document.getElementById('editor-source');
     const preview = document.getElementById('editor-preview');
     const pvWrapper = preview.closest('.editor-wrapper');
@@ -497,7 +522,7 @@ function toggleSource() {
 
 function togglePreview() {
     const editor = document.getElementById('editor-content');
-    const wrappers = document.querySelectorAll('.editor-wrapper');
+    const wrappers = getEditorWrappers();
     const source = document.getElementById('editor-source');
     const preview = document.getElementById('editor-preview');
     const pvWrapper = preview.closest('.editor-wrapper');
@@ -516,6 +541,8 @@ function togglePreview() {
         preview.innerHTML = display || '<p style="color:#999">(vide)</p>';
         preview.classList.remove('hidden');
         pvWrapper.style.display = '';
+        currentZoom = 1;
+        applyZoom(preview);
         if (!source.classList.contains('hidden')) {
             source.style.display = 'none';
         } else {
@@ -532,6 +559,38 @@ function togglePreview() {
             wrappers.forEach(function(w) { w.style.display = ''; });
         }
     }
+}
+
+let currentZoom = 1;
+const ZOOM_MIN = 0.3;
+const ZOOM_MAX = 3;
+const ZOOM_STEP = 0.1;
+
+function zoomIn() {
+    const preview = document.getElementById('editor-preview');
+    if (preview.classList.contains('hidden')) return;
+    currentZoom = Math.min(ZOOM_MAX, +(currentZoom + ZOOM_STEP).toFixed(1));
+    applyZoom(preview);
+}
+
+function zoomOut() {
+    const preview = document.getElementById('editor-preview');
+    if (preview.classList.contains('hidden')) return;
+    currentZoom = Math.max(ZOOM_MIN, +(currentZoom - ZOOM_STEP).toFixed(1));
+    applyZoom(preview);
+}
+
+function zoomReset() {
+    const preview = document.getElementById('editor-preview');
+    if (preview.classList.contains('hidden')) return;
+    currentZoom = 1;
+    applyZoom(preview);
+}
+
+function applyZoom(preview) {
+    preview.style.transform = 'scale(' + currentZoom + ')';
+    preview.style.transformOrigin = 'top center';
+    document.getElementById('zoom-level').textContent = Math.round(currentZoom * 100) + '%';
 }
 
 function beforeSave() {

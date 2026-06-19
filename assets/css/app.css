@@ -3626,8 +3626,31 @@ tr[data-coverage], .row-mapped {
     background: white; border: 1px solid var(--line);
     border-radius: 0 0 var(--radius-sm) var(--radius-sm); color: #1a1a1a;
     font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; font-size: 11pt;
-    line-height: 1.5; overflow-y: auto; box-sizing: border-box;
+    line-height: 1.5; overflow: visible; box-sizing: border-box;
     max-width: 21cm; margin: 0 auto; box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+    transition: transform 0.15s ease;
+}
+.preview-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.4rem 0.75rem; background: var(--panel);
+    border: 1px solid var(--line); border-bottom: none;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+.preview-zoom-label {
+    font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);
+}
+.preview-zoom-controls {
+    display: flex; align-items: center; gap: 4px;
+}
+.preview-zoom-level {
+    min-width: 42px; text-align: center; font-size: 0.82rem;
+    font-weight: 600; color: var(--text);
+}
+.preview-zoom-controls .btn-sm {
+    padding: 2px 6px; min-width: 28px; height: 28px;
+}
+.preview-zoom-controls .btn-sm .material-symbols-outlined {
+    font-size: 16px;
 }
 .editor-preview var {
     color: #0090e7; font-style: normal; font-family: 'Courier New', monospace;

@@ -8,6 +8,7 @@ return [
         'SARL AU' => 'SARL-AU',
         'SARL' => 'SARL',
         'SA' => 'SA',
+        '_Cession' => 'Cession de parts',
     ],
 
     'document_types' => [
