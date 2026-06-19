@@ -168,50 +168,6 @@ $variables = TemplateEditor::getAvailableVariables();
 ?>
 
 <section class="template-editor-layout">
-    <div class="editor-sidebar card stack">
-        <div class="section-header">
-            <h3>Variables</h3>
-            <p class="help-text">Cliquez pour insérer</p>
-        </div>
-        <div class="variable-search">
-            <input type="text" id="var-search" placeholder="Rechercher..." class="input-full">
-        </div>
-            <div class="variable-categories">
-                <?php foreach ($variables as $category => $vars): ?>
-                    <div class="var-category">
-                        <h4 class="var-category-title" onclick="toggleCategory(this)">
-                            <span class="material-symbols-outlined">expand_more</span>
-                            <?= e($category) ?>
-                            <span class="var-count"><?= count($vars) ?></span>
-                        </h4>
-                        <div class="var-list">
-                            <?php foreach ($vars as $varName => $varLabel): ?>
-                                <button type="button" class="var-btn" onclick="insertVar('{{ <?= e($varName) ?> }}')" title="<?= e($varLabel) ?>">
-                                    <code>{{ <?= e($varName) ?> }}</code>
-                                    <small><?= e($varLabel) ?></small>
-                                </button>
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-            <div class="sidebar-zoom-controls">
-                <span class="sidebar-zoom-label">Zoom éditeur</span>
-                <div class="sidebar-zoom-buttons">
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="editorZoomOut()" title="Zoom arrière">
-                        <span class="material-symbols-outlined">zoom_out</span>
-                    </button>
-                    <span id="editor-zoom-level" class="preview-zoom-level">100%</span>
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="editorZoomIn()" title="Zoom avant">
-                        <span class="material-symbols-outlined">zoom_in</span>
-                    </button>
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="editorZoomReset()" title="Rétablir le zoom">
-                        <span class="material-symbols-outlined">fit_screen</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-
     <div class="editor-main card stack">
         <div class="section-header">
             <div>
@@ -279,7 +235,7 @@ $variables = TemplateEditor::getAvailableVariables();
                     <span class="material-symbols-outlined">format_italic</span>
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="exec('underline')" title="Souligne (Ctrl+U)">
-                    <span class="material-symbols-outlined">format_underline</span>
+                    <span class="toolbar-letter-icon" style="font-weight:700;text-decoration:underline;font-size:1rem;line-height:1;font-family:inherit">S</span>
                 </button>
                 <span class="toolbar-sep"></span>
                 <span class="color-btn">
@@ -420,6 +376,40 @@ $variables = TemplateEditor::getAvailableVariables();
             <input type="hidden" name="blank_name" value="">
         </form>
     </div>
+
+    <div class="editor-sidebar card stack" id="editor-sidebar">
+        <div class="section-header">
+            <h3>Variables</h3>
+            <p class="help-text">Cliquez pour insérer</p>
+            <button type="button" class="btn-icon" onclick="toggleSidebar()" title="Réduire/Agrandir le panneau" id="sidebar-toggle-btn">
+                <span class="material-symbols-outlined">chevron_right</span>
+            </button>
+        </div>
+        <div class="sidebar-body">
+            <div class="variable-search">
+                <input type="text" id="var-search" placeholder="Rechercher..." class="input-full">
+            </div>
+            <div class="variable-categories">
+                <?php foreach ($variables as $category => $vars): ?>
+                    <div class="var-category">
+                        <h4 class="var-category-title" onclick="toggleCategory(this)">
+                            <span class="material-symbols-outlined">expand_more</span>
+                            <?= e($category) ?>
+                            <span class="var-count"><?= count($vars) ?></span>
+                        </h4>
+                        <div class="var-list">
+                            <?php foreach ($vars as $varName => $varLabel): ?>
+                                <button type="button" class="var-btn" onclick="insertVar('{{ <?= e($varName) ?> }}')" title="<?= e($varLabel) ?>">
+                                    <code>{{ <?= e($varName) ?> }}</code>
+                                    <small><?= e($varLabel) ?></small>
+                                </button>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </div>
 </section>
 
 <script>
@@ -553,6 +543,12 @@ function togglePreview() {
             .replace(/<table/g, '<table style="width:100%;border-collapse:collapse;margin:0.5em 0"')
             .replace(/<td/g, '<td style="border:1px solid #999;padding:6px"')
             .replace(/<th/g, '<th style="border:1px solid #999;padding:6px;background:#f0f0f0"');
+        let temp = document.createElement('div');
+        temp.innerHTML = display;
+        let a4Pages = temp.querySelectorAll('.a4-page');
+        if (a4Pages.length > 0) {
+            display = Array.from(a4Pages).map(function(p) { return p.innerHTML; }).join('<hr class="page-break">');
+        }
         preview.innerHTML = display || '<p style="color:#999">(vide)</p>';
         preview.classList.remove('hidden');
         pvWrapper.style.display = '';
@@ -632,6 +628,13 @@ function applyEditorZoom() {
     const editor = document.getElementById('editor-content');
     editor.style.zoom = editorZoom;
     document.getElementById('editor-zoom-level').textContent = Math.round(editorZoom * 100) + '%';
+}
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('editor-sidebar');
+    sidebar.classList.toggle('collapsed');
+    const icon = document.querySelector('#sidebar-toggle-btn .material-symbols-outlined');
+    icon.textContent = sidebar.classList.contains('collapsed') ? 'chevron_left' : 'chevron_right';
 }
 
 function beforeSave() {
