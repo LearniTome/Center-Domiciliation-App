@@ -393,23 +393,28 @@ if ($step === 2):
         </div>
     </template>
 
-    <div class="card" style="margin-top:12px;padding:12px 16px">
-        <div style="display:flex;gap:20px;align-items:baseline;flex-wrap:wrap">
-            <div style="display:flex;gap:6px;align-items:baseline">
-                <span style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-secondary)">Parts</span>
-                <strong style="font-size:1rem"><?= (int) ($wizard['societe']['societe_part_social'] ?? 0) ?></strong>
+    <div class="dash-metrics" style="margin-top:12px">
+        <div class="dash-metric">
+            <div class="dm-icon dm-icon-soc"><span class="material-symbols-outlined">token</span></div>
+            <div class="dm-body">
+                <span class="dm-label">Parts societe</span>
+                <strong class="dm-value"><?= (int) ($wizard['societe']['societe_part_social'] ?? 0) ?></strong>
             </div>
-            <div style="display:flex;gap:6px;align-items:baseline">
-                <span style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-secondary)">Capital</span>
-                <strong style="font-size:1rem"><?= e(number_format((float) ($wizard['societe']['societe_capital'] ?? 0), 2, ',', ' ')) ?> DH</strong>
+        </div>
+        <div class="dash-metric">
+            <div class="dm-icon dm-icon-ctr"><span class="material-symbols-outlined">account_balance</span></div>
+            <div class="dm-body">
+                <span class="dm-label">Capital societe</span>
+                <strong class="dm-value"><?= e(number_format((float) ($wizard['societe']['societe_capital'] ?? 0), 2, ',', ' ')) ?> DH</strong>
             </div>
-            <span style="width:1px;height:24px;background:var(--line);align-self:center"></span>
-            <div style="display:flex;gap:6px;align-items:baseline">
-                <span style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-secondary)">Total assoc.</span>
-                <strong style="font-size:1rem">Parts: <span id="total-parts-display">0</span></strong>
-                <strong style="font-size:1rem">Capital: <span id="total-capital-display">0,00</span> DH</strong>
+        </div>
+        <div class="dash-metric" id="total-assoc-metric" style="position:relative">
+            <div class="dm-icon dm-icon-doc"><span class="material-symbols-outlined">group</span></div>
+            <div class="dm-body">
+                <span class="dm-label">Total associes</span>
+                <strong class="dm-value">Parts: <span id="total-parts-display">0</span> / Capital: <span id="total-capital-display">0,00</span> DH</strong>
+                <span id="parts-status" style="font-size:0.72rem;font-weight:500">&nbsp;</span>
             </div>
-            <span id="parts-status" style="font-size:0.8rem;font-weight:500">&nbsp;</span>
         </div>
     </div>
 
