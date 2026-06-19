@@ -413,10 +413,10 @@ if ($step === 2):
             <div class="dm-body">
                 <span class="dm-label">Total associes</span>
                 <strong class="dm-value">Parts: <span id="total-parts-display">0</span> / Capital: <span id="total-capital-display">0,00</span> DH</strong>
-                <span id="parts-status" style="font-size:0.72rem;font-weight:500">&nbsp;</span>
             </div>
         </div>
     </div>
+    <div id="parts-status" style="margin-top:8px;padding:6px 12px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);font-size:0.82rem;font-weight:500">&nbsp;</div>
 
     <div class="footer-actions" style="margin-top:12px">
         <div style="display:flex;gap:8px;margin-right:auto">
