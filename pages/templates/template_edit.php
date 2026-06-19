@@ -1253,7 +1253,7 @@ function exportPDF() {
     }).join('');
     const htmlOut = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'
         + '<title>Exporter PDF</title><style>'
-        + 'body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; line-height: 1.5; margin: 0; color: #000; background:#f0f0f0; display:flex; flex-direction:column; align-items:center; padding:24px 0; }'
+        + 'body { font-family: Calibri, \'Segoe UI\', Arial, sans-serif; margin: 0; color: #000; background:#f0f0f0; display:flex; flex-direction:column; align-items:center; padding:24px 0; }'
         + 'h1 { font-size: 18pt; font-weight: 700; margin: 12pt 0 6pt; }'
         + 'h2 { font-size: 16pt; font-weight: 700; margin: 10pt 0 4pt; }'
         + 'h3 { font-size: 14pt; font-weight: 600; margin: 8pt 0 4pt; }'
