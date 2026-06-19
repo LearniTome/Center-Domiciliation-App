@@ -1249,7 +1249,7 @@ function exportPDF() {
     const pageHtmls = paginated.split('<hr class="page-break">');
     const content = pageHtmls.map(function(chunk, idx) {
         var inner = chunk.replace(/<div class="preview-page">/, '').replace(/<div class="preview-page-footer">.*?<\/div><\/div>$/s, '');
-        return '<div class="a4-page-visuel"><div class="page-content">' + inner + '</div><div class="page-footer">Page ' + (idx + 1) + ' / ' + pageHtmls.length + '</div></div>';
+        return '<div class="a4-page-visuel">' + inner + '<div class="page-footer">Page ' + (idx + 1) + ' / ' + pageHtmls.length + '</div></div>';
     }).join('');
     const htmlOut = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'
         + '<title>Exporter PDF</title><style>'
@@ -1262,8 +1262,7 @@ function exportPDF() {
         + 'table { width: 100%; border-collapse: collapse; margin: 6pt 0; }'
         + 'td, th { border: 1px solid #999; padding: 4pt; }'
         + 'var { color: #0090e7; font-style: normal; font-family: "Courier New", monospace; background:#e8f4fd; padding:0 2px; border-radius:2px; }'
-        + '.a4-page-visuel { width:21cm; padding:2cm 2.5cm 1.2cm; background:white; box-shadow:0 2px 10px rgba(0,0,0,0.25); box-sizing:border-box; margin-bottom:24px; }'
-        + '.a4-page-visuel .page-content { }'
+        + '.a4-page-visuel { width:21cm; min-height:29.7cm; padding:2cm 2.5cm 1.5cm; background:white; box-shadow:0 2px 10px rgba(0,0,0,0.25); box-sizing:border-box; margin-bottom:24px; }'
         + '.a4-page-visuel .page-footer { text-align:center; font-size:9pt; color:#999; border-top:1px solid #ddd; padding-top:4pt; margin-top:12pt; }'
         + '@media print { body { background:white; padding:0; } .a4-page-visuel { width:auto; min-height:auto; padding:2cm; box-shadow:none; margin:0; page-break-after:always; } .a4-page-visuel:last-child { page-break-after:auto; } .page-footer { display:none; } }'
         + '</style></head><body>' + content + '</body></html>';
