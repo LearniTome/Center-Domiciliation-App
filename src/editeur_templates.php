@@ -810,6 +810,8 @@ class TemplateEditor
                 'SOCIETE_ICE' => 'ICE',
                 'SOCIETE_RC' => 'RC',
                 'SOCIETE_IF' => 'IF',
+                'SOCIETE_TP' => 'Taxe Professionnelle',
+                'SOCIETE_CNSS' => 'CNSS',
                 'SOCIETE_CAPITAL' => 'Capital',
                 'SOCIETE_PART_SOCIAL' => 'Nombre de parts sociales',
                 'SOCIETE_VALEUR_NOMINALE' => 'Valeur nominale',
