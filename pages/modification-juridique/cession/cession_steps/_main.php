@@ -8,7 +8,7 @@ require __DIR__ . '/_init.php';
 
         <?php if ($step >= 1): ?>
         <div class="wizard-steps" id="wizard-steps-top">
-            <?php for ($s = 1; $s <= 6; $s++): ?>
+            <?php for ($s = 1; $s <= 7; $s++): ?>
                 <div class="wizard-step <?= $step > $s ? 'done' : ($step === $s ? 'active' : 'waiting') ?>">
                     <strong>Etape <?= $s ?></strong>
                     <span><?= $stepLabels[$s - 1] ?></span>
@@ -23,8 +23,9 @@ require __DIR__ . '/_init.php';
         require __DIR__ . '/step_02_Associes.php';
         require __DIR__ . '/step_03_Parts.php';
         require __DIR__ . '/step_04_Recap.php';
-        require __DIR__ . '/step_05_Upload.php';
-        require __DIR__ . '/step_06_Generation.php';
+        require __DIR__ . '/step_05_Pv.php';
+        require __DIR__ . '/step_06_Upload.php';
+        require __DIR__ . '/step_07_Generation.php';
         ?>
     </article>
 </section>

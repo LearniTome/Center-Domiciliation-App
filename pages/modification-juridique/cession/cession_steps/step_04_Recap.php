@@ -9,8 +9,6 @@ if (is_post() && $step === 4) {
     }
     redirect_to('cession', ['step' => 5]);
 }
-
-// HTML view
 if ($step === 4):
     $socData = $wizard['mode'] === 'existante' ? $selectedSociete : ($wizard['societe'] ?? []);
     $assocData = $wizard['mode'] === 'existante' ? $selectedAssocies : ($wizard['associes'] ?? []);

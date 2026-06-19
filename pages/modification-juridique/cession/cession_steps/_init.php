@@ -25,7 +25,7 @@ if (!isset($_SESSION['cession_wizard']) || !is_array($_SESSION['cession_wizard']
 
 $editingId = (int) ($_GET['id'] ?? 0);
 $wizard = &$_SESSION['cession_wizard'];
-$step = max(0, min(6, (int) ($_GET['step'] ?? 0)));
+$step = max(0, min(7, (int) ($_GET['step'] ?? 0)));
 
 // ============ REFERENCE DATA ============
 $societesList = [];
@@ -182,4 +182,4 @@ foreach ($selectedAssocies as $a) {
     }
 }
 
-$stepLabels = ['Societe', 'Associes', 'Cession', 'Recap', 'Validation', 'Generation'];
+$stepLabels = ['Societe', 'Associes', 'Cession', 'Recap', 'PV Cession', 'Validation', 'Generation'];
