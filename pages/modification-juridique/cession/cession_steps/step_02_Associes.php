@@ -410,9 +410,12 @@ if ($step === 2):
         </div>
         <div class="dash-metric" id="total-assoc-metric" style="position:relative">
             <div class="dm-icon dm-icon-doc"><span class="material-symbols-outlined">group</span></div>
-            <div class="dm-body">
+            <div class="dm-body" style="display:flex;flex-direction:column;gap:4px">
                 <span class="dm-label">Total associes</span>
-                <strong class="dm-value">Parts: <span id="total-parts-display">0</span> / Capital: <span id="total-capital-display">0,00</span> DH</strong>
+                <div style="display:flex;gap:16px;flex-wrap:wrap">
+                    <strong class="dm-value" style="font-size:0.85rem">Parts: <span id="total-parts-display">0</span></strong>
+                    <strong class="dm-value" style="font-size:0.85rem">Capital: <span id="total-capital-display">0,00</span> DH</strong>
+                </div>
             </div>
         </div>
     </div>
