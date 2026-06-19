@@ -797,7 +797,7 @@ function buildPaginatedPreview(html) {
     if (blocks.length === 0) return '<p style="color:#999;padding:2cm">(vide)</p>';
 
     var measurer = document.createElement('div');
-    measurer.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;padding:2cm 2.5cm;font-family:Calibri,sans-serif;font-size:11pt;line-height:1.5;overflow:hidden;';
+    measurer.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;height:1123px;padding:2cm 2.5cm;font-family:Calibri,sans-serif;font-size:11pt;line-height:1.5;overflow:hidden;';
     document.body.appendChild(measurer);
 
     var pageChunks = [];
@@ -1108,29 +1108,42 @@ function insertPageBreak() {
 
 function checkPaginate() {
     const editor = document.getElementById('editor-content');
+    if (!editor) return;
     const pages = editor.querySelectorAll('.a4-page');
     const last = pages[pages.length - 1];
-    if (!last) return;
-    if (last.scrollHeight > last.clientHeight + 3) {
-        const newPage = document.createElement('div');
-        newPage.className = 'a4-page';
-        const nodes = Array.from(last.childNodes);
-        let moved = false;
-        for (let i = nodes.length - 1; i >= 0; i--) {
-            const el = nodes[i];
-            const h = el.offsetHeight || 0;
-            last.removeChild(el);
-            newPage.insertBefore(el, newPage.firstChild);
-            if (last.scrollHeight <= last.clientHeight + 3) {
-                moved = true;
-                break;
-            }
-        }
-        if (last.nextSibling) {
-            editor.insertBefore(newPage, last.nextSibling);
-        } else {
-            editor.appendChild(newPage);
-        }
+    if (!last || last.scrollHeight <= last.clientHeight + 3) return;
+    const newPage = document.createElement('div');
+    newPage.className = 'a4-page';
+    const nodes = Array.from(last.childNodes);
+    for (let i = nodes.length - 1; i >= 0; i--) {
+        const el = nodes[i];
+        last.removeChild(el);
+        newPage.insertBefore(el, newPage.firstChild);
+        if (last.scrollHeight <= last.clientHeight + 3) break;
+    }
+    editor.insertBefore(newPage, last.nextSibling);
+}
+
+function repageAll() {
+    const editor = document.getElementById('editor-content');
+    if (!editor) return;
+    const existing = editor.querySelectorAll('.a4-page');
+    const content = document.createElement('div');
+    existing.forEach(function(p) {
+        while (p.firstChild) content.appendChild(p.firstChild);
+        p.remove();
+    });
+    const firstPage = document.createElement('div');
+    firstPage.className = 'a4-page';
+    while (content.firstChild) firstPage.appendChild(content.firstChild);
+    editor.appendChild(firstPage);
+    let safety = 0;
+    while (safety < 100) {
+        const pages = editor.querySelectorAll('.a4-page');
+        const last = pages[pages.length - 1];
+        if (!last || last.scrollHeight <= last.clientHeight + 3) break;
+        checkPaginate();
+        safety++;
     }
 }
 
@@ -1152,7 +1165,7 @@ document.querySelector('.editor-toolbar')?.addEventListener('mousedown', functio
     if (e.target.closest('button, .color-btn input')) saveSelection();
 });
 
-setTimeout(checkPaginate, 100);
+setTimeout(repageAll, 100);
 
 function clearFormatting() {
     const sel = window.getSelection();
