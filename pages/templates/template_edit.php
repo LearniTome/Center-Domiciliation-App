@@ -318,27 +318,6 @@ $varExamples = [
 .variables-panel.collapsed .sidebar-body {
     display: none;
 }
-.variables-panel.collapsed .section-header h3,
-.variables-panel.collapsed .section-header p {
-    display: none;
-}
-.var-actions {
-    display: flex; align-items: center; gap: 4px; margin-bottom: 0.5rem;
-}
-.var-actions .btn-sm {
-    font-size: 0.7rem; padding: 2px 6px; min-width: auto;
-}
-.var-actions .btn-sm .material-symbols-outlined {
-    font-size: 14px;
-}
-.var-filter-toggle {
-    margin-left: auto; display: flex; align-items: center; gap: 3px;
-    font-size: 0.72rem; color: var(--text-secondary); cursor: pointer;
-    user-select: none;
-}
-.var-filter-toggle input[type="checkbox"] {
-    margin: 0; cursor: pointer;
-}
 .var-btn[draggable="true"] {
     cursor: grab;
 }
@@ -348,18 +327,75 @@ $varExamples = [
 .var-btn.drag-over {
     border-color: var(--primary); background: rgba(74,108,247,0.08);
 }
-#recent-vars .var-list {
-    display: flex; flex-direction: row; flex-wrap: wrap; gap: 3px;
+#recent-vars {
+    display: flex; flex-direction: row; flex-wrap: wrap; gap: 4px; align-items: center;
+    margin-bottom: 0.5rem; padding: 0.25rem 0;
 }
-#recent-vars .var-list .var-btn {
-    display: inline-flex; grid-template-columns: none; gap: 2px; padding: 0.15rem 0.4rem;
-    font-size: 0.7rem; border-left: none;
+#recent-vars .var-recent-header {
+    display: flex; align-items: center; gap: 3px; font-size: 0.72rem;
+    color: var(--text-secondary); white-space: nowrap;
 }
-#recent-vars .var-list .var-btn code {
-    font-size: 0.7rem;
+#recent-vars .var-recent-header .material-symbols-outlined { font-size: 14px; }
+#recent-vars .var-count { font-size: 0.65rem; }
+#recent-vars .var-btn {
+    display: inline-flex; gap: 2px; padding: 0.15rem 0.4rem;
+    font-size: 0.7rem; background: transparent; border: 1px solid var(--line);
+    border-radius: var(--radius-sm); cursor: pointer; transition: all 0.1s;
+}
+#recent-vars .var-btn:hover { background: var(--panel-strong); }
+#recent-vars .var-btn code { font-size: 0.7rem; color: var(--primary); }
+.var-table-wrap {
+    flex: 1; overflow-y: auto; min-height: 0;
+}
+.var-table {
+    width: 100%; border-collapse: collapse; font-size: 0.75rem;
+}
+.var-table thead th {
+    position: sticky; top: 0; background: var(--bg); z-index: 1;
+    padding: 0.3rem 0.4rem; text-align: left; font-weight: 600;
+    border-bottom: 2px solid var(--line); color: var(--text-secondary);
+    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.var-table tbody tr {
+    transition: background 0.1s;
+}
+.var-table tbody tr:hover {
+    background: var(--panel-strong);
+}
+.var-table tbody tr.var-used {
+    background: rgba(0,184,148,0.06);
+}
+.var-table tbody tr.var-used .var-cell code {
+    color: var(--success);
+}
+.var-table td {
+    padding: 0.2rem 0.4rem; vertical-align: middle; border-bottom: 1px solid var(--line);
+}
+.var-table .var-type {
+    color: var(--text-secondary); font-size: 0.68rem; white-space: nowrap;
+    width: 80px;
+}
+.var-table .var-cell { padding: 0; }
+.var-table .var-btn {
+    display: block; width: 100%; text-align: left; padding: 0.2rem 0.4rem;
+    background: transparent; border: none; cursor: pointer; font-size: 0.75rem;
+    border-radius: 0; transition: none;
+}
+.var-table .var-btn:hover { background: transparent; }
+.var-table .var-btn code { font-family: 'Courier New', monospace; color: var(--primary); }
+.var-table .var-label {
+    color: var(--text-secondary); font-size: 0.72rem;
+}
+.var-table .var-use-cell { text-align: center; width: 50px; }
+.var-table .var-checkbox { margin: 0; cursor: pointer; }
+.var-table .var-count-cell { text-align: center; width: 60px; }
+.var-table .var-usage {
+    font-size: 0.62rem; color: var(--text-secondary);
+    background: var(--panel-strong); padding: 0 0.35rem; border-radius: 6px;
+    line-height: 1.6; display: inline-block; min-width: 14px; text-align: center;
 }
 .cat-cession { display: none; }
-.show-all-cession .cat-cession { display: block; }
+
 </style>
 <section class="template-editor-layout">
     <div class="editor-main card stack">
@@ -584,51 +620,48 @@ $varExamples = [
         <div class="variable-search">
             <input type="text" id="var-search" placeholder="Rechercher..." class="input-full" autocomplete="off">
         </div>
-        <div class="var-actions">
-            <button type="button" class="btn btn-sm" onclick="expandAll()" title="Tout ouvrir">
-                <span class="material-symbols-outlined">expand_more</span> Ouvrir
-            </button>
-            <button type="button" class="btn btn-sm" onclick="collapseAll()" title="Tout fermer">
-                <span class="material-symbols-outlined">chevron_right</span> Fermer
-            </button>
-            <label class="var-filter-toggle" title="Afficher toutes les variables">
-                <input type="checkbox" id="show-all-vars" onchange="toggleAllVars()">
-                <span>Toutes</span>
-            </label>
-        </div>
-        <div id="recent-vars" class="var-category" style="display:none">
-            <h4 class="var-category-title" onclick="toggleCategory(this)">
+        <div id="recent-vars" style="display:none">
+            <div class="var-recent-header">
                 <span class="material-symbols-outlined">schedule</span>
                 Recentes
                 <span class="var-count" id="recent-count">0</span>
-            </h4>
-            <div class="var-list" id="recent-list"></div>
+            </div>
+            <div id="recent-list"></div>
         </div>
-        <div class="variable-categories" id="var-categories">
-            <?php foreach ($variables as $category => $vars):
-                $hide = !$isCession && in_array($category, ['Cession', 'Cedant', 'Cessionnaire']);
-            ?>
-                <div class="var-category<?= $hide ? ' cat-cession' : '' ?>">
-                    <h4 class="var-category-title" onclick="toggleCategory(this)">
-                        <span class="material-symbols-outlined">expand_more</span>
-                        <?= e($category) ?>
-                        <span class="var-count"><?= count($vars) ?></span>
-                    </h4>
-                    <div class="var-list">
-                        <?php foreach ($vars as $varName => $varLabel):
+        <div class="var-table-wrap" id="var-categories">
+            <table class="var-table" id="var-table">
+                <thead>
+                    <tr>
+                        <th data-col="type">Type Variable</th>
+                        <th data-col="name">Variable</th>
+                        <th data-col="label">Libellé Variable</th>
+                        <th data-col="use">Utiliser</th>
+                        <th data-col="count">Nombre de fois</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($variables as $category => $vars):
+                        $hide = !$isCession && in_array($category, ['Cession', 'Cedant', 'Cessionnaire']);
+                        foreach ($vars as $varName => $varLabel):
                             $example = $varExamples[$varName] ?? '';
-                        ?>
-                            <button type="button" class="var-btn" draggable="true"
-                                data-var="{{ <?= e($varName) ?> }}"
-                                title="<?= e($varLabel) ?><?= $example ? '  ex: ' . e($example) : '' ?>">
-                                <code>{{ <?= e($varName) ?> }}</code>
-                                <span class="var-label"><?= e($varLabel) ?></span>
-                                <span class="var-usage" style="display:none">0</span>
-                            </button>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-            <?php endforeach; ?>
+                    ?>
+                        <tr class="var-row<?= $hide ? ' cat-cession' : '' ?>">
+                            <td class="var-type"><?= e($category) ?></td>
+                            <td class="var-cell">
+                                <button type="button" class="var-btn" draggable="true"
+                                    data-var="{{ <?= e($varName) ?> }}"
+                                    title="<?= e($varLabel) ?><?= $example ? '  ex: ' . e($example) : '' ?>">
+                                    <code>{{ <?= e($varName) ?> }}</code>
+                                </button>
+                            </td>
+                            <td class="var-label"><?= e($varLabel) ?></td>
+                            <td class="var-use-cell"><input type="checkbox" class="var-checkbox"></td>
+                            <td class="var-count-cell"><span class="var-usage" style="display:none">0</span></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -679,18 +712,6 @@ function insertVar(text) {
         }
     }
     trackVarUsage(text);
-}
-
-function toggleCategory(titleEl) {
-    const list = titleEl.nextElementSibling;
-    const icon = titleEl.querySelector('.material-symbols-outlined');
-    if (list.style.display === 'none') {
-        list.style.display = '';
-        icon.textContent = 'expand_more';
-    } else {
-        list.style.display = 'none';
-        icon.textContent = 'chevron_right';
-    }
 }
 
 function showSaveAs() {
@@ -860,28 +881,6 @@ function toggleSidebar() {
     icon.textContent = panel.classList.contains('collapsed') ? 'expand_more' : 'expand_less';
 }
 
-function expandAll() {
-    document.querySelectorAll('.var-list').forEach(function(el) {
-        el.style.display = '';
-    });
-    document.querySelectorAll('.var-category-title .material-symbols-outlined').forEach(function(icon) {
-        icon.textContent = 'expand_more';
-    });
-}
-
-function collapseAll() {
-    document.querySelectorAll('.var-list').forEach(function(el) {
-        el.style.display = 'none';
-    });
-    document.querySelectorAll('.var-category-title .material-symbols-outlined').forEach(function(icon) {
-        icon.textContent = 'chevron_right';
-    });
-}
-
-function toggleAllVars() {
-    document.getElementById('var-categories').classList.toggle('show-all-cession', document.getElementById('show-all-vars').checked);
-}
-
 // Drag & drop
 function initDragDrop() {
     const editor = document.getElementById('editor-content');
@@ -956,8 +955,9 @@ function countUsage() {
     const editor = document.getElementById('editor-content');
     const source = document.getElementById('editor-source');
     const content = source.classList.contains('hidden') ? editor.innerHTML : source.value;
-    document.querySelectorAll('.var-btn').forEach(function(btn) {
-        const varName = btn.getAttribute('data-var');
+    document.querySelectorAll('.var-row').forEach(function(row) {
+        const btn = row.querySelector('.var-btn');
+        const varName = btn ? btn.getAttribute('data-var') : '';
         if (!varName) return;
         let count = 0;
         let idx = 0;
@@ -966,12 +966,12 @@ function countUsage() {
             count++;
             idx += searchStr.length;
         }
-        const badge = btn.querySelector('.var-usage');
+        const badge = row.querySelector('.var-usage');
         if (badge) {
             badge.style.display = count > 0 ? 'inline' : 'none';
             badge.textContent = count;
         }
-        btn.classList.toggle('var-used', count > 0);
+        row.classList.toggle('var-used', count > 0);
     });
 }
 
@@ -1146,13 +1146,9 @@ function printEditor() {
 
 document.getElementById('var-search')?.addEventListener('input', function() {
     const q = this.value.toLowerCase();
-    document.querySelectorAll('.var-btn').forEach(function(btn) {
-        btn.style.display = btn.textContent.toLowerCase().includes(q) ? '' : 'none';
-    });
-    document.querySelectorAll('.var-category').forEach(function(cat) {
-        const btns = cat.querySelectorAll('.var-btn');
-        const visible = Array.from(btns).some(b => b.style.display !== 'none');
-        cat.style.display = visible ? '' : 'none';
+    document.querySelectorAll('.var-row').forEach(function(row) {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(q) ? '' : 'none';
     });
 });
 
