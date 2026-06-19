@@ -61,6 +61,8 @@ if ($step === 4):
                     <?php
                     $socCapital = (float) ($socData['societe_capital'] ?? 0);
                     $socParts = (int) ($socData['societe_part_social'] ?? 0);
+                    $totalParts = $socParts;
+                    $totalCapital = $socCapital;
 
                     $cedantNames = [];
                     $cessionnaireNames = [];
@@ -158,9 +160,6 @@ if ($step === 4):
                 <div class="recap-section">
                     <h3>Repartition du capital apres cession</h3>
                     <?php
-                    $totalParts = (int) ($socData['societe_part_social'] ?? 0);
-                    $totalCapital = (float) ($socData['societe_capital'] ?? 0);
-
                     // Build a map of each associate's actual holdings from assocData
                     $assocHoldings = [];
                     foreach ($assocData as $a) {
