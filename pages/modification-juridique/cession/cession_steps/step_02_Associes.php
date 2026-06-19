@@ -393,21 +393,25 @@ if ($step === 2):
         </div>
     </template>
 
-    <div class="stats small" style="margin-top:12px">
-        <div class="stat">
-            <span>Parts societe</span>
-            <strong><?= (int) ($wizard['societe']['societe_part_social'] ?? 0) ?></strong>
-        </div>
-        <div class="stat">
-            <span>Capital societe</span>
-            <strong><?= e(number_format((float) ($wizard['societe']['societe_capital'] ?? 0), 2, ',', ' ')) ?> DH</strong>
-        </div>
-        <div class="stat">
-            <span>Total associes</span>
-            <strong>Parts: <span id="total-parts-display">0</span> &ndash; Capital: <span id="total-capital-display">0,00</span> DH</strong>
+    <div class="card" style="margin-top:12px;padding:12px 16px">
+        <div style="display:flex;gap:20px;align-items:baseline;flex-wrap:wrap">
+            <div style="display:flex;gap:6px;align-items:baseline">
+                <span style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-secondary)">Parts</span>
+                <strong style="font-size:1rem"><?= (int) ($wizard['societe']['societe_part_social'] ?? 0) ?></strong>
+            </div>
+            <div style="display:flex;gap:6px;align-items:baseline">
+                <span style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-secondary)">Capital</span>
+                <strong style="font-size:1rem"><?= e(number_format((float) ($wizard['societe']['societe_capital'] ?? 0), 2, ',', ' ')) ?> DH</strong>
+            </div>
+            <span style="width:1px;height:24px;background:var(--line);align-self:center"></span>
+            <div style="display:flex;gap:6px;align-items:baseline">
+                <span style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-secondary)">Total assoc.</span>
+                <strong style="font-size:1rem">Parts: <span id="total-parts-display">0</span></strong>
+                <strong style="font-size:1rem">Capital: <span id="total-capital-display">0,00</span> DH</strong>
+            </div>
+            <span id="parts-status" style="font-size:0.8rem;font-weight:500">&nbsp;</span>
         </div>
     </div>
-    <div id="parts-status" style="margin-top:8px;font-size:0.85rem;font-weight:500">&nbsp;</div>
 
     <div class="footer-actions" style="margin-top:12px">
         <div style="display:flex;gap:8px;margin-right:auto">
@@ -455,12 +459,14 @@ if ($step === 2):
             if (totalPartsExpected > 0 && totalP !== totalPartsExpected) ok = false;
             if (totalCapitalExpected > 0 && Math.abs(totalC - totalCapitalExpected) > 0.01) ok = false;
             if (ok) {
-                partsStatus.innerHTML = '<span style="color:var(--success)">✓ Le total des parts et du capital correspond a la societe.</span>';
+                partsStatus.innerHTML = '✓ Le total correspond';
+                partsStatus.style.color = 'var(--success)';
             } else {
                 var msgs = [];
                 if (totalPartsExpected > 0 && totalP !== totalPartsExpected) msgs.push('parts: ' + totalP + '/' + totalPartsExpected);
                 if (totalCapitalExpected > 0 && Math.abs(totalC - totalCapitalExpected) > 0.01) msgs.push('capital: ' + totalC.toFixed(0) + '/' + totalCapitalExpected.toFixed(0));
-                partsStatus.innerHTML = '<span style="color:var(--danger)">✗ Le total des ' + msgs.join(' et ') + ' des associes ne correspond pas a la societe.</span>';
+                partsStatus.innerHTML = '✗ ' + msgs.join(', ');
+                partsStatus.style.color = 'var(--danger)';
             }
         }
         // Highlight error fields
