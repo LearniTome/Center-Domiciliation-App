@@ -419,7 +419,7 @@ if ($isConnected) {
     </a>
     <?php endif; ?>
     <?php if (has_permission('templates.edit')): ?>
-    <a class="dash-action dash-action-tpl" href="<?= e(app_url('template_edit', ['path' => ''])) ?>">
+    <a class="dash-action dash-action-tpl" href="<?= e(app_url('templates', ['action' => 'editeur'])) ?>">
         <span class="material-symbols-outlined">edit_note</span>
         <strong>Editeur template</strong>
         <small><?= $templateCount ?> documents</small>

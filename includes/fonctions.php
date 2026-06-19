@@ -608,8 +608,6 @@ function get_page_permission(string $page): ?string
         'creation' => 'wizard.create',
 
         'templates' => 'templates.view',
-        'template' => 'templates.view',
-        'template_edit' => 'templates.edit',
 
         'generation' => 'generation.use',
         'download_all' => 'generation.use',

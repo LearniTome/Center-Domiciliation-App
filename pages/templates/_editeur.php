@@ -64,7 +64,7 @@ if ($templatePath === '' || !str_starts_with($templatePath, realpath($templatesD
                             <tr>
                                 <td><?= e(basename($f)) ?></td>
                                 <td>
-                                    <a class="btn-icon info" href="<?= e(app_url('template_edit', ['path' => $f])) ?>" title="Editer">
+                                    <a class="btn-icon info" href="<?= e(app_url('templates', ['action' => 'editeur', 'path' => $f])) ?>" title="Editer">
                                         <span class="material-symbols-outlined">edit</span>
                                     </a>
                                 </td>
@@ -118,7 +118,7 @@ if (is_post()) {
         } catch (Throwable $e) {
             set_flash('error', 'Erreur lors de l\'enregistrement : ' . $e->getMessage());
         }
-        redirect_to('template_edit', ['path' => $templatePath]);
+        redirect_to('templates', ['action' => 'editeur', 'path' => $templatePath]);
     }
 
     if ($action === 'save_as') {
@@ -135,11 +135,11 @@ if (is_post()) {
             TemplateEditor::createNewHtml($html, $newPath);
             set_flash('success', 'Nouveau template cree avec succes.');
             log_activity($pdo, 'create', 'template', null, $newName);
-            redirect_to('template_edit', ['path' => $newPath]);
+            redirect_to('templates', ['action' => 'editeur', 'path' => $newPath]);
         } catch (Throwable $e) {
             set_flash('error', 'Erreur lors de la creation : ' . $e->getMessage());
         }
-        redirect_to('template_edit', ['path' => $templatePath]);
+        redirect_to('templates', ['action' => 'editeur', 'path' => $templatePath]);
     }
 
     if ($action === 'create_blank') {
@@ -155,7 +155,7 @@ if (is_post()) {
             TemplateEditor::createNewHtml('', $newPath);
             set_flash('success', 'Template vierge cree.');
             log_activity($pdo, 'create', 'template', null, $blankName);
-            redirect_to('template_edit', ['path' => $newPath]);
+            redirect_to('templates', ['action' => 'editeur', 'path' => $newPath]);
         } catch (Throwable $e) {
             set_flash('error', 'Erreur : ' . $e->getMessage());
         }
@@ -426,10 +426,10 @@ $varExamples = [
                 <p class="help-text"><?= e($folderLabels[$folder] ?? $folder) ?> &mdash; <?= e($filename) ?></p>
             </div>
             <div class="table-actions">
-                <a class="btn btn-back" href="<?= e(app_url('template', ['path' => $templatePath])) ?>" title="Retour aux infos template">
+                <a class="btn btn-back" href="<?= e(app_url('templates', ['action' => 'inspecteur', 'path' => $templatePath])) ?>" title="Retour aux infos template">
                     <span class="material-symbols-outlined">arrow_back</span> Retour
                 </a>
-                <a class="btn-icon" href="<?= e(app_url('template_edit')) ?>" title="Changer de template">
+                <a class="btn-icon" href="<?= e(app_url('templates', ['action' => 'editeur'])) ?>" title="Changer de template">
                     <span class="material-symbols-outlined">edit_note</span>
                 </a>
             </div>
@@ -1297,11 +1297,11 @@ function exportPDF() {
         + '.a4-page-visuel .page-footer { text-align:center; font-size:9pt; color:#999; border-top:1px solid #ddd; padding-top:4pt; margin-top:12pt; }'
         + '@media print { body { background:white; padding:0; } .a4-page-visuel { width:auto; min-height:auto; padding:1.5cm 2cm; box-shadow:none; margin:0; page-break-after:always; } .a4-page-visuel:last-child { page-break-after:auto; } .page-footer { display:none; } }'
         + '</style></head><body>' + content + '</body></html>';
+    const name = document.querySelector('.section-header h2')?.textContent?.trim() || 'template';
     const blob = new Blob([htmlOut], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    const name = document.querySelector('.section-header h2')?.textContent?.trim() || 'template';
     a.download = name + '.html';
     document.body.appendChild(a);
     a.click();

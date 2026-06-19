@@ -14,7 +14,7 @@ $allowedPages = [
     'dashboard',
     'societe', 'societes', 'associe', 'associes', 'contrats',
     'collaborateur', 'collaborateurs',
-    'generation', 'template', 'template_edit', 'templates',
+    'generation', 'templates',
     'documents', 'download_all',
     'defaults', 'analyse-couverture', 'variables',
     'convert-word-pdf', 'ai-assistant',
@@ -49,8 +49,6 @@ $pageDir = [
     'cession_dossier' => 'modification-juridique/cession',
     // Templates de documents
     'templates' => 'templates',
-    'template' => 'templates',
-    'template_edit' => 'templates',
     'generation' => 'templates',
     'documents' => 'templates',
     'download_all' => 'templates',
@@ -97,6 +95,15 @@ $pageFile = [
 ];
 
 $page = $_GET['page'] ?? 'dashboard';
+
+// Redirection anciennes pages templates → templates unifie
+if ($page === 'template' || $page === 'template_edit') {
+    $action = $page === 'template_edit' ? 'editeur' : 'inspecteur';
+    $params = $_GET;
+    unset($params['page']);
+    redirect_to('templates', array_merge(['action' => $action], $params));
+}
+
 if (!in_array($page, $allowedPages, true)) {
     http_response_code(404);
     $page = 'not-found';
@@ -135,8 +142,6 @@ $pageTitleMap = [
     'collaborateurs' => 'Collaborateurs',
     'generation' => 'Generateur de dossiers',
     'download_all' => 'Telechargement...',
-    'template' => 'Template',
-    'template_edit' => 'Editeur de template',
     'templates' => 'Templates',
     'analyse-couverture' => 'Analyse de couverture',
     'variables' => 'Gestion des variables',
@@ -163,7 +168,17 @@ $pageTitleMap = [
 $noLayoutPages = ['connexion', 'deconnexion'];
 
 if (in_array($page, $noLayoutPages, true)) {
-    $pageTitle = $pageTitleMap[$page] ?? 'Center Domiciliation App';
+$pageTitle = $pageTitleMap[$page] ?? 'Center Domiciliation App';
+
+// Title dynamique pour templates unifie
+if ($page === 'templates') {
+    $action = (string) ($_GET['action'] ?? 'gestionnaire');
+    $pageTitle = match ($action) {
+        'inspecteur' => 'Template',
+        'editeur' => 'Editeur de template',
+        default => 'Templates',
+    };
+}
     require __DIR__ . '/includes/entete.php';
     $dir = $pageDir[$page] ?? '';
     $file = $pageFile[$page] ?? $page;
