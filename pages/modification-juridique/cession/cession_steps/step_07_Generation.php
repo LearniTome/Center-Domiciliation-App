@@ -243,12 +243,6 @@ $stmt->execute([
                 throw new \RuntimeException('Template invalide');
             }
             $cessionId = $wizard['cession_id'];
-            $templateDir = __DIR__ . '/../../../../templates/_Cession';
-            $realTemplateDir = realpath($templateDir);
-            $realPath = realpath($path);
-            if (!$realTemplateDir || !$realPath || !str_starts_with($realPath, $realTemplateDir)) {
-                throw new \RuntimeException('Template hors repertoire autorise');
-            }
 
             $today = date('Y-m-d');
             $societeData = $selectedSociete ?: [];
@@ -257,6 +251,15 @@ $stmt->execute([
             }
             $socName = $societeData['societe_raison_sociale'] ?? 'Client';
             $forme = $societeData['societe_forme_juridique'] ?? 'PP';
+
+            $templateFolders = ['SARL AU' => '_Cession_SARLAU', 'SARL' => '_Cession_SARL'];
+            $templateFolderName = $templateFolders[$forme] ?? '_Cession';
+            $templateDir = __DIR__ . '/../../../../templates/' . $templateFolderName;
+            $realTemplateDir = realpath($templateDir);
+            $realPath = realpath($path);
+            if (!$realTemplateDir || !$realPath || !str_starts_with($realPath, $realTemplateDir)) {
+                throw new \RuntimeException('Template hors repertoire autorise');
+            }
             $clientName = trim(preg_replace('/[^a-zA-Z0-9-]/', '-', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $socName)));
             $clientName = preg_replace('/-+/', '-', $clientName);
             $clientName = trim($clientName, '-');
@@ -372,7 +375,9 @@ $stmt->execute([
         $templatesConfig = require __DIR__ . '/../../../../config/templates.php';
         $mapping = $templatesConfig['template_mapping']['cession'] ?? [];
 
-        $templateDir = __DIR__ . '/../../../../templates/_Cession';
+        $templateFolders = ['SARL AU' => '_Cession_SARLAU', 'SARL' => '_Cession_SARL'];
+        $templateFolderName = $templateFolders[$forme] ?? '_Cession';
+        $templateDir = __DIR__ . '/../../../../templates/' . $templateFolderName;
         $generated = [];
 
         // Check for existing files before overwriting
@@ -430,7 +435,7 @@ $stmt->execute([
     if ($navAction === 'terminer') {
         $societeId = $wizard['societe_id'] ?? 0;
         $cessionId = $wizard['cession_id'] ?? 0;
-        unset($_SESSION['cession_wizard'], $_SESSION['_cession_loaded'], $_SESSION['_cession_overwrite_files'], $_SESSION['_cession_overwrite_docs']);
+        unset($_SESSION['cession_wizard'], $_SESSION['_cession_loaded'], $_SESSION['_cession_editing_id'], $_SESSION['_cession_overwrite_files'], $_SESSION['_cession_overwrite_docs']);
         redirect_to('cession_dossier', ['id' => $cessionId]);
     }
 }
@@ -445,7 +450,10 @@ if ($step === 7):
     $generatedFiles = $wizard['generated_files'] ?? [];
 
     require_once __DIR__ . '/../../../../src/analyseur_templates.php';
-    $cessionTemplateDir = __DIR__ . '/../../../../templates/_Cession';
+    $templateFolders = ['SARL AU' => '_Cession_SARLAU', 'SARL' => '_Cession_SARL'];
+    $formeDir = $societeData['societe_forme_juridique'] ?? '';
+    $templateFolderName = $templateFolders[$formeDir] ?? '_Cession';
+    $cessionTemplateDir = __DIR__ . '/../../../../templates/' . $templateFolderName;
     $templatesByType = [];
     foreach ($mapping as $docType) {
         $matches = glob($cessionTemplateDir . '/*' . $docType . '*_Template.docx');

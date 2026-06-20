@@ -23,11 +23,18 @@ if (!isset($_SESSION['cession_wizard']) || !is_array($_SESSION['cession_wizard']
         'generated_files' => [],
         'pv_resolutions' => [],
     ];
+    unset($_SESSION['_cession_loaded']);
 }
 
 $editingId = (int) ($_GET['id'] ?? 0);
 $wizard = &$_SESSION['cession_wizard'];
 $step = max(0, min(7, (int) ($_GET['step'] ?? 0)));
+
+// Force re-load from DB when entering edit mode
+if ($editingId > 0 && isset($_GET['edit'])) {
+    unset($_SESSION['_cession_loaded']);
+    $_SESSION['_cession_editing_id'] = $editingId;
+}
 
 // ============ REFERENCE DATA ============
 $societesList = [];
@@ -129,9 +136,16 @@ if ($editingId > 0 && !isset($_SESSION['_cession_loaded'])) {
             $stmt2 = $pdo->prepare('SELECT * FROM cession_parts WHERE cession_id = :id ORDER BY id');
             $stmt2->execute(['id' => $editingId]);
             foreach ($stmt2->fetchAll() as $p) {
+                $cedantAssocieId = (int) ($p['cedant_associe_id'] ?? 0);
+                if ($cedantAssocieId === 0 && ($p['cedant_nom_complet'] ?? '') !== '' && $wizard['societe_id'] > 0) {
+                    $s = $pdo->prepare('SELECT id FROM associes WHERE societe_id = :sid AND associe_nom_complet = :nom LIMIT 1');
+                    $s->execute(['sid' => $wizard['societe_id'], 'nom' => $p['cedant_nom_complet']]);
+                    $found = $s->fetch();
+                    if ($found) { $cedantAssocieId = (int) $found['id']; }
+                }
                 $wizard['parts'][] = [
                     'cedant_type' => $p['cedant_type'],
-                    'cedant_associe_id' => $p['cedant_associe_id'],
+                    'cedant_associe_id' => $cedantAssocieId,
                     'cedant_nom_complet' => $p['cedant_nom_complet'],
                     'cedant_cin' => $p['cedant_cin'],
                     'cessionnaire_type' => $p['cessionnaire_type'],
@@ -157,6 +171,9 @@ if ($editingId > 0 && !isset($_SESSION['_cession_loaded'])) {
         }
     }
     $_SESSION['_cession_loaded'] = true;
+    if ($step === 0) {
+        redirect_to('cession', ['step' => 3, 'id' => $editingId, 'edit' => 1]);
+    }
 }
 
 // ============ GUARD ============
