@@ -1,7 +1,6 @@
 <?php
 declare(strict_types=1);
 
-// PHP precompute
 $socForPrix = $selectedSociete ?: ($wizard['societe'] ?? []);
 $valeurNominaleCession = (float) ($socForPrix['societe_valeur_nominale'] ?? 0);
 
@@ -21,6 +20,7 @@ if (is_post() && $step === 3) {
     $cedantCins = $_POST['cedant_cin'] ?? [];
     $cessionnaireTypes = $_POST['cessionnaire_type'] ?? [];
     $cessionnaireAssocieIds = $_POST['cessionnaire_associe_id'] ?? [];
+    $cessionnaireExistantIds = $_POST['cessionnaire_existant_id'] ?? [];
     $cessionnaireNoms = $_POST['cessionnaire_nom'] ?? [];
     $cessionnairePrenoms = $_POST['cessionnaire_prenom'] ?? [];
     $cessionnaireCins = $_POST['cessionnaire_cin'] ?? [];
@@ -66,22 +66,50 @@ if (is_post() && $step === 3) {
             }
         }
 
-        $cessType = $cessionnaireTypes[$i] ?? 'existant';
-        $cessAssocieId = (int) ($cessionnaireAssocieIds[$i] ?? 0);
-        $cessNom = trim((string) ($cessionnairePrenoms[$i] ?? '') . ' ' . (string) ($cessionnaireNoms[$i] ?? ''));
-        $cessCin = trim((string) ($cessionnaireCins[$i] ?? ''));
-        if ($cessType === 'existant' && $cessAssocieId > 0 && $cessNom === '' && ($pdo ?? null) instanceof PDO) {
-            $a = fetch_record($pdo, 'associes', $cessAssocieId);
-            if ($a) { $cessNom = $a['associe_nom_complet'] ?? ''; $cessCin = $a['associe_cin'] ?? ''; }
-        }
-        if ($cessNom === '' && !empty($wizard['associes'])) {
-            foreach ($wizard['associes'] as $wa) {
-                if (((int) ($wa['id'] ?? 0)) === $cessAssocieId) {
-                    $cessNom = $wa['associe_nom_complet'] ?? '';
-                    $cessCin = $wa['associe_cin'] ?? '';
-                    break;
+        // Cessionnaire type: 'nouveau' or 'existant'
+        $cessType = $cessionnaireTypes[$i] ?? 'nouveau';
+        $cessAssocieId = 0;
+        $cessNom = '';
+        $cessCin = '';
+        $cessCivilite = 'M.';
+        $cessDateNaiss = '';
+        $cessLieuNaiss = '';
+        $cessNationalite = '';
+        $cessAdresse = '';
+        $cessTelephone = '';
+        $cessEmail = '';
+        $cessQualite = '';
+
+        if ($cessType === 'existant') {
+            $cessAssocieId = (int) ($cessionnaireExistantIds[$i] ?? 0);
+            // Fetch existing associate data
+            if ($cessAssocieId > 0 && ($pdo ?? null) instanceof PDO) {
+                $a = fetch_record($pdo, 'associes', $cessAssocieId);
+                if ($a) {
+                    $cessNom = $a['associe_nom_complet'] ?? '';
+                    $cessCin = $a['associe_cin'] ?? '';
+                    $cessCivilite = $a['associe_civilite'] ?? 'M.';
+                    $cessDateNaiss = $a['associe_date_naissance'] ?? '';
+                    $cessLieuNaiss = $a['associe_lieu_naissance'] ?? '';
+                    $cessNationalite = $a['associe_nationalite'] ?? '';
+                    $cessAdresse = $a['associe_adresse'] ?? '';
+                    $cessTelephone = $a['associe_telephone'] ?? '';
+                    $cessEmail = $a['associe_email'] ?? '';
+                    $cessQualite = $a['associe_qualite'] ?? '';
                 }
             }
+        } else {
+            $cessAssocieId = (int) ($cessionnaireAssocieIds[$i] ?? 0);
+            $cessNom = trim((string) ($cessionnairePrenoms[$i] ?? '') . ' ' . (string) ($cessionnaireNoms[$i] ?? ''));
+            $cessCin = trim((string) ($cessionnaireCins[$i] ?? ''));
+            $cessCivilite = trim((string) ($cessionnaireCivilites[$i] ?? 'M.'));
+            $cessDateNaiss = trim((string) ($cessionnaireDates[$i] ?? ''));
+            $cessLieuNaiss = trim((string) ($cessionnaireLieux[$i] ?? ''));
+            $cessNationalite = trim((string) ($cessionnaireNationalites[$i] ?? ''));
+            $cessAdresse = trim((string) ($cessionnaireAdresses[$i] ?? ''));
+            $cessTelephone = trim((string) ($cessionnaireTelephones[$i] ?? ''));
+            $cessEmail = trim((string) ($cessionnaireEmails[$i] ?? ''));
+            $cessQualite = trim((string) ($cessionnaireQualites[$i] ?? ''));
         }
 
         $pct = money_value(['v' => $pourcentages[$i] ?? '0'], 'v');
@@ -98,7 +126,6 @@ if (is_post() && $step === 3) {
 
         $cessionnairePartsVal = (int) ($cessionnaireParts[$i] ?? 0);
         $cessionnaireCapitalVal = trim((string) ($cessionnaireCapitals[$i] ?? ''));
-        // Toujours recalculer parts acquises et capital a partir des parts cedees
         if ($parts > 0) {
             $cessionnairePartsVal = $parts;
             $totalCapitalSociete = (float) ($socForPrix['societe_capital'] ?? 0);
@@ -113,17 +140,17 @@ if (is_post() && $step === 3) {
             'cedant_nom_complet' => $cedNom,
             'cedant_cin' => $cedCin,
             'cessionnaire_type' => $cessType,
-            'cessionnaire_associe_id' => $cessAssocieId,
+            'cessionnaire_associe_id' => ($cessType === 'existant') ? $cessAssocieId : 0,
             'cessionnaire_nom_complet' => $cessNom,
             'cessionnaire_cin' => $cessCin,
-            'cessionnaire_civilite' => trim((string) ($cessionnaireCivilites[$i] ?? 'M.')),
-            'cessionnaire_date_naissance' => trim((string) ($cessionnaireDates[$i] ?? '')),
-            'cessionnaire_lieu_naissance' => trim((string) ($cessionnaireLieux[$i] ?? '')),
-            'cessionnaire_nationalite' => trim((string) ($cessionnaireNationalites[$i] ?? '')),
-            'cessionnaire_adresse' => trim((string) ($cessionnaireAdresses[$i] ?? '')),
-            'cessionnaire_telephone' => trim((string) ($cessionnaireTelephones[$i] ?? '')),
-            'cessionnaire_email' => trim((string) ($cessionnaireEmails[$i] ?? '')),
-            'cessionnaire_qualite' => trim((string) ($cessionnaireQualites[$i] ?? '')),
+            'cessionnaire_civilite' => $cessCivilite,
+            'cessionnaire_date_naissance' => $cessDateNaiss,
+            'cessionnaire_lieu_naissance' => $cessLieuNaiss,
+            'cessionnaire_nationalite' => $cessNationalite,
+            'cessionnaire_adresse' => $cessAdresse,
+            'cessionnaire_telephone' => $cessTelephone,
+            'cessionnaire_email' => $cessEmail,
+            'cessionnaire_qualite' => $cessQualite,
             'cessionnaire_parts' => $cessionnairePartsVal,
             'cessionnaire_capital_detenu' => $cessionnaireCapitalVal,
             'cessionnaire_est_gerant' => !empty($nommerGerant[$i]) ? 1 : 0,
@@ -139,6 +166,104 @@ if (is_post() && $step === 3) {
         set_flash('error', 'Ajoutez au moins une ligne de cession valide.');
         redirect_to('cession', ['step' => 3]);
     }
+
+    // ============ CASE DETECTION ============
+    $forme = $socForPrix['societe_forme_juridique'] ?? '';
+    $isSarlAu = $forme === 'SARL AU';
+
+    // Build set of current associate IDs + gérant info
+    $allAssocies = $selectedAssocies ?: ($wizard['associes'] ?? []);
+    $gerantIds = [];
+    $associeGerantMap = [];
+    foreach ($allAssocies as $a) {
+        $aid = (int) ($a['id'] ?? 0);
+        $isGerant = (string) ($a['associe_est_gerant'] ?? '0') === '1';
+        $associeGerantMap[$aid] = $isGerant;
+        if ($isGerant) $gerantIds[$aid] = $a['associe_nom_complet'] ?? '';
+    }
+
+    // Collect gerant_actions from POST
+    $gerantActions = $_POST['gerant_action'] ?? [];
+    $newGerantCessionnaireIndices = [];
+
+    $cedantsGerantMap = [];
+    foreach ($wizard['parts'] as $pi => $part) {
+        $cid = (int) ($part['cedant_associe_id'] ?? 0);
+        $isGerant = $cid > 0 && isset($associeGerantMap[$cid]) && $associeGerantMap[$cid];
+        $action = 'stay';
+        if ($isGerant) {
+            $action = ($gerantActions[$pi] ?? '') === 'resign' ? 'resign' : 'stay';
+            if ($action === 'resign' && !empty($nommerGerant[$pi])) {
+                $newGerantCessionnaireIndices[] = $pi;
+            }
+        }
+        $cedantsGerantMap[$cid] = [
+            'is_gerant' => $isGerant,
+            'action' => $action,
+        ];
+    }
+
+    // Determine cession types per line + overall
+    $cessionTypes = [];
+    foreach ($wizard['parts'] as $pi => $part) {
+        $cid = (int) ($part['cedant_associe_id'] ?? 0);
+        $cedParts = (int) ($part['parts_cedees'] ?? 0);
+        // Find the associate's total parts
+        $assocTotalParts = 0;
+        if ($cid > 0) {
+            foreach ($allAssocies as $a) {
+                if ((int) ($a['id'] ?? 0) === $cid) {
+                    $assocTotalParts = (int) ($a['associe_parts'] ?? 0);
+                    break;
+                }
+            }
+        }
+        $isTotal = $assocTotalParts > 0 && $cedParts >= $assocTotalParts;
+        $cessionTypes[$pi] = $isTotal ? 'total' : 'partial';
+    }
+
+    // Count distinct associates after cession
+    // Start with all current associates, deduct cedants who sell everything
+    $afterAssocieIds = [];
+    foreach ($allAssocies as $a) {
+        $afterAssocieIds[(int) ($a['id'] ?? 0)] = true;
+    }
+    foreach ($wizard['parts'] as $pi => $part) {
+        $cid = (int) ($part['cedant_associe_id'] ?? 0);
+        if ($cessionTypes[$pi] === 'total' && $cid > 0) {
+            // Don't remove yet - check if they're still present via another role
+            // Only remove if they're not also a cessionnaire
+            $isCessionnaire = false;
+            foreach ($wizard['parts'] as $p2) {
+                if ((int) ($p2['cessionnaire_associe_id'] ?? 0) === $cid) {
+                    $isCessionnaire = true;
+                    break;
+                }
+            }
+            if (!$isCessionnaire) {
+                unset($afterAssocieIds[$cid]);
+            }
+        }
+    }
+    // Add new cessionnaires (non-existing ones)
+    foreach ($wizard['parts'] as $part) {
+        if ($part['cessionnaire_type'] === 'nouveau') {
+            $afterAssocieIds['new_' . $part['cessionnaire_nom_complet']] = true;
+        }
+    }
+    $totalAfter = count($afterAssocieIds);
+    $needsTransform = $isSarlAu && $totalAfter > 1;
+
+    $wizard['cession_metadata'] = [
+        'forme_juridique' => $forme,
+        'is_sarl_au' => $isSarlAu,
+        'cedants_gerant_map' => $cedantsGerantMap,
+        'new_gerant_cessionnaire_indices' => $newGerantCessionnaireIndices,
+        'cession_types' => $cessionTypes,
+        'total_associes_after' => $totalAfter,
+        'needs_transformation' => $needsTransform,
+    ];
+
     redirect_to('cession', ['step' => 4]);
 }
 
@@ -168,6 +293,14 @@ if ($step === 3):
             $cedantList = !empty($selectedAssocies) ? $selectedAssocies : ($wizard['associes'] ?? []);
             $socDataForPrix = $selectedSociete ?: ($wizard['societe'] ?? []);
             $defaultPrixUnitaire = (float) ($socDataForPrix['societe_valeur_nominale'] ?? 0);
+
+            // Build gerant ID set
+            $gerantIdSet = [];
+            foreach ($cedantList as $a) {
+                if ((string) ($a['associe_est_gerant'] ?? '0') === '1') {
+                    $gerantIdSet[(int) ($a['id'] ?? 0)] = true;
+                }
+            }
             ?>
             <?php $partIndex = 0; ?>
             <?php if (!empty($wizard['parts'])): ?>
@@ -175,9 +308,14 @@ if ($step === 3):
                     <?php $partIndex = $pi;
                     $selectedCedantId = (int) ($part['cedant_associe_id'] ?? 0);
                     $selectedCedantData = null;
+                    $cedIsGerant = false;
                     if ($selectedCedantId > 0) {
                         foreach ($cedantList as $a) {
-                            if ((int) ($a['id'] ?? 0) === $selectedCedantId) { $selectedCedantData = $a; break; }
+                            if ((int) ($a['id'] ?? 0) === $selectedCedantId) {
+                                $selectedCedantData = $a;
+                                $cedIsGerant = isset($gerantIdSet[$selectedCedantId]);
+                                break;
+                            }
                         }
                     }
                     $nomComplet = $part['cessionnaire_nom_complet'] ?? '';
@@ -188,6 +326,8 @@ if ($step === 3):
                         $cessPrenom = $sp[0] ?? '';
                         $cessNom = $sp[1] ?? '';
                     }
+                    $cessIsExistant = ($part['cessionnaire_type'] ?? 'nouveau') === 'existant';
+                    $cessExistantId = (int) ($part['cessionnaire_associe_id'] ?? 0);
                     ?>
 <div style="margin-top:16px" data-part="<?= $partIndex ?>">
     <div style="border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:12px">
@@ -197,7 +337,7 @@ if ($step === 3):
         <input type="hidden" name="cedant_type[<?= $partIndex ?>]" value="existant">
         <input type="hidden" name="cedant_nom_complet[<?= $partIndex ?>]" class="cedant-nom-hidden" value="<?= e($part['cedant_nom_complet'] ?? '') ?>">
         <input type="hidden" name="cedant_cin[<?= $partIndex ?>]" class="cedant-cin-hidden" value="<?= e($part['cedant_cin'] ?? '') ?>">
-        <select name="cedant_associe_id[<?= $partIndex ?>]" class="cedant-select">
+        <select name="cedant_associe_id[<?= $partIndex ?>]" class="cedant-select" data-gerant-map='<?= json_encode($gerantIdSet) ?>'>
             <option value="">-- Sélectionnez --</option>
             <?php foreach ($cedantList as $assoc): ?>
             <option value="<?= (int) ($assoc['id'] ?? 0) ?>"
@@ -205,6 +345,7 @@ if ($step === 3):
                 data-cin="<?= e($assoc['associe_cin'] ?? '') ?>"
                 data-parts="<?= (int) ($assoc['associe_parts'] ?? 0) ?>"
                 data-capital="<?= e($assoc['associe_capital_detenu'] ?? '') ?>"
+                data-gerant="<?= isset($gerantIdSet[(int) ($assoc['id'] ?? 0)]) ? '1' : '0' ?>"
                 <?= $selectedCedantId === (int) ($assoc['id'] ?? 0) ? 'selected' : '' ?>>
                 <?= e($assoc['associe_nom_complet'] ?? '') ?> (<?= (int) ($assoc['associe_parts'] ?? 0) ?> parts)
             </option>
@@ -216,25 +357,100 @@ if ($step === 3):
             <div><small style="color:var(--text-muted)">Parts détenues</small><br><strong class="cedant-display-parts"><?= (int) ($selectedCedantData['associe_parts'] ?? 0) ?></strong></div>
             <div><small style="color:var(--text-muted)">Capital (DH)</small><br><strong class="cedant-display-capital"><?= e($selectedCedantData['associe_capital_detenu'] ?? '0') ?></strong></div>
         </div>
+        <?php if ($cedIsGerant): ?>
+        <div class="gerant-management" style="margin-top:10px;padding:8px;background:rgba(255,107,53,0.06);border-radius:4px;border:1px solid rgba(255,107,53,0.2)">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                <span class="material-symbols-outlined" style="color:var(--warning);font-size:1.1rem">admin_panel_settings</span>
+                <strong style="font-size:0.85rem">Gestion de la gérance</strong>
+            </div>
+            <div style="display:flex;gap:16px;font-size:0.85rem">
+                <label><input type="radio" name="gerant_action[<?= $partIndex ?>]" value="stay" checked> Rester gérant</label>
+                <label><input type="radio" name="gerant_action[<?= $partIndex ?>]" value="resign"> Démissionner</label>
+            </div>
+        </div>
+        <?php else: ?>
+        <input type="hidden" name="gerant_action[<?= $partIndex ?>]" value="stay">
+        <?php endif; ?>
     </div>
     <div style="border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:12px">
         <div class="section-header" style="margin-bottom:8px"><strong style="color:var(--success)">Cessionnaire</strong>
             <button type="button" class="btn-icon danger remove-part" style="margin-left:auto" title="Supprimer cette ligne"><span class="material-symbols-outlined">delete</span></button>
         </div>
-        <input type="hidden" name="cessionnaire_type[<?= $partIndex ?>]" value="nouveau">
-        <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr;gap:8px">
-            <div class="field"><label>Civilité</label><select name="cessionnaire_civilite[<?= $partIndex ?>]"><option value="M." <?= ($part['cessionnaire_civilite'] ?? 'M.') === 'M.' ? 'selected' : '' ?>>M.</option><option value="Mme" <?= ($part['cessionnaire_civilite'] ?? '') === 'Mme' ? 'selected' : '' ?>>Mme</option><option value="Mlle" <?= ($part['cessionnaire_civilite'] ?? '') === 'Mlle' ? 'selected' : '' ?>>Mlle</option></select></div>
-            <div class="field"><label>Prénom</label><input type="text" name="cessionnaire_prenom[<?= $partIndex ?>]" value="<?= e($cessPrenom) ?>"></div>
-            <div class="field"><label>Nom</label><input type="text" name="cessionnaire_nom[<?= $partIndex ?>]" value="<?= e($cessNom) ?>"></div>
-            <div class="field"><label>CIN</label><input type="text" name="cessionnaire_cin[<?= $partIndex ?>]" value="<?= e($part['cessionnaire_cin'] ?? '') ?>"></div>
-            <div class="field"><label>Date naissance</label><input type="date" name="cessionnaire_date_naissance[<?= $partIndex ?>]" value="<?= e($part['cessionnaire_date_naissance'] ?? '') ?>"></div>
-            <div class="field"><label>Lieu naissance</label><select name="cessionnaire_lieu_naissance[<?= $partIndex ?>]"><option value="">-- Sélectionnez --</option><?php foreach ($lieuxNaissanceOptions as $ln): ?><option value="<?= e($ln) ?>" <?= ($part['cessionnaire_lieu_naissance'] ?? '') === $ln ? 'selected' : '' ?>><?= e($ln) ?></option><?php endforeach; ?></select></div>
-            <div class="field"><label>Nationalité</label><select name="cessionnaire_nationalite[<?= $partIndex ?>]"><option value="">-- Sélectionnez --</option><?php foreach ($nationalitesOptions as $nat): ?><option value="<?= e($nat) ?>" <?= ($part['cessionnaire_nationalite'] ?? '') === $nat ? 'selected' : '' ?>><?= e($nat) ?></option><?php endforeach; ?></select></div>
-            <div class="field"><label>Téléphone</label><input type="text" name="cessionnaire_telephone[<?= $partIndex ?>]" value="<?= e($part['cessionnaire_telephone'] ?? '') ?>"></div>
-            <div class="field"><label>Email</label><input type="email" name="cessionnaire_email[<?= $partIndex ?>]" value="<?= e($part['cessionnaire_email'] ?? '') ?>"></div>
-            <div class="field"><label>Qualité</label><select name="cessionnaire_qualite[<?= $partIndex ?>]"><option value="">-- Sélectionnez --</option><?php foreach ($qualitesAssocieOptions as $q): ?><option value="<?= e($q) ?>" <?= ($part['cessionnaire_qualite'] ?? '') === $q ? 'selected' : '' ?>><?= e($q) ?></option><?php endforeach; ?></select></div>
+
+        <div style="margin-bottom:8px;font-size:0.85rem">
+            <label style="margin-right:12px"><input type="radio" name="cessionnaire_type[<?= $partIndex ?>]" value="nouveau" class="cess-type-radio" <?= $cessIsExistant ? '' : 'checked' ?>> Nouveau</label>
+            <label><input type="radio" name="cessionnaire_type[<?= $partIndex ?>]" value="existant" class="cess-type-radio" <?= $cessIsExistant ? 'checked' : '' ?>> Associé existant</label>
         </div>
-        <div class="field" style="margin-top:8px"><label>Adresse</label><textarea name="cessionnaire_adresse[<?= $partIndex ?>]" rows="2"><?= e($part['cessionnaire_adresse'] ?? '') ?></textarea></div>
+
+        <div class="cessionnaire-nouveau" style="display:<?= $cessIsExistant ? 'none' : 'block' ?>">
+            <input type="hidden" name="cessionnaire_associe_id[<?= $partIndex ?>]" value="0">
+            <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr;gap:8px">
+                <div class="field"><label>Civilité</label><select name="cessionnaire_civilite[<?= $partIndex ?>]"><option value="M." <?= ($part['cessionnaire_civilite'] ?? 'M.') === 'M.' ? 'selected' : '' ?>>M.</option><option value="Mme" <?= ($part['cessionnaire_civilite'] ?? '') === 'Mme' ? 'selected' : '' ?>>Mme</option><option value="Mlle" <?= ($part['cessionnaire_civilite'] ?? '') === 'Mlle' ? 'selected' : '' ?>>Mlle</option></select></div>
+                <div class="field"><label>Prénom</label><input type="text" name="cessionnaire_prenom[<?= $partIndex ?>]" value="<?= e($cessPrenom) ?>"></div>
+                <div class="field"><label>Nom</label><input type="text" name="cessionnaire_nom[<?= $partIndex ?>]" value="<?= e($cessNom) ?>"></div>
+                <div class="field"><label>CIN</label><input type="text" name="cessionnaire_cin[<?= $partIndex ?>]" value="<?= e($part['cessionnaire_cin'] ?? '') ?>"></div>
+                <div class="field"><label>Date naissance</label><input type="date" name="cessionnaire_date_naissance[<?= $partIndex ?>]" value="<?= e($part['cessionnaire_date_naissance'] ?? '') ?>"></div>
+                <div class="field"><label>Lieu naissance</label><select name="cessionnaire_lieu_naissance[<?= $partIndex ?>]"><option value="">-- Sélectionnez --</option><?php foreach ($lieuxNaissanceOptions as $ln): ?><option value="<?= e($ln) ?>" <?= ($part['cessionnaire_lieu_naissance'] ?? '') === $ln ? 'selected' : '' ?>><?= e($ln) ?></option><?php endforeach; ?></select></div>
+                <div class="field"><label>Nationalité</label><select name="cessionnaire_nationalite[<?= $partIndex ?>]"><option value="">-- Sélectionnez --</option><?php foreach ($nationalitesOptions as $nat): ?><option value="<?= e($nat) ?>" <?= ($part['cessionnaire_nationalite'] ?? '') === $nat ? 'selected' : '' ?>><?= e($nat) ?></option><?php endforeach; ?></select></div>
+                <div class="field"><label>Téléphone</label><input type="text" name="cessionnaire_telephone[<?= $partIndex ?>]" value="<?= e($part['cessionnaire_telephone'] ?? '') ?>"></div>
+                <div class="field"><label>Email</label><input type="email" name="cessionnaire_email[<?= $partIndex ?>]" value="<?= e($part['cessionnaire_email'] ?? '') ?>"></div>
+                <div class="field"><label>Qualité</label><select name="cessionnaire_qualite[<?= $partIndex ?>]"><option value="">-- Sélectionnez --</option><?php foreach ($qualitesAssocieOptions as $q): ?><option value="<?= e($q) ?>" <?= ($part['cessionnaire_qualite'] ?? '') === $q ? 'selected' : '' ?>><?= e($q) ?></option><?php endforeach; ?></select></div>
+            </div>
+            <div class="field" style="margin-top:8px"><label>Adresse</label><textarea name="cessionnaire_adresse[<?= $partIndex ?>]" rows="2"><?= e($part['cessionnaire_adresse'] ?? '') ?></textarea></div>
+        </div>
+
+        <div class="cessionnaire-existant" style="display:<?= $cessIsExistant ? 'block' : 'none' ?>">
+            <?php
+            // Filter: exclude current cedant
+            $availableForCess = array_filter($cedantList, function($a) use ($selectedCedantId) {
+                return (int) ($a['id'] ?? 0) !== $selectedCedantId;
+            });
+            ?>
+            <div class="field">
+                <label>Sélectionner un associé</label>
+                <select name="cessionnaire_existant_id[<?= $partIndex ?>]" class="cessionnaire-existant-select">
+                    <option value="">-- Sélectionnez --</option>
+                    <?php foreach ($availableForCess as $assoc): ?>
+                    <option value="<?= (int) ($assoc['id'] ?? 0) ?>"
+                        data-nom="<?= e($assoc['associe_nom_complet'] ?? '') ?>"
+                        data-cin="<?= e($assoc['associe_cin'] ?? '') ?>"
+                        data-parts="<?= (int) ($assoc['associe_parts'] ?? 0) ?>"
+                        <?= $cessExistantId === (int) ($assoc['id'] ?? 0) ? 'selected' : '' ?>>
+                        <?= e($assoc['associe_nom_complet'] ?? '') ?> (<?= (int) ($assoc['associe_parts'] ?? 0) ?> parts)
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="cessionnaire-existant-info" style="margin-top:8px;display:<?= $cessExistantId > 0 ? 'grid' : 'none' ?>;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:8px;background:var(--bg-card);border-radius:4px">
+                <div><small style="color:var(--text-muted)">Nom complet</small><br><strong class="cess-exist-display-nom">
+                    <?php
+                    $existCessNom = '';
+                    foreach ($cedantList as $a) {
+                        if ((int) ($a['id'] ?? 0) === $cessExistantId) { $existCessNom = $a['associe_nom_complet'] ?? ''; break; }
+                    }
+                    echo e($existCessNom ?: '-');
+                    ?>
+                </strong></div>
+                <div><small style="color:var(--text-muted)">CIN</small><br><strong class="cess-exist-display-cin">
+                    <?php
+                    $existCessCin = '';
+                    foreach ($cedantList as $a) {
+                        if ((int) ($a['id'] ?? 0) === $cessExistantId) { $existCessCin = $a['associe_cin'] ?? ''; break; }
+                    }
+                    echo e($existCessCin ?: '-');
+                    ?>
+                </strong></div>
+                <div><small style="color:var(--text-muted)">Parts actuelles</small><br><strong class="cess-exist-display-parts">
+                    <?php
+                    $existCessParts = 0;
+                    foreach ($cedantList as $a) {
+                        if ((int) ($a['id'] ?? 0) === $cessExistantId) { $existCessParts = (int) ($a['associe_parts'] ?? 0); break; }
+                    }
+                    echo $existCessParts;
+                    ?>
+                </strong></div>
+            </div>
+        </div>
     </div>
     <div style="border:1px solid var(--line);border-radius:6px;padding:12px;margin-top:12px">
         <div class="section-header" style="margin-bottom:8px"><strong style="color:var(--info)">Parts &amp; Prix</strong></div>
@@ -245,7 +461,18 @@ if ($step === 3):
             <div class="field"><label>Prix total (DH)</label><input type="text" name="prix_total[<?= $partIndex ?>]" class="prix-total-input" placeholder="0,00" value="<?= e(isset($part['prix_total']) ? number_format((float) $part['prix_total'], 2, ',', '') : '') ?>"></div>
             <div class="field"><label>Parts acquises</label><input type="number" name="cessionnaire_parts[<?= $partIndex ?>]" placeholder="0" value="<?= (int) ($part['cessionnaire_parts'] ?? 0) ?>"></div>
             <div class="field"><label>Capital après (DH)</label><input type="text" name="cessionnaire_capital_detenu[<?= $partIndex ?>]" placeholder="0,00" value="<?= e($part['cessionnaire_capital_detenu'] ?? '') ?>"></div>
-            <div class="field"><label>Nommer Gérant</label><select name="nommer_gerant[<?= $partIndex ?>]"><option value="0" <?= empty($part['nommer_gerant']) ? 'selected' : '' ?>>Non</option><option value="1" <?= !empty($part['nommer_gerant']) ? 'selected' : '' ?>>Oui</option></select></div>
+            <?php if ($cedIsGerant): ?>
+            <div class="field gerant-nominate-field" style="<?= $cedIsGerant ? '' : 'display:none' ?>">
+                <label>Nommer Gérant</label>
+                <select name="nommer_gerant[<?= $partIndex ?>]">
+                    <option value="0" <?= empty($part['nommer_gerant']) ? 'selected' : '' ?>>Non</option>
+                    <option value="1" <?= !empty($part['nommer_gerant']) ? 'selected' : '' ?>>Oui</option>
+                </select>
+                <small style="color:var(--text-muted);display:block">Cessionnaire devient gérant</small>
+            </div>
+            <?php else: ?>
+            <input type="hidden" name="nommer_gerant[<?= $partIndex ?>]" value="0">
+            <?php endif; ?>
         </div>
     </div>
 </div>
@@ -263,6 +490,7 @@ if ($step === 3):
                     $partIndex = 0;
                     $selectedCedantId = 0;
                     $selectedCedantData = null;
+                    $cedIsGerant = false;
                 ?>
 <div style="margin-top:16px" data-part="0">
     <div style="border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:12px">
@@ -270,14 +498,15 @@ if ($step === 3):
         <input type="hidden" name="cedant_type[0]" value="existant">
         <input type="hidden" name="cedant_nom_complet[0]" class="cedant-nom-hidden" value="">
         <input type="hidden" name="cedant_cin[0]" class="cedant-cin-hidden" value="">
-        <select name="cedant_associe_id[0]" class="cedant-select">
+        <select name="cedant_associe_id[0]" class="cedant-select" data-gerant-map='<?= json_encode($gerantIdSet) ?>'>
             <option value="">-- Sélectionnez --</option>
             <?php foreach ($cedantList as $assoc): ?>
             <option value="<?= (int) ($assoc['id'] ?? 0) ?>"
                 data-nom="<?= e($assoc['associe_nom_complet'] ?? '') ?>"
                 data-cin="<?= e($assoc['associe_cin'] ?? '') ?>"
                 data-parts="<?= (int) ($assoc['associe_parts'] ?? 0) ?>"
-                data-capital="<?= e($assoc['associe_capital_detenu'] ?? '') ?>">
+                data-capital="<?= e($assoc['associe_capital_detenu'] ?? '') ?>"
+                data-gerant="<?= isset($gerantIdSet[(int) ($assoc['id'] ?? 0)]) ? '1' : '0' ?>">
                 <?= e($assoc['associe_nom_complet'] ?? '') ?> (<?= (int) ($assoc['associe_parts'] ?? 0) ?> parts)
             </option>
             <?php endforeach; ?>
@@ -288,25 +517,58 @@ if ($step === 3):
             <div><small style="color:var(--text-muted)">Parts détenues</small><br><strong class="cedant-display-parts">0</strong></div>
             <div><small style="color:var(--text-muted)">Capital (DH)</small><br><strong class="cedant-display-capital">0</strong></div>
         </div>
+        <div class="gerant-management" style="margin-top:10px;padding:8px;background:rgba(255,107,53,0.06);border-radius:4px;border:1px solid rgba(255,107,53,0.2);display:none">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                <span class="material-symbols-outlined" style="color:var(--warning);font-size:1.1rem">admin_panel_settings</span>
+                <strong style="font-size:0.85rem">Gestion de la gérance</strong>
+            </div>
+            <div style="display:flex;gap:16px;font-size:0.85rem">
+                <label><input type="radio" name="gerant_action[0]" value="stay" checked> Rester gérant</label>
+                <label><input type="radio" name="gerant_action[0]" value="resign"> Démissionner</label>
+            </div>
+        </div>
+        <input type="hidden" name="gerant_action[0]" value="stay" class="gerant-action-hidden">
     </div>
     <div style="border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:12px">
         <div class="section-header" style="margin-bottom:8px"><strong style="color:var(--success)">Cessionnaire</strong>
             <button type="button" class="btn-icon danger remove-part" style="margin-left:auto" title="Supprimer cette ligne"><span class="material-symbols-outlined">delete</span></button>
         </div>
-        <input type="hidden" name="cessionnaire_type[0]" value="nouveau">
-        <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr;gap:8px">
-            <div class="field"><label>Civilité</label><select name="cessionnaire_civilite[0]"><option value="M." selected>M.</option><option value="Mme">Mme</option><option value="Mlle">Mlle</option></select></div>
-            <div class="field"><label>Prénom</label><input type="text" name="cessionnaire_prenom[0]" value=""></div>
-            <div class="field"><label>Nom</label><input type="text" name="cessionnaire_nom[0]" value=""></div>
-            <div class="field"><label>CIN</label><input type="text" name="cessionnaire_cin[0]" value=""></div>
-            <div class="field"><label>Date naissance</label><input type="date" name="cessionnaire_date_naissance[0]" value=""></div>
-            <div class="field"><label>Lieu naissance</label><select name="cessionnaire_lieu_naissance[0]"><option value="">-- Sélectionnez --</option><?php foreach ($lieuxNaissanceOptions as $ln): ?><option value="<?= e($ln) ?>"><?= e($ln) ?></option><?php endforeach; ?></select></div>
-            <div class="field"><label>Nationalité</label><select name="cessionnaire_nationalite[0]"><option value="">-- Sélectionnez --</option><?php foreach ($nationalitesOptions as $nat): ?><option value="<?= e($nat) ?>"><?= e($nat) ?></option><?php endforeach; ?></select></div>
-            <div class="field"><label>Téléphone</label><input type="text" name="cessionnaire_telephone[0]" value=""></div>
-            <div class="field"><label>Email</label><input type="email" name="cessionnaire_email[0]" value=""></div>
-            <div class="field"><label>Qualité</label><select name="cessionnaire_qualite[0]"><option value="">-- Sélectionnez --</option><?php foreach ($qualitesAssocieOptions as $q): ?><option value="<?= e($q) ?>"><?= e($q) ?></option><?php endforeach; ?></select></div>
+
+        <div style="margin-bottom:8px;font-size:0.85rem">
+            <label style="margin-right:12px"><input type="radio" name="cessionnaire_type[0]" value="nouveau" class="cess-type-radio" checked> Nouveau</label>
+            <label><input type="radio" name="cessionnaire_type[0]" value="existant" class="cess-type-radio"> Associé existant</label>
         </div>
-        <div class="field" style="margin-top:8px"><label>Adresse</label><textarea name="cessionnaire_adresse[0]" rows="2"></textarea></div>
+
+        <div class="cessionnaire-nouveau">
+            <input type="hidden" name="cessionnaire_associe_id[0]" value="0">
+            <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr;gap:8px">
+                <div class="field"><label>Civilité</label><select name="cessionnaire_civilite[0]"><option value="M." selected>M.</option><option value="Mme">Mme</option><option value="Mlle">Mlle</option></select></div>
+                <div class="field"><label>Prénom</label><input type="text" name="cessionnaire_prenom[0]" value=""></div>
+                <div class="field"><label>Nom</label><input type="text" name="cessionnaire_nom[0]" value=""></div>
+                <div class="field"><label>CIN</label><input type="text" name="cessionnaire_cin[0]" value=""></div>
+                <div class="field"><label>Date naissance</label><input type="date" name="cessionnaire_date_naissance[0]" value=""></div>
+                <div class="field"><label>Lieu naissance</label><select name="cessionnaire_lieu_naissance[0]"><option value="">-- Sélectionnez --</option><?php foreach ($lieuxNaissanceOptions as $ln): ?><option value="<?= e($ln) ?>"><?= e($ln) ?></option><?php endforeach; ?></select></div>
+                <div class="field"><label>Nationalité</label><select name="cessionnaire_nationalite[0]"><option value="">-- Sélectionnez --</option><?php foreach ($nationalitesOptions as $nat): ?><option value="<?= e($nat) ?>"><?= e($nat) ?></option><?php endforeach; ?></select></div>
+                <div class="field"><label>Téléphone</label><input type="text" name="cessionnaire_telephone[0]" value=""></div>
+                <div class="field"><label>Email</label><input type="email" name="cessionnaire_email[0]" value=""></div>
+                <div class="field"><label>Qualité</label><select name="cessionnaire_qualite[0]"><option value="">-- Sélectionnez --</option><?php foreach ($qualitesAssocieOptions as $q): ?><option value="<?= e($q) ?>"><?= e($q) ?></option><?php endforeach; ?></select></div>
+            </div>
+            <div class="field" style="margin-top:8px"><label>Adresse</label><textarea name="cessionnaire_adresse[0]" rows="2"></textarea></div>
+        </div>
+
+        <div class="cessionnaire-existant" style="display:none">
+            <div class="field">
+                <label>Sélectionner un associé</label>
+                <select name="cessionnaire_existant_id[0]" class="cessionnaire-existant-select">
+                    <option value="">-- Sélectionnez --</option>
+                </select>
+            </div>
+            <div class="cessionnaire-existant-info" style="margin-top:8px;display:none;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:8px;background:var(--bg-card);border-radius:4px">
+                <div><small style="color:var(--text-muted)">Nom complet</small><br><strong class="cess-exist-display-nom">-</strong></div>
+                <div><small style="color:var(--text-muted)">CIN</small><br><strong class="cess-exist-display-cin">-</strong></div>
+                <div><small style="color:var(--text-muted)">Parts actuelles</small><br><strong class="cess-exist-display-parts">0</strong></div>
+            </div>
+        </div>
     </div>
     <div style="border:1px solid var(--line);border-radius:6px;padding:12px;margin-top:12px">
         <div class="section-header" style="margin-bottom:8px"><strong style="color:var(--info)">Parts &amp; Prix</strong></div>
@@ -317,7 +579,12 @@ if ($step === 3):
             <div class="field"><label>Prix total (DH)</label><input type="text" name="prix_total[0]" class="prix-total-input" placeholder="0,00" value=""></div>
             <div class="field"><label>Parts acquises</label><input type="number" name="cessionnaire_parts[0]" placeholder="0" value="0"></div>
             <div class="field"><label>Capital après (DH)</label><input type="text" name="cessionnaire_capital_detenu[0]" placeholder="0,00" value=""></div>
-            <div class="field"><label>Nommer Gérant</label><select name="nommer_gerant[0]"><option value="0" selected>Non</option><option value="1">Oui</option></select></div>
+            <div class="field gerant-nominate-field" style="display:none">
+                <label>Nommer Gérant</label>
+                <select name="nommer_gerant[0]"><option value="0" selected>Non</option><option value="1">Oui</option></select>
+                <small style="color:var(--text-muted);display:block">Cessionnaire devient gérant</small>
+            </div>
+            <input type="hidden" name="nommer_gerant[0]" value="0" class="nommer-gerant-hidden">
         </div>
     </div>
 </div>
@@ -376,14 +643,170 @@ if ($step === 3):
                 infoDiv.style.display = 'none';
             }
         }
+
+        // Gerant management
+        toggleGerantSection(row, opt);
+        // Update cessionnaire-existant dropdown to exclude this cedant
+        updateCessionnaireExistantOptions(row, opt ? opt.value : '');
     }
 
-    document.querySelectorAll('.cedant-select').forEach(function(sel) {
-        sel.addEventListener('change', function() { syncCedant(sel); });
-        syncCedant(sel);
-    });
+    function toggleGerantSection(row, opt) {
+        var gerantMgmt = row.querySelector('.gerant-management');
+        var gerantHidden = row.querySelector('.gerant-action-hidden');
+        var nominateField = row.querySelector('.gerant-nominate-field');
+        var nominateHidden = row.querySelector('.nommer-gerant-hidden');
+        if (opt && opt.value) {
+            var isGerant = opt.getAttribute('data-gerant') === '1';
+            if (gerantMgmt) {
+                gerantMgmt.style.display = isGerant ? 'block' : 'none';
+                // Show/hide the radio group
+                var radios = gerantMgmt.querySelectorAll('input[type="radio"]');
+                if (isGerant && radios.length > 0) {
+                    // The gerant-management block has radio buttons; ensure hidden is not used
+                    if (gerantHidden) gerantHidden.disabled = true;
+                } else {
+                    if (gerantHidden) gerantHidden.disabled = false;
+                }
+            }
+            // Only show nominate field when cedant is gerant and user selected resign
+            if (nominateField) {
+                nominateField.style.display = isGerant ? 'block' : 'none';
+                if (!isGerant && nominateHidden) nominateHidden.disabled = false;
+            } else {
+                if (nominateHidden) nominateHidden.disabled = !isGerant;
+            }
+        } else {
+            if (gerantMgmt) gerantMgmt.style.display = 'none';
+            if (gerantHidden) gerantHidden.disabled = false;
+            if (nominateField) nominateField.style.display = 'none';
+            if (nominateHidden) nominateHidden.disabled = false;
+        }
+    }
 
-    // Calculate prix_total
+    function updateCessionnaireExistantOptions(cedantSelectRow, cedantId) {
+        // Update all cessionnaire-existant selects in all rows except this one
+        // to include/exclude the selected cedant
+        var allRows = document.querySelectorAll('#cession-parts-container [data-part]');
+        var cedantNumVal = cedantId || '0';
+        allRows.forEach(function(r) {
+            var cessedSelect = r.querySelector('.cessionnaire-existant-select');
+            if (!cessedSelect) return;
+            var currentRow = r === cedantSelectRow.closest('[data-part]');
+            // Rebuild options: include all cedantList except this row's cedant
+            var selectedVal = cessedSelect.value;
+            cessedSelect.innerHTML = '<option value="">-- Sélectionnez --</option>';
+            var mainCedantSelect = r.querySelector('.cedant-select');
+            if (!mainCedantSelect) return;
+            var excludeId = currentRow ? cedantNumVal : '0';
+            Array.from(mainCedantSelect.options).forEach(function(opt) {
+                if (!opt.value) return;
+                if (opt.value === excludeId) return;
+                var newOpt = document.createElement('option');
+                newOpt.value = opt.value;
+                newOpt.textContent = opt.textContent;
+                newOpt.setAttribute('data-nom', opt.getAttribute('data-nom') || '');
+                newOpt.setAttribute('data-cin', opt.getAttribute('data-cin') || '');
+                newOpt.setAttribute('data-parts', opt.getAttribute('data-parts') || '0');
+                if (opt.value === selectedVal) newOpt.selected = true;
+                cessedSelect.appendChild(newOpt);
+            });
+            // Trigger sync
+            syncCessionnaireExistant(cessedSelect);
+        });
+    }
+
+    function syncCessionnaireExistant(sel) {
+        if (!sel) return;
+        var row = sel.closest('[data-part]');
+        if (!row) return;
+        var opt = sel.options[sel.selectedIndex];
+        var infoDiv = row.querySelector('.cessionnaire-existant-info');
+        if (infoDiv) {
+            if (opt && opt.value) {
+                infoDiv.style.display = 'grid';
+                var dn = infoDiv.querySelector('.cess-exist-display-nom');
+                if (dn) dn.textContent = opt.getAttribute('data-nom') || '-';
+                var dc = infoDiv.querySelector('.cess-exist-display-cin');
+                if (dc) dc.textContent = opt.getAttribute('data-cin') || '-';
+                var dp = infoDiv.querySelector('.cess-exist-display-parts');
+                if (dp) dp.textContent = opt.getAttribute('data-parts') || '0';
+            } else {
+                infoDiv.style.display = 'none';
+            }
+        }
+    }
+
+    // Cessionnaire type toggle
+    function syncCessionnaireType(row) {
+        var radios = row.querySelectorAll('.cess-type-radio');
+        var nouveauDiv = row.querySelector('.cessionnaire-nouveau');
+        var existantDiv = row.querySelector('.cessionnaire-existant');
+        radios.forEach(function(r) {
+            if (r.checked) {
+                if (r.value === 'nouveau') {
+                    if (nouveauDiv) nouveauDiv.style.display = 'block';
+                    if (existantDiv) existantDiv.style.display = 'none';
+                } else {
+                    if (nouveauDiv) nouveauDiv.style.display = 'none';
+                    if (existantDiv) existantDiv.style.display = 'block';
+                }
+            }
+        });
+    }
+
+    // Gerant resign toggle - show/hide nominate field
+    function syncGerantAction(row) {
+        var radios = row.querySelectorAll('.gerant-management input[type="radio"]');
+        var nominateField = row.querySelector('.gerant-nominate-field');
+        var nominateHidden = row.querySelector('.nommer-gerant-hidden');
+        var hasResign = false;
+        radios.forEach(function(r) {
+            if (r.checked && r.value === 'resign') hasResign = true;
+        });
+        if (nominateField) {
+            nominateField.style.display = hasResign ? 'block' : 'none';
+        }
+        if (nominateHidden) {
+            nominateHidden.disabled = hasResign;
+        }
+    }
+
+    // Bind events on all existing rows
+    function bindRowEvents(row) {
+        var cedantSelect = row.querySelector('.cedant-select');
+        if (cedantSelect) {
+            cedantSelect.addEventListener('change', function() { syncCedant(cedantSelect); });
+            syncCedant(cedantSelect);
+        }
+
+        var typeRadios = row.querySelectorAll('.cess-type-radio');
+        typeRadios.forEach(function(r) {
+            r.addEventListener('change', function() { syncCessionnaireType(row); });
+        });
+
+        var existingSelect = row.querySelector('.cessionnaire-existant-select');
+        if (existingSelect) {
+            existingSelect.addEventListener('change', function() { syncCessionnaireExistant(existingSelect); });
+        }
+
+        var gerantRadios = row.querySelectorAll('.gerant-management input[type="radio"]');
+        gerantRadios.forEach(function(r) {
+            r.addEventListener('change', function() { syncGerantAction(row); });
+        });
+
+        // Parts & Prix
+        row.querySelectorAll('.parts-cedees-input').forEach(function(inp) {
+            inp.addEventListener('input', function() { calcPrixTotal.call(this); calcPourcentage.call(this); calcCessionnaireFields.call(this); });
+        });
+        row.querySelectorAll('.prix-unitaire-input').forEach(function(inp) {
+            inp.addEventListener('input', calcPrixTotal);
+        });
+        row.querySelectorAll('.pourcentage-input').forEach(function(inp) {
+            inp.addEventListener('input', function() { calcAllFromPct(this); });
+        });
+    }
+
+    // Calculate functions
     function calcPrixTotal() {
         var row = this.closest('[data-part]');
         if (!row) return;
@@ -431,7 +854,6 @@ if ($step === 3):
         } else {
             partsInput.value = '';
         }
-        // Auto-fill prix unitaire from valeur nominale if empty
         var puInput = row.querySelector('.prix-unitaire-input');
         if (puInput && !puInput.value) {
             var vn = parseFloat(document.getElementById('total-valeur-nominale')?.value.replace(',', '.')) || 0;
@@ -441,16 +863,9 @@ if ($step === 3):
         calcCessionnaireFields.call(partsInput);
     }
 
-    document.querySelectorAll('.parts-cedees-input').forEach(function(inp) {
-        inp.addEventListener('input', function() { calcPrixTotal.call(this); calcPourcentage.call(this); calcCessionnaireFields.call(this); });
-    });
-    document.querySelectorAll('.prix-unitaire-input').forEach(function(inp) {
-        inp.addEventListener('input', calcPrixTotal);
-    });
-
-    // Calculate parts from pourcentage
-    document.querySelectorAll('.pourcentage-input').forEach(function(inp) {
-        inp.addEventListener('input', function() { calcAllFromPct(this); });
+    // Bind existing rows on load
+    document.querySelectorAll('#cession-parts-container [data-part]').forEach(function(row) {
+        bindRowEvents(row);
     });
 
     // Add new part row
@@ -466,6 +881,10 @@ if ($step === 3):
             el.name = name.replace(/\[\d+\]/g, suffix);
             if (el.type === 'checkbox') {
                 el.checked = false;
+            } else if (el.type === 'radio') {
+                // Keep the first radio checked (stay), uncheck others
+                if (el.value === 'stay') el.checked = true;
+                else el.checked = false;
             } else if (el.tagName !== 'SELECT') {
                 el.value = '';
             } else {
@@ -475,20 +894,7 @@ if ($step === 3):
         clone.setAttribute('data-part', String(index));
         container.appendChild(clone);
 
-        // Bind events
-        clone.querySelectorAll('.cedant-select').forEach(function(el) {
-            el.addEventListener('change', function() { syncCedant(el); });
-            syncCedant(el);
-        });
-        clone.querySelectorAll('.parts-cedees-input').forEach(function(el) {
-            el.addEventListener('input', function() { calcPrixTotal.call(this); calcPourcentage.call(this); calcCessionnaireFields.call(this); });
-        });
-        clone.querySelectorAll('.prix-unitaire-input').forEach(function(el) {
-            el.addEventListener('input', calcPrixTotal);
-        });
-        clone.querySelectorAll('.pourcentage-input').forEach(function(el) {
-            el.addEventListener('input', function() { calcAllFromPct(this); });
-        });
+        bindRowEvents(clone);
         this.dataset.partIndex = index + 1;
     });
 
@@ -525,15 +931,23 @@ if ($step === 3):
                     }
 
                     // Set cessionnaire type to "nouveau" and fill fields
+                    var nouveauRadio = row.querySelector('.cess-type-radio[value="nouveau"]');
+                    if (nouveauRadio) nouveauRadio.checked = true;
+                    syncCessionnaireType(row);
+
                     var cessCivilite = row.querySelector('select[name="cessionnaire_civilite[' + idx + ']"]');
                     if (cessCivilite) {
                         var civOpts = Array.from(cessCivilite.options).filter(function(o) { return o.value; });
                         if (civOpts.length) cessCivilite.value = randFrom(civOpts).value;
                     }
-                    row.querySelector('input[name="cessionnaire_prenom[' + idx + ']"]') && (row.querySelector('input[name="cessionnaire_prenom[' + idx + ']"]').value = randFrom(prenoms));
-                    row.querySelector('input[name="cessionnaire_nom[' + idx + ']"]') && (row.querySelector('input[name="cessionnaire_nom[' + idx + ']"]').value = randFrom(hommes));
-                    row.querySelector('input[name="cessionnaire_cin[' + idx + ']"]') && (row.querySelector('input[name="cessionnaire_cin[' + idx + ']"]').value = 'CD' + randInt(100000, 999999));
-                    row.querySelector('input[name="cessionnaire_date_naissance[' + idx + ']"]') && (row.querySelector('input[name="cessionnaire_date_naissance[' + idx + ']"]').value = randDate(new Date(1960,0,1), new Date(1995,11,31)));
+                    var prenomInput = row.querySelector('input[name="cessionnaire_prenom[' + idx + ']"]');
+                    if (prenomInput) prenomInput.value = randFrom(prenoms);
+                    var nomInput = row.querySelector('input[name="cessionnaire_nom[' + idx + ']"]');
+                    if (nomInput) nomInput.value = randFrom(hommes);
+                    var cinInput = row.querySelector('input[name="cessionnaire_cin[' + idx + ']"]');
+                    if (cinInput) cinInput.value = 'CD' + randInt(100000, 999999);
+                    var dateInput = row.querySelector('input[name="cessionnaire_date_naissance[' + idx + ']"]');
+                    if (dateInput) dateInput.value = randDate(new Date(1960,0,1), new Date(1995,11,31));
                     var cessLn = row.querySelector('select[name="cessionnaire_lieu_naissance[' + idx + ']"]');
                     if (cessLn) {
                         var lnOpts = Array.from(cessLn.options).filter(function(o) { return o.value; });
@@ -544,21 +958,24 @@ if ($step === 3):
                         var natOpts = Array.from(cessNat.options).filter(function(o) { return o.value; });
                         if (natOpts.length) cessNat.value = randFrom(natOpts).value;
                     }
-                    row.querySelector('textarea[name="cessionnaire_adresse[' + idx + ']"]') && (row.querySelector('textarea[name="cessionnaire_adresse[' + idx + ']"]').value = randInt(1, 200) + ' ' + randFrom(['Avenue', 'Rue', 'Boulevard']) + ' ' + randFrom(['Liberte', 'FAR', 'Hassan II', 'Mohammed VI', 'Resistance']));
-                    row.querySelector('input[name="cessionnaire_telephone[' + idx + ']"]') && (row.querySelector('input[name="cessionnaire_telephone[' + idx + ']"]').value = '06' + randInt(10000000, 99999999));
-                    row.querySelector('input[name="cessionnaire_email[' + idx + ']"]') && (row.querySelector('input[name="cessionnaire_email[' + idx + ']"]').value = 'cession.' + randInt(100, 999) + '@email.ma');
+                    var adrInput = row.querySelector('textarea[name="cessionnaire_adresse[' + idx + ']"]');
+                    if (adrInput) adrInput.value = randInt(1, 200) + ' ' + randFrom(['Avenue', 'Rue', 'Boulevard']) + ' ' + randFrom(['Liberte', 'FAR', 'Hassan II', 'Mohammed VI', 'Resistance']);
+                    var telInput = row.querySelector('input[name="cessionnaire_telephone[' + idx + ']"]');
+                    if (telInput) telInput.value = '06' + randInt(10000000, 99999999);
+                    var emailInput = row.querySelector('input[name="cessionnaire_email[' + idx + ']"]');
+                    if (emailInput) emailInput.value = 'cession.' + randInt(100, 999) + '@email.ma';
                     var cessQl = row.querySelector('select[name="cessionnaire_qualite[' + idx + ']"]');
                     if (cessQl) {
                         var qOpts = Array.from(cessQl.options).filter(function(o) { return o.value; });
                         if (qOpts.length) cessQl.value = randFrom(qOpts).value;
                     }
-                    row.querySelector('input[name="cessionnaire_parts[' + idx + ']"]') && (row.querySelector('input[name="cessionnaire_parts[' + idx + ']"]').value = String(randInt(100, 5000)));
-                    row.querySelector('input[name="cessionnaire_capital_detenu[' + idx + ']"]') && (row.querySelector('input[name="cessionnaire_capital_detenu[' + idx + ']"]').value = String(randInt(10000, 500000)));
 
                     // Parts & price
-                    row.querySelector('input[name="parts_cedees[' + idx + ']"]') && (row.querySelector('input[name="parts_cedees[' + idx + ']"]').value = String(randInt(50, 1000)));
+                    var partsInput = row.querySelector('input[name="parts_cedees[' + idx + ']"]');
+                    if (partsInput) partsInput.value = String(randInt(50, 1000));
                     var vnCession = parseFloat(form.getAttribute('data-valeur-nominale'));
-                    row.querySelector('input[name="prix_unitaire[' + idx + ']"]') && (row.querySelector('input[name="prix_unitaire[' + idx + ']"]').value = vnCession > 0 ? String(vnCession) : String(randInt(100, 2000)));
+                    var puInput = row.querySelector('input[name="prix_unitaire[' + idx + ']"]');
+                    if (puInput) puInput.value = vnCession > 0 ? String(vnCession) : String(randInt(100, 2000));
                 });
             }
 

@@ -336,6 +336,12 @@ class TemplateAnalyzer
             'NB_CEDANTS', 'NB_CESSIONNAIRES',
             // Dates auto
             'DATE', 'DATE_LONG', 'ANNEE', 'MOIS', 'JOUR',
+            // PV resolutions (dynamic, up to 20)
+            'PV_RESOLUTION_1', 'PV_TITLE_1', 'PV_RESOLUTION_2', 'PV_TITLE_2',
+            'PV_RESOLUTION_3', 'PV_TITLE_3', 'PV_RESOLUTION_4', 'PV_TITLE_4',
+            'PV_RESOLUTION_5', 'PV_TITLE_5', 'PV_RESOLUTION_6', 'PV_TITLE_6',
+            'PV_RESOLUTION_7', 'PV_TITLE_7', 'PV_RESOLUTION_8', 'PV_TITLE_8',
+            'PV_RESOLUTION_9', 'PV_TITLE_9', 'PV_RESOLUTION_10', 'PV_TITLE_10',
         ];
     }
 
@@ -372,7 +378,7 @@ class TemplateAnalyzer
             }
         }
 
-        $cessionTokens = ['CESSION', 'CEDANT', 'CESSIONNAIRE', 'PARTS_CEDEES', 'PRIX_UNITAIRE', 'PRIX_TOTAL', 'CAPITAL_APRES', 'PARTS_APRES', 'NB_CEDANT', 'NB_CESSIONNAIRE'];
+        $cessionTokens = ['CESSION', 'CEDANT', 'CESSIONNAIRE', 'PARTS_CEDEES', 'PRIX_UNITAIRE', 'PRIX_TOTAL', 'CAPITAL_APRES', 'PARTS_APRES', 'NB_CEDANT', 'NB_CESSIONNAIRE', 'PV_RESOLUTION'];
         foreach ($cessionTokens as $token) {
             if (str_contains($name, $token)) {
                 return 'cession';

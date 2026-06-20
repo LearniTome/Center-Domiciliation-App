@@ -18,8 +18,10 @@ if (!isset($_SESSION['cession_wizard']) || !is_array($_SESSION['cession_wizard']
         'cession_date' => date('Y-m-d'),
         'cession_motif' => '',
         'parts' => [],
+        'cession_metadata' => [],
         'uploaded_docs' => [],
         'generated_files' => [],
+        'pv_resolutions' => [],
     ];
 }
 

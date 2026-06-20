@@ -274,6 +274,13 @@ $stmt->execute([
             require_once __DIR__ . '/../../../../src/analyseur_templates.php';
             require_once __DIR__ . '/../../../../src/rendu_document.php';
             $context = DocumentRenderer::buildContextFromCession($pdo, $cessionId);
+            $pvResolutions = $wizard['pv_resolutions'] ?? [];
+            if (!empty($pvResolutions) && is_array($pvResolutions)) {
+                foreach ($pvResolutions as $i => $r) {
+                    $context['PV_RESOLUTION_' . ($i + 1)] = $r['content'] ?? '';
+                    $context['PV_TITLE_' . ($i + 1)] = $r['title'] ?? '';
+                }
+            }
             $renderer = new DocumentRenderer($path, $outputDir);
             $docxPath = $renderer->render($context, $outName);
             $pdfPath = $renderer->tryConvertToPdf($docxPath);
@@ -340,6 +347,13 @@ $stmt->execute([
         if (!is_dir($outputDir)) mkdir($outputDir, 0777, true);
 
         $context = DocumentRenderer::buildContextFromCession($pdo, $cessionId);
+        $pvResolutions = $wizard['pv_resolutions'] ?? [];
+        if (!empty($pvResolutions) && is_array($pvResolutions)) {
+            foreach ($pvResolutions as $i => $r) {
+                $context['PV_RESOLUTION_' . ($i + 1)] = $r['content'] ?? '';
+                $context['PV_TITLE_' . ($i + 1)] = $r['title'] ?? '';
+            }
+        }
 
         $templatesConfig = require __DIR__ . '/../../../../config/templates.php';
         $mapping = $templatesConfig['template_mapping']['cession'] ?? [];
