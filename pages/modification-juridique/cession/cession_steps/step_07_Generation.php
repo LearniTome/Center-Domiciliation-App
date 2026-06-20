@@ -253,7 +253,7 @@ $stmt->execute([
             $forme = $societeData['societe_forme_juridique'] ?? 'PP';
 
             $templateFolders = ['SARL AU' => '_Cession_SARLAU', 'SARL' => '_Cession_SARL'];
-            $templateFolderName = $templateFolders[$forme] ?? '_Cession';
+            $templateFolderName = $templateFolders[$forme] ?? '_Cession_SARL';
             $templateDir = __DIR__ . '/../../../../templates/' . $templateFolderName;
             $realTemplateDir = realpath($templateDir);
             $realPath = realpath($path);
@@ -286,6 +286,8 @@ $stmt->execute([
                     $context['PV_TITLE_' . ($i + 1)] = $r['title'] ?? '';
                 }
                 $context['PV_ORDER_ITEMS'] = implode("\n", $orderItems);
+            } else {
+                $context['PV_ORDER_ITEMS'] = '';
             }
             for ($i = count($pvResolutions ?? []) + 1; $i <= 10; $i++) {
                 $context['PV_RESOLUTION_' . $i] = '';
@@ -358,16 +360,93 @@ $stmt->execute([
 
         $context = DocumentRenderer::buildContextFromCession($pdo, $cessionId);
         $pvResolutions = $wizard['pv_resolutions'] ?? [];
-        if (!empty($pvResolutions) && is_array($pvResolutions)) {
-            $orderItems = [];
-            foreach ($pvResolutions as $i => $r) {
-                $orderItems[] = ($i + 1) . '. ' . ($r['title'] ?? '');
-                $context['PV_RESOLUTION_' . ($i + 1)] = $r['content'] ?? '';
-                $context['PV_TITLE_' . ($i + 1)] = $r['title'] ?? '';
+        if (empty($pvResolutions) || !is_array($pvResolutions)) {
+            // Auto-generate default PV resolutions from wizard data if not saved
+            $pvResolutions = [];
+            $autoTotalParts = $societeData['societe_part_social'] ?? 0;
+            $autoTotalCapital = $societeData['societe_capital'] ?? 0;
+            $autoValeurNominale = $societeData['societe_valeur_nominale'] ?? 0;
+            $autoTotalPrix = 0;
+            $autoTotalPartsCedees = 0;
+            foreach ($wizard['parts'] ?? [] as $p) {
+                $autoTotalPrix += (float) ($p['prix_total'] ?? 0);
+                $autoTotalPartsCedees += (int) ($p['parts_cedees'] ?? 0);
             }
-            $context['PV_ORDER_ITEMS'] = implode("\n", $orderItems);
+            $autoFirstPart = $wizard['parts'][0] ?? [];
+            $autoCedant = $autoFirstPart['cedant_nom_complet'] ?? '';
+            $autoCessionnaire = $autoFirstPart['cessionnaire_nom_complet'] ?? '';
+            $autoCessionnaireCivilite = $autoFirstPart['cessionnaire_civilite'] ?? 'M.';
+            $autoCessionnaireNat = $autoFirstPart['cessionnaire_nationalite'] ?? '';
+            $autoCessionnaireAdr = $autoFirstPart['cessionnaire_adresse'] ?? '';
+            $autoCapitalFmt = number_format((float) $autoTotalCapital, 2, ',', ' ');
+            $autoPrixFmt = number_format($autoTotalPrix, 2, ',', ' ');
+            $autoVnomFmt = number_format((float) $autoValeurNominale, 2, ',', ' ');
+            $autoPartsRest = (int) $autoTotalParts - $autoTotalPartsCedees;
+            $autoMeta = $wizard['cession_metadata'] ?? [];
+            $autoIsSarlAu = $autoMeta['is_sarl_au'] ?? false;
+            $autoLabel = $autoIsSarlAu ? "l'Associé Unique" : "les associés";
+            $autoVDeclare = $autoIsSarlAu ? "déclare" : "déclarent";
+            $autoVAccepte = $autoIsSarlAu ? "accepte" : "acceptent";
+            $autoVAgree = $autoIsSarlAu ? "agrée" : "agréent";
+            $autoVDecide = $autoIsSarlAu ? "décide" : "décident";
+            $autoVPrend = $autoIsSarlAu ? "prend" : "prennent";
+            $autoCessionnaireFull = "$autoCessionnaireCivilite $autoCessionnaire";
+            
+            $pvResolutions[] = [
+                'title' => 'Cession de parts sociales',
+                'content' => "$autoLabel « $autoCedant », $autoVDeclare céder à « $autoCessionnaireFull », de nationalité $autoCessionnaireNat, demeurant à $autoCessionnaireAdr, $autoTotalPartsCedees parts sociales de $autoVnomFmt DH chacune, pour un montant total de $autoPrixFmt DH.\n\n$autoLabel $autoVAccepte expressément cette cession et reconnaît que le prix de cession a été réglé entre les parties."
+            ];
+            $pvResolutions[] = [
+                'title' => "Agrément du ou des nouveaux associés",
+                'content' => "$autoLabel $autoVAgree la cession susmentionnée et accepte l'entrée du nouvel associé dans le capital social de la société."
+            ];
+            $pvResolutions[] = [
+                'title' => 'Modification des statuts',
+                'content' => "En conséquence de la cession, $autoLabel $autoVDecide de modifier l'article 7 des statuts relatif à la répartition du capital social, lequel sera désormais rédigé comme suit :\n\nArticle 7 — Capital Social\n\nLe capital social est fixé à la somme de $autoCapitalFmt DH, divisé en $autoTotalParts parts sociales de $autoVnomFmt DH chacune, réparties comme suit :\n\n- $autoCessionnaireFull : $autoTotalPartsCedees parts" . ($autoPartsRest > 0 ? "\n- $autoCedant : $autoPartsRest parts" : '')
+            ];
+            $autoHasResign = false;
+            foreach (($autoMeta['cedants_gerant_map'] ?? []) as $gInfo) {
+                if (!empty($gInfo['is_gerant']) && ($gInfo['action'] ?? 'stay') === 'resign') {
+                    $autoHasResign = true;
+                }
+            }
+            $autoHasNominate = !empty($autoMeta['new_gerant_cessionnaire_indices'] ?? []);
+            $autoNeedsTransform = $autoMeta['needs_transformation'] ?? false;
+            $autoCedantNomEscaped = $autoCedant;
+            $autoNouveauGerantNomEscaped = $autoCessionnaire;
+            $autoAncienGerantNomEscaped = ($wizard['gerants_list'][0]['associe_nom_complet'] ?? $autoCedant);
+            
+            if ($autoHasResign) {
+                $pvResolutions[] = [
+                    'title' => "Démission de l'ancien gérant",
+                    'content' => "$autoLabel $autoVPrend acte de la démission de « $autoAncienGerantNomEscaped » de ses fonctions de gérant de la société, avec effet à compter de ce jour."
+                ];
+            }
+            if ($autoHasNominate) {
+                $pvResolutions[] = [
+                    'title' => 'Nomination du nouveau gérant',
+                    'content' => "$autoLabel $autoVDecide de nommer « $autoNouveauGerantNomEscaped » en qualité de nouveau gérant de la société, pour une durée indéterminée, avec tous les pouvoirs nécessaires à l'exercice de ses fonctions."
+                ];
+            }
+            if ($autoNeedsTransform) {
+                $pvResolutions[] = [
+                    'title' => 'Transformation de la forme juridique',
+                    'content' => "$autoLabel $autoVDecide de transformer la forme juridique de la société de SARL AU (SARL à Associé Unique) en SARL (Société à Responsabilité Limitée) à associés multiples, conformément aux dispositions de la loi 5-96 modifiée.\n\nEn conséquence, les statuts seront modifiés en conséquence pour tenir compte de la nouvelle forme sociale."
+                ];
+            }
+            $pvResolutions[] = [
+                'title' => 'Pouvoirs pour formalités',
+                'content' => "Tous pouvoirs sont donnés à $autoCedant, pour effectuer toutes formalités de dépôt et d'inscription modificative auprès du greffe du tribunal de commerce, ainsi que toutes autres démarches requises par la loi."
+            ];
         }
-        for ($i = count($pvResolutions ?? []) + 1; $i <= 10; $i++) {
+        $orderItems = [];
+        foreach ($pvResolutions as $i => $r) {
+            $orderItems[] = ($i + 1) . '. ' . ($r['title'] ?? '');
+            $context['PV_RESOLUTION_' . ($i + 1)] = $r['content'] ?? '';
+            $context['PV_TITLE_' . ($i + 1)] = $r['title'] ?? '';
+        }
+        $context['PV_ORDER_ITEMS'] = implode("\n", $orderItems);
+        for ($i = count($pvResolutions) + 1; $i <= 10; $i++) {
             $context['PV_RESOLUTION_' . $i] = '';
             $context['PV_TITLE_' . $i] = '';
         }
@@ -376,7 +455,7 @@ $stmt->execute([
         $mapping = $templatesConfig['template_mapping']['cession'] ?? [];
 
         $templateFolders = ['SARL AU' => '_Cession_SARLAU', 'SARL' => '_Cession_SARL'];
-        $templateFolderName = $templateFolders[$forme] ?? '_Cession';
+        $templateFolderName = $templateFolders[$forme] ?? '_Cession_SARL';
         $templateDir = __DIR__ . '/../../../../templates/' . $templateFolderName;
         $generated = [];
 
@@ -452,7 +531,7 @@ if ($step === 7):
     require_once __DIR__ . '/../../../../src/analyseur_templates.php';
     $templateFolders = ['SARL AU' => '_Cession_SARLAU', 'SARL' => '_Cession_SARL'];
     $formeDir = $societeData['societe_forme_juridique'] ?: ($selectedSociete['societe_forme_juridique'] ?? '');
-    $templateFolderName = $templateFolders[$formeDir] ?? '_Cession';
+    $templateFolderName = $templateFolders[$formeDir] ?? '_Cession_SARL';
     $cessionTemplateDir = __DIR__ . '/../../../../templates/' . $templateFolderName;
     $templatesByType = [];
     foreach ($mapping as $docType) {

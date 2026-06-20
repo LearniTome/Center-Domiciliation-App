@@ -89,23 +89,31 @@ $hasNominate = !empty($newGerantIndices);
 $associeLabel = $isSarlAu ? "l'Associé Unique" : "les associés";
 $associeLabelUpper = $isSarlAu ? "DE L'ASSOCIÉ UNIQUE" : "DES ASSOCIÉS";
 $associeLabelFr = $isSarlAu ? "l'Associé Unique" : "les Associés";
+$vDeclare = $isSarlAu ? "déclare" : "déclarent";
+$vAccepte = $isSarlAu ? "accepte" : "acceptent";
+$vAgree = $isSarlAu ? "agrée" : "agréent";
+$vDecide = $isSarlAu ? "décide" : "décident";
+$vPrend = $isSarlAu ? "prend" : "prennent";
+$vReuni = $isSarlAu ? "s'est réuni" : "se sont réunis";
+$vExamine = $isSarlAu ? "l'Associé Unique examine" : "les associés examinent";
+$vRemercie = $isSarlAu ? "remercie" : "remercient";
 
 $defaultResolutions = [
-    ['title' => 'Cession de parts sociales', 'content' => "$associeLabel « $cedantNom », déclare céder à « $cessionnaireFull », de nationalité $cessionnaireNat, demeurant à $cessionnaireAdr, $totalPartsCedees parts sociales de $vnomFormatted DH chacune, pour un montant total de $prixTotalFormatted DH.\n\n$associeLabel accepte expressément cette cession et reconnaît que le prix de cession a été réglé entre les parties."],
-    ['title' => "Agrément du ou des nouveaux associés", 'content' => "$associeLabel agrée la cession susmentionnée et accepte l'entrée du nouvel associé dans le capital social de la société."],
-    ['title' => 'Modification des statuts', 'content' => "En conséquence de la cession, $associeLabel décide de modifier l'article 7 des statuts relatif à la répartition du capital social, lequel sera désormais rédigé comme suit :\n\nArticle 7 — Capital Social\n\nLe capital social est fixé à la somme de $capitalFormatted DH, divisé en $totalParts parts sociales de $vnomFormatted DH chacune, réparties comme suit :\n\n- $cessionnaireFull : $totalPartsCedees parts" . ($partsRestantes > 0 ? "\n- $cedantNom : $partsRestantes parts" : '')],
+    ['title' => 'Cession de parts sociales', 'content' => "$associeLabel « $cedantNom », $vDeclare céder à « $cessionnaireFull », de nationalité $cessionnaireNat, demeurant à $cessionnaireAdr, $totalPartsCedees parts sociales de $vnomFormatted DH chacune, pour un montant total de $prixTotalFormatted DH.\n\n$associeLabel $vAccepte expressément cette cession et reconnaît que le prix de cession a été réglé entre les parties."],
+    ['title' => "Agrément du ou des nouveaux associés", 'content' => "$associeLabel $vAgree la cession susmentionnée et accepte l'entrée du nouvel associé dans le capital social de la société."],
+    ['title' => 'Modification des statuts', 'content' => "En conséquence de la cession, $associeLabel $vDecide de modifier l'article 7 des statuts relatif à la répartition du capital social, lequel sera désormais rédigé comme suit :\n\nArticle 7 — Capital Social\n\nLe capital social est fixé à la somme de $capitalFormatted DH, divisé en $totalParts parts sociales de $vnomFormatted DH chacune, réparties comme suit :\n\n- $cessionnaireFull : $totalPartsCedees parts" . ($partsRestantes > 0 ? "\n- $cedantNom : $partsRestantes parts" : '')],
 ];
 
 if ($hasResign) {
-    $defaultResolutions[] = ['title' => 'Démission de l\'ancien gérant', 'content' => "$associeLabel prend acte de la démission de « $ancienGerantNomEscaped » de ses fonctions de gérant de la société, avec effet à compter de ce jour, et le remercie pour les services rendus."];
+    $defaultResolutions[] = ['title' => 'Démission de l\'ancien gérant', 'content' => "$associeLabel $vPrend acte de la démission de « $ancienGerantNomEscaped » de ses fonctions de gérant de la société, avec effet à compter de ce jour, et le $vRemercie pour les services rendus."];
 }
 
 if ($hasNominate) {
-    $defaultResolutions[] = ['title' => 'Nomination du nouveau gérant', 'content' => "$associeLabel décide de nommer « $nouveauGerantNomEscaped » en qualité de nouveau gérant de la société, pour une durée indéterminée, avec tous les pouvoirs nécessaires à l'exercice de ses fonctions."];
+    $defaultResolutions[] = ['title' => 'Nomination du nouveau gérant', 'content' => "$associeLabel $vDecide de nommer « $nouveauGerantNomEscaped » en qualité de nouveau gérant de la société, pour une durée indéterminée, avec tous les pouvoirs nécessaires à l'exercice de ses fonctions."];
 }
 
 if ($needsTransform) {
-    $defaultResolutions[] = ['title' => 'Transformation de la forme juridique', 'content' => "$associeLabel décide de transformer la forme juridique de la société de SARL AU (SARL à Associé Unique) en SARL (Société à Responsabilité Limitée) à associés multiples, conformément aux dispositions de la loi 5-96 modifiée.\n\nEn conséquence, les statuts seront modifiés en conséquence pour tenir compte de la nouvelle forme sociale."];
+    $defaultResolutions[] = ['title' => 'Transformation de la forme juridique', 'content' => "$associeLabel $vDecide de transformer la forme juridique de la société de SARL AU (SARL à Associé Unique) en SARL (Société à Responsabilité Limitée) à associés multiples, conformément aux dispositions de la loi 5-96 modifiée.\n\nEn conséquence, les statuts seront modifiés en conséquence pour tenir compte de la nouvelle forme sociale."];
 }
 
 $defaultResolutions[] = ['title' => 'Pouvoirs pour formalités', 'content' => "Tous pouvoirs sont donnés à $cedantNom, pour effectuer toutes formalités de dépôt et d'inscription modificative auprès du greffe du tribunal de commerce, ainsi que toutes autres démarches requises par la loi."];
@@ -165,8 +173,8 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
         </div>
 
         <div class="recap-section">
-            <p>L'an deux mille <?= date('Y') ?>, le <?= e(format_date($wizard['cession_date'] ?? '')) ?>, <?= $associeLabelFr ?> de la société <?= e($socData['societe_raison_sociale'] ?: '-') ?> se sont réunis en Assemblée Générale Ordinaire au siège social.</p>
-            <p>Après avoir constaté que toutes les dispositions légales et statutaires ont été respectées, l'Associé Unique examine l'ordre du jour suivant :</p>
+            <p>L'an deux mille <?= date('Y') ?>, le <?= e(format_date($wizard['cession_date'] ?? '')) ?>, <?= $associeLabelFr ?> de la société <?= e($socData['societe_raison_sociale'] ?: '-') ?> <?= $vReuni ?> en Assemblée Générale Ordinaire au siège social.</p>
+            <p>Après avoir constaté que toutes les dispositions légales et statutaires ont été respectées, <?= $vExamine ?> l'ordre du jour suivant :</p>
         </div>
 
         <div class="recap-section">

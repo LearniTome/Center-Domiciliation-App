@@ -10,7 +10,7 @@ $templatesDir = __DIR__ . '/../../templates';
 $folderLabels = $templatesConfig['folder_labels'];
 $docTypes = $templatesConfig['document_types'];
 
-$displayFolders = ['_Racine-Actifs', '_Cession', '_Cession_SARL', '_Cession_SARLAU'];
+$displayFolders = ['_Racine-Actifs', '_Cession_SARL', '_Cession_SARLAU'];
 if (($pdo ?? null) instanceof PDO) {
     $stmt = $pdo->query("SELECT forme_juridique, template_folder FROM ref_formes_juridiques ORDER BY id");
     $allForms = $stmt->fetchAll();

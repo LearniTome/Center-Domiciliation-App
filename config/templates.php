@@ -8,7 +8,6 @@ return [
         'SARL AU' => 'SARL-AU',
         'SARL' => 'SARL',
         'SA' => 'SA',
-        '_Cession' => 'Cession (generique)',
         '_Cession_SARL' => 'Cession SARL',
         '_Cession_SARLAU' => 'Cession SARL AU',
     ],

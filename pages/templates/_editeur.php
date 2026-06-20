@@ -27,7 +27,7 @@ if ($templatePath === '' || !str_starts_with($templatePath, realpath($templatesD
         </div>
         <?php
         $allFolders = [];
-        $specialFolders = ['_Racine-Actifs', '_Cession', '_Cession_SARL', '_Cession_SARLAU'];
+        $specialFolders = ['_Racine-Actifs', '_Cession_SARL', '_Cession_SARLAU'];
         foreach ($specialFolders as $sf) {
             $sfDir = $templatesDir . '/' . $sf;
             if (is_dir($sfDir)) {
@@ -167,7 +167,7 @@ $htmlContent = TemplateEditor::extractHtml($templatePath);
 $variables = TemplateEditor::getAvailableVariables();
 
 // Auto-filter: masquer categories cession pour templates non-cession
-$isCession = in_array($folder, ['_Cession', '_Cession_SARL', '_Cession_SARLAU'], true);
+$isCession = in_array($folder, ['_Cession_SARL', '_Cession_SARLAU'], true);
 $visibleCategories = [];
 foreach ($variables as $cat => $vars) {
     if (!$isCession && in_array($cat, ['Cession', 'Cedant', 'Cessionnaire'])) continue;
