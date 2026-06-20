@@ -4,24 +4,24 @@ declare(strict_types=1);
 // Step 5: PV Cession editable — dynamic resolutions
 if (is_post() && $step === 5) {
     verify_csrf();
-    $navAction = $_POST['nav_action'] ?? 'next';
 
-    if ($navAction === 'save') {
-        $titles = $_POST['pv_title'] ?? [];
-        $contents = $_POST['pv_content'] ?? [];
-        $resolutions = [];
-        foreach ($titles as $i => $title) {
-            $title = trim((string) $title);
-            $content = trim((string) ($contents[$i] ?? ''));
-            if ($title !== '' || $content !== '') {
-                $resolutions[] = ['title' => $title, 'content' => $content];
-            }
+    $titles = $_POST['pv_title'] ?? [];
+    $contents = $_POST['pv_content'] ?? [];
+    $resolutions = [];
+    foreach ($titles as $i => $title) {
+        $title = trim((string) $title);
+        $content = trim((string) ($contents[$i] ?? ''));
+        if ($title !== '' || $content !== '') {
+            $resolutions[] = ['title' => $title, 'content' => $content];
         }
-        $wizard['pv_resolutions'] = $resolutions;
+    }
+    $wizard['pv_resolutions'] = $resolutions;
+
+    $navAction = $_POST['nav_action'] ?? 'next';
+    if ($navAction === 'save') {
         set_flash('success', 'Contenu du PV enregistre.');
         redirect_to('cession', ['step' => 5]);
     }
-
     if ($navAction === 'back') {
         redirect_to('cession', ['step' => 4]);
     }
@@ -97,6 +97,9 @@ $vPrend = $isSarlAu ? "prend" : "prennent";
 $vReuni = $isSarlAu ? "s'est réuni" : "se sont réunis";
 $vExamine = $isSarlAu ? "l'Associé Unique examine" : "les associés examinent";
 $vRemercie = $isSarlAu ? "remercie" : "remercient";
+$pvTitleFull = $isSarlAu ? "PROCÈS-VERBAL DES DÉCISIONS DE L'ASSOCIÉ UNIQUE" : "PROCÈS-VERBAL D'ASSEMBLÉE GÉNÉRALE EXTRAORDINAIRE (AGE)";
+$pvTypeLabel = $isSarlAu ? "des Décisions de l'Associé Unique" : "d'Assemblée Générale Extraordinaire (AGE)";
+$reuniLieu = $isSarlAu ? "s'est réuni au siège social" : "se sont réunis en Assemblée Générale Extraordinaire au siège social";
 
 $defaultResolutions = [
     ['title' => 'Cession de parts sociales', 'content' => "$associeLabel « $cedantNom », $vDeclare céder à « $cessionnaireFull », de nationalité $cessionnaireNat, demeurant à $cessionnaireAdr, $totalPartsCedees parts sociales de $vnomFormatted DH chacune, pour un montant total de $prixTotalFormatted DH.\n\n$associeLabel $vAccepte expressément cette cession et reconnaît que le prix de cession a été réglé entre les parties."],
@@ -145,12 +148,12 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
 
 <div class="stack">
     <div class="section-header">
-        <h2>Procès-Verbal de l'Assemblée Générale — Contenu modifiable</h2>
+        <h2>Procès-Verbal — Contenu modifiable</h2>
     </div>
 
     <div class="recap-a4">
         <div class="recap-header">
-            <h2>Procès-Verbal de l'Assemblée Générale Ordinaire</h2>
+            <h2><?= $pvTypeLabel ?></h2>
         </div>
 
         <div class="recap-section">
@@ -164,7 +167,7 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
         </div>
 
         <div class="recap-section">
-            <h3>PROCÈS-VERBAL DE L'ASSEMBLÉE GÉNÉRALE ORDINAIRE <?= $associeLabelUpper ?></h3>
+            <h3><?= $pvTitleFull ?></h3>
             <div class="recap-grid">
                 <div class="item"><span class="label">Date</span><span class="value"><?= e(format_date($wizard['cession_date'] ?? '')) ?></span></div>
                 <div class="item"><span class="label">Lieu</span><span class="value"><?= e($socData['societe_adresse_siege'] ?: '-') ?></span></div>
@@ -173,7 +176,7 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
         </div>
 
         <div class="recap-section">
-            <p>L'an deux mille <?= date('Y') ?>, le <?= e(format_date($wizard['cession_date'] ?? '')) ?>, <?= $associeLabelFr ?> de la société <?= e($socData['societe_raison_sociale'] ?: '-') ?> <?= $vReuni ?> en Assemblée Générale Ordinaire au siège social.</p>
+            <p>L'an deux mille <?= date('Y') ?>, le <?= e(format_date($wizard['cession_date'] ?? '')) ?>, <?= $associeLabelFr ?> de la société <?= e($socData['societe_raison_sociale'] ?: '-') ?> <?= $reuniLieu ?>.</p>
             <p>Après avoir constaté que toutes les dispositions légales et statutaires ont été respectées, <?= $vExamine ?> l'ordre du jour suivant :</p>
         </div>
 
@@ -216,16 +219,26 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
             <?php endforeach; ?>
         </div>
 
-        <div class="footer-actions" style="justify-content:flex-start">
-            <button type="button" class="btn btn-secondary" id="pv-add-resolution">
-                <span class="material-symbols-outlined">add</span> Ajouter une résolution
-            </button>
-            <a class="btn btn-back" href="<?= e(app_url('cession', ['step' => 5, 'pv_view' => 'preview'])) ?>">
-                <span class="material-symbols-outlined">visibility</span> Voir l'aperçu
-            </a>
-            <button class="btn btn-info" type="submit" name="nav_action" value="save">
-                <span class="material-symbols-outlined">save</span> Enregistrer
-            </button>
+        <div class="footer-actions" style="justify-content:space-between;flex-wrap:wrap">
+            <div style="display:flex;gap:8px">
+                <button type="button" class="btn btn-secondary" id="pv-add-resolution">
+                    <span class="material-symbols-outlined">add</span> Ajouter une résolution
+                </button>
+                <a class="btn btn-back" href="<?= e(app_url('cession', ['step' => 5, 'pv_view' => 'preview'])) ?>">
+                    <span class="material-symbols-outlined">visibility</span> Voir l'aperçu
+                </a>
+                <button class="btn btn-info" type="submit" name="nav_action" value="save">
+                    <span class="material-symbols-outlined">save</span> Enregistrer
+                </button>
+            </div>
+            <div style="display:flex;gap:8px">
+                <button class="btn btn-back" type="submit" name="nav_action" value="back">
+                    <span class="material-symbols-outlined">arrow_back</span> Retour
+                </button>
+                <button class="btn btn-next" type="submit" name="nav_action" value="next">
+                    <span class="material-symbols-outlined">arrow_forward</span> Suivant
+                </button>
+            </div>
         </div>
     </form>
 
