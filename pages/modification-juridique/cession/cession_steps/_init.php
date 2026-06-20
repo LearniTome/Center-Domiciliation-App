@@ -133,6 +133,7 @@ if ($editingId > 0 && !isset($_SESSION['_cession_loaded'])) {
             $wizard['cession_date'] = $dbCession['cession_date'] ?? date('Y-m-d');
             $wizard['cession_motif'] = $dbCession['cession_motif'] ?? '';
             $wizard['mode'] = 'existante';
+            $wizard['parts'] = [];
             $stmt2 = $pdo->prepare('SELECT * FROM cession_parts WHERE cession_id = :id ORDER BY id');
             $stmt2->execute(['id' => $editingId]);
             foreach ($stmt2->fetchAll() as $p) {

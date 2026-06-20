@@ -451,7 +451,7 @@ if ($step === 7):
 
     require_once __DIR__ . '/../../../../src/analyseur_templates.php';
     $templateFolders = ['SARL AU' => '_Cession_SARLAU', 'SARL' => '_Cession_SARL'];
-    $formeDir = $societeData['societe_forme_juridique'] ?? '';
+    $formeDir = $societeData['societe_forme_juridique'] ?: ($selectedSociete['societe_forme_juridique'] ?? '');
     $templateFolderName = $templateFolders[$formeDir] ?? '_Cession';
     $cessionTemplateDir = __DIR__ . '/../../../../templates/' . $templateFolderName;
     $templatesByType = [];
