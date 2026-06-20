@@ -31,6 +31,7 @@ if (!isset($_SESSION['creation_wizard']) || !is_array($_SESSION['creation_wizard
         ]],
         'contrat' => $defaults['contrat'] ?? [],
         'uploaded_docs' => [],
+        'generated_files' => [],
     ];
 }
 

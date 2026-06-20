@@ -6,6 +6,7 @@ if (is_post() && $step === 6) {
     $navAction = $_POST['nav_action'] ?? 'next';
 
     if ($navAction === 'back') {
+        $_SESSION['creation_wizard']['generated_files'] = [];
         redirect_to('creation', ['step' => 5]);
     }
 

@@ -25,6 +25,80 @@ if (is_post() && $step === 5) {
     if ($navAction === 'back') {
         redirect_to('cession', ['step' => 4]);
     }
+    if ($navAction === 'reset_defaults') {
+        unset($wizard['pv_resolutions']);
+        set_flash('success', 'Resolutions reinitialisees aux valeurs par defaut.');
+        redirect_to('cession', ['step' => 5]);
+    }
+    if ($navAction === 'ai_generate') {
+        require_once __DIR__ . '/../../../../src/service_claude.php';
+        if (!ClaudeService::isAvailable()) {
+            set_flash('error', 'IA non disponible : cle API manquante.');
+            redirect_to('cession', ['step' => 5]);
+        }
+        try {
+            $soc = $wizard['mode'] === 'existante' ? $selectedSociete : ($wizard['societe'] ?? []);
+            $_totalParts = (int) ($soc['societe_part_social'] ?? 0);
+            $_totalCapital = (float) ($soc['societe_capital'] ?? 0);
+            $_valeurNominale = (float) ($soc['societe_valeur_nominale'] ?? 0);
+            $_totalPrix = 0;
+            $_totalPartsCedees = 0;
+            foreach ($wizard['parts'] as $p) {
+                $_totalPrix += (float) ($p['prix_total'] ?? 0);
+                $_totalPartsCedees += (int) ($p['parts_cedees'] ?? 0);
+            }
+            $_firstPart = $wizard['parts'][0] ?? [];
+            $_cedantNom = $_firstPart['cedant_nom_complet'] ?? '';
+            $_cessionnaireNom = $_firstPart['cessionnaire_nom_complet'] ?? '';
+            $_cessionnaireCivilite = $_firstPart['cessionnaire_civilite'] ?? 'M.';
+            $_cessionnaireNationalite = $_firstPart['cessionnaire_nationalite'] ?? '';
+            $_cessionnaireAdresse = $_firstPart['cessionnaire_adresse'] ?? '';
+            $_cessionnaireFull = "$_cessionnaireCivilite $_cessionnaireNom";
+            $_meta = $wizard['cession_metadata'] ?? [];
+            $_hasResign = false;
+            $_hasNominate = false;
+            foreach ($_meta['cedants_gerant_map'] ?? [] as $gInfo) {
+                if (!empty($gInfo['is_gerant']) && ($gInfo['action'] ?? 'stay') === 'resign') $_hasResign = true;
+            }
+            $_hasNominate = !empty($_meta['new_gerant_cessionnaire_indices'] ?? []);
+            $_needsTransform = $_meta['needs_transformation'] ?? false;
+            $_nouveauGerantNom = '';
+            foreach ($wizard['parts'] as $p) {
+                if (!empty($p['nommer_gerant']) && !empty($p['cessionnaire_nom_complet'])) {
+                    $_nouveauGerantNom = $p['cessionnaire_nom_complet'];
+                }
+            }
+            $prompt = "Tu es un assistant juridique spécialisé en droit des sociétés marocain. Génère les résolutions d'un procès-verbal de cession de parts sociales au format JSON valide (un tableau d'objets avec les champs \"title\" et \"content\"). Les résolutions doivent être rédigées en français juridique formel, adaptées au contexte suivant :\n\n"
+                . "- Raison sociale : " . ($soc['societe_raison_sociale'] ?? 'N/A') . "\n"
+                . "- Forme juridique : " . ($soc['societe_forme_juridique'] ?? 'N/A') . "\n"
+                . "- Capital social : " . $_totalCapital . " DH\n"
+                . "- Nombre de parts : " . $_totalParts . "\n"
+                . "- Valeur nominale : " . $_valeurNominale . " DH\n"
+                . "- Parts cédées : " . $_totalPartsCedees . "\n"
+                . "- Prix total de cession : " . $_totalPrix . " DH\n"
+                . "- Cédant : " . ($_cedantNom ?: 'N/A') . "\n"
+                . "- Cessionnaire : " . ($_cessionnaireFull ?: 'N/A') . "\n"
+                . "- Nationalité cessionnaire : " . ($_cessionnaireNationalite ?: 'N/A') . "\n"
+                . "- Adresse cessionnaire : " . ($_cessionnaireAdresse ?: 'N/A') . "\n\n"
+                . ($_hasResign ? "- Démission du gérant actuel : OUI\n" : "")
+                . ($_hasNominate ? "- Nomination d'un nouveau gérant : OUI (" . ($_nouveauGerantNom ?: 'N/A') . ")\n" : "")
+                . ($_needsTransform ? "- Transformation SARL AU → SARL : OUI\n" : "")
+                . "\nRetourne UNIQUEMENT le tableau JSON, sans balises markdown, sans commentaires.";
+            $result = ClaudeService::ask($prompt);
+            $json = trim($result);
+            if (preg_match('/\[.*\]/s', $json, $m)) $json = $m[0];
+            $parsed = json_decode($json, true);
+            if (is_array($parsed) && count($parsed) > 0) {
+                $wizard['pv_resolutions'] = $parsed;
+                set_flash('success', count($parsed) . ' resolution(s) generees par IA.');
+            } else {
+                set_flash('error', 'Reponse IA invalide. Veuillez reessayer.');
+            }
+        } catch (Throwable $e) {
+            set_flash('error', 'Erreur IA : ' . $e->getMessage());
+        }
+        redirect_to('cession', ['step' => 5]);
+    }
     redirect_to('cession', ['step' => 6]);
 }
 
@@ -130,20 +204,25 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
 ?>
 <style>
 .pv-edit-form { display:flex;flex-direction:column;gap:16px; }
-.pv-edit-block { border:1px solid var(--line);border-radius:6px;padding:12px;background:var(--bg-card);position:relative; }
-.pv-edit-block .pv-title-input { width:100%;font-size:0.9rem;font-weight:600;padding:6px 8px;border:1px solid var(--line);border-radius:4px;margin-bottom:6px;background:var(--bg-main);color:var(--text);font-family:inherit; }
-.pv-edit-block .pv-title-input:focus { outline:none;border-color:var(--primary);box-shadow:0 0 0 2px rgba(74,108,247,0.15); }
-.pv-edit-block h3 { margin:0 0 6px;font-size:0.9rem;display:flex;align-items:center;gap:6px; }
-.pv-edit-block h3 .step-badge { font-size:0.65rem;padding:1px 6px;border-radius:3px; }
+.pv-edit-block { padding:4px 0;position:relative; }
+.pv-edit-block .pv-title-input { width:100%;font-size:0.9rem;font-weight:600;padding:6px 8px;border:none;background:transparent;color:var(--primary);font-family:inherit; }
+.pv-edit-block .pv-title-input:focus { outline:none; }
+.pv-edit-block .pv-title-input::placeholder { color:var(--text-muted);font-weight:400; }
 .pv-edit-block textarea { width:100%;min-height:80px;font-family:inherit;font-size:0.82rem;padding:8px;border:1px solid var(--line);border-radius:4px;resize:vertical;background:var(--bg-main);color:var(--text); }
 .pv-edit-block textarea:focus { outline:none;border-color:var(--primary);box-shadow:0 0 0 2px rgba(74,108,247,0.15); }
-.pv-edit-block .pv-remove-btn { position:absolute;top:8px;right:8px; }
+.pv-edit-block .btn-icon { width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border-radius:4px;color:var(--text-muted);transition:color 0.12s,background 0.12s; }
+.step-badge { display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;font-size:0.7rem;font-weight:700;border-radius:4px;padding:0 6px;background:var(--primary);color:#fff;flex-shrink:0; }
+.pv-edit-block .btn-icon:hover { color:var(--primary);background:rgba(74,108,247,0.08); }
+.pv-edit-block .btn-icon.danger:hover { color:var(--danger);background:rgba(252,66,74,0.08); }
 .pv-view-toggle { display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap; }
 .pv-view-toggle .btn.active { background:rgba(74,108,247,0.12);border-color:var(--primary); }
 .recap-a4 .pv-preview-block { border:1px dashed var(--line);border-radius:6px;padding:12px;margin-bottom:12px;white-space:pre-wrap; }
 .recap-a4 .pv-preview-block h3 { font-size:0.85rem;margin:0 0 6px;color:var(--primary); }
 .recap-a4 .pv-preview-block p { margin:4px 0; }
 .recap-a4 .pv-preview-block ul, .recap-a4 .pv-preview-block ol { margin:4px 0;padding-left:1.2rem; }
+.recap-section h3 { font-size:0.92rem;font-weight:700;color:var(--primary);margin:0 0 8px; }
+.recap-header h2 { font-size:1.05rem;font-weight:700;color:var(--primary);text-transform:uppercase; }
+#pv-order-of-day li::marker { color:var(--primary);font-weight:600; }
 </style>
 
 <div class="stack">
@@ -208,27 +287,41 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
             <?php foreach ($resolutions as $i => $r): ?>
             <div class="pv-edit-block" data-index="<?= $i ?>">
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-                    <span class="step-badge" style="background:var(--primary);color:#fff;flex-shrink:0"><?= $i + 1 ?></span>
+                    <span class="step-badge"><?= $i + 1 ?></span>
                     <input type="text" name="pv_title[]" class="pv-title-input" value="<?= e($r['title']) ?>" placeholder="Titre de la résolution">
-                    <button type="button" class="btn-icon danger pv-remove-btn" onclick="this.closest('.pv-edit-block').remove();updateOrder()" title="Supprimer">
-                        <span class="material-symbols-outlined">close</span>
-                    </button>
+                    <div style="display:flex;gap:2px;margin-left:auto">
+                        <button type="button" class="btn-icon pv-move-up" onclick="moveResolution(this, -1)" title="Monter">
+                            <span class="material-symbols-outlined">arrow_upward</span>
+                        </button>
+                        <button type="button" class="btn-icon pv-move-down" onclick="moveResolution(this, 1)" title="Descendre">
+                            <span class="material-symbols-outlined">arrow_downward</span>
+                        </button>
+                        <button type="button" class="btn-icon danger pv-remove-btn" onclick="this.closest('.pv-edit-block').remove();updateOrder()" title="Supprimer">
+                            <span class="material-symbols-outlined">close</span>
+                        </button>
+                    </div>
                 </div>
                 <textarea name="pv_content[]" rows="5" placeholder="Contenu de la résolution..."><?= e($r['content']) ?></textarea>
             </div>
             <?php endforeach; ?>
         </div>
 
-        <div class="footer-actions" style="justify-content:space-between;flex-wrap:wrap">
-            <div style="display:flex;gap:8px">
+        <div class="footer-actions" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
                 <button type="button" class="btn btn-secondary" id="pv-add-resolution">
-                    <span class="material-symbols-outlined">add</span> Ajouter une résolution
+                    <span class="material-symbols-outlined">add</span> Ajouter
                 </button>
-                <a class="btn btn-back" href="<?= e(app_url('cession', ['step' => 5, 'pv_view' => 'preview'])) ?>">
-                    <span class="material-symbols-outlined">visibility</span> Voir l'aperçu
+                <button type="button" class="btn btn-secondary" id="pv-add-ai-resolution" title="Ajouter une résolution générée par IA">
+                    <span class="material-symbols-outlined">auto_awesome</span> Ajouter avec IA
+                </button>
+                <a class="btn btn-info" href="<?= e(app_url('cession', ['step' => 5, 'pv_view' => 'preview'])) ?>">
+                    <span class="material-symbols-outlined">visibility</span> Aperçu
                 </a>
                 <button class="btn btn-info" type="submit" name="nav_action" value="save">
                     <span class="material-symbols-outlined">save</span> Enregistrer
+                </button>
+                <button class="btn btn-cancel" type="submit" name="nav_action" value="reset_defaults" data-confirm="Réinitialiser toutes les résolutions ?">
+                    <span class="material-symbols-outlined">restart_alt</span> Réinitialiser
                 </button>
             </div>
             <div style="display:flex;gap:8px">
@@ -245,11 +338,19 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
     <template id="pv-resolution-template">
         <div class="pv-edit-block" data-index="__IDX__">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-                <span class="step-badge" style="background:var(--primary);color:#fff;flex-shrink:0">__NUM__</span>
+                <span class="step-badge">__NUM__</span>
                 <input type="text" name="pv_title[]" class="pv-title-input" placeholder="Titre de la résolution">
-                <button type="button" class="btn-icon danger pv-remove-btn" onclick="this.closest('.pv-edit-block').remove();updateOrder()" title="Supprimer">
-                    <span class="material-symbols-outlined">close</span>
-                </button>
+                <div style="display:flex;gap:2px;margin-left:auto">
+                    <button type="button" class="btn-icon pv-move-up" onclick="moveResolution(this, -1)" title="Monter">
+                        <span class="material-symbols-outlined">arrow_upward</span>
+                    </button>
+                    <button type="button" class="btn-icon pv-move-down" onclick="moveResolution(this, 1)" title="Descendre">
+                        <span class="material-symbols-outlined">arrow_downward</span>
+                    </button>
+                    <button type="button" class="btn-icon danger pv-remove-btn" onclick="this.closest('.pv-edit-block').remove();updateOrder()" title="Supprimer">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
             </div>
             <textarea name="pv_content[]" rows="5" placeholder="Contenu de la résolution..."></textarea>
         </div>
@@ -260,7 +361,7 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
     <div class="recap-a4">
         <?php foreach ($resolutions as $i => $r): ?>
         <div class="recap-section">
-            <h3><?= ($i + 1) . '. ' . e($r['title'] ?: '(Sans titre)') ?></h3>
+            <h3><?= e($r['title'] ?: '(Sans titre)') ?></h3>
             <?php if (trim($r['content']) !== ''): ?>
                 <div class="pv-preview-block"><?= nl2br(e($r['content'])) ?></div>
             <?php else: ?>
@@ -320,6 +421,7 @@ function updateOrder() {
     blocks.forEach(function(b, i) {
         var badge = b.querySelector('.step-badge');
         if (badge) badge.textContent = i + 1;
+        b.dataset.index = i;
     });
 }
 
@@ -329,16 +431,63 @@ function $escapeHtml(str) {
     return div.innerHTML;
 }
 
-document.getElementById('pv-add-resolution')?.addEventListener('click', function() {
+function moveResolution(btn, direction) {
+    var block = btn.closest('.pv-edit-block');
+    if (!block) return;
+    var list = document.getElementById('pv-resolution-list');
+    var sibling = direction === -1 ? block.previousElementSibling : block.nextElementSibling;
+    if (!sibling || !sibling.matches('.pv-edit-block')) return;
+    if (direction === -1) {
+        list.insertBefore(block, sibling);
+    } else {
+        list.insertBefore(sibling, block);
+    }
+    updateOrder();
+}
+
+function $createResolutionBlock(title, content) {
     var list = document.getElementById('pv-resolution-list');
     if (!list) return;
     var template = document.getElementById('pv-resolution-template');
     var html = template.innerHTML.replace(/__IDX__/g, list.children.length).replace(/__NUM__/g, list.children.length + 1);
     var div = document.createElement('div');
     div.innerHTML = html;
-    list.appendChild(div.firstElementChild);
+    var block = div.firstElementChild;
+    block.querySelector('.pv-title-input').value = title || '';
+    block.querySelector('textarea').value = content || '';
+    list.appendChild(block);
     updateOrder();
+    return block;
+}
+
+document.getElementById('pv-add-resolution')?.addEventListener('click', function() {
+    $createResolutionBlock('', '');
+    var list = document.getElementById('pv-resolution-list');
     list.lastElementChild.querySelector('input')?.focus();
+});
+
+document.getElementById('pv-add-ai-resolution')?.addEventListener('click', function() {
+    var btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-symbols-outlined">hourglass_top</span> Génération...';
+    <?php if (ClaudeService::isAvailable()): ?>
+    fetch('<?= e(app_url('cession', ['step' => 5])) ?>', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: new URLSearchParams({
+            'nav_action': 'ai_generate',
+            'csrf_token': '<?= e($_SESSION['csrf_token'] ?? '') ?>'
+        })
+    }).then(function(r) { return r.text(); }).then(function() {
+        window.location.reload();
+    }).catch(function() {
+        window.location.reload();
+    });
+    <?php else: ?>
+    btn.innerHTML = '<span class="material-symbols-outlined">auto_awesome</span> Ajouter avec IA';
+    btn.disabled = false;
+    alert('IA non disponible : cle API manquante.');
+    <?php endif; ?>
 });
 
 document.querySelectorAll('#pv-resolution-list .pv-title-input').forEach(function(input) {

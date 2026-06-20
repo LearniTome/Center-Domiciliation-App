@@ -8,6 +8,7 @@ if (is_post() && $step === 7) {
     $navAction = $_POST['nav_action'] ?? 'generate';
     if ($navAction === 'back') {
         unset($_SESSION['_cession_overwrite_files'], $_SESSION['_cession_overwrite_docs']);
+        $_SESSION['cession_wizard']['generated_files'] = [];
         redirect_to('cession', ['step' => 6]);
     }
 
