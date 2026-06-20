@@ -276,10 +276,17 @@ $stmt->execute([
             $context = DocumentRenderer::buildContextFromCession($pdo, $cessionId);
             $pvResolutions = $wizard['pv_resolutions'] ?? [];
             if (!empty($pvResolutions) && is_array($pvResolutions)) {
+                $orderItems = [];
                 foreach ($pvResolutions as $i => $r) {
+                    $orderItems[] = ($i + 1) . '. ' . ($r['title'] ?? '');
                     $context['PV_RESOLUTION_' . ($i + 1)] = $r['content'] ?? '';
                     $context['PV_TITLE_' . ($i + 1)] = $r['title'] ?? '';
                 }
+                $context['PV_ORDER_ITEMS'] = implode("\n", $orderItems);
+            }
+            for ($i = count($pvResolutions ?? []) + 1; $i <= 10; $i++) {
+                $context['PV_RESOLUTION_' . $i] = '';
+                $context['PV_TITLE_' . $i] = '';
             }
             $renderer = new DocumentRenderer($path, $outputDir);
             $docxPath = $renderer->render($context, $outName);
@@ -349,10 +356,17 @@ $stmt->execute([
         $context = DocumentRenderer::buildContextFromCession($pdo, $cessionId);
         $pvResolutions = $wizard['pv_resolutions'] ?? [];
         if (!empty($pvResolutions) && is_array($pvResolutions)) {
+            $orderItems = [];
             foreach ($pvResolutions as $i => $r) {
+                $orderItems[] = ($i + 1) . '. ' . ($r['title'] ?? '');
                 $context['PV_RESOLUTION_' . ($i + 1)] = $r['content'] ?? '';
                 $context['PV_TITLE_' . ($i + 1)] = $r['title'] ?? '';
             }
+            $context['PV_ORDER_ITEMS'] = implode("\n", $orderItems);
+        }
+        for ($i = count($pvResolutions ?? []) + 1; $i <= 10; $i++) {
+            $context['PV_RESOLUTION_' . $i] = '';
+            $context['PV_TITLE_' . $i] = '';
         }
 
         $templatesConfig = require __DIR__ . '/../../../../config/templates.php';
