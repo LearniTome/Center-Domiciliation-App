@@ -37,18 +37,8 @@ $noSidebar = in_array($page ?? '', ['connexion', 'deconnexion'], true);
     try{var a=localStorage.getItem('sidebar_collapsed');if(a==='1'){document.querySelector('.shell').classList.add('collapsed')}}catch(e){}
     </script>
     <?php endif; ?>
-    <main class="main">
-        <?php if (!is_logged_in()): ?>
-        <header class="page-header">
-            <div>
-                <h1><?= e($pageTitle) ?></h1>
-                <?php if (isset($pageSubtitle)): ?>
-                <p class="page-subtitle"><?= e($pageSubtitle) ?></p>
-                <?php endif; ?>
-                <span class="page-count-bar"></span>
-            </div>
-        </header>
-        <?php else:
+    <div class="shell-body">
+        <?php if (is_logged_in()):
             $_topUser = current_user();
             $_topNotifCount = 0;
             if ($_topUser && $pdo) {
@@ -98,16 +88,29 @@ $noSidebar = in_array($page ?? '', ['connexion', 'deconnexion'], true);
                 </div>
             </div>
         </div>
-        <header class="page-header">
-            <div>
-                <h1><?= e($pageTitle) ?></h1>
-                <?php if (isset($pageSubtitle)): ?>
-                <p class="page-subtitle"><?= e($pageSubtitle) ?></p>
-                <?php endif; ?>
-                <span class="page-count-bar"></span>
-            </div>
-        </header>
         <?php endif; ?>
+        <main class="main">
+            <?php if (!is_logged_in()): ?>
+            <header class="page-header">
+                <div>
+                    <h1><?= e($pageTitle) ?></h1>
+                    <?php if (isset($pageSubtitle)): ?>
+                    <p class="page-subtitle"><?= e($pageSubtitle) ?></p>
+                    <?php endif; ?>
+                    <span class="page-count-bar"></span>
+                </div>
+            </header>
+            <?php else: ?>
+            <header class="page-header">
+                <div>
+                    <h1><?= e($pageTitle) ?></h1>
+                    <?php if (isset($pageSubtitle)): ?>
+                    <p class="page-subtitle"><?= e($pageSubtitle) ?></p>
+                    <?php endif; ?>
+                    <span class="page-count-bar"></span>
+                </div>
+            </header>
+            <?php endif; ?>
 
         <?php if ($flash): ?>
             <div class="flash flash-<?= e($flash['type']) ?>"><?= e($flash['message']) ?></div>

@@ -65,10 +65,10 @@ a:hover {
     padding: 10px;
     background: var(--panel);
     border-right: 1px solid var(--line);
-    overflow-x: hidden;
-    overflow-y: auto;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
+    height: 100vh;
 }
 
 .brand {
@@ -76,6 +76,17 @@ a:hover {
     gap: 8px;
     align-items: center;
     min-height: 34px;
+    flex-shrink: 0;
+}
+
+.sidebar-scroll {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.shell.collapsed .sidebar-scroll {
+    overflow: visible;
 }
 .nav-toggle-all {
     display: flex;
@@ -391,9 +402,10 @@ a:hover {
 }
 
 .main {
+    flex: 1;
     padding: 1.5rem;
-    overflow-y: scroll;
-    height: 100vh;
+    overflow-y: auto;
+    min-height: 0;
 }
 
 .page-header {
@@ -3112,6 +3124,7 @@ tr[data-coverage], .row-mapped {
     .wizard-steps, .section-header, .step-4-controls,
     .card, nav, header, .shell > nav { display: none !important; }
     .shell { display: block !important; }
+    .shell-body { display: block !important; height: auto !important; overflow: visible !important; }
     .main { overflow: visible !important; height: auto !important; padding: 0 !important; }
     .stack { display: block !important; }
     .recap-a4 {
@@ -4361,6 +4374,14 @@ tr[data-coverage], .row-mapped {
     gap: 12px;
     flex-wrap: wrap;
     min-height: 44px;
+    flex-shrink: 0;
+}
+
+.shell-body {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    height: 100vh;
 }
 .top-bar-left {
     display: flex;

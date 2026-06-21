@@ -134,71 +134,73 @@ $navSections = [
             }
         }
     ?>
-    <div class="nav-toggle-all">
-        <button type="button" title="Tout réduire" data-collapse-all>
-            <span class="material-symbols-outlined">collapse_all</span>
-        </button>
-        <button type="button" title="Tout déployer" data-expand-all>
-            <span class="material-symbols-outlined">expand_all</span>
-        </button>
-    </div>
+    <div class="sidebar-scroll">
+        <div class="nav-toggle-all">
+            <button type="button" title="Tout réduire" data-collapse-all>
+                <span class="material-symbols-outlined">collapse_all</span>
+            </button>
+            <button type="button" title="Tout déployer" data-expand-all>
+                <span class="material-symbols-outlined">expand_all</span>
+            </button>
+        </div>
 
-    <nav class="nav-links">
-        <?php foreach ($navSections as $sectionLabel => $section): ?>
-            <?php $items = $section['items']; ?>
-            <?php
-                // Filter items by permission
-                $visibleItems = [];
-                foreach ($items as $navKey => $item) {
-                    if (is_array($item) && isset($item['page'])) {
-                        $itemPage = $item['page'];
-                    } else {
-                        $itemPage = $navKey;
-                    }
-                    $perm = $navPermissions[$itemPage] ?? null;
-                    if ($perm !== null && !has_permission($perm)) continue;
-                    $visibleItems[$navKey] = $item;
-                }
-            ?>
-            <?php if (empty($visibleItems)) { continue; } ?>
-            <?php if ($sectionLabel): ?>
-            <div class="nav-section">
-                <button class="nav-section-toggle" type="button" data-nav-toggle data-label="<?= e($sectionLabel) ?>">
-                    <span class="material-symbols-outlined section-icon"><?= e($section['icon']) ?></span>
-                    <span class="nav-section-label"><?= e($sectionLabel) ?></span>
-                    <span class="material-symbols-outlined section-chevron">expand_more</span>
-                </button>
-                <div class="nav-section-items">
-            <?php endif; ?>
-            <?php foreach ($visibleItems as $navKey => $item): ?>
+        <nav class="nav-links">
+            <?php foreach ($navSections as $sectionLabel => $section): ?>
+                <?php $items = $section['items']; ?>
                 <?php
-                    if (is_array($item) && isset($item['page'])) {
-                        $itemPage = $item['page'];
-                        $itemLabel = $item['label'];
-                        $itemIcon = $item['icon'];
-                        $href = app_url($itemPage);
-                        $isActive = $page === $itemPage;
-                    } else {
-                        $itemLabel = $item[0];
-                        $itemIcon = $item[1];
-                        $href = app_url($navKey);
-                        $isActive = $page === $navKey;
+                    // Filter items by permission
+                    $visibleItems = [];
+                    foreach ($items as $navKey => $item) {
+                        if (is_array($item) && isset($item['page'])) {
+                            $itemPage = $item['page'];
+                        } else {
+                            $itemPage = $navKey;
+                        }
+                        $perm = $navPermissions[$itemPage] ?? null;
+                        if ($perm !== null && !has_permission($perm)) continue;
+                        $visibleItems[$navKey] = $item;
                     }
                 ?>
-                <a class="<?= $isActive ? 'active' : '' ?>" href="<?= e($href) ?>" data-nav-link>
-                    <span class="material-symbols-outlined"><?= e($itemIcon) ?></span>
-                    <span data-nav-label><?= e($itemLabel) ?></span>
-                    <?php if ($navKey === 'notifications'): ?>
-                        <span class="notif-badge" id="nav-notif-badge" style="position:static;margin-left:auto;margin-right:8px;<?= $_navNotifCount > 0 ? '' : 'display:none' ?>"><?= $_navNotifCount > 99 ? '99+' : $_navNotifCount ?></span>
-                    <?php endif; ?>
-                </a>
-            <?php endforeach; ?>
-            <?php if ($sectionLabel): ?>
+                <?php if (empty($visibleItems)) { continue; } ?>
+                <?php if ($sectionLabel): ?>
+                <div class="nav-section">
+                    <button class="nav-section-toggle" type="button" data-nav-toggle data-label="<?= e($sectionLabel) ?>">
+                        <span class="material-symbols-outlined section-icon"><?= e($section['icon']) ?></span>
+                        <span class="nav-section-label"><?= e($sectionLabel) ?></span>
+                        <span class="material-symbols-outlined section-chevron">expand_more</span>
+                    </button>
+                    <div class="nav-section-items">
+                <?php endif; ?>
+                <?php foreach ($visibleItems as $navKey => $item): ?>
+                    <?php
+                        if (is_array($item) && isset($item['page'])) {
+                            $itemPage = $item['page'];
+                            $itemLabel = $item['label'];
+                            $itemIcon = $item['icon'];
+                            $href = app_url($itemPage);
+                            $isActive = $page === $itemPage;
+                        } else {
+                            $itemLabel = $item[0];
+                            $itemIcon = $item[1];
+                            $href = app_url($navKey);
+                            $isActive = $page === $navKey;
+                        }
+                    ?>
+                    <a class="<?= $isActive ? 'active' : '' ?>" href="<?= e($href) ?>" data-nav-link>
+                        <span class="material-symbols-outlined"><?= e($itemIcon) ?></span>
+                        <span data-nav-label><?= e($itemLabel) ?></span>
+                        <?php if ($navKey === 'notifications'): ?>
+                            <span class="notif-badge" id="nav-notif-badge" style="position:static;margin-left:auto;margin-right:8px;<?= $_navNotifCount > 0 ? '' : 'display:none' ?>"><?= $_navNotifCount > 99 ? '99+' : $_navNotifCount ?></span>
+                        <?php endif; ?>
+                    </a>
+                <?php endforeach; ?>
+                <?php if ($sectionLabel): ?>
+                    </div>
                 </div>
-            </div>
-            <?php endif; ?>
-        <?php endforeach; ?>
-    </nav>
+                <?php endif; ?>
+            <?php endforeach; ?>
+        </nav>
+    </div>
 
     <div class="sidebar-footer">
         <a href="<?= e(app_url('deconnexion')) ?>" class="nav-logout" data-nav-link>
