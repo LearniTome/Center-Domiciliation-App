@@ -97,7 +97,6 @@ if ($pdo) {
 ?>
 <section>
     <div class="section-header" style="margin-bottom:1rem;">
-        <h2>Gestion des notifications</h2>
         <div class="table-actions">
             <span style="font-size:0.85rem;color:var(--text-secondary);margin-right:8px;">
                 <?= (int) $totalCount ?> totale(s) &middot; <?= (int) $unreadCount ?> non lue(s)

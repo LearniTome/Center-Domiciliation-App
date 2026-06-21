@@ -57,7 +57,6 @@ if (is_post()) {
     <article class="card stack" style="max-width:400px;margin:80px auto;">
         <div style="text-align:center;margin-bottom:1.5rem;">
             <span class="material-symbols-outlined" style="font-size:3rem;color:var(--primary);">location_city</span>
-            <h2 style="margin-top:0.5rem;">Connexion</h2>
             <p class="help-text">Centre de Domiciliation — Espace collaborateur</p>
         </div>
 

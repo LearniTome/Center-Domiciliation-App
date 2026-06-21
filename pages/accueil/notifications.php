@@ -47,7 +47,6 @@ $unreadCount = count_unread_notifications($pdo, (int) $user['id'], (int) ($user[
 ?>
 <section>
     <div class="notif-page-header">
-        <h2>Notifications</h2>
         <form method="post" style="display:inline">
             <?= csrf_input() ?>
             <input type="hidden" name="action" value="mark_all_read">

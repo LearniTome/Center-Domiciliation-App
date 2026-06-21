@@ -38,7 +38,6 @@ $totalAvecCompte = array_reduce($roles, fn($c, $r) => $c + (int) ($r['nb_collabo
 <section class="stack">
     <div class="section-header">
         <div>
-            <h2>Gestion des roles</h2>
             <p class="help-text"><?= count($roles) ?> roles — <?= $totalAvecCompte ?> collaborateur(s) assigne(s)</p>
         </div>
         <div class="table-actions">
