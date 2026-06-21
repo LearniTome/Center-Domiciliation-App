@@ -19,7 +19,7 @@ $noSidebar = in_array($page ?? '', ['connexion', 'deconnexion'], true);
     <link rel="stylesheet" href="assets/css/app.css?v=<?= filemtime(__DIR__ . '/../assets/css/app.css') ?>">
     <style>
         <?php if ($noSidebar): ?>
-        .shell { grid-template-columns: 1fr; }
+        .shell, .shell.collapsed { grid-template-columns: 1fr; }
         .sidebar, .sidebar-toggle { display: none; }
         .main { padding: 2rem; }
         .main::after { display: none !important; }
