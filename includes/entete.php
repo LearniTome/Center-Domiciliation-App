@@ -53,6 +53,10 @@ $noSidebar = in_array($page ?? '', ['connexion', 'deconnexion'], true);
             $_topNotifCount = 0;
             if ($_topUser && $pdo) {
                 $_topNotifCount = count_unread_notifications($pdo, (int) $_topUser['id'], (int) ($_topUser['role_id'] ?? 0), $_topUser['collaborateur_type'] ?? null);
+                // Track user session (current page, last active)
+                update_user_session($pdo, $currentPage);
+                // Log unique page views (once per session)
+                log_page_view($pdo, $currentPage);
             }
         ?>
         <div class="top-bar">

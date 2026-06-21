@@ -146,6 +146,10 @@ $templateCount = is_dir(__DIR__ . '/../../templates')
     : 0;
 $refTableCount = count(load_defaults());
 
+// Online users & page stats
+$onlineUsers = $isConnected ? get_online_users($pdo, 5) : [];
+$mostVisitedPages = $isConnected && $isAdmin ? get_most_visited_pages($pdo, 8) : [];
+
 $sf = $userId !== null ? " AND s.created_by = $userId" : '';
 
 // --- Repartition ---
@@ -704,39 +708,87 @@ if ($isConnected) {
 </section>
 
 <?php if ($collabActivity): ?>
+<section class="grid two bottom-section" style="margin-bottom:0;">
+    <article class="card">
+        <div class="section-header">
+            <a class="dash-title-link" href="<?= e(app_url('activite')) ?>"><h4 style="color:var(--primary)"><span class="material-symbols-outlined" style="color:var(--primary)">work_history</span> Journal d'activite</h4></a>
+        </div>
+        <table class="dash-table dash-table-journal">
+            <thead><tr><th>Utilisateur</th><th>Action</th><th>Date</th></tr></thead>
+            <tbody>
+            <?php foreach (array_slice($collabActivity, 0, 7) as $ca):
+                $caAction = (string) ($ca['action'] ?? '');
+                $caIcon = match ($caAction) {
+                    'create', 'ajout' => 'add_circle',
+                    'update' => 'edit',
+                    'delete', 'suppression' => 'delete',
+                    'connexion' => 'login',
+                    'deconnexion' => 'logout',
+                    'generate' => 'description',
+                    default => 'radio_button_unchecked',
+                };
+                $caColor = match ($caAction) {
+                    'delete', 'suppression' => 'var(--danger)',
+                    'create', 'ajout' => 'var(--success)',
+                    'connexion' => 'var(--info)',
+                    default => 'var(--primary)',
+                };
+                $caDt = date('d/m/Y H:i', strtotime($ca['created_at']));
+            ?>
+                <tr>
+                    <td><span class="material-symbols-outlined" style="color:<?= $caColor ?>;font-size:0.9rem;vertical-align:middle;margin-right:4px"><?= $caIcon ?></span> <?= e((string) ($ca['user_nom'] ?? '—')) ?></td>
+                    <td class="col-action-text"><?= e($caAction) ?><?= $ca['entity_label'] ? ' — ' . e($ca['entity_label']) : '' ?></td>
+                    <td><small style="color:var(--text-muted)"><?= $caDt ?></small></td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    </article>
+    <article class="card">
+        <div class="section-header">
+            <h4 style="color:var(--success)"><span class="material-symbols-outlined" style="color:var(--success)">group</span> Utilisateurs en ligne</h4>
+        </div>
+        <?php if (!empty($onlineUsers)): ?>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+            <?php foreach ($onlineUsers as $_ou): ?>
+                <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);">
+                    <span style="width:10px;height:10px;border-radius:50%;background:var(--success);flex-shrink:0;"></span>
+                    <strong style="font-size:0.85rem;"><?= e($_ou['nom_complet']) ?></strong>
+                    <small style="color:var(--text-secondary);font-size:0.7rem;"><?= e($_ou['role_nom'] ?? '') ?></small>
+                    <span style="margin-left:auto;font-size:0.7rem;color:var(--text-muted);">
+                        <?= e(page_display_name($_ou['current_page'] ?? '')) ?>
+                    </span>
+                </div>
+            <?php endforeach; ?>
+            </div>
+            <p style="font-size:0.7rem;color:var(--text-muted);margin-top:8px;">
+                <?= count($onlineUsers) ?> utilisateur<?= count($onlineUsers) > 1 ? 's' : '' ?> actif<?= count($onlineUsers) > 1 ? 's' : '' ?> (5 min)
+            </p>
+        <?php else: ?>
+            <p class="table-empty">Aucun utilisateur en ligne.</p>
+        <?php endif; ?>
+    </article>
+</section>
+
+<?php if (!empty($mostVisitedPages)): ?>
 <section class="card bottom-section">
     <div class="section-header">
-        <a class="dash-title-link" href="<?= e(app_url('activite')) ?>"><h4 style="color:var(--primary)"><span class="material-symbols-outlined" style="color:var(--primary)">work_history</span> Journal d'activite</h4></a>
+        <h4 style="color:var(--info)"><span class="material-symbols-outlined" style="color:var(--info)">trending_up</span> Pages les plus visitées</h4>
+        <a class="btn btn-info" href="<?= e(app_url('activite', ['entity' => 'page'])) ?>"><span class="material-symbols-outlined">visibility</span> Voir tout</a>
     </div>
-    <table class="dash-table dash-table-journal">
-        <thead><tr><th>Utilisateur</th><th>Action</th><th>Date</th></tr></thead>
+    <table class="dash-table">
+        <thead><tr><th>Page</th><th>Visites</th><th>Dernière visite</th></tr></thead>
         <tbody>
-        <?php foreach (array_slice($collabActivity, 0, 7) as $ca):
-            $caAction = (string) ($ca['action'] ?? '');
-            $caIcon = match ($caAction) {
-                'create', 'ajout' => 'add_circle',
-                'update' => 'edit',
-                'delete', 'suppression' => 'delete',
-                'connexion' => 'login',
-                'deconnexion' => 'logout',
-                'generate' => 'description',
-                default => 'radio_button_unchecked',
-            };
-            $caColor = match ($caAction) {
-                'delete', 'suppression' => 'var(--danger)',
-                'create', 'ajout' => 'var(--success)',
-                'connexion' => 'var(--info)',
-                default => 'var(--primary)',
-            };
-            $caDt = date('d/m/Y H:i', strtotime($ca['created_at']));
-        ?>
+        <?php foreach ($mostVisitedPages as $_mvp): ?>
             <tr>
-                <td><span class="material-symbols-outlined" style="color:<?= $caColor ?>;font-size:0.9rem;vertical-align:middle;margin-right:4px"><?= $caIcon ?></span> <?= e((string) ($ca['user_nom'] ?? '—')) ?></td>
-                <td class="col-action-text"><?= e($caAction) ?><?= $ca['entity_label'] ? ' — ' . e($ca['entity_label']) : '' ?></td>
-                <td><small style="color:var(--text-muted)"><?= $caDt ?></small></td>
+                <td><span class="material-symbols-outlined" style="font-size:0.9rem;vertical-align:middle;margin-right:4px;color:var(--primary)">web</span> <?= e(page_display_name($_mvp['page'])) ?></td>
+                <td><strong><?= (int) $_mvp['visits'] ?></strong></td>
+                <td><small style="color:var(--text-muted)"><?= date('d/m/Y H:i', strtotime($_mvp['last_visit'])) ?></small></td>
             </tr>
         <?php endforeach; ?>
         </tbody>
     </table>
 </section>
+<?php endif; ?>
+
 <?php endif; ?>

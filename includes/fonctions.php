@@ -902,9 +902,11 @@ function auto_notify_action(
     if (!$config) return;
 
     $user = current_user();
+    $userName = $user['nom_complet'] ?? 'Un utilisateur';
     $label = $entity_label ?? ($entity_id ? '#' . $entity_id : '');
     $link = is_callable($config['link']) && $entity_id ? $config['link']($entity_id) : $config['link'];
     $message = is_callable($config['message']) ? $config['message']($label) : $config['message'];
+    $message .= " — par {$userName}";
 
     // Avoid duplicate notifications for the same entity in the last hour
     try {
@@ -1262,4 +1264,133 @@ function generate_auto_notifications(?PDO $pdo, int $createdBy): array
     }
 
     return $generated;
+}
+
+// ─── User Sessions & Online Tracking ─────────────────
+
+function update_user_session(?PDO $pdo, string $currentPage): void
+{
+    if (!$pdo) return;
+    $user = current_user();
+    if (!$user) return;
+
+    // Clean up stale sessions older than 1 hour
+    try {
+        $pdo->exec("DELETE FROM user_sessions WHERE last_active < DATE_SUB(NOW(), INTERVAL 1 HOUR)");
+    } catch (PDOException) {}
+
+    $sessionId = session_id();
+    $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+    $ua = substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500);
+
+    try {
+        $stmt = $pdo->prepare("
+            INSERT INTO user_sessions (user_id, last_active, current_page, ip_address, user_agent, session_id)
+            VALUES (:uid, NOW(), :page, :ip, :ua, :sid)
+            ON DUPLICATE KEY UPDATE
+                user_id = VALUES(user_id),
+                last_active = VALUES(last_active),
+                current_page = VALUES(current_page),
+                ip_address = VALUES(ip_address),
+                user_agent = VALUES(user_agent)
+        ");
+        $stmt->execute([
+            'uid'  => (int) $user['id'],
+            'page' => $currentPage,
+            'ip'   => $ip,
+            'ua'   => $ua,
+            'sid'  => $sessionId,
+        ]);
+    } catch (PDOException) {
+        // silent
+    }
+}
+
+function get_online_users(?PDO $pdo, int $minutes = 5): array
+{
+    if (!$pdo) return [];
+    try {
+        $stmt = $pdo->prepare("
+            SELECT us.user_id, c.nom_complet, c.role_id, r.nom AS role_nom,
+                   us.current_page, us.last_active, us.ip_address
+            FROM user_sessions us
+            JOIN collaborateurs c ON c.id = us.user_id
+            LEFT JOIN roles r ON r.id = c.role_id
+            WHERE us.last_active >= DATE_SUB(NOW(), INTERVAL :min MINUTE)
+            ORDER BY us.last_active DESC
+        ");
+        $stmt->execute(['min' => $minutes]);
+        return $stmt->fetchAll();
+    } catch (PDOException) {
+        return [];
+    }
+}
+
+function get_most_visited_pages(?PDO $pdo, int $limit = 10): array
+{
+    if (!$pdo) return [];
+    try {
+        $stmt = $pdo->prepare("
+            SELECT entity_label AS page, COUNT(*) AS visits,
+                   MAX(created_at) AS last_visit
+            FROM activity_logs
+            WHERE action = 'view' AND entity_type = 'page'
+            GROUP BY entity_label
+            ORDER BY visits DESC
+            LIMIT :lim
+        ");
+        $stmt->execute(['lim' => $limit]);
+        return $stmt->fetchAll();
+    } catch (PDOException) {
+        return [];
+    }
+}
+
+function log_page_view(?PDO $pdo, string $page): void
+{
+    if (!$pdo) return;
+    $user = current_user();
+    if (!$user) return;
+
+    $viewed = $_SESSION['_viewed_pages'] ?? [];
+    if (in_array($page, $viewed, true)) return;
+
+    log_activity($pdo, 'view', 'page', null, $page);
+    $_SESSION['_viewed_pages'][] = $page;
+}
+
+function page_display_name(string $page): string
+{
+    $base = explode('&', $page)[0];
+    $map = [
+        'dashboard' => 'Tableau de bord',
+        'societes' => 'Sociétés',
+        'societe' => 'Détail société',
+        'creation' => 'Nouveau dossier',
+        'associes' => 'Associés',
+        'associe' => 'Détail associé',
+        'contrats' => 'Contrats',
+        'collaborateurs' => 'Collaborateurs',
+        'collaborateur' => 'Nouveau collaborateur',
+        'notifications' => 'Notifications',
+        'templates' => 'Templates',
+        'generation' => 'Génération de documents',
+        'documents' => 'Documents générés',
+        'configuration' => 'Configuration',
+        'analyse-couverture' => 'Analyse de couverture',
+        'variables' => 'Gestion des variables',
+        'defaults' => 'Valeurs par défaut',
+        'convert-word-pdf' => 'Conversion Word→PDF',
+        'ai-assistant' => 'Assistant IA',
+        'cesions' => 'Cessions de parts',
+        'cession' => 'Nouvelle cession',
+        'cession_dossier' => 'Dossier cession',
+        'roles' => 'Gestion des rôles',
+        'role' => 'Détail rôle',
+        'activite' => "Journal d'activité",
+        'modifications' => 'Modifications juridiques',
+        'notifications-manage' => 'Gestion notifications',
+        'connexion' => 'Connexion',
+    ];
+    return $map[$base] ?? $page;
 }
