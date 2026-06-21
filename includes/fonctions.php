@@ -346,6 +346,10 @@ function like_term(string $value): string
 
 function export_csv(string $filename, array $headers, array $rows): never
 {
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
+
     header('Content-Type: text/csv; charset=UTF-8');
     header('Content-Disposition: attachment; filename="' . $filename . '"');
 
@@ -367,6 +371,10 @@ function export_csv(string $filename, array $headers, array $rows): never
 
 function export_excel(string $filename, array $headers, array $rows): never
 {
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
+
     if (!class_exists('\PhpOffice\PhpSpreadsheet\Spreadsheet')) {
         exit('PhpSpreadsheet n\'est pas installe. Lancez "composer install" a la racine du projet.');
     }

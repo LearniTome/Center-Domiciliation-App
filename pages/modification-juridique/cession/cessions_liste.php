@@ -6,6 +6,10 @@ $query = search_term();
 $user = current_user();
 $isAdmin = $user && in_array((int) $user['role_id'], [1, 2], true);
 
+if (isset($_GET['import_msg']) && $_GET['import_msg'] !== '') {
+    set_flash('success', htmlspecialchars($_GET['import_msg']));
+}
+
 if (is_post() && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
     $action = $_POST['action'] ?? 'delete';
@@ -27,17 +31,18 @@ if (($pdo ?? null) instanceof PDO) {
         $userParams['user_id'] = (int) $user['id'];
     }
     if ($query !== '') {
+        $likeTerm = like_term($query);
         $stmt = $pdo->prepare('
             SELECT c.*, s.societe_raison_sociale, s.societe_dossier AS ste_dossier,
                    (SELECT COUNT(*) FROM cession_parts cp WHERE cp.cession_id = c.id) AS nb_lignes,
                    (SELECT COALESCE(SUM(cp.parts_cedees), 0) FROM cession_parts cp WHERE cp.cession_id = c.id) AS total_parts
             FROM cessions c
             LEFT JOIN societes s ON s.id = c.societe_id
-            WHERE (s.societe_raison_sociale LIKE :term OR c.cession_dossier LIKE :term OR c.cession_status LIKE :term)
+            WHERE (s.societe_raison_sociale LIKE :term1 OR c.cession_dossier LIKE :term2 OR c.cession_status LIKE :term3)
             ' . $userFilter . '
             ORDER BY c.id DESC
         ');
-        $params = ['term' => like_term($query)] + $userParams;
+        $params = ['term1' => $likeTerm, 'term2' => $likeTerm, 'term3' => $likeTerm] + $userParams;
         $stmt->execute($params);
         $cessions = $stmt->fetchAll();
     } else {
@@ -64,7 +69,7 @@ if (($pdo ?? null) instanceof PDO) {
                 $row['id'],
                 $row['cession_dossier'] ?? '-',
                 $row['societe_raison_sociale'] ?? '-',
-                $row['cession_date'] ?? '-',
+                format_date($row['cession_date'] ?? null),
                 $row['cession_status'] ?? 'brouillon',
                 $row['nb_lignes'] ?? '0',
                 $row['total_parts'] ?? '0',
@@ -95,21 +100,7 @@ if (($pdo ?? null) instanceof PDO) {
                 <a class="btn btn-info" href="<?= e(app_url('cessions', ['export' => 'csv', 'q' => $query])) ?>"><span class="material-symbols-outlined">download</span> CSV</a>
                 <a class="btn btn-next" href="<?= e(app_url('cessions', ['export' => 'xlsx', 'q' => $query])) ?>"><span class="material-symbols-outlined">table_chart</span> Excel</a>
                 <?php if (has_permission('cessions.import')): ?>
-                <?php
-                    $importTable = 'cessions';
-                    $importPage = 'cessions';
-                    $importLabel = 'cession';
-                    $importColumnMap = [
-                        'Dossier' => 'cession_dossier',
-                        'Societe' => 'societe_id',
-                        'Date' => 'cession_date',
-                        'Statut' => 'cession_status',
-                    ];
-                    $importDefaults = [
-                        'created_by' => ($user['id'] ?? 0),
-                    ];
-                    require __DIR__ . '/../../../includes/import_excel_section.php';
-                ?>
+                <button class="btn btn-secondary" type="button" data-import-btn="cessions"><span class="material-symbols-outlined">upload_file</span> Importer Excel</button>
                 <?php endif; ?>
                 <a class="btn btn-next" href="<?= e(app_url('cession')) ?>"><span class="material-symbols-outlined">note_add</span> Nouvelle cession</a>
             </div>
@@ -182,3 +173,5 @@ if (($pdo ?? null) instanceof PDO) {
         <?php endif; ?>
     </article>
 </section>
+
+<?php require __DIR__ . '/../../../includes/import_excel_modal.php'; ?>

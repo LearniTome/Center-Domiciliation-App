@@ -2,6 +2,10 @@
 
 declare(strict_types=1);
 
+if (isset($_GET['import_msg']) && $_GET['import_msg'] !== '') {
+    set_flash('success', htmlspecialchars($_GET['import_msg']));
+}
+
 $editId = isset($_GET['edit']) ? (int) $_GET['edit'] : 0;
 $editRecord = $editId > 0 ? fetch_record($pdo ?? null, 'contrats', $editId) : null;
 
@@ -81,18 +85,19 @@ if (!$isAdmin && $user) {
 
 if (($pdo ?? null) instanceof PDO) {
     if ($query !== '') {
+        $likeTerm = like_term($query);
         $stmt = $pdo->prepare('
             SELECT contrats.*, societes.societe_raison_sociale
             FROM contrats
             INNER JOIN societes ON societes.id = contrats.societe_id
-            WHERE (societes.societe_raison_sociale LIKE :term
-               OR contrats.contrat_type LIKE :term
-               OR contrats.contrat_statut LIKE :term)
+            WHERE (societes.societe_raison_sociale LIKE :term1
+               OR contrats.contrat_type LIKE :term2
+               OR contrats.contrat_statut LIKE :term3)
             ' . $userFilter . '
             ORDER BY contrats.id DESC
         ');
-        $stmt->execute(['term' => like_term($query)] + $userParams);
-        $contrats = $stmt->fetchAll();
+        $stmt->execute(['term1' => $likeTerm, 'term2' => $likeTerm, 'term3' => $likeTerm] + $userParams);
+            $contrats = $stmt->fetchAll();
     } else {
         $stmt = $pdo->prepare('
             SELECT contrats.*, societes.societe_raison_sociale
@@ -113,11 +118,11 @@ if (($pdo ?? null) instanceof PDO) {
                 $c['id'],
                 $c['societe_raison_sociale'],
                 $c['contrat_type'],
-                $c['contrat_date'],
+                format_date($c['contrat_date'] ?? null),
                 $c['contrat_duree_mois'],
                 $c['contrat_type_domiciliation'],
-                $c['contrat_date_debut'],
-                $c['contrat_date_fin'],
+                format_date($c['contrat_date_debut'] ?? null),
+                format_date($c['contrat_date_fin'] ?? null),
                 $c['contrat_loyer_ttc'],
                 $c['contrat_tva_pourcent'],
                 $c['contrat_loyer_ht'],
@@ -153,24 +158,7 @@ if (($pdo ?? null) instanceof PDO) {
                 <a class="btn btn-info" href="<?= e(app_url('contrats', ['export' => 'csv', 'q' => $query])) ?>"><span class="material-symbols-outlined">download</span> CSV</a>
                 <a class="btn btn-next" href="<?= e(app_url('contrats', ['export' => 'xlsx', 'q' => $query])) ?>"><span class="material-symbols-outlined">table_chart</span> Excel</a>
                 <?php if (has_permission('contrats.import')): ?>
-                <?php
-                    $importTable = 'contrats';
-                    $importPage = 'contrats';
-                    $importLabel = 'contrat';
-                    $importColumnMap = [
-                        'Type contrat' => 'contrat_type',
-                        'Date contrat' => 'contrat_date',
-                        'Duree (mois)' => 'contrat_duree_mois',
-                        'Date debut' => 'contrat_date_debut',
-                        'Date fin' => 'contrat_date_fin',
-                        'Loyer TTC/mois' => 'contrat_loyer_ttc',
-                        'Statut' => 'contrat_statut',
-                    ];
-                    $importDefaults = [
-                        'created_by' => ($user['id'] ?? 0),
-                    ];
-                    require __DIR__ . '/../../includes/import_excel_section.php';
-                ?>
+                <button class="btn btn-secondary" type="button" data-import-btn="contrats"><span class="material-symbols-outlined">upload_file</span> Importer Excel</button>
                 <?php endif; ?>
             </div>
         </div>
@@ -363,4 +351,6 @@ if (($pdo ?? null) instanceof PDO) {
         <?php endif; ?>
     </article>
 </section>
+
+<?php require __DIR__ . '/../../includes/import_excel_modal.php'; ?>
 

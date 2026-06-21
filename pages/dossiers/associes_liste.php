@@ -2,6 +2,10 @@
 
 declare(strict_types=1);
 
+if (isset($_GET['import_msg']) && $_GET['import_msg'] !== '') {
+    set_flash('success', htmlspecialchars($_GET['import_msg']));
+}
+
 $editId = isset($_GET['edit']) ? (int) $_GET['edit'] : 0;
 $editRecord = $editId > 0 ? fetch_record($pdo ?? null, 'associes', $editId) : null;
 
@@ -71,17 +75,18 @@ if (!$isAdmin && $user) {
 
 if (($pdo ?? null) instanceof PDO) {
     if ($query !== '') {
+        $likeTerm = like_term($query);
         $stmt = $pdo->prepare('
             SELECT associes.*, societes.societe_raison_sociale
             FROM associes
             INNER JOIN societes ON societes.id = associes.societe_id
-            WHERE (associes.associe_nom_complet LIKE :term
-               OR societes.societe_raison_sociale LIKE :term
-               OR associes.associe_cin LIKE :term)
+            WHERE (associes.associe_nom_complet LIKE :term1
+               OR societes.societe_raison_sociale LIKE :term2
+               OR associes.associe_cin LIKE :term3)
             ' . $userFilter . '
             ORDER BY associes.id DESC
         ');
-        $stmt->execute(['term' => like_term($query)] + $userParams);
+        $stmt->execute(['term1' => $likeTerm, 'term2' => $likeTerm, 'term3' => $likeTerm] + $userParams);
         $associes = $stmt->fetchAll();
     } else {
         $stmt = $pdo->prepare('
@@ -104,7 +109,7 @@ if (($pdo ?? null) instanceof PDO) {
                 $a['associe_nom_complet'],
                 $a['societe_raison_sociale'],
                 $a['associe_cin'],
-                $a['associe_date_naissance'],
+                format_date($a['associe_date_naissance'] ?? null),
                 $a['associe_lieu_naissance'],
                 $a['associe_nationalite'],
                 $a['associe_telephone'],
@@ -303,29 +308,12 @@ if (($pdo ?? null) instanceof PDO) {
                 <a class="btn btn-info" href="<?= e(app_url('associes', ['export' => 'csv', 'q' => $query])) ?>"><span class="material-symbols-outlined">download</span> CSV</a>
                 <a class="btn btn-next" href="<?= e(app_url('associes', ['export' => 'xlsx', 'q' => $query])) ?>"><span class="material-symbols-outlined">table_chart</span> Excel</a>
                 <?php if (has_permission('associes.import')): ?>
-                <?php
-                    $importTable = 'associes';
-                    $importPage = 'associes';
-                    $importLabel = 'associe';
-                    $importColumnMap = [
-                        'Nom complet' => 'associe_nom_complet',
-                        'CIN' => 'associe_cin',
-                        'Date naissance' => 'associe_date_naissance',
-                        'Lieu naissance' => 'associe_lieu_naissance',
-                        'Nationalite' => 'associe_nationalite',
-                        'Telephone' => 'associe_telephone',
-                        'Email' => 'associe_email',
-                        'Qualite' => 'associe_qualite',
-                        'Parts' => 'associe_parts',
-                    ];
-                    $importDefaults = [
-                        'created_by' => ($user['id'] ?? 0),
-                    ];
-                    require __DIR__ . '/../../includes/import_excel_section.php';
-                ?>
+                <button class="btn btn-secondary" type="button" data-import-btn="associes"><span class="material-symbols-outlined">upload_file</span> Importer Excel</button>
                 <?php endif; ?>
             </div>
         <?php endif; ?>
     </article>
 </section>
+
+<?php require __DIR__ . '/../../includes/import_excel_modal.php'; ?>
 

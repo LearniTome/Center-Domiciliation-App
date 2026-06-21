@@ -18,7 +18,13 @@ if (!$user) {
 }
 
 $config = require __DIR__ . '/config/app.php';
+$dbConfig = require __DIR__ . '/config/database.php';
 require __DIR__ . '/includes/base_donnees.php';
+
+$autoloadPath = __DIR__ . '/vendor/autoload.php';
+if (file_exists($autoloadPath)) {
+    require $autoloadPath;
+}
 
 try {
     $pdo = db();
@@ -40,6 +46,75 @@ if ($csrfToken === '' || empty($_SESSION['csrf_token']) || !hash_equals($_SESSIO
     echo json_encode(['success' => false, 'message' => 'Token CSRF invalide.']);
     exit;
 }
+
+// ── Import Excel configuration ──
+$importTableConfig = [
+    'societes' => [
+        'columnMap' => [
+            'Raison sociale' => 'societe_raison_sociale',
+            'Dossier domiciliation' => 'societe_dossier',
+            'Forme juridique' => 'societe_forme_juridique',
+            'ICE' => 'societe_ice',
+            'RC' => 'societe_rc',
+            'IF' => 'societe_if',
+            'Ville' => 'societe_ville',
+            'Email' => 'societe_email',
+            'Telephone' => 'societe_telephone',
+            'Capital' => 'societe_capital',
+        ],
+        'defaults' => ['societe_source' => 'import'],
+    ],
+    'associes' => [
+        'columnMap' => [
+            'Societe ID' => 'societe_id',
+            'Nom complet' => 'associe_nom_complet',
+            'CIN' => 'associe_cin',
+            'Date naissance' => 'associe_date_naissance',
+            'Lieu naissance' => 'associe_lieu_naissance',
+            'Nationalite' => 'associe_nationalite',
+            'Telephone' => 'associe_telephone',
+            'Email' => 'associe_email',
+            'Qualite' => 'associe_qualite',
+            'Parts' => 'associe_parts',
+        ],
+        'defaults' => [],
+    ],
+    'contrats' => [
+        'columnMap' => [
+            'Societe ID' => 'societe_id',
+            'Type contrat' => 'contrat_type',
+            'Date contrat' => 'contrat_date',
+            'Duree (mois)' => 'contrat_duree_mois',
+            'Date debut' => 'contrat_date_debut',
+            'Date fin' => 'contrat_date_fin',
+            'Loyer TTC/mois' => 'contrat_loyer_ttc',
+            'Statut' => 'contrat_statut',
+        ],
+        'defaults' => [],
+    ],
+    'collaborateurs' => [
+        'columnMap' => [
+            'Nom complet' => 'nom_complet',
+            'Fonction' => 'fonction',
+            'Type' => 'collaborateur_type',
+            'Code' => 'collaborateur_code',
+            'ICE' => 'collaborateur_ice',
+            'Telephone' => 'telephone',
+            'Email' => 'email',
+            'Statut' => 'statut',
+        ],
+        'defaults' => [],
+    ],
+    'cessions' => [
+        'columnMap' => [
+            'Dossier' => 'cession_dossier',
+            'Societe' => 'societe_id',
+            'Date' => 'cession_date',
+            'Statut' => 'cession_status',
+        ],
+        'defaults' => [],
+    ],
+];
 
 $action = $_POST['action'] ?? '';
 $response = ['success' => false, 'message' => 'Action inconnue.'];
@@ -70,6 +145,12 @@ try {
             break;
         case 'bulk_update':
             $response = handle_bulk_update($pdo, $allowedTables);
+            break;
+        case 'import_preview':
+            $response = handle_import_preview($importTableConfig);
+            break;
+        case 'import_confirm':
+            $response = handle_import_confirm($pdo, $user, $importTableConfig);
             break;
     }
 } catch (Throwable $e) {
@@ -184,4 +265,239 @@ function handle_bulk_update(PDO $pdo, array $allowedTables): array
     $stmt->execute($params);
 
     return ['success' => true, 'message' => count($ids) . ' enregistrement(s) mis a jour avec succes.', 'updated' => $stmt->rowCount()];
+}
+
+function handle_import_preview(array $config): array
+{
+    if (!class_exists('\PhpOffice\PhpSpreadsheet\IOFactory')) {
+        http_response_code(500);
+        return ['success' => false, 'message' => 'PhpSpreadsheet n\'est pas installe.'];
+    }
+
+    if (!isset($_FILES['import_file']) || $_FILES['import_file']['error'] !== UPLOAD_ERR_OK) {
+        http_response_code(400);
+        return ['success' => false, 'message' => 'Veuillez selectionner un fichier Excel valide.'];
+    }
+
+    $ext = strtolower(pathinfo($_FILES['import_file']['name'], PATHINFO_EXTENSION));
+    if (!in_array($ext, ['xlsx', 'xls'], true)) {
+        http_response_code(400);
+        return ['success' => false, 'message' => 'Format de fichier non supporte. Utilisez .xlsx ou .xls.'];
+    }
+
+    $tmpDir = __DIR__ . '/uploads/tmp/import/';
+    if (!is_dir($tmpDir)) {
+        mkdir($tmpDir, 0777, true);
+    }
+
+    $tmpFile = $tmpDir . uniqid('import_', true) . '.' . $ext;
+    move_uploaded_file($_FILES['import_file']['tmp_name'], $tmpFile);
+
+    try {
+        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($tmpFile);
+        $result = loadSpreadsheetData($spreadsheet, $tmpFile);
+    } catch (\Throwable $e) {
+        $msg = $e->getMessage();
+        if (stripos($msg, 'ENTITY') !== false && stripos($msg, 'XML') !== false) {
+            $cleaned = stripXlsxEntityDeclarations($tmpFile);
+            if ($cleaned !== null) {
+                try {
+                    $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($cleaned);
+                    $result = loadSpreadsheetData($spreadsheet, $tmpFile);
+                    @unlink($cleaned);
+                } catch (\Throwable $e2) {
+                    @unlink($cleaned);
+                    if (file_exists($tmpFile)) @unlink($tmpFile);
+                    http_response_code(500);
+                    return ['success' => false, 'message' => 'Erreur de lecture du fichier Excel : le fichier contient des declarations ENTITY XML incompatibles. Reenregistrez le fichier depuis Excel (Fichier > Enregistrer sous > Classeur Excel .xlsx).'];
+                }
+            } else {
+                if (file_exists($tmpFile)) @unlink($tmpFile);
+                http_response_code(500);
+                return ['success' => false, 'message' => 'Erreur de lecture du fichier Excel : le fichier contient des declarations ENTITY XML incompatibles. Reenregistrez le fichier depuis Excel (Fichier > Enregistrer sous > Classeur Excel .xlsx).'];
+            }
+        } else {
+            if (file_exists($tmpFile)) @unlink($tmpFile);
+            http_response_code(500);
+            return ['success' => false, 'message' => 'Erreur de lecture du fichier Excel : ' . $e->getMessage()];
+        }
+    }
+
+    // Merge expected columns from config with actual Excel columns
+    $table = $_POST['table'] ?? '';
+    if (isset($config[$table])) {
+        $expectedHeaders = array_keys($config[$table]['columnMap']);
+        $excelHeaders = $result['headers'];
+        // Only keep and reorder: expected first, then extra Excel columns not in expected
+        $mergedHeaders = $expectedHeaders;
+        foreach ($excelHeaders as $h) {
+            if (!in_array($h, $mergedHeaders, true)) {
+                $mergedHeaders[] = $h;
+            }
+        }
+        $result['headers'] = $mergedHeaders;
+        $result['expected_headers'] = $expectedHeaders;
+
+        // Pad each row with empty values for any missing expected column
+        foreach ($result['rows'] as &$row) {
+            foreach ($expectedHeaders as $h) {
+                if (!isset($row[$h])) {
+                    $row[$h] = '';
+                }
+            }
+        }
+        unset($row);
+    }
+
+    return $result;
+}
+
+function loadSpreadsheetData(\PhpOffice\PhpSpreadsheet\Spreadsheet $spreadsheet, string $tmpFile): array
+{
+    $sheet = $spreadsheet->getActiveSheet();
+    $data = $sheet->toArray();
+
+    if (count($data) < 2) {
+        @unlink($tmpFile);
+        http_response_code(400);
+        return ['success' => false, 'message' => 'Le fichier doit contenir au moins une ligne d\'en-tete et une ligne de donnees.'];
+    }
+
+    $headers = array_map('trim', $data[0]);
+    $rows = [];
+    for ($i = 1; $i < count($data); $i++) {
+        $row = [];
+        foreach ($data[$i] as $j => $value) {
+            $row[$headers[$j] ?? 'Colonne_' . ($j + 1)] = $value;
+        }
+        $rows[] = $row;
+    }
+
+    $_SESSION['_import_file'] = $tmpFile;
+
+    return [
+        'success' => true,
+        'headers' => $headers,
+        'rows' => $rows,
+        'total' => count($rows),
+        'file' => basename($tmpFile),
+    ];
+}
+
+function stripXlsxEntityDeclarations(string $path): ?string
+{
+    $zip = new \ZipArchive();
+    $src = $zip->open($path);
+    if ($src !== true) {
+        return null;
+    }
+
+    $entries = [];
+    $hasEntity = false;
+    for ($i = 0; $i < $zip->numFiles; $i++) {
+        $name = $zip->getNameIndex($i);
+        $content = $zip->getFromIndex($i);
+        if ($content === false) {
+            $entries[$name] = false;
+            continue;
+        }
+        if (preg_match('/<!ENTITY\s+\S+\s+/s', $content)) {
+            $hasEntity = true;
+            $content = preg_replace('/<!ENTITY\s+\S+\s+[^>]*>\s*/s', '', $content);
+        }
+        $entries[$name] = $content;
+    }
+    $zip->close();
+
+    if (!$hasEntity) {
+        return null;
+    }
+
+    $outPath = $path . '.cleaned.xlsx';
+    $out = new \ZipArchive();
+    if ($out->open($outPath, \ZipArchive::CREATE) !== true) {
+        return null;
+    }
+    foreach ($entries as $name => $content) {
+        if ($content === false) {
+            $out->addEmptyDir(dirname($name));
+        } else {
+            $out->addFromString($name, $content);
+        }
+    }
+    $out->close();
+
+    return file_exists($outPath) ? $outPath : null;
+}
+
+function handle_import_confirm(PDO $pdo, array $user, array $config): array
+{
+    $table = $_POST['table'] ?? '';
+    if (!isset($config[$table])) {
+        http_response_code(400);
+        return ['success' => false, 'message' => 'Table non autorisee pour l\'import.'];
+    }
+
+    $rawData = $_POST['import_data'] ?? '';
+    if ($rawData === '') {
+        http_response_code(400);
+        return ['success' => false, 'message' => 'Aucune donnee fournie.'];
+    }
+
+    $rows = json_decode($rawData, true);
+    if (!is_array($rows) || $rows === []) {
+        http_response_code(400);
+        return ['success' => false, 'message' => 'Donnees d\'import invalides.'];
+    }
+
+    $cfg = $config[$table];
+    $columnMap = $cfg['columnMap'];
+    $defaults = $cfg['defaults'];
+    if (in_array($table, ['societes', 'collaborateurs', 'cessions'])) {
+        $defaults['created_by'] = (int) $user['id'];
+    }
+    $defaults['created_at'] = date('Y-m-d H:i:s');
+    $defaults['updated_at'] = date('Y-m-d H:i:s');
+
+    $imported = 0;
+    $errors = [];
+
+    foreach ($rows as $idx => $row) {
+        try {
+            $data = $defaults;
+            foreach ($columnMap as $excelHeader => $dbCol) {
+                $val = $row[$excelHeader] ?? '';
+                $data[$dbCol] = $val !== '' ? $val : null;
+            }
+
+            // Convert DD/MM/YYYY to YYYY-MM-DD for date columns
+            foreach ($data as $col => $val) {
+                if (is_string($val) && preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $val)) {
+                    $data[$col] = \DateTime::createFromFormat('d/m/Y', $val)->format('Y-m-d');
+                }
+            }
+
+            $cols = implode(', ', array_keys($data));
+            $placeholders = ':' . implode(', :', array_keys($data));
+            $stmt = $pdo->prepare("INSERT INTO {$table} ({$cols}) VALUES ({$placeholders})");
+            $stmt->execute($data);
+            $imported++;
+        } catch (\Throwable $e) {
+            $errors[] = 'Ligne ' . ($idx + 2) . ' : ' . $e->getMessage();
+        }
+    }
+
+    // Cleanup temp file
+    $tmpFile = $_SESSION['_import_file'] ?? null;
+    if ($tmpFile && file_exists($tmpFile)) {
+        @unlink($tmpFile);
+    }
+    unset($_SESSION['_import_file']);
+
+    return [
+        'success' => true,
+        'imported' => $imported,
+        'errors' => $errors,
+        'message' => $imported . ' ligne(s) importee(s) avec succes.' . (!empty($errors) ? ' Erreurs : ' . implode(' | ', array_slice($errors, 0, 10)) : ''),
+    ];
 }

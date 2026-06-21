@@ -1401,5 +1401,304 @@ document.addEventListener('click', function (event) {
         tick();
         setInterval(tick, 1000);
     })();
+
+    // ── Live Search (AJAX, no page reload) ──
+    document.querySelectorAll('.search-bar').forEach(function (form) {
+        var input = form.querySelector('input[type="search"]');
+        if (!input) return;
+        var timer = null;
+
+        // Store search function on form for external access
+        form._doSearch = function () {
+            clearTimeout(timer);
+            var q = input.value.trim();
+            var params = new URLSearchParams(window.location.search);
+            if (q) { params.set('q', q); } else { params.delete('q'); }
+
+            var newUrl = window.location.pathname + '?' + params.toString();
+            history.replaceState(null, '', newUrl);
+
+            fetch(newUrl)
+                .then(function (r) { return r.text(); })
+                .then(function (html) {
+                    var parser = new DOMParser();
+                    var doc = parser.parseFromString(html, 'text/html');
+
+                    var oldTable = form.closest('.card')?.querySelector('table');
+                    var newTable = doc.querySelector('table');
+                    if (oldTable && newTable) {
+                        var oldTbody = oldTable.querySelector('tbody');
+                        var newTbody = newTable.querySelector('tbody');
+                        if (oldTbody && newTbody) {
+                            oldTbody.innerHTML = newTbody.innerHTML;
+                        }
+                    }
+
+                    var oldCount = document.querySelector('.page-count');
+                    var newCount = doc.querySelector('.page-count');
+                    if (oldCount && newCount) {
+                        oldCount.textContent = newCount.textContent;
+                    }
+
+                    var effacer = form.querySelector('.btn-cancel');
+                    if (q) {
+                        if (!effacer) {
+                            var a = document.createElement('a');
+                            a.className = 'btn btn-cancel';
+                            a.innerHTML = '<span class="material-symbols-outlined">close</span> Effacer';
+                            a.href = '#';
+                            a.addEventListener('click', function (e) {
+                                e.preventDefault();
+                                input.value = '';
+                                form._doSearch();
+                            });
+                            form.querySelector('.inline-form')?.appendChild(a);
+                        }
+                    } else {
+                        if (effacer) effacer.remove();
+                    }
+                })
+                .catch(function () {});
+        };
+
+        input.addEventListener('input', function () {
+            clearTimeout(timer);
+            timer = setTimeout(function () { form._doSearch(); }, 400);
+        });
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            form._doSearch();
+        });
+
+        // Intercept static "Effacer" link rendered by PHP
+        var effacer = form.querySelector('.btn-cancel');
+        if (effacer) {
+            effacer.addEventListener('click', function (e) {
+                e.preventDefault();
+                input.value = '';
+                form._doSearch();
+            });
+        }
+    });
+
+    // ── Auto-focus search input when query is present ──
+    (function () {
+        var input = document.querySelector('.search-bar input[type="search"]');
+        if (!input) return;
+        if (input.value.trim() !== '') {
+            input.focus();
+            input.selectionStart = input.selectionEnd = input.value.length;
+        }
+    })();
+
+    // ── Import Excel Modal (2-step: upload → preview + edit → confirm) ──
+    (function () {
+        var uploadModal = document.querySelector('[data-modal="import-upload"]');
+        var previewModal = document.querySelector('[data-modal="import-preview"]');
+        var openBtns = document.querySelectorAll('[data-import-btn]');
+        if (!uploadModal || !previewModal || openBtns.length === 0) return;
+
+        var uploadForm = uploadModal.querySelector('[data-import-upload-form]');
+        var uploadError = uploadModal.querySelector('[data-import-upload-error]');
+        var previewBody = previewModal.querySelector('[data-import-preview-body]');
+        var previewTable = previewModal.querySelector('[data-import-preview-table]');
+        var previewError = previewModal.querySelector('[data-import-preview-error]');
+        var importCount = previewModal.querySelector('[data-import-count]');
+        var confirmBtn = previewModal.querySelector('[data-import-confirm]');
+        var currentTable = '';
+        var currentData = null;
+
+        // ── CSRF helper ──
+        function getCsrf() {
+            var el = document.querySelector('input[name="csrf_token"], input[name="_csrf_token"]');
+            return el ? el.value : '';
+        }
+
+        // ── Modal helpers ──
+        function openModal(modal) {
+            modal.classList.add('open');
+        }
+        function closeModal(modal) {
+            modal.classList.remove('open');
+        }
+
+        // Close on overlay click / Escape
+        function initModalClose(modal) {
+            modal.querySelectorAll('[data-modal-close]').forEach(function (el) {
+                el.addEventListener('click', function () { closeModal(modal); });
+            });
+            modal.addEventListener('click', function (e) {
+                if (e.target === modal) closeModal(modal);
+            });
+        }
+        initModalClose(uploadModal);
+        initModalClose(previewModal);
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                closeModal(uploadModal);
+                closeModal(previewModal);
+            }
+        });
+
+        // ── Open upload modal ──
+        openBtns.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                currentTable = btn.getAttribute('data-import-btn') || '';
+                uploadForm.querySelector('input[name="table"]').value = currentTable;
+                uploadForm.reset();
+                uploadError.style.display = 'none';
+                openModal(uploadModal);
+            });
+        });
+
+        // ── Step 1: Upload + preview ──
+        uploadForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var fd = new FormData(uploadForm);
+            var token = getCsrf();
+            if (token) fd.set('_csrf_token', token);
+
+            var submitBtn = uploadForm.querySelector('button[type="submit"]');
+            var origHtml = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="material-symbols-outlined">hourglass_top</span> Analyse...';
+            uploadError.style.display = 'none';
+
+            fetch('api.php', { method: 'POST', body: fd })
+                .then(function (r) { return r.json(); })
+                .then(function (json) {
+                    if (!json.success) {
+                        uploadError.textContent = json.message || 'Erreur lors de l\'analyse du fichier.';
+                        uploadError.style.display = '';
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = origHtml;
+                        return;
+                    }
+
+                    currentData = json;
+                    renderPreview(json);
+                    closeModal(uploadModal);
+                    openModal(previewModal);
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = origHtml;
+                })
+                .catch(function () {
+                    uploadError.textContent = 'Erreur réseau. Veuillez réessayer.';
+                    uploadError.style.display = '';
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = origHtml;
+                });
+        });
+
+        // ── Render preview table ──
+        function renderPreview(data) {
+            var headers = data.headers || [];
+            var rows = data.rows || [];
+            var expected = data.expected_headers || [];
+
+            importCount.textContent = rows.length;
+            previewError.style.display = 'none';
+
+            // Build thead
+            var thead = previewTable.querySelector('thead');
+            thead.innerHTML = '';
+            var tr = document.createElement('tr');
+            headers.forEach(function (h) {
+                var th = document.createElement('th');
+                th.setAttribute('data-col', h);
+                th.textContent = h;
+                if (expected.indexOf(h) === -1) {
+                    th.classList.add('col-extra');
+                }
+                tr.appendChild(th);
+            });
+            thead.appendChild(tr);
+
+            // Build tbody with editable inputs
+            var tbody = previewTable.querySelector('tbody');
+            tbody.innerHTML = '';
+            rows.forEach(function (row, ri) {
+                var tr2 = document.createElement('tr');
+                headers.forEach(function (h) {
+                    var td = document.createElement('td');
+                    var input = document.createElement('input');
+                    input.type = 'text';
+                    input.className = 'import-edit-input';
+                    input.value = row[h] !== null && row[h] !== undefined ? String(row[h]) : '';
+                    input.dataset.row = String(ri);
+                    input.dataset.col = h;
+                    if (expected.indexOf(h) === -1) {
+                        input.classList.add('col-extra');
+                    }
+                    td.appendChild(input);
+                    tr2.appendChild(td);
+                });
+                tbody.appendChild(tr2);
+            });
+
+        }
+
+        // ── Step 2: Confirm import ──
+        confirmBtn.addEventListener('click', function () {
+            if (!currentData) return;
+
+            var headers = currentData.headers || [];
+            var inputs = previewTable.querySelectorAll('tbody input.import-edit-input');
+            var rowCount = currentData.rows.length;
+
+            // Collect modified data
+            var rows = [];
+            for (var ri = 0; ri < rowCount; ri++) {
+                var row = {};
+                for (var ci = 0; ci < headers.length; ci++) {
+                    var input = previewTable.querySelector(
+                        'tbody input.import-edit-input[data-row="' + ri + '"][data-col="' + headers[ci] + '"]'
+                    );
+                    row[headers[ci]] = input ? input.value : '';
+                }
+                rows.push(row);
+            }
+
+            var fd = new FormData();
+            var token = getCsrf();
+            if (token) fd.set('_csrf_token', token);
+            fd.set('action', 'import_confirm');
+            fd.set('table', currentTable);
+            fd.set('import_data', JSON.stringify(rows));
+
+            var origHtml = confirmBtn.innerHTML;
+            confirmBtn.disabled = true;
+            confirmBtn.innerHTML = '<span class="material-symbols-outlined">hourglass_top</span> Import en cours...';
+
+            fetch('api.php', { method: 'POST', body: fd })
+                .then(function (r) { return r.json(); })
+                .then(function (json) {
+                    if (!json.success) {
+                        previewError.textContent = json.message || 'Erreur lors de l\'import.';
+                        previewError.style.display = '';
+                        confirmBtn.disabled = false;
+                        confirmBtn.innerHTML = origHtml;
+                        return;
+                    }
+
+                    closeModal(previewModal);
+                    confirmBtn.disabled = false;
+                    confirmBtn.innerHTML = origHtml;
+
+                    // Reload page to show new data
+                    var msg = json.message || (json.imported + ' ligne(s) importée(s).');
+                    var params = new URLSearchParams(window.location.search);
+                    params.set('import_msg', msg);
+                    window.location.search = params.toString();
+                })
+                .catch(function () {
+                    previewError.textContent = 'Erreur réseau lors de l\'import.';
+                    previewError.style.display = '';
+                    confirmBtn.disabled = false;
+                    confirmBtn.innerHTML = origHtml;
+                });
+        });
+    })();
 })();
 

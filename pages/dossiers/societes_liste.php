@@ -7,6 +7,10 @@ $user = current_user();
 $isAdmin = $user && in_array((int) $user['role_id'], [1, 2], true);
 $canEdit = has_permission('societes.edit');
 
+if (isset($_GET['import_msg']) && $_GET['import_msg'] !== '') {
+    set_flash('success', htmlspecialchars($_GET['import_msg']));
+}
+
 // Reference data for quick create / bulk edit
 $formesOptions = [];
 $villesOptions = [];
@@ -40,14 +44,20 @@ if (($pdo ?? null) instanceof PDO) {
         $userParams['user_id'] = (int) $user['id'];
     }
     if ($query !== '') {
+        $likeTerm = like_term($query);
         $stmt = $pdo->prepare('
             SELECT *
             FROM societes
-            WHERE (societe_raison_sociale LIKE :term OR societe_forme_juridique LIKE :term OR societe_ice LIKE :term OR societe_ville LIKE :term)
+            WHERE (societe_raison_sociale LIKE :term1 OR societe_forme_juridique LIKE :term2 OR societe_ice LIKE :term3 OR societe_ville LIKE :term4)
             ' . $userFilter . '
             ORDER BY id DESC
         ');
-        $params = ['term' => like_term($query)] + $userParams;
+        $params = [
+            'term1' => $likeTerm,
+            'term2' => $likeTerm,
+            'term3' => $likeTerm,
+            'term4' => $likeTerm,
+        ] + $userParams;
         $stmt->execute($params);
         $societes = $stmt->fetchAll();
     } else {
@@ -71,7 +81,7 @@ if (($pdo ?? null) instanceof PDO) {
                 $societe['societe_forme_juridique'],
                 $societe['societe_source'] ?? 'creation',
                 $societe['societe_ice'],
-                $societe['societe_date_ice'],
+                format_date($societe['societe_date_ice'] ?? null),
                 $societe['societe_rc'],
                 $societe['societe_if'],
                 $societe['societe_activites_statuts'] ?? '',
@@ -114,28 +124,7 @@ if (($pdo ?? null) instanceof PDO) {
                 <a class="btn btn-info" href="<?= e(app_url('societes', ['export' => 'csv', 'q' => $query])) ?>"><span class="material-symbols-outlined">download</span> CSV</a>
                 <a class="btn btn-next" href="<?= e(app_url('societes', ['export' => 'xlsx', 'q' => $query])) ?>"><span class="material-symbols-outlined">table_chart</span> Excel</a>
                 <?php if (has_permission('societes.import')): ?>
-                <?php
-                    $importTable = 'societes';
-                    $importPage = 'societes';
-                    $importLabel = 'societe';
-                    $importColumnMap = [
-                        'Raison sociale' => 'societe_raison_sociale',
-                        'Dossier domiciliation' => 'societe_dossier',
-                        'Forme juridique' => 'societe_forme_juridique',
-                        'ICE' => 'societe_ice',
-                        'RC' => 'societe_rc',
-                        'IF' => 'societe_if',
-                        'Ville' => 'societe_ville',
-                        'Email' => 'societe_email',
-                        'Telephone' => 'societe_telephone',
-                        'Capital' => 'societe_capital',
-                    ];
-                    $importDefaults = [
-                        'societe_source' => 'import',
-                        'created_by' => ($user['id'] ?? 0),
-                    ];
-                    require __DIR__ . '/../../includes/import_excel_section.php';
-                ?>
+                <button class="btn btn-secondary" type="button" data-import-btn="societes"><span class="material-symbols-outlined">upload_file</span> Importer Excel</button>
                 <?php endif; ?>
             </div>
         </div>
@@ -286,3 +275,5 @@ if (($pdo ?? null) instanceof PDO) {
     <span class="bulk-info"><span class="bulk-count" data-bulk-count>0</span> enregistrement(s) selectionne(s)</span>
     <button class="btn btn-info" type="button" data-bulk-edit-btn><span class="material-symbols-outlined">edit_note</span> Modifier en masse</button>
 </div>
+
+<?php require __DIR__ . '/../../includes/import_excel_modal.php'; ?>

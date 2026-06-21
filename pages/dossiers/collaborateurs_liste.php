@@ -5,6 +5,10 @@ declare(strict_types=1);
 $query = search_term();
 $user = current_user();
 
+if (isset($_GET['import_msg']) && $_GET['import_msg'] !== '') {
+    set_flash('success', htmlspecialchars($_GET['import_msg']));
+}
+
 if (is_post() && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
     $action = $_POST['action'] ?? 'delete';
@@ -24,18 +28,19 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
 $collaborateurs = [];
 if (($pdo ?? null) instanceof PDO) {
     if ($query !== '') {
+        $likeTerm = like_term($query);
         $stmt = $pdo->prepare("
             SELECT c.*, r.nom AS role_nom, r.is_internal
             FROM collaborateurs c
             LEFT JOIN roles r ON r.id = c.role_id
-            WHERE c.nom_complet LIKE :term
-               OR c.den_ste LIKE :term
-               OR c.collaborateur_ice LIKE :term
-               OR c.fonction LIKE :term
-               OR r.nom LIKE :term
+            WHERE c.nom_complet LIKE :term1
+               OR c.den_ste LIKE :term2
+               OR c.collaborateur_ice LIKE :term3
+               OR c.fonction LIKE :term4
+               OR r.nom LIKE :term5
             ORDER BY c.id DESC
         ");
-        $stmt->execute(['term' => like_term($query)]);
+        $stmt->execute(['term1' => $likeTerm, 'term2' => $likeTerm, 'term3' => $likeTerm, 'term4' => $likeTerm, 'term5' => $likeTerm]);
         $collaborateurs = $stmt->fetchAll();
     } else {
         $stmt = $pdo->query('
@@ -114,25 +119,7 @@ if (($pdo ?? null) instanceof PDO) {
                 <a class="btn btn-info" href="<?= e(app_url('collaborateurs', ['export' => 'csv', 'q' => $query])) ?>"><span class="material-symbols-outlined">download</span> CSV</a>
                 <a class="btn btn-next" href="<?= e(app_url('collaborateurs', ['export' => 'xlsx', 'q' => $query])) ?>"><span class="material-symbols-outlined">table_chart</span> Excel</a>
                 <?php if (has_permission('collaborateurs.import')): ?>
-                <?php
-                    $importTable = 'collaborateurs';
-                    $importPage = 'collaborateurs';
-                    $importLabel = 'collaborateur';
-                    $importColumnMap = [
-                        'Nom complet' => 'nom_complet',
-                        'Fonction' => 'fonction',
-                        'Type' => 'collaborateur_type',
-                        'Code' => 'collaborateur_code',
-                        'ICE' => 'collaborateur_ice',
-                        'Telephone' => 'telephone',
-                        'Email' => 'email',
-                        'Statut' => 'statut',
-                    ];
-                    $importDefaults = [
-                        'created_by' => ($user['id'] ?? 0),
-                    ];
-                    require __DIR__ . '/../../includes/import_excel_section.php';
-                ?>
+                <button class="btn btn-secondary" type="button" data-import-btn="collaborateurs"><span class="material-symbols-outlined">upload_file</span> Importer Excel</button>
                 <?php endif; ?>
             </div>
         </div>
@@ -228,3 +215,5 @@ if (($pdo ?? null) instanceof PDO) {
         <?php endif; ?>
     </article>
 </section>
+
+<?php require __DIR__ . '/../../includes/import_excel_modal.php'; ?>

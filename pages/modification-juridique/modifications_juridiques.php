@@ -57,8 +57,11 @@ if (($pdo ?? null) instanceof PDO) {
         ';
         $where = [];
         if ($query !== '') {
-            $where[] = '(s.societe_raison_sociale LIKE :term OR c.cession_dossier LIKE :term OR c.cession_status LIKE :term)';
-            $userParams['term'] = like_term($query);
+            $likeTerm = like_term($query);
+            $where[] = '(s.societe_raison_sociale LIKE :term1 OR c.cession_dossier LIKE :term2 OR c.cession_status LIKE :term3)';
+            $userParams['term1'] = $likeTerm;
+            $userParams['term2'] = $likeTerm;
+            $userParams['term3'] = $likeTerm;
         }
         if ($userFilter) {
             $where[] = 'c.created_by = :user_id';

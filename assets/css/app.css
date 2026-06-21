@@ -1008,8 +1008,8 @@ textarea {
 
 .table-scroll {
     overflow-x: auto;
-    margin: 0 -1.25rem;
-    padding: 0 1.25rem;
+    margin: 0 -0.7rem;
+    padding: 0 0.7rem;
 }
 
 table {
@@ -1286,6 +1286,7 @@ td.col-pdf .pdf-pending {
 
 .inline-form input[type="search"] {
     flex: 1 1 260px;
+    padding: 4px 10px;
 }
 .inline-form select {
     flex: 1 1 320px;
@@ -4661,4 +4662,69 @@ input[data-bulk-checkbox] {
     height: 16px;
     cursor: pointer;
     accent-color: var(--primary);
+}
+
+/* ==========================================
+   Import Excel Modal
+   ========================================== */
+.import-edit-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 4px 6px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text);
+    font-size: 0.8rem;
+    font-family: inherit;
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.import-edit-input:hover {
+    border-color: var(--line);
+    background: rgba(255,255,255,0.03);
+}
+
+.import-edit-input:focus {
+    border-color: var(--primary);
+    background: rgba(0,144,231,0.06);
+    outline: none;
+}
+
+[data-import-preview-table] td {
+    padding: 2px 4px;
+    vertical-align: middle;
+}
+
+[data-import-preview-table] th {
+    white-space: nowrap;
+    font-size: 0.8rem;
+}
+
+[data-modal="import-upload"] .field input[type="file"] {
+    padding: 6px 10px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.85rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+[data-modal="import-upload"] .field input[type="file"]::file-selector-button {
+    padding: 4px 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--panel-strong);
+    color: var(--text);
+    cursor: pointer;
+    margin-right: 8px;
+    font-size: 0.8rem;
+}
+
+/* Import preview: extra columns not in columnMap */
+[data-import-preview-table] th.col-extra,
+[data-import-preview-table] input.import-edit-input.col-extra {
+    opacity: 0.55;
 }
