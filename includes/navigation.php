@@ -202,10 +202,4 @@ $navSections = [
         </nav>
     </div>
 
-    <div class="sidebar-footer">
-        <a href="<?= e(app_url('deconnexion')) ?>" class="nav-logout" data-nav-link>
-            <span class="material-symbols-outlined">logout</span>
-            <span data-nav-label>Deconnexion</span>
-        </a>
-    </div>
 </aside>

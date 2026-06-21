@@ -4461,3 +4461,22 @@ tr[data-coverage], .row-mapped {
     left: auto;
     width: 340px;
 }
+
+.top-bar-logout {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    color: var(--danger);
+    text-decoration: none;
+    transition: background var(--transition), color var(--transition);
+}
+.top-bar-logout:hover {
+    background: rgba(252, 66, 74, 0.12);
+    color: var(--danger);
+}
+.top-bar-logout .material-symbols-outlined {
+    font-size: 1.2rem;
+}

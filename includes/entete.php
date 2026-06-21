@@ -86,6 +86,9 @@ $noSidebar = in_array($page ?? '', ['connexion', 'deconnexion'], true);
                         </div>
                     </div>
                 </div>
+                <a href="<?= e(app_url('deconnexion')) ?>" class="top-bar-logout" title="Deconnexion">
+                    <span class="material-symbols-outlined">logout</span>
+                </a>
             </div>
         </div>
         <?php endif; ?>
