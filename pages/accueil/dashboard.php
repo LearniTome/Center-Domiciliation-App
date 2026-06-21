@@ -558,7 +558,7 @@ if ($isConnected) {
                 <tr><td><span class="material-symbols-outlined" style="color:var(--danger)">person_remove</span> Sans associe</td><td><?= e($s['societe_raison_sociale']) ?></td><td>—</td><td class="col-action"><a class="btn-icon" href="<?= e(app_url('societe', ['id' => (int) $s['id']])) ?>"><span class="material-symbols-outlined" style="color:var(--info)">visibility</span></a></td></tr>
                 <?php endforeach; ?>
                 <?php foreach ($sansContrat as $s): ?>
-                <tr><td><span class="material-symbols-outlined" style="color:var(--warning)">note_remove</span> Sans contrat</td><td><?= e($s['societe_raison_sociale']) ?></td><td>—</td><td class="col-action"><a class="btn-icon" href="<?= e(app_url('societe', ['id' => (int) $s['id']])) ?>"><span class="material-symbols-outlined" style="color:var(--info)">visibility</span></a></td></tr>
+                <tr><td><span class="material-symbols-outlined" style="color:var(--warning)">contract</span> Sans contrat</td><td><?= e($s['societe_raison_sociale']) ?></td><td>—</td><td class="col-action"><a class="btn-icon" href="<?= e(app_url('societe', ['id' => (int) $s['id']])) ?>"><span class="material-symbols-outlined" style="color:var(--info)">visibility</span></a></td></tr>
                 <?php endforeach; ?>
                 <?php foreach ($sansDocuments as $s): ?>
                 <tr><td><span class="material-symbols-outlined" style="color:var(--info)">remove_selection</span> Sans documents</td><td><?= e($s['societe_raison_sociale']) ?></td><td>—</td><td class="col-action"><a class="btn-icon" href="<?= e(app_url('societe', ['id' => (int) $s['id']])) ?>"><span class="material-symbols-outlined" style="color:var(--info)">visibility</span></a></td></tr>

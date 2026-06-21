@@ -1380,5 +1380,26 @@ document.addEventListener('click', function (event) {
 
     // Refresh CSRF on focus
     document.addEventListener('focus', function () { csrfToken = null; }, true);
+
+    // ── Live Clock ──
+    (function () {
+        var clock = document.getElementById('top-bar-clock');
+        if (!clock) return;
+        function tick() {
+            var now = new Date();
+            var days = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+            var months = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+            var d = days[now.getDay()];
+            var dd = now.getDate();
+            var m = months[now.getMonth()];
+            var y = now.getFullYear();
+            var h = String(now.getHours()).padStart(2,'0');
+            var min = String(now.getMinutes()).padStart(2,'0');
+            var s = String(now.getSeconds()).padStart(2,'0');
+            clock.textContent = d + ' ' + dd + ' ' + m + ' ' + y + ' — ' + h + ':' + min + ':' + s;
+        }
+        tick();
+        setInterval(tick, 1000);
+    })();
 })();
 

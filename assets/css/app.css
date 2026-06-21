@@ -4347,3 +4347,96 @@ tr[data-coverage], .row-mapped {
 .shell.collapsed .notif-bell [data-nav-label] {
     display: none;
 }
+
+/* ==========================================
+   Top Bar (user info + clock + notifications)
+   ========================================== */
+.top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 24px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+    gap: 12px;
+    flex-wrap: wrap;
+    min-height: 44px;
+}
+.top-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.top-bar-avatar {
+    font-size: 1.3rem;
+    color: var(--primary);
+}
+.top-bar-user {
+    font-weight: 500;
+    font-size: 0.85rem;
+    color: var(--text);
+}
+.top-bar-role {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    padding: 1px 8px;
+    border-radius: 10px;
+    background: var(--panel-strong);
+}
+.top-bar-center {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.top-bar-clock {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+.top-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.top-bar-right .notif-bell-wrap {
+    position: relative;
+}
+.top-bar-right .notif-bell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: 50%;
+    transition: background var(--transition), color var(--transition);
+    position: relative;
+}
+.top-bar-right .notif-bell:hover {
+    background: var(--panel-strong);
+    color: var(--text);
+}
+.top-bar-right .notif-bell .material-symbols-outlined {
+    font-size: 1.2rem;
+}
+.top-bar-right .notif-badge-count {
+    position: absolute;
+    top: 1px;
+    right: 1px;
+    min-width: 15px;
+    height: 15px;
+    font-size: 0.5rem;
+    padding: 0 3px;
+    border-radius: 8px;
+}
+.top-bar-right .notif-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    left: auto;
+    width: 340px;
+}

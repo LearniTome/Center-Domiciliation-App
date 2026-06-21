@@ -38,6 +38,7 @@ $noSidebar = in_array($page ?? '', ['connexion', 'deconnexion'], true);
     </script>
     <?php endif; ?>
     <main class="main">
+        <?php if (!is_logged_in()): ?>
         <header class="page-header">
             <div>
                 <h1><?= e($pageTitle) ?></h1>
@@ -47,6 +48,62 @@ $noSidebar = in_array($page ?? '', ['connexion', 'deconnexion'], true);
                 <span class="page-count-bar"></span>
             </div>
         </header>
+        <?php else:
+            $_topUser = current_user();
+            $_topNotifCount = 0;
+            if ($_topUser && $pdo) {
+                $_topNotifCount = count_unread_notifications($pdo, (int) $_topUser['id'], (int) ($_topUser['role_id'] ?? 0), $_topUser['collaborateur_type'] ?? null);
+            }
+        ?>
+        <div class="top-bar">
+            <div class="top-bar-left">
+                <span class="material-symbols-outlined top-bar-avatar">account_circle</span>
+                <span class="top-bar-user"><?= e($_topUser['nom_complet'] ?? '') ?></span>
+                <span class="top-bar-role"><?= e(get_role_name()) ?></span>
+            </div>
+            <div class="top-bar-center">
+                <span class="top-bar-clock" id="top-bar-clock"></span>
+            </div>
+            <div class="top-bar-right">
+                <div class="notif-bell-wrap">
+                    <button type="button" class="notif-bell" data-notif-bell title="Notifications">
+                        <span class="material-symbols-outlined">notifications</span>
+                        <?php if ($_topNotifCount > 0): ?>
+                            <span class="notif-badge notif-badge-count"><?= $_topNotifCount > 99 ? '99+' : $_topNotifCount ?></span>
+                        <?php endif; ?>
+                    </button>
+                    <div class="notif-dropdown" data-notif-dropdown>
+                        <div class="notif-dropdown-header">
+                            <strong>Notifications</strong>
+                            <span class="notif-dropdown-count" data-notif-dropdown-count></span>
+                        </div>
+                        <div class="notif-dropdown-list" data-notif-dropdown-list>
+                            <div class="notif-dropdown-loading">
+                                <span class="material-symbols-outlined">sync</span> Chargement...
+                            </div>
+                        </div>
+                        <div class="notif-dropdown-footer">
+                            <button type="button" class="btn btn-info" data-notif-mark-all style="width:100%;padding:4px 10px;font-size:0.72rem;">
+                                <span class="material-symbols-outlined" style="font-size:0.85rem">done_all</span> Tout marquer comme lu
+                            </button>
+                            <a href="<?= e(app_url('notifications')) ?>" class="btn btn-next" style="width:100%;padding:4px 10px;font-size:0.72rem;">
+                                <span class="material-symbols-outlined" style="font-size:0.85rem">visibility</span> Voir tout
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <header class="page-header">
+            <div>
+                <h1><?= e($pageTitle) ?></h1>
+                <?php if (isset($pageSubtitle)): ?>
+                <p class="page-subtitle"><?= e($pageSubtitle) ?></p>
+                <?php endif; ?>
+                <span class="page-count-bar"></span>
+            </div>
+        </header>
+        <?php endif; ?>
 
         <?php if ($flash): ?>
             <div class="flash flash-<?= e($flash['type']) ?>"><?= e($flash['message']) ?></div>
