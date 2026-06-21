@@ -73,7 +73,8 @@ if (($pdo ?? null) instanceof PDO) {
         $rows = $stmt->fetchAll();
     }
 
-    if (($_GET['export'] ?? '') === 'csv') {
+    $exportType = $_GET['export'] ?? '';
+    if ($exportType === 'csv' || $exportType === 'xlsx') {
         $headers = ['Type', 'ID', 'Dossier', 'Societe', 'Date', 'Statut'];
         $csvRows = array_map(static function (array $row) use ($modTypes): array {
             $type = $modTypes[$row['mod_type']]['label'] ?? $row['mod_type'];
@@ -86,7 +87,12 @@ if (($pdo ?? null) instanceof PDO) {
                 $row['mod_status'] ?? 'brouillon',
             ];
         }, $rows);
-        export_csv('modifications_juridiques.csv', $headers, $csvRows);
+
+        if ($exportType === 'csv') {
+            export_csv('modifications_juridiques.csv', $headers, $csvRows);
+        } else {
+            export_excel('modifications_juridiques.xlsx', $headers, $csvRows);
+        }
     }
 }
 
@@ -97,7 +103,8 @@ if (($pdo ?? null) instanceof PDO) {
             <span class="page-count"><?= count($rows) ?> enregistrement(s)</span>
             <div class="table-actions">
                 <button class="btn btn-secondary" type="button" data-col-toggle-btn><span class="material-symbols-outlined">view_column</span> Colonnes <span class="col-toggle-count" data-col-count>0/0</span></button>
-                <a class="btn btn-info" href="<?= e(app_url('modifications', ['export' => 'csv', 'q' => $query, 'type' => $currentType])) ?>"><span class="material-symbols-outlined">download</span> Exporter CSV</a>
+                <a class="btn btn-info" href="<?= e(app_url('modifications', ['export' => 'csv', 'q' => $query, 'type' => $currentType])) ?>"><span class="material-symbols-outlined">download</span> CSV</a>
+                <a class="btn btn-next" href="<?= e(app_url('modifications', ['export' => 'xlsx', 'q' => $query, 'type' => $currentType])) ?>"><span class="material-symbols-outlined">table_chart</span> Excel</a>
             </div>
         </div>
 

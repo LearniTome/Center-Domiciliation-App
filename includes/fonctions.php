@@ -365,6 +365,106 @@ function export_csv(string $filename, array $headers, array $rows): never
     exit;
 }
 
+function export_excel(string $filename, array $headers, array $rows): never
+{
+    if (!class_exists('\PhpOffice\PhpSpreadsheet\Spreadsheet')) {
+        exit('PhpSpreadsheet n\'est pas installe. Lancez "composer install" a la racine du projet.');
+    }
+
+    $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+    $sheet = $spreadsheet->getActiveSheet();
+
+    // Header row
+    $col = 1;
+    foreach ($headers as $header) {
+        $sheet->setCellValue([$col, 1], $header);
+        $col++;
+    }
+
+    // Data rows
+    $rowNum = 2;
+    foreach ($rows as $row) {
+        $col = 1;
+        foreach ($row as $value) {
+            $sheet->setCellValue([$col, $rowNum], $value ?? '');
+            $col++;
+        }
+        $rowNum++;
+    }
+
+    // Auto-size columns
+    foreach (range(1, count($headers)) as $colIdx) {
+        $sheet->getColumnDimensionByColumn($colIdx)->setAutoSize(true);
+    }
+
+    // Bold header
+    $sheet->getStyle([1, 1, count($headers), 1])->getFont()->setBold(true);
+
+    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+
+    $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+    $writer->save('php://output');
+    exit;
+}
+
+function import_excel_preview(string $filepath): array
+{
+    if (!class_exists('\PhpOffice\PhpSpreadsheet\Spreadsheet')) {
+        return ['error' => 'PhpSpreadsheet n\'est pas installe.'];
+    }
+
+    try {
+        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($filepath);
+        $sheet = $spreadsheet->getActiveSheet();
+        $data = $sheet->toArray();
+
+        if (count($data) < 2) {
+            return ['error' => 'Le fichier doit contenir au moins une ligne d\'en-tete et une ligne de donnees.'];
+        }
+
+        $headers = array_map('trim', $data[0]);
+        $rows = [];
+        for ($i = 1; $i < count($data); $i++) {
+            $row = [];
+            foreach ($data[$i] as $j => $value) {
+                $row[$headers[$j] ?? 'Colonne_' . ($j + 1)] = $value;
+            }
+            $rows[] = $row;
+        }
+
+        return compact('headers', 'rows');
+    } catch (\Throwable $e) {
+        return ['error' => 'Erreur de lecture du fichier Excel : ' . $e->getMessage()];
+    }
+}
+
+function import_excel_confirm(string $filepath, array $columnMap, callable $rowHandler): array
+{
+    $preview = import_excel_preview($filepath);
+    if (isset($preview['error'])) {
+        return $preview;
+    }
+
+    $imported = 0;
+    $errors = [];
+
+    foreach ($preview['rows'] as $idx => $row) {
+        $mapped = [];
+        foreach ($columnMap as $excelCol => $dbCol) {
+            $mapped[$dbCol] = $row[$excelCol] ?? null;
+        }
+        try {
+            $rowHandler($mapped, $idx);
+            $imported++;
+        } catch (\Throwable $e) {
+            $errors[] = 'Ligne ' . ($idx + 2) . ' : ' . $e->getMessage();
+        }
+    }
+
+    return compact('imported', 'errors');
+}
+
 function format_money(?float $value, string $suffix = ' DH'): string
 {
     if ($value === null) return '-';

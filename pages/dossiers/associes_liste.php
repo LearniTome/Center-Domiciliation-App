@@ -96,7 +96,8 @@ if (($pdo ?? null) instanceof PDO) {
         $associes = $stmt->fetchAll();
     }
 
-    if (($_GET['export'] ?? '') === 'csv') {
+    $exportType = $_GET['export'] ?? '';
+    if ($exportType === 'csv' || $exportType === 'xlsx') {
         $rows = array_map(static function (array $a): array {
             return [
                 $a['id'],
@@ -114,11 +115,17 @@ if (($pdo ?? null) instanceof PDO) {
             ];
         }, $associes);
 
-        export_csv('associes.csv', [
+        $headers = [
             'ID', 'Nom complet', 'Societe', 'CIN', 'Date naissance',
             'Lieu naissance', 'Nationalite', 'Telephone', 'Email',
             'Qualite', 'Parts', 'Gerant',
-        ], $rows);
+        ];
+
+        if ($exportType === 'csv') {
+            export_csv('associes.csv', $headers, $rows);
+        } else {
+            export_excel('associes.xlsx', $headers, $rows);
+        }
     }
 } else {
     $associes = [];
@@ -293,7 +300,30 @@ if (($pdo ?? null) instanceof PDO) {
             </table>
             </div>
             <div class="table-actions" style="margin-top:12px">
-                <a class="btn btn-info" href="<?= e(app_url('associes', ['export' => 'csv', 'q' => $query])) ?>"><span class="material-symbols-outlined">download</span> Exporter CSV</a>
+                <a class="btn btn-info" href="<?= e(app_url('associes', ['export' => 'csv', 'q' => $query])) ?>"><span class="material-symbols-outlined">download</span> CSV</a>
+                <a class="btn btn-next" href="<?= e(app_url('associes', ['export' => 'xlsx', 'q' => $query])) ?>"><span class="material-symbols-outlined">table_chart</span> Excel</a>
+                <?php if (has_permission('associes.import')): ?>
+                <?php
+                    $importTable = 'associes';
+                    $importPage = 'associes';
+                    $importLabel = 'associe';
+                    $importColumnMap = [
+                        'Nom complet' => 'associe_nom_complet',
+                        'CIN' => 'associe_cin',
+                        'Date naissance' => 'associe_date_naissance',
+                        'Lieu naissance' => 'associe_lieu_naissance',
+                        'Nationalite' => 'associe_nationalite',
+                        'Telephone' => 'associe_telephone',
+                        'Email' => 'associe_email',
+                        'Qualite' => 'associe_qualite',
+                        'Parts' => 'associe_parts',
+                    ];
+                    $importDefaults = [
+                        'created_by' => ($user['id'] ?? 0),
+                    ];
+                    require __DIR__ . '/../../includes/import_excel_section.php';
+                ?>
+                <?php endif; ?>
             </div>
         <?php endif; ?>
     </article>

@@ -11,6 +11,12 @@ $dbConfig = require __DIR__ . '/../config/database.php';
 
 require __DIR__ . '/fonctions.php';
 require __DIR__ . '/base_donnees.php';
+
+// Composer autoload (PhpSpreadsheet, PHPWord, Dompdf)
+$autoloadPath = __DIR__ . '/../vendor/autoload.php';
+if (file_exists($autoloadPath)) {
+    require $autoloadPath;
+}
 require_once __DIR__ . '/../src/service_claude.php';
 
 $flash = pull_flash();

@@ -57,7 +57,8 @@ if (($pdo ?? null) instanceof PDO) {
         $cessions = $stmt->fetchAll();
     }
 
-    if (($_GET['export'] ?? '') === 'csv') {
+    $exportType = $_GET['export'] ?? '';
+    if ($exportType === 'csv' || $exportType === 'xlsx') {
         $rows = array_map(static function (array $row): array {
             return [
                 $row['id'],
@@ -70,9 +71,15 @@ if (($pdo ?? null) instanceof PDO) {
             ];
         }, $cessions);
 
-        export_csv('cessions.csv', [
+        $headers = [
             'ID', 'Dossier', 'Societe', 'Date', 'Statut', 'Nb lignes', 'Total parts',
-        ], $rows);
+        ];
+
+        if ($exportType === 'csv') {
+            export_csv('cessions.csv', $headers, $rows);
+        } else {
+            export_excel('cessions.xlsx', $headers, $rows);
+        }
     }
 } else {
     $cessions = [];
@@ -85,7 +92,25 @@ if (($pdo ?? null) instanceof PDO) {
             <span class="page-count"><?= count($cessions) ?> enregistrement(s)</span>
             <div class="table-actions">
                 <button class="btn btn-secondary" type="button" data-col-toggle-btn><span class="material-symbols-outlined">view_column</span> Colonnes <span class="col-toggle-count" data-col-count>0/0</span></button>
-                <a class="btn btn-info" href="<?= e(app_url('cessions', ['export' => 'csv', 'q' => $query])) ?>"><span class="material-symbols-outlined">download</span> Exporter CSV</a>
+                <a class="btn btn-info" href="<?= e(app_url('cessions', ['export' => 'csv', 'q' => $query])) ?>"><span class="material-symbols-outlined">download</span> CSV</a>
+                <a class="btn btn-next" href="<?= e(app_url('cessions', ['export' => 'xlsx', 'q' => $query])) ?>"><span class="material-symbols-outlined">table_chart</span> Excel</a>
+                <?php if (has_permission('cessions.import')): ?>
+                <?php
+                    $importTable = 'cessions';
+                    $importPage = 'cessions';
+                    $importLabel = 'cession';
+                    $importColumnMap = [
+                        'Dossier' => 'cession_dossier',
+                        'Societe' => 'societe_id',
+                        'Date' => 'cession_date',
+                        'Statut' => 'cession_status',
+                    ];
+                    $importDefaults = [
+                        'created_by' => ($user['id'] ?? 0),
+                    ];
+                    require __DIR__ . '/../../../includes/import_excel_section.php';
+                ?>
+                <?php endif; ?>
                 <a class="btn btn-next" href="<?= e(app_url('cession')) ?>"><span class="material-symbols-outlined">note_add</span> Nouvelle cession</a>
             </div>
         </div>

@@ -106,7 +106,8 @@ if (($pdo ?? null) instanceof PDO) {
         $contrats = $stmt->fetchAll();
     }
 
-    if (($_GET['export'] ?? '') === 'csv') {
+    $exportType = $_GET['export'] ?? '';
+    if ($exportType === 'csv' || $exportType === 'xlsx') {
         $rows = array_map(static function (array $c): array {
             return [
                 $c['id'],
@@ -126,11 +127,17 @@ if (($pdo ?? null) instanceof PDO) {
             ];
         }, $contrats);
 
-        export_csv('contrats.csv', [
+        $headers = [
             'ID', 'Societe', 'Type contrat', 'Date contrat', 'Duree (mois)',
             'Type domiciliation', 'Date debut', 'Date fin', 'Loyer TTC/mois',
             'TVA %', 'Loyer HT/mois', 'Total HT', 'Renouvellement', 'Statut',
-        ], $rows);
+        ];
+
+        if ($exportType === 'csv') {
+            export_csv('contrats.csv', $headers, $rows);
+        } else {
+            export_excel('contrats.xlsx', $headers, $rows);
+        }
     }
 } else {
     $contrats = [];
@@ -143,7 +150,28 @@ if (($pdo ?? null) instanceof PDO) {
             <span class="page-count"><?= count($contrats) ?> enregistrement(s)</span>
             <div class="table-actions">
                 <button class="btn btn-secondary" type="button" data-col-toggle-btn><span class="material-symbols-outlined">view_column</span> Colonnes <span class="col-toggle-count" data-col-count>0/0</span></button>
-                <a class="btn btn-info" href="<?= e(app_url('contrats', ['export' => 'csv', 'q' => $query])) ?>"><span class="material-symbols-outlined">download</span> Exporter CSV</a>
+                <a class="btn btn-info" href="<?= e(app_url('contrats', ['export' => 'csv', 'q' => $query])) ?>"><span class="material-symbols-outlined">download</span> CSV</a>
+                <a class="btn btn-next" href="<?= e(app_url('contrats', ['export' => 'xlsx', 'q' => $query])) ?>"><span class="material-symbols-outlined">table_chart</span> Excel</a>
+                <?php if (has_permission('contrats.import')): ?>
+                <?php
+                    $importTable = 'contrats';
+                    $importPage = 'contrats';
+                    $importLabel = 'contrat';
+                    $importColumnMap = [
+                        'Type contrat' => 'contrat_type',
+                        'Date contrat' => 'contrat_date',
+                        'Duree (mois)' => 'contrat_duree_mois',
+                        'Date debut' => 'contrat_date_debut',
+                        'Date fin' => 'contrat_date_fin',
+                        'Loyer TTC/mois' => 'contrat_loyer_ttc',
+                        'Statut' => 'contrat_statut',
+                    ];
+                    $importDefaults = [
+                        'created_by' => ($user['id'] ?? 0),
+                    ];
+                    require __DIR__ . '/../../includes/import_excel_section.php';
+                ?>
+                <?php endif; ?>
             </div>
         </div>
         <form method="get" class="stack search-bar">

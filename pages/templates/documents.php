@@ -8,7 +8,7 @@ $q = search_term();
 $filterSociete = int_value($_GET, 'societe_id');
 $filterDocType = field_value($_GET, 'doc_type');
 $filterStatut = field_value($_GET, 'statut');
-$exportCsv = isset($_GET['export']) && $_GET['export'] === 'csv';
+$exportType = $_GET['export'] ?? '';
 
 if (is_post() && isset($_POST['delete_submit'])) {
     verify_csrf();
@@ -152,7 +152,7 @@ if ($filterStatut === 'valide') {
     $documents = array_values(array_filter($allDocuments, fn($d) => (int) $d['valide'] === 0));
 }
 
-if ($exportCsv && count($documents) > 0) {
+if (($exportType === 'csv' || $exportType === 'xlsx') && count($documents) > 0) {
     $headers = ['ID', 'Societe', 'Type', 'Fichier DOCX', 'Fichier PDF', 'Taille (Ko)', 'Statut', 'Date generation'];
     $rows = [];
     foreach ($documents as $d) {
@@ -167,7 +167,11 @@ if ($exportCsv && count($documents) > 0) {
             $d['created_at'],
         ];
     }
-    export_csv('documents-generes_' . date('Y-m-d') . '.csv', $headers, $rows);
+    if ($exportType === 'csv') {
+        export_csv('documents-generes_' . date('Y-m-d') . '.csv', $headers, $rows);
+    } else {
+        export_excel('documents-generes_' . date('Y-m-d') . '.xlsx', $headers, $rows);
+    }
 }
 ?>
 <section class="card">
@@ -177,8 +181,11 @@ if ($exportCsv && count($documents) > 0) {
             <a class="btn <?= $filterStatut === '' ? 'btn-next' : 'btn-secondary' ?>" href="<?= e(app_url('documents', array_filter(['societe_id' => $filterSociete, 'doc_type' => $filterDocType, 'q' => $q], fn($v) => $v !== null && $v !== ''))) ?>">Tous</a>
             <a class="btn <?= $filterStatut === 'valide' ? 'btn-next' : 'btn-secondary' ?>" href="<?= e(app_url('documents', array_filter(['societe_id' => $filterSociete, 'doc_type' => $filterDocType, 'q' => $q, 'statut' => 'valide'], fn($v) => $v !== null && $v !== ''))) ?>">Valides</a>
             <a class="btn <?= $filterStatut === 'brouillon' ? 'btn-next' : 'btn-secondary' ?>" href="<?= e(app_url('documents', array_filter(['societe_id' => $filterSociete, 'doc_type' => $filterDocType, 'q' => $q, 'statut' => 'brouillon'], fn($v) => $v !== null && $v !== ''))) ?>">Brouillons</a>
-            <a class="btn btn-info" href="<?= e(app_url('documents', array_filter(['export' => 'csv', 'societe_id' => $filterSociete, 'doc_type' => $filterDocType], fn($v) => $v !== null && $v !== ''))) ?>">
-                <span class="material-symbols-outlined">download</span> Exporter CSV
+            <a class="btn btn-info" href="<?= e(app_url('documents', array_filter(['export' => 'csv', 'societe_id' => $filterSociete, 'doc_type' => $filterDocType, 'q' => $q], fn($v) => $v !== null && $v !== ''))) ?>">
+                <span class="material-symbols-outlined">download</span> CSV
+            </a>
+            <a class="btn btn-next" href="<?= e(app_url('documents', array_filter(['export' => 'xlsx', 'societe_id' => $filterSociete, 'doc_type' => $filterDocType, 'q' => $q], fn($v) => $v !== null && $v !== ''))) ?>">
+                <span class="material-symbols-outlined">table_chart</span> Excel
             </a>
         </div>
     </div>

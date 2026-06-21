@@ -1,7 +1,7 @@
 # Center Domiciliation App — PHP Project Guide
 
 ## Overview
-Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No framework, no autoloader. Runs on XAMPP (Apache + MySQL). Composer used only for PHPWord + Dompdf (DOCX→PDF fallback).
+Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No framework, no autoloader. Runs on XAMPP (Apache + MySQL). Composer used for PHPWord + Dompdf (DOCX→PDF fallback) + PhpSpreadsheet (Excel export/import).
 
 ## Architecture
 - **Routing**: Single front controller `index.php?page=` with an allowlist of pages + `$pageDir` mapping → subdirectory
@@ -42,7 +42,16 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - `fetch_all_records(?PDO, string): array`
 - `fetch_societes_options(?PDO): array`
 - `fetch_reference_options(?PDO, string table, string column): array`
+- `auto_notify_action(string $action, string $entityType, int $entityId, string $description, array $extra = []): void` — crée notification automatique via `log_activity()` (17 types)
+- `update_user_session(int $userId, string $sessionId): void` — enregistre session active dans `user_sessions`
+- `get_online_users(?PDO $pdo): array` — utilisateurs actifs dans la dernière heure
+- `get_most_visited_pages(?PDO $pdo, int $limit = 5): array` — pages les plus consultées (depuis `page_views`)
+- `log_page_view(?PDO $pdo, int $userId, string $page): void` — enregistre visite de page
+- `page_display_name(string $page): string` — traduit page en français
 - `export_csv(string filename, array headers, array rows): never`
+- `export_excel(string filename, array headers, array rows): never` — génère .xlsx via PhpSpreadsheet, auto-column width
+- `import_excel_preview(string table, array columnMap, array defaults): array|string` — lit .xlsx uploadé, mappe colonnes, retourne preview ou message d'erreur
+- `import_excel_confirm(string table, array columnMap, array defaults): array` — insère les données validées depuis `$_SESSION['_import_preview']`
 - `load_defaults(?string key): array`
 - `fetch_legal_form_template_folder(?PDO, string formeJuridique): string` — lit `template_folder` depuis `ref_formes_juridiques`
 - `fetch_formes_juridiques_with_folders(?PDO): array` — toutes les formes avec leur dossier template
@@ -147,6 +156,26 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 ## Assets
 - CSS: `assets/css/app.css` — custom design system (CSS variables, no framework)
 - JS: `assets/js/app.js` — vanilla JS: sidebar toggle, column toggle, table sorting, confirmation dialogs (`data-confirm`), dynamic associate form cloning (`data-associe-template`, `data-add-associe`, `data-remove-associe`), wizard capital distribution
+- JS: `assets/js/table-editor.js` — **création rapide**, **édition inline** (double-clic), **édition en masse** (checkboxes + toolbar)
+
+## Table Editor (Création rapide, Édition inline, Modification en masse)
+- **API** `api.php`: Point d'accès sécurisé (JSON). Actions : `quick_create`, `inline_update`, `bulk_update`. Vérifie auth + CSRF. Whitelist des tables/colonnes autorisées.
+- **JS** `assets/js/table-editor.js`: IIFE globale, 3 modules indépendants.
+- **Quick Create** (`[data-quick-create-btn]` + `[data-modal="quick-create"]`):
+  - Modal overlay avec formulaire → `fetch('api.php')` → insère la ligne via `<template data-row-template>`
+  - Attributs template : `data-cell="col"`, `data-cell-link="page"`, `data-cell-value="id"`, `data-cell-label="text_col"`, `data-cell-actions`
+- **Inline Edit** (`[data-editable="column"]` sur `<td>`):
+  - Double-clic → input → blur/Enter → `api.php` → mise à jour cellule
+  - Escape annule. Permission `*.edit` requise (attribut non rendu si pas de droit)
+- **Bulk Edit** (`[data-bulk]` sur `<table>`):
+  - Checkbox colonne + `<template data-bulk-toolbar>` (floating bottom bar)
+  - "Tout sélectionner" via `[data-bulk-select-all]`
+  - `[data-bulk-edit-btn]` ouvre `[data-modal="bulk-edit"]` → `api.php?action=bulk_update` → rechargement page
+- **Modales réutilisables**:
+  - `includes/quick_create_modal.php` : Définir `$quickCreateTitle`, `$quickCreateTable`, `$quickCreateFields`
+  - `includes/bulk_edit_modal.php` : Définir `$bulkEditTitle`, `$bulkEditTable`, `$bulkEditFields`
+  - Champs : `name`, `label`, `type` (text|select|number|email), `required`, `full`, `options` (indexed ou assoc), `placeholder`
+- **Perms check** : `has_permission('societes.create')` pour le bouton, `has_permission('societes.edit')` pour `data-editable`
 
 ## TemplateAnalyzer (src/analyseur_templates.php)
 - Static class for .docx template analysis and modification

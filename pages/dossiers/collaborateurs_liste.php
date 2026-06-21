@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 $query = search_term();
+$user = current_user();
 
 if (is_post() && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
@@ -46,7 +47,8 @@ if (($pdo ?? null) instanceof PDO) {
         $collaborateurs = $stmt->fetchAll();
     }
 
-    if (($_GET['export'] ?? '') === 'csv') {
+    $exportType = $_GET['export'] ?? '';
+    if ($exportType === 'csv' || $exportType === 'xlsx') {
         $rows = array_map(static function (array $c): array {
             return [
                 $c['id'],
@@ -74,7 +76,7 @@ if (($pdo ?? null) instanceof PDO) {
             ];
         }, $collaborateurs);
 
-        export_csv('collaborateurs.csv', [
+        $headers = [
             'ID',
             'Role',
             'Type',
@@ -92,7 +94,13 @@ if (($pdo ?? null) instanceof PDO) {
             'Email',
             'Adresse',
             'Statut',
-        ], $rows);
+        ];
+
+        if ($exportType === 'csv') {
+            export_csv('collaborateurs.csv', $headers, $rows);
+        } else {
+            export_excel('collaborateurs.xlsx', $headers, $rows);
+        }
     }
 }
 ?>
@@ -103,7 +111,29 @@ if (($pdo ?? null) instanceof PDO) {
             <div class="table-actions">
                 <button class="btn btn-secondary" type="button" data-col-toggle-btn><span class="material-symbols-outlined">view_column</span> Colonnes <span class="col-toggle-count" data-col-count>0/0</span></button>
                 <a class="btn btn-next" href="<?= e(app_url('collaborateur')) ?>"><span class="material-symbols-outlined">person_add</span> Nouveau collaborateur</a>
-                <a class="btn btn-info" href="<?= e(app_url('collaborateurs', ['export' => 'csv', 'q' => $query])) ?>"><span class="material-symbols-outlined">download</span> Exporter CSV</a>
+                <a class="btn btn-info" href="<?= e(app_url('collaborateurs', ['export' => 'csv', 'q' => $query])) ?>"><span class="material-symbols-outlined">download</span> CSV</a>
+                <a class="btn btn-next" href="<?= e(app_url('collaborateurs', ['export' => 'xlsx', 'q' => $query])) ?>"><span class="material-symbols-outlined">table_chart</span> Excel</a>
+                <?php if (has_permission('collaborateurs.import')): ?>
+                <?php
+                    $importTable = 'collaborateurs';
+                    $importPage = 'collaborateurs';
+                    $importLabel = 'collaborateur';
+                    $importColumnMap = [
+                        'Nom complet' => 'nom_complet',
+                        'Fonction' => 'fonction',
+                        'Type' => 'collaborateur_type',
+                        'Code' => 'collaborateur_code',
+                        'ICE' => 'collaborateur_ice',
+                        'Telephone' => 'telephone',
+                        'Email' => 'email',
+                        'Statut' => 'statut',
+                    ];
+                    $importDefaults = [
+                        'created_by' => ($user['id'] ?? 0),
+                    ];
+                    require __DIR__ . '/../../includes/import_excel_section.php';
+                ?>
+                <?php endif; ?>
             </div>
         </div>
         <form method="get" class="stack search-bar">
