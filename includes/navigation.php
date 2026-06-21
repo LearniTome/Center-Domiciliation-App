@@ -164,7 +164,7 @@ $navSections = [
                 <?php if (empty($visibleItems)) { continue; } ?>
                 <?php if ($sectionLabel): ?>
                 <div class="nav-section">
-                    <button class="nav-section-toggle" type="button" data-nav-toggle data-label="<?= e($sectionLabel) ?>">
+                    <button class="nav-section-toggle" type="button" data-nav-toggle data-label="<?= e($sectionLabel) ?>" title="<?= e($sectionLabel) ?>">
                         <span class="material-symbols-outlined section-icon"><?= e($section['icon']) ?></span>
                         <span class="nav-section-label"><?= e($sectionLabel) ?></span>
                         <span class="material-symbols-outlined section-chevron">expand_more</span>
@@ -186,7 +186,7 @@ $navSections = [
                             $isActive = $page === $navKey;
                         }
                     ?>
-                    <a class="<?= $isActive ? 'active' : '' ?>" href="<?= e($href) ?>" data-nav-link>
+                    <a class="<?= $isActive ? 'active' : '' ?>" href="<?= e($href) ?>" data-nav-link title="<?= e($itemLabel) ?>">
                         <span class="material-symbols-outlined"><?= e($itemIcon) ?></span>
                         <span data-nav-label><?= e($itemLabel) ?></span>
                         <?php if ($navKey === 'notifications'): ?>
