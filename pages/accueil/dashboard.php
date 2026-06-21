@@ -5,6 +5,15 @@ declare(strict_types=1);
 $pdo = $pdo ?? null;
 $isConnected = $pdo instanceof PDO;
 
+// Auto-generate system notifications on dashboard (once per session)
+if ($isConnected && empty($_SESSION['_auto_notif_run'])) {
+    $user = current_user();
+    if ($user && (int) ($user['role_id'] ?? 0) === 1) {
+        generate_auto_notifications($pdo, (int) $user['id']);
+    }
+    $_SESSION['_auto_notif_run'] = true;
+}
+
 // --- Stats ---
 $totalSocietes = 0;
 $contratsActifs = 0;

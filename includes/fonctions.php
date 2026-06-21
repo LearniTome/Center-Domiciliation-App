@@ -706,6 +706,236 @@ function log_activity(
     } catch (PDOException) {
         // silently fail – logging must never break the app
     }
+
+    // Auto-create notification for important actions
+    auto_notify_action($pdo, $action, $entity_type, $entity_id, $entity_label, $details);
+}
+
+/**
+ * Automatically creates a notification based on action + entity_type mapping.
+ * Called from log_activity() — no manual calls needed.
+ */
+function auto_notify_action(
+    ?PDO $pdo,
+    string $action,
+    string $entity_type,
+    ?int $entity_id = null,
+    ?string $entity_label = null,
+    ?string $details = null,
+): void {
+    if (!$pdo) return;
+
+    // Only notify for meaningful user actions
+    $skipActions = ['connexion', 'deconnexion', 'export', 'view', 'search', 'ai_suggest'];
+    if (in_array($action, $skipActions, true)) return;
+
+    $map = [
+        'create_societe' => [
+            'target_role_id' => 1,
+            'type' => 'success',
+            'title' => 'Nouvelle société créée',
+            'message' => fn($l) => "La société {$l} a été créée.",
+            'link' => fn($id) => 'index.php?page=societe&id=' . $id,
+        ],
+        'create_associe' => [
+            'target_role_id' => 1,
+            'type' => 'info',
+            'title' => 'Nouvel associé ajouté',
+            'message' => fn($l) => "L'associé {$l} a été ajouté.",
+            'link' => fn($id) => 'index.php?page=societe&id=' . $id,
+        ],
+        'create_contrat' => [
+            'target_role_id' => 1,
+            'type' => 'success',
+            'title' => 'Nouveau contrat créé',
+            'message' => fn($l) => "Un nouveau contrat a été créé pour {$l}.",
+            'link' => fn($id) => 'index.php?page=societe&id=' . $id,
+        ],
+        'create_collaborateur' => [
+            'target_role_id' => 1,
+            'type' => 'info',
+            'title' => 'Nouveau collaborateur',
+            'message' => fn($l) => "Le collaborateur {$l} a été ajouté.",
+            'link' => null,
+        ],
+        'create_dossier' => [
+            'target_role_id' => 1,
+            'type' => 'success',
+            'title' => 'Nouveau dossier créé',
+            'message' => fn($l) => "Le dossier complet de {$l} a été créé.",
+            'link' => fn($id) => 'index.php?page=societe&id=' . $id,
+        ],
+
+        'update_societe' => [
+            'target_role_id' => 1,
+            'type' => 'warning',
+            'title' => 'Société modifiée',
+            'message' => fn($l) => "La société {$l} a été modifiée.",
+            'link' => fn($id) => 'index.php?page=societe&id=' . $id,
+        ],
+        'update_associe' => [
+            'target_role_id' => 1,
+            'type' => 'info',
+            'title' => 'Associé modifié',
+            'message' => fn($l) => "L'associé {$l} a été modifié.",
+            'link' => fn($id) => 'index.php?page=societe&id=' . $id,
+        ],
+        'update_contrat' => [
+            'target_role_id' => 1,
+            'type' => 'warning',
+            'title' => 'Contrat modifié',
+            'message' => fn($l) => "Le contrat de {$l} a été modifié.",
+            'link' => fn($id) => 'index.php?page=societe&id=' . $id,
+        ],
+        'update_collaborateur' => [
+            'target_role_id' => 1,
+            'type' => 'info',
+            'title' => 'Collaborateur modifié',
+            'message' => fn($l) => "Le collaborateur {$l} a été modifié.",
+            'link' => null,
+        ],
+        'update_dossier' => [
+            'target_role_id' => 1,
+            'type' => 'warning',
+            'title' => 'Dossier modifié',
+            'message' => fn($l) => "Le dossier de {$l} a été modifié.",
+            'link' => fn($id) => 'index.php?page=societe&id=' . $id,
+        ],
+        'update_cessions' => [
+            'target_role_id' => 1,
+            'type' => 'info',
+            'title' => 'Cession de parts modifiée',
+            'message' => fn($l) => "La cession de parts pour {$l} a été modifiée.",
+            'link' => fn($id) => 'index.php?page=cession_dossier&id=' . $id,
+        ],
+
+        'delete_societe' => [
+            'target_role_id' => 1,
+            'type' => 'danger',
+            'title' => 'Société supprimée',
+            'message' => fn($l) => "La société {$l} a été supprimée.",
+            'link' => null,
+        ],
+        'delete_associe' => [
+            'target_role_id' => 1,
+            'type' => 'danger',
+            'title' => 'Associé supprimé',
+            'message' => fn($l) => "L'associé {$l} a été supprimé.",
+            'link' => null,
+        ],
+        'delete_contrat' => [
+            'target_role_id' => 1,
+            'type' => 'danger',
+            'title' => 'Contrat supprimé',
+            'message' => fn($l) => "Le contrat de {$l} a été supprimé.",
+            'link' => null,
+        ],
+        'delete_collaborateur' => [
+            'target_role_id' => 1,
+            'type' => 'danger',
+            'title' => 'Collaborateur supprimé',
+            'message' => fn($l) => "Le collaborateur {$l} a été supprimé.",
+            'link' => null,
+        ],
+        'delete_dossier' => [
+            'target_role_id' => 1,
+            'type' => 'danger',
+            'title' => 'Dossier supprimé',
+            'message' => fn($l) => "Le dossier de {$l} a été supprimé.",
+            'link' => null,
+        ],
+        'delete_cessions' => [
+            'target_role_id' => 1,
+            'type' => 'danger',
+            'title' => 'Cession de parts supprimée',
+            'message' => fn($l) => "La cession de parts pour {$l} a été supprimée.",
+            'link' => null,
+        ],
+
+        'generate_document' => [
+            'target_role_id' => 1,
+            'type' => 'success',
+            'title' => 'Documents générés',
+            'message' => fn($l) => "Des documents ont été générés pour {$l}.",
+            'link' => fn($id) => 'index.php?page=societe&id=' . $id,
+        ],
+        'validate_document' => [
+            'target_role_id' => 1,
+            'type' => 'success',
+            'title' => 'Document validé',
+            'message' => fn($l) => "Le document {$l} a été validé.",
+            'link' => null,
+        ],
+        'upload_document' => [
+            'target_role_id' => 1,
+            'type' => 'info',
+            'title' => 'Document uploadé',
+            'message' => fn($l) => "Le document {$l} a été uploadé.",
+            'link' => null,
+        ],
+        'rename_variable' => [
+            'target_role_id' => 1,
+            'type' => 'info',
+            'title' => 'Variable renommée',
+            'message' => fn($l) => "La variable {$l} a été renommée dans les templates.",
+            'link' => null,
+        ],
+        'bulk_rename_variable' => [
+            'target_role_id' => 1,
+            'type' => 'warning',
+            'title' => 'Renommage groupé de variables',
+            'message' => fn($l) => $l ? "Variables renommées : {$l}" : 'Plusieurs variables ont été renommées.',
+            'link' => null,
+        ],
+        'bulk_delete_variable' => [
+            'target_role_id' => 1,
+            'type' => 'danger',
+            'title' => 'Suppression groupée de variables',
+            'message' => fn($l) => $l ? "Variables supprimées : {$l}" : 'Plusieurs variables ont été supprimées.',
+            'link' => null,
+        ],
+    ];
+
+    $key = $action . '_' . $entity_type;
+    $config = $map[$key] ?? null;
+
+    if (!$config) return;
+
+    $user = current_user();
+    $label = $entity_label ?? ($entity_id ? '#' . $entity_id : '');
+    $link = is_callable($config['link']) && $entity_id ? $config['link']($entity_id) : $config['link'];
+    $message = is_callable($config['message']) ? $config['message']($label) : $config['message'];
+
+    // Avoid duplicate notifications for the same entity in the last hour
+    try {
+        $dupCheck = $pdo->prepare("
+            SELECT COUNT(*) FROM notifications
+            WHERE entity_type = :et AND entity_id = :eid
+              AND title = :title
+              AND created_at >= DATE_SUB(NOW(), INTERVAL 1 HOUR)
+        ");
+        $dupCheck->execute([
+            'et' => $entity_type,
+            'eid' => $entity_id,
+            'title' => $config['title'],
+        ]);
+        if ((int) $dupCheck->fetchColumn() > 0) return;
+    } catch (PDOException) {
+        return;
+    }
+
+    create_notification($pdo, [
+        'target_role_id' => $config['target_role_id'] ?? null,
+        'target_type' => 'interne',
+        'type' => $config['type'] ?? 'info',
+        'title' => $config['title'],
+        'message' => $message,
+        'link' => $link,
+        'entity_type' => $entity_type,
+        'entity_id' => $entity_id,
+        'is_global' => 0,
+        'created_by' => $user['id'] ?? null,
+    ]);
 }
 
 // ──────────────────────────────────────────────
