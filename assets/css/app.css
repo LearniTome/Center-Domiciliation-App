@@ -3232,7 +3232,9 @@ tr[data-coverage], .row-mapped {
 @media print {
     .sidebar, .page-header, .pv-actions, .footer-actions,
     .wizard-steps, .section-header, .step-4-controls,
-    .card, nav, header, .shell > nav { display: none !important; }
+    nav, header, .shell > nav { display: none !important; }
+    .card:not(.pv-ago-wizard) { display: none !important; }
+    .pv-ago-wizard { display: block !important; border: none !important; box-shadow: none !important; padding: 0 !important; background: transparent !important; }
     .shell { display: block !important; }
     .shell-body { display: block !important; height: auto !important; overflow: visible !important; }
     .main { overflow: visible !important; height: auto !important; padding: 0 !important; }
