@@ -1389,7 +1389,11 @@ td.col-pdf .pdf-pending {
 .pv-ago-wizard .field { gap: 3px; }
 .pv-ago-wizard .field > span { font-size: 0.7rem; }
 .pv-ago-wizard .form-grid { gap: 8px; }
-.pv-ago-wizard .wizard-info { margin: 12px 0 4px; font-size: 0.9rem; color: var(--text-secondary); }
+.pv-ago-wizard .wizard-info {
+    margin: 12px 0 4px; font-size: 1.1rem; font-weight: 700;
+    color: var(--text); padding: 8px 12px; background: var(--bg-secondary);
+    border-radius: 6px; border-left: 3px solid var(--primary);
+}
 .pv-ago-wizard fieldset.card,
 .pv-ago-wizard .card-box { padding: 16px; margin-bottom: 16px; }
 .pv-ago-wizard legend { font-weight: 600; font-size: 0.9rem; padding: 0 6px; }

@@ -183,15 +183,6 @@ if ($step === 5):
     $generatedFiles = $wizard['generated_files'] ?? [];
 ?>
 <div class="stack">
-    <div class="section-header">
-        <h2>Etape 5 — Generation du PV AGO</h2>
-        <?php if ($saved): ?>
-        <a class="btn btn-secondary" href="<?= e(app_url('pvag', ['id' => $wizard['pv_ago_id']])) ?>">
-            <span class="material-symbols-outlined">visibility</span> Voir le dossier
-        </a>
-        <?php endif; ?>
-    </div>
-
     <div class="two-step-flow">
         <div class="step-card <?= $saved ? 'done' : 'active' ?>">
             <div class="step-card-header">
@@ -286,6 +277,13 @@ if ($step === 5):
         </button>
         <?php endif; ?>
     </form>
+    <?php if ($saved): ?>
+    <div style="display:flex;justify-content:flex-end;margin-top:8px">
+        <a class="btn btn-secondary" href="<?= e(app_url('pvag', ['id' => $wizard['pv_ago_id']])) ?>">
+            <span class="material-symbols-outlined">visibility</span> Voir le dossier
+        </a>
+    </div>
+    <?php endif; ?>
 </div>
 
 <script>

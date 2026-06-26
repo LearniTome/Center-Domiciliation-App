@@ -34,10 +34,6 @@ if ($step === 2):
     $affectationOption = $wizard['affectation_option'] ?? 'profit_distribution';
 ?>
 <div class="stack">
-    <div class="section-header">
-        <h2>Donnees financieres</h2>
-    </div>
-
     <form method="post" class="form" id="finances-form">
         <?= csrf_input() ?>
 

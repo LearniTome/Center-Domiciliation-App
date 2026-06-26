@@ -52,10 +52,6 @@ if ($step === 1):
     $showSocieteSelector = !$isNew && !$selectedSociete;
 ?>
 <div class="stack">
-    <div class="section-header">
-        <h2>Assemblee et societe</h2>
-    </div>
-
     <form method="post" class="form">
         <?= csrf_input() ?>
 

@@ -177,10 +177,6 @@ if ($step === 3):
     }
 ?>
 <div class="stack">
-    <div class="section-header">
-        <h2>Resolutions et calculs</h2>
-    </div>
-
     <div class="card card-box" style="background:var(--bg-secondary)">
         <h4 style="margin:0 0 8px">Recapitulatif des calculs</h4>
         <div class="form-grid cols-3" style="font-size:0.85rem">

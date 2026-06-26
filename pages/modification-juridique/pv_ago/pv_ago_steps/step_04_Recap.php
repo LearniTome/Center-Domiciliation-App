@@ -25,10 +25,6 @@ if ($step === 4):
     $reportFinal = ($calc['report_nouveau'] >= 0 ? '' : '-') . $rsFmt(abs($calc['report_nouveau'])) . ' DH';
 ?>
 <div class="stack">
-    <div class="section-header">
-        <h2>Recapitulatif du PV AGO</h2>
-    </div>
-
     <div class="step-4-controls table-actions" style="margin-bottom:12px">
         <button type="button" class="btn btn-info" onclick="window.print()">
             <span class="material-symbols-outlined">print</span> Imprimer
