@@ -45,6 +45,9 @@ if ($step === 4):
         <h4>Resultat et affectation</h4>
         <div class="info-grid">
             <div><span>Resultat net</span><strong class="<?= $calc['is_benefice'] ? '' : 'text-danger' ?>"><?= ($calc['is_benefice'] ? '' : '-') ?><?= $rsFmt(abs($calc['resultat_net'])) ?> DH</strong></div>
+            <?php if ($calc['report_debiteur'] > 0): ?>
+            <div><span>Report a nouveau debiteur anterieur</span><strong class="text-danger">-<?= $rsFmt($calc['report_debiteur']) ?> DH</strong></div>
+            <?php endif; ?>
             <div><span>Affectation</span><strong><?= $calc['affectation'] === 'profit_distribution' ? 'Distribution de dividendes' : ($calc['affectation'] === 'loss_carryforward' ? 'Report a nouveau' : 'Imputation sur reserves') ?></strong></div>
             <?php if ($calc['RL_dotation'] > 0): ?>
             <div><span>Dotation reserve legale</span><strong><?= $rsFmt($calc['RL_dotation']) ?> DH</strong></div>

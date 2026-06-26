@@ -33,7 +33,7 @@ function pv_ago_calculs(array $w, array $soc): array
             $reportNv = $baseRL - $RLDotation - $reserveStatutaire - $reserveFacultative;
         }
     } else {
-        $reportNv = $affectation === 'loss_carryforward' ? -abs($resultatNet) : 0;
+        $reportNv = $affectation === 'loss_carryforward' ? -(abs($resultatNet) + $reportDebiteur) : -abs($resultatNet);
     }
 
     $rsFmt = fn($v) => number_format($v, 2, ',', ' ');
@@ -80,7 +80,16 @@ function pv_ago_calculs(array $w, array $soc): array
         $affectContent .= "Report a nouveau crediteur (solde) : {$rsFmt(max(0, $reportNv))} DH";
     } else {
         if ($affectation === 'loss_carryforward') {
-            $affectContent .= "L'Assemblee Generale decide d'affecter l'integralite de la perte nette de l'exercice, s'elevant a {$rsFmt(abs($resultatNet))} DH, au compte Report a nouveau debiteur.\n\nLe solde cumule de ce compte sera apure sur les benefices des exercices ulterieurs.";
+            $affectContent .= "Perte nette de l'exercice : {$rsFmt(abs($resultatNet))} DH\n";
+            if ($reportDebiteur > 0) {
+                $affectContent .= "Report a nouveau debiteur anterieur : {$rsFmt($reportDebiteur)} DH\n";
+                $affectContent .= "Report a nouveau debiteur cumule : {$rsFmt(abs($resultatNet) + $reportDebiteur)} DH\n\n";
+            }
+            $affectContent .= "L'Assemblee Generale decide d'affecter l'integralite de la perte";
+            if ($reportDebiteur > 0) {
+                $affectContent .= " nette de l'exercice ainsi que le solde debiteur anterieur";
+            }
+            $affectContent .= " au compte Report a nouveau debiteur.\n\nLe solde cumule de ce compte sera apure sur les benefices des exercices ulterieurs.";
         } else {
             $affectContent .= "L'Assemblee Generale decide d'absorber la perte nette de l'exercice, s'elevant a {$rsFmt(abs($resultatNet))} DH, par imputation directe sur les reserves facultatives a concurrence de {$rsFmt($pertePrelevement)} DH.";
         }
