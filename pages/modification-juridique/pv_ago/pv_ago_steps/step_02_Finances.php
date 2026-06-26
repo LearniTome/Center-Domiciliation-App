@@ -41,8 +41,8 @@ if ($step === 2):
     <form method="post" class="form" id="finances-form">
         <?= csrf_input() ?>
 
-        <fieldset class="card" style="padding:16px;margin-bottom:16px">
-            <legend style="font-weight:600;font-size:0.9rem;padding:0 6px">Resultat de l'exercice</legend>
+        <fieldset class="card card-box">
+            <legend>Resultat de l'exercice</legend>
             <div class="form-grid cols-2">
                 <div class="field">
                     <span>Type de resultat</span>
@@ -59,15 +59,15 @@ if ($step === 2):
         </fieldset>
 
         <div id="benefice-fields" style="display:<?= $isBenefice ? 'block' : 'none' ?>">
-            <fieldset class="card" style="padding:16px;margin-bottom:16px">
-                <legend style="font-weight:600;font-size:0.9rem;padding:0 6px">Reserves existantes (avant affectation)</legend>
+            <fieldset class="card card-box">
+                <legend>Reserves existantes (avant affectation)</legend>
                 <div class="form-grid cols-2">
                     <div class="field">
                         <span>Report a nouveau debiteur anterieur (DH)</span>
                         <input type="text" name="report_a_nouveau_debiteur" value="<?= e($wizard['report_a_nouveau_debiteur'] ?? '0') ?>">
                     </div>
                     <div class="field">
-                        <span>Reserve legale existante (DH) <small style="color:var(--text-muted)">plafond: <?= number_format($plafondRL, 2, ',', ' ') ?> DH</small></span>
+                        <span>Reserve legale existante (DH) <span class="help-text">plafond: <?= number_format($plafondRL, 2, ',', ' ') ?> DH</span></span>
                         <input type="text" name="reserve_legale_existante" value="<?= e($wizard['reserve_legale_existante'] ?? '0') ?>">
                     </div>
                     <div class="field">
@@ -81,8 +81,8 @@ if ($step === 2):
                 </div>
             </fieldset>
 
-            <fieldset class="card" style="padding:16px;margin-bottom:16px">
-                <legend style="font-weight:600;font-size:0.9rem;padding:0 6px">Affectation du benefice</legend>
+            <fieldset class="card card-box">
+                <legend>Affectation du benefice</legend>
                 <div class="field" style="margin-bottom:12px">
                     <span>Option d'affectation</span>
                     <select name="affectation_option" id="affectation-benefice" onchange="toggleAffectation()">
@@ -92,8 +92,8 @@ if ($step === 2):
                 </div>
                 <div class="form-grid cols-2">
                     <div class="field">
-                        <span>Dotation reserve legale (5%) <small style="color:var(--text-muted)">auto: <?= number_format($RLDotation, 2, ',', ' ') ?> DH</small></span>
-                        <input type="text" name="reserve_legale_dotation_display" value="<?= number_format($RLDotation, 2, ',', ' ') ?>" disabled style="background:#f0f0f0">
+                        <span>Dotation reserve legale (5%) <span class="help-text">auto: <?= number_format($RLDotation, 2, ',', ' ') ?> DH</span></span>
+                        <input type="text" name="reserve_legale_dotation_display" value="<?= number_format($RLDotation, 2, ',', ' ') ?>" disabled>
                     </div>
                     <div class="field">
                         <span>Dotation reserve statutaire (DH)</span>
@@ -112,8 +112,8 @@ if ($step === 2):
         </div>
 
         <div id="perte-fields" style="display:<?= !$isBenefice ? 'block' : 'none' ?>">
-            <fieldset class="card" style="padding:16px;margin-bottom:16px">
-                <legend style="font-weight:600;font-size:0.9rem;padding:0 6px">Traitement de la perte</legend>
+            <fieldset class="card card-box">
+                <legend>Traitement de la perte</legend>
                 <div class="field" style="margin-bottom:12px">
                     <span>Option d'affectation de la perte</span>
                     <select name="affectation_option" id="affectation-perte" onchange="toggleAffectation()" disabled>

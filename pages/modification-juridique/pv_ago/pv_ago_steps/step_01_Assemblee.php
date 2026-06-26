@@ -51,8 +51,8 @@ if ($step === 1):
         <?= csrf_input() ?>
 
         <?php if ($isNew): ?>
-        <fieldset class="card" style="padding:16px;margin-bottom:16px">
-            <legend style="font-weight:600;font-size:0.9rem;padding:0 6px">Nouvelle societe</legend>
+        <fieldset class="card card-box">
+            <legend>Nouvelle societe</legend>
             <div class="form-grid cols-2">
                 <?php foreach ([
                     'societe_raison_sociale' => ['Raison sociale', 'text', true],
@@ -95,19 +95,17 @@ if ($step === 1):
             </div>
         </fieldset>
         <?php elseif ($selectedSociete): ?>
-        <div class="card" style="padding:12px;margin-bottom:16px;background:var(--bg-secondary)">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-                <div>
-                    <strong><?= e($selectedSociete['societe_raison_sociale']) ?></strong>
-                    <span style="color:var(--text-secondary);font-size:0.85rem;margin-left:8px"><?= e($selectedSociete['societe_forme_juridique']) ?></span>
-                </div>
-                <a class="btn btn-back" href="<?= e(app_url('pv_ago', ['step' => 0])) ?>"><span class="material-symbols-outlined">swap_horiz</span> Changer</a>
+        <div class="soc-info">
+            <div>
+                <strong><?= e($selectedSociete['societe_raison_sociale']) ?></strong>
+                <span class="soc-meta"><?= e($selectedSociete['societe_forme_juridique']) ?></span>
             </div>
+            <a class="btn btn-back" href="<?= e(app_url('pv_ago', ['step' => 0])) ?>"><span class="material-symbols-outlined">swap_horiz</span> Changer</a>
         </div>
         <?php endif; ?>
 
-        <fieldset class="card" style="padding:16px;margin-bottom:16px">
-            <legend style="font-weight:600;font-size:0.9rem;padding:0 6px">Assemblee</legend>
+        <fieldset class="card card-box">
+            <legend>Assemblee</legend>
             <div class="form-grid cols-2">
                 <div class="field">
                     <span>Date de l'assemblee</span>
@@ -117,7 +115,7 @@ if ($step === 1):
                     <span>Heure</span>
                     <input type="text" name="heure_ago" value="<?= e($wizard['heure_ago'] ?? '10:00') ?>" placeholder="10:00">
                 </div>
-                <div class="field" style="grid-column:1/-1">
+                <div class="field full-width">
                     <span>Lieu</span>
                     <input type="text" name="lieu_ago" value="<?= e($wizard['lieu_ago'] ?? 'au siege social') ?>">
                 </div>

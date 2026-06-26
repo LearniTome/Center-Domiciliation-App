@@ -201,11 +201,11 @@ if ($step === 5):
                     <p class="help-text">Sauvegarder les donnees en base de donnees.</p>
                 </div>
                 <?php if ($saved): ?>
-                <span class="step-badge" style="color:var(--success)">Fait</span>
+                <span class="step-badge text-success">Fait</span>
                 <?php endif; ?>
             </div>
             <?php if (!$saved): ?>
-            <form method="post" style="margin-top:8px">
+            <form method="post" class="inline-save">
                 <?= csrf_input() ?>
                 <input type="hidden" name="nav_action" value="save">
                 <button class="btn btn-next" type="submit">
@@ -224,7 +224,7 @@ if ($step === 5):
                 </div>
             </div>
             <?php if ($saved && empty($generatedFiles)): ?>
-            <form method="post" style="margin-top:8px">
+            <form method="post" class="inline-save">
                 <?= csrf_input() ?>
                 <input type="hidden" name="nav_action" value="generate">
                 <button class="btn btn-next" type="submit" id="btn-generate-pvago">
@@ -236,9 +236,9 @@ if ($step === 5):
     </div>
 
     <?php if (!empty($generatedFiles)): ?>
-    <div class="card" style="padding:16px;margin-top:16px">
+    <div class="card card-box" style="margin-top:16px">
         <h4>Document genere</h4>
-        <div class="table-scroll" style="margin-top:8px">
+        <div class="doc-grid">
             <table>
                 <thead>
                     <tr>

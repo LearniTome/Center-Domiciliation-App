@@ -172,7 +172,7 @@ if ($step === 3):
         <h2>Resolutions et calculs</h2>
     </div>
 
-    <div class="card" style="padding:16px;margin-bottom:16px;background:var(--bg-secondary)">
+    <div class="card card-box" style="background:var(--bg-secondary)">
         <h4 style="margin:0 0 8px">Recapitulatif des calculs</h4>
         <div class="form-grid cols-3" style="font-size:0.85rem">
             <div class="calc-line">Capital social : <strong><?= $rsFmt($calc['capital']) ?> DH</strong></div>
@@ -209,7 +209,7 @@ if ($step === 3):
         <div id="resolutions-container">
             <?php foreach ($resolutions as $i => $r): ?>
             <div class="res-block" data-idx="<?= $i ?>">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <div class="res-block-header">
                     <h4>Resolution <?= $i + 1 ?></h4>
                     <button type="button" class="btn-icon danger" onclick="this.closest('.res-block').remove()" title="Supprimer"><span class="material-symbols-outlined">delete</span></button>
                 </div>
@@ -219,7 +219,7 @@ if ($step === 3):
                 </div>
                 <div class="field">
                     <span>Contenu</span>
-                    <textarea name="res_content[]" rows="6" style="font-family:Georgia,serif;font-size:0.85rem"><?= e($r['content'] ?? '') ?></textarea>
+                    <textarea name="res_content[]" rows="6" class="res-title-input"><?= e($r['content'] ?? '') ?></textarea>
                 </div>
             </div>
             <?php endforeach; ?>
@@ -231,7 +231,7 @@ if ($step === 3):
             <button type="submit" name="nav_action" value="reset" class="btn btn-cancel"><span class="material-symbols-outlined">refresh</span> Reinitialiser</button>
         </div>
 
-        <hr style="margin:16px 0">
+        <hr class="divider">
 
         <div class="table-actions">
             <button type="submit" name="nav_action" value="back" class="btn btn-back"><span class="material-symbols-outlined">arrow_back</span> Retour</button>
@@ -246,11 +246,11 @@ function addResolution() {
     var idx = container.children.length;
     var div = document.createElement('div');
     div.className = 'res-block';
-    div.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
+    div.innerHTML = '<div class="res-block-header">'
         + '<h4>Resolution ' + (idx + 1) + '</h4>'
         + '<button type="button" class="btn-icon danger" onclick="this.closest(\'.res-block\').remove()" title="Supprimer"><span class="material-symbols-outlined">delete</span></button></div>'
         + '<div class="field" style="margin-bottom:6px"><span>Titre</span><input type="text" name="res_title[]" value=""></div>'
-        + '<div class="field"><span>Contenu</span><textarea name="res_content[]" rows="6" style="font-family:Georgia,serif;font-size:0.85rem"></textarea></div>';
+        + '<div class="field"><span>Contenu</span><textarea name="res_content[]" rows="6" class="res-title-input"></textarea></div>';
     container.appendChild(div);
 }
 </script>

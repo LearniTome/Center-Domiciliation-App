@@ -534,6 +534,8 @@ article.card + article.card {
     font-weight: 500;
     color: var(--text);
 }
+.stat .text-success { color: var(--success); }
+.stat .text-danger { color: var(--danger); }
 
 .stats.small .stat { padding: 0.4rem 0.5rem; display:flex;flex-direction:column;justify-content:space-between; }
 .stats.small .stat strong { font-size: 0.9rem; margin-top: auto;padding-top:2px; }
@@ -1326,6 +1328,91 @@ td.col-pdf .pdf-pending {
     color: var(--text);
     font-size: 0.9rem;
 }
+.info-grid .text-success { color: var(--success); }
+.info-grid .text-danger { color: var(--danger); }
+
+.resolution-card {
+    background: var(--panel-strong);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 0.85rem;
+    margin-bottom: 0.5rem;
+}
+.resolution-card:last-child { margin-bottom: 0; }
+.resolution-card-title {
+    color: var(--primary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+.resolution-card-body {
+    margin: 0;
+    white-space: pre-wrap;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+
+.calc-detail-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 0.9rem;
+    line-height: 2;
+    gap: 1rem;
+}
+.calc-detail-label {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    flex-shrink: 0;
+}
+.calc-detail-value {
+    font-weight: 600;
+    text-align: right;
+    white-space: nowrap;
+}
+.calc-detail-total {
+    border-top: 1px solid var(--line);
+    padding-top: 0.35rem;
+    margin-top: 0.35rem;
+}
+.calc-detail-label .help-text {
+    color: #ff6b35;
+    font-weight: 700;
+}
+
+/* Wizard PV AGO */
+.pv-ago-wizard input,
+.pv-ago-wizard select,
+.pv-ago-wizard textarea { padding: 6px 10px; font-size: 0.82rem; }
+.pv-ago-wizard .field { gap: 3px; }
+.pv-ago-wizard .field > span { font-size: 0.7rem; }
+.pv-ago-wizard .form-grid { gap: 8px; }
+.pv-ago-wizard .wizard-info { margin: 12px 0 4px; font-size: 0.9rem; color: var(--text-secondary); }
+.pv-ago-wizard fieldset.card,
+.pv-ago-wizard .card-box { padding: 16px; margin-bottom: 16px; }
+.pv-ago-wizard legend { font-weight: 600; font-size: 0.9rem; padding: 0 6px; }
+.pv-ago-wizard .soc-info { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--bg-secondary); border-radius: var(--radius); margin-bottom: 16px; }
+.pv-ago-wizard .soc-info strong { font-size: 0.95rem; }
+.pv-ago-wizard .soc-info .soc-meta { color: var(--text-secondary); font-size: 0.85rem; margin-left: 8px; }
+.pv-ago-wizard .inline-save { margin-top: 8px; }
+.pv-ago-wizard .resolutions-preview { white-space: pre-wrap; font-family: Georgia, serif; line-height: 1.6; padding: 20px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); margin-top: 12px; }
+.pv-ago-wizard .res-block { background: var(--bg-secondary); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; }
+.pv-ago-wizard .res-block h4 { margin: 0 0 6px; font-size: 0.9rem; }
+.pv-ago-wizard .res-block-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.pv-ago-wizard .recap-card { padding: 16px; margin-bottom: 16px; }
+.pv-ago-wizard .recap-card h4 { margin: 0 0 8px; font-size: 0.95rem; }
+.pv-ago-wizard .recap-resolution { margin-bottom: 12px; padding: 10px; background: var(--bg-secondary); border-radius: var(--radius); }
+.pv-ago-wizard .recap-resolution strong { display: block; margin-bottom: 4px; }
+.pv-ago-wizard .recap-resolution p { margin: 4px 0 0; white-space: pre-wrap; font-size: 0.85rem; line-height: 1.5; }
+.pv-ago-wizard .res-title-input { font-family: Georgia, serif; font-size: 0.85rem; }
+.pv-ago-wizard .two-step-flow { margin-top: 0; }
+.pv-ago-wizard .doc-grid { margin-top: 8px; overflow-x: auto; }
+.pv-ago-wizard .calc-line { padding: 2px 0; font-size: 0.85rem; }
+.pv-ago-wizard .calc-total { font-weight: 600; border-top: 1px solid var(--line); padding-top: 6px; margin-top: 6px; }
+.pv-ago-wizard .divider { margin: 16px 0; border: none; border-top: 1px solid var(--line); }
+.pv-ago-wizard .full-width { grid-column: 1 / -1; }
 
 .hero-card {
     background: linear-gradient(135deg, #191c24, #1f2430);
@@ -2550,6 +2637,14 @@ td.col-pdf .pdf-pending {
     margin-top: 12px;
 }
 
+/* Pagination */
+.pagination {
+    padding: 12px;
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
 /* Empty table cell */
 .table-empty-cell {
     color: var(--text-secondary);
@@ -2560,8 +2655,6 @@ td.col-pdf .pdf-pending {
 .accordion-table-empty {
     margin: 0;
 }
-    color: var(--text-secondary);
-    font-style: italic;
 }
 
 /* Template picker (editor home) */

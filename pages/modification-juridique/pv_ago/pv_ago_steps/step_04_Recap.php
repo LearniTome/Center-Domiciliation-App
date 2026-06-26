@@ -30,76 +30,40 @@ if ($step === 4):
         <h2>Recapitulatif du PV AGO</h2>
     </div>
 
-    <div class="card" style="padding:16px;margin-bottom:16px">
+    <div class="card recap-card">
         <h4>Informations de la societe</h4>
         <div class="info-grid">
-            <div class="info-item">
-                <span class="info-label">Raison sociale</span>
-                <span class="info-value"><?= e($socForCalc['societe_raison_sociale'] ?? '-') ?></span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Forme juridique</span>
-                <span class="info-value"><?= e($socForCalc['societe_forme_juridique'] ?? '-') ?></span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Capital social</span>
-                <span class="info-value"><?= $rsFmt($calc['capital']) ?> DH</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Date AGO</span>
-                <span class="info-value"><?php if (!empty($wizard['date_ago'])): $dt = date_create($wizard['date_ago']); echo $dt ? $dt->format('d/m/Y') : e($wizard['date_ago']); endif; ?></span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Exercice clos le</span>
-                <span class="info-value"><?= e($wizard['exercice_clos'] ?? '-') ?></span>
-            </div>
+            <div><span>Raison sociale</span><strong><?= e($socForCalc['societe_raison_sociale'] ?? '-') ?></strong></div>
+            <div><span>Forme juridique</span><strong><?= e($socForCalc['societe_forme_juridique'] ?? '-') ?></strong></div>
+            <div><span>Capital social</span><strong><?= $rsFmt($calc['capital']) ?> DH</strong></div>
+            <div><span>Date AGO</span><strong><?php if (!empty($wizard['date_ago'])): $dt = date_create($wizard['date_ago']); echo $dt ? $dt->format('d/m/Y') : e($wizard['date_ago']); endif; ?></strong></div>
+            <div><span>Exercice clos le</span><strong><?= e($wizard['exercice_clos'] ?? '-') ?></strong></div>
         </div>
     </div>
 
-    <div class="card" style="padding:16px;margin-bottom:16px">
+    <div class="card recap-card">
         <h4>Resultat et affectation</h4>
         <div class="info-grid">
-            <div class="info-item">
-                <span class="info-label">Resultat net</span>
-                <span class="info-value <?= $calc['is_benefice'] ? '' : 'text-danger' ?>"><?= $rsFmt($calc['resultat_net']) ?> DH</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Affectation</span>
-                <span class="info-value"><?= $calc['affectation'] === 'profit_distribution' ? 'Distribution de dividendes' : ($calc['affectation'] === 'loss_carryforward' ? 'Report a nouveau' : 'Imputation sur reserves') ?></span>
-            </div>
+            <div><span>Resultat net</span><strong class="<?= $calc['is_benefice'] ? '' : 'text-danger' ?>"><?= $rsFmt($calc['resultat_net']) ?> DH</strong></div>
+            <div><span>Affectation</span><strong><?= $calc['affectation'] === 'profit_distribution' ? 'Distribution de dividendes' : ($calc['affectation'] === 'loss_carryforward' ? 'Report a nouveau' : 'Imputation sur reserves') ?></strong></div>
             <?php if ($calc['RL_dotation'] > 0): ?>
-            <div class="info-item">
-                <span class="info-label">Dotation reserve legale</span>
-                <span class="info-value"><?= $rsFmt($calc['RL_dotation']) ?> DH</span>
-            </div>
+            <div><span>Dotation reserve legale</span><strong><?= $rsFmt($calc['RL_dotation']) ?> DH</strong></div>
             <?php endif; ?>
             <?php if ($calc['dividende_brut'] > 0): ?>
-            <div class="info-item">
-                <span class="info-label">Dividende brut</span>
-                <span class="info-value"><?= $rsFmt($calc['dividende_brut']) ?> DH</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">TPA (10%)</span>
-                <span class="info-value"><?= $rsFmt($calc['tpa']) ?> DH</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Dividende net</span>
-                <span class="info-value"><?= $rsFmt($calc['dividende_net']) ?> DH</span>
-            </div>
+            <div><span>Dividende brut</span><strong><?= $rsFmt($calc['dividende_brut']) ?> DH</strong></div>
+            <div><span>TPA (10%)</span><strong><?= $rsFmt($calc['tpa']) ?> DH</strong></div>
+            <div><span>Dividende net</span><strong><?= $rsFmt($calc['dividende_net']) ?> DH</strong></div>
             <?php endif; ?>
-            <div class="info-item">
-                <span class="info-label">Report a nouveau final</span>
-                <span class="info-value"><?= $rsFmt(max(0, $calc['report_nouveau'])) ?> DH</span>
-            </div>
+            <div><span>Report a nouveau final</span><strong><?= $rsFmt(max(0, $calc['report_nouveau'])) ?> DH</strong></div>
         </div>
     </div>
 
-    <div class="card" style="padding:16px;margin-bottom:16px">
+    <div class="card recap-card">
         <h4>Resolutions (<?= count($resolutions) ?>)</h4>
         <?php foreach ($resolutions as $i => $r): ?>
-        <div style="margin-bottom:12px;padding:10px;background:var(--bg-secondary);border-radius:6px">
+        <div class="recap-resolution">
             <strong>Resolution <?= $i + 1 ?> : <?= e($r['title'] ?? '') ?></strong>
-            <p style="margin:4px 0 0;white-space:pre-wrap;font-size:0.85rem;line-height:1.5"><?= e(mb_substr($r['content'] ?? '', 0, 300)) ?><?= mb_strlen($r['content'] ?? '') > 300 ? '...' : '' ?></p>
+            <p><?= e(mb_substr($r['content'] ?? '', 0, 300)) ?><?= mb_strlen($r['content'] ?? '') > 300 ? '...' : '' ?></p>
         </div>
         <?php endforeach; ?>
     </div>
