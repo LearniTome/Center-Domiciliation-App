@@ -67,7 +67,11 @@ if ($step === 1):
                     'societe_tribunal' => ['Tribunal', 'select'],
                     'societe_email' => ['Email', 'email'],
                     'societe_telephone' => ['Telephone', 'tel'],
-                ] as $field => [$label, $type, $required]): ?>
+                ] as $field => $def):
+                    $label = $def[0] ?? '';
+                    $type = $def[1] ?? 'text';
+                    $required = $def[2] ?? null;
+                ?>
                 <div class="field">
                     <span><?= e($label) ?></span>
                     <?php if ($type === 'select'): ?>

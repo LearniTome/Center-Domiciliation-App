@@ -1,0 +1,1 @@
+ALTER TABLE pv_ago MODIFY exercice_clos VARCHAR(10) DEFAULT NULL;

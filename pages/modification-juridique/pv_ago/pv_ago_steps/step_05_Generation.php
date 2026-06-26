@@ -48,7 +48,8 @@ if (is_post() && $step === 5) {
                     'activites' => $soc['societe_activites_statuts'] ?? '',
                     'created_by' => ($user = current_user()) ? (int) $user['id'] : null,
                 ]);
-                $wizard['societe_id'] = (int) $pdo->lastInsertId();
+                $newSocId = (int) $pdo->lastInsertId();
+                $wizard['societe_id'] = $newSocId;
             }
 
             $societeId = (int) $wizard['societe_id'];
@@ -101,6 +102,7 @@ if (is_post() && $step === 5) {
             log_activity($pdo, 'create', 'pv_ago', $pvAgoId);
         } catch (Throwable $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
+            if ($wizard['mode'] === 'nouvelle') $wizard['societe_id'] = 0;
             set_flash('error', 'Erreur lors de l\'enregistrement: ' . $e->getMessage());
             redirect_to('pv_ago', ['step' => 5]);
         }
