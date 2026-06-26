@@ -27,6 +27,8 @@ if (($pdo ?? null) instanceof PDO) {
     $adressesAll = fetch_adresses_all($pdo);
 }
 
+$societeDefaults = load_defaults('societe');
+
 // JSON-encoded option arrays for inline editable selects
 $formesJson = e(json_encode(array_values($formesOptions)));
 $villesJson = e(json_encode(array_values($villesOptions)));
@@ -273,7 +275,7 @@ if (($pdo ?? null) instanceof PDO) {
                 <div class="form-grid" style="grid-template-columns:repeat(3,1fr)">
                     <div style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:12px">
                         <label class="field"><span>Raison sociale</span><input type="text" name="societe_raison_sociale" required></label>
-                        <label class="field"><span>Forme juridique</span><select name="societe_forme_juridique" required><option value="">Selectionner</option><?php foreach ($formesOptions as $opt): ?><option value="<?= e($opt) ?>"><?= e($opt) ?></option><?php endforeach; ?></select></label>
+                        <label class="field"><span>Forme juridique</span><select name="societe_forme_juridique" required><option value="">Selectionner</option><?php $fjDef = $societeDefaults['societe_forme_juridique'] ?? ''; foreach ($formesOptions as $opt): ?><option value="<?= e($opt) ?>" <?= $opt === $fjDef ? 'selected' : '' ?>><?= e($opt) ?></option><?php endforeach; ?></select></label>
                     </div>
                     <div style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:12px">
                         <label class="field"><span>Date cert. negatif</span><input type="date" name="societe_date_ice"></label>
@@ -284,15 +286,15 @@ if (($pdo ?? null) instanceof PDO) {
                     <label class="field"><span>IF</span><input type="text" name="societe_if"></label>
                     <label class="field"><span>TP</span><input type="text" name="societe_tp"></label>
                     <label class="field"><span>CNSS</span><input type="text" name="societe_cnss"></label>
-                    <label class="field"><span>Capital</span><input type="number" step="0.01" name="societe_capital"></label>
-                    <label class="field"><span>Part social</span><input type="number" name="societe_part_social"></label>
-                    <label class="field"><span>Valeur nominale</span><input type="number" step="0.01" name="societe_valeur_nominale"></label>
+                    <label class="field"><span>Capital</span><input type="number" step="0.01" name="societe_capital" value="<?= e($societeDefaults['societe_capital'] ?? '') ?>"></label>
+                    <label class="field"><span>Part social</span><input type="number" name="societe_part_social" value="<?= e($societeDefaults['societe_part_social'] ?? '') ?>"></label>
+                    <label class="field"><span>Valeur nominale</span><input type="number" step="0.01" name="societe_valeur_nominale" value="<?= e($societeDefaults['societe_valeur_nominale'] ?? '') ?>"></label>
                     <label class="field"><span>Type tribunal</span><select name="societe_tribunal_type" data-tribunal-type><option value="">Selectionner</option><?php foreach ($tribunalTypes ?? [] as $t): ?><option value="<?= e($t) ?>"><?= e($t) ?></option><?php endforeach; ?></select></label>
-                    <label class="field"><span>Tribunal</span><select name="societe_tribunal"><option value="">Selectionner</option><?php foreach ($tribunauxAll ?? [] as $opt): ?><option value="<?= e($opt['tribunal']) ?>" data-type="<?= e($opt['tribunal_type'] ?? '') ?>"><?= e($opt['tribunal']) ?></option><?php endforeach; ?></select></label>
+                    <label class="field"><span>Tribunal</span><select name="societe_tribunal"><option value="">Selectionner</option><?php $tribDef = $societeDefaults['societe_tribunal'] ?? ''; foreach ($tribunauxAll ?? [] as $opt): ?><option value="<?= e($opt['tribunal']) ?>" data-type="<?= e($opt['tribunal_type'] ?? '') ?>" <?= $opt['tribunal'] === $tribDef ? 'selected' : '' ?>><?= e($opt['tribunal']) ?></option><?php endforeach; ?></select></label>
                     <label class="field"><span>Telephone</span><input type="text" name="societe_telephone"></label>
                     <label class="field"><span>Email</span><input type="email" name="societe_email"></label>
                     <label class="field" style="grid-column:1/-1"><span>Ville</span><select name="societe_ville" data-ville-filter><option value="">Selectionner</option><?php foreach ($villesOptions as $opt): ?><option value="<?= e($opt) ?>"><?= e($opt) ?></option><?php endforeach; ?></select></label>
-                    <label class="field" style="grid-column:1/-1"><span>Adresse siege</span><select name="societe_adresse_siege"><option value="">Selectionner</option><?php foreach ($adressesAll ?? [] as $opt): ?><option value="<?= e($opt['ste_adresse']) ?>" data-ville="<?= e($opt['ville'] ?? '') ?>"><?= e($opt['ste_adresse']) ?></option><?php endforeach; ?></select></label>
+                    <label class="field" style="grid-column:1/-1"><span>Adresse siege</span><select name="societe_adresse_siege"><option value="">Selectionner</option><?php $adrDef = $societeDefaults['societe_adresse_siege'] ?? ''; foreach ($adressesAll ?? [] as $opt): ?><option value="<?= e($opt['ste_adresse']) ?>" data-ville="<?= e($opt['ville'] ?? '') ?>" <?= $opt['ste_adresse'] === $adrDef ? 'selected' : '' ?>><?= e($opt['ste_adresse']) ?></option><?php endforeach; ?></select></label>
                 </div>
                 <div class="form-actions" style="margin-top:1rem;display:flex;gap:8px;justify-content:flex-end">
                     <button type="button" class="btn btn-cancel" data-modal-close><span class="material-symbols-outlined">close</span> Annuler</button>
