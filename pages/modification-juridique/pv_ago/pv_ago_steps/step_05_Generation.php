@@ -200,7 +200,9 @@ if ($step === 5):
                     <p class="help-text">Sauvegarder les donnees en base de donnees.</p>
                 </div>
                 <?php if ($saved): ?>
-                <span class="step-badge text-success">Fait</span>
+                <span class="step-badge text-success"><span class="material-symbols-outlined" style="font-size:1.4rem">check_circle</span></span>
+                <?php else: ?>
+                <span class="step-badge text-danger"><span class="material-symbols-outlined" style="font-size:1.4rem">cancel</span></span>
                 <?php endif; ?>
             </div>
             <?php if (!$saved): ?>
@@ -222,7 +224,9 @@ if ($step === 5):
                     <p class="help-text">Generation du PV AGO au format DOCX + PDF.</p>
                 </div>
                 <?php if ($generatedFiles): ?>
-                <span class="step-badge text-success">Fait</span>
+                <span class="step-badge text-success"><span class="material-symbols-outlined" style="font-size:1.4rem">check_circle</span></span>
+                <?php else: ?>
+                <span class="step-badge text-danger"><span class="material-symbols-outlined" style="font-size:1.4rem">cancel</span></span>
                 <?php endif; ?>
             </div>
             <?php if ($saved && empty($generatedFiles)): ?>
