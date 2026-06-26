@@ -12,6 +12,7 @@ if (!isset($_SESSION['pv_ago_wizard']) || !is_array($_SESSION['pv_ago_wizard']))
         'mode' => '',
         'societe' => [],
         'societe_id' => 0,
+        'associes' => [],
         'date_ago' => date('Y-m-d'),
         'heure_ago' => '10:00',
         'lieu_ago' => 'au siege social',
@@ -39,7 +40,7 @@ if (!isset($_SESSION['pv_ago_wizard']) || !is_array($_SESSION['pv_ago_wizard']))
 
 $editingId = (int) ($_GET['id'] ?? 0);
 $wizard = &$_SESSION['pv_ago_wizard'];
-$step = max(0, min(5, (int) ($_GET['step'] ?? 0)));
+$step = max(0, min(7, (int) ($_GET['step'] ?? 0)));
 
 if ($editingId > 0 && isset($_GET['edit'])) {
     unset($_SESSION['_pv_ago_loaded']);
@@ -172,4 +173,4 @@ if ($step >= 1 && $wizard['mode'] === '' && !is_post()) {
 $capitalSoc = (float) ($selectedSociete['societe_capital'] ?? $wizard['societe']['societe_capital'] ?? 0);
 $totalPartsSoc = (int) ($selectedSociete['societe_part_social'] ?? $wizard['societe']['societe_part_social'] ?? 0);
 
-$stepLabels = ['Assemblee', 'Finances', 'Resolutions', 'Recap', 'Generation'];
+$stepLabels = ['Societe', 'Associes', 'Assemblee', 'Finances', 'Resolutions', 'Recap', 'Generation'];

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-if (is_post() && $step === 2) {
+if (is_post() && $step === 4) {
     verify_csrf();
     $navAction = $_POST['nav_action'] ?? 'next';
 
@@ -18,12 +18,12 @@ if (is_post() && $step === 2) {
     $wizard['perte_reserve_prelevement'] = $_POST['perte_reserve_prelevement'] ?? '0';
 
     if ($navAction === 'back') {
-        redirect_to('pv_ago', ['step' => 1]);
+        redirect_to('pv_ago', ['step' => 3]);
     }
-    redirect_to('pv_ago', ['step' => 3]);
+    redirect_to('pv_ago', ['step' => 5]);
 }
 
-if ($step === 2):
+if ($step === 4):
     $isBenefice = ($wizard['resultat_type'] ?? 'benefice') === 'benefice';
     $resultatNet = (float) ($wizard['resultat_net'] ?? 0);
     $capitalSocLocal = (float) ($selectedSociete['societe_capital'] ?? $wizard['societe']['societe_capital'] ?? 0);

@@ -7,7 +7,7 @@ require __DIR__ . '/_init.php';
     <article class="card stack pv-ago-wizard">
         <?php if ($step >= 1): ?>
         <div class="wizard-steps" id="wizard-steps-top">
-            <?php for ($s = 1; $s <= 5; $s++): ?>
+            <?php for ($s = 1; $s <= 7; $s++): ?>
                 <div class="wizard-step <?= $step > $s ? 'done' : ($step === $s ? 'active' : 'waiting') ?>">
                     <strong>Etape <?= $s ?></strong>
                     <span><?= $stepLabels[$s - 1] ?></span>
@@ -26,11 +26,13 @@ require __DIR__ . '/_init.php';
 
         <?php
         require __DIR__ . '/step_00_Mode.php';
-        require __DIR__ . '/step_01_Assemblee.php';
-        require __DIR__ . '/step_02_Finances.php';
-        require __DIR__ . '/step_03_Resolutions.php';
-        require __DIR__ . '/step_04_Recap.php';
-        require __DIR__ . '/step_05_Generation.php';
+        require __DIR__ . '/step_01_Societe.php';
+        require __DIR__ . '/step_02_Associes.php';
+        require __DIR__ . '/step_03_Assemblee.php';
+        require __DIR__ . '/step_04_Finances.php';
+        require __DIR__ . '/step_05_Resolutions.php';
+        require __DIR__ . '/step_06_Recap.php';
+        require __DIR__ . '/step_07_Generation.php';
         ?>
     </article>
 </section>

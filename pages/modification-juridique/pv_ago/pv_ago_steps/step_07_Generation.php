@@ -8,17 +8,17 @@ function parse_pv_ago_money(string $val): ?float
     return (float) $val;
 }
 
-if (is_post() && $step === 5) {
+if (is_post() && $step === 7) {
     verify_csrf();
     $navAction = $_POST['nav_action'] ?? 'back';
     if ($navAction === 'back') {
-        redirect_to('pv_ago', ['step' => 4]);
+        redirect_to('pv_ago', ['step' => 6]);
     }
 
     if ($navAction === 'save') {
         if (!(($pdo ?? null) instanceof PDO)) {
             set_flash('error', 'Connexion MySQL indisponible.');
-            redirect_to('pv_ago', ['step' => 5]);
+            redirect_to('pv_ago', ['step' => 7]);
         }
         try {
             $pdo->beginTransaction();
@@ -104,16 +104,16 @@ if (is_post() && $step === 5) {
             if ($pdo->inTransaction()) $pdo->rollBack();
             if ($wizard['mode'] === 'nouvelle') $wizard['societe_id'] = 0;
             set_flash('error', 'Erreur lors de l\'enregistrement: ' . $e->getMessage());
-            redirect_to('pv_ago', ['step' => 5]);
+            redirect_to('pv_ago', ['step' => 7]);
         }
-        redirect_to('pv_ago', ['step' => 5, 'id' => $pvAgoId, 'edit' => 1]);
+        redirect_to('pv_ago', ['step' => 7, 'id' => $pvAgoId, 'edit' => 1]);
     }
 
     if ($navAction === 'generate') {
         $pvAgoId = $wizard['pv_ago_id'] ?? 0;
         if ($pvAgoId <= 0) {
             set_flash('error', 'Enregistrez d abord le PV AGO avant de generer le document.');
-            redirect_to('pv_ago', ['step' => 5]);
+            redirect_to('pv_ago', ['step' => 7]);
         }
 
         require_once __DIR__ . '/../../../../src/analyseur_templates.php';
@@ -125,7 +125,7 @@ if (is_post() && $step === 5) {
         $context = DocumentRenderer::buildContextFromPvAgo($pdo, $pvAgoId);
         if (empty($context)) {
             set_flash('error', 'Impossible de construire le contexte pour le PV AGO.');
-            redirect_to('pv_ago', ['step' => 5]);
+            redirect_to('pv_ago', ['step' => 7]);
         }
 
         $societeId = (int) ($wizard['societe_id'] ?? 0);
@@ -151,7 +151,7 @@ if (is_post() && $step === 5) {
         $matches = glob($templateDir . '/*PV-AGO*_Template.docx');
         if (empty($matches)) {
             set_flash('error', 'Aucun template PV-AGO trouve dans templates/_PV_AGO/.');
-            redirect_to('pv_ago', ['step' => 5]);
+            redirect_to('pv_ago', ['step' => 7]);
         }
 
         $outName = $sanitizedForme . '_' . $today . '_PV-AGO_' . $clientName . '.docx';
@@ -176,7 +176,7 @@ if (is_post() && $step === 5) {
         } catch (Throwable $e) {
             set_flash('error', 'Erreur de generation: ' . $e->getMessage());
         }
-        redirect_to('pv_ago', ['step' => 5, 'id' => $pvAgoId, 'edit' => 1]);
+        redirect_to('pv_ago', ['step' => 7, 'id' => $pvAgoId, 'edit' => 1]);
     }
 
     if ($navAction === 'terminer') {
@@ -186,7 +186,7 @@ if (is_post() && $step === 5) {
     }
 }
 
-if ($step === 5):
+if ($step === 7):
     $saved = isset($wizard['pv_ago_id']) && $wizard['pv_ago_id'] > 0;
     $generatedFiles = $wizard['generated_files'] ?? [];
 ?>

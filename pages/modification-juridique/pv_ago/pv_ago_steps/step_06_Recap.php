@@ -1,16 +1,16 @@
 <?php
 declare(strict_types=1);
 
-if (is_post() && $step === 4) {
+if (is_post() && $step === 6) {
     verify_csrf();
     $navAction = $_POST['nav_action'] ?? 'next';
     if ($navAction === 'back') {
-        redirect_to('pv_ago', ['step' => 3]);
+        redirect_to('pv_ago', ['step' => 5]);
     }
-    redirect_to('pv_ago', ['step' => 5]);
+    redirect_to('pv_ago', ['step' => 7]);
 }
 
-if ($step === 4):
+if ($step === 6):
     $socForCalc = $selectedSociete ?: ($wizard['societe'] ?? []);
     $calcResult = pv_ago_calculs($wizard, $socForCalc);
     $calc = $calcResult['calculs'];
@@ -32,7 +32,7 @@ if ($step === 4):
         <button type="button" class="btn btn-info" id="btn-pdf-recap">
             <span class="material-symbols-outlined">picture_as_pdf</span> Sauvegarder PDF
         </button>
-        <a class="btn btn-back" href="<?= e(app_url('pv_ago', ['step' => 3])) ?>">
+        <a class="btn btn-back" href="<?= e(app_url('pv_ago', ['step' => 5])) ?>">
             <span class="material-symbols-outlined">edit</span> Modifier les resolutions
         </a>
     </div>

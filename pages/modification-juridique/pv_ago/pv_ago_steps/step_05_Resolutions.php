@@ -134,17 +134,17 @@ function pv_ago_calculs(array $w, array $soc): array
     ];
 }
 
-if (is_post() && $step === 3) {
+if (is_post() && $step === 5) {
     verify_csrf();
     $navAction = $_POST['nav_action'] ?? 'next';
 
     if ($navAction === 'back') {
-        redirect_to('pv_ago', ['step' => 2]);
+        redirect_to('pv_ago', ['step' => 4]);
     }
     if ($navAction === 'reset') {
         unset($wizard['resolutions']);
         set_flash('success', 'Resolutions reinitialisees.');
-        redirect_to('pv_ago', ['step' => 3]);
+        redirect_to('pv_ago', ['step' => 5]);
     }
     if ($navAction === 'save_resolutions') {
         $titles = $_POST['res_title'] ?? [];
@@ -159,12 +159,12 @@ if (is_post() && $step === 3) {
         }
         $wizard['resolutions'] = $resolutions;
         set_flash('success', 'Resolutions enregistrees.');
-        redirect_to('pv_ago', ['step' => 3]);
+        redirect_to('pv_ago', ['step' => 5]);
     }
-    redirect_to('pv_ago', ['step' => 4]);
+    redirect_to('pv_ago', ['step' => 6]);
 }
 
-if ($step === 3):
+if ($step === 5):
     $socForCalc = $selectedSociete ?: ($wizard['societe'] ?? []);
     $calcResult = pv_ago_calculs($wizard, $socForCalc);
     $calc = $calcResult['calculs'];
