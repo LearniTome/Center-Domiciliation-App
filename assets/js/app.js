@@ -590,6 +590,28 @@ document.addEventListener('input', (e) => {
 })();
 
 (function () {
+    document.querySelectorAll('[data-ville-filter]').forEach(function (villeSelect) {
+        var addrSelect = villeSelect.closest('.form-grid, .card')?.querySelector('[name="societe_adresse_siege"]');
+        if (!addrSelect) return;
+        var filter = function () {
+            var ville = villeSelect.value;
+            Array.from(addrSelect.options).forEach(function (opt) {
+                if (opt.value === '') return;
+                opt.style.display = !ville || opt.getAttribute('data-ville') === ville ? '' : 'none';
+            });
+            if (addrSelect.value) {
+                var selected = addrSelect.options[addrSelect.selectedIndex];
+                if (selected && selected.style.display === 'none') {
+                    addrSelect.value = '';
+                }
+            }
+        };
+        villeSelect.addEventListener('change', filter);
+        filter();
+    });
+})();
+
+(function () {
     const dateDebut = document.querySelector('[data-date-debut]');
     const dureeMois = document.querySelector('[data-duree-mois]');
     const dateFin = document.querySelector('[data-date-fin]');

@@ -60,6 +60,7 @@ if (($pdo ?? null) instanceof PDO) {
     $qualitesAssocieOptions = fetch_reference_options($pdo, 'ref_qualites_associe', 'qualite_associe');
     $activitesOptions = fetch_reference_options($pdo, 'ref_activites', 'activite');
     $adressesOptions = fetch_reference_options($pdo, 'ref_ste_adresses', 'ste_adresse');
+    $adressesAll = fetch_adresses_all($pdo);
     $ompicOptions = fetch_activites_ompic_options($pdo);
     $tribunalTypes = fetch_tribunaux_types($pdo);
     $allTribunaux = fetch_tribunaux_all($pdo);

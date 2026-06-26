@@ -25,11 +25,13 @@ $isNmaTab = $tab === 'activites-ompic';
 $isTribunalTab = $tab === 'tribunaux';
 $isFormeJuridiqueTab = $tab === 'formes-juridiques';
 $isFonctionsTab = $tab === 'fonctions';
+$isAdresseTab = $tab === 'adresses';
 
+$villesOptions = $isAdresseTab ? fetch_reference_options($pdo ?? null, 'ref_villes', 'ville') : [];
 $rows = [];
 if (($pdo ?? null) instanceof PDO) {
     try {
-        $selectCols = $isNmaTab ? "id, code, {$column}, sort_order, created_at, updated_at" : ($isTribunalTab ? "id, tribunal_type, {$column}, sort_order, created_at, updated_at" : ($isFormeJuridiqueTab ? "id, {$column}, template_folder, sort_order, created_at, updated_at" : "id, {$column}, sort_order, created_at, updated_at"));
+        $selectCols = $isNmaTab ? "id, code, {$column}, sort_order, created_at, updated_at" : ($isTribunalTab ? "id, tribunal_type, {$column}, sort_order, created_at, updated_at" : ($isFormeJuridiqueTab ? "id, {$column}, template_folder, sort_order, created_at, updated_at" : ($isAdresseTab ? "id, {$column}, ville, sort_order, created_at, updated_at" : "id, {$column}, sort_order, created_at, updated_at")));
         $orderBy = $isTribunalTab ? "FIELD(tribunal_type, 'Tribunal de commerce', 'Tribunal de Première Instance'), sort_order ASC, {$column} ASC" : "sort_order ASC, {$column} ASC";
         $stmt = $pdo->query("SELECT {$selectCols} FROM {$table} ORDER BY {$orderBy}");
         $rows = $stmt->fetchAll();
@@ -81,6 +83,11 @@ if (is_post()) {
                 $max = $pdo->query("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM {$table}")->fetchColumn();
                 $stmt = $pdo->prepare("INSERT IGNORE INTO {$table} ({$column}, template_folder, sort_order) VALUES (:val, :tf, :so)");
                 $stmt->execute(['val' => $value, 'tf' => $templateFolder, 'so' => $max]);
+            } elseif ($tab === 'adresses') {
+                $adresseVille = field_value($_POST, 'ville');
+                $max = $pdo->query("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM {$table}")->fetchColumn();
+                $stmt = $pdo->prepare("INSERT IGNORE INTO {$table} ({$column}, ville, sort_order) VALUES (:val, :ville, :so)");
+                $stmt->execute(['val' => $value, 'ville' => $adresseVille, 'so' => $max]);
             } else {
                 $stmt = $pdo->prepare("INSERT IGNORE INTO {$table} ({$column}, sort_order) VALUES (:val, :so)");
                 $max = $pdo->query("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM {$table}")->fetchColumn();
@@ -109,6 +116,10 @@ if (is_post()) {
                 }
                 $stmt = $pdo->prepare("UPDATE {$table} SET {$column} = :new, template_folder = :tf WHERE id = :id");
                 $stmt->execute(['new' => $newValue, 'tf' => $newTemplateFolder, 'id' => $recordId]);
+            } elseif ($tab === 'adresses') {
+                $newVille = field_value($_POST, 'ville');
+                $stmt = $pdo->prepare("UPDATE {$table} SET {$column} = :new, ville = :ville WHERE id = :id");
+                $stmt->execute(['new' => $newValue, 'ville' => $newVille, 'id' => $recordId]);
             } else {
                 $stmt = $pdo->prepare("UPDATE {$table} SET {$column} = :new WHERE id = :id");
                 $stmt->execute(['new' => $newValue, 'id' => $recordId]);
@@ -208,6 +219,14 @@ if (is_post()) {
             <?php if ($isFormeJuridiqueTab): ?>
                 <input name="template_folder" placeholder="Dossier Templates..." style="width:140px;padding:4px 8px;font-size:0.8125rem">
             <?php endif; ?>
+            <?php if ($isAdresseTab): ?>
+                <select name="ville" style="width:140px;padding:4px 6px;font-size:0.8125rem">
+                    <option value="">Sans ville</option>
+                    <?php foreach ($villesOptions ?? [] as $v): ?>
+                        <option value="<?= e($v) ?>"><?= e($v) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            <?php endif; ?>
             <?php if ($isNmaTab): ?>
                 <input name="ompic_code" placeholder="Code..." required style="width:100px;padding:4px 8px;font-size:0.8125rem">
             <?php endif; ?>
@@ -230,6 +249,9 @@ if (is_post()) {
                         <th>Dossier Templates</th>
                     <?php endif; ?>
                     <th><?= e($label) ?></th>
+                    <?php if ($isAdresseTab): ?>
+                        <th>Ville</th>
+                    <?php endif; ?>
                     <?php if ($isFonctionsTab): ?>
                         <th style="width:80px;text-align:center">Personnes</th>
                     <?php endif; ?>
@@ -248,7 +270,7 @@ if (is_post()) {
                     <tr <?= $editKey === $val ? '' : 'draggable="true"' ?> data-record-id="<?= $rid ?>">
                         <?php if ($editKey === $val): ?>
                             <td style="text-align:center;color:var(--text-secondary)"><span class="material-symbols-outlined">drag_indicator</span></td>
-                            <td <?= $isTribunalTab || $isFormeJuridiqueTab ? 'colspan="2"' : '' ?>>
+                            <td <?= $isTribunalTab || $isFormeJuridiqueTab || $isAdresseTab ? 'colspan="2"' : '' ?>>
                                 <form method="post" style="display:flex;gap:4px">
                                     <?= csrf_input() ?>
                                     <input type="hidden" name="action" value="update">
@@ -261,6 +283,14 @@ if (is_post()) {
                                     <?php endif; ?>
                                     <?php if ($isFormeJuridiqueTab): ?>
                                         <input name="template_folder" value="<?= e($tfVal) ?>" placeholder="Dossier Templates..." style="width:140px;padding:2px 6px;font-size:0.8125rem">
+                                    <?php endif; ?>
+                                    <?php if ($isAdresseTab): ?>
+                                        <select name="ville" style="padding:2px 4px;font-size:0.8125rem;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface)">
+                                            <option value="">Sans ville</option>
+                                            <?php foreach ($villesOptions ?? [] as $v): ?>
+                                                <option value="<?= e($v) ?>" <?= ($row['ville'] ?? '') === $v ? 'selected' : '' ?>><?= e($v) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
                                     <?php endif; ?>
                                     <?php if ($isNmaTab): ?>
                                         <span style="padding:2px 6px;font-size:0.8125rem;color:var(--text-secondary)"><?= e((string) $row['code']) ?> -</span>
@@ -284,6 +314,9 @@ if (is_post()) {
                                 <td><?= e($tfVal ?: '-') ?></td>
                             <?php endif; ?>
                             <td><?= $isNmaTab ? e((string) $row['code'] . ' - ' . $val) : e($val) ?></td>
+                            <?php if ($isAdresseTab): ?>
+                                <td><?= e($row['ville'] ?? '-') ?></td>
+                            <?php endif; ?>
                             <?php if ($isFonctionsTab): ?>
                                 <td style="text-align:center;font-weight:600;color:var(--primary)"><?= (int) ($row['collab_count'] ?? 0) ?></td>
                             <?php endif; ?>

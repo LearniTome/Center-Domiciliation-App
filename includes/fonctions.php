@@ -214,6 +214,17 @@ function fetch_tribunaux_all(?PDO $pdo): array
     }
 }
 
+function fetch_adresses_all(?PDO $pdo): array
+{
+    if (!$pdo) return [];
+    try {
+        $stmt = $pdo->query("SELECT ste_adresse, ville FROM ref_ste_adresses ORDER BY ville ASC, sort_order ASC, ste_adresse ASC");
+        return $stmt->fetchAll();
+    } catch (PDOException) {
+        return [];
+    }
+}
+
 function fetch_reference_options(?PDO $pdo, string $table, string $column): array
 {
     if (!$pdo) {

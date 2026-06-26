@@ -226,8 +226,8 @@ if ($step === 1):
             <div style="display:flex;gap:8px;align-items:center">
                 <select name="societe_adresse_siege" style="flex:1">
                     <option value="">Selectionner</option>
-                    <?php foreach ($adressesOptions as $option): ?>
-                        <option value="<?= e($option) ?>" <?= (string) $societeData['societe_adresse_siege'] === $option ? 'selected' : '' ?>><?= e($option) ?></option>
+                    <?php foreach ($adressesAll as $opt): ?>
+                        <option value="<?= e($opt['ste_adresse']) ?>" data-ville="<?= e($opt['ville'] ?? '') ?>" <?= (string) $societeData['societe_adresse_siege'] === $opt['ste_adresse'] ? 'selected' : '' ?>><?= e($opt['ste_adresse']) ?></option>
                     <?php endforeach; ?>
                 </select>
                 <button type="button" class="btn-icon" data-quick-create-btn="adresses" title="Ajouter une adresse"><span class="material-symbols-outlined">add</span></button>
@@ -236,10 +236,10 @@ if ($step === 1):
         <label class="field">
             <span>Ville</span>
             <div style="display:flex;gap:8px;align-items:center">
-                <select name="societe_ville" style="flex:1">
+<select name="societe_ville" data-ville-filter style="flex:1">
                     <option value="">Selectionner</option>
                     <?php foreach ($villesOptions as $option): ?>
-                        <option value="<?= e($option) ?>" <?= $defaultVille === $option ? 'selected' : '' ?>><?= e($option) ?></option>
+                        <option value="<?= e($option) ?>" <?= $societeData['societe_ville'] === $option ? 'selected' : '' ?>><?= e($option) ?></option>
                     <?php endforeach; ?>
                 </select>
                 <button type="button" class="btn-icon" data-quick-create-btn="villes" title="Ajouter une ville"><span class="material-symbols-outlined">add</span></button>

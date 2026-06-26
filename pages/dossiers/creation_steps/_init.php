@@ -38,6 +38,7 @@ if (!isset($_SESSION['creation_wizard']) || !is_array($_SESSION['creation_wizard
 $wizard = &$_SESSION['creation_wizard'];
 $step = max(1, min(6, (int) ($_GET['step'] ?? 1)));
 $adressesOptions = fetch_reference_options($pdo ?? null, 'ref_ste_adresses', 'ste_adresse');
+$adressesAll = fetch_adresses_all($pdo ?? null);
 $villesOptions = fetch_reference_options($pdo ?? null, 'ref_villes', 'ville');
 $nationalitesOptions = fetch_reference_options($pdo ?? null, 'ref_nationalites', 'nationalite');
 $lieuxNaissanceOptions = fetch_reference_options($pdo ?? null, 'ref_lieux_naissance', 'lieu_naissance');
