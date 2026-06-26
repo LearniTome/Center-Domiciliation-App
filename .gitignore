@@ -24,3 +24,4 @@ tmp_test/
 *.DS_Store
 .opencode/tmp/
 /screenshots/
+/docs/screenshots/pv_ago_step4_recap.png
