@@ -5,13 +5,8 @@ if (is_post() && $step === 0) {
     verify_csrf();
     $mode = $_POST['mode'] ?? '';
     if ($mode === 'existante') {
-        $societeId = (int) ($_POST['societe_id'] ?? 0);
-        if ($societeId <= 0) {
-            set_flash('error', 'Selectionnez une societe existante.');
-            redirect_to('pv_ago', ['step' => 0]);
-        }
         $wizard['mode'] = 'existante';
-        $wizard['societe_id'] = $societeId;
+        $wizard['societe_id'] = 0;
         $wizard['societe'] = [];
         redirect_to('pv_ago', ['step' => 1]);
     }
@@ -20,7 +15,7 @@ if (is_post() && $step === 0) {
         $wizard['societe_id'] = 0;
         redirect_to('pv_ago', ['step' => 1]);
     }
-    set_flash('error', 'Choisissez un mode.');
+    set_flash('error', 'Veuillez choisir un mode.');
     redirect_to('pv_ago', ['step' => 0]);
 }
 
@@ -29,28 +24,50 @@ if ($step === 0):
 <div class="stack">
     <div class="section-header">
         <h2>PV d'Assemblee Generale Ordinaire Annuelle</h2>
-    </div>
-    <p class="help-text" style="margin-bottom:12px">Selectionnez la societe concernee par le PV AGO.</p>
-
-    <form method="post" class="form" style="max-width:500px">
-        <?= csrf_input() ?>
-        <div class="form-group">
-            <div class="field">
-                <span>Societe existante</span>
-                <select name="societe_id" class="field">
-                    <option value="">-- Choisir une societe --</option>
-                    <?php foreach ($societesList as $s): ?>
-                        <option value="<?= (int) $s['id'] ?>"><?= e($s['societe_raison_sociale']) ?> (<?= e($s['societe_forme_juridique']) ?>)</option>
-                    <?php endforeach; ?>
-                </select>
-                <button type="submit" name="mode" value="existante" class="btn btn-next" style="margin-top:8px"><span class="material-symbols-outlined">check</span> Utiliser cette societe</button>
-            </div>
-        </div>
-        <hr class="divider">
-        <div class="form-group">
-            <button type="submit" name="mode" value="nouvelle" class="btn btn-info"><span class="material-symbols-outlined">add_circle</span> Nouvelle societe</button>
-        </div>
         <a class="btn btn-back" href="<?= e(app_url('pvag')) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour aux PV AGO</a>
+    </div>
+    <p class="help-text" style="margin-bottom:0">Selectionnez la societe concernee par le PV AGO.</p>
+
+    <form method="post" class="stack">
+        <?= csrf_input() ?>
+        <div id="mode-choice-grid">
+            <label class="card choice-card" data-mode="existante">
+                <input type="radio" name="mode" value="existante" hidden>
+                <span class="material-symbols-outlined" style="color:var(--primary)">business</span>
+                <h3>Societe existante</h3>
+                <p>Selectionnez une societe deja enregistree dans la base</p>
+            </label>
+            <label class="card choice-card" data-mode="nouvelle">
+                <input type="radio" name="mode" value="nouvelle" hidden>
+                <span class="material-symbols-outlined" style="color:var(--success)">add_business</span>
+                <h3>Nouvelle societe</h3>
+                <p>Creer une nouvelle societe pour ce PV AGO</p>
+            </label>
+        </div>
     </form>
 </div>
+
+<style>
+#mode-choice-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; }
+#mode-choice-grid .choice-card.selected[data-mode="existante"] { border-color: var(--primary); }
+#mode-choice-grid .choice-card.selected[data-mode="nouvelle"]  { border-color: var(--success); }
+#mode-choice-grid .choice-card { cursor:pointer; }
+</style>
+
+<script>
+(function(){
+    var cards = document.querySelectorAll('.choice-card');
+    cards.forEach(function(c){
+        c.addEventListener('click', function(){
+            var radio = this.querySelector('input[type="radio"]');
+            if (radio) {
+                radio.checked = true;
+                cards.forEach(function(x){ x.classList.remove('selected'); });
+                this.classList.add('selected');
+                this.closest('form').submit();
+            }
+        });
+    });
+})();
+</script>
 <?php endif; ?>
