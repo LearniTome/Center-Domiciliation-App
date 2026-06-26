@@ -5,6 +5,7 @@
     "societe_capital": "100000",
     "societe_part_social": "1000",
     "societe_valeur_nominale": "100",
+    "societe_ville": "Casablanca",
     "societe_adresse_siege": "HAY MOULAY ABDELLAH RUE 300 N 152 ETG 2 AIN CHOCK, CASABLANCA",
     "societe_tribunal": "Casablanca",
     "type_generation": "creation",
