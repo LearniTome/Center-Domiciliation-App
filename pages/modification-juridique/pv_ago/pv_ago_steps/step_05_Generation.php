@@ -286,10 +286,23 @@ if ($step === 5):
     <?php endif; ?>
 </div>
 
+<div id="gen-loading-overlay" class="gen-loading-overlay">
+    <div class="loader-card">
+        <div class="spinner"></div>
+        <p>Generation du document en cours...</p>
+        <div class="gen-progress-bar">
+            <div class="gen-progress-fill" style="width:60%"></div>
+        </div>
+        <div class="gen-progress-text">Preparation du PV AGO</div>
+        <div class="gen-status-text">Veuillez patienter, cette operation peut prendre quelques instants.</div>
+    </div>
+</div>
 <script>
-document.getElementById('btn-generate-pvago')?.addEventListener('click', function(e) {
-    this.disabled = true;
-    this.innerHTML = '<span class="material-symbols-outlined">sync</span> Generation en cours...';
+document.querySelectorAll('.inline-save button[type="submit"]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+        var overlay = document.getElementById('gen-loading-overlay');
+        if (overlay) overlay.classList.add('show');
+    });
 });
 </script>
 <?php endif; ?>
