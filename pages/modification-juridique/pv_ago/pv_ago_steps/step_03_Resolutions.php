@@ -178,7 +178,7 @@ if ($step === 3):
             <div class="calc-line">Capital social : <strong><?= $rsFmt($calc['capital']) ?> DH</strong></div>
             <div class="calc-line">Parts sociales : <strong><?= $calc['total_parts'] ?></strong></div>
             <div class="calc-line">Parts presentes : <strong><?= $calc['parts_presentes'] ?> (<?= $calc['pct_presence'] ?>%)</strong></div>
-            <div class="calc-line <?= $calc['is_benefice'] ? '' : 'calc-total' ?>">Resultat net : <strong><?= $rsFmt($calc['resultat_net']) ?> DH</strong></div>
+            <div class="calc-line <?= $calc['is_benefice'] ? '' : 'calc-total' ?>">Resultat net : <strong><?= ($calc['is_benefice'] ? '' : '-') ?><?= $rsFmt(abs($calc['resultat_net'])) ?> DH</strong></div>
             <?php if ($calc['report_debiteur'] > 0): ?>
             <div class="calc-line">Report a nouveau debiteur : <strong>-<?= $rsFmt($calc['report_debiteur']) ?> DH</strong></div>
             <div class="calc-line">Base reserve legale : <strong><?= $rsFmt($calc['base_RL']) ?> DH</strong></div>

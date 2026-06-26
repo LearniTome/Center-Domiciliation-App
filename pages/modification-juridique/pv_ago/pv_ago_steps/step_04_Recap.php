@@ -23,7 +23,7 @@ if ($step === 4):
     $calcResult = pv_ago_calculs($wizard, $socForCalc);
     $calc = $calcResult['calculs'];
     $rsFmt = $calc['rsFmt'];
-    $resolutions = $wizard['resolutions'] ?? $calcResult['resolutions'];
+    $resolutions = !empty($wizard['resolutions']) ? $wizard['resolutions'] : $calcResult['resolutions'];
 ?>
 <div class="stack">
     <div class="section-header">
@@ -44,7 +44,7 @@ if ($step === 4):
     <div class="card recap-card">
         <h4>Resultat et affectation</h4>
         <div class="info-grid">
-            <div><span>Resultat net</span><strong class="<?= $calc['is_benefice'] ? '' : 'text-danger' ?>"><?= $rsFmt($calc['resultat_net']) ?> DH</strong></div>
+            <div><span>Resultat net</span><strong class="<?= $calc['is_benefice'] ? '' : 'text-danger' ?>"><?= ($calc['is_benefice'] ? '' : '-') ?><?= $rsFmt(abs($calc['resultat_net'])) ?> DH</strong></div>
             <div><span>Affectation</span><strong><?= $calc['affectation'] === 'profit_distribution' ? 'Distribution de dividendes' : ($calc['affectation'] === 'loss_carryforward' ? 'Report a nouveau' : 'Imputation sur reserves') ?></strong></div>
             <?php if ($calc['RL_dotation'] > 0): ?>
             <div><span>Dotation reserve legale</span><strong><?= $rsFmt($calc['RL_dotation']) ?> DH</strong></div>
@@ -54,7 +54,7 @@ if ($step === 4):
             <div><span>TPA (10%)</span><strong><?= $rsFmt($calc['tpa']) ?> DH</strong></div>
             <div><span>Dividende net</span><strong><?= $rsFmt($calc['dividende_net']) ?> DH</strong></div>
             <?php endif; ?>
-            <div><span>Report a nouveau final</span><strong><?= $rsFmt(max(0, $calc['report_nouveau'])) ?> DH</strong></div>
+            <div><span>Report a nouveau final</span><strong class="<?= $calc['report_nouveau'] >= 0 ? '' : 'text-danger' ?>"><?= ($calc['report_nouveau'] >= 0 ? '' : '-') ?><?= $rsFmt(abs($calc['report_nouveau'])) ?> DH</strong></div>
         </div>
     </div>
 
