@@ -291,8 +291,8 @@ if (($pdo ?? null) instanceof PDO) {
                     <label class="field"><span>Tribunal</span><select name="societe_tribunal"><option value="">Selectionner</option><?php foreach ($tribunauxAll ?? [] as $opt): ?><option value="<?= e($opt['tribunal']) ?>" data-type="<?= e($opt['tribunal_type'] ?? '') ?>"><?= e($opt['tribunal']) ?></option><?php endforeach; ?></select></label>
                     <label class="field"><span>Telephone</span><input type="text" name="societe_telephone"></label>
                     <label class="field"><span>Email</span><input type="email" name="societe_email"></label>
-                    <label class="field" style="grid-column:1/-1"><span>Adresse siege</span><select name="societe_adresse_siege"><option value="">Selectionner</option><?php foreach ($adressesAll ?? [] as $opt): ?><option value="<?= e($opt['ste_adresse']) ?>" data-ville="<?= e($opt['ville'] ?? '') ?>"><?= e($opt['ste_adresse']) ?></option><?php endforeach; ?></select></label>
                     <label class="field" style="grid-column:1/-1"><span>Ville</span><select name="societe_ville" data-ville-filter><option value="">Selectionner</option><?php foreach ($villesOptions as $opt): ?><option value="<?= e($opt) ?>"><?= e($opt) ?></option><?php endforeach; ?></select></label>
+                    <label class="field" style="grid-column:1/-1"><span>Adresse siege</span><select name="societe_adresse_siege"><option value="">Selectionner</option><?php foreach ($adressesAll ?? [] as $opt): ?><option value="<?= e($opt['ste_adresse']) ?>" data-ville="<?= e($opt['ville'] ?? '') ?>"><?= e($opt['ste_adresse']) ?></option><?php endforeach; ?></select></label>
                 </div>
                 <div class="form-actions" style="margin-top:1rem;display:flex;gap:8px;justify-content:flex-end">
                     <button type="button" class="btn btn-cancel" data-modal-close><span class="material-symbols-outlined">close</span> Annuler</button>
