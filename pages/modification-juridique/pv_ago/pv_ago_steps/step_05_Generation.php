@@ -281,6 +281,7 @@ if ($step === 5):
             </table>
         </div>
     </article>
+    <?php endif; ?>
 
     <form method="post" class="footer-actions" style="margin-top:0.75rem">
         <?= csrf_input() ?>
