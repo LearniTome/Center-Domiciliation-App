@@ -17,6 +17,14 @@ if (is_post() && $step === 1) {
             set_flash('error', 'La raison sociale est obligatoire.');
             redirect_to('pv_ago', ['step' => 1]);
         }
+    } elseif ($wizard['mode'] === 'existante') {
+        $societeId = (int) ($_POST['societe_id'] ?? 0);
+        if ($societeId > 0) {
+            $wizard['societe_id'] = $societeId;
+        } elseif (!$selectedSociete) {
+            set_flash('error', 'Veuillez selectionner une societe.');
+            redirect_to('pv_ago', ['step' => 1]);
+        }
     }
 
     $wizard['date_ago'] = $_POST['date_ago'] ?? date('Y-m-d');
@@ -41,6 +49,7 @@ if ($step === 1):
         $soc = $selectedSociete;
         $wizard['total_parts'] = $wizard['total_parts'] ?: $soc['societe_part_social'] ?? '';
     }
+    $showSocieteSelector = !$isNew && !$selectedSociete;
 ?>
 <div class="stack">
     <div class="section-header">
@@ -102,6 +111,21 @@ if ($step === 1):
             </div>
             <a class="btn btn-back" href="<?= e(app_url('pv_ago', ['step' => 0])) ?>"><span class="material-symbols-outlined">swap_horiz</span> Changer</a>
         </div>
+        <?php endif; ?>
+
+        <?php if ($showSocieteSelector): ?>
+        <fieldset class="card card-box">
+            <legend>Selectionner une societe</legend>
+            <div class="field">
+                <span>Societe existante</span>
+                <select name="societe_id" required onchange="this.form.querySelector('.societe-details')?.classList.toggle('hidden', !this.value)">
+                    <option value="">-- Choisir une societe --</option>
+                    <?php foreach ($societesList as $s): ?>
+                        <option value="<?= (int) $s['id'] ?>"><?= e($s['societe_raison_sociale']) ?> (<?= e($s['societe_forme_juridique']) ?>)</option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </fieldset>
         <?php endif; ?>
 
         <fieldset class="card card-box">
