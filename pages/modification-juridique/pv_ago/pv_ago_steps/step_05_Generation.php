@@ -242,14 +242,16 @@ if ($step === 5):
     </div>
 
     <?php if (!empty($generatedFiles)): ?>
-    <div class="card card-box" style="margin-top:16px">
-        <h4>Document genere</h4>
-        <div class="doc-grid">
-            <table>
+    <article class="card stack">
+        <div class="section-header">
+            <h2><span class="material-symbols-outlined" style="font-size:1.2rem;vertical-align:middle;margin-right:6px">article</span>Document genere</h2>
+        </div>
+        <div class="table-scroll">
+            <table data-sortable>
                 <thead>
                     <tr>
-                        <th>Fichier</th>
-                        <th>Taille</th>
+                        <th data-col="fichier">Fichier</th>
+                        <th data-col="taille">Taille</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -257,7 +259,7 @@ if ($step === 5):
                     <?php foreach ($generatedFiles as $file): ?>
                     <tr>
                         <td>
-                            <span class="material-symbols-outlined" style="color:var(--primary);vertical-align:middle;margin-right:6px">article</span>
+                            <span class="material-symbols-outlined doc-icon">article</span>
                             <?= e($file['name'] ?? basename($file['docx'] ?? '')) ?>
                         </td>
                         <td><?= file_exists($file['docx'] ?? '') ? number_format(filesize($file['docx']) / 1024, 1) . ' Ko' : '-' ?></td>
@@ -278,8 +280,7 @@ if ($step === 5):
                 </tbody>
             </table>
         </div>
-    </div>
-    <?php endif; ?>
+    </article>
 
     <form method="post" class="footer-actions" style="margin-top:0.75rem">
         <?= csrf_input() ?>

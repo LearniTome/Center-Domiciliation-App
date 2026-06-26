@@ -1412,7 +1412,7 @@ td.col-pdf .pdf-pending {
 .pv-ago-wizard .recap-resolution p { margin: 4px 0 0; white-space: pre-wrap; font-size: 0.85rem; line-height: 1.5; }
 .pv-ago-wizard .res-title-input { font-family: Georgia, serif; font-size: 0.85rem; }
 .pv-ago-wizard .two-step-flow { margin-top: 0; }
-.pv-ago-wizard .doc-grid { margin-top: 8px; overflow-x: auto; }
+.pv-ago-wizard .doc-icon { color: var(--primary); vertical-align: middle; margin-right: 6px; }
 .pv-ago-wizard .calc-line { padding: 2px 0; font-size: 0.85rem; }
 .pv-ago-wizard .calc-total { font-weight: 600; border-top: 1px solid var(--line); padding-top: 6px; margin-top: 6px; }
 .pv-ago-wizard .divider { margin: 16px 0; border: none; border-top: 1px solid var(--line); }
