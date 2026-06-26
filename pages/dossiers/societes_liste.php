@@ -23,6 +23,7 @@ if (($pdo ?? null) instanceof PDO) {
     $tribunauxOptions = fetch_reference_options($pdo, 'ref_tribunaux', 'tribunal');
     $adressesOptions = fetch_reference_options($pdo, 'ref_ste_adresses', 'adresse');
     $tribunalTypes = fetch_tribunaux_types($pdo);
+    $tribunauxAll = fetch_tribunaux_all($pdo);
 }
 
 // JSON-encoded option arrays for inline editable selects
@@ -286,8 +287,8 @@ if (($pdo ?? null) instanceof PDO) {
                     <label class="field"><span>Part social</span><input type="number" name="societe_part_social"></label>
                     <label class="field"><span>Valeur nominale</span><input type="number" step="0.01" name="societe_valeur_nominale"></label>
                     <label class="field"><span>Ville</span><select name="societe_ville"><option value="">Selectionner</option><?php foreach ($villesOptions as $opt): ?><option value="<?= e($opt) ?>"><?= e($opt) ?></option><?php endforeach; ?></select></label>
-                    <label class="field"><span>Type tribunal</span><select name="societe_tribunal_type"><option value="">Selectionner</option><?php foreach ($tribunalTypes ?? [] as $t): ?><option value="<?= e($t) ?>"><?= e($t) ?></option><?php endforeach; ?></select></label>
-                    <label class="field"><span>Tribunal</span><select name="societe_tribunal"><option value="">Selectionner</option><?php foreach ($tribunauxOptions as $opt): ?><option value="<?= e($opt) ?>"><?= e($opt) ?></option><?php endforeach; ?></select></label>
+                    <label class="field"><span>Type tribunal</span><select name="societe_tribunal_type" data-tribunal-type><option value="">Selectionner</option><?php foreach ($tribunalTypes ?? [] as $t): ?><option value="<?= e($t) ?>"><?= e($t) ?></option><?php endforeach; ?></select></label>
+                    <label class="field"><span>Tribunal</span><select name="societe_tribunal"><option value="">Selectionner</option><?php foreach ($tribunauxAll ?? [] as $opt): ?><option value="<?= e($opt['tribunal']) ?>" data-type="<?= e($opt['tribunal_type'] ?? '') ?>"><?= e($opt['tribunal']) ?></option><?php endforeach; ?></select></label>
                     <label class="field"><span>Telephone</span><input type="text" name="societe_telephone"></label>
                     <label class="field"><span>Email</span><input type="email" name="societe_email"></label>
                     <label class="field" style="grid-column:1/-1"><span>Adresse siege</span><select name="societe_adresse_siege"><option value="">Selectionner</option><?php foreach ($adressesOptions as $opt): ?><option value="<?= e($opt) ?>"><?= e($opt) ?></option><?php endforeach; ?></select></label>
