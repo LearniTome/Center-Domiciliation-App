@@ -242,9 +242,9 @@ if ($step === 5):
     </div>
 
     <?php if (!empty($generatedFiles)): ?>
-    <article class="card stack">
+    <article class="card stack doc-success-card">
         <div class="section-header">
-            <h2><span class="material-symbols-outlined" style="font-size:1.2rem;vertical-align:middle;margin-right:6px">article</span>Document genere</h2>
+            <h2><span class="material-symbols-outlined doc-icon" style="font-size:1.2rem">article</span>Document genere</h2>
         </div>
         <div class="table-scroll">
             <table data-sortable>
