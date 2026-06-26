@@ -3230,15 +3230,18 @@ tr[data-coverage], .row-mapped {
 .recap-a4.recap-pdf-mode .recap-section h3 { border-bottom-color: #ccc !important; }
 .recap-a4.recap-pdf-mode .recap-header h2 { color: #1a4b8c !important; }
 @media print {
-    .sidebar, .page-header, .pv-actions, .footer-actions,
-    .wizard-steps, .section-header, .step-4-controls,
-    nav, header, .shell > nav { display: none !important; }
+    .sidebar, .sidebar-toggle, .top-bar, .page-header,
+    .pv-actions, .footer-actions, .wizard-steps, .wizard-info,
+    .section-header, .step-4-controls,
+    nav, header, .shell > nav, .flash { display: none !important; }
     .card:not(.pv-ago-wizard) { display: none !important; }
     .pv-ago-wizard { display: block !important; border: none !important; box-shadow: none !important; padding: 0 !important; background: transparent !important; }
     .shell { display: block !important; }
     .shell-body { display: block !important; height: auto !important; overflow: visible !important; }
     .main { overflow: visible !important; height: auto !important; padding: 0 !important; }
     .stack { display: block !important; }
+    body { background: #fff !important; font-size: 10pt !important; margin: 0 !important; padding: 0 !important; }
+    @page { margin: 1.5cm; }
     .recap-a4 {
         box-shadow: none !important; padding: 0 !important;
         max-width: none !important; background: #fff !important;
@@ -3259,7 +3262,6 @@ tr[data-coverage], .row-mapped {
     .recap-a4 .recap-header { border-bottom-color: #222 !important; }
     .recap-a4 .recap-section h3 { border-bottom-color: #ccc !important; }
     .recap-a4 .recap-section { padding: 0 !important; }
-    body { background: #fff !important; font-size: 10pt !important; }
 }
 
 /* recap tables & cards */
