@@ -221,6 +221,9 @@ if ($step === 5):
                     <h3>Generer le document</h3>
                     <p class="help-text">Generation du PV AGO au format DOCX + PDF.</p>
                 </div>
+                <?php if ($generatedFiles): ?>
+                <span class="step-badge text-success">Fait</span>
+                <?php endif; ?>
             </div>
             <?php if ($saved && empty($generatedFiles)): ?>
             <form method="post" class="inline-save">
