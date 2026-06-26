@@ -16,6 +16,8 @@ $navPermissions = [
     'modifications' => 'modifications.view',
     'cessions' => 'cessions.view',
     'cession' => 'cessions.create',
+    'pvag' => 'pv_ago.view',
+    'pv_ago' => 'pv_ago.create',
     'generation' => 'generation.use',
     'documents' => 'documents.view',
     'analyse-couverture' => 'analyse.view',
@@ -69,6 +71,7 @@ $navSections = [
         'items' => [
             'modifications' => ['Toutes les modifications', 'list_alt'],
             'cessions' => ['Cession de parts', 'transfer_within_a_station'],
+            'pvag' => ['PV Assemblee Generale', 'groups'],
         ],
     ],
     'Templates de documents' => [

@@ -10,6 +10,7 @@ return [
         'SA' => 'SA',
         '_Cession_SARL' => 'Cession SARL',
         '_Cession_SARLAU' => 'Cession SARL AU',
+        '_PV_AGO' => 'PV Assemblee Generale Ordinaire',
     ],
 
     'document_types' => [
@@ -23,17 +24,20 @@ return [
         'PV-AGE-Cession' => "PV d'assemblee generale cession",
         'Declaration-Modificative-RC' => 'Declaration modificative RC',
         'Annonce-Legale-Cession' => 'Annonce legale cession',
+        'PV-AGO' => "PV d'assemblee generale ordinaire annuelle",
     ],
 
     'generation_types' => [
         'creation' => 'Creation',
         'domiciliation' => 'Domiciliation',
         'cession' => 'Cession de parts',
+        'pv_ago' => 'PV Assemblee Generale Ordinaire',
     ],
 
     'template_mapping' => [
         'creation' => ['Statuts', 'Annonce-Legale-Journal', 'Depot-Legal-Constitution', 'Declaration-Immatriculation-RC', 'Attestation-Domiciliation-Initiale', 'Contrat-Domiciliation'],
         'domiciliation' => ['Contrat-Domiciliation', 'Attestation-Domiciliation-Initiale'],
         'cession' => ['Acte-Cession-Parts', 'PV-AGE-Cession', 'Declaration-Modificative-RC', 'Annonce-Legale-Cession'],
+        'pv_ago' => ['PV-AGO'],
     ],
 ];

@@ -762,6 +762,8 @@ function get_page_permission(string $page): ?string
         'cessions' => 'cessions.view',
         'cession' => 'cessions.view',
         'cession_dossier' => 'cessions.view',
+        'pv_ago' => 'pv_ago.view',
+        'pvag' => 'pv_ago.view',
     ];
 
     return $map[$page] ?? null;

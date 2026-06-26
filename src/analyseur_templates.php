@@ -342,6 +342,21 @@ class TemplateAnalyzer
             'PV_RESOLUTION_5', 'PV_TITLE_5', 'PV_RESOLUTION_6', 'PV_TITLE_6',
             'PV_RESOLUTION_7', 'PV_TITLE_7', 'PV_RESOLUTION_8', 'PV_TITLE_8',
             'PV_RESOLUTION_9', 'PV_TITLE_9', 'PV_RESOLUTION_10', 'PV_TITLE_10',
+            // PV AGO assemblee
+            'PV_AGO_DATE', 'PV_AGO_HEURE', 'PV_AGO_LIEU',
+            'PV_AGO_PRESIDENT_NOM', 'PV_AGO_PRESIDENT_QUALITE',
+            'PV_AGO_EXERCICE_CLOS',
+            'PV_AGO_RESULTAT_NET', 'PV_AGO_RESULTAT_TYPE', 'PV_AGO_RESULTAT_LIB',
+            'PV_AGO_BASE_RESERVE_LEGALE',
+            'PV_AGO_RESERVE_LEGALE_EXISTANTE', 'PV_AGO_RESERVE_LEGALE_PLAFOND',
+            'PV_AGO_RESERVE_LEGALE_DOTATION', 'PV_AGO_RESERVE_STATUTAIRE_DOTATION',
+            'PV_AGO_DIVIDENDE_BRUT', 'PV_AGO_TPA_MONTANT', 'PV_AGO_DIVIDENDE_NET',
+            'PV_AGO_REPORT_A_NOUVEAU_SOLDE',
+            'PV_AGO_CALCUL_DETAIL', 'PV_AGO_TOTAL_PARTS', 'PV_AGO_PARTS_PRESENTES',
+            'PV_AGO_RESERVE_FACULTATIVE_DOTATION', 'PV_AGO_RESERVE_FACULTATIVE_PRELEVEMENT',
+            'PV_AGO_RESERVE_STATUTAIRE_EXISTANTE', 'PV_AGO_RESERVE_FACULTATIVE_EXISTANTE',
+            'PV_AGO_REPORT_DEBITEUR',
+            'PV_AGO_ORDRE_JOUR',
         ];
     }
 
@@ -383,6 +398,10 @@ class TemplateAnalyzer
             if (str_contains($name, $token)) {
                 return 'cession';
             }
+        }
+
+        if (str_contains($name, 'PV_AGO')) {
+            return 'cession';
         }
 
         return 'autre';

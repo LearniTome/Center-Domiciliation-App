@@ -923,6 +923,178 @@ class DocumentRenderer
         ];
     }
 
+    public static function buildContextFromPvAgo(PDO $pdo, int $pvAgoId): array
+    {
+        $stmt = $pdo->prepare('SELECT * FROM pv_ago WHERE id = :id');
+        $stmt->execute(['id' => $pvAgoId]);
+        $pv = $stmt->fetch();
+
+        if (!$pv) {
+            return [];
+        }
+
+        $societe = fetch_record($pdo, 'societes', (int) $pv['societe_id']);
+        if (!$societe) {
+            return [];
+        }
+
+        $now = new DateTime();
+        $capital = (float) ($pv['capital_social'] ?? $societe['societe_capital'] ?? 0);
+        $totalParts = (int) ($pv['total_parts'] ?? $societe['societe_part_social'] ?? 0);
+        $partsPresentes = (int) ($pv['parts_presentes'] ?? $totalParts);
+        $resultatNet = (float) ($pv['resultat_net'] ?? 0);
+        $isBenefice = ($pv['resultat_type'] ?? 'benefice') === 'benefice';
+        $reportDebiteur = (float) ($pv['report_a_nouveau_debiteur'] ?? 0);
+        $reserveLegaleExistante = (float) ($pv['reserve_legale_existante'] ?? 0);
+        $reserveStatutaireExistante = (float) ($pv['reserve_statutaire_existante'] ?? 0);
+        $reserveFacultativeExistante = (float) ($pv['reserve_facultative_existante'] ?? 0);
+        $affectation = $pv['affectation_option'] ?? '';
+        $dividendeTotal = (float) ($pv['dividende_total'] ?? 0);
+        $reserveStatutaireDotation = (float) ($pv['reserve_statutaire_dotation'] ?? 0);
+        $reserveFacultativeDotation = (float) ($pv['reserve_facultative_dotation'] ?? 0);
+        $perteReservePrelevement = (float) ($pv['perte_reserve_prelevement'] ?? 0);
+
+        // Calculations
+        $plafondReserveLegale = $capital * 0.10;
+        $baseReserveLegale = max(0, $resultatNet - $reportDebiteur);
+        $reserveLegaleDotation = 0;
+        if ($isBenefice && $baseReserveLegale > 0) {
+            $dotationCalculee = $baseReserveLegale * 0.05;
+            $reserveLegaleDotation = min($dotationCalculee, max(0, $plafondReserveLegale - $reserveLegaleExistante));
+        }
+        $newReserveLegale = $reserveLegaleExistante + $reserveLegaleDotation;
+
+        $tpaMontant = $dividendeTotal * 0.10;
+        $dividendeNet = $dividendeTotal - $tpaMontant;
+
+        $reportNouveau = 0;
+        if ($isBenefice) {
+            if ($affectation === 'profit_distribution') {
+                $reportNouveau = $baseReserveLegale - $reserveLegaleDotation - $reserveStatutaireDotation - $reserveFacultativeDotation - $dividendeTotal;
+            }
+        } else {
+            if ($affectation === 'loss_carryforward') {
+                $reportNouveau = -$resultatNet;
+            } else {
+                $reportNouveau = 0;
+            }
+        }
+
+        $resultatLib = $isBenefice
+            ? 'Un benefice net comptable de ' . number_format($resultatNet, 2, ',', ' ') . ' DH'
+            : 'Une perte nette comptable de ' . number_format(abs($resultatNet), 2, ',', ' ') . ' DH';
+
+        $calculLines = [];
+        $calculLines[] = 'Resultat net de l\'exercice : ' . number_format($resultatNet, 2, ',', ' ') . ' DH';
+        if ($reportDebiteur > 0) {
+            $calculLines[] = 'Report a nouveau debiteur anterieur : ' . number_format($reportDebiteur, 2, ',', ' ') . ' DH';
+            $calculLines[] = 'Base de calcul reserve legale : ' . number_format($baseReserveLegale, 2, ',', ' ') . ' DH';
+        }
+        if ($isBenefice) {
+            if ($reserveLegaleDotation > 0) {
+                $calculLines[] = 'Reserve legale (5%) : ' . number_format($reserveLegaleDotation, 2, ',', ' ') . ' DH (plafond ' . number_format($plafondReserveLegale, 2, ',', ' ') . ' DH)';
+            } else {
+                $calculLines[] = 'Reserve legale : plafond atteint ou non applicable';
+            }
+            if ($reserveStatutaireDotation > 0) {
+                $calculLines[] = 'Reserve statutaire : ' . number_format($reserveStatutaireDotation, 2, ',', ' ') . ' DH';
+            }
+            if ($reserveFacultativeDotation > 0) {
+                $calculLines[] = 'Reserve facultative : ' . number_format($reserveFacultativeDotation, 2, ',', ' ') . ' DH';
+            }
+            if ($dividendeTotal > 0) {
+                $calculLines[] = 'Dividendes : ' . number_format($dividendeTotal, 2, ',', ' ') . ' DH';
+                $calculLines[] = 'TPA (10%) : ' . number_format($tpaMontant, 2, ',', ' ') . ' DH';
+                $calculLines[] = 'Dividendes nets verses : ' . number_format($dividendeNet, 2, ',', ' ') . ' DH';
+            }
+            $calculLines[] = 'Report a nouveau crediteur (solde) : ' . number_format(max(0, $reportNouveau), 2, ',', ' ') . ' DH';
+        } else {
+            if ($affectation === 'loss_carryforward') {
+                $calculLines[] = 'Perte reportee a nouveau : ' . number_format(abs($resultatNet), 2, ',', ' ') . ' DH';
+            } else {
+                $calculLines[] = 'Perte imputee sur reserves : ' . number_format($perteReservePrelevement, 2, ',', ' ') . ' DH';
+            }
+        }
+        $calculDetail = implode("\n", $calculLines);
+
+        // Ordre du jour
+        $ordreJour = "1. Rapport de gestion de la gerance sur l'activite et le resultat de l'exercice clos le " . ($pv['exercice_clos'] ?? '31/12/2025') . "\n"
+            . "2. Lecture du bilan, du compte de produits et charges (CPC), de l'etat des soldes de gestion (ESG) et des annexes\n"
+            . "3. Approbation des etats de synthese et quitus a la gerance\n"
+            . "4. Affectation du resultat de l'exercice\n"
+            . "5. Pouvoirs pour l'accomplissement des formalites legales de depot et de publicite";
+
+        $resolutions = [];
+        if (!empty($pv['resolutions'])) {
+            $parsed = json_decode($pv['resolutions'], true);
+            if (is_array($parsed)) {
+                $resolutions = $parsed;
+            }
+        }
+
+        return [
+            'pv_ago' => $pv,
+            'societe' => $societe,
+            'SOCIETE_RAISON_SOCIALE' => $societe['societe_raison_sociale'] ?? '',
+            'SOCIETE_FORME_JURIDIQUE' => $societe['societe_forme_juridique'] ?? '',
+            'SOCIETE_ICE' => $societe['societe_ice'] ?? '',
+            'SOCIETE_RC' => $societe['societe_rc'] ?? '',
+            'SOCIETE_IF' => $societe['societe_if'] ?? '',
+            'SOCIETE_TP' => $societe['societe_tp'] ?? '',
+            'SOCIETE_CNSS' => $societe['societe_cnss'] ?? '',
+            'SOCIETE_CAPITAL' => (string) $capital,
+            'SOCIETE_PART_SOCIAL' => (string) $totalParts,
+            'SOCIETE_VALEUR_NOMINALE' => (string) ($societe['societe_valeur_nominale'] ?? ''),
+            'SOCIETE_VILLE' => $societe['societe_ville'] ?? '',
+            'SOCIETE_TRIBUNAL' => $societe['societe_tribunal'] ?? '',
+            'SOCIETE_ADRESSE_SIEGE' => $societe['societe_adresse_siege'] ?? '',
+            'SOCIETE_EMAIL' => $societe['societe_email'] ?? '',
+            'SOCIETE_TELEPHONE' => $societe['societe_telephone'] ?? '',
+            'SOCIETE_DOSSIER' => $societe['societe_dossier'] ?? '',
+            // PV AGO specifics
+            'PV_AGO_DATE' => self::formatDate($pv['date_ago'] ?? ''),
+            'PV_AGO_HEURE' => $pv['heure_ago'] ?? '10:00',
+            'PV_AGO_LIEU' => $pv['lieu_ago'] ?? 'au siege social',
+            'PV_AGO_PRESIDENT_NOM' => $pv['president_nom'] ?? '',
+            'PV_AGO_PRESIDENT_QUALITE' => $pv['president_qualite'] ?? 'Gerant',
+            'PV_AGO_EXERCICE_CLOS' => $pv['exercice_clos'] ?? '',
+            'PV_AGO_RESULTAT_NET' => number_format($resultatNet, 2, ',', ' '),
+            'PV_AGO_RESULTAT_TYPE' => $isBenefice ? 'benefice' : 'perte',
+            'PV_AGO_RESULTAT_LIB' => $resultatLib,
+            'PV_AGO_BASE_RESERVE_LEGALE' => number_format($baseReserveLegale, 2, ',', ' '),
+            'PV_AGO_RESERVE_LEGALE_EXISTANTE' => number_format($reserveLegaleExistante, 2, ',', ' '),
+            'PV_AGO_RESERVE_LEGALE_PLAFOND' => number_format($plafondReserveLegale, 2, ',', ' '),
+            'PV_AGO_RESERVE_LEGALE_DOTATION' => number_format($reserveLegaleDotation, 2, ',', ' '),
+            'PV_AGO_RESERVE_STATUTAIRE_DOTATION' => number_format($reserveStatutaireDotation, 2, ',', ' '),
+            'PV_AGO_RESERVE_FACULTATIVE_DOTATION' => number_format($reserveFacultativeDotation, 2, ',', ' '),
+            'PV_AGO_RESERVE_FACULTATIVE_PRELEVEMENT' => number_format($perteReservePrelevement, 2, ',', ' '),
+            'PV_AGO_RESERVE_STATUTAIRE_EXISTANTE' => number_format($reserveStatutaireExistante, 2, ',', ' '),
+            'PV_AGO_RESERVE_FACULTATIVE_EXISTANTE' => number_format($reserveFacultativeExistante, 2, ',', ' '),
+            'PV_AGO_REPORT_DEBITEUR' => number_format($reportDebiteur, 2, ',', ' '),
+            'PV_AGO_DIVIDENDE_BRUT' => number_format($dividendeTotal, 2, ',', ' '),
+            'PV_AGO_TPA_MONTANT' => number_format($tpaMontant, 2, ',', ' '),
+            'PV_AGO_DIVIDENDE_NET' => number_format($dividendeNet, 2, ',', ' '),
+            'PV_AGO_REPORT_A_NOUVEAU_SOLDE' => number_format(max(0, $reportNouveau), 2, ',', ' '),
+            'PV_AGO_CALCUL_DETAIL' => $calculDetail,
+            'PV_AGO_TOTAL_PARTS' => (string) $totalParts,
+            'PV_AGO_PARTS_PRESENTES' => (string) $partsPresentes,
+            'PV_AGO_ORDRE_JOUR' => $ordreJour,
+            // Dates auto
+            'DATE' => $now->format('d/m/Y'),
+            'DATE_LONG' => strtr($now->format('d F Y'), [
+                'January' => 'Janvier', 'February' => 'Fevrier', 'March' => 'Mars',
+                'April' => 'Avril', 'May' => 'Mai', 'June' => 'Juin',
+                'July' => 'Juillet', 'August' => 'Aout', 'September' => 'Septembre',
+                'October' => 'Octobre', 'November' => 'Novembre', 'December' => 'Decembre',
+            ]),
+            'ANNEE' => $now->format('Y'),
+            'MOIS' => $now->format('m'),
+            'JOUR' => $now->format('d'),
+            // PV resolutions
+            'PV_ORDER_ITEMS' => $ordreJour,
+        ];
+    }
+
     public static function buildContextFromSession(array $wizard, ?PDO $pdo = null): array
     {
         $societe = $wizard['societe'] ?? [];
