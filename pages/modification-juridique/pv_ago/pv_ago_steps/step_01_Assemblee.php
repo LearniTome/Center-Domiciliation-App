@@ -56,7 +56,7 @@ if ($step === 1):
         <?= csrf_input() ?>
 
         <?php if ($isNew): ?>
-        <fieldset class="card card-box">
+        <fieldset class="card card-box card-societe">
             <legend>Nouvelle societe</legend>
             <div class="form-grid cols-2">
                 <?php foreach ([
@@ -110,7 +110,7 @@ if ($step === 1):
         <?php endif; ?>
 
         <?php if ($showSocieteSelector): ?>
-        <fieldset class="card card-box">
+        <fieldset class="card card-box card-select">
             <legend>Selectionner une societe</legend>
             <div class="field">
                 <span>Societe existante</span>
@@ -124,7 +124,7 @@ if ($step === 1):
         </fieldset>
         <?php endif; ?>
 
-        <fieldset class="card card-box">
+        <fieldset class="card card-box card-assemblee">
             <legend>Assemblee</legend>
             <div class="form-grid cols-2">
                 <div class="field">

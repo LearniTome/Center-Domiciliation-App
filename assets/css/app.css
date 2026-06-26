@@ -1395,11 +1395,36 @@ td.col-pdf .pdf-pending {
     border-radius: 6px; border-left: 3px solid var(--primary);
 }
 .pv-ago-wizard fieldset.card,
-.pv-ago-wizard .card-box { padding: 16px; margin-bottom: 16px; }
-.pv-ago-wizard legend { font-weight: 600; font-size: 0.9rem; padding: 0 6px; }
-.pv-ago-wizard .soc-info { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--bg-secondary); border-radius: var(--radius); margin-bottom: 16px; }
-.pv-ago-wizard .soc-info strong { font-size: 0.95rem; }
-.pv-ago-wizard .soc-info .soc-meta { color: var(--text-secondary); font-size: 0.85rem; margin-left: 8px; }
+.pv-ago-wizard .card-box {
+    padding: 20px; margin-bottom: 20px;
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--card-bg);
+    transition: border-color .2s, box-shadow .2s;
+}
+.pv-ago-wizard fieldset.card:focus-within,
+.pv-ago-wizard .card-box:focus-within {
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+.pv-ago-wizard legend {
+    font-weight: 700; font-size: 0.85rem; text-transform: uppercase;
+    letter-spacing: 0.04em; padding: 0 10px; color: var(--text-secondary);
+    background: var(--card-bg); border-radius: 4px;
+}
+.pv-ago-wizard fieldset.card.card-societe { border-left-color: var(--primary); }
+.pv-ago-wizard fieldset.card.card-assemblee { border-left-color: var(--info); }
+.pv-ago-wizard fieldset.card.card-select { border-left-color: var(--warning); }
+.pv-ago-wizard .soc-info {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 20px; background: linear-gradient(135deg, var(--primary) 10%, color-mix(in srgb, var(--primary) 80%, black));
+    border-radius: var(--radius); margin-bottom: 20px; color: #fff;
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+.pv-ago-wizard .soc-info strong { font-size: 1rem; color: inherit; }
+.pv-ago-wizard .soc-info .soc-meta { font-size: 0.85rem; margin-left: 10px; opacity: 0.85; color: inherit; }
+.pv-ago-wizard .soc-info .btn { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.4); color: #fff; }
+.pv-ago-wizard .soc-info .btn:hover { background: rgba(255,255,255,0.25); border-color: rgba(255,255,255,0.6); }
 .pv-ago-wizard .inline-save { margin-top: 8px; }
 .pv-ago-wizard .resolutions-preview { white-space: pre-wrap; font-family: Georgia, serif; line-height: 1.6; padding: 20px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); margin-top: 12px; }
 .pv-ago-wizard .res-block { background: var(--bg-secondary); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; }
