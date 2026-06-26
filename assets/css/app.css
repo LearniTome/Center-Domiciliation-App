@@ -2190,12 +2190,8 @@ td.col-pdf .pdf-pending {
 }
 .step-badge {
     margin-left: auto;
-    font-size: 0.7rem;
-    font-weight: 600;
-    color: var(--success);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    white-space: nowrap;
+    display: flex;
+    align-items: center;
 }
 
 .template-gen-group {
