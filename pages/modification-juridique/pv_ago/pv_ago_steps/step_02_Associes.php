@@ -132,7 +132,7 @@ if ($step === 2):
                                     <option value="<?= e($option) ?>" <?= (string) ($associe['associe_nationalite'] ?? '') === $option ? 'selected' : '' ?>><?= e($option) ?></option>
                                 <?php endforeach; ?>
                             </select>
-                            <a href="<?= e(app_url('configuration', ['tab' => 'nationalites'])) ?>" target="_blank" title="Gerer les nationalites" style="color:var(--primary);text-decoration:none;font-size:1.4rem;line-height:1">&plus;</a>
+                            <button type="button" class="btn-icon" data-quick-create-btn="nationalites" title="Ajouter une nationalite"><span class="material-symbols-outlined">add</span></button>
                         </div>
                     </label>
                     <label class="field">
@@ -148,7 +148,7 @@ if ($step === 2):
                                     <option value="<?= e($option) ?>" <?= (string) ($associe['associe_lieu_naissance'] ?? '') === $option ? 'selected' : '' ?>><?= e($option) ?></option>
                                 <?php endforeach; ?>
                             </select>
-                            <a href="<?= e(app_url('configuration', ['tab' => 'lieux-naissance'])) ?>" target="_blank" title="Gerer les lieux de naissance" style="color:var(--primary);text-decoration:none;font-size:1.4rem;line-height:1">&plus;</a>
+                            <button type="button" class="btn-icon" data-quick-create-btn="lieux-naissance" title="Ajouter un lieu de naissance"><span class="material-symbols-outlined">add</span></button>
                         </div>
                     </label>
                     <h3 class="section-title">Contact</h3>
@@ -174,7 +174,7 @@ if ($step === 2):
                                     <option value="<?= e($option) ?>" <?= (string) ($associe['associe_qualite'] ?? '') === $option ? 'selected' : '' ?>><?= e($option) ?></option>
                                 <?php endforeach; ?>
                             </select>
-                            <a href="<?= e(app_url('configuration', ['tab' => 'qualites-associe'])) ?>" target="_blank" title="Gerer les qualites" style="color:var(--primary);text-decoration:none;font-size:1.4rem;line-height:1">&plus;</a>
+                            <button type="button" class="btn-icon" data-quick-create-btn="qualites-associe" title="Ajouter une qualite"><span class="material-symbols-outlined">add</span></button>
                         </div>
                     </label>
                     <label class="field">
@@ -244,7 +244,7 @@ if ($step === 2):
                                     <option value="<?= e($option) ?>"><?= e($option) ?></option>
                                 <?php endforeach; ?>
                             </select>
-                            <a href="<?= e(app_url('configuration', ['tab' => 'nationalites'])) ?>" target="_blank" title="Gerer les nationalites" style="color:var(--primary);text-decoration:none;font-size:1.4rem;line-height:1">&plus;</a>
+                            <button type="button" class="btn-icon" data-quick-create-btn="nationalites" title="Ajouter une nationalite"><span class="material-symbols-outlined">add</span></button>
                         </div>
                     </label>
                     <label class="field">
@@ -260,7 +260,7 @@ if ($step === 2):
                                     <option value="<?= e($option) ?>"><?= e($option) ?></option>
                                 <?php endforeach; ?>
                             </select>
-                            <a href="<?= e(app_url('configuration', ['tab' => 'lieux-naissance'])) ?>" target="_blank" title="Gerer les lieux de naissance" style="color:var(--primary);text-decoration:none;font-size:1.4rem;line-height:1">&plus;</a>
+                            <button type="button" class="btn-icon" data-quick-create-btn="lieux-naissance" title="Ajouter un lieu de naissance"><span class="material-symbols-outlined">add</span></button>
                         </div>
                     </label>
                     <h3 class="section-title">Contact</h3>
@@ -286,7 +286,7 @@ if ($step === 2):
                                     <option value="<?= e($option) ?>"><?= e($option) ?></option>
                                 <?php endforeach; ?>
                             </select>
-                            <a href="<?= e(app_url('configuration', ['tab' => 'qualites-associe'])) ?>" target="_blank" title="Gerer les qualites" style="color:var(--primary);text-decoration:none;font-size:1.4rem;line-height:1">&plus;</a>
+                            <button type="button" class="btn-icon" data-quick-create-btn="qualites-associe" title="Ajouter une qualite"><span class="material-symbols-outlined">add</span></button>
                         </div>
                     </label>
                     <label class="field">
@@ -318,4 +318,30 @@ if ($step === 2):
         </div>
     </form>
 </div>
+
+<?php
+$quickCreateModalKey = 'nationalites';
+$quickCreateTitle = 'Nouvelle nationalite';
+$quickCreateTable = 'ref_nationalites';
+$quickCreateFields = [
+    ['name' => 'nationalite', 'label' => 'Nationalite', 'type' => 'text', 'required' => true],
+];
+require __DIR__ . '/../../../../includes/quick_create_modal.php';
+
+$quickCreateModalKey = 'lieux-naissance';
+$quickCreateTitle = 'Nouveau lieu de naissance';
+$quickCreateTable = 'ref_lieux_naissance';
+$quickCreateFields = [
+    ['name' => 'lieu_naissance', 'label' => 'Lieu de naissance', 'type' => 'text', 'required' => true],
+];
+require __DIR__ . '/../../../../includes/quick_create_modal.php';
+
+$quickCreateModalKey = 'qualites-associe';
+$quickCreateTitle = 'Nouvelle qualite associe';
+$quickCreateTable = 'ref_qualites_associe';
+$quickCreateFields = [
+    ['name' => 'qualite_associe', 'label' => 'Qualite associe', 'type' => 'text', 'required' => true],
+];
+require __DIR__ . '/../../../../includes/quick_create_modal.php';
+?>
 <?php endif; ?>

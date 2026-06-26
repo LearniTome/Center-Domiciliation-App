@@ -12,67 +12,89 @@
 
     // ── Quick Create Modal ──
     (function () {
-        var modal = document.querySelector('[data-modal="quick-create"]');
-        var openBtns = document.querySelectorAll('[data-quick-create-btn]');
-        var form = modal ? modal.querySelector('[data-quick-create-form]') : null;
+        function initQuickCreate(modal, form, openBtns) {
+            if (!modal || !form || !openBtns || openBtns.length === 0) return;
 
-        if (!modal || !form || openBtns.length === 0) return;
+            function open() { modal.classList.add('open'); }
+            function close() { modal.classList.remove('open'); }
 
-        function open() { modal.classList.add('open'); }
-        function close() { modal.classList.remove('open'); }
+            openBtns.forEach(function (btn) { btn.addEventListener('click', open); });
 
-        openBtns.forEach(function (btn) { btn.addEventListener('click', open); });
+            modal.querySelectorAll('[data-modal-close]').forEach(function (el) {
+                el.addEventListener('click', close);
+            });
 
-        modal.querySelectorAll('[data-modal-close]').forEach(function (el) {
-            el.addEventListener('click', close);
-        });
+            modal.addEventListener('click', function (e) {
+                if (e.target === modal) close();
+            });
 
-        modal.addEventListener('click', function (e) {
-            if (e.target === modal) close();
-        });
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && modal.classList.contains('open')) close();
+            });
 
-        document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape' && modal.classList.contains('open')) close();
-        });
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                var fd = new FormData(form);
+                var token = getCsrfToken();
+                if (token) fd.set('_csrf_token', token);
 
-        form.addEventListener('submit', function (e) {
-            e.preventDefault();
-            var fd = new FormData(form);
-            var token = getCsrfToken();
-            if (token) fd.set('_csrf_token', token);
+                var submitBtn = form.querySelector('button[type="submit"]');
+                var originalText = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="material-symbols-outlined">hourglass_top</span> Creation...';
 
-            var submitBtn = form.querySelector('button[type="submit"]');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="material-symbols-outlined">hourglass_top</span> Creation...';
-
-            fetch('api.php', { method: 'POST', body: fd })
-                .then(function (r) { return r.json(); })
-                .then(function (json) {
-                    if (json.success && json.data) {
-                        var table = document.querySelector('[data-table]');
-                        if (table) {
-                            var tbody = table.querySelector('tbody');
-                            if (tbody) {
-                                var newRow = buildRow(json.data, table);
-                                if (newRow) {
-                                    tbody.insertBefore(newRow, tbody.firstChild);
+                fetch('api.php', { method: 'POST', body: fd })
+                    .then(function (r) { return r.json(); })
+                    .then(function (json) {
+                        if (json.success && json.data) {
+                            var table = document.querySelector('[data-table]');
+                            if (table) {
+                                var tbody = table.querySelector('tbody');
+                                if (tbody) {
+                                    var newRow = buildRow(json.data, table);
+                                    if (newRow) {
+                                        tbody.insertBefore(newRow, tbody.firstChild);
+                                    }
                                 }
+                                form.reset();
+                                close();
+                                showToast('success', json.message);
+                                return;
                             }
+                            // No data-table → reload to refresh dropdowns (e.g. wizard steps)
+                            location.reload();
+                        } else {
+                            showToast('error', json.message || 'Erreur lors de la creation.');
                         }
-                        form.reset();
-                        close();
-                        showToast('success', json.message);
-                    } else {
-                        showToast('error', json.message || 'Erreur lors de la creation.');
-                    }
-                })
-                .catch(function () {
-                    showToast('error', 'Erreur reseau. Veuillez reessayer.');
-                })
-                .finally(function () {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<span class="material-symbols-outlined">add</span> Creer';
-                });
+                    })
+                    .catch(function () {
+                        showToast('error', 'Erreur reseau. Veuillez reessayer.');
+                    })
+                    .finally(function () {
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = originalText;
+                        }
+                    });
+            });
+        }
+
+        // Single modal (list page pattern — attribute without value)
+        var modal = document.querySelector('[data-modal="quick-create"]');
+        var form = modal ? modal.querySelector('[data-quick-create-form]') : null;
+        var openBtns = document.querySelectorAll('[data-quick-create-btn=""]');
+        initQuickCreate(modal, form, openBtns);
+
+        // Keyed modals (wizard / multi-modal pattern)
+        document.querySelectorAll('[data-quick-create-btn]').forEach(function (btn) {
+            var key = btn.getAttribute('data-quick-create-btn');
+            if (key) {
+                var kModal = document.querySelector('[data-modal="quick-create-' + key + '"]');
+                var kForm = kModal ? kModal.querySelector('[data-quick-create-form]') : null;
+                if (kModal && kForm) {
+                    initQuickCreate(kModal, kForm, [btn]);
+                }
+            }
         });
     })();
 
@@ -163,19 +185,53 @@
                 if (currentValue === '-' || currentValue === '—') currentValue = '';
                 var tableName = table.getAttribute('data-table');
 
-                var input = document.createElement('input');
-                input.type = 'text';
-                input.value = currentValue;
-                input.className = 'inline-edit-input';
-                input.style.cssText = 'width:100%;box-sizing:border-box;padding:2px 4px;border:1px solid var(--primary);border-radius:2px;background:var(--surface);color:var(--text);font:inherit';
+                var isSelect = cell.hasAttribute('data-editable-options');
+                var el;
+
+                if (isSelect) {
+                    el = document.createElement('select');
+                    el.className = 'inline-edit-input';
+                    el.style.cssText = 'width:100%;box-sizing:border-box;padding:2px 4px;border:1px solid var(--primary);border-radius:2px;background:var(--surface);color:var(--text);font:inherit';
+                    try {
+                        var options = JSON.parse(cell.getAttribute('data-editable-options'));
+                        var blank = document.createElement('option');
+                        blank.value = '';
+                        blank.textContent = '—';
+                        el.appendChild(blank);
+                        options.forEach(function (opt) {
+                            var o = document.createElement('option');
+                            o.value = opt;
+                            o.textContent = opt;
+                            if (opt === currentValue) o.selected = true;
+                            el.appendChild(o);
+                        });
+                    } catch (e) {
+                        // fallback to text input if options parse fails
+                        var fallback = document.createElement('input');
+                        fallback.type = 'text';
+                        fallback.value = currentValue;
+                        el = fallback;
+                    }
+                } else {
+                    el = document.createElement('input');
+                    el.type = 'text';
+                    el.value = currentValue;
+                }
+
+                el.className = 'inline-edit-input';
+                el.style.cssText = 'width:100%;box-sizing:border-box;padding:2px 4px;border:1px solid var(--primary);border-radius:2px;background:var(--surface);color:var(--text);font:inherit';
 
                 cell.textContent = '';
-                cell.appendChild(input);
-                input.focus();
-                input.select();
+                cell.appendChild(el);
+                el.focus();
+                if (el.select) el.select();
+
+                function getValue() {
+                    return el.value ? el.value.trim() : '';
+                }
 
                 function save() {
-                    var newValue = input.value.trim();
+                    var newValue = getValue();
                     if (newValue === currentValue) {
                         cell.textContent = currentValue || '-';
                         return;
@@ -210,9 +266,9 @@
                     cell.textContent = currentValue || '-';
                 }
 
-                input.addEventListener('blur', save);
-                input.addEventListener('keydown', function (ev) {
-                    if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
+                el.addEventListener('blur', save);
+                el.addEventListener('keydown', function (ev) {
+                    if (ev.key === 'Enter') { ev.preventDefault(); el.blur(); }
                     if (ev.key === 'Escape') { ev.preventDefault(); cancel(); }
                 });
             });

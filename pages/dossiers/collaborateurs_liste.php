@@ -4,10 +4,25 @@ declare(strict_types=1);
 
 $query = search_term();
 $user = current_user();
+$canEdit = has_permission('collaborateurs.edit');
 
 if (isset($_GET['import_msg']) && $_GET['import_msg'] !== '') {
     set_flash('success', htmlspecialchars($_GET['import_msg']));
 }
+
+// Reference data for quick create / bulk edit
+$rolesOptions = [];
+if (($pdo ?? null) instanceof PDO) {
+    $stmt = $pdo->query('SELECT id, nom FROM roles ORDER BY nom ASC');
+    while ($row = $stmt->fetch()) {
+        $rolesOptions[(int)$row['id']] = $row['nom'];
+    }
+}
+$collabTypeOptions = ['interne', 'externe-pm', 'externe-pp'];
+$collabStatutOptions = ['actif', 'inactif', 'suspendu'];
+$collabTypeJson = e(json_encode($collabTypeOptions));
+$collabStatutJson = e(json_encode($collabStatutOptions));
+$accesJson = e(json_encode(['0', '1']));
 
 if (is_post() && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
@@ -114,8 +129,10 @@ if (($pdo ?? null) instanceof PDO) {
         <div class="section-header">
             <span class="page-count"><?= count($collaborateurs) ?> enregistrement(s)</span>
             <div class="table-actions">
+                <?php if (has_permission('collaborateurs.create')): ?>
+                <button class="btn btn-next" type="button" data-quick-create-btn><span class="material-symbols-outlined">add</span> Nouveau collaborateur</button>
+                <?php endif; ?>
                 <button class="btn btn-secondary" type="button" data-col-toggle-btn><span class="material-symbols-outlined">view_column</span> Colonnes <span class="col-toggle-count" data-col-count>0/0</span></button>
-                <a class="btn btn-next" href="<?= e(app_url('collaborateur')) ?>"><span class="material-symbols-outlined">person_add</span> Nouveau collaborateur</a>
                 <a class="btn btn-info" href="<?= e(app_url('collaborateurs', ['export' => 'csv', 'q' => $query])) ?>"><span class="material-symbols-outlined">download</span> CSV</a>
                 <a class="btn btn-next" href="<?= e(app_url('collaborateurs', ['export' => 'xlsx', 'q' => $query])) ?>"><span class="material-symbols-outlined">table_chart</span> Excel</a>
                 <?php if (has_permission('collaborateurs.import')): ?>
@@ -142,9 +159,10 @@ if (($pdo ?? null) instanceof PDO) {
             <p class="table-empty">Aucun collaborateur pour le moment.</p>
         <?php else: ?>
             <div class="table-scroll">
-            <table data-col-toggle data-sortable>
+            <table data-col-toggle data-sortable data-table="collaborateurs" data-bulk>
                 <thead>
                 <tr>
+                    <th data-bulk-col><input type="checkbox" data-bulk-select-all title="Tout selectionner"></th>
                     <th data-col="role">Role</th>
                     <th data-col="type">Type</th>
                     <th data-col="acces">Acces app</th>
@@ -161,7 +179,8 @@ if (($pdo ?? null) instanceof PDO) {
                 </thead>
                 <tbody>
                 <?php foreach ($collaborateurs as $c): ?>
-                    <tr>
+                    <tr data-id="<?= (int) $c['id'] ?>">
+                        <td data-bulk-cell><input type="checkbox" data-bulk-checkbox title="Selectionner"></td>
                         <td>
                             <?php
                                 $isInternal = (int) ($c['is_internal'] ?? 0);
@@ -171,7 +190,7 @@ if (($pdo ?? null) instanceof PDO) {
                                 <?= e($roleName) ?>
                             </span>
                         </td>
-                        <td>
+                        <td<?= $canEdit ? ' data-editable="collaborateur_type" data-editable-options="' . $collabTypeJson . '"' : '' ?>>
                             <?php
                                 $ct = $c['collaborateur_type'] ?? '';
                                 if (!in_array($ct, ['interne', 'externe-pm', 'externe-pp'], true)) {
@@ -183,22 +202,23 @@ if (($pdo ?? null) instanceof PDO) {
                             ?>
                             <span class="badge <?= $typeClass[$ct] ?? 'badge' ?>"><?= $typeLabels[$ct] ?? '-' ?></span>
                         </td>
-                        <td>
+                        <td<?= $canEdit ? ' data-editable="can_login" data-editable-options="' . $accesJson . '"' : '' ?>>
                             <?php if ((int) ($c['can_login'] ?? 0)): ?>
                                 <span class="badge badge-success" title="Derniere connexion: <?= e(format_date($c['last_login'] ?? null)) ?>">Connectable</span>
                             <?php else: ?>
                                 <span class="badge">Aucun acces</span>
                             <?php endif; ?>
                         </td>
-                        <td><?= e($c['den_ste'] ?? '-') ?></td>
+                        <td<?= $canEdit ? ' data-editable="den_ste"' : '' ?>><?= e($c['den_ste'] ?? '-') ?></td>
                         <td><a href="<?= e(app_url('collaborateur', ['id' => (int) $c['id']])) ?>" style="color:var(--primary);text-decoration:none;font-weight:500;"><?= e($c['nom_complet']) ?></a></td>
-                        <td><?= e($c['fonction'] ?? '-') ?></td>
-                        <td><?= e($c['collaborateur_ice'] ?? '-') ?></td>
-                        <td><?= e($c['collaborateur_tel_mobile'] ?: $c['collaborateur_tel_fixe'] ?: $c['telephone'] ?: '-') ?></td>
-                        <td><?= e($c['statut']) ?></td>
+                        <td<?= $canEdit ? ' data-editable="fonction"' : '' ?>><?= e($c['fonction'] ?? '-') ?></td>
+                        <td<?= $canEdit ? ' data-editable="collaborateur_ice"' : '' ?>><?= e($c['collaborateur_ice'] ?? '-') ?></td>
+                        <td<?= $canEdit ? ' data-editable="collaborateur_tel_mobile"' : '' ?>><?= e($c['collaborateur_tel_mobile'] ?: $c['collaborateur_tel_fixe'] ?: $c['telephone'] ?: '-') ?></td>
+                        <td<?= $canEdit ? ' data-editable="statut" data-editable-options="' . $collabStatutJson . '"' : '' ?>><?= e($c['statut']) ?></td>
                         <td><?= e(date('d/m/Y', strtotime((string) $c['created_at']))) ?></td>
                         <td><?= e($c['last_login'] ? date('d/m/Y H:i', strtotime($c['last_login'])) : '-') ?></td>
                         <td class="table-actions">
+                            <a class="btn-icon primary" href="<?= e(app_url('collaborateur', ['id' => (int) $c['id']])) ?>" title="Voir"><span class="material-symbols-outlined">visibility</span></a>
                             <a class="btn-icon info" href="<?= e(app_url('collaborateur', ['id' => (int) $c['id']])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
                             <form method="post">
                                 <?= csrf_input() ?>
@@ -211,9 +231,65 @@ if (($pdo ?? null) instanceof PDO) {
                 <?php endforeach; ?>
                 </tbody>
             </table>
+            <template data-row-template>
+                <tr data-id="">
+                    <td data-bulk-cell><input type="checkbox" data-bulk-checkbox title="Selectionner"></td>
+                    <td data-cell="role_nom"></td>
+                    <td data-cell="collaborateur_type"></td>
+                    <td data-cell="can_login"></td>
+                    <td data-cell="den_ste"></td>
+                    <td data-cell-link="collaborateur" data-cell-value="id" data-cell-label="nom_complet"></td>
+                    <td data-cell="fonction"></td>
+                    <td data-cell="collaborateur_ice"></td>
+                    <td data-cell="collaborateur_tel_mobile"></td>
+                    <td data-cell="statut"></td>
+                    <td data-cell="created_at"></td>
+                    <td data-cell="last_login"></td>
+                    <td data-cell-actions>
+                        <a class="btn-icon primary" href="" title="Voir"><span class="material-symbols-outlined">visibility</span></a>
+                        <a class="btn-icon info" href="" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
+                        <form method="post" action="index.php?page=collaborateurs">
+                            <input type="hidden" name="action" value="delete">
+                            <input type="hidden" name="id" value="">
+                            <input type="hidden" name="_csrf_token" value="">
+                            <button class="btn-icon danger" type="submit" data-confirm="Supprimer ce collaborateur ?" title="Supprimer"><span class="material-symbols-outlined">delete</span></button>
+                        </form>
+                    </td>
+                </tr>
+            </template>
             </div>
         <?php endif; ?>
     </article>
+
+    <?php
+    $quickCreateTitle = 'Nouveau collaborateur';
+    $quickCreateTable = 'collaborateurs';
+    $quickCreateFields = [
+        ['name' => 'nom_complet', 'label' => 'Nom complet', 'type' => 'text', 'required' => true],
+        ['name' => 'collaborateur_type', 'label' => 'Type', 'type' => 'select', 'options' => $collabTypeOptions, 'required' => true],
+        ['name' => 'role_id', 'label' => 'Role', 'type' => 'select', 'options' => $rolesOptions],
+        ['name' => 'den_ste', 'label' => 'Cabinet', 'type' => 'text'],
+        ['name' => 'fonction', 'label' => 'Fonction', 'type' => 'text'],
+        ['name' => 'collaborateur_ice', 'label' => 'ICE', 'type' => 'text'],
+        ['name' => 'collaborateur_tel_mobile', 'label' => 'Telephone mobile', 'type' => 'text'],
+        ['name' => 'collaborateur_email', 'label' => 'Email', 'type' => 'email'],
+        ['name' => 'statut', 'label' => 'Statut', 'type' => 'select', 'options' => $collabStatutOptions],
+    ];
+    require __DIR__ . '/../../includes/quick_create_modal.php';
+
+    $bulkEditTitle = 'Modifier les collaborateurs selectionnes';
+    $bulkEditTable = 'collaborateurs';
+    $bulkEditFields = [
+        ['name' => 'statut', 'label' => 'Statut', 'type' => 'select', 'options' => $collabStatutOptions],
+        ['name' => 'collaborateur_type', 'label' => 'Type', 'type' => 'select', 'options' => $collabTypeOptions],
+    ];
+    require __DIR__ . '/../../includes/bulk_edit_modal.php';
+    ?>
 </section>
+
+<div class="bulk-toolbar" data-bulk-toolbar>
+    <span class="bulk-info"><span class="bulk-count" data-bulk-count>0</span> enregistrement(s) selectionne(s)</span>
+    <button class="btn btn-info" type="button" data-bulk-edit-btn><span class="material-symbols-outlined">edit_note</span> Modifier en masse</button>
+</div>
 
 <?php require __DIR__ . '/../../includes/import_excel_modal.php'; ?>

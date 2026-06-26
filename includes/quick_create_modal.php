@@ -9,9 +9,16 @@
  *       ...
  *   ];
  *   require __DIR__ . '/../../includes/quick_create_modal.php';
+ *   Wizard page (keyed, multi-modal):
+ *   $quickCreateModalKey = 'formes-juridiques';
+ *   $quickCreateTitle = 'Nouvelle forme juridique';
+ *   $quickCreateTable = 'ref_formes_juridiques';
+ *   $quickCreateFields = [...];
+ *   require __DIR__ . '/../../includes/quick_create_modal.php';
  */
+$modalKey = $quickCreateModalKey ?? 'quick-create';
 ?>
-<div class="modal-overlay" data-modal="quick-create">
+<div class="modal-overlay" data-modal="<?= e($modalKey) ?>">
     <div class="modal-panel">
         <div class="modal-header">
             <h3><?= e($quickCreateTitle ?? 'Nouvel enregistrement') ?></h3>

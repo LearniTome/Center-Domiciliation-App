@@ -2,17 +2,34 @@
 
 declare(strict_types=1);
 
+$query = search_term();
+$user = current_user();
+$canEdit = has_permission('associes.edit');
+
 if (isset($_GET['import_msg']) && $_GET['import_msg'] !== '') {
     set_flash('success', htmlspecialchars($_GET['import_msg']));
 }
 
-$editId = isset($_GET['edit']) ? (int) $_GET['edit'] : 0;
-$editRecord = $editId > 0 ? fetch_record($pdo ?? null, 'associes', $editId) : null;
-
+// Reference data for quick create / bulk edit
+$societesOptions = [];
 $qualitesOptions = [];
-if ($editRecord && ($pdo ?? null) instanceof PDO) {
+$lieuxNaissanceOptions = [];
+$nationalitesOptions = [];
+if (($pdo ?? null) instanceof PDO) {
+    $stmt = $pdo->query('SELECT id, societe_raison_sociale FROM societes ORDER BY societe_raison_sociale ASC');
+    while ($row = $stmt->fetch()) {
+        $societesOptions[(int)$row['id']] = $row['societe_raison_sociale'];
+    }
     $qualitesOptions = fetch_reference_options($pdo, 'ref_qualites_associe', 'qualite_associe');
+    $lieuxNaissanceOptions = fetch_reference_options($pdo, 'ref_lieux_naissance', 'lieu_naissance');
+    $nationalitesOptions = fetch_reference_options($pdo, 'ref_nationalites', 'nationalite');
 }
+// JSON-encoded option arrays for inline editable selects
+$qualitesJson = e(json_encode(array_values($qualitesOptions)));
+$lieuxJson = e(json_encode(array_values($lieuxNaissanceOptions)));
+$nationalitesJson = e(json_encode(array_values($nationalitesOptions)));
+$civiliteJson = e(json_encode(['Mr', 'Mme', 'Mlle']));
+$gerantJson = e(json_encode(['0' => 'Non', '1' => 'Oui']));
 
 if (is_post() && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
@@ -25,46 +42,8 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
         set_flash('success', 'Associe supprime avec succes.');
         redirect_to('associes');
     }
-
-    if ($action === 'update' && $editRecord) {
-        $stmt = $pdo->prepare('
-            UPDATE associes SET
-                associe_civilite = :associe_civilite, associe_nom = :associe_nom, associe_prenom = :associe_prenom, associe_nom_complet = :associe_nom_complet,
-                associe_cin = :associe_cin, associe_date_validite_cin = :associe_date_validite_cin,
-                associe_date_naissance = :associe_date_naissance, associe_lieu_naissance = :associe_lieu_naissance, associe_nationalite = :associe_nationalite,
-                associe_adresse = :associe_adresse, associe_telephone = :associe_telephone, associe_email = :associe_email,
-                associe_qualite = :associe_qualite, associe_parts = :associe_parts,
-                associe_capital_detenu = :associe_capital_detenu, associe_part_percent = :associe_part_percent, associe_est_gerant = :associe_est_gerant
-            WHERE id = :id
-        ');
-        $stmt->execute([
-            'associe_civilite' => field_value($_POST, 'associe_civilite'),
-            'associe_nom' => field_value($_POST, 'associe_nom'),
-            'associe_prenom' => field_value($_POST, 'associe_prenom'),
-            'associe_nom_complet' => field_value($_POST, 'associe_nom_complet'),
-            'associe_cin' => field_value($_POST, 'associe_cin'),
-            'associe_date_validite_cin' => field_value($_POST, 'associe_date_validite_cin'),
-            'associe_date_naissance' => field_value($_POST, 'associe_date_naissance'),
-            'associe_lieu_naissance' => field_value($_POST, 'associe_lieu_naissance'),
-            'associe_nationalite' => field_value($_POST, 'associe_nationalite'),
-            'associe_adresse' => field_value($_POST, 'associe_adresse'),
-            'associe_telephone' => field_value($_POST, 'associe_telephone'),
-            'associe_email' => field_value($_POST, 'associe_email'),
-            'associe_qualite' => field_value($_POST, 'associe_qualite'),
-            'associe_parts' => int_value($_POST, 'associe_parts'),
-            'associe_capital_detenu' => money_value($_POST, 'associe_capital_detenu'),
-            'associe_part_percent' => money_value($_POST, 'associe_part_percent'),
-            'associe_est_gerant' => (field_value($_POST, 'associe_est_gerant') === '1') ? 1 : 0,
-            'id' => $editId,
-        ]);
-        log_activity($pdo, 'update', 'associe', $editId, field_value($_POST, 'associe_nom_complet'));
-        set_flash('success', 'Associe mis a jour.');
-        redirect_to('associes');
-    }
 }
 
-$query = search_term();
-$user = current_user();
 $isAdmin = $user && in_array((int) $user['role_id'], [1, 2], true);
 $userFilter = '';
 $userParams = [];
@@ -141,6 +120,17 @@ if (($pdo ?? null) instanceof PDO) {
     <article class="card">
         <div class="section-header">
             <span class="page-count"><?= count($associes) ?> enregistrement(s)</span>
+            <div class="table-actions">
+                <?php if (has_permission('associes.create')): ?>
+                <button class="btn btn-next" type="button" data-quick-create-btn><span class="material-symbols-outlined">add</span> Nouvel associe</button>
+                <?php endif; ?>
+                <button class="btn btn-secondary" type="button" data-col-toggle-btn><span class="material-symbols-outlined">view_column</span> Colonnes <span class="col-toggle-count" data-col-count>0/0</span></button>
+                <a class="btn btn-info" href="<?= e(app_url('associes', ['export' => 'csv', 'q' => $query])) ?>"><span class="material-symbols-outlined">download</span> CSV</a>
+                <a class="btn btn-next" href="<?= e(app_url('associes', ['export' => 'xlsx', 'q' => $query])) ?>"><span class="material-symbols-outlined">table_chart</span> Excel</a>
+                <?php if (has_permission('associes.import')): ?>
+                <button class="btn btn-secondary" type="button" data-import-btn="associes"><span class="material-symbols-outlined">upload_file</span> Importer Excel</button>
+                <?php endif; ?>
+            </div>
         </div>
         <form method="get" class="stack search-bar">
             <input type="hidden" name="page" value="associes">
@@ -152,112 +142,14 @@ if (($pdo ?? null) instanceof PDO) {
                 <?php endif; ?>
             </div>
         </form>
-
-        <?php if ($editRecord): ?>
-            <form method="post" class="stack" style="margin-bottom:1rem">
-                <?= csrf_input() ?>
-                <input type="hidden" name="action" value="update">
-                <h3>Modifier l'associe</h3>
-                <div class="form-grid">
-                    <label class="field">
-                        <span>Civilite</span>
-                        <select name="associe_civilite">
-                            <option value="">Selectionner</option>
-                            <option value="Mr" <?= (string) $editRecord['associe_civilite'] === 'Mr' ? 'selected' : '' ?>>Mr</option>
-                            <option value="Mme" <?= (string) $editRecord['associe_civilite'] === 'Mme' ? 'selected' : '' ?>>Mme</option>
-                            <option value="Mlle" <?= (string) $editRecord['associe_civilite'] === 'Mlle' ? 'selected' : '' ?>>Mlle</option>
-                        </select>
-                    </label>
-                    <label class="field">
-                        <span>Nom</span>
-                        <input name="associe_nom" value="<?= e((string) $editRecord['associe_nom']) ?>">
-                    </label>
-                    <label class="field">
-                        <span>Prenom</span>
-                        <input name="associe_prenom" value="<?= e((string) $editRecord['associe_prenom']) ?>">
-                    </label>
-                    <label class="field">
-                        <span>Nom complet</span>
-                        <input name="associe_nom_complet" value="<?= e((string) $editRecord['associe_nom_complet']) ?>">
-                    </label>
-                    <label class="field">
-                        <span>CIN</span>
-                        <input name="associe_cin" value="<?= e((string) $editRecord['associe_cin']) ?>">
-                    </label>
-                    <label class="field">
-                        <span>Date validite CIN</span>
-                        <input type="date" name="associe_date_validite_cin" value="<?= e((string) $editRecord['associe_date_validite_cin']) ?>">
-                    </label>
-                    <label class="field">
-                        <span>Date naissance</span>
-                        <input type="date" name="associe_date_naissance" value="<?= e((string) $editRecord['associe_date_naissance']) ?>">
-                    </label>
-                    <label class="field">
-                        <span>Lieu naissance</span>
-                        <input name="associe_lieu_naissance" value="<?= e((string) $editRecord['associe_lieu_naissance']) ?>">
-                    </label>
-                    <label class="field">
-                        <span>Nationalite</span>
-                        <input name="associe_nationalite" value="<?= e((string) $editRecord['associe_nationalite']) ?>">
-                    </label>
-                    <label class="field">
-                        <span>Telephone</span>
-                        <input name="associe_telephone" value="<?= e((string) $editRecord['associe_telephone']) ?>">
-                    </label>
-                    <label class="field">
-                        <span>Email</span>
-                        <input type="email" name="associe_email" value="<?= e((string) $editRecord['associe_email']) ?>">
-                    </label>
-                    <label class="field full">
-                        <span>Adresse</span>
-                        <textarea name="associe_adresse"><?= e((string) $editRecord['associe_adresse']) ?></textarea>
-                    </label>
-                    <label class="field">
-                        <span>Qualite associe</span>
-                        <select name="associe_qualite">
-                            <option value="">Selectionner</option>
-                            <?php foreach ($qualitesOptions as $option): ?>
-                                <option value="<?= e($option) ?>" <?= (string) $editRecord['associe_qualite'] === $option ? 'selected' : '' ?>><?= e($option) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </label>
-                    <label class="field">
-                        <span>Parts</span>
-                        <input type="number" name="associe_parts" value="<?= e((string) $editRecord['associe_parts']) ?>">
-                    </label>
-                    <label class="field">
-                        <span>Capital detenu (DH)</span>
-                        <input type="number" step="0.01" name="associe_capital_detenu" value="<?= e((string) $editRecord['associe_capital_detenu']) ?>">
-                    </label>
-                    <label class="field">
-                        <span>% Capital social</span>
-                        <input type="number" step="0.01" name="associe_part_percent" value="<?= e((string) $editRecord['associe_part_percent']) ?>">
-                    </label>
-                    <label class="field">
-                        <span>Gerant</span>
-                        <select name="associe_est_gerant">
-                            <option value="0" <?= (string) $editRecord['associe_est_gerant'] === '0' ? 'selected' : '' ?>>Non</option>
-                            <option value="1" <?= (string) $editRecord['associe_est_gerant'] === '1' ? 'selected' : '' ?>>Oui</option>
-                        </select>
-                    </label>
-                </div>
-                <div class="table-actions">
-                    <a class="btn btn-secondary" href="<?= e(app_url('associes')) ?>">Annuler</a>
-                    <button class="btn btn-next" type="submit">Enregistrer</button>
-                </div>
-            </form>
-        <?php endif; ?>
-
         <?php if (!$associes): ?>
             <p class="table-empty">Aucun associe pour le moment.</p>
         <?php else: ?>
-            <div class="table-actions" style="margin-bottom:8px">
-                <button class="btn btn-secondary" type="button" data-col-toggle-btn><span class="material-symbols-outlined">view_column</span> Colonnes <span class="col-toggle-count" data-col-count>0/0</span></button>
-            </div>
             <div class="table-scroll">
-            <table data-col-toggle data-sortable>
+            <table data-col-toggle data-sortable data-table="associes" data-bulk>
                 <thead>
                 <tr>
+                    <th data-bulk-col><input type="checkbox" data-bulk-select-all title="Tout selectionner"></th>
                     <th data-col="nom-complet">Nom complet</th>
                     <th data-col="societe">Societe</th>
                     <th data-col="cin">CIN</th>
@@ -269,6 +161,7 @@ if (($pdo ?? null) instanceof PDO) {
                     <th data-col="qualite">Qualite</th>
                     <th data-col="parts">Parts</th>
                     <th data-col="gerant">Gerant</th>
+                    <th data-col="capital-detenu">Capital detenu</th>
                     <th data-col="creation">Creation</th>
                     <th data-col="modification">Modification</th>
                     <th>Actions</th>
@@ -276,21 +169,24 @@ if (($pdo ?? null) instanceof PDO) {
                 </thead>
                 <tbody>
                 <?php foreach ($associes as $associe): ?>
-                    <tr>
+                    <tr data-id="<?= (int) $associe['id'] ?>">
+                        <td data-bulk-cell><input type="checkbox" data-bulk-checkbox title="Selectionner"></td>
                         <td><a href="<?= e(app_url('associe', ['id' => (int) $associe['id']])) ?>" class="table-link"><?= e($associe['associe_nom_complet']) ?></a></td>
                         <td><?= e($associe['societe_raison_sociale']) ?></td>
-                        <td><?= e($associe['associe_cin'] ?? '-') ?></td>
-                        <td><?= e(format_date($associe['associe_date_naissance'] ?? null)) ?></td>
-                        <td><?= e($associe['associe_lieu_naissance'] ?? '-') ?></td>
-                        <td><?= e($associe['associe_nationalite'] ?? '-') ?></td>
-                        <td><?= e($associe['associe_telephone'] ?? '-') ?></td>
-                        <td><?= e($associe['associe_email'] ?? '-') ?></td>
-                        <td><?= e($associe['associe_qualite'] ?? '-') ?></td>
-                        <td><?= $associe['associe_parts'] !== null ? e((string) $associe['associe_parts']) : '-' ?></td>
-                        <td><?= (int) $associe['associe_est_gerant'] === 1 ? 'Oui' : 'Non' ?></td>
+                        <td<?= $canEdit ? ' data-editable="associe_cin"' : '' ?>><?= e($associe['associe_cin'] ?? '-') ?></td>
+                        <td<?= $canEdit ? ' data-editable="associe_date_naissance"' : '' ?>><?= e(format_date($associe['associe_date_naissance'] ?? null)) ?></td>
+                        <td<?= $canEdit ? ' data-editable="associe_lieu_naissance" data-editable-options="' . $lieuxJson . '"' : '' ?>><?= e($associe['associe_lieu_naissance'] ?? '-') ?></td>
+                        <td<?= $canEdit ? ' data-editable="associe_nationalite" data-editable-options="' . $nationalitesJson . '"' : '' ?>><?= e($associe['associe_nationalite'] ?? '-') ?></td>
+                        <td<?= $canEdit ? ' data-editable="associe_telephone"' : '' ?>><?= e($associe['associe_telephone'] ?? '-') ?></td>
+                        <td<?= $canEdit ? ' data-editable="associe_email"' : '' ?>><?= e($associe['associe_email'] ?? '-') ?></td>
+                        <td<?= $canEdit ? ' data-editable="associe_qualite" data-editable-options="' . $qualitesJson . '"' : '' ?>><?= e($associe['associe_qualite'] ?? '-') ?></td>
+                        <td<?= $canEdit ? ' data-editable="associe_parts"' : '' ?>><?= $associe['associe_parts'] !== null ? e((string) $associe['associe_parts']) : '-' ?></td>
+                        <td<?= $canEdit ? ' data-editable="associe_est_gerant" data-editable-options="' . $gerantJson . '"' : '' ?>><?= (int) $associe['associe_est_gerant'] === 1 ? 'Oui' : 'Non' ?></td>
+                        <td<?= $canEdit ? ' data-editable="associe_capital_detenu"' : '' ?>><?= $associe['associe_capital_detenu'] !== null ? e(number_format((float) $associe['associe_capital_detenu'], 2, ',', ' ') . ' DH') : '-' ?></td>
                         <td><?= e(date('d/m/Y', strtotime((string) $associe['created_at']))) ?></td>
                         <td><?= e(date('d/m/Y', strtotime((string) $associe['updated_at']))) ?></td>
                         <td class="table-actions">
+                            <a class="btn-icon primary" href="<?= e(app_url('associe', ['id' => (int) $associe['id']])) ?>" title="Voir"><span class="material-symbols-outlined">visibility</span></a>
                             <a class="btn-icon info" href="<?= e(app_url('associe', ['id' => (int) $associe['id'], 'edit' => '1'])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
                             <form method="post">
                                 <?= csrf_input() ?>
@@ -303,17 +199,74 @@ if (($pdo ?? null) instanceof PDO) {
                 <?php endforeach; ?>
                 </tbody>
             </table>
-            </div>
-            <div class="table-actions" style="margin-top:12px">
-                <a class="btn btn-info" href="<?= e(app_url('associes', ['export' => 'csv', 'q' => $query])) ?>"><span class="material-symbols-outlined">download</span> CSV</a>
-                <a class="btn btn-next" href="<?= e(app_url('associes', ['export' => 'xlsx', 'q' => $query])) ?>"><span class="material-symbols-outlined">table_chart</span> Excel</a>
-                <?php if (has_permission('associes.import')): ?>
-                <button class="btn btn-secondary" type="button" data-import-btn="associes"><span class="material-symbols-outlined">upload_file</span> Importer Excel</button>
-                <?php endif; ?>
+            <template data-row-template>
+                <tr data-id="">
+                    <td data-bulk-cell><input type="checkbox" data-bulk-checkbox title="Selectionner"></td>
+                    <td data-cell-link="associe" data-cell-value="id" data-cell-label="associe_nom_complet"></td>
+                    <td data-cell="societe_raison_sociale"></td>
+                    <td data-cell="associe_cin"></td>
+                    <td data-cell="associe_date_naissance"></td>
+                    <td data-cell="associe_lieu_naissance"></td>
+                    <td data-cell="associe_nationalite"></td>
+                    <td data-cell="associe_telephone"></td>
+                    <td data-cell="associe_email"></td>
+                    <td data-cell="associe_qualite"></td>
+                    <td data-cell="associe_parts"></td>
+                    <td data-cell="associe_est_gerant"></td>
+                    <td data-cell="associe_capital_detenu"></td>
+                    <td data-cell="created_at"></td>
+                    <td data-cell="updated_at"></td>
+                    <td data-cell-actions>
+                        <a class="btn-icon primary" href="" title="Voir"><span class="material-symbols-outlined">visibility</span></a>
+                        <a class="btn-icon info" href="" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
+                        <form method="post" action="index.php?page=associes">
+                            <input type="hidden" name="action" value="delete">
+                            <input type="hidden" name="id" value="">
+                            <input type="hidden" name="_csrf_token" value="">
+                            <button class="btn-icon danger" type="submit" data-confirm="Supprimer cet associe ?" title="Supprimer"><span class="material-symbols-outlined">delete</span></button>
+                        </form>
+                    </td>
+                </tr>
+            </template>
             </div>
         <?php endif; ?>
     </article>
+
+    <?php
+    $quickCreateTitle = 'Nouvel associe';
+    $quickCreateTable = 'associes';
+    $quickCreateFields = [
+        ['name' => 'associe_nom_complet', 'label' => 'Nom complet', 'type' => 'text', 'required' => true],
+        ['name' => 'societe_id', 'label' => 'Societe', 'type' => 'select', 'options' => $societesOptions, 'required' => true],
+        ['name' => 'associe_civilite', 'label' => 'Civilite', 'type' => 'select', 'options' => ['Mr', 'Mme', 'Mlle']],
+        ['name' => 'associe_nom', 'label' => 'Nom', 'type' => 'text'],
+        ['name' => 'associe_prenom', 'label' => 'Prenom', 'type' => 'text'],
+        ['name' => 'associe_cin', 'label' => 'CIN', 'type' => 'text'],
+        ['name' => 'associe_date_naissance', 'label' => 'Date naissance', 'type' => 'date'],
+        ['name' => 'associe_lieu_naissance', 'label' => 'Lieu naissance', 'type' => 'select', 'options' => $lieuxNaissanceOptions],
+        ['name' => 'associe_nationalite', 'label' => 'Nationalite', 'type' => 'select', 'options' => $nationalitesOptions],
+        ['name' => 'associe_telephone', 'label' => 'Telephone', 'type' => 'text'],
+        ['name' => 'associe_email', 'label' => 'Email', 'type' => 'email'],
+        ['name' => 'associe_qualite', 'label' => 'Qualite associe', 'type' => 'select', 'options' => $qualitesOptions],
+        ['name' => 'associe_parts', 'label' => 'Parts', 'type' => 'number'],
+        ['name' => 'associe_est_gerant', 'label' => 'Gerant', 'type' => 'select', 'options' => ['0' => 'Non', '1' => 'Oui']],
+    ];
+    require __DIR__ . '/../../includes/quick_create_modal.php';
+
+    $bulkEditTitle = 'Modifier les associes selectionnes';
+    $bulkEditTable = 'associes';
+    $bulkEditFields = [
+        ['name' => 'associe_qualite', 'label' => 'Qualite associe', 'type' => 'select', 'options' => $qualitesOptions],
+        ['name' => 'associe_nationalite', 'label' => 'Nationalite', 'type' => 'select', 'options' => $nationalitesOptions],
+    ];
+    require __DIR__ . '/../../includes/bulk_edit_modal.php';
+    ?>
 </section>
+
+<div class="bulk-toolbar" data-bulk-toolbar>
+    <span class="bulk-info"><span class="bulk-count" data-bulk-count>0</span> enregistrement(s) selectionne(s)</span>
+    <button class="btn btn-info" type="button" data-bulk-edit-btn><span class="material-symbols-outlined">edit_note</span> Modifier en masse</button>
+</div>
 
 <?php require __DIR__ . '/../../includes/import_excel_modal.php'; ?>
 

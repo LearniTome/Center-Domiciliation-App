@@ -111,7 +111,7 @@ if ($step === 1):
                         <option value="<?= e($option) ?>" <?= (string) $societeData['societe_forme_juridique'] === $option ? 'selected' : '' ?>><?= e($option) ?></option>
                     <?php endforeach; ?>
                 </select>
-                <a href="<?= e(app_url('configuration', ['tab' => 'formes-juridiques'])) ?>" target="_blank" title="Gerer les formes juridiques" style="color:var(--primary);text-decoration:none;font-size:1.4rem;line-height:1">&plus;</a>
+                <button type="button" class="btn-icon" data-quick-create-btn="formes-juridiques" title="Ajouter une forme juridique"><span class="material-symbols-outlined">add</span></button>
             </div>
         </label>
         <label class="field">
@@ -230,7 +230,7 @@ if ($step === 1):
                         <option value="<?= e($option) ?>" <?= (string) $societeData['societe_adresse_siege'] === $option ? 'selected' : '' ?>><?= e($option) ?></option>
                     <?php endforeach; ?>
                 </select>
-                <a href="<?= e(app_url('configuration', ['tab' => 'adresses'])) ?>" target="_blank" title="Gerer les adresses" style="color:var(--primary);text-decoration:none;font-size:1.4rem;line-height:1">&plus;</a>
+                <button type="button" class="btn-icon" data-quick-create-btn="adresses" title="Ajouter une adresse"><span class="material-symbols-outlined">add</span></button>
             </div>
         </label>
         <label class="field">
@@ -242,7 +242,7 @@ if ($step === 1):
                         <option value="<?= e($option) ?>" <?= $defaultVille === $option ? 'selected' : '' ?>><?= e($option) ?></option>
                     <?php endforeach; ?>
                 </select>
-                <a href="<?= e(app_url('configuration', ['tab' => 'villes'])) ?>" target="_blank" title="Gerer les villes" style="color:var(--primary);text-decoration:none;font-size:1.4rem;line-height:1">&plus;</a>
+                <button type="button" class="btn-icon" data-quick-create-btn="villes" title="Ajouter une ville"><span class="material-symbols-outlined">add</span></button>
             </div>
         </label>
         <label class="field">
@@ -280,4 +280,31 @@ if ($step === 1):
         <button class="btn btn-next" type="submit" name="nav_action" value="next"><span class="material-symbols-outlined">arrow_forward</span> Suivant</button>
     </div>
 </form>
+
+<?php
+$quickCreateModalKey = 'formes-juridiques';
+$quickCreateTitle = 'Nouvelle forme juridique';
+$quickCreateTable = 'ref_formes_juridiques';
+$quickCreateFields = [
+    ['name' => 'forme_juridique', 'label' => 'Forme juridique', 'type' => 'text', 'required' => true],
+    ['name' => 'template_folder', 'label' => 'Dossier template', 'type' => 'text', 'placeholder' => 'Optionnel'],
+];
+require __DIR__ . '/../../../includes/quick_create_modal.php';
+
+$quickCreateModalKey = 'adresses';
+$quickCreateTitle = 'Nouvelle adresse';
+$quickCreateTable = 'ref_ste_adresses';
+$quickCreateFields = [
+    ['name' => 'adresse', 'label' => 'Adresse', 'type' => 'text', 'required' => true],
+];
+require __DIR__ . '/../../../includes/quick_create_modal.php';
+
+$quickCreateModalKey = 'villes';
+$quickCreateTitle = 'Nouvelle ville';
+$quickCreateTable = 'ref_villes';
+$quickCreateFields = [
+    ['name' => 'ville', 'label' => 'Ville', 'type' => 'text', 'required' => true],
+];
+require __DIR__ . '/../../../includes/quick_create_modal.php';
+?>
 <?php endif; ?>

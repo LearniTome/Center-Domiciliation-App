@@ -212,7 +212,7 @@ if (is_post()) {
                 <input name="ompic_code" placeholder="Code..." required style="width:100px;padding:4px 8px;font-size:0.8125rem">
             <?php endif; ?>
             <input name="<?= e($column) ?>" placeholder="Nouveau..." required style="flex:1;padding:4px 8px;font-size:0.8125rem;min-width:120px">
-            <button type="submit" class="btn-icon" title="Ajouter" style="border:2px solid var(--primary);border-radius:var(--radius-sm);background:transparent;color:var(--primary);width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all var(--transition)"><span class="material-symbols-outlined">add</span></button>
+            <button type="submit" class="btn btn-next" style="padding:4px 10px;font-size:0.8125rem">Ajouter</button>
         </div>
     </form>
 

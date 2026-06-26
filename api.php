@@ -131,6 +131,46 @@ $allowedTables = [
         'societe_type_generation', 'societe_procedure_creation', 'societe_mode_depot',
         'societe_source', 'societe_activites_statuts', 'societe_activites_ompic',
     ],
+    'associes' => [
+        'societe_id',
+        'associe_civilite', 'associe_nom', 'associe_prenom', 'associe_nom_complet',
+        'associe_cin', 'associe_date_validite_cin', 'associe_date_naissance',
+        'associe_lieu_naissance', 'associe_nationalite', 'associe_adresse',
+        'associe_telephone', 'associe_email', 'associe_qualite',
+        'associe_parts', 'associe_capital_detenu', 'associe_part_percent', 'associe_est_gerant',
+    ],
+    'contrats' => [
+        'societe_id',
+        'contrat_type', 'contrat_type_domiciliation', 'contrat_date',
+        'contrat_duree_mois', 'contrat_date_debut', 'contrat_date_fin',
+        'contrat_tva_pourcent', 'contrat_loyer_ht', 'contrat_loyer_ttc',
+        'contrat_total_ht', 'contrat_type_renouvellement',
+        'contrat_renouv_tva_pourcent', 'contrat_renouv_loyer_ht',
+        'contrat_renouv_loyer_ttc', 'contrat_renouv_total_ht',
+        'contrat_statut', 'contrat_notes', 'contrat_caution', 'contrat_pack_montant_ttc',
+    ],
+    'collaborateurs' => [
+        'role_id',
+        'nom_complet', 'den_ste', 'fonction', 'collaborateur_type',
+        'collaborateur_code', 'collaborateur_ice', 'collaborateur_tp',
+        'collaborateur_rc', 'collaborateur_if',
+        'collaborateur_tel_fixe', 'collaborateur_tel_mobile',
+        'collaborateur_email', 'collaborateur_adresse', 'statut', 'can_login',
+    ],
+    'cessions' => [
+        'societe_id',
+        'cession_dossier', 'cession_date', 'cession_status',
+    ],
+    'pv_ago' => [
+        'dossier_numero', 'date_ago', 'exercice_clos',
+        'resultat_type', 'resultat_net', 'statut',
+    ],
+    'ref_formes_juridiques' => ['forme_juridique', 'template_folder'],
+    'ref_ste_adresses' => ['adresse'],
+    'ref_villes' => ['ville'],
+    'ref_nationalites' => ['nationalite'],
+    'ref_lieux_naissance' => ['lieu_naissance'],
+    'ref_qualites_associe' => ['qualite_associe'],
 ];
 
 $tableColumnMap = $allowedTables;
@@ -176,10 +216,12 @@ function handle_quick_create(PDO $pdo, array $allowedTables, array $user): array
             $data[$col] = $_POST[$col];
         }
     }
-    $data['created_by'] = (int) $user['id'];
-    if (!isset($data['societe_source'])) {
-        $data['societe_source'] = 'creation';
+    if ($table === 'societes') {
+        if (!isset($data['societe_source'])) {
+            $data['societe_source'] = 'creation';
+        }
     }
+    $data['created_by'] = (int) $user['id'];
 
     if (empty($data)) {
         http_response_code(400);
@@ -453,7 +495,7 @@ function handle_import_confirm(PDO $pdo, array $user, array $config): array
     $cfg = $config[$table];
     $columnMap = $cfg['columnMap'];
     $defaults = $cfg['defaults'];
-    if (in_array($table, ['societes', 'collaborateurs', 'cessions'])) {
+    if (in_array($table, ['societes', 'associes', 'contrats', 'collaborateurs', 'cessions', 'pv_ago'])) {
         $defaults['created_by'] = (int) $user['id'];
     }
     $defaults['created_at'] = date('Y-m-d H:i:s');

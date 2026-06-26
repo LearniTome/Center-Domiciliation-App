@@ -66,7 +66,7 @@ if ($step === 1):
                                 <option value="<?= e($opt['forme_juridique'] ?? '') ?>" <?= ((string) ($soc['societe_forme_juridique'] ?? '') === (string) ($opt['forme_juridique'] ?? '')) ? 'selected' : '' ?>><?= e($opt['forme_juridique'] ?? '') ?></option>
                             <?php endforeach; ?>
                         </select>
-                        <a href="<?= e(app_url('configuration', ['tab' => 'formes-juridiques'])) ?>" target="_blank" title="Gerer les formes juridiques" style="color:var(--primary);text-decoration:none;font-size:1.4rem;line-height:1">&plus;</a>
+                        <button type="button" class="btn-icon" data-quick-create-btn="formes-juridiques" title="Ajouter une forme juridique"><span class="material-symbols-outlined">add</span></button>
                     </div>
                 </div>
                 <div class="field">
@@ -90,7 +90,7 @@ if ($step === 1):
                                 <option value="<?= e($opt) ?>" <?= ((string) ($soc['societe_ville'] ?? '') === (string) $opt) ? 'selected' : '' ?>><?= e($opt) ?></option>
                             <?php endforeach; ?>
                         </select>
-                        <a href="<?= e(app_url('configuration', ['tab' => 'villes'])) ?>" target="_blank" title="Gerer les villes" style="color:var(--primary);text-decoration:none;font-size:1.4rem;line-height:1">&plus;</a>
+                        <button type="button" class="btn-icon" data-quick-create-btn="villes" title="Ajouter une ville"><span class="material-symbols-outlined">add</span></button>
                     </div>
                 </div>
             </div>
@@ -178,4 +178,23 @@ if ($step === 1):
         </div>
     </form>
 </div>
+
+<?php
+$quickCreateModalKey = 'formes-juridiques';
+$quickCreateTitle = 'Nouvelle forme juridique';
+$quickCreateTable = 'ref_formes_juridiques';
+$quickCreateFields = [
+    ['name' => 'forme_juridique', 'label' => 'Forme juridique', 'type' => 'text', 'required' => true],
+    ['name' => 'template_folder', 'label' => 'Dossier template', 'type' => 'text', 'placeholder' => 'Optionnel'],
+];
+require __DIR__ . '/../../../../includes/quick_create_modal.php';
+
+$quickCreateModalKey = 'villes';
+$quickCreateTitle = 'Nouvelle ville';
+$quickCreateTable = 'ref_ste_adresses';
+$quickCreateFields = [
+    ['name' => 'adresse', 'label' => 'Ville', 'type' => 'text', 'required' => true],
+];
+require __DIR__ . '/../../../../includes/quick_create_modal.php';
+?>
 <?php endif; ?>

@@ -5,10 +5,22 @@ declare(strict_types=1);
 $query = search_term();
 $user = current_user();
 $isAdmin = $user && in_array((int) $user['role_id'], [1, 2], true);
+$canEdit = has_permission('cessions.edit');
 
 if (isset($_GET['import_msg']) && $_GET['import_msg'] !== '') {
     set_flash('success', htmlspecialchars($_GET['import_msg']));
 }
+
+// Reference data for quick create
+$societesOptions = [];
+if (($pdo ?? null) instanceof PDO) {
+    $stmt = $pdo->query('SELECT id, societe_raison_sociale FROM societes ORDER BY societe_raison_sociale ASC');
+    while ($row = $stmt->fetch()) {
+        $societesOptions[(int)$row['id']] = $row['societe_raison_sociale'];
+    }
+}
+$cessionStatusOptions = ['brouillon', 'finalise'];
+$cessionStatusJson = e(json_encode($cessionStatusOptions));
 
 if (is_post() && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
@@ -96,13 +108,15 @@ if (($pdo ?? null) instanceof PDO) {
         <div class="section-header">
             <span class="page-count"><?= count($cessions) ?> enregistrement(s)</span>
             <div class="table-actions">
+                <?php if (has_permission('cessions.create')): ?>
+                <button class="btn btn-next" type="button" data-quick-create-btn><span class="material-symbols-outlined">add</span> Nouvelle cession</button>
+                <?php endif; ?>
                 <button class="btn btn-secondary" type="button" data-col-toggle-btn><span class="material-symbols-outlined">view_column</span> Colonnes <span class="col-toggle-count" data-col-count>0/0</span></button>
                 <a class="btn btn-info" href="<?= e(app_url('cessions', ['export' => 'csv', 'q' => $query])) ?>"><span class="material-symbols-outlined">download</span> CSV</a>
                 <a class="btn btn-next" href="<?= e(app_url('cessions', ['export' => 'xlsx', 'q' => $query])) ?>"><span class="material-symbols-outlined">table_chart</span> Excel</a>
                 <?php if (has_permission('cessions.import')): ?>
                 <button class="btn btn-secondary" type="button" data-import-btn="cessions"><span class="material-symbols-outlined">upload_file</span> Importer Excel</button>
                 <?php endif; ?>
-                <a class="btn btn-next" href="<?= e(app_url('cession')) ?>"><span class="material-symbols-outlined">note_add</span> Nouvelle cession</a>
             </div>
         </div>
         <form method="get" class="stack search-bar">
@@ -124,9 +138,10 @@ if (($pdo ?? null) instanceof PDO) {
             <p class="table-empty">Aucune cession pour le moment.</p>
         <?php else: ?>
             <div class="table-scroll">
-            <table data-col-toggle data-sortable>
+            <table data-col-toggle data-sortable data-table="cessions" data-bulk>
                 <thead>
                 <tr>
+                    <th data-bulk-col><input type="checkbox" data-bulk-select-all title="Tout selectionner"></th>
                     <th data-col="dossier">Dossier</th>
                     <th data-col="societe">Societe</th>
                     <th data-col="date">Date</th>
@@ -138,11 +153,12 @@ if (($pdo ?? null) instanceof PDO) {
                 </thead>
                 <tbody>
                 <?php foreach ($cessions as $cession): ?>
-                    <tr>
-                        <td><?= e($cession['cession_dossier'] ?? '-') ?></td>
+                    <tr data-id="<?= (int) $cession['id'] ?>">
+                        <td data-bulk-cell><input type="checkbox" data-bulk-checkbox title="Selectionner"></td>
+                        <td<?= $canEdit ? ' data-editable="cession_dossier"' : '' ?>><?= e($cession['cession_dossier'] ?? '-') ?></td>
                         <td><a href="<?= e(app_url('cession_dossier', ['id' => (int) $cession['id']])) ?>" style="color:var(--primary);text-decoration:none;font-weight:500"><?= e($cession['societe_raison_sociale'] ?? '-') ?></a></td>
-                        <td><?= e(format_date($cession['cession_date'] ?? null)) ?></td>
-                        <td>
+                        <td<?= $canEdit ? ' data-editable="cession_date"' : '' ?>><?= e(format_date($cession['cession_date'] ?? null)) ?></td>
+                        <td<?= $canEdit ? ' data-editable="cession_status" data-editable-options="' . $cessionStatusJson . '"' : '' ?>>
                             <?php if (($cession['cession_status'] ?? 'brouillon') === 'finalise'): ?>
                                 <span style="color:var(--success);font-weight:500">Valider</span>
                             <?php else: ?>
@@ -169,9 +185,54 @@ if (($pdo ?? null) instanceof PDO) {
                 <?php endforeach; ?>
                 </tbody>
             </table>
+            <template data-row-template>
+                <tr data-id="">
+                    <td data-bulk-cell><input type="checkbox" data-bulk-checkbox title="Selectionner"></td>
+                    <td data-cell="cession_dossier"></td>
+                    <td data-cell="societe_raison_sociale"></td>
+                    <td data-cell="cession_date"></td>
+                    <td data-cell="cession_status"></td>
+                    <td data-cell="nb_lignes"></td>
+                    <td data-cell="total_parts"></td>
+                    <td data-cell-actions>
+                        <a class="btn-icon primary" href="" title="Voir"><span class="material-symbols-outlined">visibility</span></a>
+                        <a class="btn-icon info" href="" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
+                        <form method="post" action="index.php?page=cessions">
+                            <input type="hidden" name="action" value="delete">
+                            <input type="hidden" name="id" value="">
+                            <input type="hidden" name="_csrf_token" value="">
+                            <button class="btn-icon danger" type="submit" data-confirm="Supprimer cette cession ?" title="Supprimer"><span class="material-symbols-outlined">delete</span></button>
+                        </form>
+                    </td>
+                </tr>
+            </template>
             </div>
         <?php endif; ?>
     </article>
+
+    <?php
+    $quickCreateTitle = 'Nouvelle cession';
+    $quickCreateTable = 'cessions';
+    $quickCreateFields = [
+        ['name' => 'societe_id', 'label' => 'Societe', 'type' => 'select', 'options' => $societesOptions, 'required' => true],
+        ['name' => 'cession_dossier', 'label' => 'Dossier', 'type' => 'text'],
+        ['name' => 'cession_date', 'label' => 'Date', 'type' => 'date'],
+        ['name' => 'cession_status', 'label' => 'Statut', 'type' => 'select', 'options' => $cessionStatusOptions],
+    ];
+    require __DIR__ . '/../../../includes/quick_create_modal.php';
+
+    $bulkEditTitle = 'Modifier les cessions selectionnees';
+    $bulkEditTable = 'cessions';
+    $bulkEditFields = [
+        ['name' => 'cession_status', 'label' => 'Statut', 'type' => 'select', 'options' => $cessionStatusOptions],
+    ];
+    require __DIR__ . '/../../../includes/bulk_edit_modal.php';
+    ?>
 </section>
+
+<div class="bulk-toolbar" data-bulk-toolbar>
+    <span class="bulk-info"><span class="bulk-count" data-bulk-count>0</span> enregistrement(s) selectionne(s)</span>
+    <button class="btn btn-info" type="button" data-bulk-edit-btn><span class="material-symbols-outlined">edit_note</span> Modifier en masse</button>
+</div>
 
 <?php require __DIR__ . '/../../../includes/import_excel_modal.php'; ?>

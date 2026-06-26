@@ -2,12 +2,34 @@
 
 declare(strict_types=1);
 
+$query = search_term();
+$user = current_user();
+$canEdit = has_permission('contrats.edit');
+
 if (isset($_GET['import_msg']) && $_GET['import_msg'] !== '') {
     set_flash('success', htmlspecialchars($_GET['import_msg']));
 }
 
-$editId = isset($_GET['edit']) ? (int) $_GET['edit'] : 0;
-$editRecord = $editId > 0 ? fetch_record($pdo ?? null, 'contrats', $editId) : null;
+// Reference data for quick create / bulk edit
+$societesOptions = [];
+if (($pdo ?? null) instanceof PDO) {
+    $stmt = $pdo->query('SELECT id, societe_raison_sociale FROM societes ORDER BY societe_raison_sociale ASC');
+    while ($row = $stmt->fetch()) {
+        $societesOptions[(int)$row['id']] = $row['societe_raison_sociale'];
+    }
+}
+
+// JSON option arrays for inline editable selects
+$contratTypeOptions = ['Domiciliation commerciale', 'Domiciliation professionnelle', 'Domiciliation simple', 'autre'];
+$contratTypeDomiOptions = ['Personne Morale', 'Personne Physique', 'Association', 'Fondation', 'Autres'];
+$contratStatutOptions = ['actif', 'expire', 'brouillon'];
+$tvaOptions = ['7', '10', '14', '20'];
+$renouvellementOptions = ['Mensuel', 'Trimestriel', 'Annuel', '2 ans', '3 ans', '4 ans', '5 ans'];
+$contratTypeJson = e(json_encode($contratTypeOptions));
+$contratTypeDomiJson = e(json_encode($contratTypeDomiOptions));
+$contratStatutJson = e(json_encode($contratStatutOptions));
+$tvaJson = e(json_encode($tvaOptions));
+$renouvellementJson = e(json_encode($renouvellementOptions));
 
 if (is_post() && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
@@ -20,61 +42,8 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
         set_flash('success', 'Contrat supprime avec succes.');
         redirect_to('contrats');
     }
-
-    if ($action === 'update' && $editRecord) {
-        $typeContratVal = field_value($_POST, 'contrat_type');
-        $typeContratAutre = field_value($_POST, 'type_contrat_autre');
-        if ($typeContratVal === 'autre' && $typeContratAutre !== '') {
-            $typeContratVal = $typeContratAutre;
-        }
-        $stmt = $pdo->prepare('
-            UPDATE contrats SET
-                contrat_type = :contrat_type,
-                contrat_date = :contrat_date, contrat_duree_mois = :contrat_duree_mois,
-                contrat_type_domiciliation = :contrat_type_domiciliation,
-                contrat_type_domiciliation_autre = :contrat_type_domiciliation_autre,
-                contrat_date_debut = :contrat_date_debut, contrat_date_fin = :contrat_date_fin,
-                contrat_tva_pourcent = :contrat_tva_pourcent,
-                contrat_loyer_ht = :contrat_loyer_ht,
-                contrat_loyer_ttc = :contrat_loyer_ttc,
-                contrat_total_ht = :contrat_total_ht,
-                contrat_type_renouvellement = :contrat_type_renouvellement,
-                contrat_renouv_tva_pourcent = :contrat_renouv_tva_pourcent,
-                contrat_renouv_loyer_ht = :contrat_renouv_loyer_ht,
-                contrat_renouv_loyer_ttc = :contrat_renouv_loyer_ttc,
-                contrat_renouv_total_ht = :contrat_renouv_total_ht,
-                contrat_statut = :contrat_statut, contrat_notes = :contrat_notes
-            WHERE id = :id
-        ');
-        $stmt->execute([
-            'contrat_type' => $typeContratVal,
-            'contrat_date' => field_value($_POST, 'contrat_date'),
-            'contrat_duree_mois' => int_value($_POST, 'contrat_duree_mois'),
-            'contrat_type_domiciliation' => field_value($_POST, 'contrat_type_domiciliation'),
-            'contrat_type_domiciliation_autre' => field_value($_POST, 'contrat_type_domiciliation_autre'),
-            'contrat_date_debut' => field_value($_POST, 'contrat_date_debut'),
-            'contrat_date_fin' => field_value($_POST, 'contrat_date_fin'),
-            'contrat_tva_pourcent' => money_value($_POST, 'contrat_tva_pourcent'),
-            'contrat_loyer_ht' => money_value($_POST, 'contrat_loyer_ht'),
-            'contrat_loyer_ttc' => money_value($_POST, 'contrat_loyer_ttc'),
-            'contrat_total_ht' => money_value($_POST, 'contrat_total_ht'),
-            'contrat_type_renouvellement' => field_value($_POST, 'contrat_type_renouvellement'),
-            'contrat_renouv_tva_pourcent' => money_value($_POST, 'contrat_renouv_tva_pourcent'),
-            'contrat_renouv_loyer_ht' => money_value($_POST, 'contrat_renouv_loyer_ht'),
-            'contrat_renouv_loyer_ttc' => money_value($_POST, 'contrat_renouv_loyer_ttc'),
-            'contrat_renouv_total_ht' => money_value($_POST, 'contrat_renouv_total_ht'),
-            'contrat_statut' => field_value($_POST, 'contrat_statut', 'actif'),
-            'contrat_notes' => field_value($_POST, 'contrat_notes'),
-            'id' => $editId,
-        ]);
-        log_activity($pdo, 'update', 'contrat', $editId);
-        set_flash('success', 'Contrat mis a jour.');
-        redirect_to('contrats');
-    }
 }
 
-$query = search_term();
-$user = current_user();
 $isAdmin = $user && in_array((int) $user['role_id'], [1, 2], true);
 $userFilter = '';
 $userParams = [];
@@ -154,6 +123,9 @@ if (($pdo ?? null) instanceof PDO) {
         <div class="section-header">
             <span class="page-count"><?= count($contrats) ?> enregistrement(s)</span>
             <div class="table-actions">
+                <?php if (has_permission('contrats.create')): ?>
+                <button class="btn btn-next" type="button" data-quick-create-btn><span class="material-symbols-outlined">add</span> Nouveau contrat</button>
+                <?php endif; ?>
                 <button class="btn btn-secondary" type="button" data-col-toggle-btn><span class="material-symbols-outlined">view_column</span> Colonnes <span class="col-toggle-count" data-col-count>0/0</span></button>
                 <a class="btn btn-info" href="<?= e(app_url('contrats', ['export' => 'csv', 'q' => $query])) ?>"><span class="material-symbols-outlined">download</span> CSV</a>
                 <a class="btn btn-next" href="<?= e(app_url('contrats', ['export' => 'xlsx', 'q' => $query])) ?>"><span class="material-symbols-outlined">table_chart</span> Excel</a>
@@ -172,128 +144,14 @@ if (($pdo ?? null) instanceof PDO) {
                 <?php endif; ?>
             </div>
         </form>
-
-        <?php if ($editRecord): ?>
-            <form method="post" class="stack" style="margin-bottom:1rem">
-                <?= csrf_input() ?>
-                <input type="hidden" name="action" value="update">
-                <h3>Modifier le contrat</h3>
-                <div class="form-grid">
-                    <label class="field">
-                        <span>Type de contrat</span>
-                        <select name="contrat_type" style="flex:1">
-                            <option value="">Selectionner</option>
-                            <option value="Domiciliation commerciale" <?= (string) $editRecord['contrat_type'] === 'Domiciliation commerciale' ? 'selected' : '' ?>>Domiciliation commerciale</option>
-                            <option value="Domiciliation professionnelle" <?= (string) $editRecord['contrat_type'] === 'Domiciliation professionnelle' ? 'selected' : '' ?>>Domiciliation professionnelle</option>
-                            <option value="Domiciliation simple" <?= (string) $editRecord['contrat_type'] === 'Domiciliation simple' ? 'selected' : '' ?>>Domiciliation simple</option>
-                            <option value="autre" <?= (string) $editRecord['contrat_type'] === 'autre' ? 'selected' : '' ?>>Autre (specifier)</option>
-                        </select>
-                    </label>
-                    <label class="field">
-                        <span>Type contrat domiciliation</span>
-                        <select name="contrat_type_domiciliation">
-                            <option value="">Selectionner</option>
-                            <?php foreach (['Personne Morale', 'Personne Physique', 'Association', 'Fondation', 'Autres'] as $option): ?>
-                                <option value="<?= e($option) ?>" <?= (string) $editRecord['contrat_type_domiciliation'] === $option ? 'selected' : '' ?>><?= e($option) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </label>
-                    <label class="field">
-                        <span>Date du contrat</span>
-                        <input type="date" name="contrat_date" value="<?= e((string) $editRecord['contrat_date']) ?>">
-                    </label>
-                    <label class="field">
-                        <span>Duree (mois)</span>
-                        <input type="number" name="contrat_duree_mois" value="<?= e((string) $editRecord['contrat_duree_mois']) ?>">
-                    </label>
-                    <label class="field">
-                        <span>Date debut</span>
-                        <input type="date" name="contrat_date_debut" value="<?= e((string) $editRecord['contrat_date_debut']) ?>">
-                    </label>
-                    <label class="field">
-                        <span>Date fin</span>
-                        <input type="date" name="contrat_date_fin" value="<?= e((string) $editRecord['contrat_date_fin']) ?>">
-                    </label>
-                    <label class="field">
-                        <span>Statut</span>
-                        <select name="contrat_statut">
-                            <?php foreach (['actif', 'expire', 'brouillon'] as $statut): ?>
-                                <option value="<?= e($statut) ?>" <?= (string) $editRecord['contrat_statut'] === $statut ? 'selected' : '' ?>><?= e(ucfirst($statut)) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </label>
-                    <label class="field">
-                        <span>Loyer HT (Mois)</span>
-                        <input type="number" step="0.01" name="contrat_loyer_ht" value="<?= e((string) $editRecord['contrat_loyer_ht']) ?>">
-                    </label>
-                    <label class="field">
-                        <span>TVA %</span>
-                        <select name="contrat_tva_pourcent">
-                            <option value="">Selectionner</option>
-                            <option value="7" <?= (string) $editRecord['contrat_tva_pourcent'] === '7' ? 'selected' : '' ?>>7%</option>
-                            <option value="10" <?= (string) $editRecord['contrat_tva_pourcent'] === '10' ? 'selected' : '' ?>>10%</option>
-                            <option value="14" <?= (string) $editRecord['contrat_tva_pourcent'] === '14' ? 'selected' : '' ?>>14%</option>
-                            <option value="20" <?= (string) $editRecord['contrat_tva_pourcent'] === '20' ? 'selected' : '' ?>>20%</option>
-                        </select>
-                    </label>
-                    <label class="field">
-                        <span>Loyer TTC (Mois)</span>
-                        <input type="number" step="0.01" name="contrat_loyer_ttc" value="<?= e((string) $editRecord['contrat_loyer_ttc']) ?>">
-                    </label>
-                    <label class="field">
-                        <span>Montant Total HT</span>
-                        <input type="number" step="0.01" name="contrat_total_ht" value="<?= e((string) $editRecord['contrat_total_ht']) ?>">
-                    </label>
-                    <label class="field">
-                        <span>Type renouvellement</span>
-                        <select name="contrat_type_renouvellement">
-                            <option value="">Selectionner</option>
-                            <?php foreach (['Mensuel', 'Trimestriel', 'Annuel', '2 ans', '3 ans', '4 ans', '5 ans'] as $option): ?>
-                                <option value="<?= e($option) ?>" <?= (string) $editRecord['contrat_type_renouvellement'] === $option ? 'selected' : '' ?>><?= e($option) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </label>
-                    <label class="field">
-                        <span>Loyer HT Renouvellement</span>
-                        <input type="number" step="0.01" name="contrat_renouv_loyer_ht" value="<?= e((string) $editRecord['contrat_renouv_loyer_ht']) ?>">
-                    </label>
-                    <label class="field">
-                        <span>TVA Renouvellement %</span>
-                        <select name="contrat_renouv_tva_pourcent">
-                            <option value="">Selectionner</option>
-                            <option value="7" <?= (string) $editRecord['contrat_renouv_tva_pourcent'] === '7' ? 'selected' : '' ?>>7%</option>
-                            <option value="10" <?= (string) $editRecord['contrat_renouv_tva_pourcent'] === '10' ? 'selected' : '' ?>>10%</option>
-                            <option value="14" <?= (string) $editRecord['contrat_renouv_tva_pourcent'] === '14' ? 'selected' : '' ?>>14%</option>
-                            <option value="20" <?= (string) $editRecord['contrat_renouv_tva_pourcent'] === '20' ? 'selected' : '' ?>>20%</option>
-                        </select>
-                    </label>
-                    <label class="field">
-                        <span>Loyer TTC Renouvellement</span>
-                        <input type="number" step="0.01" name="contrat_renouv_loyer_ttc" value="<?= e((string) $editRecord['contrat_renouv_loyer_ttc']) ?>">
-                    </label>
-                    <label class="field">
-                        <span>Montant Total HT Renouvellement</span>
-                        <input type="number" step="0.01" name="contrat_renouv_total_ht" value="<?= e((string) $editRecord['contrat_renouv_total_ht']) ?>">
-                    </label>
-                    <label class="field full">
-                        <span>Notes</span>
-                        <textarea name="contrat_notes"><?= e((string) $editRecord['contrat_notes']) ?></textarea>
-                    </label>
-                </div>
-                <div class="table-actions">
-                    <a class="btn btn-secondary" href="<?= e(app_url('contrats')) ?>">Annuler</a>
-                    <button class="btn btn-next" type="submit">Enregistrer</button>
-                </div>
-            </form>
-        <?php endif; ?>
-
         <?php if (!$contrats): ?>
             <p class="table-empty">Aucun contrat pour le moment.</p>
         <?php else: ?>
             <div class="table-scroll">
-            <table data-col-toggle data-sortable>
+            <table data-col-toggle data-sortable data-table="contrats" data-bulk>
                 <thead>
                 <tr>
+                    <th data-bulk-col><input type="checkbox" data-bulk-select-all title="Tout selectionner"></th>
                     <th data-col="societe">Societe</th>
                     <th data-col="type-contrat">Type contrat</th>
                     <th data-col="date-contrat">Date contrat</th>
@@ -316,26 +174,28 @@ if (($pdo ?? null) instanceof PDO) {
                 </thead>
                 <tbody>
                 <?php foreach ($contrats as $contrat): ?>
-                    <tr>
+                    <tr data-id="<?= (int) $contrat['id'] ?>">
+                        <td data-bulk-cell><input type="checkbox" data-bulk-checkbox title="Selectionner"></td>
                         <td><?= e($contrat['societe_raison_sociale']) ?></td>
-                        <td><?= e($contrat['contrat_type']) ?></td>
-<td><?= e(format_date($contrat['contrat_date'] ?? null)) ?></td>
-                        <td><?= e((string) ($contrat['contrat_duree_mois'] ?? '-')) ?></td>
-                        <td><?= e($contrat['contrat_type_domiciliation'] ?? '-') ?></td>
-                        <td><?= e(format_date($contrat['contrat_date_debut'] ?? null)) ?></td>
-                        <td><?= e(format_date($contrat['contrat_date_fin'] ?? null)) ?></td>
-                        <td><?= $contrat['contrat_loyer_ttc'] !== null ? e(number_format((float) $contrat['contrat_loyer_ttc'], 2, ',', ' ') . ' DH') : '-' ?></td>
-                        <td><?= $contrat['contrat_caution'] !== null ? e(number_format((float) $contrat['contrat_caution'], 2, ',', ' ') . ' DH') : '-' ?></td>
-                        <td><?= $contrat['contrat_tva_pourcent'] !== null ? e(number_format((float) $contrat['contrat_tva_pourcent'], 2, ',', ' ') . ' %') : '-' ?></td>
-                        <td><?= $contrat['contrat_loyer_ht'] !== null ? e(number_format((float) $contrat['contrat_loyer_ht'], 2, ',', ' ') . ' DH') : '-' ?></td>
-                        <td><?= $contrat['contrat_total_ht'] !== null ? e(number_format((float) $contrat['contrat_total_ht'], 2, ',', ' ') . ' DH') : '-' ?></td>
-                        <td><?= $contrat['contrat_pack_montant_ttc'] !== null ? e(number_format((float) $contrat['contrat_pack_montant_ttc'], 2, ',', ' ') . ' DH') : '-' ?></td>
-                        <td><?= e($contrat['contrat_type_renouvellement'] ?? '-') ?></td>
-                        <td><?= e($contrat['contrat_statut']) ?></td>
+                        <td<?= $canEdit ? ' data-editable="contrat_type" data-editable-options="' . $contratTypeJson . '"' : '' ?>><?= e($contrat['contrat_type']) ?></td>
+                        <td<?= $canEdit ? ' data-editable="contrat_date"' : '' ?>><?= e(format_date($contrat['contrat_date'] ?? null)) ?></td>
+                        <td<?= $canEdit ? ' data-editable="contrat_duree_mois"' : '' ?>><?= e((string) ($contrat['contrat_duree_mois'] ?? '-')) ?></td>
+                        <td<?= $canEdit ? ' data-editable="contrat_type_domiciliation" data-editable-options="' . $contratTypeDomiJson . '"' : '' ?>><?= e($contrat['contrat_type_domiciliation'] ?? '-') ?></td>
+                        <td<?= $canEdit ? ' data-editable="contrat_date_debut"' : '' ?>><?= e(format_date($contrat['contrat_date_debut'] ?? null)) ?></td>
+                        <td<?= $canEdit ? ' data-editable="contrat_date_fin"' : '' ?>><?= e(format_date($contrat['contrat_date_fin'] ?? null)) ?></td>
+                        <td<?= $canEdit ? ' data-editable="contrat_loyer_ttc"' : '' ?>><?= $contrat['contrat_loyer_ttc'] !== null ? e(number_format((float) $contrat['contrat_loyer_ttc'], 2, ',', ' ') . ' DH') : '-' ?></td>
+                        <td<?= $canEdit ? ' data-editable="contrat_caution"' : '' ?>><?= $contrat['contrat_caution'] !== null ? e(number_format((float) $contrat['contrat_caution'], 2, ',', ' ') . ' DH') : '-' ?></td>
+                        <td<?= $canEdit ? ' data-editable="contrat_tva_pourcent" data-editable-options="' . $tvaJson . '"' : '' ?>><?= $contrat['contrat_tva_pourcent'] !== null ? e(number_format((float) $contrat['contrat_tva_pourcent'], 2, ',', ' ') . ' %') : '-' ?></td>
+                        <td<?= $canEdit ? ' data-editable="contrat_loyer_ht"' : '' ?>><?= $contrat['contrat_loyer_ht'] !== null ? e(number_format((float) $contrat['contrat_loyer_ht'], 2, ',', ' ') . ' DH') : '-' ?></td>
+                        <td<?= $canEdit ? ' data-editable="contrat_total_ht"' : '' ?>><?= $contrat['contrat_total_ht'] !== null ? e(number_format((float) $contrat['contrat_total_ht'], 2, ',', ' ') . ' DH') : '-' ?></td>
+                        <td<?= $canEdit ? ' data-editable="contrat_pack_montant_ttc"' : '' ?>><?= $contrat['contrat_pack_montant_ttc'] !== null ? e(number_format((float) $contrat['contrat_pack_montant_ttc'], 2, ',', ' ') . ' DH') : '-' ?></td>
+                        <td<?= $canEdit ? ' data-editable="contrat_type_renouvellement" data-editable-options="' . $renouvellementJson . '"' : '' ?>><?= e($contrat['contrat_type_renouvellement'] ?? '-') ?></td>
+                        <td<?= $canEdit ? ' data-editable="contrat_statut" data-editable-options="' . $contratStatutJson . '"' : '' ?>><?= e($contrat['contrat_statut']) ?></td>
                         <td><?= e(date('d/m/Y', strtotime((string) $contrat['created_at']))) ?></td>
                         <td><?= e(date('d/m/Y', strtotime((string) $contrat['updated_at']))) ?></td>
                         <td class="table-actions">
-                            <a class="btn-icon info" href="<?= e(app_url('contrats', ['edit' => (int) $contrat['id']])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
+                            <a class="btn-icon primary" href="<?= e(app_url('contrat', ['id' => (int) $contrat['id']])) ?>" title="Voir"><span class="material-symbols-outlined">visibility</span></a>
+                            <a class="btn-icon info" href="<?= e(app_url('contrat', ['id' => (int) $contrat['id'], 'edit' => '1'])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
                             <form method="post">
                                 <?= csrf_input() ?>
                                 <input type="hidden" name="action" value="delete">
@@ -347,10 +207,71 @@ if (($pdo ?? null) instanceof PDO) {
                 <?php endforeach; ?>
                 </tbody>
             </table>
+            <template data-row-template>
+                <tr data-id="">
+                    <td data-bulk-cell><input type="checkbox" data-bulk-checkbox title="Selectionner"></td>
+                    <td data-cell="societe_raison_sociale"></td>
+                    <td data-cell="contrat_type"></td>
+                    <td data-cell="contrat_date"></td>
+                    <td data-cell="contrat_duree_mois"></td>
+                    <td data-cell="contrat_type_domiciliation"></td>
+                    <td data-cell="contrat_date_debut"></td>
+                    <td data-cell="contrat_date_fin"></td>
+                    <td data-cell="contrat_loyer_ttc"></td>
+                    <td data-cell="contrat_caution"></td>
+                    <td data-cell="contrat_tva_pourcent"></td>
+                    <td data-cell="contrat_loyer_ht"></td>
+                    <td data-cell="contrat_total_ht"></td>
+                    <td data-cell="contrat_pack_montant_ttc"></td>
+                    <td data-cell="contrat_type_renouvellement"></td>
+                    <td data-cell="contrat_statut"></td>
+                    <td data-cell="created_at"></td>
+                    <td data-cell="updated_at"></td>
+                    <td data-cell-actions>
+                        <a class="btn-icon primary" href="" title="Voir"><span class="material-symbols-outlined">visibility</span></a>
+                        <a class="btn-icon info" href="" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
+                        <form method="post" action="index.php?page=contrats">
+                            <input type="hidden" name="action" value="delete">
+                            <input type="hidden" name="id" value="">
+                            <input type="hidden" name="_csrf_token" value="">
+                            <button class="btn-icon danger" type="submit" data-confirm="Supprimer ce contrat ?" title="Supprimer"><span class="material-symbols-outlined">delete</span></button>
+                        </form>
+                    </td>
+                </tr>
+            </template>
             </div>
         <?php endif; ?>
     </article>
+
+    <?php
+    $quickCreateTitle = 'Nouveau contrat';
+    $quickCreateTable = 'contrats';
+    $quickCreateFields = [
+        ['name' => 'societe_id', 'label' => 'Societe', 'type' => 'select', 'options' => $societesOptions, 'required' => true],
+        ['name' => 'contrat_type', 'label' => 'Type contrat', 'type' => 'select', 'options' => $contratTypeOptions, 'required' => true],
+        ['name' => 'contrat_type_domiciliation', 'label' => 'Type domiciliation', 'type' => 'select', 'options' => $contratTypeDomiOptions],
+        ['name' => 'contrat_date', 'label' => 'Date contrat', 'type' => 'date'],
+        ['name' => 'contrat_duree_mois', 'label' => 'Duree (mois)', 'type' => 'number'],
+        ['name' => 'contrat_date_debut', 'label' => 'Date debut', 'type' => 'date'],
+        ['name' => 'contrat_date_fin', 'label' => 'Date fin', 'type' => 'date'],
+        ['name' => 'contrat_loyer_ttc', 'label' => 'Loyer TTC/mois', 'type' => 'number'],
+        ['name' => 'contrat_statut', 'label' => 'Statut', 'type' => 'select', 'options' => $contratStatutOptions],
+    ];
+    require __DIR__ . '/../../includes/quick_create_modal.php';
+
+    $bulkEditTitle = 'Modifier les contrats selectionnes';
+    $bulkEditTable = 'contrats';
+    $bulkEditFields = [
+        ['name' => 'contrat_statut', 'label' => 'Statut', 'type' => 'select', 'options' => $contratStatutOptions],
+    ];
+    require __DIR__ . '/../../includes/bulk_edit_modal.php';
+    ?>
 </section>
+
+<div class="bulk-toolbar" data-bulk-toolbar>
+    <span class="bulk-info"><span class="bulk-count" data-bulk-count>0</span> enregistrement(s) selectionne(s)</span>
+    <button class="btn btn-info" type="button" data-bulk-edit-btn><span class="material-symbols-outlined">edit_note</span> Modifier en masse</button>
+</div>
 
 <?php require __DIR__ . '/../../includes/import_excel_modal.php'; ?>
 
