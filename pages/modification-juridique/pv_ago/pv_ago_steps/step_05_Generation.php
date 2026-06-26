@@ -128,6 +128,14 @@ if (is_post() && $step === 5) {
             redirect_to('pv_ago', ['step' => 5]);
         }
 
+        $societeId = (int) ($wizard['societe_id'] ?? 0);
+        if ($societeId <= 0) {
+            $stmtSoc = $pdo->prepare('SELECT societe_id FROM pv_ago WHERE id = :id');
+            $stmtSoc->execute(['id' => $pvAgoId]);
+            $rowSoc = $stmtSoc->fetchColumn();
+            $societeId = (int) ($rowSoc ?: 0);
+        }
+
         $societeData = $selectedSociete ?: $wizard['societe'] ?? [];
         $socName = $societeData['societe_raison_sociale'] ?? 'Client';
         $forme = $societeData['societe_forme_juridique'] ?? 'PP';
