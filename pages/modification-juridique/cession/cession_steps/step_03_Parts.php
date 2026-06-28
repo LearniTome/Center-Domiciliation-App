@@ -354,13 +354,13 @@ if ($step === 3):
         </div>
         <?php if ($cedIsGerant): ?>
         <div class="gerant-management" style="margin-top:10px;padding:8px;background:rgba(255,107,53,0.06);border-radius:4px;border:1px solid rgba(255,107,53,0.2)">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <div style="display:flex;align-items:center;gap:8px">
                 <span class="material-symbols-outlined" style="color:var(--warning);font-size:1.1rem">admin_panel_settings</span>
-                <strong style="font-size:0.85rem">Gestion de la gérance</strong>
-            </div>
-            <div class="radio-group">
-                <label><input type="radio" name="gerant_action[<?= $partIndex ?>]" value="stay" checked> Rester gérant</label>
-                <label><input type="radio" name="gerant_action[<?= $partIndex ?>]" value="resign"> Démissionner</label>
+                <strong style="font-size:0.85rem;white-space:nowrap">Gestion de la gérance</strong>
+                <div class="radio-group" style="margin-bottom:0;margin-left:4px">
+                    <label><input type="radio" name="gerant_action[<?= $partIndex ?>]" value="stay" checked> Rester gérant</label>
+                    <label><input type="radio" name="gerant_action[<?= $partIndex ?>]" value="resign"> Démissionner</label>
+                </div>
             </div>
         </div>
         <?php else: ?>
@@ -513,13 +513,13 @@ if ($step === 3):
             <div><small style="color:var(--text-muted)">Capital (DH)</small><br><strong class="cedant-display-capital">0</strong></div>
         </div>
         <div class="gerant-management" style="margin-top:10px;padding:8px;background:rgba(255,107,53,0.06);border-radius:4px;border:1px solid rgba(255,107,53,0.2);display:none">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <div style="display:flex;align-items:center;gap:8px">
                 <span class="material-symbols-outlined" style="color:var(--warning);font-size:1.1rem">admin_panel_settings</span>
-                <strong style="font-size:0.85rem">Gestion de la gérance</strong>
-            </div>
-            <div class="radio-group">
-                <label><input type="radio" name="gerant_action[0]" value="stay" checked> Rester gérant</label>
-                <label><input type="radio" name="gerant_action[0]" value="resign"> Démissionner</label>
+                <strong style="font-size:0.85rem;white-space:nowrap">Gestion de la gérance</strong>
+                <div class="radio-group" style="margin-bottom:0;margin-left:4px">
+                    <label><input type="radio" name="gerant_action[0]" value="stay" checked> Rester gérant</label>
+                    <label><input type="radio" name="gerant_action[0]" value="resign"> Démissionner</label>
+                </div>
             </div>
         </div>
         <input type="hidden" name="gerant_action[0]" value="stay" class="gerant-action-hidden">

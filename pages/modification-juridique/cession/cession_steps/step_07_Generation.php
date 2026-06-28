@@ -587,7 +587,7 @@ if ($step === 7):
                     <p class="help-text">Enregistrez la societe, les cedants et cessionnaires en base de donnees.</p>
                 </div>
                 <?php if ($dossierCreated): ?>
-                    <span class="step-badge" style="color:var(--success)">Fait</span>
+                    <span class="step-badge" style="color:var(--success)"><span class="material-symbols-outlined" style="font-size:1.3rem">check_circle</span></span>
                 <?php endif; ?>
             </div>
             <?php if (!$dossierCreated): ?>
