@@ -4881,12 +4881,12 @@ input[data-bulk-checkbox] {
 }
 
 .modal-panel:has(form[data-quick-create-form]) {
-    padding: 1rem;
+    padding: 0.75rem 1rem;
 }
 
 .modal-panel:has(form[data-quick-create-form]) .modal-header {
-    margin-bottom: 0.5rem;
-    padding-bottom: 0.4rem;
+    margin-bottom: 0.25rem;
+    padding: 0.25rem 0.75rem 0.25rem 0;
 }
 
 .modal-panel form[data-quick-create-form] .field span {
