@@ -384,24 +384,17 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
     <form method="post" class="footer-actions">
         <?= csrf_input() ?>
         <input type="hidden" name="step" value="5">
-        <button class="btn btn-back" type="submit" name="nav_action" value="back">
-            <span class="material-symbols-outlined">arrow_back</span> Retour
-        </button>
-        <a class="btn btn-info" href="<?= e(app_url('cession', ['step' => 5, 'pv_view' => 'edit'])) ?>">
-            <span class="material-symbols-outlined">edit</span> Modifier
-        </a>
-        <button class="btn btn-next" type="submit" name="nav_action" value="next">
-            <span class="material-symbols-outlined">arrow_forward</span> Suivant
-        </button>
-        <button class="btn btn-cancel" type="button" onclick="window.print()">
-            <span class="material-symbols-outlined">print</span> Imprimer
-        </button>
-        <a class="btn btn-cancel" href="<?= e(app_url('cessions')) ?>">
-            <span class="material-symbols-outlined">close</span> Annuler
-        </a>
-        <a class="btn btn-back" href="<?= e(app_url('cession', ['reset' => '1'])) ?>" data-confirm="Réinitialiser l'assistant ?">
-            <span class="material-symbols-outlined">restart_alt</span> Réinitialiser
-        </a>
+        <div style="display:flex;gap:8px;margin-left:auto">
+            <button class="btn btn-back" type="submit" name="nav_action" value="back">
+                <span class="material-symbols-outlined">arrow_back</span> Retour
+            </button>
+            <a class="btn btn-info" href="<?= e(app_url('cession', ['step' => 5, 'pv_view' => 'edit'])) ?>">
+                <span class="material-symbols-outlined">edit</span> Modifier
+            </a>
+            <button class="btn btn-next" type="submit" name="nav_action" value="next">
+                <span class="material-symbols-outlined">arrow_forward</span> Suivant
+            </button>
+        </div>
     </form>
     <?php endif; ?>
 </div>

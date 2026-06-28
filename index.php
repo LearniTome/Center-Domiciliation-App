@@ -212,6 +212,10 @@ if (function_exists('has_permission')) {
     if ($page === 'roles' && has_permission('roles.create')) {
         $pageActions = '<a class="btn btn-next" href="' . e(app_url('role')) . '"><span class="material-symbols-outlined">add</span> Nouveau role</a>';
     }
+    if ($page === 'cession') {
+        $pageActions = '<a class="btn btn-cancel" href="' . e(app_url('cessions')) . '"><span class="material-symbols-outlined">close</span> Annuler</a>';
+        $pageActions .= '<a class="btn btn-back" href="' . e(app_url('cession', ['reset' => '1'])) . '" data-confirm="Reinitialiser l assistant ?"><span class="material-symbols-outlined">restart_alt</span> Reinitialiser</a>';
+    }
 }
 
 require __DIR__ . '/includes/entete.php';
