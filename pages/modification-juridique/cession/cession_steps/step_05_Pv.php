@@ -208,7 +208,7 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
 .pv-edit-block .pv-title-input { width:100%;font-size:0.9rem;font-weight:600;padding:6px 8px;border:none;background:transparent;color:var(--primary);font-family:inherit; }
 .pv-edit-block .pv-title-input:focus { outline:none; }
 .pv-edit-block .pv-title-input::placeholder { color:var(--text-muted);font-weight:400; }
-.pv-edit-block textarea { width:100%;min-height:80px;font-family:inherit;font-size:0.82rem;padding:8px;border:1px solid var(--line);border-radius:4px;resize:vertical;background:var(--bg-main);color:var(--text); }
+.pv-edit-block textarea { width:100%;min-height:0;font-family:inherit;font-size:0.82rem;padding:8px;border:1px solid var(--line);border-radius:4px;resize:none;background:var(--bg-main);color:var(--text);overflow:hidden;box-sizing:border-box; }
 .pv-edit-block textarea:focus { outline:none;border-color:var(--primary);box-shadow:0 0 0 2px rgba(74,108,247,0.15); }
 .pv-edit-block .btn-icon { width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border-radius:4px;color:var(--text-muted);transition:color 0.12s,background 0.12s; }
 .step-badge { display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;font-size:0.7rem;font-weight:700;border-radius:4px;padding:0 6px;background:var(--primary);color:#fff;flex-shrink:0; }
@@ -301,7 +301,7 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
                         </button>
                     </div>
                 </div>
-                <textarea name="pv_content[]" rows="5" placeholder="Contenu de la résolution..."><?= e($r['content']) ?></textarea>
+                <textarea name="pv_content[]" placeholder="Contenu de la résolution..." oninput="autoResize(this)"><?= e($r['content']) ?></textarea>
             </div>
             <?php endforeach; ?>
         </div>
@@ -352,7 +352,7 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
                     </button>
                 </div>
             </div>
-            <textarea name="pv_content[]" rows="5" placeholder="Contenu de la résolution..."></textarea>
+            <textarea name="pv_content[]" placeholder="Contenu de la résolution..." oninput="autoResize(this)"></textarea>
         </div>
     </template>
     <?php endif; ?>
@@ -400,6 +400,13 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
 </div>
 
 <script>
+function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+}
+
+document.querySelectorAll('.pv-edit-block textarea').forEach(autoResize);
+
 function updateOrder() {
     var blocks = document.querySelectorAll('#pv-resolution-list .pv-edit-block');
     var orderList = document.getElementById('pv-order-of-day');
@@ -447,8 +454,10 @@ function $createResolutionBlock(title, content) {
     div.innerHTML = html;
     var block = div.firstElementChild;
     block.querySelector('.pv-title-input').value = title || '';
-    block.querySelector('textarea').value = content || '';
+    var ta = block.querySelector('textarea');
+    ta.value = content || '';
     list.appendChild(block);
+    autoResize(ta);
     updateOrder();
     return block;
 }
@@ -490,6 +499,9 @@ document.querySelectorAll('#pv-resolution-list .pv-title-input').forEach(functio
 document.addEventListener('input', function(e) {
     if (e.target.matches('#pv-resolution-list .pv-title-input')) {
         updateOrder();
+    }
+    if (e.target.matches('#pv-resolution-list textarea')) {
+        autoResize(e.target);
     }
 });
 </script>
