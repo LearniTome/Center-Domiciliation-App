@@ -4704,7 +4704,7 @@ button[data-toggle-import] {
     border: 1px solid var(--line);
     border-radius: var(--radius);
     width: 90%;
-    max-width: 640px;
+    max-width: 960px;
     max-height: 85vh;
     overflow-y: auto;
     padding: 1.5rem;
