@@ -83,8 +83,18 @@ $stmt->execute([
             }
 
             $societeId = $wizard['societe_id'];
+            if ($societeId <= 0) {
+                $pdo->rollBack();
+                set_flash('error', 'Aucune societe selectionnee. Veuillez recommencer l\'assistant.');
+                redirect_to('cession', ['step' => 1]);
+            }
             if (!$selectedSociete && $societeId > 0 && ($pdo ?? null) instanceof PDO) {
                 $selectedSociete = fetch_record($pdo, 'societes', $societeId);
+            }
+            if (!$selectedSociete) {
+                $pdo->rollBack();
+                set_flash('error', 'Societe introuvable (id ' . $societeId . ').');
+                redirect_to('cession', ['step' => 1]);
             }
             $capitalAvant = (float) ($selectedSociete['societe_capital'] ?? 0);
             $partsAvant = (int) ($selectedSociete['societe_part_social'] ?? 0);
