@@ -333,9 +333,9 @@ $stmt->execute([
                 $autoTotalPct = $autoTotalParts > 0 ? round($autoTotalPartsCedees / $autoTotalParts * 100, 1) : 0;
                 if ($autoCedant || $autoCessionnaire) {
                     $pvResolutions[] = ['title' => 'Cession de parts sociales', 'content' => "Approbation de la cession des " . nombre_en_lettres($autoTotalPartsCedees, 'parts') . " ($autoTotalPartsCedees parts) de « $autoCedant » au profit de « $autoCessionnaire ».\n\nLes associés acceptent les $autoTotalPartsCedees parts avec leurs actifs et passifs cédés par le vendeur sus-indiqué."];
-                    $pvResolutions[] = ['title' => "Agrément du ou des nouveaux associés", 'content' => "Les associés agréent la cession et acceptent l'entrée du nouvel associé."];
-                    $pvResolutions[] = ['title' => 'Modification des statuts', 'content' => "Modification de l'article 7 des statuts relatif au capital social (cession de $autoTotalPartsCedees parts, soit $autoTotalPct% du capital)."];
-                    $pvResolutions[] = ['title' => 'Pouvoirs pour formalités', 'content' => "Tous pouvoirs sont donnés au porteur d'une copie du présent procès-verbal pour effectuer toutes formalités légales."];
+                    $pvResolutions[] = ['title' => "Agrément du ou des nouveaux associés", 'content' => "Les associés agréent la cession susmentionnée et acceptent l'entrée du nouvel associé « $autoCessionnaire » dans le capital social de la société."];
+                    $pvResolutions[] = ['title' => 'Modification des statuts', 'content' => "Les associés décident la mise à jour de l'article 7 des statuts relatif au capital social, suite à la cession de $autoTotalPartsCedees parts intervenue."];
+                    $pvResolutions[] = ['title' => 'Pouvoirs pour formalités', 'content' => "L'assemblée donne tous pouvoirs au porteur d'un original, d'une copie ou d'un extrait du présent procès-verbal pour accomplir les formalités prévues par la loi, notamment effectuer les dépôts et inscriptions modificatives nécessaires."];
                 }
             }
             $docxBr = '</w:t></w:r><w:r><w:rPr><w:sz w:val="22"/><w:szCs w:val="22"/></w:rPr><w:br/><w:t xml:space="preserve">';
@@ -464,7 +464,7 @@ $stmt->execute([
             ];
             $pvResolutions[] = [
                 'title' => 'Modification des statuts',
-                'content' => "En conséquence de la cession, $autoLabel $autoVDecide de modifier l'article 7 des statuts relatif à la répartition du capital social, lequel sera désormais rédigé comme suit :\n\nArticle 7 — Capital Social\n\nLe capital social est fixé à la somme de $autoCapitalFmt DH, divisé en $autoTotalParts parts sociales de $autoVnomFmt DH chacune, réparties comme suit :\n\n- $autoCessionnaireFull : $autoTotalPartsCedees parts" . ($autoPartsRest > 0 ? "\n- $autoCedant : $autoPartsRest parts" : '')
+                'content' => "$autoLabel $autoVDecide la mise à jour de l'article 7 des statuts relatif au capital social, suite à la cession de parts intervenue.\n\nLe capital social est désormais réparti comme suit :\n\n- $autoCessionnaireFull : $autoTotalPartsCedees parts" . ($autoPartsRest > 0 ? "\n- $autoCedant : $autoPartsRest parts" : '')
             ];
             $autoHasResign = false;
             foreach (($autoMeta['cedants_gerant_map'] ?? []) as $gInfo) {
@@ -481,7 +481,7 @@ $stmt->execute([
             if ($autoHasResign) {
                 $pvResolutions[] = [
                     'title' => "Démission de l'ancien gérant",
-                    'content' => "$autoLabel $autoVPrend acte de la démission de « $autoAncienGerantNomEscaped » de ses fonctions de gérant de la société, avec effet à compter de ce jour."
+                    'content' => "$autoLabel $autoVPrend acte de la démission de « $autoAncienGerantNomEscaped » de ses fonctions de gérant de la société, avec effet à compter de ce jour, et le remercie pour les services rendus."
                 ];
             }
             if ($autoHasNominate) {
@@ -493,12 +493,12 @@ $stmt->execute([
             if ($autoNeedsTransform) {
                 $pvResolutions[] = [
                     'title' => 'Transformation de la forme juridique',
-                    'content' => "$autoLabel $autoVDecide de transformer la forme juridique de la société de SARL AU (SARL à Associé Unique) en SARL (Société à Responsabilité Limitée) à associés multiples, conformément aux dispositions de la loi 5-96 modifiée.\n\nEn conséquence, les statuts seront modifiés en conséquence pour tenir compte de la nouvelle forme sociale."
+                    'content' => "$autoLabel $autoVDecide la transformation de la forme juridique de la société de SARL AU (SARL à Associé Unique) en SARL (Société à Responsabilité Limitée) à associés multiples, tout en gardant la même dénomination sociale, la même durée et sans création d'une nouvelle personne morale, conformément aux dispositions de la loi 5-96 modifiée."
                 ];
             }
             $pvResolutions[] = [
                 'title' => 'Pouvoirs pour formalités',
-                'content' => "Tous pouvoirs sont donnés à $autoCedant, pour effectuer toutes formalités de dépôt et d'inscription modificative auprès du greffe du tribunal de commerce, ainsi que toutes autres démarches requises par la loi."
+                'content' => "$autoLabel donne tous pouvoirs au porteur d'un original, d'une copie ou d'un extrait du présent procès-verbal pour accomplir les formalités prévues par la loi, notamment effectuer les dépôts et inscriptions modificatives nécessaires auprès du greffe du tribunal de commerce compétent."
             ];
         }
         $docxBr = '</w:t></w:r><w:r><w:rPr><w:sz w:val="22"/><w:szCs w:val="22"/></w:rPr><w:br/><w:t xml:space="preserve">';

@@ -178,7 +178,7 @@ $reuniLieu = $isSarlAu ? "s'est réuni au siège social" : "se sont réunis en A
 $defaultResolutions = [
     ['title' => 'Cession de parts sociales', 'content' => "$associeLabel « $cedantNomEscaped », approuve la cession des " . nombre_en_lettres($totalPartsCedees, 'parts') . " ($totalPartsCedees parts) au profit de « $cessionnaireFull », présent.\n\n$associeLabel $vAccepte les $totalPartsCedees parts avec leurs actifs et passifs cédés par le vendeur sus-indiqué."],
     ['title' => "Agrément du ou des nouveaux associés", 'content' => "$associeLabel $vAgree la cession susmentionnée et accepte l'entrée du nouvel associé « $cessionnaireFull » dans le capital social de la société."],
-    ['title' => 'Modification des statuts', 'content' => "En conséquence de la cession, $associeLabel $vDecide de modifier l'article 7 des statuts relatif à la répartition du capital social, lequel sera désormais rédigé comme suit :\n\nArticle 7 — Capital Social\n\nLe capital social est fixé à la somme de $capitalFormatted DH, divisé en $totalParts parts sociales de $vnomFormatted DH chacune, réparties comme suit :\n\n- $cessionnaireFull : $totalPartsCedees parts" . ($partsRestantes > 0 ? "\n- $cedantNom : $partsRestantes parts" : '')],
+    ['title' => 'Modification des statuts', 'content' => "$associeLabel $vDecide la mise à jour de l'article 7 des statuts relatif au capital social, suite à la cession de parts intervenue.\n\nLe capital social est désormais réparti comme suit :\n\n- $cessionnaireFull : $totalPartsCedees parts" . ($partsRestantes > 0 ? "\n- $cedantNom : $partsRestantes parts" : '')],
 ];
 
 if ($hasResign) {
@@ -190,10 +190,10 @@ if ($hasNominate) {
 }
 
 if ($needsTransform) {
-    $defaultResolutions[] = ['title' => 'Transformation de la forme juridique', 'content' => "$associeLabel $vDecide de transformer la forme juridique de la société de SARL AU (SARL à Associé Unique) en SARL (Société à Responsabilité Limitée) à associés multiples, conformément aux dispositions de la loi 5-96 modifiée.\n\nEn conséquence, les statuts seront modifiés en conséquence pour tenir compte de la nouvelle forme sociale."];
+    $defaultResolutions[] = ['title' => 'Transformation de la forme juridique', 'content' => "$associeLabel $vDecide la transformation de la forme juridique de la société de SARL AU (SARL à Associé Unique) en SARL (Société à Responsabilité Limitée) à associés multiples, tout en gardant la même dénomination sociale, la même durée et sans création d'une nouvelle personne morale, conformément aux dispositions de la loi 5-96 modifiée."];
 }
 
-$defaultResolutions[] = ['title' => 'Pouvoirs pour formalités', 'content' => "Tous pouvoirs sont donnés à $cedantNom, pour effectuer toutes formalités de dépôt et d'inscription modificative auprès du greffe du tribunal de commerce, ainsi que toutes autres démarches requises par la loi."];
+$defaultResolutions[] = ['title' => 'Pouvoirs pour formalités', 'content' => "$associeLabel donne tous pouvoirs au porteur d'un original, d'une copie ou d'un extrait du présent procès-verbal pour accomplir les formalités prévues par la loi, notamment effectuer les dépôts et inscriptions modificatives nécessaires auprès du greffe du tribunal de commerce compétent."];
 
 // Load preconfig templates from DB
 $preconfigTemplates = [];
