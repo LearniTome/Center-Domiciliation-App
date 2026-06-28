@@ -363,7 +363,7 @@ if ($step === 3):
                 <span class="material-symbols-outlined" style="color:var(--warning);font-size:1.1rem">admin_panel_settings</span>
                 <strong style="font-size:0.85rem">Gestion de la gérance</strong>
             </div>
-            <div style="display:flex;gap:16px;font-size:0.85rem">
+            <div class="radio-group">
                 <label><input type="radio" name="gerant_action[<?= $partIndex ?>]" value="stay" checked> Rester gérant</label>
                 <label><input type="radio" name="gerant_action[<?= $partIndex ?>]" value="resign"> Démissionner</label>
             </div>
@@ -377,8 +377,8 @@ if ($step === 3):
             <button type="button" class="btn-icon danger remove-part" style="margin-left:auto" title="Supprimer cette ligne"><span class="material-symbols-outlined">delete</span></button>
         </div>
 
-        <div style="margin-bottom:8px;font-size:0.85rem">
-            <label style="margin-right:12px"><input type="radio" name="cessionnaire_type[<?= $partIndex ?>]" value="nouveau" class="cess-type-radio" <?= $cessIsExistant ? '' : 'checked' ?>> Nouveau</label>
+        <div class="radio-group" style="margin-bottom:8px">
+            <label><input type="radio" name="cessionnaire_type[<?= $partIndex ?>]" value="nouveau" class="cess-type-radio" <?= $cessIsExistant ? '' : 'checked' ?>> Nouveau</label>
             <label><input type="radio" name="cessionnaire_type[<?= $partIndex ?>]" value="existant" class="cess-type-radio" <?= $cessIsExistant ? 'checked' : '' ?>> Associé existant</label>
         </div>
 
@@ -522,7 +522,7 @@ if ($step === 3):
                 <span class="material-symbols-outlined" style="color:var(--warning);font-size:1.1rem">admin_panel_settings</span>
                 <strong style="font-size:0.85rem">Gestion de la gérance</strong>
             </div>
-            <div style="display:flex;gap:16px;font-size:0.85rem">
+            <div class="radio-group">
                 <label><input type="radio" name="gerant_action[0]" value="stay" checked> Rester gérant</label>
                 <label><input type="radio" name="gerant_action[0]" value="resign"> Démissionner</label>
             </div>
@@ -534,8 +534,8 @@ if ($step === 3):
             <button type="button" class="btn-icon danger remove-part" style="margin-left:auto" title="Supprimer cette ligne"><span class="material-symbols-outlined">delete</span></button>
         </div>
 
-        <div style="margin-bottom:8px;font-size:0.85rem">
-            <label style="margin-right:12px"><input type="radio" name="cessionnaire_type[0]" value="nouveau" class="cess-type-radio" checked> Nouveau</label>
+        <div class="radio-group" style="margin-bottom:8px">
+            <label><input type="radio" name="cessionnaire_type[0]" value="nouveau" class="cess-type-radio" checked> Nouveau</label>
             <label><input type="radio" name="cessionnaire_type[0]" value="existant" class="cess-type-radio"> Associé existant</label>
         </div>
 
