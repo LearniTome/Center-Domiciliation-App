@@ -1,0 +1,361 @@
+<?php
+
+declare(strict_types=1);
+
+// ─── Labels ───────────────────────────────────────────────────────────────
+$stepLabels = [
+    'redaction'          => 'Rédaction de l\'acte',
+    'signature'          => 'Signature',
+    'enregistrement'     => 'Enregistrement',
+    'legalisation'       => 'Légalisation',
+    'depot_greffe'       => 'Dépôt au greffe',
+    'publication_jal'    => 'Publication JAL',
+    'publication_bo'     => 'Publication BO',
+    'rc_modificatif'     => 'RC modificatif',
+    'reglement'          => 'Règlement',
+    'remise'             => 'Remise de documents',
+];
+
+$stepIcons = [
+    'redaction'          => 'edit_note',
+    'signature'          => 'draw',
+    'enregistrement'     => 'receipt_long',
+    'legalisation'       => 'verified',
+    'depot_greffe'       => 'folder',
+    'publication_jal'    => 'newspaper',
+    'publication_bo'     => 'campaign',
+    'rc_modificatif'     => 'assignment',
+    'reglement'          => 'payments',
+    'remise'             => 'move_up',
+];
+
+$documentSuggestions = [
+    'redaction'          => ['Projet d\'acte de cession'],
+    'signature'          => ['Acte signé par les parties'],
+    'enregistrement'     => ['Acte enregistré', 'Quittance de paiement'],
+    'legalisation'       => ['Acte légalisé'],
+    'depot_greffe'       => ['Récépissé de dépôt', 'Certificat de dépôt'],
+    'publication_jal'    => ['Attestation de parution'],
+    'publication_bo'     => ['Attestation BO'],
+    'rc_modificatif'     => ['Nouvel extrait RC'],
+    'reglement'          => ['Facture', 'Reçu de paiement'],
+    'remise'             => ['Bordereau de remise', 'PV de remise'],
+];
+
+$statutBadges = [
+    'en_attente' => 'brouillon',
+    'en_cours'   => 'warning',
+    'termine'    => 'valide',
+];
+
+$statutLabels = [
+    'en_attente' => 'En attente',
+    'en_cours'   => 'En cours',
+    'termine'    => 'Terminé',
+];
+
+// ─── Current cession ──────────────────────────────────────────────────────
+$cessionId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+$cession = null;
+$etapes = [];
+$documents = [];
+
+if ($cessionId > 0 && ($pdo ?? null) instanceof PDO) {
+    $stmt = $pdo->prepare('
+        SELECT c.*, s.societe_raison_sociale, s.societe_forme_juridique
+        FROM cessions c
+        LEFT JOIN societes s ON s.id = c.societe_id
+        WHERE c.id = :id
+    ');
+    $stmt->execute(['id' => $cessionId]);
+    $cession = $stmt->fetch();
+
+    if ($cession) {
+        $stmt = $pdo->prepare('SELECT * FROM cession_suivi_etapes WHERE cession_id = :id ORDER BY ordre');
+        $stmt->execute(['id' => $cessionId]);
+        $etapes = $stmt->fetchAll();
+
+        $stmt = $pdo->prepare('
+            SELECT d.*, e.etape
+            FROM cession_suivi_documents d
+            JOIN cession_suivi_etapes e ON e.id = d.etape_id
+            WHERE e.cession_id = :id
+            ORDER BY d.uploaded_at DESC
+        ');
+        $stmt->execute(['id' => $cessionId]);
+        $documents = $stmt->fetchAll();
+        $docsByEtape = [];
+        foreach ($documents as $d) {
+            $docsByEtape[$d['etape_id']][] = $d;
+        }
+    }
+}
+
+if (!$cession) {
+    if ($cessionId === 0) {
+        redirect_to('cessions');
+    }
+    http_response_code(404);
+    ?><section class="card stack">
+        <h2>Cession introuvable</h2>
+        <p>Le dossier de cession demandé n'existe pas.</p>
+        <a class="btn" href="<?= e(app_url('cessions')) ?>">Retour aux cessions</a>
+    </section><?php
+    return;
+}
+
+// ─── POST handlers ────────────────────────────────────────────────────────
+if (is_post() && ($pdo ?? null) instanceof PDO) {
+    verify_csrf();
+
+    // Update statut
+    if (isset($_POST['update_statut'])) {
+        $etapeId = (int) ($_POST['etape_id'] ?? 0);
+        $newStatut = $_POST['statut'] ?? '';
+        if ($etapeId > 0 && in_array($newStatut, ['en_attente', 'en_cours', 'termine'], true)) {
+            $updates = ['statut = :statut'];
+            $params = ['statut' => $newStatut, 'id' => $etapeId];
+            if ($newStatut === 'en_cours') {
+                $updates[] = 'date_debut = COALESCE(date_debut, CURDATE())';
+            }
+            if ($newStatut === 'termine') {
+                $updates[] = 'date_fin = COALESCE(date_fin, CURDATE())';
+            }
+            $sql = 'UPDATE cession_suivi_etapes SET ' . implode(', ', $updates) . ' WHERE id = :id AND cession_id = :cid';
+            $params['cid'] = $cessionId;
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+            set_flash('success', 'Statut mis à jour.');
+        }
+        redirect_to('cession_suivi', ['id' => $cessionId]);
+    }
+
+    // Update dates
+    if (isset($_POST['update_dates'])) {
+        $etapeId = (int) ($_POST['etape_id'] ?? 0);
+        $dateDebut = $_POST['date_debut'] ?: null;
+        $dateFin = $_POST['date_fin'] ?: null;
+        if ($etapeId > 0) {
+            $stmt = $pdo->prepare('UPDATE cession_suivi_etapes SET date_debut = :dd, date_fin = :df WHERE id = :id AND cession_id = :cid');
+            $stmt->execute(['dd' => $dateDebut, 'df' => $dateFin, 'id' => $etapeId, 'cid' => $cessionId]);
+            set_flash('success', 'Dates mises à jour.');
+        }
+        redirect_to('cession_suivi', ['id' => $cessionId]);
+    }
+
+    // Update notes
+    if (isset($_POST['update_notes'])) {
+        $etapeId = (int) ($_POST['etape_id'] ?? 0);
+        $notes = trim($_POST['notes'] ?? '');
+        if ($etapeId > 0) {
+            $stmt = $pdo->prepare('UPDATE cession_suivi_etapes SET notes = :notes WHERE id = :id AND cession_id = :cid');
+            $stmt->execute(['notes' => $notes ?: null, 'id' => $etapeId, 'cid' => $cessionId]);
+            set_flash('success', 'Notes mises à jour.');
+        }
+        redirect_to('cession_suivi', ['id' => $cessionId]);
+    }
+
+    // Upload document
+    if (isset($_POST['upload_document']) && isset($_FILES['doc_file']) && $_FILES['doc_file']['error'] === UPLOAD_ERR_OK) {
+        $etapeId = (int) ($_POST['etape_id'] ?? 0);
+        $nomDoc = trim($_POST['doc_nom'] ?? documentSuggestions[0] ?? 'Document');
+        $allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+        $extension = strtolower(pathinfo($_FILES['doc_file']['name'], PATHINFO_EXTENSION));
+        if ($etapeId > 0 && in_array($_FILES['doc_file']['type'], $allowedTypes, true)) {
+            $uploadDir = __DIR__ . '/../../../uploads/suivi/' . $cessionId . '/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+            $filename = $etapeId . '_' . time() . '.' . $extension;
+            $dest = $uploadDir . $filename;
+            if (move_uploaded_file($_FILES['doc_file']['tmp_name'], $dest)) {
+                $stmt = $pdo->prepare('INSERT INTO cession_suivi_documents (etape_id, nom, fichier) VALUES (:eid, :nom, :fichier)');
+                $stmt->execute(['eid' => $etapeId, 'nom' => $nomDoc, 'fichier' => 'uploads/suivi/' . $cessionId . '/' . $filename]);
+                set_flash('success', 'Document ajouté.');
+            }
+        } else {
+            set_flash('error', 'Type de fichier non autorisé. Formats acceptés: PDF, JPEG, PNG, DOC, DOCX.');
+        }
+        redirect_to('cession_suivi', ['id' => $cessionId]);
+    }
+
+    // Delete document
+    if (isset($_POST['delete_document'])) {
+        $docId = (int) ($_POST['doc_id'] ?? 0);
+        if ($docId > 0) {
+            $stmt = $pdo->prepare('SELECT d.id, d.fichier, e.cession_id FROM cession_suivi_documents d JOIN cession_suivi_etapes e ON e.id = d.etape_id WHERE d.id = :id');
+            $stmt->execute(['id' => $docId]);
+            $doc = $stmt->fetch();
+            if ($doc && (int) $doc['cession_id'] === $cessionId) {
+                $filePath = __DIR__ . '/../../../' . $doc['fichier'];
+                if (file_exists($filePath)) unlink($filePath);
+                $stmt = $pdo->prepare('DELETE FROM cession_suivi_documents WHERE id = :id');
+                $stmt->execute(['id' => $docId]);
+                set_flash('success', 'Document supprimé.');
+            }
+        }
+        redirect_to('cession_suivi', ['id' => $cessionId]);
+    }
+}
+
+$progress = count($etapes) > 0 ? round(count(array_filter($etapes, fn($e) => $e['statut'] === 'termine')) / count($etapes) * 100) : 0;
+$completed = count(array_filter($etapes, fn($e) => $e['statut'] === 'termine'));
+$inProgress = count(array_filter($etapes, fn($e) => $e['statut'] === 'en_cours'));
+?>
+
+<div class="section-title-row">
+    <h2>Suivi administratif — <?= e($cession['cession_dossier'] ?? '-') ?></h2>
+    <div class="table-actions">
+        <a class="btn btn-info" href="<?= e(app_url('cession_dossier', ['id' => $cessionId])) ?>"><span class="material-symbols-outlined">info</span> Dossier</a>
+        <a class="btn btn-back" href="<?= e(app_url('cessions')) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
+    </div>
+</div>
+
+<section class="stats small stats-bottom-margin">
+    <article class="stat">
+        <span>Société</span>
+        <strong><?= e($cession['societe_raison_sociale'] ?? '-') ?></strong>
+    </article>
+    <article class="stat">
+        <span>Progression</span>
+        <strong><?= $completed ?>/<?= count($etapes) ?></strong>
+    </article>
+    <article class="stat">
+        <span>En cours</span>
+        <strong><?= $inProgress ?></strong>
+    </article>
+    <article class="stat">
+        <span>Terminé</span>
+        <strong><?= $completed ?></strong>
+    </article>
+</section>
+
+<div class="progress-bar" style="height:6px;background:var(--line);border-radius:3px;margin-bottom:1.5rem;overflow:hidden">
+    <div style="height:100%;width:<?= $progress ?>%;background:var(--success);border-radius:3px;transition:width .3s ease"></div>
+</div>
+
+<section class="timeline" style="display:flex;flex-direction:column;gap:.75rem">
+    <?php foreach ($etapes as $e): $eid = (int) $e['id']; ?>
+    <article class="card" id="etape-<?= $eid ?>" data-statut="<?= e($e['statut']) ?>">
+        <div class="timeline-header" style="display:flex;align-items:center;gap:.75rem;cursor:pointer" onclick="toggleStep(<?= $eid ?>)">
+            <span class="material-symbols-outlined" style="font-size:1.5rem;color:<?= $e['statut'] === 'termine' ? 'var(--success)' : ($e['statut'] === 'en_cours' ? 'var(--warning)' : 'var(--text-muted)') ?>">
+                <?= match ($e['statut']) {
+                    'termine' => 'check_circle',
+                    'en_cours' => 'radio_button_checked',
+                    default => 'radio_button_unchecked',
+                } ?>
+            </span>
+            <span class="material-symbols-outlined" style="font-size:1.3rem;color:var(--text-muted)"><?= e($stepIcons[$e['etape']] ?? 'help') ?></span>
+            <strong style="flex:1"><?= $stepLabels[$e['etape']] ?? e($e['etape']) ?></strong>
+            <span class="statut-badge <?= $statutBadges[$e['statut']] ?? 'brouillon' ?>"><?= $statutLabels[$e['statut']] ?? e($e['statut']) ?></span>
+            <?php if ($e['date_fin']): ?>
+            <small style="color:var(--text-muted)"><?= format_date($e['date_fin']) ?></small>
+            <?php endif; ?>
+            <span class="material-symbols-outlined toggle-icon" style="transition:transform .2s;color:var(--text-muted)" data-target="step-detail-<?= $eid ?>">expand_more</span>
+        </div>
+
+        <div id="step-detail-<?= $eid ?>" class="step-detail" style="display:none;margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--line)">
+            <!-- Quick statut change -->
+            <div class="form-inline" style="display:flex;gap:.5rem;align-items:center;margin-bottom:.75rem;flex-wrap:wrap">
+                <span style="font-size:.85rem;color:var(--text-muted)">Statut :</span>
+                <form method="post" style="display:inline-flex;gap:.25rem">
+                    <?= csrf_input() ?>
+                    <input type="hidden" name="etape_id" value="<?= $eid ?>">
+                    <input type="hidden" name="update_statut" value="1">
+                    <?php foreach (['en_attente', 'en_cours', 'termine'] as $s): ?>
+                    <button type="submit" name="statut" value="<?= $s ?>" class="btn <?= $e['statut'] === $s ? 'btn-next' : '' ?>" style="font-size:.8rem;padding:3px 10px"><?= $statutLabels[$s] ?></button>
+                    <?php endforeach; ?>
+                </form>
+            </div>
+
+            <!-- Dates -->
+            <form method="post" style="display:flex;gap:.75rem;align-items:center;margin-bottom:.75rem;flex-wrap:wrap" class="form-inline">
+                <?= csrf_input() ?>
+                <input type="hidden" name="etape_id" value="<?= $eid ?>">
+                <input type="hidden" name="update_dates" value="1">
+                <label style="font-size:.85rem;color:var(--text-muted)">Début :
+                    <input type="date" name="date_debut" value="<?= e($e['date_debut'] ?? '') ?>" style="padding:3px 8px;border:1px solid var(--line);border-radius:4px;font-size:.85rem">
+                </label>
+                <label style="font-size:.85rem;color:var(--text-muted)">Fin :
+                    <input type="date" name="date_fin" value="<?= e($e['date_fin'] ?? '') ?>" style="padding:3px 8px;border:1px solid var(--line);border-radius:4px;font-size:.85rem">
+                </label>
+                <button type="submit" class="btn" style="font-size:.8rem;padding:3px 10px"><span class="material-symbols-outlined">calendar_month</span> Dates</button>
+            </form>
+
+            <!-- Notes -->
+            <form method="post" style="margin-bottom:.75rem">
+                <?= csrf_input() ?>
+                <input type="hidden" name="etape_id" value="<?= $eid ?>">
+                <input type="hidden" name="update_notes" value="1">
+                <textarea name="notes" rows="2" placeholder="Notes..." style="width:100%;padding:6px 10px;border:1px solid var(--line);border-radius:4px;font-size:.85rem;resize:vertical"><?= e($e['notes'] ?? '') ?></textarea>
+                <button type="submit" class="btn" style="margin-top:.25rem;font-size:.8rem;padding:3px 10px"><span class="material-symbols-outlined">note</span> Enregistrer</button>
+            </form>
+
+            <!-- Documents -->
+            <div style="margin-bottom:.5rem">
+                <strong style="font-size:.85rem">Documents :</strong>
+                <?php if (!empty($docsByEtape[$eid])): ?>
+                <ul style="list-style:none;padding:0;margin:.5rem 0">
+                    <?php foreach ($docsByEtape[$eid] as $doc): ?>
+                    <li style="display:flex;align-items:center;gap:.5rem;padding:.25rem 0;font-size:.85rem">
+                        <span class="material-symbols-outlined" style="font-size:1.1rem;color:var(--primary)">description</span>
+                        <span><?= e($doc['nom']) ?></span>
+                        <a href="<?= e(word_url($doc['fichier'])) ?>" class="btn-icon primary" title="Télécharger" target="_blank">
+                            <span class="material-symbols-outlined">download</span>
+                        </a>
+                        <form method="post" style="display:inline" onsubmit="return confirm('Supprimer ce document ?')">
+                            <?= csrf_input() ?>
+                            <input type="hidden" name="delete_document" value="1">
+                            <input type="hidden" name="doc_id" value="<?= (int) $doc['id'] ?>">
+                            <button type="submit" class="btn-icon danger" title="Supprimer">
+                                <span class="material-symbols-outlined">delete</span>
+                            </button>
+                        </form>
+                        <small style="color:var(--text-muted)"><?= format_date($doc['uploaded_at']) ?></small>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+                <?php else: ?>
+                <p style="font-size:.85rem;color:var(--text-muted);margin:.25rem 0">Aucun document.</p>
+                <?php endif; ?>
+            </div>
+
+            <!-- Upload document -->
+            <form method="post" enctype="multipart/form-data" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;padding:.5rem;background:var(--bg);border-radius:4px">
+                <?= csrf_input() ?>
+                <input type="hidden" name="etape_id" value="<?= $eid ?>">
+                <input type="hidden" name="upload_document" value="1">
+                <input type="text" name="doc_nom" placeholder="Nom du document" list="doc-suggest-<?= $eid ?>" style="padding:4px 8px;border:1px solid var(--line);border-radius:4px;font-size:.85rem;flex:1;min-width:140px" value="<?= e(($documentSuggestions[$e['etape']] ?? [null])[0]) ?>">
+                <datalist id="doc-suggest-<?= $eid ?>">
+                    <?php foreach ($documentSuggestions[$e['etape']] ?? [] as $s): ?>
+                    <option value="<?= e($s) ?>">
+                    <?php endforeach; ?>
+                </datalist>
+                <input type="file" name="doc_file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" required style="font-size:.85rem;max-width:160px">
+                <button type="submit" class="btn btn-next" style="font-size:.8rem;padding:4px 12px"><span class="material-symbols-outlined">upload</span> Ajouter</button>
+            </form>
+        </div>
+    </article>
+    <?php endforeach; ?>
+</section>
+
+<script>
+function toggleStep(id) {
+    var detail = document.getElementById('step-detail-' + id);
+    var icon = document.querySelector('#etape-' + id + ' .toggle-icon');
+    if (!detail || !icon) return;
+    var isOpen = detail.style.display !== 'none';
+    detail.style.display = isOpen ? 'none' : 'block';
+    icon.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+}
+<?php if (isset($_GET['open'])): ?>
+document.addEventListener('DOMContentLoaded', function() {
+    var id = <?= json_encode((string) $_GET['open']) ?>;
+    var el = document.getElementById('step-detail-' + id);
+    if (el) { el.style.display = 'block';
+        var icon = document.querySelector('#etape-' + id + ' .toggle-icon');
+        if (icon) icon.style.transform = 'rotate(180deg)';
+        el.closest('.card')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+});
+<?php endif; ?>
+</script>

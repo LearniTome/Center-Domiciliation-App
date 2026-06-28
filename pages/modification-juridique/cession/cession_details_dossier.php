@@ -91,6 +91,38 @@ if (is_post() && isset($_POST['restore_submit']) && ($pdo ?? null) instanceof PD
     redirect_to('cession_dossier', ['id' => $cessionId]);
 }
 
+// ─── Suivi administratif ──────────────────────────────────────────────────
+$suiviEtapes = [];
+$suiviProgress = 0;
+if (($pdo ?? null) instanceof PDO) {
+    $stmt = $pdo->prepare('SELECT * FROM cession_suivi_etapes WHERE cession_id = :id ORDER BY ordre');
+    $stmt->execute(['id' => $cessionId]);
+    $suiviEtapes = $stmt->fetchAll();
+    $total = count($suiviEtapes);
+    $done = count(array_filter($suiviEtapes, fn($e) => $e['statut'] === 'termine'));
+    $suiviProgress = $total > 0 ? round($done / $total * 100) : 0;
+}
+
+$stepLabels = [
+    'redaction'          => 'Rédaction de l\'acte',
+    'signature'          => 'Signature',
+    'enregistrement'     => 'Enregistrement',
+    'legalisation'       => 'Légalisation',
+    'depot_greffe'       => 'Dépôt au greffe',
+    'publication_jal'    => 'Publication JAL',
+    'publication_bo'     => 'Publication BO',
+    'rc_modificatif'     => 'RC modificatif',
+    'reglement'          => 'Règlement',
+    'remise'             => 'Remise de documents',
+];
+
+$statutBadges = [
+    'en_attente' => 'brouillon',
+    'en_cours'   => 'warning',
+    'termine'    => 'valide',
+];
+// ────────────────────────────────────────────────────────────────────────────
+
 $docTypeLabels = [
     'Acte-Cession-Parts' => "Acte de cession de parts",
     'PV-AGE-Cession' => "PV d'assemblee generale cession",
@@ -133,6 +165,26 @@ $sourceLabels = [
         <strong><?= array_sum(array_map(fn($p) => (int) ($p['parts_cedees'] ?? 0), $cessionParts)) ?></strong>
     </article>
 </section>
+
+<?php if ($suiviEtapes && has_permission('cessions.suivi')): ?>
+<article class="card">
+    <div class="section-header">
+        <h3>Suivi administratif</h3>
+        <a class="btn btn-info" href="<?= e(app_url('cession_suivi', ['id' => $cessionId])) ?>"><span class="material-symbols-outlined">open_in_new</span> Voir le suivi complet</a>
+    </div>
+    <div class="progress-bar" style="height:4px;background:var(--line);border-radius:2px;margin-bottom:.75rem;overflow:hidden">
+        <div style="height:100%;width:<?= $suiviProgress ?>%;background:var(--success);border-radius:2px;transition:width .3s ease"></div>
+    </div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+        <?php foreach ($suiviEtapes as $e): ?>
+        <a href="<?= e(app_url('cession_suivi', ['id' => $cessionId, 'open' => $e['id']])) ?>" style="display:flex;align-items:center;gap:.35rem;padding:4px 10px;border-radius:20px;font-size:.8rem;text-decoration:none;border:1px solid <?= $e['statut'] === 'termine' ? 'var(--success)' : ($e['statut'] === 'en_cours' ? 'var(--warning)' : 'var(--line)') ?>;color:<?= $e['statut'] === 'termine' ? 'var(--success)' : ($e['statut'] === 'en_cours' ? 'var(--warning)' : 'var(--text-muted)') ?>;background:<?= $e['statut'] === 'termine' ? 'rgba(0,184,148,0.08)' : ($e['statut'] === 'en_cours' ? 'rgba(255,107,53,0.08)' : 'transparent') ?>" title="<?= e($stepLabels[$e['etape']] ?? $e['etape']) ?>">
+            <span class="material-symbols-outlined" style="font-size:1rem"><?= $e['statut'] === 'termine' ? 'check_circle' : ($e['statut'] === 'en_cours' ? 'radio_button_checked' : 'radio_button_unchecked') ?></span>
+            <span><?= $stepLabels[$e['etape']] ?? e($e['etape']) ?></span>
+        </a>
+        <?php endforeach; ?>
+    </div>
+</article>
+<?php endif; ?>
 
 <article class="card stack">
     <div class="form-grid">

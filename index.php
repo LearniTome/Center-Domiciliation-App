@@ -21,7 +21,7 @@ $allowedPages = [
     'setup', 'connexion', 'deconnexion',
     'roles', 'role', 'activite',
     'notifications', 'notifications-manage', 'notif-ajax',
-    'modifications', 'cessions', 'cession', 'cession_dossier',
+    'modifications', 'cessions', 'cession', 'cession_dossier', 'cession_suivi',
     'pv_ago', 'pv_ago_wizard',
 ];
 
@@ -48,6 +48,7 @@ $pageDir = [
     'cessions' => 'modification-juridique/cession',
     'cession' => 'modification-juridique/cession',
     'cession_dossier' => 'modification-juridique/cession',
+    'cession_suivi' => 'modification-juridique/cession',
     'pv_ago' => 'modification-juridique/pv_ago',
     'pv_ago_wizard' => 'modification-juridique/pv_ago/pv_ago_steps',
     // Templates de documents
@@ -94,6 +95,7 @@ $pageFile = [
     'cessions' => 'cessions_liste',
     'cession' => 'cession_steps/_main',
     'cession_dossier' => 'cession_details_dossier',
+    'cession_suivi' => 'cession_suivi',
     'modifications' => 'modifications_juridiques',
     'pv_ago' => 'pv_details',
     'pv_ago_wizard' => '_main',
@@ -167,6 +169,7 @@ $pageTitleMap = [
     'cessions' => 'Cessions de parts sociales',
     'cession' => 'Formulaire de Cession Des Parts Sociales',
     'cession_dossier' => 'Dossier de cession',
+    'cession_suivi' => 'Suivi administratif',
     'pv_ago' => 'PV Assemblee Generale Ordinaire',
     'pv_ago_wizard' => 'PV Assemblee Generale Ordinaire',
 ];

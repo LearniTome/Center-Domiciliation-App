@@ -4974,3 +4974,23 @@ input[data-bulk-checkbox] {
     border-color: var(--primary);
     background: rgba(74,108,247,0.06);
 }
+
+/* ─── Suivi administratif ────────────────────────────────────── */
+.timeline .card {
+    border-left: 3px solid var(--line);
+    transition: border-color .2s;
+}
+.timeline .card[data-statut="termine"] {
+    border-left-color: var(--success);
+}
+.timeline .card[data-statut="en_cours"] {
+    border-left-color: var(--warning);
+}
+.step-detail .form-inline button.btn-next {
+    background: var(--success);
+    color: #fff;
+    border-color: var(--success);
+}
+.progress-bar {
+    flex: none;
+}

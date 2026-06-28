@@ -16,6 +16,7 @@ $navPermissions = [
     'modifications' => 'modifications.view',
     'cessions' => 'cessions.view',
     'cession' => 'cessions.create',
+    'cession_suivi' => 'cessions.suivi',
     'pv_ago' => 'pv_ago.view',
     'pv_ago' => 'pv_ago.create',
     'generation' => 'generation.use',
@@ -71,6 +72,7 @@ $navSections = [
         'items' => [
             'modifications' => ['Toutes les modifications', 'list_alt'],
             'cessions' => ['Cession de parts', 'transfer_within_a_station'],
+            'cession_suivi' => ['Suivi administratif', 'checklist'],
             'pv_ago' => ['PV Assemblee Generale', 'groups'],
         ],
     ],
