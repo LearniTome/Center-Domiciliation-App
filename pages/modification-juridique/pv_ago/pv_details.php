@@ -456,20 +456,22 @@ $list = $stmt->fetchAll();
 <article class="card">
     <div class="section-header">
         <span class="page-count"><?= $total ?> enregistrement(s)</span>
-        <form method="get" class="search-bar">
-            <input type="hidden" name="page" value="pv_ago">
-            <div class="inline-form">
-                <input type="search" name="q" placeholder="Rechercher par dossier, societe, exercice..." value="<?= e($search) ?>" style="min-width:300px">
-                <button class="btn btn-secondary" type="submit"><span class="material-symbols-outlined">search</span> Rechercher</button>
-                <?php if ($search !== ''): ?>
-                <a class="btn btn-cancel" href="<?= e(app_url('pv_ago')) ?>"><span class="material-symbols-outlined">close</span> Effacer</a>
-                <?php endif; ?>
-                <?php if (has_permission('pv_ago.export') && function_exists('export_csv')): ?>
-                <a class="btn btn-info" href="<?= e(app_url('pv_ago', ['export' => 'csv'] + ($search ? ['q' => $search] : []))) ?>"><span class="material-symbols-outlined">download</span> CSV</a>
-                <?php endif; ?>
-            </div>
-        </form>
+        <?php if (has_permission('pv_ago.export') && function_exists('export_csv')): ?>
+        <div class="table-actions">
+            <a class="btn btn-info" href="<?= e(app_url('pv_ago', ['export' => 'csv'] + ($search ? ['q' => $search] : []))) ?>"><span class="material-symbols-outlined">download</span> CSV</a>
+        </div>
+        <?php endif; ?>
     </div>
+    <form method="get" class="stack search-bar">
+        <input type="hidden" name="page" value="pv_ago">
+        <div class="inline-form">
+            <input type="search" name="q" placeholder="Rechercher par dossier, societe, exercice..." value="<?= e($search) ?>">
+            <button class="btn btn-secondary" type="submit"><span class="material-symbols-outlined">search</span> Rechercher</button>
+            <?php if ($search !== ''): ?>
+            <a class="btn btn-cancel" href="<?= e(app_url('pv_ago')) ?>"><span class="material-symbols-outlined">close</span> Effacer</a>
+            <?php endif; ?>
+        </div>
+    </form>
 
     <?php if (empty($list)): ?>
     <div class="empty-state">
