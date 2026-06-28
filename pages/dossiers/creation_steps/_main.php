@@ -8,8 +8,10 @@ require __DIR__ . '/_init.php';
         <div>
             <p class="help-text">Parcours guide: societe, associes, puis contrat, dans un seul flux.</p>
         </div>
-        <a class="btn btn-cancel" href="<?= e(app_url('creation', ['cancel' => '1'])) ?>" data-confirm="Annuler la creation ?"><span class="material-symbols-outlined">cancel</span> Annuler</a>
-        <a class="btn btn-back" href="<?= e(app_url('creation', ['reset' => '1'])) ?>" data-confirm="Reinitialiser cet assistant ?"><span class="material-symbols-outlined">restart_alt</span> Reinitialiser</a>
+        <div class="table-actions">
+            <a class="btn btn-cancel" href="<?= e(app_url('creation', ['cancel' => '1'])) ?>" data-confirm="Annuler la creation ?"><span class="material-symbols-outlined">cancel</span> Annuler</a>
+            <a class="btn btn-back" href="<?= e(app_url('creation', ['reset' => '1'])) ?>" data-confirm="Reinitialiser cet assistant ?"><span class="material-symbols-outlined">restart_alt</span> Reinitialiser</a>
+        </div>
     </div>
 
     <div class="wizard-steps" id="wizard-steps-top">

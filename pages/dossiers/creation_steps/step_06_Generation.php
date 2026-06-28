@@ -479,9 +479,11 @@ if ($step === 6):
             <p class="help-text">Creez d'abord le dossier, puis generez les documents.</p>
         </div>
         <?php if ($dossierCreated): ?>
-            <a class="btn btn-secondary" href="<?= e(app_url('societe', ['id' => $societeId])) ?>">
-                <span class="material-symbols-outlined">visibility</span> Voir le dossier
-            </a>
+            <div class="table-actions">
+                <a class="btn btn-secondary" href="<?= e(app_url('societe', ['id' => $societeId])) ?>">
+                    <span class="material-symbols-outlined">visibility</span> Voir le dossier
+                </a>
+            </div>
         <?php endif; ?>
     </div>
 
