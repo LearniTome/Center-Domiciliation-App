@@ -307,9 +307,9 @@ if ($isBenefice) {
 
 <article class="card">
     <div class="section-header">
-        <h3>Documents generes (<?= count($docs) ?>)</h3>
+        <h3 style="color:var(--success);">Documents generes (<?= count($docs) ?>)</h3>
         <?php if (has_permission('pv_ago.create')): ?>
-        <form method="post" class="inline-form" id="gen-form-header">
+        <form method="post" class="inline-form" id="gen-form-header" style="margin-left:auto;">
             <?= csrf_input() ?>
             <input type="hidden" name="generate_pv_ago" value="<?= $viewId ?>">
             <button class="btn btn-next" type="submit"><span class="material-symbols-outlined">sync</span> <?= empty($docs) ? 'Generer le document' : 'Regenerer' ?></button>
@@ -320,13 +320,6 @@ if ($isBenefice) {
     <div class="empty-state">
         <span class="material-symbols-outlined">description</span>
         <p class="table-empty">Aucun document genere pour ce PV AGO.</p>
-        <?php if (has_permission('pv_ago.create')): ?>
-        <form method="post" id="gen-form-empty">
-            <?= csrf_input() ?>
-            <input type="hidden" name="generate_pv_ago" value="<?= $viewId ?>">
-            <button class="btn btn-next" type="submit"><span class="material-symbols-outlined">description</span> Generer le document</button>
-        </form>
-        <?php endif; ?>
     </div>
     <?php else: ?>
     <form method="post" id="docs-form">
