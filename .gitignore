@@ -16,7 +16,8 @@
 backups/
 /config/ai.local.php
 
-/dossiers_generer/
+/dossiers_generer/*
+!/dossiers_generer/**/.gitkeep
 .opencode/skill_cache/
 tmp_test/
 *.DS_Store

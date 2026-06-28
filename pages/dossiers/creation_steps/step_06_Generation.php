@@ -141,7 +141,7 @@ if (is_post() && $step === 6) {
 
             $uploadedDocs = $wizard['uploaded_docs'] ?? [];
             if ($uploadedDocs !== [] && ($pdo ?? null) instanceof PDO) {
-                $dossierUploadDir = __DIR__ . '/../../../dossiers_generer/dossiers_domiciliation/' . $dossierName . '/_uploads';
+                $dossierUploadDir = __DIR__ . '/../../../dossiers_generer/dossiers_creation/' . $dossierName . '/_uploads';
                 if (!is_dir($dossierUploadDir)) {
                     mkdir($dossierUploadDir, 0777, true);
                 }
@@ -198,7 +198,7 @@ if (is_post() && $step === 6) {
                 }
             }
 
-            $creaDir = __DIR__ . '/../../../dossiers_generer/dossiers_domiciliation/' . $dossierName;
+            $creaDir = __DIR__ . '/../../../dossiers_generer/dossiers_creation/' . $dossierName;
             if (!is_dir($creaDir)) {
                 mkdir($creaDir, 0777, true);
             }
@@ -245,7 +245,7 @@ if (is_post() && $step === 6) {
         $folderDate = $wizard['contrat']['contrat_date'] ?? $today;
         $folderName = $folderDate . '_' . $forme . '_' . $clientName;
         $folderName = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', $folderName), '-');
-        $outputDir = __DIR__ . '/../../../dossiers_generer/dossiers_domiciliation/' . $folderName;
+        $outputDir = __DIR__ . '/../../../dossiers_generer/dossiers_creation/' . $folderName;
         if (!is_dir($outputDir)) {
             mkdir($outputDir, 0777, true);
         }
@@ -338,7 +338,7 @@ if (is_post() && $step === 6) {
             $folderDate = $wizard['contrat']['contrat_date'] ?? $today;
             $folderName = $folderDate . '_' . $forme . '_' . $clientName;
             $folderName = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', $folderName), '-');
-            $outputDir = __DIR__ . '/../../../dossiers_generer/dossiers_domiciliation/' . $folderName;
+            $outputDir = __DIR__ . '/../../../dossiers_generer/dossiers_creation/' . $folderName;
             if (!is_dir($outputDir)) mkdir($outputDir, 0777, true);
 
             $renderer = new DocumentRenderer($path, $outputDir);
