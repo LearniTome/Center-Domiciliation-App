@@ -94,7 +94,7 @@ $stmt->execute([
                 'dos' => $dossier,
                 'dat' => $wizard['cession_date'],
                 'motif' => $wizard['cession_motif'] ?: null,
-                'status' => $wizard['cession_status'] ?? 'valide',
+                'status' => $wizard['cession_status'] ?? 'Valider',
                 'cap' => $capitalAvant,
                 'parts' => $partsAvant,
                 'created_by' => ($user = current_user()) ? (int) $user['id'] : null,

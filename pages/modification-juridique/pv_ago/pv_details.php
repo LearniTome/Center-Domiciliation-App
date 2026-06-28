@@ -155,7 +155,7 @@ if ($viewId > 0):
         'loss_reserves' => 'Imputation sur les reserves',
     ];
     $statutBadgeClass = match ($pv['statut'] ?? 'brouillon') {
-        'finalise' => 'valide',
+        'Valider' => 'valide',
         default => 'brouillon',
     };
 ?>
@@ -491,7 +491,7 @@ $list = $stmt->fetchAll();
                     <td><?= format_date($row['date_ago'] ?? null) ?></td>
                     <td><?= e($row['exercice_clos'] ?? '-') ?></td>
                     <td class="<?= ($row['resultat_type'] ?? 'benefice') === 'benefice' ? 'text-success' : 'text-danger' ?>"><?= format_money((float) ($row['resultat_net'] ?? 0)) ?></td>
-                    <td><span class="statut-badge <?= ($row['statut'] ?? 'brouillon') === 'finalise' ? 'valide' : 'brouillon' ?>"><?= e($row['statut'] ?? 'brouillon') ?></span></td>
+                    <td><span class="statut-badge <?= ($row['statut'] ?? 'brouillon') === 'Valider' ? 'valide' : 'brouillon' ?>"><?= e($row['statut'] ?? 'brouillon') ?></span></td>
                     <td><?= format_date($row['created_at'] ?? null) ?></td>
                     <td class="col-actions">
                         <div class="table-actions">

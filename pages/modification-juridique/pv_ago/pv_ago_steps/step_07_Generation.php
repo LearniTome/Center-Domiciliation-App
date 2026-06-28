@@ -69,7 +69,7 @@ if (is_post() && $step === 7) {
             $stmt->execute([
                 'sid' => $societeId,
                 'dos' => $dossier,
-                'stat' => 'finalise',
+                'stat' => 'Valider',
                 'date' => $wizard['date_ago'],
                 'heure' => $wizard['heure_ago'] ?? '10:00',
                 'lieu' => $wizard['lieu_ago'] ?? 'au siege social',

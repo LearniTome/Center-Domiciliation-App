@@ -170,7 +170,7 @@ if (($pdo ?? null) instanceof PDO) {
                         <td><a href="<?= e(app_url($row['mod_type'] === 'cession' ? 'cession_dossier' : 'societe', ['id' => (int) $row['id']])) ?>" style="color:var(--primary);text-decoration:none;font-weight:500"><?= e($row['societe_raison_sociale'] ?? '-') ?></a></td>
                         <td><?= e(format_date($row['mod_date'] ?? null)) ?></td>
                         <td>
-                            <?php if (($row['mod_status'] ?? 'brouillon') === 'finalise'): ?>
+                            <?php if (($row['mod_status'] ?? 'brouillon') === 'Valider'): ?>
                                 <span style="color:var(--success);font-weight:500">Valider</span>
                             <?php else: ?>
                                 <span style="color:var(--warning);font-weight:500">Brouillon</span>
