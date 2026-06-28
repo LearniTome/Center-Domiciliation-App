@@ -587,7 +587,7 @@ if ($step === 7):
                     <p class="help-text">Enregistrez la societe, les cedants et cessionnaires en base de donnees.</p>
                 </div>
                 <?php if ($dossierCreated): ?>
-                    <span class="step-badge" style="color:var(--success)"><span class="material-symbols-outlined" style="font-size:1.3rem">check_circle</span></span>
+                    <span class="step-badge" style="color:var(--success)"><span class="material-symbols-outlined" style="font-size:1.6rem">check_circle</span></span>
                 <?php endif; ?>
             </div>
             <?php if (!$dossierCreated): ?>
@@ -608,6 +608,9 @@ if ($step === 7):
                     <h3>Generer les documents</h3>
                     <p class="help-text">Selectionnez les types de documents a generer pour la cession.</p>
                 </div>
+                <?php if (!empty($generatedFiles)): ?>
+                    <span class="step-badge" style="color:var(--success)"><span class="material-symbols-outlined" style="font-size:1.6rem">check_circle</span></span>
+                <?php endif; ?>
             </div>
 
             <?php if (!$dossierCreated): ?>
@@ -708,6 +711,7 @@ if ($step === 7):
                 <h3>Documents generes</h3>
                 <p class="help-text"><?= count($generatedFiles) ?> fichier(s) genere(s)</p>
             </div>
+            <span class="step-badge" style="color:var(--success)"><span class="material-symbols-outlined" style="font-size:1.6rem">check_circle</span></span>
         </div>
         <div class="table-scroll" style="overflow-x:auto;margin-top:8px">
             <table style="white-space:nowrap">
