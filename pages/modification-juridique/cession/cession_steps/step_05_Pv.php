@@ -234,16 +234,25 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
 .recap-section h3 { font-size:0.92rem;font-weight:700;color:var(--primary);margin:0 0 8px; }
 .recap-header h2 { font-size:1.05rem;font-weight:700;color:var(--primary);text-transform:uppercase; }
 #pv-order-of-day li::marker { color:var(--primary);font-weight:600; }
-.pv-preconfig-wrap { position:relative;display:inline-block; }
-.pv-preconfig-menu { display:none;position:absolute;top:100%;left:0;min-width:320px;max-height:360px;overflow-y:auto;background:var(--bg-secondary);border:1px solid var(--line);border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:100;padding:4px 0; }
-.pv-preconfig-menu::-webkit-scrollbar { width:6px; }
-.pv-preconfig-menu::-webkit-scrollbar-track { background:transparent; }
-.pv-preconfig-menu::-webkit-scrollbar-thumb { background:var(--line);border-radius:2px; }
-.pv-preconfig-menu::-webkit-scrollbar-thumb:hover { background:var(--text-muted); }
-.pv-preconfig-menu a { display:block;padding:8px 14px;color:var(--text);text-decoration:none;font-size:0.85rem;border-bottom:1px solid var(--line);cursor:pointer; }
-.pv-preconfig-menu a:last-child { border-bottom:none; }
-.pv-preconfig-menu a:hover { background:rgba(74,108,247,0.08); }
-.pv-preconfig-menu .pv-preconfig-cat { padding:6px 14px 2px;font-size:0.7rem;font-weight:700;text-transform:uppercase;color:var(--text-muted);letter-spacing:0.04em;border-bottom:1px solid var(--line);background:var(--bg-secondary);position:sticky;top:0; }
+.pv-modal-overlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center; }
+.pv-modal-overlay.active { display:flex; }
+.pv-modal { background:var(--bg-secondary);border-radius:8px;width:520px;max-width:90vw;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 16px 48px rgba(0,0,0,0.2); }
+.pv-modal-header { display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line); }
+.pv-modal-header h3 { margin:0;font-size:0.95rem;font-weight:700;color:var(--text); }
+.pv-modal-close { width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border-radius:4px;cursor:pointer;color:var(--text-muted);border:none;background:transparent; }
+.pv-modal-close:hover { background:rgba(252,66,74,0.08);color:var(--danger); }
+.pv-modal-body { flex:1;overflow-y:auto;padding:8px 0;min-height:200px; }
+.pv-modal-body::-webkit-scrollbar { width:6px; }
+.pv-modal-body::-webkit-scrollbar-track { background:transparent; }
+.pv-modal-body::-webkit-scrollbar-thumb { background:var(--line);border-radius:2px; }
+.pv-modal-body::-webkit-scrollbar-thumb:hover { background:var(--text-muted); }
+.pv-modal-footer { display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-top:1px solid var(--line);gap:8px;flex-wrap:wrap; }
+.pv-modal-item { display:flex;align-items:flex-start;gap:10px;padding:8px 18px;cursor:pointer;transition:background 0.1s; }
+.pv-modal-item:hover { background:rgba(74,108,247,0.04); }
+.pv-modal-item input[type="checkbox"] { margin-top:3px;accent-color:var(--primary); }
+.pv-modal-item-title { font-size:0.85rem;font-weight:600;color:var(--text); }
+.pv-modal-item-preview { font-size:0.75rem;color:var(--text-muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.pv-modal-cat { padding:6px 18px 3px;font-size:0.7rem;font-weight:700;text-transform:uppercase;color:var(--text-muted);letter-spacing:0.04em;background:var(--bg-secondary);position:sticky;top:0;z-index:1; }
 </style>
 
 <div class="stack">
@@ -328,12 +337,9 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
                 <button type="button" class="btn btn-secondary" id="pv-add-resolution">
                     <span class="material-symbols-outlined">add</span> Ajouter
                 </button>
-                <div class="pv-preconfig-wrap">
-                    <button type="button" class="btn btn-info" id="pv-preconfig-btn">
-                        <span class="material-symbols-outlined">playlist_add</span> Préconfiguré <span style="font-size:0.7em">▾</span>
-                    </button>
-                    <div class="pv-preconfig-menu" id="pv-preconfig-menu"></div>
-                </div>
+                <button type="button" class="btn btn-info" id="pv-preconfig-btn">
+                    <span class="material-symbols-outlined">playlist_add</span> Préconfiguré
+                </button>
                 <button type="button" class="btn btn-secondary" id="pv-add-ai-resolution" title="Ajouter une résolution générée par IA">
                     <span class="material-symbols-outlined">auto_awesome</span> Ajouter avec IA
                 </button>
@@ -357,6 +363,26 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
             </div>
         </div>
     </form>
+
+    <div class="pv-modal-overlay" id="pv-preconfig-modal">
+        <div class="pv-modal">
+            <div class="pv-modal-header">
+                <h3>Ajouter des résolutions préconfigurées</h3>
+                <button type="button" class="pv-modal-close" id="pv-modal-close-btn">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="pv-modal-body" id="pv-modal-body"></div>
+            <div class="pv-modal-footer">
+                <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;cursor:pointer;user-select:none">
+                    <input type="checkbox" id="pv-modal-select-all"> Tout sélectionner
+                </label>
+                <button type="button" class="btn btn-next" id="pv-modal-add-btn">
+                    <span class="material-symbols-outlined">add</span> Ajouter la sélection
+                </button>
+            </div>
+        </div>
+    </div>
 
     <script>
     window._pvPreconfig = <?= json_encode($preconfigTemplates, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
@@ -532,48 +558,82 @@ document.addEventListener('input', function(e) {
     }
 });
 
-// Preconfig dropdown
+// Preconfig modal
 (function() {
     var preconfig = window._pvPreconfig || [];
-    var menu = document.getElementById('pv-preconfig-menu');
+    var modal = document.getElementById('pv-preconfig-modal');
     var btn = document.getElementById('pv-preconfig-btn');
-    if (!menu || !btn || !preconfig.length) return;
+    var closeBtn = document.getElementById('pv-modal-close-btn');
+    var body = document.getElementById('pv-modal-body');
+    var selectAll = document.getElementById('pv-modal-select-all');
+    var addBtn = document.getElementById('pv-modal-add-btn');
+    if (!modal || !btn || !body || !preconfig.length) return;
 
-    function buildMenu() {
-        menu.innerHTML = '';
+    function openModal() { modal.classList.add('active'); }
+    function closeModal() { modal.classList.remove('active'); }
+
+    function buildList() {
+        body.innerHTML = '';
         var lastCat = '';
-        preconfig.forEach(function(item) {
+        preconfig.forEach(function(item, idx) {
             if (item.category !== lastCat) {
                 var catDiv = document.createElement('div');
-                catDiv.className = 'pv-preconfig-cat';
+                catDiv.className = 'pv-modal-cat';
                 catDiv.textContent = item.category === 'cession' ? 'Cession de parts' : 'Général';
-                menu.appendChild(catDiv);
+                body.appendChild(catDiv);
                 lastCat = item.category;
             }
-            var a = document.createElement('a');
-            a.textContent = item.title;
-            a.addEventListener('click', function(e) {
-                e.preventDefault();
-                $createResolutionBlock(item.title, item.content);
-                menu.style.display = 'none';
-            });
-            menu.appendChild(a);
+            var label = document.createElement('label');
+            label.className = 'pv-modal-item';
+            var cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.dataset.index = idx;
+            cb.className = 'pv-modal-cb';
+            var wrap = document.createElement('div');
+            var titleSpan = document.createElement('div');
+            titleSpan.className = 'pv-modal-item-title';
+            titleSpan.textContent = item.title;
+            var prevSpan = document.createElement('div');
+            prevSpan.className = 'pv-modal-item-preview';
+            var previewText = item.content.replace(/\*\*(.+?)\*\*/g, '$1');
+            prevSpan.textContent = previewText.substring(0, 80) + (previewText.length > 80 ? '…' : '');
+            wrap.appendChild(titleSpan);
+            wrap.appendChild(prevSpan);
+            label.appendChild(cb);
+            label.appendChild(wrap);
+            body.appendChild(label);
         });
     }
-    buildMenu();
+    buildList();
 
-    btn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    btn.addEventListener('click', openModal);
+    if (closeBtn) closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) closeModal();
     });
 
-    document.addEventListener('click', function() {
-        menu.style.display = 'none';
-    });
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            var cbs = body.querySelectorAll('.pv-modal-cb');
+            cbs.forEach(function(cb) { cb.checked = selectAll.checked; });
+        });
+    }
 
-    menu.addEventListener('click', function(e) {
-        e.stopPropagation();
-    });
+    if (addBtn) {
+        addBtn.addEventListener('click', function() {
+            var cbs = body.querySelectorAll('.pv-modal-cb:checked');
+            var count = 0;
+            cbs.forEach(function(cb) {
+                var item = preconfig[parseInt(cb.dataset.index)];
+                if (item) { $createResolutionBlock(item.title, item.content); count++; }
+            });
+            if (count > 0) {
+                closeModal();
+                var list = document.getElementById('pv-resolution-list');
+                if (list && list.lastElementChild) list.lastElementChild.scrollIntoView({ behavior:'smooth', block:'nearest' });
+            }
+        });
+    }
 })();
 </script>
 <?php endif; ?>
