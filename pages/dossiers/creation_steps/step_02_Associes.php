@@ -103,7 +103,9 @@ if ($step === 2):
             <h2>Associes de <?= e((string) ($societeData['societe_raison_sociale'] ?: 'la societe')) ?></h2>
             <p class="help-text">Ajoutez autant d'associes que necessaire.</p>
         </div>
-        <button class="btn" type="button" data-add-associe><span class="material-symbols-outlined">add</span> Ajouter un associé</button>
+        <div class="table-actions">
+            <button class="btn" type="button" data-add-associe><span class="material-symbols-outlined">add</span> Ajouter un associé</button>
+        </div>
     </div>
 
     <div class="stack" data-associes-container>
