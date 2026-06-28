@@ -247,9 +247,9 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
 .pv-modal-body::-webkit-scrollbar-thumb { background:var(--line);border-radius:2px; }
 .pv-modal-body::-webkit-scrollbar-thumb:hover { background:var(--text-muted); }
 .pv-modal-footer { display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-top:1px solid var(--line);gap:8px;flex-wrap:wrap; }
-.pv-modal-item { display:flex;align-items:flex-start;gap:10px;padding:8px 18px;cursor:pointer;transition:background 0.1s; }
+.pv-modal-item { display:flex;align-items:center;gap:12px;padding:8px 18px;cursor:pointer;transition:background 0.1s; }
 .pv-modal-item:hover { background:rgba(0,144,231,0.06); }
-.pv-modal-item input[type="checkbox"] { margin-top:3px;accent-color:var(--primary); }
+.pv-modal-item input[type="checkbox"] { flex-shrink:0;width:16px;height:16px;accent-color:var(--primary);margin:0; }
 .pv-modal-item-title { font-size:0.85rem;font-weight:600;color:var(--text); }
 .pv-modal-item-preview { font-size:0.75rem;color:var(--text-secondary);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
 .pv-modal-cat { padding:6px 18px 3px;font-size:0.7rem;font-weight:700;text-transform:uppercase;color:var(--text-secondary);letter-spacing:0.04em;background:var(--panel);position:sticky;top:0;z-index:1; }
