@@ -496,6 +496,56 @@ function format_number(?float $value, int $decimals = 0): string
     return number_format($value, $decimals, ',', ' ');
 }
 
+function nombre_en_lettres(int $nombre, string $unite = ''): string
+{
+    $unites = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf', 'dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'];
+    $dizaines = ['', '', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante', 'quatre-vingt', 'quatre-vingt'];
+    if ($nombre === 0) return 'zéro' . ($unite ? ' ' . $unite : '');
+    if ($nombre < 0) return 'moins ' . nombre_en_lettres(-$nombre, $unite);
+    $words = '';
+    if ($nombre >= 1000000) {
+        $millions = intdiv($nombre, 1000000);
+        $words .= nombre_en_lettres($millions) . ' million' . ($millions > 1 ? 's' : '') . ' ';
+        $nombre %= 1000000;
+    }
+    if ($nombre >= 1000) {
+        $milliers = intdiv($nombre, 1000);
+        if ($milliers > 1) $words .= nombre_en_lettres($milliers) . ' ';
+        $words .= 'mille ';
+        $nombre %= 1000;
+    }
+    if ($nombre >= 100) {
+        $centaines = intdiv($nombre, 100);
+        if ($centaines > 1) $words .= $unites[$centaines] . ' ';
+        $words .= 'cent' . ($centaines > 1 && $nombre % 100 === 0 ? 's' : '') . ' ';
+        $nombre %= 100;
+    }
+    if ($nombre > 0) {
+        if ($nombre < 20) {
+            $words .= $unites[$nombre] . ' ';
+        } else {
+            $d = intdiv($nombre, 10);
+            $u = $nombre % 10;
+            if ($d === 7 || $d === 9) {
+                $words .= $dizaines[$d] . '-' . $unites[10 + $u] . ' ';
+            } else {
+                $words .= $dizaines[$d];
+                if ($u === 1 && $d > 1) {
+                    $words .= ' et un ';
+                } elseif ($u > 0) {
+                    $words .= '-' . $unites[$u] . ' ';
+                } else {
+                    $words .= $d === 8 ? 's' : '';
+                    $words .= ' ';
+                }
+            }
+        }
+    }
+    $result = trim($words);
+    if ($unite) $result .= ' ' . $unite;
+    return $result;
+}
+
 function format_date(?string $value): string
 {
     if ($value === null || $value === '') return '-';

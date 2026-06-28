@@ -176,8 +176,8 @@ $pvTypeLabel = $isSarlAu ? "des Décisions de l'Associé Unique" : "d'Assemblée
 $reuniLieu = $isSarlAu ? "s'est réuni au siège social" : "se sont réunis en Assemblée Générale Extraordinaire au siège social";
 
 $defaultResolutions = [
-    ['title' => 'Cession de parts sociales', 'content' => "$associeLabel « $cedantNom », $vDeclare céder à « $cessionnaireFull », de nationalité $cessionnaireNat, demeurant à $cessionnaireAdr, $totalPartsCedees parts sociales de $vnomFormatted DH chacune, pour un montant total de $prixTotalFormatted DH.\n\n$associeLabel $vAccepte expressément cette cession et reconnaît que le prix de cession a été réglé entre les parties."],
-    ['title' => "Agrément du ou des nouveaux associés", 'content' => "$associeLabel $vAgree la cession susmentionnée et accepte l'entrée du nouvel associé dans le capital social de la société."],
+    ['title' => 'Cession de parts sociales', 'content' => "$associeLabel « $cedantNomEscaped », approuve la cession des " . nombre_en_lettres($totalPartsCedees, 'parts') . " ($totalPartsCedees parts) au profit de « $cessionnaireFull », présent.\n\n$associeLabel $vAccepte les $totalPartsCedees parts avec leurs actifs et passifs cédés par le vendeur sus-indiqué."],
+    ['title' => "Agrément du ou des nouveaux associés", 'content' => "$associeLabel $vAgree la cession susmentionnée et accepte l'entrée du nouvel associé « $cessionnaireFull » dans le capital social de la société."],
     ['title' => 'Modification des statuts', 'content' => "En conséquence de la cession, $associeLabel $vDecide de modifier l'article 7 des statuts relatif à la répartition du capital social, lequel sera désormais rédigé comme suit :\n\nArticle 7 — Capital Social\n\nLe capital social est fixé à la somme de $capitalFormatted DH, divisé en $totalParts parts sociales de $vnomFormatted DH chacune, réparties comme suit :\n\n- $cessionnaireFull : $totalPartsCedees parts" . ($partsRestantes > 0 ? "\n- $cedantNom : $partsRestantes parts" : '')],
 ];
 

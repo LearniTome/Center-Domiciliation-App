@@ -332,7 +332,7 @@ $stmt->execute([
                 $autoPrixFmt = number_format($autoTotalPrix, 2, ',', ' ');
                 $autoTotalPct = $autoTotalParts > 0 ? round($autoTotalPartsCedees / $autoTotalParts * 100, 1) : 0;
                 if ($autoCedant || $autoCessionnaire) {
-                    $pvResolutions[] = ['title' => 'Cession de parts sociales', 'content' => "Cession de $autoTotalPartsCedees parts sociales pour un montant total de $autoPrixFmt DH."];
+                    $pvResolutions[] = ['title' => 'Cession de parts sociales', 'content' => "Approbation de la cession des " . nombre_en_lettres($autoTotalPartsCedees, 'parts') . " ($autoTotalPartsCedees parts) de « $autoCedant » au profit de « $autoCessionnaire ».\n\nLes associés acceptent les $autoTotalPartsCedees parts avec leurs actifs et passifs cédés par le vendeur sus-indiqué."];
                     $pvResolutions[] = ['title' => "Agrément du ou des nouveaux associés", 'content' => "Les associés agréent la cession et acceptent l'entrée du nouvel associé."];
                     $pvResolutions[] = ['title' => 'Modification des statuts', 'content' => "Modification de l'article 7 des statuts relatif au capital social (cession de $autoTotalPartsCedees parts, soit $autoTotalPct% du capital)."];
                     $pvResolutions[] = ['title' => 'Pouvoirs pour formalités', 'content' => "Tous pouvoirs sont donnés au porteur d'une copie du présent procès-verbal pour effectuer toutes formalités légales."];
@@ -456,11 +456,11 @@ $stmt->execute([
             
             $pvResolutions[] = [
                 'title' => 'Cession de parts sociales',
-                'content' => "$autoLabel « $autoCedant », $autoVDeclare céder à « $autoCessionnaireFull », de nationalité $autoCessionnaireNat, demeurant à $autoCessionnaireAdr, $autoTotalPartsCedees parts sociales de $autoVnomFmt DH chacune, pour un montant total de $autoPrixFmt DH.\n\n$autoLabel $autoVAccepte expressément cette cession et reconnaît que le prix de cession a été réglé entre les parties."
+                'content' => "$autoLabel approuve la cession des " . nombre_en_lettres($autoTotalPartsCedees, 'parts') . " ($autoTotalPartsCedees parts) de « $autoCedant » au profit de « $autoCessionnaireFull », présent.\n\n$autoLabel accepte les $autoTotalPartsCedees parts avec leurs actifs et passifs cédés par le vendeur sus-indiqué."
             ];
             $pvResolutions[] = [
                 'title' => "Agrément du ou des nouveaux associés",
-                'content' => "$autoLabel $autoVAgree la cession susmentionnée et accepte l'entrée du nouvel associé dans le capital social de la société."
+                'content' => "$autoLabel agrée la cession susmentionnée et accepte l'entrée du nouvel associé « $autoCessionnaireFull » dans le capital social de la société."
             ];
             $pvResolutions[] = [
                 'title' => 'Modification des statuts',
