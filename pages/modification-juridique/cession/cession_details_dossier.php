@@ -206,7 +206,7 @@ $sourceLabels = [
 
 <article class="card">
     <div class="section-header">
-        <h3>Lignes de cession (<?= count($cessionParts) ?>)</h3>
+        <h3>Lignes de cession <span style="color:var(--primary)">(<?= count($cessionParts) ?>)</span></h3>
     </div>
     <?php if (!$cessionParts): ?>
         <p class="table-empty">Aucune ligne de cession.</p>
@@ -257,7 +257,7 @@ $sourceLabels = [
 
 <article class="card">
     <div class="section-header">
-        <h3>Documents generes (<?= count($documents) ?>)</h3>
+        <h3>Documents generes <span style="color:var(--primary)">(<?= count($documents) ?>)</span></h3>
     </div>
     <?php if (!$documents): ?>
         <div class="empty-state">
