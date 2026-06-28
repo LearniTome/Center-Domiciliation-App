@@ -19,7 +19,7 @@ if (($pdo ?? null) instanceof PDO) {
         $societesOptions[(int)$row['id']] = $row['societe_raison_sociale'];
     }
 }
-$cessionStatusOptions = ['brouillon', 'finalise'];
+$cessionStatusOptions = ['brouillon', 'valide'];
 $cessionStatusJson = e(json_encode($cessionStatusOptions));
 
 if (is_post() && ($pdo ?? null) instanceof PDO) {
@@ -159,7 +159,7 @@ if (($pdo ?? null) instanceof PDO) {
                         <td><a href="<?= e(app_url('cession_dossier', ['id' => (int) $cession['id']])) ?>" style="color:var(--primary);text-decoration:none;font-weight:500"><?= e($cession['societe_raison_sociale'] ?? '-') ?></a></td>
                         <td<?= $canEdit ? ' data-editable="cession_date"' : '' ?>><?= e(format_date($cession['cession_date'] ?? null)) ?></td>
                         <td<?= $canEdit ? ' data-editable="cession_status" data-editable-options="' . $cessionStatusJson . '"' : '' ?>>
-                            <?php if (($cession['cession_status'] ?? 'brouillon') === 'finalise'): ?>
+                            <?php if (($cession['cession_status'] ?? 'brouillon') === 'valide'): ?>
                                 <span style="color:var(--success);font-weight:500">Valider</span>
                             <?php else: ?>
                                 <span style="color:var(--warning);font-weight:500">Brouillon</span>

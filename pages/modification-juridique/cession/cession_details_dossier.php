@@ -118,7 +118,7 @@ $sourceLabels = [
     </article>
     <article class="stat">
         <span>Statut</span>
-        <strong><?= ($cession['cession_status'] ?? 'brouillon') === 'finalise' ? 'Valider' : 'Brouillon' ?></strong>
+        <strong><?= ($cession['cession_status'] ?? 'brouillon') === 'valide' ? 'Valider' : 'Brouillon' ?></strong>
     </article>
     <article class="stat">
         <span>Date</span>
