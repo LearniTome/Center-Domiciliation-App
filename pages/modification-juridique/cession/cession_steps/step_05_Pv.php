@@ -236,7 +236,7 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
 #pv-order-of-day li::marker { color:var(--primary);font-weight:600; }
 .pv-modal-overlay { display:none;position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;background:rgba(0,0,0,0.55);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(2px); }
 .pv-modal-overlay.active { display:flex; }
-.pv-modal { background:var(--panel);border-radius:8px;width:520px;max-width:90vw;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 16px 48px rgba(0,0,0,0.3); }
+.pv-modal { background:var(--panel);border-radius:8px;width:640px;max-width:92vw;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 16px 48px rgba(0,0,0,0.3); }
 .pv-modal-header { display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line); }
 .pv-modal-header h3 { margin:0;font-size:0.95rem;font-weight:700;color:var(--text); }
 .pv-modal-close { width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border-radius:4px;cursor:pointer;color:var(--text-muted);border:none;background:transparent; }
