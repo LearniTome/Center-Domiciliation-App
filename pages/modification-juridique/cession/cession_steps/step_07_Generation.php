@@ -345,7 +345,7 @@ $stmt->execute([
                     $orderItems[] = 'Résolution ' . ($i + 1) . ' : ' . ($r['title'] ?? '');
                     $content = str_replace("\n", $docxBr, $r['content'] ?? '');
                     $context['PV_RESOLUTION_' . ($i + 1)] = $content;
-                    $context['PV_TITLE_' . ($i + 1)] = 'Résolution ' . ($i + 1) . $docxBr . ($r['title'] ?? '');
+                    $context['PV_TITLE_' . ($i + 1)] = 'Résolution ' . ($i + 1) . ' : ' . ($r['title'] ?? '');
                 }
                 $context['PV_ORDER_ITEMS'] = implode($docxBr, $orderItems);
             } else {
@@ -507,7 +507,7 @@ $stmt->execute([
             $orderItems[] = 'Résolution ' . ($i + 1) . ' : ' . ($r['title'] ?? '');
             $content = str_replace("\n", $docxBr, $r['content'] ?? '');
             $context['PV_RESOLUTION_' . ($i + 1)] = $content;
-            $context['PV_TITLE_' . ($i + 1)] = 'Résolution ' . ($i + 1) . $docxBr . ($r['title'] ?? '');
+            $context['PV_TITLE_' . ($i + 1)] = 'Résolution ' . ($i + 1) . ' : ' . ($r['title'] ?? '');
         }
         $context['PV_ORDER_ITEMS'] = implode($docxBr, $orderItems);
         for ($i = count($pvResolutions) + 1; $i <= 10; $i++) {
