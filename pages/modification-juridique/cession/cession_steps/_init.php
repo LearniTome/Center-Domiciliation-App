@@ -134,6 +134,13 @@ if ($editingId > 0 && !isset($_SESSION['_cession_loaded'])) {
             $wizard['cession_date'] = $dbCession['cession_date'] ?? date('Y-m-d');
             $wizard['cession_motif'] = $dbCession['cession_motif'] ?? '';
             $wizard['mode'] = 'existante';
+            // Restore pv_resolutions from DB
+            if (!empty($dbCession['pv_resolutions'])) {
+                $decoded = json_decode($dbCession['pv_resolutions'], true);
+                if (is_array($decoded)) {
+                    $wizard['pv_resolutions'] = $decoded;
+                }
+            }
             $wizard['parts'] = [];
             $stmt2 = $pdo->prepare('SELECT * FROM cession_parts WHERE cession_id = :id ORDER BY id');
             $stmt2->execute(['id' => $editingId]);

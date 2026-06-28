@@ -119,6 +119,12 @@ $stmt->execute([
             ]);
             $cessionId = (int) $pdo->lastInsertId();
 
+            // Save pv_resolutions as JSON
+            $pvJson = !empty($wizard['pv_resolutions']) ? json_encode($wizard['pv_resolutions'], JSON_UNESCAPED_UNICODE) : null;
+            if ($pvJson !== null) {
+                $pdo->prepare('UPDATE cessions SET pv_resolutions = :pv WHERE id = :id')->execute(['pv' => $pvJson, 'id' => $cessionId]);
+            }
+
             // Auto-insert suivi etapes
             $suiviSteps = [
                 ['redaction', 1], ['signature', 2], ['enregistrement', 3],
@@ -309,6 +315,29 @@ $stmt->execute([
             require_once __DIR__ . '/../../../../src/rendu_document.php';
             $context = DocumentRenderer::buildContextFromCession($pdo, $cessionId);
             $pvResolutions = $wizard['pv_resolutions'] ?? [];
+            // Auto-generate defaults if empty
+            if (empty($pvResolutions) || !is_array($pvResolutions)) {
+                $pvResolutions = [];
+                $autoFirstPart = $wizard['parts'][0] ?? [];
+                $autoCedant = $autoFirstPart['cedant_nom_complet'] ?? ($wizard['cession_metadata']['cedant_name'] ?? '');
+                $autoCessionnaire = $autoFirstPart['cessionnaire_nom_complet'] ?? ($wizard['cession_metadata']['cessionnaire_name'] ?? '');
+                $autoTotalParts = (int) ($societeData['societe_part_social'] ?? 0);
+                $autoTotalPrix = 0;
+                $autoTotalPartsCedees = 0;
+                foreach ($wizard['parts'] ?? [] as $p) {
+                    $autoTotalPrix += (float) ($p['prix_total'] ?? 0);
+                    $autoTotalPartsCedees += (int) ($p['parts_cedees'] ?? 0);
+                }
+                $autoCapitalFmt = number_format((float) ($societeData['societe_capital'] ?? 0), 2, ',', ' ');
+                $autoPrixFmt = number_format($autoTotalPrix, 2, ',', ' ');
+                $autoTotalPct = $autoTotalParts > 0 ? round($autoTotalPartsCedees / $autoTotalParts * 100, 1) : 0;
+                if ($autoCedant || $autoCessionnaire) {
+                    $pvResolutions[] = ['title' => 'Cession de parts sociales', 'content' => "Cession de $autoTotalPartsCedees parts sociales pour un montant total de $autoPrixFmt DH."];
+                    $pvResolutions[] = ['title' => "Agrément du ou des nouveaux associés", 'content' => "Les associés agréent la cession et acceptent l'entrée du nouvel associé."];
+                    $pvResolutions[] = ['title' => 'Modification des statuts', 'content' => "Modification de l'article 7 des statuts relatif au capital social (cession de $autoTotalPartsCedees parts, soit $autoTotalPct% du capital)."];
+                    $pvResolutions[] = ['title' => 'Pouvoirs pour formalités', 'content' => "Tous pouvoirs sont donnés au porteur d'une copie du présent procès-verbal pour effectuer toutes formalités légales."];
+                }
+            }
             $docxBr = '</w:t></w:r><w:r><w:rPr><w:sz w:val="22"/><w:szCs w:val="22"/></w:rPr><w:br/><w:t xml:space="preserve">';
             if (!empty($pvResolutions) && is_array($pvResolutions)) {
                 $orderItems = [];
