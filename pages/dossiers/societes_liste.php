@@ -265,7 +265,7 @@ if (($pdo ?? null) instanceof PDO) {
     <div class="modal-overlay" data-modal="quick-create">
         <div class="modal-panel">
             <div class="modal-header">
-                <h3><?= e($quickCreateTitle) ?></h3>
+                <h3 style="font-weight:700;color:var(--info)"><?= e($quickCreateTitle) ?></h3>
                 <button class="btn-icon" data-modal-close type="button" title="Fermer"><span class="material-symbols-outlined">close</span></button>
             </div>
             <form data-quick-create-form>
