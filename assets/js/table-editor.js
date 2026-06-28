@@ -340,7 +340,7 @@
                     if (e.key === 'Escape' && modal.classList.contains('open')) modal.classList.remove('open');
                 });
 
-                form.addEventListener('submit', function (e) {
+            form.addEventListener('submit', function (e) {
                     e.preventDefault();
                     var fd = new FormData(form);
                     var token = getCsrfToken();

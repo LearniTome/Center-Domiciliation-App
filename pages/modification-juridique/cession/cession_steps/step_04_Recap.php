@@ -211,14 +211,15 @@ if ($step === 4):
                     }
 
                     ?>
+                    <div style="overflow-x:auto;width:100%">
                     <table class="recap-table">
                         <thead>
                             <tr>
                                 <th>Associe</th>
-                                <th class="right">Parts avant</th>
+                                <th class="right">Avant</th>
                                 <th class="center">Operation</th>
-                                <th class="right">Parts cedees/recues</th>
-                                <th class="right">Parts apres</th>
+                                <th class="right">Cedees/Recues</th>
+                                <th class="right">Apres</th>
                                 <th class="right">Capital apres</th>
                                 <th class="right">% apres</th>
                             </tr>
@@ -276,6 +277,7 @@ if ($step === 4):
                             </tr>
                         </tfoot>
                     </table>
+                    </div>
 
                     <div class="recap-grid" style="margin-top:0.75rem;grid-template-columns:1fr 1fr">
                         <div class="capital-card">

@@ -31,6 +31,8 @@ $contratStatutJson = e(json_encode($contratStatutOptions));
 $tvaJson = e(json_encode($tvaOptions));
 $renouvellementJson = e(json_encode($renouvellementOptions));
 
+$contratDefaults = load_defaults('contrat');
+
 if (is_post() && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
     $action = $_POST['action'] ?? 'delete';
@@ -246,6 +248,7 @@ if (($pdo ?? null) instanceof PDO) {
     <?php
     $quickCreateTitle = 'Nouveau contrat';
     $quickCreateTable = 'contrats';
+    $quickCreateDefaults = $contratDefaults;
     $quickCreateFields = [
         ['type' => 'title', 'label' => 'Type de contrat'],
         ['name' => 'societe_id', 'label' => 'Societe', 'type' => 'select', 'options' => $societesOptions, 'required' => true],

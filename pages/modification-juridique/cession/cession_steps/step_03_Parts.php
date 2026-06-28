@@ -280,11 +280,6 @@ if ($step === 3):
 
     <div style="margin-top:12px">
         <div class="section-header" style="margin-bottom:12px">
-            <strong>Date de la cession</strong>
-            <input type="date" name="cession_date" id="cession_date" value="<?= e($wizard['cession_date'] ?? date('Y-m-d')) ?>" required style="max-width:200px">
-        </div>
-
-        <div class="section-header" style="margin-bottom:12px">
             <strong>Lignes de cession</strong>
             <button class="btn btn-info" type="button" data-fill-cession="3" style="margin-left:auto"><span class="material-symbols-outlined">auto_fix</span> Remplir automatiquement</button>
         </div>
@@ -373,13 +368,13 @@ if ($step === 3):
         <?php endif; ?>
     </div>
     <div style="border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:12px">
-        <div class="section-header" style="margin-bottom:8px"><strong style="color:var(--success)">Cessionnaire</strong>
+        <div class="section-header" style="margin-bottom:8px">
+            <strong style="color:var(--success)">Cessionnaire</strong>
+            <div class="radio-group" style="margin-bottom:0">
+                <label><input type="radio" name="cessionnaire_type[<?= $partIndex ?>]" value="nouveau" class="cess-type-radio" <?= $cessIsExistant ? '' : 'checked' ?>> Nouveau</label>
+                <label><input type="radio" name="cessionnaire_type[<?= $partIndex ?>]" value="existant" class="cess-type-radio" <?= $cessIsExistant ? 'checked' : '' ?>> Associé existant</label>
+            </div>
             <button type="button" class="btn-icon danger remove-part" style="margin-left:auto" title="Supprimer cette ligne"><span class="material-symbols-outlined">delete</span></button>
-        </div>
-
-        <div class="radio-group" style="margin-bottom:8px">
-            <label><input type="radio" name="cessionnaire_type[<?= $partIndex ?>]" value="nouveau" class="cess-type-radio" <?= $cessIsExistant ? '' : 'checked' ?>> Nouveau</label>
-            <label><input type="radio" name="cessionnaire_type[<?= $partIndex ?>]" value="existant" class="cess-type-radio" <?= $cessIsExistant ? 'checked' : '' ?>> Associé existant</label>
         </div>
 
         <div class="cessionnaire-nouveau" style="display:<?= $cessIsExistant ? 'none' : 'block' ?>">
@@ -530,13 +525,13 @@ if ($step === 3):
         <input type="hidden" name="gerant_action[0]" value="stay" class="gerant-action-hidden">
     </div>
     <div style="border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:12px">
-        <div class="section-header" style="margin-bottom:8px"><strong style="color:var(--success)">Cessionnaire</strong>
+        <div class="section-header" style="margin-bottom:8px">
+            <strong style="color:var(--success)">Cessionnaire</strong>
+            <div class="radio-group" style="margin-bottom:0">
+                <label><input type="radio" name="cessionnaire_type[0]" value="nouveau" class="cess-type-radio" checked> Nouveau</label>
+                <label><input type="radio" name="cessionnaire_type[0]" value="existant" class="cess-type-radio"> Associé existant</label>
+            </div>
             <button type="button" class="btn-icon danger remove-part" style="margin-left:auto" title="Supprimer cette ligne"><span class="material-symbols-outlined">delete</span></button>
-        </div>
-
-        <div class="radio-group" style="margin-bottom:8px">
-            <label><input type="radio" name="cessionnaire_type[0]" value="nouveau" class="cess-type-radio" checked> Nouveau</label>
-            <label><input type="radio" name="cessionnaire_type[0]" value="existant" class="cess-type-radio"> Associé existant</label>
         </div>
 
         <div class="cessionnaire-nouveau">

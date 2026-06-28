@@ -31,6 +31,8 @@ $nationalitesJson = e(json_encode(array_values($nationalitesOptions)));
 $civiliteJson = e(json_encode(['Mr', 'Mme', 'Mlle']));
 $gerantJson = e(json_encode(['0' => 'Non', '1' => 'Oui']));
 
+$associeDefaults = load_defaults('associe');
+
 if (is_post() && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
     $action = $_POST['action'] ?? 'delete';
@@ -235,6 +237,7 @@ if (($pdo ?? null) instanceof PDO) {
     <?php
     $quickCreateTitle = 'Nouvel associe';
     $quickCreateTable = 'associes';
+    $quickCreateDefaults = $associeDefaults;
     $quickCreateFields = [
         ['type' => 'title', 'label' => 'Identite'],
         ['name' => 'associe_civilite', 'label' => 'Civilite', 'type' => 'select', 'options' => ['Mr', 'Mme', 'Mlle']],

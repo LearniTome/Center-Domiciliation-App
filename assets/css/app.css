@@ -4949,25 +4949,8 @@ input[data-bulk-checkbox] {
     cursor: pointer;
     font-size: 0.85rem;
     background: transparent;
+    white-space: nowrap;
     transition: border-color 0.15s, background 0.15s;
-}
-
-.radio-group input[type="radio"] {
-    appearance: none;
-    -webkit-appearance: none;
-    width: 14px;
-    height: 14px;
-    border: 2px solid var(--text-muted);
-    border-radius: 50%;
-    margin: 0;
-    flex-shrink: 0;
-    transition: border-color 0.15s, background 0.15s;
-}
-
-.radio-group input[type="radio"]:checked {
-    border-color: var(--primary);
-    background: var(--primary);
-    box-shadow: inset 0 0 0 3px white;
 }
 
 .radio-group label:has(input:checked) {

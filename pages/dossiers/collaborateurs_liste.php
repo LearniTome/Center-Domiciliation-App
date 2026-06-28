@@ -24,6 +24,8 @@ $collabTypeJson = e(json_encode($collabTypeOptions));
 $collabStatutJson = e(json_encode($collabStatutOptions));
 $accesJson = e(json_encode(['0', '1']));
 
+$collabDefaults = load_defaults('collaborateur');
+
 if (is_post() && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
     $action = $_POST['action'] ?? 'delete';
@@ -264,6 +266,7 @@ if (($pdo ?? null) instanceof PDO) {
     <?php
     $quickCreateTitle = 'Nouveau collaborateur';
     $quickCreateTable = 'collaborateurs';
+    $quickCreateDefaults = $collabDefaults;
     $quickCreateFields = [
         ['type' => 'title', 'label' => 'Identite & Role'],
         ['name' => 'collaborateur_type', 'label' => 'Type', 'type' => 'select', 'options' => $collabTypeOptions, 'required' => true],

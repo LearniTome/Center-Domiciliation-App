@@ -9,6 +9,7 @@ require __DIR__ . '/_init.php';
         .cession-wizard select,
         .cession-wizard textarea { padding: 6px 10px; font-size: 0.82rem; }
         .cession-wizard .field { gap: 3px; }
+        .cession-wizard .field label { font-weight: 600; }
         .cession-wizard .field span { font-size: 0.7rem; }
         .cession-wizard .form-grid { gap: 8px; }
     </style>
@@ -27,8 +28,14 @@ require __DIR__ . '/_init.php';
         $raisonSociale = $societeData['societe_raison_sociale'] ?? '';
         if ($raisonSociale !== ''):
         ?>
-        <div style="margin:12px 0 4px;font-size:0.9rem;color:var(--text-secondary)">
-            <strong>Etape <?= $step ?></strong> — <?= e($stepLabels[$step - 1]) ?> de la société : <?= e($raisonSociale) ?>
+        <div style="margin:12px 0 4px;font-size:0.9rem;color:var(--text-secondary);display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <span><strong>Etape <?= $step ?></strong> — <?= e($stepLabels[$step - 1]) ?> de la société : <?= e($raisonSociale) ?></span>
+            <?php if ($step === 3): ?>
+            <span style="display:flex;align-items:center;gap:6px;margin-left:auto;white-space:nowrap">
+                <strong style="font-size:0.8rem">Date de la cession</strong>
+                <input type="date" name="cession_date" id="cession_date" value="<?= e($wizard['cession_date'] ?? date('Y-m-d')) ?>" required style="max-width:180px;font-size:0.82rem;padding:4px 8px">
+            </span>
+            <?php endif; ?>
         </div>
         <?php endif; ?>
         <?php endif; ?>

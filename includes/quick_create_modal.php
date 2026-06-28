@@ -67,11 +67,12 @@ $modalKey = $quickCreateModalKey ?? 'quick-create';
                     <label class="field<?= !empty($field['full']) ? ' full' : '' ?>">
                         <span><?= e($field['label'] ?? '') ?></span>
                         <?php if (($field['type'] ?? 'text') === 'select' && isset($field['options'])): ?>
+                            <?php $fd = ($quickCreateDefaults ?? [])[$field['name']] ?? ''; ?>
                             <select name="<?= e($field['name'] ?? '') ?>" <?= !empty($field['required']) ? 'required' : '' ?>>
                                 <option value=""><?= e($field['placeholder'] ?? 'Selectionner') ?></option>
                                 <?php foreach ($field['options'] as $val => $label): ?>
                                     <?php $optVal = is_int($val) ? $label : $val; ?>
-                                    <option value="<?= e((string) $optVal) ?>"><?= e($label) ?></option>
+                                    <option value="<?= e((string) $optVal) ?>"<?= ((string) $optVal) === $fd ? ' selected' : '' ?>><?= e($label) ?></option>
                                 <?php endforeach; ?>
                             </select>
                         <?php elseif (($field['type'] ?? 'text') === 'textarea'): ?>
@@ -81,6 +82,7 @@ $modalKey = $quickCreateModalKey ?? 'quick-create';
                                 type="<?= e($field['type'] ?? 'text') ?>"
                                 name="<?= e($field['name'] ?? '') ?>"
                                 placeholder="<?= e($field['placeholder'] ?? '') ?>"
+                                value="<?= e(($quickCreateDefaults ?? [])[$field['name']] ?? '') ?>"
                                 <?= !empty($field['required']) ? 'required' : '' ?>
                             >
                         <?php endif; ?>
