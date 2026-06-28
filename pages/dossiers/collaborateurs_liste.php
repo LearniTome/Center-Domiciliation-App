@@ -265,14 +265,24 @@ if (($pdo ?? null) instanceof PDO) {
     $quickCreateTitle = 'Nouveau collaborateur';
     $quickCreateTable = 'collaborateurs';
     $quickCreateFields = [
-        ['name' => 'nom_complet', 'label' => 'Nom complet', 'type' => 'text', 'required' => true],
+        ['type' => 'title', 'label' => 'Identite & Role'],
         ['name' => 'collaborateur_type', 'label' => 'Type', 'type' => 'select', 'options' => $collabTypeOptions, 'required' => true],
         ['name' => 'role_id', 'label' => 'Role', 'type' => 'select', 'options' => $rolesOptions],
+        ['name' => 'nom_complet', 'label' => 'Nom complet', 'type' => 'text', 'required' => true],
         ['name' => 'den_ste', 'label' => 'Cabinet', 'type' => 'text'],
         ['name' => 'fonction', 'label' => 'Fonction', 'type' => 'text'],
-        ['name' => 'collaborateur_ice', 'label' => 'ICE', 'type' => 'text'],
-        ['name' => 'collaborateur_tel_mobile', 'label' => 'Telephone mobile', 'type' => 'text'],
+        ['type' => 'title', 'label' => 'Contact'],
         ['name' => 'collaborateur_email', 'label' => 'Email', 'type' => 'email'],
+        ['name' => 'collaborateur_tel_mobile', 'label' => 'Telephone mobile', 'type' => 'text'],
+        ['name' => 'collaborateur_tel_fixe', 'label' => 'Telephone fixe', 'type' => 'text'],
+        ['name' => 'collaborateur_adresse', 'label' => 'Adresse', 'type' => 'textarea', 'full' => true],
+        ['type' => 'title', 'label' => 'Identifiants legaux'],
+        ['name' => 'collaborateur_ice', 'label' => 'ICE', 'type' => 'text'],
+        ['name' => 'collaborateur_code', 'label' => 'Code', 'type' => 'text'],
+        ['name' => 'collaborateur_tp', 'label' => 'TP', 'type' => 'text'],
+        ['name' => 'collaborateur_rc', 'label' => 'RC', 'type' => 'text'],
+        ['name' => 'collaborateur_if', 'label' => 'IF', 'type' => 'text'],
+        ['type' => 'title', 'label' => 'Informations'],
         ['name' => 'statut', 'label' => 'Statut', 'type' => 'select', 'options' => $collabStatutOptions],
     ];
     require __DIR__ . '/../../includes/quick_create_modal.php';

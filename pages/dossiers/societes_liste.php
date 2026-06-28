@@ -261,48 +261,38 @@ if (($pdo ?? null) instanceof PDO) {
 
     <?php
     $quickCreateTitle = 'Nouvelle societe';
-    ?>
-    <div class="modal-overlay" data-modal="quick-create">
-        <div class="modal-panel">
-            <div class="modal-header">
-                <h3 style="font-weight:700;color:var(--info)"><?= e($quickCreateTitle) ?></h3>
-                <button class="btn-icon" data-modal-close type="button" title="Fermer"><span class="material-symbols-outlined">close</span></button>
-            </div>
-            <form data-quick-create-form>
-                <?= csrf_input() ?>
-                <input type="hidden" name="action" value="quick_create">
-                <input type="hidden" name="table" value="societes">
-                <div class="form-grid" style="grid-template-columns:repeat(3,1fr)">
-                    <div style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:12px">
-                        <label class="field"><span>Raison sociale</span><input type="text" name="societe_raison_sociale" required></label>
-                        <label class="field"><span>Forme juridique</span><select name="societe_forme_juridique" required><option value="">Selectionner</option><?php $fjDef = $societeDefaults['societe_forme_juridique'] ?? ''; foreach ($formesOptions as $opt): ?><option value="<?= e($opt) ?>" <?= $opt === $fjDef ? 'selected' : '' ?>><?= e($opt) ?></option><?php endforeach; ?></select></label>
-                    </div>
-                    <div style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:12px">
-                        <label class="field"><span>Date cert. negatif</span><input type="date" name="societe_date_ice"></label>
-                        <label class="field"><span>Date exp. cert. negatif</span><input type="date" name="societe_date_exp_cert_neg"></label>
-                    </div>
-                    <label class="field"><span>ICE</span><input type="text" name="societe_ice"></label>
-                    <label class="field"><span>RC</span><input type="text" name="societe_rc"></label>
-                    <label class="field"><span>IF</span><input type="text" name="societe_if"></label>
-                    <label class="field"><span>TP</span><input type="text" name="societe_tp"></label>
-                    <label class="field"><span>CNSS</span><input type="text" name="societe_cnss"></label>
-                    <label class="field"><span>Capital</span><input type="number" step="0.01" name="societe_capital" value="<?= e($societeDefaults['societe_capital'] ?? '') ?>"></label>
-                    <label class="field"><span>Part social</span><input type="number" name="societe_part_social" value="<?= e($societeDefaults['societe_part_social'] ?? '') ?>"></label>
-                    <label class="field"><span>Valeur nominale</span><input type="number" step="0.01" name="societe_valeur_nominale" value="<?= e($societeDefaults['societe_valeur_nominale'] ?? '') ?>"></label>
-                    <label class="field"><span>Type tribunal</span><select name="societe_tribunal_type" data-tribunal-type><option value="">Selectionner</option><?php foreach ($tribunalTypes ?? [] as $t): ?><option value="<?= e($t) ?>"><?= e($t) ?></option><?php endforeach; ?></select></label>
-                    <label class="field"><span>Tribunal</span><select name="societe_tribunal"><option value="">Selectionner</option><?php $tribDef = $societeDefaults['societe_tribunal'] ?? ''; foreach ($tribunauxAll ?? [] as $opt): ?><option value="<?= e($opt['tribunal']) ?>" data-type="<?= e($opt['tribunal_type'] ?? '') ?>" <?= $opt['tribunal'] === $tribDef ? 'selected' : '' ?>><?= e($opt['tribunal']) ?></option><?php endforeach; ?></select></label>
-                    <label class="field"><span>Telephone</span><input type="text" name="societe_telephone"></label>
-                    <label class="field"><span>Email</span><input type="email" name="societe_email"></label>
-                    <label class="field" style="grid-column:1/-1"><span>Ville</span><select name="societe_ville" data-ville-filter><option value="">Selectionner</option><?php $villeDef = $societeDefaults['societe_ville'] ?? ''; foreach ($villesOptions as $opt): ?><option value="<?= e($opt) ?>" <?= $opt === $villeDef ? 'selected' : '' ?>><?= e($opt) ?></option><?php endforeach; ?></select></label>
-                    <label class="field" style="grid-column:1/-1"><span>Adresse siege</span><select name="societe_adresse_siege"><option value="">Selectionner</option><?php $adrDef = $societeDefaults['societe_adresse_siege'] ?? ''; foreach ($adressesAll ?? [] as $opt): ?><option value="<?= e($opt['ste_adresse']) ?>" data-ville="<?= e($opt['ville'] ?? '') ?>" <?= $opt['ste_adresse'] === $adrDef ? 'selected' : '' ?>><?= e($opt['ste_adresse']) ?></option><?php endforeach; ?></select></label>
-                </div>
-                <div class="form-actions" style="margin-top:1rem;display:flex;gap:8px;justify-content:flex-end">
-                    <button type="button" class="btn btn-cancel" data-modal-close><span class="material-symbols-outlined">close</span> Annuler</button>
-                    <button type="submit" class="btn btn-next"><span class="material-symbols-outlined">add</span> Creer</button>
-                </div>
-            </form>
-        </div>
-    </div>
+    $quickCreateTable = 'societes';
+    $adressesSimple = [];
+    if (!empty($adressesAll)) {
+        foreach ($adressesAll as $r) {
+            $adressesSimple[] = $r['ste_adresse'];
+        }
+    }
+    $quickCreateFields = [
+        ['type' => 'title', 'label' => 'Identifiants'],
+        ['name' => 'societe_raison_sociale', 'label' => 'Raison sociale', 'type' => 'text', 'required' => true],
+        ['name' => 'societe_forme_juridique', 'label' => 'Forme juridique', 'type' => 'select', 'options' => $formesOptions, 'required' => true],
+        ['name' => 'societe_ice', 'label' => 'ICE', 'type' => 'text'],
+        ['name' => 'societe_date_ice', 'label' => 'Date cert. negatif', 'type' => 'date'],
+        ['name' => 'societe_date_exp_cert_neg', 'label' => 'Date exp. cert. negatif', 'type' => 'date'],
+        ['name' => 'societe_rc', 'label' => 'RC', 'type' => 'text'],
+        ['name' => 'societe_if', 'label' => 'IF', 'type' => 'text'],
+        ['name' => 'societe_tp', 'label' => 'TP', 'type' => 'text'],
+        ['name' => 'societe_cnss', 'label' => 'CNSS', 'type' => 'text'],
+        ['type' => 'title', 'label' => 'Capital'],
+        ['name' => 'societe_capital', 'label' => 'Capital', 'type' => 'number'],
+        ['name' => 'societe_part_social', 'label' => 'Part social', 'type' => 'number'],
+        ['name' => 'societe_valeur_nominale', 'label' => 'Valeur nominale', 'type' => 'number'],
+        ['type' => 'title', 'label' => 'Adresse'],
+        ['name' => 'societe_adresse_siege', 'label' => 'Adresse de reference', 'type' => 'select', 'options' => $adressesSimple],
+        ['name' => 'societe_ville', 'label' => 'Ville', 'type' => 'select', 'options' => $villesOptions],
+        ['name' => 'societe_tribunal_type', 'label' => 'Type tribunal', 'type' => 'select', 'options' => $tribunalTypes],
+        ['name' => 'societe_tribunal', 'label' => 'Tribunal', 'type' => 'select', 'options' => $tribunauxOptions],
+        ['type' => 'title', 'label' => 'Contact'],
+        ['name' => 'societe_email', 'label' => 'Email', 'type' => 'email'],
+        ['name' => 'societe_telephone', 'label' => 'Telephone', 'type' => 'text'],
+    ];
+    require __DIR__ . '/../../includes/quick_create_modal.php';
 
     $bulkEditTitle = 'Modifier les societes selectionnees';
     $bulkEditTable = 'societes';

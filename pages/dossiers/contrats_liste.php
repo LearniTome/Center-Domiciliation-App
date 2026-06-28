@@ -247,15 +247,26 @@ if (($pdo ?? null) instanceof PDO) {
     $quickCreateTitle = 'Nouveau contrat';
     $quickCreateTable = 'contrats';
     $quickCreateFields = [
+        ['type' => 'title', 'label' => 'Type de contrat'],
         ['name' => 'societe_id', 'label' => 'Societe', 'type' => 'select', 'options' => $societesOptions, 'required' => true],
         ['name' => 'contrat_type', 'label' => 'Type contrat', 'type' => 'select', 'options' => $contratTypeOptions, 'required' => true],
         ['name' => 'contrat_type_domiciliation', 'label' => 'Type domiciliation', 'type' => 'select', 'options' => $contratTypeDomiOptions],
         ['name' => 'contrat_date', 'label' => 'Date contrat', 'type' => 'date'],
-        ['name' => 'contrat_duree_mois', 'label' => 'Duree (mois)', 'type' => 'number'],
+        ['type' => 'title', 'label' => 'Periode'],
         ['name' => 'contrat_date_debut', 'label' => 'Date debut', 'type' => 'date'],
+        ['name' => 'contrat_duree_mois', 'label' => 'Duree (mois)', 'type' => 'number'],
         ['name' => 'contrat_date_fin', 'label' => 'Date fin', 'type' => 'date'],
-        ['name' => 'contrat_loyer_ttc', 'label' => 'Loyer TTC/mois', 'type' => 'number'],
         ['name' => 'contrat_statut', 'label' => 'Statut', 'type' => 'select', 'options' => $contratStatutOptions],
+        ['type' => 'title', 'label' => 'Loyer'],
+        ['name' => 'contrat_loyer_ht', 'label' => 'Loyer HT/mois', 'type' => 'number'],
+        ['name' => 'contrat_tva_pourcent', 'label' => 'TVA %', 'type' => 'select', 'options' => $tvaOptions],
+        ['name' => 'contrat_loyer_ttc', 'label' => 'Loyer TTC/mois', 'type' => 'number'],
+        ['name' => 'contrat_caution', 'label' => 'Caution', 'type' => 'number'],
+        ['type' => 'title', 'label' => 'Renouvellement'],
+        ['name' => 'contrat_type_renouvellement', 'label' => 'Type renouvellement', 'type' => 'select', 'options' => $renouvellementOptions],
+        ['name' => 'contrat_renouv_loyer_ht', 'label' => 'Loyer HT renouv.', 'type' => 'number'],
+        ['name' => 'contrat_renouv_tva_pourcent', 'label' => 'TVA renouv. %', 'type' => 'select', 'options' => $tvaOptions],
+        ['name' => 'contrat_renouv_loyer_ttc', 'label' => 'Loyer TTC renouv.', 'type' => 'number'],
     ];
     require __DIR__ . '/../../includes/quick_create_modal.php';
 
