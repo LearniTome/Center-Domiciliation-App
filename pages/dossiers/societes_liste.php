@@ -281,7 +281,7 @@ if (($pdo ?? null) instanceof PDO) {
         ['name' => 'societe_if', 'label' => 'IF', 'type' => 'text'],
         ['name' => 'societe_tp', 'label' => 'TP', 'type' => 'text'],
         ['name' => 'societe_cnss', 'label' => 'CNSS', 'type' => 'text'],
-        ['name' => 'societe_activites_statuts', 'label' => 'Activites (Statuts)', 'type' => 'select', 'options' => $activitesOptions, 'full' => true, 'multiple' => true],
+        ['name' => 'societe_activites_statuts', 'label' => 'Activites (Statuts)', 'type' => 'dynamic-select', 'options' => $activitesOptions],
         ['type' => 'title', 'label' => 'Capital'],
         ['name' => 'societe_capital', 'label' => 'Capital', 'type' => 'number'],
         ['name' => 'societe_part_social', 'label' => 'Part social', 'type' => 'number'],
@@ -299,23 +299,46 @@ if (($pdo ?? null) instanceof PDO) {
     <script>
     (function() {
         var form = document.querySelector('[data-modal="quick-create"] [data-quick-create-form]');
-        if (form) {
-            form.addEventListener('submit', function() {
-                var sel = form.querySelector('select[name="societe_activites_statuts"]');
-                if (sel && sel.multiple) {
-                    var vals = [];
-                    for (var i = 0; i < sel.options.length; i++) {
-                        if (sel.options[i].selected) vals.push(sel.options[i].value);
-                    }
-                    sel.name = '';
-                    var h = document.createElement('input');
-                    h.type = 'hidden';
-                    h.name = 'societe_activites_statuts';
-                    h.value = vals.join(', ');
-                    form.appendChild(h);
+        if (!form) return;
+
+        form.addEventListener('click', function(e) {
+            var addBtn = e.target.closest('[data-dynamic-add]');
+            if (addBtn) {
+                var container = form.querySelector('[data-dynamic-select="' + addBtn.getAttribute('data-dynamic-add') + '"]');
+                var tmpl = form.querySelector('[data-dynamic-template]');
+                if (container && tmpl) {
+                    var clone = tmpl.content.cloneNode(true);
+                    container.appendChild(clone);
                 }
+                return;
+            }
+            var rmBtn = e.target.closest('[data-dynamic-remove]');
+            if (rmBtn) {
+                var item = rmBtn.closest('[data-dynamic-item]');
+                var parent = item ? item.parentNode : null;
+                if (parent && parent.querySelectorAll('[data-dynamic-item]').length > 1) {
+                    parent.removeChild(item);
+                }
+            }
+        });
+
+        form.addEventListener('submit', function() {
+            var dynSelects = form.querySelectorAll('[data-dynamic-select]');
+            dynSelects.forEach(function(container) {
+                var items = container.querySelectorAll('[data-dynamic-item]');
+                var vals = [];
+                items.forEach(function(item) {
+                    var sel = item.querySelector('[data-dynamic-option]');
+                    if (sel && sel.value) vals.push(sel.value);
+                });
+                var name = container.getAttribute('data-dynamic-select');
+                var h = document.createElement('input');
+                h.type = 'hidden';
+                h.name = name;
+                h.value = vals.join(', ');
+                form.appendChild(h);
             });
-        }
+        });
     })();
     </script>
     <?php

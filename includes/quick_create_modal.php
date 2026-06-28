@@ -38,12 +38,42 @@ $modalKey = $quickCreateModalKey ?? 'quick-create';
                     <label class="field<?= !empty($field['full']) ? ' full' : '' ?>">
                         <span><?= e($field['label'] ?? '') ?></span>
                         <?php if (($field['type'] ?? 'text') === 'select' && isset($field['options'])): ?>
-                            <select name="<?= e($field['name'] ?? '') ?>" <?= !empty($field['required']) ? 'required' : '' ?> <?= !empty($field['multiple']) ? 'multiple style="height:120px"' : '' ?>><?php if (empty($field['multiple'])): ?><option value=""><?= e($field['placeholder'] ?? 'Selectionner') ?></option><?php endif; ?>
+                            <select name="<?= e($field['name'] ?? '') ?>" <?= !empty($field['required']) ? 'required' : '' ?>>
+                                <option value=""><?= e($field['placeholder'] ?? 'Selectionner') ?></option>
                                 <?php foreach ($field['options'] as $val => $label): ?>
                                     <?php $optVal = is_int($val) ? $label : $val; ?>
                                     <option value="<?= e((string) $optVal) ?>"><?= e($label) ?></option>
                                 <?php endforeach; ?>
                             </select>
+                        <?php elseif (($field['type'] ?? 'text') === 'dynamic-select' && isset($field['options'])): ?>
+                            <div style="grid-column:1/-1">
+                                <span style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-secondary);display:block;margin-bottom:4px"><?= e($field['label'] ?? '') ?></span>
+                                <div data-dynamic-select="<?= e($field['name'] ?? '') ?>">
+                                    <div data-dynamic-item style="display:flex;gap:6px;margin-bottom:4px">
+                                        <select style="flex:1" data-dynamic-option>
+                                            <option value="">Selectionner</option>
+                                            <?php foreach ($field['options'] as $val => $label): ?>
+                                                <?php $optVal = is_int($val) ? $label : $val; ?>
+                                                <option value="<?= e((string) $optVal) ?>"><?= e($label) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <button type="button" class="btn-icon danger" data-dynamic-remove style="flex-shrink:0" tabindex="-1" title="Retirer"><span class="material-symbols-outlined">close</span></button>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn" data-dynamic-add="<?= e($field['name'] ?? '') ?>" style="margin-top:2px;padding:3px 8px;font-size:0.7rem"><span class="material-symbols-outlined" style="font-size:14px">add</span> Ajouter une activite</button>
+                                <template data-dynamic-template>
+                                    <div data-dynamic-item style="display:flex;gap:6px;margin-bottom:4px">
+                                        <select style="flex:1" data-dynamic-option>
+                                            <option value="">Selectionner</option>
+                                            <?php foreach ($field['options'] as $val => $label): ?>
+                                                <?php $optVal = is_int($val) ? $label : $val; ?>
+                                                <option value="<?= e((string) $optVal) ?>"><?= e($label) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <button type="button" class="btn-icon danger" data-dynamic-remove style="flex-shrink:0" tabindex="-1" title="Retirer"><span class="material-symbols-outlined">close</span></button>
+                                    </div>
+                                </template>
+                            </div>
                         <?php elseif (($field['type'] ?? 'text') === 'textarea'): ?>
                             <textarea name="<?= e($field['name'] ?? '') ?>" <?= !empty($field['required']) ? 'required' : '' ?> <?= !empty($field['rows']) ? 'rows="' . (int) $field['rows'] . '"' : '' ?>></textarea>
                         <?php else: ?>
