@@ -4868,3 +4868,49 @@ input[data-bulk-checkbox] {
 [data-import-preview-table] input.import-edit-input.col-extra {
     opacity: 0.55;
 }
+
+/* ==========================================
+   Quick Create Modal — compact form fields
+   ========================================== */
+.modal-panel form[data-quick-create-form] .form-grid {
+    gap: 6px;
+}
+
+.modal-panel form[data-quick-create-form] .field {
+    gap: 3px;
+}
+
+.modal-panel form[data-quick-create-form] .field span {
+    font-size: 0.65rem;
+}
+
+.modal-panel form[data-quick-create-form] .section-title {
+    font-size: 0.7rem;
+    padding: 4px 0 2px;
+    margin: 2px 0;
+}
+
+.modal-panel form[data-quick-create-form] input,
+.modal-panel form[data-quick-create-form] select,
+.modal-panel form[data-quick-create-form] textarea {
+    padding: 5px 8px;
+    font-size: 0.75rem;
+}
+
+.modal-panel form[data-quick-create-form] textarea {
+    min-height: 50px;
+    resize: vertical;
+}
+
+.modal-panel form[data-quick-create-form] .form-actions {
+    margin-top: 0.5rem !important;
+}
+
+.modal-panel form[data-quick-create-form] .form-actions .btn {
+    padding: 4px 10px;
+    font-size: 0.75rem;
+}
+
+.modal-panel form[data-quick-create-form] .form-actions .btn .material-symbols-outlined {
+    font-size: 14px;
+}

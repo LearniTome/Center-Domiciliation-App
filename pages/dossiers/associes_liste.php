@@ -236,20 +236,28 @@ if (($pdo ?? null) instanceof PDO) {
     $quickCreateTitle = 'Nouvel associe';
     $quickCreateTable = 'associes';
     $quickCreateFields = [
-        ['name' => 'associe_nom_complet', 'label' => 'Nom complet', 'type' => 'text', 'required' => true],
-        ['name' => 'societe_id', 'label' => 'Societe', 'type' => 'select', 'options' => $societesOptions, 'required' => true],
+        ['type' => 'title', 'label' => 'Identite'],
         ['name' => 'associe_civilite', 'label' => 'Civilite', 'type' => 'select', 'options' => ['Mr', 'Mme', 'Mlle']],
         ['name' => 'associe_nom', 'label' => 'Nom', 'type' => 'text'],
         ['name' => 'associe_prenom', 'label' => 'Prenom', 'type' => 'text'],
-        ['name' => 'associe_cin', 'label' => 'CIN', 'type' => 'text'],
+        ['name' => 'associe_nom_complet', 'label' => 'Nom complet', 'type' => 'text', 'required' => true],
+        ['name' => 'associe_cin', 'label' => 'N CIN/Sejour/Passport', 'type' => 'text'],
+        ['name' => 'associe_date_validite_cin', 'label' => 'Date validite CIN', 'type' => 'date'],
+        ['name' => 'associe_nationalite', 'label' => 'Nationalite', 'type' => 'select', 'options' => $nationalitesOptions],
         ['name' => 'associe_date_naissance', 'label' => 'Date naissance', 'type' => 'date'],
         ['name' => 'associe_lieu_naissance', 'label' => 'Lieu naissance', 'type' => 'select', 'options' => $lieuxNaissanceOptions],
-        ['name' => 'associe_nationalite', 'label' => 'Nationalite', 'type' => 'select', 'options' => $nationalitesOptions],
+        ['type' => 'title', 'label' => 'Contact'],
         ['name' => 'associe_telephone', 'label' => 'Telephone', 'type' => 'text'],
         ['name' => 'associe_email', 'label' => 'Email', 'type' => 'email'],
+        ['name' => 'associe_adresse', 'label' => 'Adresse', 'type' => 'textarea', 'full' => true],
+        ['type' => 'title', 'label' => 'Participation'],
         ['name' => 'associe_qualite', 'label' => 'Qualite associe', 'type' => 'select', 'options' => $qualitesOptions],
         ['name' => 'associe_parts', 'label' => 'Parts', 'type' => 'number'],
+        ['name' => 'associe_capital_detenu', 'label' => 'Capital detenu (DH)', 'type' => 'number'],
+        ['name' => 'associe_part_percent', 'label' => '% Capital social', 'type' => 'number'],
         ['name' => 'associe_est_gerant', 'label' => 'Gerant', 'type' => 'select', 'options' => ['0' => 'Non', '1' => 'Oui']],
+        ['type' => 'title', 'label' => 'Liaison'],
+        ['name' => 'societe_id', 'label' => 'Societe', 'type' => 'select', 'options' => $societesOptions, 'required' => true],
     ];
     require __DIR__ . '/../../includes/quick_create_modal.php';
 

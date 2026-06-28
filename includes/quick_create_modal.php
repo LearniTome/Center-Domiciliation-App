@@ -30,6 +30,11 @@ $modalKey = $quickCreateModalKey ?? 'quick-create';
             <input type="hidden" name="table" value="<?= e($quickCreateTable) ?>">
             <div class="form-grid">
                 <?php foreach ((array) ($quickCreateFields ?? []) as $field): ?>
+                    <?php if (($field['type'] ?? '') === 'title'): ?>
+                        <h3 class="section-title"><?= e($field['label'] ?? '') ?></h3>
+                    <?php elseif (($field['type'] ?? '') === 'title-secondary'): ?>
+                        <h4 style="grid-column:1/-1;font-size:0.8rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-secondary);margin:8px 0 2px;padding:0"><?= e($field['label'] ?? '') ?></h4>
+                    <?php else: ?>
                     <label class="field<?= !empty($field['full']) ? ' full' : '' ?>">
                         <span><?= e($field['label'] ?? '') ?></span>
                         <?php if (($field['type'] ?? 'text') === 'select' && isset($field['options'])): ?>
@@ -40,6 +45,8 @@ $modalKey = $quickCreateModalKey ?? 'quick-create';
                                     <option value="<?= e((string) $optVal) ?>"><?= e($label) ?></option>
                                 <?php endforeach; ?>
                             </select>
+                        <?php elseif (($field['type'] ?? 'text') === 'textarea'): ?>
+                            <textarea name="<?= e($field['name'] ?? '') ?>" <?= !empty($field['required']) ? 'required' : '' ?> <?= !empty($field['rows']) ? 'rows="' . (int) $field['rows'] . '"' : '' ?>></textarea>
                         <?php else: ?>
                             <input
                                 type="<?= e($field['type'] ?? 'text') ?>"
@@ -49,6 +56,7 @@ $modalKey = $quickCreateModalKey ?? 'quick-create';
                             >
                         <?php endif; ?>
                     </label>
+                    <?php endif; ?>
                 <?php endforeach; ?>
             </div>
             <div class="form-actions" style="margin-top:1rem;display:flex;gap:8px;justify-content:flex-end">
