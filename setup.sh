@@ -158,7 +158,7 @@ done
 
 # ----- Dossiers -----
 echo "[5/9] Verification des dossiers..."
-for d in uploads output dossiers_dom templates; do
+for d in uploads output dossiers_generer templates; do
     if [ ! -d "$PROJECT_ROOT/$d" ]; then
         mkdir -p "$PROJECT_ROOT/$d"
         echo "      $d/ cree"

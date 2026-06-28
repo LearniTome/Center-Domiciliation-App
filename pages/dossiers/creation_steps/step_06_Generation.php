@@ -198,7 +198,7 @@ if (is_post() && $step === 6) {
                 }
             }
 
-            $creaDir = __DIR__ . '/../../../dossiers_crea/' . $dossierName;
+            $creaDir = __DIR__ . '/../../../dossiers_generer/dossiers_domiciliation/' . $dossierName;
             if (!is_dir($creaDir)) {
                 mkdir($creaDir, 0777, true);
             }

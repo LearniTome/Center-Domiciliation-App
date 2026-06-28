@@ -347,7 +347,7 @@ if (-not $linkExists) {
 
 # ----- 6. Creation dossiers utiles -----
 Write-Host "[6/9] Verification des dossiers..." -ForegroundColor Yellow
-$dirs = @("uploads", "output", "dossiers_dom", "templates")
+$dirs = @("uploads", "output", "dossiers_generer", "templates")
 foreach ($d in $dirs) {
     $p = Join-Path $ProjectRoot $d
     if (-not (Test-Path $p -PathType Container)) {

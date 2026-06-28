@@ -16,8 +16,6 @@
 backups/
 /config/ai.local.php
 
-/dossiers_dom/
-/dossiers_crea/
 /dossiers_generer/
 .opencode/skill_cache/
 tmp_test/
