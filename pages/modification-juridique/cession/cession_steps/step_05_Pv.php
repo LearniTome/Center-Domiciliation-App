@@ -288,8 +288,8 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
         <div class="recap-section">
             <h3>ORDRE DU JOUR</h3>
             <ol id="pv-order-of-day">
-                <?php foreach ($resolutions as $r): ?>
-                <li><?= e($r['title'] ?: '(Sans titre)') ?></li>
+                <?php foreach ($resolutions as $i => $r): ?>
+                <li>Résolution <?= $i + 1 ?> : <?= e($r['title'] ?: '(Sans titre)') ?></li>
                 <?php endforeach; ?>
             </ol>
         </div>
@@ -414,7 +414,7 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
     <div class="recap-a4">
         <?php foreach ($resolutions as $i => $r): ?>
         <div class="recap-section">
-            <h3><?= e($r['title'] ?: '(Sans titre)') ?></h3>
+            <h3><?= e('Résolution ' . ($i + 1) . ' — ' . ($r['title'] ?: '(Sans titre)')) ?></h3>
             <?php if (trim($r['content']) !== ''): ?>
                 <div class="pv-preview-block"><?= nl2br(preg_replace('/\*\*(.+?)\*\*/', '<strong>$1</strong>', e($r['content']))) ?></div>
             <?php else: ?>
@@ -469,7 +469,7 @@ function updateOrder() {
             var input = b.querySelector('.pv-title-input');
             titles.push(input ? input.value : '(Sans titre)');
         });
-        orderList.innerHTML = titles.map(function(t) { return '<li>' + $escapeHtml(t) + '</li>'; }).join('');
+        orderList.innerHTML = titles.map(function(t, idx) { return '<li>Résolution ' + (idx + 1) + ' : ' + $escapeHtml(t) + '</li>'; }).join('');
     }
     blocks.forEach(function(b, i) {
         var badge = b.querySelector('.step-badge');
