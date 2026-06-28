@@ -22,7 +22,8 @@ if (is_post() && $step === 7) {
             $pdo->beginTransaction();
 
             // Create société if new
-            if ($wizard['mode'] === 'nouvelle' && $wizard['societe_id'] <= 0) {
+            if ($wizard['mode'] === 'nouvelle') {
+                $wizard['societe_id'] = 0;
                 $soc = $wizard['societe'];
 $stmt = $pdo->prepare('INSERT INTO societes (societe_raison_sociale, societe_forme_juridique, societe_source, societe_ice, societe_date_ice, societe_date_exp_cert_neg, societe_rc, societe_if, societe_tp, societe_cnss, societe_capital, societe_part_social, societe_valeur_nominale, societe_adresse_siege, societe_ville, societe_tribunal, societe_tribunal_type, societe_email, societe_telephone, societe_dossier, societe_type_generation, societe_procedure_creation, societe_mode_depot, societe_activites_statuts, societe_activites_ompic, created_by) VALUES (:raison, :forme, :source, :ice, :date_ice, :date_exp_cert_neg, :rc, :ifis, :tp, :cnss, :capital, :parts, :vnom, :adr, :ville, :trib, :trib_type, :email, :tel, :dossier, :type_gen, :proc_creation, :mode_depot, :activites, :activites_ompic, :created_by)');
 $stmt->execute([
