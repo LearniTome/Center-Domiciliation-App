@@ -17,6 +17,7 @@ $villesOptions = [];
 $tribunauxOptions = [];
 $adressesOptions = [];
 $tribunalTypes = [];
+$activitesOptions = [];
 if (($pdo ?? null) instanceof PDO) {
     $formesOptions = fetch_reference_options($pdo, 'ref_formes_juridiques', 'forme_juridique');
     $villesOptions = fetch_reference_options($pdo, 'ref_villes', 'ville');
@@ -25,6 +26,7 @@ if (($pdo ?? null) instanceof PDO) {
     $tribunalTypes = fetch_tribunaux_types($pdo);
     $tribunauxAll = fetch_tribunaux_all($pdo);
     $adressesAll = fetch_adresses_all($pdo);
+    $activitesOptions = fetch_reference_options($pdo, 'ref_activites', 'activite');
 }
 
 $societeDefaults = load_defaults('societe');
@@ -279,6 +281,7 @@ if (($pdo ?? null) instanceof PDO) {
         ['name' => 'societe_if', 'label' => 'IF', 'type' => 'text'],
         ['name' => 'societe_tp', 'label' => 'TP', 'type' => 'text'],
         ['name' => 'societe_cnss', 'label' => 'CNSS', 'type' => 'text'],
+        ['name' => 'societe_activites_statuts', 'label' => 'Activites (Statuts)', 'type' => 'select', 'options' => $activitesOptions, 'full' => true, 'multiple' => true],
         ['type' => 'title', 'label' => 'Capital'],
         ['name' => 'societe_capital', 'label' => 'Capital', 'type' => 'number'],
         ['name' => 'societe_part_social', 'label' => 'Part social', 'type' => 'number'],
@@ -292,8 +295,30 @@ if (($pdo ?? null) instanceof PDO) {
         ['name' => 'societe_email', 'label' => 'Email', 'type' => 'email'],
         ['name' => 'societe_telephone', 'label' => 'Telephone', 'type' => 'text'],
     ];
-    require __DIR__ . '/../../includes/quick_create_modal.php';
-
+    require __DIR__ . '/../../includes/quick_create_modal.php'; ?>
+    <script>
+    (function() {
+        var form = document.querySelector('[data-modal="quick-create"] [data-quick-create-form]');
+        if (form) {
+            form.addEventListener('submit', function() {
+                var sel = form.querySelector('select[name="societe_activites_statuts"]');
+                if (sel && sel.multiple) {
+                    var vals = [];
+                    for (var i = 0; i < sel.options.length; i++) {
+                        if (sel.options[i].selected) vals.push(sel.options[i].value);
+                    }
+                    sel.name = '';
+                    var h = document.createElement('input');
+                    h.type = 'hidden';
+                    h.name = 'societe_activites_statuts';
+                    h.value = vals.join(', ');
+                    form.appendChild(h);
+                }
+            });
+        }
+    })();
+    </script>
+    <?php
     $bulkEditTitle = 'Modifier les societes selectionnees';
     $bulkEditTable = 'societes';
     $bulkEditFields = [

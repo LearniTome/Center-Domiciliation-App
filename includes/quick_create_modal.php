@@ -38,8 +38,7 @@ $modalKey = $quickCreateModalKey ?? 'quick-create';
                     <label class="field<?= !empty($field['full']) ? ' full' : '' ?>">
                         <span><?= e($field['label'] ?? '') ?></span>
                         <?php if (($field['type'] ?? 'text') === 'select' && isset($field['options'])): ?>
-                            <select name="<?= e($field['name'] ?? '') ?>" <?= !empty($field['required']) ? 'required' : '' ?>>
-                                <option value=""><?= e($field['placeholder'] ?? 'Selectionner') ?></option>
+                            <select name="<?= e($field['name'] ?? '') ?>" <?= !empty($field['required']) ? 'required' : '' ?> <?= !empty($field['multiple']) ? 'multiple style="height:120px"' : '' ?>><?php if (empty($field['multiple'])): ?><option value=""><?= e($field['placeholder'] ?? 'Selectionner') ?></option><?php endif; ?>
                                 <?php foreach ($field['options'] as $val => $label): ?>
                                     <?php $optVal = is_int($val) ? $label : $val; ?>
                                     <option value="<?= e((string) $optVal) ?>"><?= e($label) ?></option>
