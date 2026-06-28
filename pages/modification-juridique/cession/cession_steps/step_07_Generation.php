@@ -119,6 +119,18 @@ $stmt->execute([
             ]);
             $cessionId = (int) $pdo->lastInsertId();
 
+            // Auto-insert suivi etapes
+            $suiviSteps = [
+                ['redaction', 1], ['signature', 2], ['enregistrement', 3],
+                ['legalisation', 4], ['depot_greffe', 5], ['publication_jal', 6],
+                ['publication_bo', 7], ['rc_modificatif', 8], ['reglement', 9],
+                ['remise', 10],
+            ];
+            $suiviStmt = $pdo->prepare('INSERT INTO cession_suivi_etapes (cession_id, etape, ordre) VALUES (:cid, :etape, :ordre)');
+            foreach ($suiviSteps as $s) {
+                $suiviStmt->execute(['cid' => $cessionId, 'etape' => $s[0], 'ordre' => $s[1]]);
+            }
+
             // Insert cession_parts
             foreach ($wizard['parts'] as $p) {
                 $stmt = $pdo->prepare('INSERT INTO cession_parts (cession_id, cedant_associe_id, cedant_nom_complet, cedant_cin, cedant_type, cessionnaire_associe_id, cessionnaire_nom_complet, cessionnaire_cin, cessionnaire_type, cessionnaire_civilite, cessionnaire_date_naissance, cessionnaire_lieu_naissance, cessionnaire_nationalite, cessionnaire_adresse, cessionnaire_telephone, cessionnaire_email, cessionnaire_qualite, cessionnaire_parts, cessionnaire_capital_detenu, cessionnaire_est_gerant, parts_cedees, prix_unitaire, prix_total, pourcentage, nommer_gerant) VALUES (:cid, :caid, :cnom, :ccin, :ctype, :csaid, :csnom, :cscin, :cstype, :csciv, :csdn, :csln, :csnat, :csadr, :cstel, :cseml, :csql, :csparts, :cscap, :csger, :parts, :pu, :pt, :pct, :ger)');
