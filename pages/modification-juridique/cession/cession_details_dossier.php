@@ -138,7 +138,7 @@ $sourceLabels = [
     <h2><?= e($cession['cession_dossier']) ?></h2>
     <div class="table-actions">
         <a class="btn btn-info" href="<?= e(app_url('cession', ['id' => $cessionId, 'edit' => '1'])) ?>"><span class="material-symbols-outlined">edit</span> Modifier</a>
-        <a class="btn btn-next" href="<?= e(app_url('cession', ['step' => 6, 'id' => $cessionId, 'edit' => '1'])) ?>"><span class="material-symbols-outlined">sync</span> <?= count($documents) > 0 ? 'Regenerer documents' : 'Generer documents' ?></a>
+        <a class="btn btn-next" href="<?= e(app_url('cession', ['step' => 7, 'id' => $cessionId, 'edit' => '1'])) ?>"><span class="material-symbols-outlined">sync</span> <?= count($documents) > 0 ? 'Regenerer documents' : 'Generer documents' ?></a>
         <a class="btn btn-back" href="<?= e(app_url('cessions')) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
     </div>
 </div>
