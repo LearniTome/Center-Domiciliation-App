@@ -234,7 +234,7 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
 .recap-section h3 { font-size:0.92rem;font-weight:700;color:var(--primary);margin:0 0 8px; }
 .recap-header h2 { font-size:1.05rem;font-weight:700;color:var(--primary);text-transform:uppercase; }
 #pv-order-of-day li::marker { color:var(--primary);font-weight:600; }
-.pv-modal-overlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center; }
+.pv-modal-overlay { display:none;position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;background:rgba(0,0,0,0.55);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(2px); }
 .pv-modal-overlay.active { display:flex; }
 .pv-modal { background:var(--bg-secondary);border-radius:8px;width:520px;max-width:90vw;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 16px 48px rgba(0,0,0,0.2); }
 .pv-modal-header { display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line); }
@@ -340,7 +340,7 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
                 <button type="button" class="btn btn-info" id="pv-preconfig-btn">
                     <span class="material-symbols-outlined">playlist_add</span> Préconfiguré
                 </button>
-                <button type="button" class="btn btn-secondary" id="pv-add-ai-resolution" title="Ajouter une résolution générée par IA">
+                <button type="button" class="btn btn-secondary" id="pv-add-ai-resolution" title="Ajouter une résolution générée par IA" style="display:none">
                     <span class="material-symbols-outlined">auto_awesome</span> Ajouter avec IA
                 </button>
                 <a class="btn btn-info" href="<?= e(app_url('cession', ['step' => 5, 'pv_view' => 'preview'])) ?>">
