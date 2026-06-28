@@ -102,6 +102,9 @@ $noSidebar = in_array($page ?? '', ['connexion', 'deconnexion'], true);
                     <?php endif; ?>
                     <span class="page-count-bar"></span>
                 </div>
+                <?php if (!empty($pageActions)): ?>
+                <div class="table-actions"><?= $pageActions ?></div>
+                <?php endif; ?>
             </header>
             <?php else: ?>
             <header class="page-header">
@@ -112,6 +115,9 @@ $noSidebar = in_array($page ?? '', ['connexion', 'deconnexion'], true);
                     <?php endif; ?>
                     <span class="page-count-bar"></span>
                 </div>
+                <?php if (!empty($pageActions)): ?>
+                <div class="table-actions"><?= $pageActions ?></div>
+                <?php endif; ?>
             </header>
             <?php endif; ?>
 

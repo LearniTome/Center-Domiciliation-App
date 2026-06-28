@@ -4,7 +4,7 @@ declare(strict_types=1);
 if (isset($_GET['reset']) && $_GET['reset'] === '1') {
     unset($_SESSION['pv_ago_wizard'], $_SESSION['_pv_ago_loaded']);
     set_flash('success', 'Assistant reinitialise.');
-    redirect_to('pv_ago');
+    redirect_to('pv_ago_wizard');
 }
 
 if (!isset($_SESSION['pv_ago_wizard']) || !is_array($_SESSION['pv_ago_wizard'])) {
@@ -167,7 +167,7 @@ if ($editingId > 0 && !isset($_SESSION['_pv_ago_loaded'])) {
 }
 
 if ($step >= 1 && $wizard['mode'] === '' && !is_post()) {
-    redirect_to('pv_ago', ['step' => 0]);
+    redirect_to('pv_ago_wizard', ['step' => 0]);
 }
 
 $capitalSoc = (float) ($selectedSociete['societe_capital'] ?? $wizard['societe']['societe_capital'] ?? 0);

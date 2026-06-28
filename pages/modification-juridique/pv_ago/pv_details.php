@@ -50,7 +50,7 @@ if (is_post() && isset($_POST['delete_pv_ago'])) {
         set_flash('success', 'PV AGO supprime.');
         log_activity($pdo, 'delete', 'pv_ago', $delId);
     }
-    redirect_to('pvag');
+    redirect_to('pv_ago');
 }
 
 // Generate PV AGO document directly
@@ -66,7 +66,7 @@ if (is_post() && isset($_POST['generate_pv_ago'])) {
         $context = DocumentRenderer::buildContextFromPvAgo($pdo, $genId);
         if (empty($context)) {
             set_flash('error', 'Impossible de construire le contexte pour le PV AGO.');
-            redirect_to('pvag', ['id' => $genId]);
+            redirect_to('pv_ago', ['id' => $genId]);
         }
         $societeData = $context['societe'] ?? [];
         $socName = $societeData['societe_raison_sociale'] ?? 'Client';
@@ -82,7 +82,7 @@ if (is_post() && isset($_POST['generate_pv_ago'])) {
         $matches = glob($templateDir . '/*PV-AGO*_Template.docx');
         if (empty($matches)) {
             set_flash('error', 'Aucun template PV-AGO trouve dans templates/_PV_AGO/. Ajoutez un fichier *PV-AGO*_Template.docx.');
-            redirect_to('pvag', ['id' => $genId]);
+            redirect_to('pv_ago', ['id' => $genId]);
         }
         $outName = $sanitizedForme . '_' . $today . '_PV-AGO_' . $clientName . '.docx';
         try {
@@ -105,7 +105,7 @@ if (is_post() && isset($_POST['generate_pv_ago'])) {
             set_flash('error', 'Erreur de generation: ' . $e->getMessage());
         }
     }
-    redirect_to('pvag', ['id' => $genId]);
+    redirect_to('pv_ago', ['id' => $genId]);
 }
 
 // Delete selected generated documents
@@ -124,7 +124,7 @@ if (is_post() && isset($_POST['delete_docs'])) {
         $pdo->prepare("DELETE FROM documents_generes WHERE id IN ($placeholders) AND pv_ago_id = ?")->execute($params);
         set_flash('success', count($selected) . ' document(s) supprime(s).');
     }
-    redirect_to('pvag', ['id' => $viewId]);
+    redirect_to('pv_ago', ['id' => $viewId]);
 }
 
 // ============ DETAIL VIEW ============
@@ -162,9 +162,9 @@ if ($viewId > 0):
 <div class="section-title-row">
     <h2>PV AGO n&deg;<?= e($pv['dossier_numero'] ?? '-') ?></h2>
     <div class="table-actions">
-        <a class="btn btn-back" href="<?= e(app_url('pvag')) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
+        <a class="btn btn-back" href="<?= e(app_url('pv_ago')) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
         <?php if (has_permission('pv_ago.create')): ?>
-        <a class="btn btn-next" href="<?= e(app_url('pv_ago')) ?>"><span class="material-symbols-outlined">add</span> Nouveau PV AGO</a>
+        <a class="btn btn-next" href="<?= e(app_url('pv_ago_wizard')) ?>"><span class="material-symbols-outlined">add</span> Nouveau PV AGO</a>
         <?php endif; ?>
     </div>
 </div>
@@ -389,7 +389,7 @@ if ($isBenefice) {
 <?php if (has_permission('pv_ago.edit')): ?>
 <div class="section-title-row">
     <div></div>
-    <a class="btn btn-info" href="<?= e(app_url('pv_ago', ['step' => 1, 'id' => $viewId, 'edit' => 1])) ?>">
+    <a class="btn btn-info" href="<?= e(app_url('pv_ago_wizard', ['step' => 1, 'id' => $viewId, 'edit' => 1])) ?>">
         <span class="material-symbols-outlined">edit</span> Modifier le PV AGO
     </a>
 </div>
@@ -430,15 +430,6 @@ endif;
 // ============ LIST VIEW ============
 ?>
 
-<div class="section-title-row">
-    <h2>PV d&apos;assemblee generale ordinaire</h2>
-    <?php if (has_permission('pv_ago.create')): ?>
-    <a class="btn btn-next" href="<?= e(app_url('pv_ago')) ?>">
-        <span class="material-symbols-outlined">add</span> Nouveau PV AGO
-    </a>
-    <?php endif; ?>
-</div>
-
 <?php
 $search = trim($_GET['q'] ?? '');
 $pageNum = max(1, (int) ($_GET['p'] ?? 1));
@@ -464,17 +455,20 @@ $list = $stmt->fetchAll();
 
 <article class="card">
     <div class="section-header">
-        <form method="get" class="search-form">
-            <input type="hidden" name="page" value="pvag">
-            <input type="search" name="q" placeholder="Rechercher par dossier, societe, exercice..." value="<?= e($search) ?>" style="min-width:300px">
-            <button class="btn btn-secondary" type="submit"><span class="material-symbols-outlined">search</span> Rechercher</button>
-            <?php if ($search !== ''): ?>
-            <a class="btn btn-cancel" href="<?= e(app_url('pvag')) ?>"><span class="material-symbols-outlined">close</span> Effacer</a>
-            <?php endif; ?>
+        <span class="page-count"><?= $total ?> enregistrement(s)</span>
+        <form method="get" class="search-bar">
+            <input type="hidden" name="page" value="pv_ago">
+            <div class="inline-form">
+                <input type="search" name="q" placeholder="Rechercher par dossier, societe, exercice..." value="<?= e($search) ?>" style="min-width:300px">
+                <button class="btn btn-secondary" type="submit"><span class="material-symbols-outlined">search</span> Rechercher</button>
+                <?php if ($search !== ''): ?>
+                <a class="btn btn-cancel" href="<?= e(app_url('pv_ago')) ?>"><span class="material-symbols-outlined">close</span> Effacer</a>
+                <?php endif; ?>
+                <?php if (has_permission('pv_ago.export') && function_exists('export_csv')): ?>
+                <a class="btn btn-info" href="<?= e(app_url('pv_ago', ['export' => 'csv'] + ($search ? ['q' => $search] : []))) ?>"><span class="material-symbols-outlined">download</span> CSV</a>
+                <?php endif; ?>
+            </div>
         </form>
-        <?php if (count($list) > 0 && has_permission('pv_ago.export') && function_exists('export_csv')): ?>
-        <a class="btn btn-info" href="<?= e(app_url('pvag', ['export' => 'csv'] + ($search ? ['q' => $search] : []))) ?>"><span class="material-symbols-outlined">download</span> Exporter CSV</a>
-        <?php endif; ?>
     </div>
 
     <?php if (empty($list)): ?>
@@ -500,7 +494,7 @@ $list = $stmt->fetchAll();
             <tbody>
                 <?php foreach ($list as $row): ?>
                 <tr>
-                    <td><a href="<?= e(app_url('pvag', ['id' => $row['id']])) ?>"><?= e($row['dossier_numero'] ?? '-') ?></a></td>
+                    <td><a href="<?= e(app_url('pv_ago', ['id' => $row['id']])) ?>"><?= e($row['dossier_numero'] ?? '-') ?></a></td>
                     <td><?= e($row['societe_raison_sociale'] ?? '-') ?></td>
                     <td><?= format_date($row['date_ago'] ?? null) ?></td>
                     <td><?= e($row['exercice_clos'] ?? '-') ?></td>
@@ -509,9 +503,9 @@ $list = $stmt->fetchAll();
                     <td><?= format_date($row['created_at'] ?? null) ?></td>
                     <td class="col-actions">
                         <div class="table-actions">
-                            <a class="btn-icon" href="<?= e(app_url('pvag', ['id' => $row['id']])) ?>" title="Voir"><span class="material-symbols-outlined">visibility</span></a>
+                            <a class="btn-icon" href="<?= e(app_url('pv_ago', ['id' => $row['id']])) ?>" title="Voir"><span class="material-symbols-outlined">visibility</span></a>
                             <?php if (has_permission('pv_ago.edit')): ?>
-                            <a class="btn-icon" href="<?= e(app_url('pv_ago', ['step' => 1, 'id' => $row['id'], 'edit' => 1])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
+                            <a class="btn-icon" href="<?= e(app_url('pv_ago_wizard', ['step' => 1, 'id' => $row['id'], 'edit' => 1])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
                             <?php endif; ?>
                             <?php if (has_permission('pv_ago.delete')): ?>
                             <form method="post" style="display:inline" data-confirm="Supprimer ce PV AGO ?">
@@ -531,7 +525,7 @@ $list = $stmt->fetchAll();
     <?php if ($totalPages > 1): ?>
     <div class="pagination">
         <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-        <a class="btn <?= $i === $pageNum ? 'btn-next' : 'btn-secondary' ?>" href="<?= e(app_url('pvag', ['p' => $i] + ($search ? ['q' => $search] : []))) ?>"><?= $i ?></a>
+        <a class="btn <?= $i === $pageNum ? 'btn-next' : 'btn-secondary' ?>" href="<?= e(app_url('pv_ago', ['p' => $i] + ($search ? ['q' => $search] : []))) ?>"><?= $i ?></a>
         <?php endfor; ?>
     </div>
     <?php endif; ?>

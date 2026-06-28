@@ -6,6 +6,18 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 ## Architecture
 - **Routing**: Single front controller `index.php?page=` with an allowlist of pages + `$pageDir` mapping → subdirectory
 - **Globals available in pages**: `$pdo` (PDO|null), `$config` (app config), `$flash` (?array), `$dbError` (?string), `$pageTitle` (string)
+- **`$pageActions` (string)**: Définir dans `index.php` AVANT `require entete.php` pour afficher des boutons d'action alignés à droite du titre dans le `.page-header`. Exemple :
+  ```php
+  $pageActions = '<a class="btn btn-next" href="' . e(app_url('ma_page')) . '"><span class="material-symbols-outlined">add</span> Nouvel élément</a>';
+  ```
+  Pour l'utiliser, ajouter le bloc dans `index.php` avant `require entete.php` :
+  ```php
+  $pageActions = '';
+  if ($page === 'ma-page' && function_exists('has_permission') && has_permission('ma_page.create')) {
+      $pageActions = '<a class="btn btn-next" href="' . e(app_url('ma_page_create')) . '"><span class="material-symbols-outlined">add</span> Nouveau</a>';
+  }
+  ```
+  Ne PAS mettre de titre H2 en double dans la page — le H1 du `page-header` suffit. Le `.page-header` est en `display: flex; justify-content: space-between` ; le premier `div` contient le titre, le second contient `$pageActions`. CSS : `.page-header > div:first-child` a `flex: 1`, `.table-actions` dans le header garde `flex: 0 1 auto`.
 - **Page files** (`pages/{group}/{page}.php`): Self-contained — PHP logic at top (POST handling, data fetching), HTML at bottom. Pages are grouped by sidebar section:
   - `accueil/` — dashboard, notifications
   - `dossiers/` — sociétés, associés, contrats, collaborateurs

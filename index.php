@@ -22,7 +22,7 @@ $allowedPages = [
     'roles', 'role', 'activite',
     'notifications', 'notifications-manage', 'notif-ajax',
     'modifications', 'cessions', 'cession', 'cession_dossier',
-    'pv_ago', 'pvag',
+    'pv_ago', 'pv_ago_wizard',
 ];
 
 $pageDir = [
@@ -48,8 +48,8 @@ $pageDir = [
     'cessions' => 'modification-juridique/cession',
     'cession' => 'modification-juridique/cession',
     'cession_dossier' => 'modification-juridique/cession',
-    'pv_ago' => 'modification-juridique/pv_ago/pv_ago_steps',
-    'pvag' => 'modification-juridique/pv_ago',
+    'pv_ago' => 'modification-juridique/pv_ago',
+    'pv_ago_wizard' => 'modification-juridique/pv_ago/pv_ago_steps',
     // Templates de documents
     'templates' => 'templates',
     'generation' => 'templates',
@@ -95,8 +95,8 @@ $pageFile = [
     'cession' => 'cession_steps/_main',
     'cession_dossier' => 'cession_details_dossier',
     'modifications' => 'modifications_juridiques',
-    'pv_ago' => '_main',
-    'pvag' => 'pv_details',
+    'pv_ago' => 'pv_details',
+    'pv_ago_wizard' => '_main',
 ];
 
 $page = $_GET['page'] ?? 'dashboard';
@@ -168,7 +168,7 @@ $pageTitleMap = [
     'cession' => 'Formulaire de Cession Des Parts Sociales',
     'cession_dossier' => 'Dossier de cession',
     'pv_ago' => 'PV Assemblee Generale Ordinaire',
-    'pvag' => 'PV Assemblee Generale Ordinaire',
+    'pv_ago_wizard' => 'PV Assemblee Generale Ordinaire',
 ];
 
 // Public pages without sidebar layout
@@ -201,6 +201,17 @@ $pageTitle = $pageTitleMap[$page] ?? 'Center Domiciliation App';
 $publicPages = ['setup', 'not-found'];
 if (!in_array($page, $publicPages, true)) {
     require_page_access($page);
+}
+
+// Page header actions
+$pageActions = '';
+if (function_exists('has_permission')) {
+    if ($page === 'pv_ago' && has_permission('pv_ago.create')) {
+        $pageActions = '<a class="btn btn-next" href="' . e(app_url('pv_ago_wizard')) . '"><span class="material-symbols-outlined">add</span> Nouveau PV AGO</a>';
+    }
+    if ($page === 'roles' && has_permission('roles.create')) {
+        $pageActions = '<a class="btn btn-next" href="' . e(app_url('role')) . '"><span class="material-symbols-outlined">add</span> Nouveau role</a>';
+    }
 }
 
 require __DIR__ . '/includes/entete.php';

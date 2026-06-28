@@ -15,9 +15,9 @@ if (is_post() && $step === 3) {
     $wizard['parts_presentes'] = $_POST['parts_presentes'] ?? '';
 
     if ($navAction === 'back') {
-        redirect_to('pv_ago', ['step' => 2]);
+        redirect_to('pv_ago_wizard', ['step' => 2]);
     }
-    redirect_to('pv_ago', ['step' => 4]);
+    redirect_to('pv_ago_wizard', ['step' => 4]);
 }
 
 if ($step === 3):
@@ -29,7 +29,7 @@ if ($step === 3):
             <strong><?= e($selectedSociete['societe_raison_sociale']) ?></strong>
             <span class="soc-meta"><?= e($selectedSociete['societe_forme_juridique']) ?></span>
         </div>
-        <a class="btn" href="<?= e(app_url('pv_ago', ['step' => 1])) ?>"><span class="material-symbols-outlined">edit</span> Modifier</a>
+        <a class="btn" href="<?= e(app_url('pv_ago_wizard', ['step' => 1])) ?>"><span class="material-symbols-outlined">edit</span> Modifier</a>
     </div>
     <?php endif; ?>
 

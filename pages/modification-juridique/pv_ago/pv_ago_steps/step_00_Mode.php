@@ -8,15 +8,15 @@ if (is_post() && $step === 0) {
         $wizard['mode'] = 'existante';
         $wizard['societe_id'] = 0;
         $wizard['societe'] = [];
-        redirect_to('pv_ago', ['step' => 1]);
+        redirect_to('pv_ago_wizard', ['step' => 1]);
     }
     if ($mode === 'nouvelle') {
         $wizard['mode'] = 'nouvelle';
         $wizard['societe_id'] = 0;
-        redirect_to('pv_ago', ['step' => 1]);
+        redirect_to('pv_ago_wizard', ['step' => 1]);
     }
     set_flash('error', 'Veuillez choisir un mode.');
-    redirect_to('pv_ago', ['step' => 0]);
+    redirect_to('pv_ago_wizard', ['step' => 0]);
 }
 
 if ($step === 0):
@@ -24,7 +24,7 @@ if ($step === 0):
 <div class="stack">
     <div class="section-header">
         <h2>PV d'Assemblee Generale Ordinaire Annuelle</h2>
-        <a class="btn btn-back" href="<?= e(app_url('pvag')) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour aux PV AGO</a>
+        <a class="btn btn-back" href="<?= e(app_url('pv_ago')) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour aux PV AGO</a>
     </div>
     <p class="help-text" style="margin-bottom:0">Selectionnez la societe concernee par le PV AGO.</p>
 

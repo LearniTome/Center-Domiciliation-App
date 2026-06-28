@@ -415,7 +415,7 @@ a:hover {
     justify-content: space-between;
     margin-bottom: 16px;
 }
-.page-header > div {
+.page-header > div:first-child {
     display: flex;
     align-items: center;
     gap: 12px;

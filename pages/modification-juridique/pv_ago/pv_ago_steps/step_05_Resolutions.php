@@ -139,12 +139,12 @@ if (is_post() && $step === 5) {
     $navAction = $_POST['nav_action'] ?? 'next';
 
     if ($navAction === 'back') {
-        redirect_to('pv_ago', ['step' => 4]);
+        redirect_to('pv_ago_wizard', ['step' => 4]);
     }
     if ($navAction === 'reset') {
         unset($wizard['resolutions']);
         set_flash('success', 'Resolutions reinitialisees.');
-        redirect_to('pv_ago', ['step' => 5]);
+        redirect_to('pv_ago_wizard', ['step' => 5]);
     }
     if ($navAction === 'save_resolutions') {
         $titles = $_POST['res_title'] ?? [];
@@ -159,9 +159,9 @@ if (is_post() && $step === 5) {
         }
         $wizard['resolutions'] = $resolutions;
         set_flash('success', 'Resolutions enregistrees.');
-        redirect_to('pv_ago', ['step' => 5]);
+        redirect_to('pv_ago_wizard', ['step' => 5]);
     }
-    redirect_to('pv_ago', ['step' => 6]);
+    redirect_to('pv_ago_wizard', ['step' => 6]);
 }
 
 if ($step === 5):

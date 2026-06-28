@@ -5,9 +5,9 @@ if (is_post() && $step === 6) {
     verify_csrf();
     $navAction = $_POST['nav_action'] ?? 'next';
     if ($navAction === 'back') {
-        redirect_to('pv_ago', ['step' => 5]);
+        redirect_to('pv_ago_wizard', ['step' => 5]);
     }
-    redirect_to('pv_ago', ['step' => 7]);
+    redirect_to('pv_ago_wizard', ['step' => 7]);
 }
 
 if ($step === 6):
@@ -32,7 +32,7 @@ if ($step === 6):
         <button type="button" class="btn btn-info" id="btn-pdf-recap">
             <span class="material-symbols-outlined">picture_as_pdf</span> Sauvegarder PDF
         </button>
-        <a class="btn btn-back" href="<?= e(app_url('pv_ago', ['step' => 5])) ?>">
+        <a class="btn btn-back" href="<?= e(app_url('pv_ago_wizard', ['step' => 5])) ?>">
             <span class="material-symbols-outlined">edit</span> Modifier les resolutions
         </a>
     </div>

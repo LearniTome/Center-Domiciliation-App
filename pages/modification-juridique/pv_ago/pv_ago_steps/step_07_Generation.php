@@ -12,13 +12,13 @@ if (is_post() && $step === 7) {
     verify_csrf();
     $navAction = $_POST['nav_action'] ?? 'back';
     if ($navAction === 'back') {
-        redirect_to('pv_ago', ['step' => 6]);
+        redirect_to('pv_ago_wizard', ['step' => 6]);
     }
 
     if ($navAction === 'save') {
         if (!(($pdo ?? null) instanceof PDO)) {
             set_flash('error', 'Connexion MySQL indisponible.');
-            redirect_to('pv_ago', ['step' => 7]);
+            redirect_to('pv_ago_wizard', ['step' => 7]);
         }
         try {
             $pdo->beginTransaction();
@@ -104,16 +104,16 @@ if (is_post() && $step === 7) {
             if ($pdo->inTransaction()) $pdo->rollBack();
             if ($wizard['mode'] === 'nouvelle') $wizard['societe_id'] = 0;
             set_flash('error', 'Erreur lors de l\'enregistrement: ' . $e->getMessage());
-            redirect_to('pv_ago', ['step' => 7]);
+            redirect_to('pv_ago_wizard', ['step' => 7]);
         }
-        redirect_to('pv_ago', ['step' => 7, 'id' => $pvAgoId, 'edit' => 1]);
+        redirect_to('pv_ago_wizard', ['step' => 7, 'id' => $pvAgoId, 'edit' => 1]);
     }
 
     if ($navAction === 'generate') {
         $pvAgoId = $wizard['pv_ago_id'] ?? 0;
         if ($pvAgoId <= 0) {
             set_flash('error', 'Enregistrez d abord le PV AGO avant de generer le document.');
-            redirect_to('pv_ago', ['step' => 7]);
+            redirect_to('pv_ago_wizard', ['step' => 7]);
         }
 
         require_once __DIR__ . '/../../../../src/analyseur_templates.php';
@@ -125,7 +125,7 @@ if (is_post() && $step === 7) {
         $context = DocumentRenderer::buildContextFromPvAgo($pdo, $pvAgoId);
         if (empty($context)) {
             set_flash('error', 'Impossible de construire le contexte pour le PV AGO.');
-            redirect_to('pv_ago', ['step' => 7]);
+            redirect_to('pv_ago_wizard', ['step' => 7]);
         }
 
         $societeId = (int) ($wizard['societe_id'] ?? 0);
@@ -151,7 +151,7 @@ if (is_post() && $step === 7) {
         $matches = glob($templateDir . '/*PV-AGO*_Template.docx');
         if (empty($matches)) {
             set_flash('error', 'Aucun template PV-AGO trouve dans templates/_PV_AGO/.');
-            redirect_to('pv_ago', ['step' => 7]);
+            redirect_to('pv_ago_wizard', ['step' => 7]);
         }
 
         $outName = $sanitizedForme . '_' . $today . '_PV-AGO_' . $clientName . '.docx';
@@ -176,13 +176,13 @@ if (is_post() && $step === 7) {
         } catch (Throwable $e) {
             set_flash('error', 'Erreur de generation: ' . $e->getMessage());
         }
-        redirect_to('pv_ago', ['step' => 7, 'id' => $pvAgoId, 'edit' => 1]);
+        redirect_to('pv_ago_wizard', ['step' => 7, 'id' => $pvAgoId, 'edit' => 1]);
     }
 
     if ($navAction === 'terminer') {
         $pvAgoId = $wizard['pv_ago_id'] ?? 0;
         unset($_SESSION['pv_ago_wizard'], $_SESSION['_pv_ago_loaded'], $_SESSION['_pv_ago_editing_id']);
-        redirect_to('pvag', ['id' => $pvAgoId]);
+        redirect_to('pv_ago', ['id' => $pvAgoId]);
     }
 }
 
@@ -296,7 +296,7 @@ if ($step === 7):
     </form>
     <?php if ($saved): ?>
     <div style="display:flex;justify-content:flex-end;margin-top:8px">
-        <a class="btn btn-secondary" href="<?= e(app_url('pvag', ['id' => $wizard['pv_ago_id']])) ?>">
+        <a class="btn btn-secondary" href="<?= e(app_url('pv_ago', ['id' => $wizard['pv_ago_id']])) ?>">
             <span class="material-symbols-outlined">visibility</span> Voir le dossier
         </a>
     </div>

@@ -6,7 +6,7 @@ if (is_post() && $step === 2) {
     $navAction = $_POST['nav_action'] ?? 'next';
 
     if ($navAction === 'back') {
-        redirect_to('pv_ago', ['step' => 1]);
+        redirect_to('pv_ago_wizard', ['step' => 1]);
     }
 
     $associes = $_POST['associes'] ?? [];
@@ -56,10 +56,10 @@ if (is_post() && $step === 2) {
 
     if (count($normalizedAssocies) === 0) {
         set_flash('error', 'Ajoutez au moins un associe.');
-        redirect_to('pv_ago', ['step' => 2]);
+        redirect_to('pv_ago_wizard', ['step' => 2]);
     }
 
-    redirect_to('pv_ago', ['step' => 3]);
+    redirect_to('pv_ago_wizard', ['step' => 3]);
 }
 
 if ($step === 2):
@@ -76,7 +76,7 @@ if ($step === 2):
                 <strong><?= e($selectedSociete['societe_raison_sociale']) ?></strong>
                 <span class="soc-meta"><?= e($selectedSociete['societe_forme_juridique']) ?></span>
             </div>
-            <a class="btn" href="<?= e(app_url('pv_ago', ['step' => 1])) ?>"><span class="material-symbols-outlined">edit</span> Modifier</a>
+            <a class="btn" href="<?= e(app_url('pv_ago_wizard', ['step' => 1])) ?>"><span class="material-symbols-outlined">edit</span> Modifier</a>
         </div>
         <?php endif; ?>
 

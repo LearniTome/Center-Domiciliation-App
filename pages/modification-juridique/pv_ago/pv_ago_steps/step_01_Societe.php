@@ -6,7 +6,7 @@ if (is_post() && $step === 1) {
     $navAction = $_POST['nav_action'] ?? 'next';
 
     if ($navAction === 'back') {
-        redirect_to('pv_ago', ['step' => 0]);
+        redirect_to('pv_ago_wizard', ['step' => 0]);
     }
 
     if ($wizard['mode'] === 'nouvelle') {
@@ -20,7 +20,7 @@ if (is_post() && $step === 1) {
         $wizard['societe_id'] = 0;
         if (empty($soc['societe_raison_sociale'])) {
             set_flash('error', 'La raison sociale est obligatoire.');
-            redirect_to('pv_ago', ['step' => 1]);
+            redirect_to('pv_ago_wizard', ['step' => 1]);
         }
     } elseif ($wizard['mode'] === 'existante') {
         $societeId = (int) ($_POST['societe_id'] ?? 0);
@@ -29,11 +29,11 @@ if (is_post() && $step === 1) {
             $wizard['societe'] = [];
         } else {
             set_flash('error', 'Veuillez selectionner une societe.');
-            redirect_to('pv_ago', ['step' => 1]);
+            redirect_to('pv_ago_wizard', ['step' => 1]);
         }
     }
 
-    redirect_to('pv_ago', ['step' => 2]);
+    redirect_to('pv_ago_wizard', ['step' => 2]);
 }
 
 if ($step === 1):
@@ -153,7 +153,7 @@ if ($step === 1):
                 <strong><?= e($selectedSociete['societe_raison_sociale']) ?></strong>
                 <span class="soc-meta"><?= e($selectedSociete['societe_forme_juridique']) ?></span>
             </div>
-            <a class="btn" href="<?= e(app_url('pv_ago', ['step' => 0])) ?>"><span class="material-symbols-outlined">swap_horiz</span> Changer</a>
+            <a class="btn" href="<?= e(app_url('pv_ago_wizard', ['step' => 0])) ?>"><span class="material-symbols-outlined">swap_horiz</span> Changer</a>
         </div>
         <?php endif; ?>
 
