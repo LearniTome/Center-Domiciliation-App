@@ -154,7 +154,7 @@ $sourceLabels = [
     </article>
     <article class="stat">
         <span>Date</span>
-        <strong><?= format_date($cession['cession_date'] ?? null) ?></strong>
+        <strong><?= format_date($cession['cession_date'] ?? $cession['created_at'] ?? null) ?></strong>
     </article>
     <article class="stat">
         <span>Lignes</span>
@@ -199,7 +199,7 @@ $sourceLabels = [
             <div><span>Capital</span><strong><?= format_money($cession['societe_capital'] !== null ? (float) $cession['societe_capital'] : null) ?></strong></div>
             <div><span>Parts avant cession</span><strong><?= $cession['parts_avant'] ?? '-' ?></strong></div>
             <div><span>Capital avant cession</span><strong><?= format_money($cession['capital_avant'] !== null ? (float) $cession['capital_avant'] : null) ?></strong></div>
-            <div><span>Date de cession</span><strong><?= format_date($cession['cession_date'] ?? null) ?></strong></div>
+            <div><span>Date de cession</span><strong><?= format_date($cession['cession_date'] ?? $cession['created_at'] ?? null) ?></strong></div>
         </div>
     </div>
 </article>

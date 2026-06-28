@@ -110,7 +110,7 @@ $stmt->execute([
             $stmt->execute([
                 'sid' => $societeId,
                 'dos' => $dossier,
-                'dat' => $wizard['cession_date'] ?: null,
+                'dat' => $wizard['cession_date'] ?: date('Y-m-d'),
                 'motif' => $wizard['cession_motif'] ?: null,
                 'status' => $wizard['cession_status'] ?? 'Valider',
                 'cap' => $capitalAvant,
