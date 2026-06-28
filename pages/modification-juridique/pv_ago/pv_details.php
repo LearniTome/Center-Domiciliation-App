@@ -160,7 +160,7 @@ if ($viewId > 0):
     };
 ?>
 <div class="section-title-row">
-    <h2><?= e($pv['dossier_numero'] ?? '-') ?></h2>
+    <h2 class="text-info"><?= e($pv['dossier_numero'] ?? '-') ?></h2>
     <div>
         <a class="btn btn-back" href="<?= e(app_url('pv_ago')) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
     </div>
