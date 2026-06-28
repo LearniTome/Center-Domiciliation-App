@@ -4880,6 +4880,15 @@ input[data-bulk-checkbox] {
     gap: 3px;
 }
 
+.modal-panel:has(form[data-quick-create-form]) {
+    padding: 1rem;
+}
+
+.modal-panel:has(form[data-quick-create-form]) .modal-header {
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.4rem;
+}
+
 .modal-panel form[data-quick-create-form] .field span {
     font-size: 0.65rem;
 }
