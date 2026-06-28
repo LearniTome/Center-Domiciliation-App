@@ -23,6 +23,7 @@ $allowedPages = [
     'notifications', 'notifications-manage', 'notif-ajax',
     'modifications', 'cessions', 'cession', 'cession_dossier', 'cession_suivi',
     'pv_ago', 'pv_ago_wizard',
+    'pv-templates',
 ];
 
 $pageDir = [
@@ -80,6 +81,7 @@ $pageDir = [
     'notifications-manage' => 'configuration',
     'notif-ajax' => 'configuration',
     'setup' => 'configuration',
+    'pv-templates' => 'configuration',
 ];
 
 // Custom filenames for pages where the file != the page name
@@ -172,6 +174,7 @@ $pageTitleMap = [
     'cession_suivi' => 'Suivi administratif',
     'pv_ago' => 'PV Assemblee Generale Ordinaire',
     'pv_ago_wizard' => 'PV Assemblee Generale Ordinaire',
+    'pv-templates' => 'Modèles de résolutions PV',
 ];
 
 // Public pages without sidebar layout

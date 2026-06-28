@@ -38,6 +38,7 @@ $navPermissions = [
     'fonctions' => 'configuration.view',
     'activites' => 'configuration.view',
     'activites-ompic' => 'configuration.view',
+    'pv-templates' => 'pv_resolutions.view',
 ];
 
 function nav_item_visible(string $page, array $permMap): bool
@@ -110,6 +111,7 @@ $navSections = [
             ['page' => 'fonctions', 'label' => 'Fonctions', 'icon' => 'assignment'],
             ['page' => 'activites', 'label' => 'Activites', 'icon' => 'work'],
             ['page' => 'activites-ompic', 'label' => 'Activites Ompic', 'icon' => 'verified'],
+            ['page' => 'pv-templates', 'label' => 'Modèles de résolutions PV', 'icon' => 'playlist_add_check'],
         ],
     ],
 ];

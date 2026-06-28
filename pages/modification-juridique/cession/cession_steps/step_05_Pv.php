@@ -195,6 +195,17 @@ if ($needsTransform) {
 
 $defaultResolutions[] = ['title' => 'Pouvoirs pour formalités', 'content' => "Tous pouvoirs sont donnés à $cedantNom, pour effectuer toutes formalités de dépôt et d'inscription modificative auprès du greffe du tribunal de commerce, ainsi que toutes autres démarches requises par la loi."];
 
+// Load preconfig templates from DB
+$preconfigTemplates = [];
+if (($pdo ?? null) instanceof PDO) {
+    try {
+        $ptStmt = $pdo->query("SELECT id, title, content, category FROM pv_resolutions_templates ORDER BY sort_order ASC, title ASC");
+        $preconfigTemplates = $ptStmt->fetchAll();
+    } catch (PDOException) {
+        $preconfigTemplates = [];
+    }
+}
+
 $resolutions = $wizard['pv_resolutions'] ?? [];
 if (empty($resolutions)) {
     $resolutions = $defaultResolutions;
@@ -223,13 +234,19 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
 .recap-section h3 { font-size:0.92rem;font-weight:700;color:var(--primary);margin:0 0 8px; }
 .recap-header h2 { font-size:1.05rem;font-weight:700;color:var(--primary);text-transform:uppercase; }
 #pv-order-of-day li::marker { color:var(--primary);font-weight:600; }
+.pv-preconfig-wrap { position:relative;display:inline-block; }
+.pv-preconfig-menu { display:none;position:absolute;top:100%;left:0;min-width:320px;max-height:360px;overflow-y:auto;background:var(--bg-secondary);border:1px solid var(--line);border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:100;padding:4px 0; }
+.pv-preconfig-menu::-webkit-scrollbar { width:6px; }
+.pv-preconfig-menu::-webkit-scrollbar-track { background:transparent; }
+.pv-preconfig-menu::-webkit-scrollbar-thumb { background:var(--line);border-radius:2px; }
+.pv-preconfig-menu::-webkit-scrollbar-thumb:hover { background:var(--text-muted); }
+.pv-preconfig-menu a { display:block;padding:8px 14px;color:var(--text);text-decoration:none;font-size:0.85rem;border-bottom:1px solid var(--line);cursor:pointer; }
+.pv-preconfig-menu a:last-child { border-bottom:none; }
+.pv-preconfig-menu a:hover { background:rgba(74,108,247,0.08); }
+.pv-preconfig-menu .pv-preconfig-cat { padding:6px 14px 2px;font-size:0.7rem;font-weight:700;text-transform:uppercase;color:var(--text-muted);letter-spacing:0.04em;border-bottom:1px solid var(--line);background:var(--bg-secondary);position:sticky;top:0; }
 </style>
 
 <div class="stack">
-    <div class="section-header">
-        <h2>Procès-Verbal — Contenu modifiable</h2>
-    </div>
-
     <div class="recap-a4">
         <div class="recap-header">
             <h2><?= $pvTypeLabel ?></h2>
@@ -240,7 +257,7 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
                 <div class="item"><span class="label">Dénomination sociale</span><span class="value"><?= e($socData['societe_raison_sociale'] ?: '-') ?></span></div>
                 <div class="item"><span class="label">Forme juridique</span><span class="value"><?= e($socData['societe_forme_juridique'] ?: '-') ?></span></div>
                 <div class="item"><span class="label">Capital social</span><span class="value"><?= e(number_format($totalCapital, 2, ',', ' ')) ?> DH</span></div>
-                <div class="item"><span class="label">Siège social</span><span class="value"><?= e($socData['societe_adresse_siege'] ?: '-') ?></span></div>
+                <div class="item"><span class="label">Siège social</span><span class="value"><?= e($socData['societe_adresse_siege'] ?: $socData['societe_ville'] ?: '-') ?></span></div>
                 <div class="item"><span class="label">RC</span><span class="value"><?= e($socData['societe_rc'] ?: '-') ?> — Tribunal de <?= e($socData['societe_ville'] ?: '-') ?></span></div>
             </div>
         </div>
@@ -248,14 +265,14 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
         <div class="recap-section">
             <h3><?= $pvTitleFull ?></h3>
             <div class="recap-grid">
-                <div class="item"><span class="label">Date</span><span class="value"><?= e(format_date($wizard['cession_date'] ?? '')) ?></span></div>
-                <div class="item"><span class="label">Lieu</span><span class="value"><?= e($socData['societe_adresse_siege'] ?: '-') ?></span></div>
+                <div class="item"><span class="label">Date</span><span class="value"><?= e(format_date($wizard['cession_date'] ?: date('Y-m-d'))) ?></span></div>
+                <div class="item"><span class="label">Lieu</span><span class="value"><?= e($socData['societe_ville'] ?: $socData['societe_adresse_siege'] ?: '-') ?></span></div>
                 <div class="item"><span class="label">Président de séance</span><span class="value"><?= e($cedantNom ?: '-') ?></span></div>
             </div>
         </div>
 
         <div class="recap-section">
-            <p>L'an deux mille <?= date('Y') ?>, le <?= e(format_date($wizard['cession_date'] ?? '')) ?>, <?= $associeLabelFr ?> de la société <?= e($socData['societe_raison_sociale'] ?: '-') ?> <?= $reuniLieu ?>.</p>
+            <p>L'an deux mille <?= date('Y') ?>, le <?= e(format_date($wizard['cession_date'] ?: date('Y-m-d'))) ?>, <?= $associeLabelFr ?> de la société <?= e($socData['societe_raison_sociale'] ?: '-') ?> <?= $reuniLieu ?>.</p>
             <p>Après avoir constaté que toutes les dispositions légales et statutaires ont été respectées, <?= $vExamine ?> l'ordre du jour suivant :</p>
         </div>
 
@@ -311,6 +328,12 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
                 <button type="button" class="btn btn-secondary" id="pv-add-resolution">
                     <span class="material-symbols-outlined">add</span> Ajouter
                 </button>
+                <div class="pv-preconfig-wrap">
+                    <button type="button" class="btn btn-info" id="pv-preconfig-btn">
+                        <span class="material-symbols-outlined">playlist_add</span> Préconfiguré <span style="font-size:0.7em">▾</span>
+                    </button>
+                    <div class="pv-preconfig-menu" id="pv-preconfig-menu"></div>
+                </div>
                 <button type="button" class="btn btn-secondary" id="pv-add-ai-resolution" title="Ajouter une résolution générée par IA">
                     <span class="material-symbols-outlined">auto_awesome</span> Ajouter avec IA
                 </button>
@@ -334,6 +357,10 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
             </div>
         </div>
     </form>
+
+    <script>
+    window._pvPreconfig = <?= json_encode($preconfigTemplates, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    </script>
 
     <template id="pv-resolution-template">
         <div class="pv-edit-block" data-index="__IDX__">
@@ -363,7 +390,7 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
         <div class="recap-section">
             <h3><?= e($r['title'] ?: '(Sans titre)') ?></h3>
             <?php if (trim($r['content']) !== ''): ?>
-                <div class="pv-preview-block"><?= nl2br(e($r['content'])) ?></div>
+                <div class="pv-preview-block"><?= nl2br(preg_replace('/\*\*(.+?)\*\*/', '<strong>$1</strong>', e($r['content']))) ?></div>
             <?php else: ?>
                 <p class="help-text" style="font-style:italic;color:var(--text-muted)">(Non renseigné)</p>
             <?php endif; ?>
@@ -374,7 +401,7 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
             <h3>Clôture de la séance</h3>
             <p>Plus rien n'étant à l'ordre du jour, la séance est levée.</p>
             <div class="recap-grid" style="margin-top:1rem">
-                <div class="item"><span class="label">Fait à</span><span class="value"><?= e($socData['societe_ville'] ?: '-') ?>, le <?= e(format_date($wizard['cession_date'] ?? '')) ?></span></div>
+                <div class="item"><span class="label">Fait à</span><span class="value"><?= e($socData['societe_ville'] ?: '-') ?>, le <?= e(format_date($wizard['cession_date'] ?: date('Y-m-d'))) ?></span></div>
             </div>
             <p style="margin-top:1.5rem"><strong><?= $isSarlAu ? "L'Associé Unique" : "Les Associés" ?></strong></p>
             <p><?= e($cedantNom) ?></p>
@@ -504,5 +531,49 @@ document.addEventListener('input', function(e) {
         autoResize(e.target);
     }
 });
+
+// Preconfig dropdown
+(function() {
+    var preconfig = window._pvPreconfig || [];
+    var menu = document.getElementById('pv-preconfig-menu');
+    var btn = document.getElementById('pv-preconfig-btn');
+    if (!menu || !btn || !preconfig.length) return;
+
+    function buildMenu() {
+        menu.innerHTML = '';
+        var lastCat = '';
+        preconfig.forEach(function(item) {
+            if (item.category !== lastCat) {
+                var catDiv = document.createElement('div');
+                catDiv.className = 'pv-preconfig-cat';
+                catDiv.textContent = item.category === 'cession' ? 'Cession de parts' : 'Général';
+                menu.appendChild(catDiv);
+                lastCat = item.category;
+            }
+            var a = document.createElement('a');
+            a.textContent = item.title;
+            a.addEventListener('click', function(e) {
+                e.preventDefault();
+                $createResolutionBlock(item.title, item.content);
+                menu.style.display = 'none';
+            });
+            menu.appendChild(a);
+        });
+    }
+    buildMenu();
+
+    btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    });
+
+    document.addEventListener('click', function() {
+        menu.style.display = 'none';
+    });
+
+    menu.addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+})();
 </script>
 <?php endif; ?>

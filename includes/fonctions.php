@@ -1512,6 +1512,7 @@ function page_display_name(string $page): string
         'modifications' => 'Modifications juridiques',
         'notifications-manage' => 'Gestion notifications',
         'connexion' => 'Connexion',
+        'pv-templates' => 'Modèles de résolutions PV',
     ];
     return $map[$base] ?? $page;
 }
