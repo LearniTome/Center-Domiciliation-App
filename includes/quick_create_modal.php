@@ -34,6 +34,35 @@ $modalKey = $quickCreateModalKey ?? 'quick-create';
                         <h3 class="section-title"><?= e($field['label'] ?? '') ?></h3>
                     <?php elseif (($field['type'] ?? '') === 'title-secondary'): ?>
                         <h4 style="grid-column:1/-1;font-size:0.8rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-secondary);margin:8px 0 2px;padding:0"><?= e($field['label'] ?? '') ?></h4>
+                    <?php elseif (($field['type'] ?? '') === 'dynamic-select' && isset($field['options'])): ?>
+                        <h3 class="section-title"><?= e($field['label'] ?? '') ?></h3>
+                        <div data-dynamic-select="<?= e($field['name'] ?? '') ?>" style="grid-column:1/-1">
+                            <div data-dynamic-item style="display:flex;gap:6px;margin-bottom:4px">
+                                <select style="flex:1" data-dynamic-option>
+                                    <option value="">Selectionner</option>
+                                    <?php foreach ($field['options'] as $val => $label): ?>
+                                        <?php $optVal = is_int($val) ? $label : $val; ?>
+                                        <option value="<?= e((string) $optVal) ?>"><?= e($label) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <button type="button" class="btn-icon danger" data-dynamic-remove style="flex-shrink:0" tabindex="-1" title="Retirer"><span class="material-symbols-outlined">close</span></button>
+                            </div>
+                        </div>
+                        <div style="grid-column:1/-1;display:flex;gap:6px">
+                            <button type="button" class="btn" data-dynamic-add="<?= e($field['name'] ?? '') ?>" style="padding:3px 8px;font-size:0.7rem"><span class="material-symbols-outlined" style="font-size:14px">add</span> Ajouter une activite</button>
+                        </div>
+                        <template data-dynamic-template>
+                            <div data-dynamic-item style="display:flex;gap:6px;margin-bottom:4px">
+                                <select style="flex:1" data-dynamic-option>
+                                    <option value="">Selectionner</option>
+                                    <?php foreach ($field['options'] as $val => $label): ?>
+                                        <?php $optVal = is_int($val) ? $label : $val; ?>
+                                        <option value="<?= e((string) $optVal) ?>"><?= e($label) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <button type="button" class="btn-icon danger" data-dynamic-remove style="flex-shrink:0" tabindex="-1" title="Retirer"><span class="material-symbols-outlined">close</span></button>
+                            </div>
+                        </template>
                     <?php else: ?>
                     <label class="field<?= !empty($field['full']) ? ' full' : '' ?>">
                         <span><?= e($field['label'] ?? '') ?></span>
@@ -45,35 +74,6 @@ $modalKey = $quickCreateModalKey ?? 'quick-create';
                                     <option value="<?= e((string) $optVal) ?>"><?= e($label) ?></option>
                                 <?php endforeach; ?>
                             </select>
-                        <?php elseif (($field['type'] ?? 'text') === 'dynamic-select' && isset($field['options'])): ?>
-                            <div style="grid-column:1/-1">
-                                <span style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-secondary);display:block;margin-bottom:4px"><?= e($field['label'] ?? '') ?></span>
-                                <div data-dynamic-select="<?= e($field['name'] ?? '') ?>">
-                                    <div data-dynamic-item style="display:flex;gap:6px;margin-bottom:4px">
-                                        <select style="flex:1" data-dynamic-option>
-                                            <option value="">Selectionner</option>
-                                            <?php foreach ($field['options'] as $val => $label): ?>
-                                                <?php $optVal = is_int($val) ? $label : $val; ?>
-                                                <option value="<?= e((string) $optVal) ?>"><?= e($label) ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <button type="button" class="btn-icon danger" data-dynamic-remove style="flex-shrink:0" tabindex="-1" title="Retirer"><span class="material-symbols-outlined">close</span></button>
-                                    </div>
-                                </div>
-                                <button type="button" class="btn" data-dynamic-add="<?= e($field['name'] ?? '') ?>" style="margin-top:2px;padding:3px 8px;font-size:0.7rem"><span class="material-symbols-outlined" style="font-size:14px">add</span> Ajouter une activite</button>
-                                <template data-dynamic-template>
-                                    <div data-dynamic-item style="display:flex;gap:6px;margin-bottom:4px">
-                                        <select style="flex:1" data-dynamic-option>
-                                            <option value="">Selectionner</option>
-                                            <?php foreach ($field['options'] as $val => $label): ?>
-                                                <?php $optVal = is_int($val) ? $label : $val; ?>
-                                                <option value="<?= e((string) $optVal) ?>"><?= e($label) ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <button type="button" class="btn-icon danger" data-dynamic-remove style="flex-shrink:0" tabindex="-1" title="Retirer"><span class="material-symbols-outlined">close</span></button>
-                                    </div>
-                                </template>
-                            </div>
                         <?php elseif (($field['type'] ?? 'text') === 'textarea'): ?>
                             <textarea name="<?= e($field['name'] ?? '') ?>" <?= !empty($field['required']) ? 'required' : '' ?> <?= !empty($field['rows']) ? 'rows="' . (int) $field['rows'] . '"' : '' ?>></textarea>
                         <?php else: ?>
