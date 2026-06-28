@@ -160,13 +160,7 @@ if ($viewId > 0):
     };
 ?>
 <div class="section-title-row">
-    <h2>PV AGO n&deg;<?= e($pv['dossier_numero'] ?? '-') ?></h2>
-    <div class="table-actions">
-        <a class="btn btn-back" href="<?= e(app_url('pv_ago')) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
-        <?php if (has_permission('pv_ago.create')): ?>
-        <a class="btn btn-next" href="<?= e(app_url('pv_ago_wizard')) ?>"><span class="material-symbols-outlined">add</span> Nouveau PV AGO</a>
-        <?php endif; ?>
-    </div>
+    <a class="btn btn-back" href="<?= e(app_url('pv_ago')) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
 </div>
 
 <section class="stats small stats-bottom-margin">
