@@ -6,18 +6,29 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 ## Architecture
 - **Routing**: Single front controller `index.php?page=` with an allowlist of pages + `$pageDir` mapping → subdirectory
 - **Globals available in pages**: `$pdo` (PDO|null), `$config` (app config), `$flash` (?array), `$dbError` (?string), `$pageTitle` (string)
-- **`$pageActions` (string)**: Définir dans `index.php` AVANT `require entete.php` pour afficher des boutons d'action alignés à droite du titre dans le `.page-header`. Exemple :
-  ```php
-  $pageActions = '<a class="btn btn-next" href="' . e(app_url('ma_page')) . '"><span class="material-symbols-outlined">add</span> Nouvel élément</a>';
-  ```
-  Pour l'utiliser, ajouter le bloc dans `index.php` avant `require entete.php` :
-  ```php
-  $pageActions = '';
-  if ($page === 'ma-page' && function_exists('has_permission') && has_permission('ma_page.create')) {
-      $pageActions = '<a class="btn btn-next" href="' . e(app_url('ma_page_create')) . '"><span class="material-symbols-outlined">add</span> Nouveau</a>';
-  }
-  ```
-  Ne PAS mettre de titre H2 en double dans la page — le H1 du `page-header` suffit. Le `.page-header` est en `display: flex; justify-content: space-between` ; le premier `div` contient le titre, le second contient `$pageActions`. CSS : `.page-header > div:first-child` a `flex: 1`, `.table-actions` dans le header garde `flex: 0 1 auto`.
+- **Boutons alignés à droite du titre (inline, jamais en dessous)**: Les boutons doivent TOUJOURS être sur la même ligne que le titre, alignés à droite. Ne JAMAIS les placer juste après le texte du titre (nouvelle ligne).
+  - **Niveau H1 (`.page-header`)**: Utiliser `$pageActions` dans `index.php` AVANT `require entete.php`. Le `.page-header` est `display: flex; justify-content: space-between` ; le premier `div` contient le H1, le second contient `$pageActions`. Exemple :
+    ```php
+    $pageActions = '<a class="btn btn-next" href="' . e(app_url('ma_page')) . '"><span class="material-symbols-outlined">add</span> Nouvel élément</a>';
+    ```
+    Ajouter le bloc dans `index.php` avant `require entete.php` :
+    ```php
+    $pageActions = '';
+    if ($page === 'ma-page' && function_exists('has_permission') && has_permission('ma_page.create')) {
+        $pageActions = '<a class="btn btn-next" href="' . e(app_url('ma_page_create')) . '"><span class="material-symbols-outlined">add</span> Nouveau</a>';
+    }
+    ```
+    CSS : `.page-header > div:first-child` a `flex: 1`, `.table-actions` dans le header garde `flex: 0 1 auto`.
+  - **Niveau section (H2/H3 dans la page)**: Utiliser `<div class="section-title-row">` contenant le titre ET les boutons inline. `.section-title-row` utilise `display: flex; justify-content: space-between; align-items: center`. Ne PAS mettre le titre dans un `<div>` séparé du bloc des actions — tout doit être dans le même `.section-title-row`. Exemple :
+    ```html
+    <div class="section-title-row">
+        <h2>Mon titre</h2>
+        <div class="table-actions">
+            <a class="btn btn-next" href="...">Bouton</a>
+        </div>
+    </div>
+    ```
+  - Ne PAS mettre de titre H2 en double dans la page — le H1 du `page-header` suffit.
 - **Page files** (`pages/{group}/{page}.php`): Self-contained — PHP logic at top (POST handling, data fetching), HTML at bottom. Pages are grouped by sidebar section:
   - `accueil/` — dashboard, notifications
   - `dossiers/` — sociétés, associés, contrats, collaborateurs

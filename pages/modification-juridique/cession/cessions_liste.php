@@ -109,7 +109,7 @@ if (($pdo ?? null) instanceof PDO) {
             <span class="page-count"><?= count($cessions) ?> enregistrement(s)</span>
             <div class="table-actions">
                 <?php if (has_permission('cessions.create')): ?>
-                <button class="btn btn-next" type="button" data-quick-create-btn><span class="material-symbols-outlined">add</span> Nouvelle cession</button>
+                <a class="btn btn-next" href="<?= e(app_url('cession')) ?>"><span class="material-symbols-outlined">add</span> Nouvelle cession</a>
                 <?php endif; ?>
                 <button class="btn btn-secondary" type="button" data-col-toggle-btn><span class="material-symbols-outlined">view_column</span> Colonnes <span class="col-toggle-count" data-col-count>0/0</span></button>
                 <a class="btn btn-info" href="<?= e(app_url('cessions', ['export' => 'csv', 'q' => $query])) ?>"><span class="material-symbols-outlined">download</span> CSV</a>

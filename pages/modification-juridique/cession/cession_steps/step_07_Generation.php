@@ -24,28 +24,35 @@ if (is_post() && $step === 7) {
             // Create société if new
             if ($wizard['mode'] === 'nouvelle' && $wizard['societe_id'] <= 0) {
                 $soc = $wizard['societe'];
-$stmt = $pdo->prepare('INSERT INTO societes (societe_raison_sociale, societe_forme_juridique, societe_source, societe_ice, societe_rc, societe_if, societe_tp, societe_cnss, societe_capital, societe_part_social, societe_valeur_nominale, societe_adresse_siege, societe_ville, societe_tribunal, societe_tribunal_type, societe_email, societe_telephone, societe_activites_statuts, created_by) VALUES (:raison, :forme, :source, :ice, :rc, :ifis, :tp, :cnss, :capital, :parts, :vnom, :adr, :ville, :trib, :trib_type, :email, :tel, :activites, :created_by)');
+$stmt = $pdo->prepare('INSERT INTO societes (societe_raison_sociale, societe_forme_juridique, societe_source, societe_ice, societe_date_ice, societe_date_exp_cert_neg, societe_rc, societe_if, societe_tp, societe_cnss, societe_capital, societe_part_social, societe_valeur_nominale, societe_adresse_siege, societe_ville, societe_tribunal, societe_tribunal_type, societe_email, societe_telephone, societe_dossier, societe_type_generation, societe_procedure_creation, societe_mode_depot, societe_activites_statuts, societe_activites_ompic, created_by) VALUES (:raison, :forme, :source, :ice, :date_ice, :date_exp_cert_neg, :rc, :ifis, :tp, :cnss, :capital, :parts, :vnom, :adr, :ville, :trib, :trib_type, :email, :tel, :dossier, :type_gen, :proc_creation, :mode_depot, :activites, :activites_ompic, :created_by)');
 $stmt->execute([
     'raison' => $soc['societe_raison_sociale'] ?? '',
     'forme' => $soc['societe_forme_juridique'] ?? '',
     'source' => 'cession',
     'ice' => $soc['societe_ice'] ?? '',
+    'date_ice' => $soc['societe_date_ice'] ?: null,
+    'date_exp_cert_neg' => $soc['societe_date_exp_cert_neg'] ?: null,
     'rc' => $soc['societe_rc'] ?? '',
     'ifis' => $soc['societe_if'] ?? '',
     'tp' => $soc['societe_tp'] ?? '',
     'cnss' => $soc['societe_cnss'] ?? '',
-                    'capital' => !empty($soc['societe_capital']) ? parse_money($soc['societe_capital']) : null,
-                    'parts' => !empty($soc['societe_part_social']) ? (int) $soc['societe_part_social'] : null,
-                    'vnom' => !empty($soc['societe_valeur_nominale']) ? parse_money($soc['societe_valeur_nominale']) : null,
-                    'adr' => $soc['societe_adresse_siege'] ?? '',
-                    'ville' => $soc['societe_ville'] ?? '',
-                    'trib' => $soc['societe_tribunal'] ?? '',
-                    'trib_type' => $soc['societe_tribunal_type'] ?? '',
-                    'email' => $soc['societe_email'] ?? '',
-                    'tel' => $soc['societe_telephone'] ?? '',
-                    'activites' => $soc['societe_activites_statuts'] ?? '',
-                    'created_by' => ($user = current_user()) ? (int) $user['id'] : null,
-                ]);
+    'capital' => !empty($soc['societe_capital']) ? parse_money($soc['societe_capital']) : null,
+    'parts' => !empty($soc['societe_part_social']) ? (int) $soc['societe_part_social'] : null,
+    'vnom' => !empty($soc['societe_valeur_nominale']) ? parse_money($soc['societe_valeur_nominale']) : null,
+    'adr' => $soc['societe_adresse_siege'] ?? '',
+    'ville' => $soc['societe_ville'] ?? '',
+    'trib' => $soc['societe_tribunal'] ?? '',
+    'trib_type' => $soc['societe_tribunal_type'] ?? '',
+    'email' => $soc['societe_email'] ?? '',
+    'tel' => $soc['societe_telephone'] ?? '',
+    'dossier' => $soc['societe_dossier'] ?? '',
+    'type_gen' => $soc['societe_type_generation'] ?? 'cession',
+    'proc_creation' => $soc['societe_procedure_creation'] ?? '',
+    'mode_depot' => $soc['societe_mode_depot'] ?? '',
+    'activites' => $soc['societe_activites_statuts'] ?? '',
+    'activites_ompic' => $soc['societe_activites_ompic'] ?? '',
+    'created_by' => ($user = current_user()) ? (int) $user['id'] : null,
+]);
                 $newSocieteId = (int) $pdo->lastInsertId();
                 $wizard['societe_id'] = $newSocieteId;
 

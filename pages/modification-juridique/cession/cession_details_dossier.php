@@ -168,9 +168,11 @@ $sourceLabels = [
 
 <?php if ($suiviEtapes && has_permission('cessions.suivi')): ?>
 <article class="card">
-    <div class="section-header">
-        <h3>Suivi administratif</h3>
-        <a class="btn btn-info" href="<?= e(app_url('cession_suivi', ['id' => $cessionId])) ?>"><span class="material-symbols-outlined">open_in_new</span> Voir le suivi complet</a>
+    <div class="section-title-row">
+        <h3 style="color:var(--success)">Suivi administratif</h3>
+        <div class="table-actions">
+            <a class="btn btn-info" href="<?= e(app_url('cession_suivi', ['id' => $cessionId])) ?>"><span class="material-symbols-outlined">open_in_new</span> Voir le suivi complet</a>
+        </div>
     </div>
     <div class="progress-bar" style="height:4px;background:var(--line);border-radius:2px;margin-bottom:.75rem;overflow:hidden">
         <div style="height:100%;width:<?= $suiviProgress ?>%;background:var(--success);border-radius:2px;transition:width .3s ease"></div>
