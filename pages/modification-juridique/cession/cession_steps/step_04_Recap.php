@@ -290,10 +290,10 @@ if ($step === 4):
                 </div>
             </div>
 
-            <form method="post" class="step-4-controls table-actions" style="margin-top:0.75rem">
+            <form method="post" class="step-4-controls" style="margin-top:0.75rem">
                 <?= csrf_input() ?>
                 <input type="hidden" name="step" value="4">
-                <div style="display:flex;gap:8px;margin-left:auto">
+                <div style="display:flex;gap:8px">
                     <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="material-symbols-outlined">arrow_back</span> Retour</button>
                     <button class="btn btn-next" type="submit" name="nav_action" value="next"><span class="material-symbols-outlined">arrow_forward</span> Suivant</button>
                 </div>

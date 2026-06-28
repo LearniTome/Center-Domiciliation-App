@@ -3200,8 +3200,15 @@ tr[data-coverage], .row-mapped {
 .recap-a4 {
     background: var(--surface);
     box-shadow: 0 2px 12px rgba(0,0,0,0.3);
-    padding: 2rem 2.5rem; margin-bottom: 1.5rem;
+    padding: 2rem 2.5rem; margin: 0 auto 1.5rem;
     max-width: 210mm;
+}
+
+.step-4-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
 }
 .recap-a4 .recap-header {
     text-align: left; border-bottom: 2px solid var(--text);
@@ -3258,6 +3265,7 @@ tr[data-coverage], .row-mapped {
 .recap-a4.recap-pdf-mode .recap-header h2 { color: #1a4b8c !important; }
 @media print {
     .sidebar, .sidebar-toggle, .top-bar, .page-header,
+    .section-header, .step-4-controls,
     .pv-actions, .footer-actions, .wizard-steps, .wizard-info,
     .section-header, .step-4-controls,
     nav, header, .shell > nav, .flash { display: none !important; }
