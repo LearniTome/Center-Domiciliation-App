@@ -278,11 +278,11 @@ if (($pdo ?? null) instanceof PDO) {
         ['name' => 'collaborateur_adresse', 'label' => 'Adresse', 'type' => 'textarea', 'full' => true],
         ['type' => 'title', 'label' => 'Identifiants legaux'],
         ['name' => 'collaborateur_ice', 'label' => 'ICE', 'type' => 'text'],
-        ['name' => 'collaborateur_code', 'label' => 'Code', 'type' => 'text'],
         ['name' => 'collaborateur_tp', 'label' => 'TP', 'type' => 'text'],
         ['name' => 'collaborateur_rc', 'label' => 'RC', 'type' => 'text'],
         ['name' => 'collaborateur_if', 'label' => 'IF', 'type' => 'text'],
         ['type' => 'title', 'label' => 'Informations'],
+        ['name' => 'collaborateur_code', 'label' => 'Code', 'type' => 'text'],
         ['name' => 'statut', 'label' => 'Statut', 'type' => 'select', 'options' => $collabStatutOptions],
     ];
     require __DIR__ . '/../../includes/quick_create_modal.php';
