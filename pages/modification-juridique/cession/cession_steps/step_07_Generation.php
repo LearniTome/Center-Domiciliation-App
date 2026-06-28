@@ -309,14 +309,16 @@ $stmt->execute([
             require_once __DIR__ . '/../../../../src/rendu_document.php';
             $context = DocumentRenderer::buildContextFromCession($pdo, $cessionId);
             $pvResolutions = $wizard['pv_resolutions'] ?? [];
+            $docxBr = '</w:t></w:r><w:r><w:rPr><w:sz w:val="22"/><w:szCs w:val="22"/></w:rPr><w:br/><w:t xml:space="preserve">';
             if (!empty($pvResolutions) && is_array($pvResolutions)) {
                 $orderItems = [];
                 foreach ($pvResolutions as $i => $r) {
                     $orderItems[] = ($i + 1) . '. ' . ($r['title'] ?? '');
-                    $context['PV_RESOLUTION_' . ($i + 1)] = $r['content'] ?? '';
+                    $content = str_replace("\n", $docxBr, $r['content'] ?? '');
+                    $context['PV_RESOLUTION_' . ($i + 1)] = $content;
                     $context['PV_TITLE_' . ($i + 1)] = $r['title'] ?? '';
                 }
-                $context['PV_ORDER_ITEMS'] = implode("\n", $orderItems);
+                $context['PV_ORDER_ITEMS'] = implode($docxBr, $orderItems);
             } else {
                 $context['PV_ORDER_ITEMS'] = '';
             }
@@ -470,13 +472,15 @@ $stmt->execute([
                 'content' => "Tous pouvoirs sont donnés à $autoCedant, pour effectuer toutes formalités de dépôt et d'inscription modificative auprès du greffe du tribunal de commerce, ainsi que toutes autres démarches requises par la loi."
             ];
         }
+        $docxBr = '</w:t></w:r><w:r><w:rPr><w:sz w:val="22"/><w:szCs w:val="22"/></w:rPr><w:br/><w:t xml:space="preserve">';
         $orderItems = [];
         foreach ($pvResolutions as $i => $r) {
             $orderItems[] = ($i + 1) . '. ' . ($r['title'] ?? '');
-            $context['PV_RESOLUTION_' . ($i + 1)] = $r['content'] ?? '';
+            $content = str_replace("\n", $docxBr, $r['content'] ?? '');
+            $context['PV_RESOLUTION_' . ($i + 1)] = $content;
             $context['PV_TITLE_' . ($i + 1)] = $r['title'] ?? '';
         }
-        $context['PV_ORDER_ITEMS'] = implode("\n", $orderItems);
+        $context['PV_ORDER_ITEMS'] = implode($docxBr, $orderItems);
         for ($i = count($pvResolutions) + 1; $i <= 10; $i++) {
             $context['PV_RESOLUTION_' . $i] = '';
             $context['PV_TITLE_' . $i] = '';
