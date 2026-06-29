@@ -3635,6 +3635,12 @@ tr[data-coverage], .row-mapped {
 .dash-action-tpl:hover { border-color:var(--info); background:rgba(156,39,176,0.04); }
 .dash-action-cfg .material-symbols-outlined { color:var(--warning); }
 .dash-action-cfg:hover { border-color:var(--warning); background:rgba(255,107,53,0.04); }
+.dash-action-cession .material-symbols-outlined { color:#d63031; }
+.dash-action-cession:hover { border-color:#d63031; background:rgba(214,48,49,0.04); }
+.dash-action-pv .material-symbols-outlined { color:#6c5ce7; }
+.dash-action-pv:hover { border-color:#6c5ce7; background:rgba(108,92,231,0.04); }
+.dash-action-suivi .material-symbols-outlined { color:#00b894; }
+.dash-action-suivi:hover { border-color:#00b894; background:rgba(0,184,148,0.04); }
 
 .dash-metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-bottom:0.6rem; }
 .dash-metric { display:flex; align-items:center; gap:8px; padding:8px; border:1px solid var(--line); border-radius:var(--radius); background:var(--panel); transition:border-color .2s; }

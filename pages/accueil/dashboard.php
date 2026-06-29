@@ -463,6 +463,21 @@ if ($isConnected) {
         <strong>Creer un dossier</strong>
         <small><?= $incompletsCount ?> dossiers incomplets</small>
     </a>
+    <a class="dash-action dash-action-cession" href="<?= e(app_url('cession')) ?>">
+        <span class="material-symbols-outlined">transfer_within_a_station</span>
+        <strong>Ajouter une cession</strong>
+        <small><?= $cessionsCount ?> existantes</small>
+    </a>
+    <a class="dash-action dash-action-pv" href="<?= e(app_url('pv_ago_wizard')) ?>">
+        <span class="material-symbols-outlined">groups</span>
+        <strong>Remplir un PV AGO</strong>
+        <small><?= $pvAgoCount ?> existants</small>
+    </a>
+    <a class="dash-action dash-action-suivi" href="<?= e(app_url('cession_suivi')) ?>">
+        <span class="material-symbols-outlined">checklist</span>
+        <strong>Suivi administratif</strong>
+        <small><?= $suiviCount ?> dossiers</small>
+    </a>
     <?php endif; ?>
     <?php if (has_permission('collaborateurs.create')): ?>
     <a class="dash-action dash-action-collab" href="<?= e(app_url('collaborateur')) ?>">
