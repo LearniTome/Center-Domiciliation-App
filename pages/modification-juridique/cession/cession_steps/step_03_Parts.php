@@ -391,7 +391,7 @@ if ($step === 3):
                 <div class="field"><label>Email</label><input type="email" name="cessionnaire_email[<?= $partIndex ?>]" value="<?= e($part['cessionnaire_email'] ?? '') ?>"></div>
                 <div class="field"><label>Qualité</label><select name="cessionnaire_qualite[<?= $partIndex ?>]"><option value="">-- Sélectionnez --</option><?php foreach ($qualitesAssocieOptions as $q): ?><option value="<?= e($q) ?>" <?= ($part['cessionnaire_qualite'] ?? '') === $q ? 'selected' : '' ?>><?= e($q) ?></option><?php endforeach; ?></select></div>
             </div>
-            <div class="field" style="margin-top:8px"><label>Adresse</label><textarea name="cessionnaire_adresse[<?= $partIndex ?>]" rows="2"><?= e($part['cessionnaire_adresse'] ?? '') ?></textarea></div>
+            <div class="field" style="margin-top:8px"><label>Adresse</label><textarea name="cessionnaire_adresse[<?= $partIndex ?>]" rows="2" style="min-height:2.8em;padding:4px 8px"><?= e($part['cessionnaire_adresse'] ?? '') ?></textarea></div>
         </div>
 
         <div class="cessionnaire-existant" style="display:<?= $cessIsExistant ? 'block' : 'none' ?>">
@@ -548,7 +548,7 @@ if ($step === 3):
                 <div class="field"><label>Email</label><input type="email" name="cessionnaire_email[0]" value=""></div>
                 <div class="field"><label>Qualité</label><select name="cessionnaire_qualite[0]"><option value="">-- Sélectionnez --</option><?php foreach ($qualitesAssocieOptions as $q): ?><option value="<?= e($q) ?>"><?= e($q) ?></option><?php endforeach; ?></select></div>
             </div>
-            <div class="field" style="margin-top:8px"><label>Adresse</label><textarea name="cessionnaire_adresse[0]" rows="2"></textarea></div>
+            <div class="field" style="margin-top:8px"><label>Adresse</label><textarea name="cessionnaire_adresse[0]" rows="2" style="min-height:2.8em;padding:4px 8px"></textarea></div>
         </div>
 
         <div class="cessionnaire-existant" style="display:none">
