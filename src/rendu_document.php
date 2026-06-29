@@ -193,6 +193,7 @@ class DocumentRenderer
         $xml = $this->processAssocieLoop($xml, $context);
         $xml = $this->processActivityLoop($xml, $context);
         $xml = $this->processCessionPartsLoop($xml, $context);
+        $xml = $this->processPvResolutionsLoop($xml, $context);
         return $xml;
     }
 
@@ -251,6 +252,25 @@ class DocumentRenderer
                 if ($i < count($associes) - 1) {
                     $result .= "\n";
                 }
+            }
+            return $result;
+        }, $xml);
+    }
+
+    private function processPvResolutionsLoop(string $xml, array $context): string
+    {
+        $pattern = '/\{\%p\s+for\s+r\s+in\s+pv_resolutions\s*\%\}(.*?)\{\%p\s+endfor\s*\%\}/s';
+        return preg_replace_callback($pattern, function ($matches) use ($context) {
+            $block = $matches[1];
+            $resolutions = $context['pv_resolutions'] ?? [];
+            $result = '';
+            foreach ($resolutions as $i => $r) {
+                $item = $block;
+                $title = 'Résolution ' . ($i + 1) . ' : ' . ($r['title'] ?? '');
+                $content = str_replace("\n", '</w:t></w:r><w:r><w:rPr><w:sz w:val="22"/><w:szCs w:val="22"/></w:rPr><w:br/><w:t xml:space="preserve">', $r['content'] ?? '');
+                $item = str_replace('{{ r.TITLE }}', $title, $item);
+                $item = str_replace('{{ r.CONTENT }}', $content, $item);
+                $result .= $item;
             }
             return $result;
         }, $xml);

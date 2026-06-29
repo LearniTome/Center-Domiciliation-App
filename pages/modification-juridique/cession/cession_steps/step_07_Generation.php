@@ -351,10 +351,7 @@ $stmt->execute([
             } else {
                 $context['PV_ORDER_ITEMS'] = '';
             }
-            for ($i = count($pvResolutions ?? []) + 1; $i <= 10; $i++) {
-                $context['PV_RESOLUTION_' . $i] = '';
-                $context['PV_TITLE_' . $i] = '';
-            }
+            $context['pv_resolutions'] = $pvResolutions;
             $renderer = new DocumentRenderer($path, $outputDir);
             $docxPath = $renderer->render($context, $outName);
             $pdfPath = $renderer->tryConvertToPdf($docxPath);
@@ -502,18 +499,7 @@ $stmt->execute([
             ];
         }
         $docxBr = '</w:t></w:r><w:r><w:rPr><w:sz w:val="22"/><w:szCs w:val="22"/></w:rPr><w:br/><w:t xml:space="preserve">';
-        $orderItems = [];
-        foreach ($pvResolutions as $i => $r) {
-            $orderItems[] = 'Résolution ' . ($i + 1) . ' : ' . ($r['title'] ?? '');
-            $content = str_replace("\n", $docxBr, $r['content'] ?? '');
-            $context['PV_RESOLUTION_' . ($i + 1)] = $content;
-            $context['PV_TITLE_' . ($i + 1)] = 'Résolution ' . ($i + 1) . ' : ' . ($r['title'] ?? '');
-        }
-        $context['PV_ORDER_ITEMS'] = implode($docxBr, $orderItems);
-        for ($i = count($pvResolutions) + 1; $i <= 10; $i++) {
-            $context['PV_RESOLUTION_' . $i] = '';
-            $context['PV_TITLE_' . $i] = '';
-        }
+        $context['pv_resolutions'] = $pvResolutions;
 
         $templatesConfig = require __DIR__ . '/../../../../config/templates.php';
         $mapping = $templatesConfig['template_mapping']['cession'] ?? [];
