@@ -281,7 +281,7 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
         </div>
 
         <div class="recap-section">
-            <p>L'an deux mille <?= date('Y') ?>, le <?= e(format_date($wizard['cession_date'] ?: date('Y-m-d'))) ?>, <?= $associeLabelFr ?> de la société <?= e($socData['societe_raison_sociale'] ?: '-') ?> <?= $reuniLieu ?>.</p>
+            <p>L'an <?= nombre_en_lettres((int) date('Y')) ?>, le <?= e(format_date($wizard['cession_date'] ?: date('Y-m-d'))) ?>, <?= $associeLabelFr ?> de la société <?= e($socData['societe_raison_sociale'] ?: '-') ?> <?= $reuniLieu ?>.</p>
             <p>Après avoir constaté que toutes les dispositions légales et statutaires ont été respectées, <?= $vExamine ?> l'ordre du jour suivant :</p>
         </div>
 
