@@ -10,13 +10,15 @@ if (is_post() && $step === 2) {
     }
 
     $wizard['associes'] = [];
-    $noms = $_POST['associe_nom_complet'] ?? [];
+    $noms = $_POST['associe_nom'] ?? [];
+    $prenoms = $_POST['associe_prenom'] ?? [];
     foreach ($noms as $i => $nom) {
         $nom = trim((string) $nom);
-        if ($nom === '') continue;
+        $prenom = trim((string) ($prenoms[$i] ?? ''));
+        if ($nom === '' && $prenom === '') continue;
         $wizard['associes'][] = [
             'associe_civilite' => trim((string) ($_POST['associe_civilite'][$i] ?? 'M.')),
-            'associe_nom_complet' => $nom,
+            'associe_nom_complet' => trim($prenom . ' ' . $nom),
             'associe_cin' => trim((string) ($_POST['associe_cin'][$i] ?? '')),
             'associe_date_naissance' => trim((string) ($_POST['associe_date_naissance'][$i] ?? '')),
             'associe_lieu_naissance' => trim((string) ($_POST['associe_lieu_naissance'][$i] ?? '')),
@@ -144,9 +146,14 @@ if ($step === 2):
                             <option value="Mlle" <?= ($assoc['associe_civilite'] ?? '') === 'Mlle' ? 'selected' : '' ?>>Mlle</option>
                         </select>
                     </label>
+                    <?php $_np = explode(' ', $assoc['associe_nom_complet'] ?? '', 2); ?>
                     <label class="field">
-                        <span>Nom complet *</span>
-                        <input type="text" name="associe_nom_complet[<?= $ai ?>]" required value="<?= e($assoc['associe_nom_complet'] ?? '') ?>">
+                        <span>Prenom *</span>
+                        <input type="text" name="associe_prenom[<?= $ai ?>]" required value="<?= e($_np[0] ?? '') ?>">
+                    </label>
+                    <label class="field">
+                        <span>Nom *</span>
+                        <input type="text" name="associe_nom[<?= $ai ?>]" required value="<?= e($_np[1] ?? $_np[0] ?? '') ?>">
                     </label>
                     <label class="field">
                         <span>CIN</span>
@@ -233,8 +240,12 @@ if ($step === 2):
                         </select>
                     </label>
                     <label class="field">
-                        <span>Nom complet *</span>
-                        <input type="text" name="associe_nom_complet[0]" required>
+                        <span>Prenom *</span>
+                        <input type="text" name="associe_prenom[0]" required>
+                    </label>
+                    <label class="field">
+                        <span>Nom *</span>
+                        <input type="text" name="associe_nom[0]" required>
                     </label>
                     <label class="field">
                         <span>CIN</span>
@@ -322,8 +333,12 @@ if ($step === 2):
                     </select>
                 </label>
                 <label class="field">
-                    <span>Nom complet</span>
-                    <input data-field-name="associe_nom_complet" required>
+                    <span>Prenom</span>
+                    <input data-field-name="associe_prenom" required>
+                </label>
+                <label class="field">
+                    <span>Nom</span>
+                    <input data-field-name="associe_nom" required>
                 </label>
                 <label class="field">
                     <span>CIN</span>
@@ -613,7 +628,8 @@ if ($step === 2):
                 }
                 var nom = randFrom(hommes);
                 var prenom = randFrom(prenoms);
-                card.querySelector('[name^="associe_nom_complet"]') && (card.querySelector('[name^="associe_nom_complet"]').value = prenom + ' ' + nom);
+                card.querySelector('[name^="associe_prenom"]') && (card.querySelector('[name^="associe_prenom"]').value = prenom);
+                card.querySelector('[name^="associe_nom"]') && (card.querySelector('[name^="associe_nom"]').value = nom);
                 card.querySelector('[name^="associe_cin"]') && (card.querySelector('[name^="associe_cin"]').value = 'AB' + randInt(100000, 999999));
                 card.querySelector('[name^="associe_date_naissance"]') && (card.querySelector('[name^="associe_date_naissance"]').value = randDate(new Date(1960, 0, 1), new Date(1995, 11, 31)));
                 var ln = card.querySelector('[name^="associe_lieu_naissance"]');
