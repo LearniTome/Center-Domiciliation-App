@@ -190,9 +190,9 @@ if ($step === 2):
                         <span>Email</span>
                         <input type="email" name="associe_email[<?= $ai ?>]" value="<?= e($assoc['associe_email'] ?? '') ?>">
                     </label>
-                    <label class="field">
+                    <label class="field full">
                         <span>Adresse</span>
-                        <textarea name="associe_adresse[<?= $ai ?>]" rows="2"><?= e($assoc['associe_adresse'] ?? '') ?></textarea>
+                        <textarea name="associe_adresse[<?= $ai ?>]" rows="2" style="min-height:2.8em;padding:4px 8px"><?= e($assoc['associe_adresse'] ?? '') ?></textarea>
                     </label>
                     <h3 class="section-title">Participation</h3>
                     <label class="field">
@@ -282,9 +282,9 @@ if ($step === 2):
                         <span>Email</span>
                         <input type="email" name="associe_email[0]">
                     </label>
-                    <label class="field">
+                    <label class="field full">
                         <span>Adresse</span>
-                        <textarea name="associe_adresse[0]" rows="2"></textarea>
+                        <textarea name="associe_adresse[0]" rows="2" style="min-height:2.8em;padding:4px 8px"></textarea>
                     </label>
                     <h3 class="section-title">Participation</h3>
                     <label class="field">
@@ -375,9 +375,9 @@ if ($step === 2):
                     <span>Email</span>
                     <input data-field-name="associe_email" type="email">
                 </label>
-                <label class="field">
+                <label class="field full">
                     <span>Adresse</span>
-                    <textarea data-field-name="associe_adresse" rows="2"></textarea>
+                    <textarea data-field-name="associe_adresse" rows="2" style="min-height:2.8em;padding:4px 8px"></textarea>
                 </label>
                 <h3 class="section-title">Participation</h3>
                 <label class="field">
