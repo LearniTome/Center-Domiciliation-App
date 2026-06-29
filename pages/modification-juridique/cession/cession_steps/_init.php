@@ -46,6 +46,10 @@ $lieuxNaissanceOptions = [];
 $qualitesAssocieOptions = [];
 $activitesOptions = [];
 $adressesOptions = [];
+$adressesAll = [];
+$ompicOptions = [];
+$tribunalTypes = [];
+$allTribunaux = [];
 
 if (($pdo ?? null) instanceof PDO) {
     $stmt = $pdo->query('SELECT id, societe_raison_sociale, societe_dossier, societe_forme_juridique, societe_capital, societe_part_social, societe_ville FROM societes ORDER BY societe_raison_sociale');
