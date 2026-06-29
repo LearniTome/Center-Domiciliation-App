@@ -8,9 +8,6 @@ $valeurNominaleCession = (float) ($socForPrix['societe_valeur_nominale'] ?? 0);
 if (is_post() && $step === 3) {
     verify_csrf();
     $navAction = $_POST['nav_action'] ?? 'next';
-    if ($navAction === 'back') {
-        redirect_to('cession', ['step' => 2]);
-    }
 
     $wizard['cession_date'] = field_value($_POST, 'cession_date');
 
@@ -160,6 +157,10 @@ if (is_post() && $step === 3) {
             'prix_total' => $pt,
             'nommer_gerant' => !empty($nommerGerant[$i]) ? 1 : 0,
         ];
+    }
+
+    if ($navAction === 'back') {
+        redirect_to('cession', ['step' => 2]);
     }
 
     if (empty($wizard['parts'])) {

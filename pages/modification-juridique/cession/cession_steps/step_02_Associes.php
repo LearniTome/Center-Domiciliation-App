@@ -5,9 +5,6 @@ declare(strict_types=1);
 if (is_post() && $step === 2) {
     verify_csrf();
     $navAction = $_POST['nav_action'] ?? 'next';
-    if ($navAction === 'back') {
-        redirect_to('cession', ['step' => 1]);
-    }
 
     $wizard['associes'] = [];
     $noms = $_POST['associe_nom'] ?? [];
@@ -31,6 +28,10 @@ if (is_post() && $step === 2) {
             'associe_capital_detenu' => (string) ($_POST['associe_capital_detenu'][$i] ?? ''),
             'associe_est_gerant' => ($_POST['associe_est_gerant'][$i] ?? '0') === '1' ? '1' : '0',
         ];
+    }
+
+    if ($navAction === 'back') {
+        redirect_to('cession', ['step' => 1]);
     }
 
     if (empty($wizard['associes'])) {
