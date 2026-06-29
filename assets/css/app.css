@@ -634,6 +634,7 @@ article.card + article.card {
 .section-header {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 6px;
     margin-bottom: 6px;
     flex-wrap: nowrap;
