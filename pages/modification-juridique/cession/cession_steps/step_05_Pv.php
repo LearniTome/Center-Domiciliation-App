@@ -285,6 +285,7 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
             <p>Après avoir constaté que toutes les dispositions légales et statutaires ont été respectées, <?= $vExamine ?> l'ordre du jour suivant :</p>
         </div>
 
+        <?php if ($viewMode !== 'preview'): ?>
         <div class="recap-section">
             <h3>ORDRE DU JOUR</h3>
             <ol id="pv-order-of-day">
@@ -293,6 +294,7 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
                 <?php endforeach; ?>
             </ol>
         </div>
+        <?php endif; ?>
     </div>
 
     <div class="pv-view-toggle">
