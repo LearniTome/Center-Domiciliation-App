@@ -22,6 +22,9 @@ $collaborateursCount = 0;
 $dossiersComplets = 0;
 $revenuMensuel = 0;
 $creationsMois = 0;
+$cessionsCount = 0;
+$pvAgoCount = 0;
+$suiviCount = 0;
 
 $user = current_user();
 $isAdmin = $user && in_array((int) $user['role_id'], [1, 2], true);
@@ -61,6 +64,18 @@ if ($isConnected) {
         $stmt = $pdo->prepare('SELECT COUNT(*) FROM collaborateurs WHERE created_by = :uid');
         $stmt->execute(['uid' => $userId]);
         $collaborateursCount = (int) $stmt->fetchColumn();
+
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM cessions WHERE created_by = :uid');
+        $stmt->execute(['uid' => $userId]);
+        $cessionsCount = (int) $stmt->fetchColumn();
+
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM pv_ago WHERE created_by = :uid');
+        $stmt->execute(['uid' => $userId]);
+        $pvAgoCount = (int) $stmt->fetchColumn();
+
+        $stmt = $pdo->prepare('SELECT COUNT(DISTINCT e.cession_id) FROM cession_suivi_etapes e INNER JOIN cessions c ON c.id = e.cession_id WHERE c.created_by = :uid');
+        $stmt->execute(['uid' => $userId]);
+        $suiviCount = (int) $stmt->fetchColumn();
     } else {
         $totalSocietes = (int) $pdo->query('SELECT COUNT(*) FROM societes')->fetchColumn();
         $contratsActifs = (int) $pdo->query("SELECT COUNT(*) FROM contrats WHERE contrat_statut = 'actif'")->fetchColumn();
@@ -68,6 +83,10 @@ if ($isConnected) {
         $revenuMensuel = (float) $pdo->query("SELECT COALESCE(SUM(contrat_loyer_ttc), 0) FROM contrats WHERE contrat_statut = 'actif'")->fetchColumn();
         $creationsMois = (int) $pdo->query("SELECT COUNT(*) FROM societes WHERE MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE())")->fetchColumn();
         $collaborateursCount = (int) $pdo->query("SELECT COUNT(*) FROM collaborateurs")->fetchColumn();
+
+        $cessionsCount = (int) $pdo->query("SELECT COUNT(*) FROM cessions")->fetchColumn();
+        $pvAgoCount = (int) $pdo->query("SELECT COUNT(*) FROM pv_ago")->fetchColumn();
+        $suiviCount = (int) $pdo->query("SELECT COUNT(DISTINCT cession_id) FROM cession_suivi_etapes")->fetchColumn();
 
         $dossiersComplets = (int) $pdo->query("
             SELECT COUNT(*) FROM societes s
@@ -500,6 +519,30 @@ if ($isConnected) {
             <span class="dm-label">Revenu mensuel</span>
             <strong class="dm-value"><?= number_format($revenuMensuel, 0, ',', ' ') ?> DH</strong>
             <span class="dm-delta"><?= $renouvelerCount ?> a renouveler</span>
+        </div>
+    </a>
+    <a class="dash-metric" href="<?= e(app_url('cessions')) ?>">
+        <div class="dm-icon dm-icon-ces"><span class="material-symbols-outlined">transfer_within_a_station</span></div>
+        <div class="dm-body">
+            <span class="dm-label">Cessions</span>
+            <strong class="dm-value"><?= $cessionsCount ?></strong>
+            <span class="dm-delta up">en cours</span>
+        </div>
+    </a>
+    <a class="dash-metric" href="<?= e(app_url('pv_ago')) ?>">
+        <div class="dm-icon dm-icon-pv"><span class="material-symbols-outlined">groups</span></div>
+        <div class="dm-body">
+            <span class="dm-label">PV AGO</span>
+            <strong class="dm-value"><?= $pvAgoCount ?></strong>
+            <span class="dm-delta up">assemblees</span>
+        </div>
+    </a>
+    <a class="dash-metric" href="<?= e(app_url('cession_suivi')) ?>">
+        <div class="dm-icon dm-icon-sui"><span class="material-symbols-outlined">checklist</span></div>
+        <div class="dm-body">
+            <span class="dm-label">Suivi</span>
+            <strong class="dm-value"><?= $suiviCount ?></strong>
+            <span class="dm-delta up">dossiers</span>
         </div>
     </a>
 </section>

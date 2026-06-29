@@ -3645,6 +3645,9 @@ tr[data-coverage], .row-mapped {
 .dm-icon-ctr { background:linear-gradient(135deg,var(--success),#00d2a0); }
 .dm-icon-doc { background:linear-gradient(135deg,var(--info),#b865ea); }
 .dm-icon-rev { background:linear-gradient(135deg,var(--warning),#ff8555); }
+.dm-icon-ces { background:linear-gradient(135deg,#e17055,#d63031); }
+.dm-icon-pv { background:linear-gradient(135deg,#6c5ce7,#a29bfe); }
+.dm-icon-sui { background:linear-gradient(135deg,#00b894,#55efc4); }
 .dm-body { flex:1; min-width:0; }
 .dm-label { font-size:0.6rem; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.04em; }
 .dm-value { display:block; font-size:1.1rem; font-weight:600; color:var(--text); line-height:1.2; }
