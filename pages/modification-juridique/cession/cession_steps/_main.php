@@ -28,7 +28,7 @@ require __DIR__ . '/_init.php';
         $raisonSociale = $societeData['societe_raison_sociale'] ?? '';
         if ($raisonSociale !== ''):
         ?>
-        <div style="margin:12px 0 4px;font-size:0.9rem;color:var(--text-secondary);display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div id="cession-step-title" style="margin:12px 0 4px;font-size:0.9rem;color:var(--text-secondary);display:flex;align-items:center;gap:12px;flex-wrap:wrap">
             <span><strong>Etape <?= $step ?></strong> — <?= e($stepLabels[$step - 1]) ?> de la société : <?= e($raisonSociale) ?></span>
             <?php if ($step === 3): ?>
             <span style="display:flex;align-items:center;gap:6px;margin-left:auto;white-space:nowrap">

@@ -723,7 +723,7 @@ if ($step === 7):
 (function(){
     var btn = document.getElementById('step7-voir-dossier');
     if (!btn) return;
-    var titleRow = document.querySelector('.cession-wizard > div:first-of-type');
+    var titleRow = document.getElementById('cession-step-title');
     if (titleRow) {
         btn.style.display = '';
         btn.style.marginLeft = 'auto';
