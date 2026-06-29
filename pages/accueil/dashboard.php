@@ -394,19 +394,7 @@ if ($isConnected) {
     $valPct = $docsTotal > 0 ? round(($docsValides / $docsTotal) * 100) : 0;
 }
 ?>
-<!-- Welcome -->
-<section class="dash-header">
-    <div class="dash-header-left">
-        <p class="dash-greeting">👋 Bon retour, <?= e($user['nom_complet'] ?? '—') ?></p>
-        <div class="dash-header-meta">
-            <span class="material-symbols-outlined" style="font-size:0.75rem;color:var(--text-secondary)">calendar_today</span>
-            <?= date('d/m/Y') ?>
-            <a class="dash-pill" href="<?= e(app_url('societes')) ?>"><span class="material-symbols-outlined">business</span><?= $totalSocietes ?> societes</a>
-            <a class="dash-pill" href="<?= e(app_url('contrats')) ?>"><span class="material-symbols-outlined">signature</span><?= $contratsActifs ?> contrats</a>
-            <a class="dash-pill" href="<?= e(app_url('collaborateurs')) ?>"><span class="material-symbols-outlined">group</span><?= $collaborateursCount ?> collab.</a>
-        </div>
-    </div>
-</section>
+<p class="dash-greeting" id="dash-greeting">👋 Bon retour, <?= e($user['nom_complet'] ?? '—') ?></p>
 
 <?php if ($hasAlerts): ?>
 <section class="dash-alert-bar" id="dash-alert-bar">
@@ -417,17 +405,34 @@ if ($isConnected) {
 
 <script>
 (function(){
-    var bar = document.getElementById('dash-alert-bar');
-    if (!bar) return;
     var header = document.querySelector('.page-header');
     if (!header) return;
-    var actions = header.querySelector('.table-actions');
-    if (!actions) {
-        actions = document.createElement('div');
-        actions.className = 'table-actions';
-        header.appendChild(actions);
+    // Move greeting into top-bar left, replace duplicate name/role
+    var greeting = document.querySelector('.dash-greeting');
+    var topBarLeft = document.querySelector('.top-bar-left');
+    if (greeting && topBarLeft) {
+        var nameEl = topBarLeft.querySelector('.top-bar-user');
+        var roleEl = topBarLeft.querySelector('.top-bar-role');
+        if (nameEl) nameEl.style.display = 'none';
+        if (roleEl) roleEl.style.display = 'none';
+        greeting.style.margin = '0 0 0 6px';
+        greeting.style.fontSize = '0.72rem';
+        greeting.style.display = 'inline';
+        greeting.style.fontWeight = '600';
+        greeting.style.color = 'var(--text-secondary)';
+        topBarLeft.appendChild(greeting);
     }
-    actions.appendChild(bar);
+    // Move alert bar into header actions
+    var bar = document.getElementById('dash-alert-bar');
+    if (bar) {
+        var actions = header.querySelector('.table-actions');
+        if (!actions) {
+            actions = document.createElement('div');
+            actions.className = 'table-actions';
+            header.appendChild(actions);
+        }
+        actions.appendChild(bar);
+    }
 })();
 </script>
 
