@@ -285,16 +285,19 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
             <p>Après avoir constaté que toutes les dispositions légales et statutaires ont été respectées, <?= $vExamine ?> l'ordre du jour suivant :</p>
         </div>
 
-        <?php if ($viewMode !== 'preview'): ?>
         <div class="recap-section">
-            <h3>ORDRE DU JOUR</h3>
-            <ol id="pv-order-of-day">
+            <h3>ORDRE DU JOUR DÉTAILLÉ</h3>
+            <div class="pv-detailed-order">
                 <?php foreach ($resolutions as $i => $r): ?>
-                <li>Résolution <?= $i + 1 ?> : <?= e($r['title'] ?: '(Sans titre)') ?></li>
+                <div style="margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--line)">
+                    <strong>Résolution <?= $i + 1 ?> : <?= e($r['title'] ?: '(Sans titre)') ?></strong>
+                    <?php if (trim($r['content'] ?? '') !== ''): ?>
+                    <div style="margin-top:4px;font-size:0.85rem"><?= nl2br(preg_replace('/\*\*(.+?)\*\*/', '<strong>$1</strong>', e($r['content']))) ?></div>
+                    <?php endif; ?>
+                </div>
                 <?php endforeach; ?>
-            </ol>
+            </div>
         </div>
-        <?php endif; ?>
     </div>
 
     <div class="pv-view-toggle">
@@ -414,17 +417,6 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
 
     <?php if ($viewMode === 'preview'): ?>
     <div class="recap-a4">
-        <?php foreach ($resolutions as $i => $r): ?>
-        <div class="recap-section">
-            <h3><?= e('Résolution ' . ($i + 1) . ' — ' . ($r['title'] ?: '(Sans titre)')) ?></h3>
-            <?php if (trim($r['content']) !== ''): ?>
-                <div class="pv-preview-block"><?= nl2br(preg_replace('/\*\*(.+?)\*\*/', '<strong>$1</strong>', e($r['content']))) ?></div>
-            <?php else: ?>
-                <p class="help-text" style="font-style:italic;color:var(--text-muted)">(Non renseigné)</p>
-            <?php endif; ?>
-        </div>
-        <?php endforeach; ?>
-
         <div class="recap-section">
             <h3>Clôture de la séance</h3>
             <p>Plus rien n'étant à l'ordre du jour, la séance est levée.</p>
