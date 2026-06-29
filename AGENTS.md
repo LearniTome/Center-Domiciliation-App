@@ -264,7 +264,7 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
   - Étape 3 : Récapitulatif + Génération DOCX (via DocumentRenderer::buildContextFromCession())
 - **Numéro de dossier**: Auto-généré `CES-YYYY-NNN`
 - **Dossiers de sortie**: `dossiers_generer/dossiers_cession/{date}_{forme}_{raison}/{dossier_cession}/`
-- **Templates DOCX**: `templates/_Cession/` (4 fichiers : Acte-Cession-Parts, PV-AGE-Cession, Declaration-Modificative-RC, Annonce-Legale-Cession)
+- **Templates DOCX**: `templates/_Cession_SARL/` et `templates/_Cession_SARLAU/` (4 fichiers chacun : Acte-Cession-Parts, PV-AGE-Cession, Declaration-Modificative-RC, Annonce-Legale-Cession)
 - **DocumentRenderer** (`src/rendu_document.php`): `buildContextFromCession()` construit le contexte avec `SESSION_*`, `CEDANT_*`, `CESSIONNAIRE_*`, boucle `{%p for c in cession_parts %}`
 - **TemplateAnalyzer**: clés contexte `CESSION_*` ajoutées dans `getExpectedContextKeys()`, section `cession` dans `inferSection()`
 - **Mise à jour parts**: après validation, met à jour `associe_parts` et `associe_capital_detenu` dans la table `associes`
