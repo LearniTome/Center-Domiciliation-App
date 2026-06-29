@@ -614,13 +614,14 @@ if ($step === 7):
     }
 ?>
 <div class="stack">
-    <div style="display:flex;justify-content:flex-end;margin-bottom:6px">
-        <?php if ($dossierCreated): ?>
-            <a class="btn btn-secondary" href="<?= e(app_url('cession_dossier', ['id' => $cessionId])) ?>">
-                <span class="material-symbols-outlined">visibility</span> Voir le dossier
-            </a>
-        <?php endif; ?>
+
+    <?php if ($dossierCreated): ?>
+    <div id="step7-voir-dossier" style="display:none">
+        <a class="btn btn-secondary" href="<?= e(app_url('cession_dossier', ['id' => $cessionId])) ?>">
+            <span class="material-symbols-outlined">visibility</span> Voir le dossier
+        </a>
     </div>
+    <?php endif; ?>
 
     <div class="two-step-flow">
         <div class="step-card <?= $dossierCreated ? 'done' : 'active' ?>">
@@ -718,7 +719,19 @@ if ($step === 7):
                                             <td class="col-check"><input type="checkbox" name="doc_types[]" value="<?= e($docType) ?>" data-template-path="<?= e($tpl['path']) ?>" checked class="template-check"></td>
                                             <?php if ($i === 0): ?>
                                                 <td rowspan="<?= $tplCount ?>" style="vertical-align:middle"><?= e($typeLabel) ?></td>
-                                            <?php endif; ?>
+<script>
+(function(){
+    var btn = document.getElementById('step7-voir-dossier');
+    if (!btn) return;
+    var titleRow = document.querySelector('.cession-wizard > div:first-of-type');
+    if (titleRow) {
+        btn.style.display = '';
+        btn.style.marginLeft = 'auto';
+        titleRow.appendChild(btn);
+    }
+})();
+</script>
+<?php endif; ?>
                                             <td>
                                                 <span class="material-symbols-outlined" style="color:var(--primary);vertical-align:middle;margin-right:4px">article</span>
                                                 <?= e(basename($tpl['path'])) ?>
