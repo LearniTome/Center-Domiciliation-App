@@ -614,10 +614,9 @@ if ($step === 7):
     }
 ?>
 <div class="stack">
-    <div class="section-header">
-        <h2>Etape 7 — Generation des documents</h2>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:6px">
         <?php if ($dossierCreated): ?>
-            <a class="btn btn-secondary" style="margin-left:auto" href="<?= e(app_url('cession_dossier', ['id' => $cessionId])) ?>">
+            <a class="btn btn-secondary" href="<?= e(app_url('cession_dossier', ['id' => $cessionId])) ?>">
                 <span class="material-symbols-outlined">visibility</span> Voir le dossier
             </a>
         <?php endif; ?>
