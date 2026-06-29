@@ -190,7 +190,7 @@ if ($step === 2):
                         <span>Email</span>
                         <input type="email" name="associe_email[<?= $ai ?>]" value="<?= e($assoc['associe_email'] ?? '') ?>">
                     </label>
-                    <label class="field full">
+                    <label class="field">
                         <span>Adresse</span>
                         <textarea name="associe_adresse[<?= $ai ?>]" rows="2"><?= e($assoc['associe_adresse'] ?? '') ?></textarea>
                     </label>
@@ -282,7 +282,7 @@ if ($step === 2):
                         <span>Email</span>
                         <input type="email" name="associe_email[0]">
                     </label>
-                    <label class="field full">
+                    <label class="field">
                         <span>Adresse</span>
                         <textarea name="associe_adresse[0]" rows="2"></textarea>
                     </label>
@@ -375,7 +375,7 @@ if ($step === 2):
                     <span>Email</span>
                     <input data-field-name="associe_email" type="email">
                 </label>
-                <label class="field full">
+                <label class="field">
                     <span>Adresse</span>
                     <textarea data-field-name="associe_adresse" rows="2"></textarea>
                 </label>
