@@ -494,7 +494,11 @@ if ($step === 1):
             }
             var addr = form.querySelector('[name="societe_adresse_siege"]');
             if (addr) {
-                var aOpts = Array.from(addr.options).filter(function(o) { return o.value; });
+                var villeVal = form.querySelector('[name="societe_ville"]')?.value || '';
+                var aOpts = Array.from(addr.options).filter(function(o) {
+                    return o.value && (!villeVal || o.getAttribute('data-ville') === villeVal);
+                });
+                if (!aOpts.length) aOpts = Array.from(addr.options).filter(function(o) { return o.value; });
                 if (aOpts.length) addr.value = randFrom(aOpts).value;
             }
             form.querySelector('[name="societe_email"]') && (form.querySelector('[name="societe_email"]').value = 'contact@' + rs.toLowerCase().replace(/[^a-z0-9]/g, '') + '.ma');

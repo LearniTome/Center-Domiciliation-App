@@ -3618,7 +3618,7 @@ tr[data-coverage], .row-mapped {
 .dash-pill:hover { border-color:var(--primary); color:var(--primary); }
 .dash-pill .material-symbols-outlined { font-size:0.65rem; }
 
-.dash-alert-bar { display:flex; align-items:center; gap:6px; padding:5px 12px; background:rgba(255,107,53,0.05); border:1px solid color-mix(in srgb, var(--warning) 30%, transparent); border-radius:var(--radius); margin-bottom:0.5rem; font-size:0.78rem; color:var(--warning); }
+.dash-alert-bar { display:flex; align-items:center; gap:6px; padding:5px 12px; background:rgba(255,107,53,0.05); border:1px solid color-mix(in srgb, var(--warning) 30%, transparent); border-radius:var(--radius); font-size:0.78rem; color:var(--warning); white-space:nowrap; }
 .dash-alert-bar .alert-bar-icon { font-size:1rem; }
 
 .dash-actions { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-bottom:0.6rem; }

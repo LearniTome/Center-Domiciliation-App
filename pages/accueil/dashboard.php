@@ -409,11 +409,27 @@ if ($isConnected) {
 </section>
 
 <?php if ($hasAlerts): ?>
-<section class="dash-alert-bar">
+<section class="dash-alert-bar" id="dash-alert-bar">
     <span class="material-symbols-outlined alert-bar-icon">warning</span>
     <span><?= $alerteCount ?> point<?= $alerteCount > 1 ? 's' : '' ?> necessitant attention</span>
 </section>
 <?php endif; ?>
+
+<script>
+(function(){
+    var bar = document.getElementById('dash-alert-bar');
+    if (!bar) return;
+    var header = document.querySelector('.page-header');
+    if (!header) return;
+    var actions = header.querySelector('.table-actions');
+    if (!actions) {
+        actions = document.createElement('div');
+        actions.className = 'table-actions';
+        header.appendChild(actions);
+    }
+    actions.appendChild(bar);
+})();
+</script>
 
 <!-- Quick actions -->
 <section class="dash-actions">
