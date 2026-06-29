@@ -22,8 +22,7 @@ if (is_post() && $step === 0) {
 if ($step === 0):
 ?>
 <div class="stack">
-    <div class="section-header">
-        <h2>PV d'Assemblee Generale Ordinaire Annuelle</h2>
+    <div class="section-header" style="justify-content:flex-end">
         <a class="btn btn-back" href="<?= e(app_url('pv_ago')) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour aux PV AGO</a>
     </div>
     <p class="help-text" style="margin-bottom:0">Selectionnez la societe concernee par le PV AGO.</p>
