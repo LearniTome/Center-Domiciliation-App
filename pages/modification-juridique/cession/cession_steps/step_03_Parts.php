@@ -963,9 +963,13 @@ if ($step === 3):
                         if (qOpts.length) cessQl.value = randFrom(qOpts).value;
                     }
 
-                    // Parts & price
+                    // Parts & price — calculate from cedant data
                     var partsInput = row.querySelector('input[name="parts_cedees[' + idx + ']"]');
-                    if (partsInput) partsInput.value = String(randInt(50, 1000));
+                    if (partsInput) {
+                        var cedantOpt = cedantSelect ? cedantSelect.options[cedantSelect.selectedIndex] : null;
+                        var maxParts = parseInt(cedantOpt?.getAttribute('data-parts') || '0');
+                        partsInput.value = maxParts > 0 ? String(maxParts) : String(randInt(50, 1000));
+                    }
                     var vnCession = parseFloat(form.getAttribute('data-valeur-nominale'));
                     var puInput = row.querySelector('input[name="prix_unitaire[' + idx + ']"]');
                     if (puInput) puInput.value = vnCession > 0 ? String(vnCession) : String(randInt(100, 2000));
