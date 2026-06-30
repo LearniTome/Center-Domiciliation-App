@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-// ============ STEP 7 POST HANDLER ============
-if (is_post() && $step === 7) {
+// ============ STEP 6 POST HANDLER ============
+if (is_post() && $step === 6) {
     verify_csrf();
     $navAction = $_POST['nav_action'] ?? 'generate';
     if ($navAction === 'back') {
         unset($_SESSION['_cession_overwrite_files'], $_SESSION['_cession_overwrite_docs']);
         $_SESSION['cession_wizard']['generated_files'] = [];
-        redirect_to('cession', ['step' => 6]);
+        redirect_to('cession', ['step' => 5]);
     }
 
     if ($navAction === 'create_dossier') {
         if (!(($pdo ?? null) instanceof PDO)) {
             set_flash('error', 'Connexion MySQL indisponible.');
-            redirect_to('cession', ['step' => 7]);
+            redirect_to('cession', ['step' => 6]);
         }
 
         try {
@@ -212,9 +212,9 @@ $stmt->execute([
         } catch (Throwable $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
             set_flash('error', 'Erreur lors de la creation: ' . $e->getMessage());
-            redirect_to('cession', ['step' => 7]);
+            redirect_to('cession', ['step' => 6]);
         }
-        redirect_to('cession', ['step' => 7, 'id' => $cessionId, 'edit' => 1]);
+        redirect_to('cession', ['step' => 6, 'id' => $cessionId, 'edit' => 1]);
     }
 
     // Generate documents
@@ -383,7 +383,7 @@ $stmt->execute([
     if ($navAction === 'generate') {
         if (!isset($wizard['cession_id']) || $wizard['cession_id'] <= 0) {
             set_flash('error', 'Creez d abord le dossier avant de generer les documents.');
-            redirect_to('cession', ['step' => 7]);
+            redirect_to('cession', ['step' => 6]);
         }
 
         require_once __DIR__ . '/../../../../src/analyseur_templates.php';
@@ -395,7 +395,7 @@ $stmt->execute([
         $selectedDocs = $_POST['doc_types'] ?? [];
         if (empty($selectedDocs)) {
             set_flash('error', 'Selectionnez au moins un type de document.');
-            redirect_to('cession', ['step' => 7]);
+            redirect_to('cession', ['step' => 6]);
         }
 
         $cessionId = $wizard['cession_id'];
@@ -525,7 +525,7 @@ $stmt->execute([
             $_SESSION['_cession_overwrite_files'] = $existingFiles;
             $_SESSION['_cession_overwrite_docs'] = $selectedDocs;
             set_flash('warning', 'Des documents existent deja. Voulez-vous les ecraser ?');
-            redirect_to('cession', ['step' => 7, 'id' => $cessionId, 'edit' => 1]);
+            redirect_to('cession', ['step' => 6, 'id' => $cessionId, 'edit' => 1]);
         }
         unset($_SESSION['_cession_overwrite_files'], $_SESSION['_cession_overwrite_docs']);
 
@@ -558,7 +558,7 @@ $stmt->execute([
 
             $_SESSION['cession_wizard']['generated_files'] = $generated;
             set_flash('success', count($generated) . ' document(s) genere(s).');
-            redirect_to('cession', ['step' => 7, 'id' => $cessionId, 'edit' => 1]);
+            redirect_to('cession', ['step' => 6, 'id' => $cessionId, 'edit' => 1]);
     }
 
     if ($navAction === 'terminer') {
@@ -569,8 +569,8 @@ $stmt->execute([
     }
 }
 
-// ============ STEP 7 HTML VIEW ============
-if ($step === 7):
+// ============ STEP 6 HTML VIEW ============
+if ($step === 6):
     $dossierCreated = isset($wizard['cession_id']) && $wizard['cession_id'] > 0;
     $cessionId = $wizard['cession_id'] ?? null;
     $templatesConfig = require __DIR__ . '/../../../../config/templates.php';

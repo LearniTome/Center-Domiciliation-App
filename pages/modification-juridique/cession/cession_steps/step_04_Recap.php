@@ -1,15 +1,15 @@
 <?php
 declare(strict_types=1);
 
-// Step 4: Récap (just navigation)
-if (is_post() && $step === 4) {
+// Step 3: Récap (just navigation)
+if (is_post() && $step === 3) {
     $navAction = $_POST['nav_action'] ?? 'next';
     if ($navAction === 'back') {
-        redirect_to('cession', ['step' => 3]);
+        redirect_to('cession', ['step' => 2]);
     }
-    redirect_to('cession', ['step' => 5]);
+    redirect_to('cession', ['step' => 4]);
 }
-if ($step === 4):
+if ($step === 3):
     $socData = $wizard['mode'] === 'existante' ? $selectedSociete : ($wizard['societe'] ?? []);
     $assocData = $wizard['mode'] === 'existante' ? $selectedAssocies : ($wizard['associes'] ?? []);
     $raisonSlug = preg_replace('/[^a-zA-Z0-9\s-]/', '', ($socData['societe_raison_sociale'] ?? 'Dossier'));
@@ -29,8 +29,7 @@ if ($step === 4):
                 <button class="btn btn-info" onclick="window.print()"><span class="material-symbols-outlined">print</span> Imprimer</button>
                 <button class="btn btn-info" id="btn-pdf-recap-cession" data-prefix="<?= e($pdfPrefix) ?>" data-raison="<?= e($raisonSlug) ?>"><span class="material-symbols-outlined">picture_as_pdf</span> Sauvegarder PDF</button>
                 <a class="btn btn-back" href="<?= e(app_url('cession', ['step' => 1])) ?>"><span class="material-symbols-outlined">edit</span> Modifier societe</a>
-                <a class="btn btn-back" href="<?= e(app_url('cession', ['step' => 2])) ?>"><span class="material-symbols-outlined">edit</span> Modifier associes</a>
-                <a class="btn btn-back" href="<?= e(app_url('cession', ['step' => 3])) ?>"><span class="material-symbols-outlined">edit</span> Modifier cession</a>
+                <a class="btn btn-back" href="<?= e(app_url('cession', ['step' => 2])) ?>"><span class="material-symbols-outlined">edit</span> Modifier associés et cession</a>
             </div>
 
             <div class="recap-a4">
@@ -294,7 +293,7 @@ if ($step === 4):
 
             <form method="post" class="step-4-controls" style="margin-top:0.75rem">
                 <?= csrf_input() ?>
-                <input type="hidden" name="step" value="4">
+                <input type="hidden" name="step" value="3">
                 <div style="display:flex;gap:8px">
                     <button class="btn btn-back" type="submit" name="nav_action" value="back"><span class="material-symbols-outlined">arrow_back</span> Retour</button>
                     <button class="btn btn-next" type="submit" name="nav_action" value="next"><span class="material-symbols-outlined">arrow_forward</span> Suivant</button>

@@ -17,7 +17,7 @@ require __DIR__ . '/_init.php';
 
         <?php if ($step >= 1): ?>
         <div class="wizard-steps" id="wizard-steps-top">
-            <?php for ($s = 1; $s <= 7; $s++): ?>
+            <?php for ($s = 1; $s <= 6; $s++): ?>
                 <div class="wizard-step <?= $step > $s ? 'done' : ($step === $s ? 'active' : 'waiting') ?>">
                     <strong>Etape <?= $s ?></strong>
                     <span><?= $stepLabels[$s - 1] ?></span>
@@ -30,7 +30,7 @@ require __DIR__ . '/_init.php';
         ?>
         <div id="cession-step-title" style="margin:12px 0 4px;font-size:0.9rem;color:var(--text-secondary);display:flex;align-items:center;gap:12px;flex-wrap:wrap">
             <span><strong>Etape <?= $step ?></strong> — <?= e($stepLabels[$step - 1]) ?> de la société : <?= e($raisonSociale) ?></span>
-            <?php if ($step === 3): ?>
+            <?php if ($step === 2): ?>
             <span style="display:flex;align-items:center;gap:6px;margin-left:auto;white-space:nowrap">
                 <strong style="font-size:0.8rem">Date de la cession</strong>
                 <input type="date" name="cession_date" id="cession_date" value="<?= e($wizard['cession_date'] ?? date('Y-m-d')) ?>" required style="max-width:180px;font-size:0.82rem;padding:4px 8px">
@@ -43,8 +43,7 @@ require __DIR__ . '/_init.php';
         <?php
         require __DIR__ . '/step_00_Mode.php';
         require __DIR__ . '/step_01_Societe.php';
-        require __DIR__ . '/step_02_Associes.php';
-        require __DIR__ . '/step_03_Parts.php';
+        require __DIR__ . '/step_02_Associes_Parts.php';
         require __DIR__ . '/step_04_Recap.php';
         require __DIR__ . '/step_05_Pv.php';
         require __DIR__ . '/step_06_Upload.php';

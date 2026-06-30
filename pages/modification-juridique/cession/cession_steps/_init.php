@@ -28,7 +28,7 @@ if (!isset($_SESSION['cession_wizard']) || !is_array($_SESSION['cession_wizard']
 
 $editingId = (int) ($_GET['id'] ?? 0);
 $wizard = &$_SESSION['cession_wizard'];
-$step = max(0, min(7, (int) ($_GET['step'] ?? 0)));
+$step = max(0, min(6, (int) ($_GET['step'] ?? 0)));
 
 // Force re-load from DB when entering edit mode
 if ($editingId > 0 && isset($_GET['edit'])) {
@@ -185,7 +185,7 @@ if ($editingId > 0 && !isset($_SESSION['_cession_loaded'])) {
     }
     $_SESSION['_cession_loaded'] = true;
     if ($step === 0) {
-        redirect_to('cession', ['step' => 3, 'id' => $editingId, 'edit' => 1]);
+        redirect_to('cession', ['step' => 2, 'id' => $editingId, 'edit' => 1]);
     }
 }
 
@@ -214,4 +214,4 @@ foreach ($selectedAssocies as $a) {
     }
 }
 
-$stepLabels = ['Societe', 'Associes', 'Cession', 'Recap', 'PV Cession', 'Validation', 'Generation'];
+$stepLabels = ['Societe', 'Associes et Cession', 'Recap', 'PV Cession', 'Validation', 'Generation'];

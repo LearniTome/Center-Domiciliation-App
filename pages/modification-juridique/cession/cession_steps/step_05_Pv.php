@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 
-// Step 5: PV Cession editable — dynamic resolutions
-if (is_post() && $step === 5) {
+// Step 4: PV Cession editable — dynamic resolutions
+if (is_post() && $step === 4) {
     verify_csrf();
 
     $titles = $_POST['pv_title'] ?? [];
@@ -20,21 +20,21 @@ if (is_post() && $step === 5) {
     $navAction = $_POST['nav_action'] ?? 'next';
     if ($navAction === 'save') {
         set_flash('success', 'Contenu du PV enregistre.');
-        redirect_to('cession', ['step' => 5]);
+        redirect_to('cession', ['step' => 4]);
     }
     if ($navAction === 'back') {
-        redirect_to('cession', ['step' => 4]);
+        redirect_to('cession', ['step' => 3]);
     }
     if ($navAction === 'reset_defaults') {
         unset($wizard['pv_resolutions']);
         set_flash('success', 'Resolutions reinitialisees aux valeurs par defaut.');
-        redirect_to('cession', ['step' => 5]);
+        redirect_to('cession', ['step' => 4]);
     }
     if ($navAction === 'ai_generate') {
         require_once __DIR__ . '/../../../../src/service_claude.php';
         if (!ClaudeService::isAvailable()) {
             set_flash('error', 'IA non disponible : cle API manquante.');
-            redirect_to('cession', ['step' => 5]);
+            redirect_to('cession', ['step' => 4]);
         }
         try {
             $soc = $wizard['mode'] === 'existante' ? $selectedSociete : ($wizard['societe'] ?? []);
@@ -97,12 +97,12 @@ if (is_post() && $step === 5) {
         } catch (Throwable $e) {
             set_flash('error', 'Erreur IA : ' . $e->getMessage());
         }
-        redirect_to('cession', ['step' => 5]);
+        redirect_to('cession', ['step' => 4]);
     }
-    redirect_to('cession', ['step' => 6]);
+    redirect_to('cession', ['step' => 5]);
 }
 
-if ($step === 5):
+if ($step === 4):
 $socData = $wizard['mode'] === 'existante' ? $selectedSociete : ($wizard['societe'] ?? []);
 $totalParts = (int) ($socData['societe_part_social'] ?? 0);
 $totalCapital = (float) ($socData['societe_capital'] ?? 0);
@@ -301,10 +301,10 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
     </div>
 
     <div class="pv-view-toggle">
-        <a class="btn <?= $viewMode === 'edit' ? 'active' : '' ?>" href="<?= e(app_url('cession', ['step' => 5, 'pv_view' => 'edit'])) ?>">
+        <a class="btn <?= $viewMode === 'edit' ? 'active' : '' ?>" href="<?= e(app_url('cession', ['step' => 4, 'pv_view' => 'edit'])) ?>">
             <span class="material-symbols-outlined">edit</span> Modifier
         </a>
-        <a class="btn <?= $viewMode === 'preview' ? 'active' : '' ?>" href="<?= e(app_url('cession', ['step' => 5, 'pv_view' => 'preview'])) ?>">
+        <a class="btn <?= $viewMode === 'preview' ? 'active' : '' ?>" href="<?= e(app_url('cession', ['step' => 4, 'pv_view' => 'preview'])) ?>">
             <span class="material-symbols-outlined">visibility</span> Aperçu
         </a>
     </div>
@@ -312,7 +312,7 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
     <?php if ($viewMode === 'edit'): ?>
     <form method="post" class="pv-edit-form" id="pv-edit-form">
         <?= csrf_input() ?>
-        <input type="hidden" name="step" value="5">
+        <input type="hidden" name="step" value="4">
 
         <div id="pv-resolution-list">
             <?php foreach ($resolutions as $i => $r): ?>
@@ -348,7 +348,7 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
                 <button type="button" class="btn btn-secondary" id="pv-add-ai-resolution" title="Ajouter une résolution générée par IA" style="display:none">
                     <span class="material-symbols-outlined">auto_awesome</span> Ajouter avec IA
                 </button>
-                <a class="btn btn-info" href="<?= e(app_url('cession', ['step' => 5, 'pv_view' => 'preview'])) ?>">
+                <a class="btn btn-info" href="<?= e(app_url('cession', ['step' => 4, 'pv_view' => 'preview'])) ?>">
                     <span class="material-symbols-outlined">visibility</span> Aperçu
                 </a>
                 <button class="btn btn-info" type="submit" name="nav_action" value="save">
@@ -430,12 +430,12 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
 
     <form method="post" class="footer-actions">
         <?= csrf_input() ?>
-        <input type="hidden" name="step" value="5">
+        <input type="hidden" name="step" value="4">
         <div style="display:flex;gap:8px;margin-left:auto">
             <button class="btn btn-back" type="submit" name="nav_action" value="back">
                 <span class="material-symbols-outlined">arrow_back</span> Retour
             </button>
-            <a class="btn btn-info" href="<?= e(app_url('cession', ['step' => 5, 'pv_view' => 'edit'])) ?>">
+            <a class="btn btn-info" href="<?= e(app_url('cession', ['step' => 4, 'pv_view' => 'edit'])) ?>">
                 <span class="material-symbols-outlined">edit</span> Modifier
             </a>
             <button class="btn btn-next" type="submit" name="nav_action" value="next">
@@ -520,7 +520,7 @@ document.getElementById('pv-add-ai-resolution')?.addEventListener('click', funct
     btn.disabled = true;
     btn.innerHTML = '<span class="material-symbols-outlined">hourglass_top</span> Génération...';
     <?php if (ClaudeService::isAvailable()): ?>
-    fetch('<?= e(app_url('cession', ['step' => 5])) ?>', {
+    fetch('<?= e(app_url('cession', ['step' => 4])) ?>', {
         method: 'POST',
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: new URLSearchParams({

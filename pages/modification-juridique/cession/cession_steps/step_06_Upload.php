@@ -2,14 +2,14 @@
 declare(strict_types=1);
 
 // POST handler
-if (is_post() && $step === 6) {
+if (is_post() && $step === 5) {
     verify_csrf();
 
-    // Step 6: Upload / Validation
-    if ($step === 6) {
+    // Step 5: Upload / Validation
+    if ($step === 5) {
         $navAction = $_POST['nav_action'] ?? 'next';
         if ($navAction === 'back') {
-            redirect_to('cession', ['step' => 5]);
+            redirect_to('cession', ['step' => 4]);
         }
 
         $uploadDir = __DIR__ . '/../../../../uploads';
@@ -42,12 +42,12 @@ if (is_post() && $step === 6) {
         }
 
         $wizard['uploaded_docs'] = $uploadedDocs;
-        redirect_to('cession', ['step' => 7]);
+        redirect_to('cession', ['step' => 6]);
     }
 }
 
 // HTML view
-if ($step === 6):
+if ($step === 5):
     $uploadedDocs = $wizard['uploaded_docs'] ?? [];
 ?>
         <div class="stack">
