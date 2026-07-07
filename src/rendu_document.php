@@ -14,6 +14,31 @@ class DocumentRenderer
         return $dt ? $dt->format('d/m/Y') : $val;
     }
 
+    private static function calcPackMontantTtc(array $contrat): string
+    {
+        $loyerTtc = $contrat['contrat_loyer_ttc'] ?? null;
+        $dureeMois = $contrat['contrat_duree_mois'] ?? null;
+        if ($loyerTtc !== null && $loyerTtc !== '' && $dureeMois !== null && $dureeMois !== '') {
+            return (string) ((float) $loyerTtc * (int) $dureeMois);
+        }
+        return '';
+    }
+
+    private static function calcRenouvAnnuelTtc(array $contrat): string
+    {
+        $renouvLoyerTtc = $contrat['contrat_renouv_loyer_ttc'] ?? null;
+        if ($renouvLoyerTtc !== null && $renouvLoyerTtc !== '') {
+            return (string) ((float) $renouvLoyerTtc * 12);
+        }
+        $renouvLoyerHt = $contrat['contrat_renouv_loyer_ht'] ?? null;
+        $renouvTva = $contrat['contrat_renouv_tva_pourcent'] ?? null;
+        if ($renouvLoyerHt !== null && $renouvLoyerHt !== '' && $renouvTva !== null && $renouvTva !== '') {
+            $monthlyTtc = (float) $renouvLoyerHt * (1 + (float) $renouvTva / 100);
+            return (string) ($monthlyTtc * 12);
+        }
+        return '';
+    }
+
     public function __construct(string $templatePath, string $outputDir)
     {
         $this->templatePath = $templatePath;
@@ -729,9 +754,9 @@ class DocumentRenderer
             'ASSOCIE_DATE_NAISSANCE' => self::formatDate($firstAssocie['associe_date_naissance'] ?? ''),
             'ASSOCIE_LIEU_NAISSANCE' => $firstAssocie['associe_lieu_naissance'] ?? '',
             'ASSOCIE_NATIONALITE' => $firstAssocie['associe_nationalite'] ?? '',
-            'ASSOCIE_ADRESSE' => $firstAssocie['associe_adresse'] ?? '',
-            'ASSOCIE_TELEPHONE' => $firstAssocie['associe_telephone'] ?? '',
-            'ASSOCIE_EMAIL' => $firstAssocie['associe_email'] ?? '',
+            'ASSOCIE_ADRESSE' => $firstAssocie['adresse'] ?? '',
+            'ASSOCIE_TELEPHONE' => $firstAssocie['telephone'] ?? '',
+            'ASSOCIE_EMAIL' => $firstAssocie['email'] ?? '',
             'ASSOCIE_QUALITE' => $firstAssocie['associe_qualite'] ?? '',
             'ASSOCIE_PARTS' => $firstAssocie['associe_parts'] ?? '',
             'ASSOCIE_CAPITAL_DETENU' => $firstAssocie['associe_capital_detenu'] ?? '',
@@ -750,13 +775,13 @@ class DocumentRenderer
             'CONTRAT_CAUTION' => $contrat['contrat_caution'] ?? '',
             'CONTRAT_STATUT' => $contrat['contrat_statut'] ?? '',
             'CONTRAT_MODE_SIGNATURE' => $contrat['contrat_mode_signature'] ?? '',
-            'CONTRAT_PACK_MONTANT_TTC' => $contrat['contrat_pack_montant_ttc'] ?? '',
-            'CONTRAT_PACK_LOYER_TTC' => $contrat['contrat_pack_loyer_ttc'] ?? '',
+            'CONTRAT_PACK_MONTANT_TTC' => $contrat['contrat_pack_montant_ttc'] ?? self::calcPackMontantTtc($contrat),
+            'CONTRAT_PACK_LOYER_TTC' => $contrat['contrat_pack_loyer_ttc'] ?? ($contrat['contrat_loyer_ttc'] ?? ''),
             'CONTRAT_TYPE_RENOUVELLEMENT' => $contrat['contrat_type_renouvellement'] ?? '',
             'CONTRAT_RENOUV_TVA_POURCENT' => $contrat['contrat_renouv_tva_pourcent'] ?? '',
             'CONTRAT_RENOUV_LOYER_HT' => $contrat['contrat_renouv_loyer_ht'] ?? '',
             'CONTRAT_RENOUV_LOYER_TTC' => $contrat['contrat_renouv_loyer_ttc'] ?? '',
-            'CONTRAT_RENOUV_ANNUEL_TTC' => $contrat['contrat_renouv_annuel_ttc'] ?? '',
+            'CONTRAT_RENOUV_ANNUEL_TTC' => $contrat['contrat_renouv_annuel_ttc'] ?? self::calcRenouvAnnuelTtc($contrat),
             'ACTIVITES' => $activitiesList,
             'ACTIVITES_INLINE' => $activitiesInline,
             'ACTIVITES_PLAIN' => $activitiesInline,
@@ -1237,29 +1262,29 @@ class DocumentRenderer
             'SOCIETE_PROCEDURE_CREATION' => $societe['societe_procedure_creation'] ?? '',
             'SOCIETE_MODE_DEPOT' => $societe['societe_mode_depot'] ?? '',
             'SOCIETE_TRIBUNAL_TYPE' => $societe['societe_tribunal_type'] ?? '',
-            'SOCIETE_DATE_ICE' => $societe['societe_date_ice'] ?? '',
-            'SOCIETE_DATE_EXP_CERT_NEG' => $societe['societe_date_exp_cert_neg'] ?? '',
+            'SOCIETE_DATE_ICE' => self::formatDate($societe['societe_date_ice'] ?? ''),
+            'SOCIETE_DATE_EXP_CERT_NEG' => self::formatDate($societe['societe_date_exp_cert_neg'] ?? ''),
             'ASSOCIE_NOM_COMPLET' => $fNomComplet,
             'ASSOCIE_NOM' => $fNom,
             'ASSOCIE_PRENOM' => $fPrenom,
             'ASSOCIE_CIVILITE' => $fCivilite,
             'ASSOCIE_CIN' => $firstAssocie['associe_cin'] ?? '',
-            'ASSOCIE_DATE_VALIDITE_CIN' => $firstAssocie['associe_date_validite_cin'] ?? '',
-            'ASSOCIE_DATE_NAISSANCE' => $firstAssocie['associe_date_naissance'] ?? '',
+            'ASSOCIE_DATE_VALIDITE_CIN' => self::formatDate($firstAssocie['associe_date_validite_cin'] ?? ''),
+            'ASSOCIE_DATE_NAISSANCE' => self::formatDate($firstAssocie['associe_date_naissance'] ?? ''),
             'ASSOCIE_LIEU_NAISSANCE' => $firstAssocie['associe_lieu_naissance'] ?? '',
             'ASSOCIE_NATIONALITE' => $firstAssocie['associe_nationalite'] ?? '',
-            'ASSOCIE_ADRESSE' => $firstAssocie['associe_adresse'] ?? '',
-            'ASSOCIE_TELEPHONE' => $firstAssocie['associe_telephone'] ?? '',
-            'ASSOCIE_EMAIL' => $firstAssocie['associe_email'] ?? '',
+            'ASSOCIE_ADRESSE' => $firstAssocie['adresse'] ?? '',
+            'ASSOCIE_TELEPHONE' => $firstAssocie['telephone'] ?? '',
+            'ASSOCIE_EMAIL' => $firstAssocie['email'] ?? '',
             'ASSOCIE_QUALITE' => $firstAssocie['associe_qualite'] ?? '',
             'ASSOCIE_PARTS' => $firstAssocie['associe_parts'] ?? '',
             'ASSOCIE_CAPITAL_DETENU' => $firstAssocie['associe_capital_detenu'] ?? '',
             'ASSOCIE_EST_GERANT' => $firstAssocie['associe_est_gerant'] ?? '',
             'CONTRAT_TYPE' => $contrat['contrat_type'] ?? '',
             'CONTRAT_TYPE_DOMICILIATION' => $contrat['contrat_type_domiciliation'] ?? '',
-            'CONTRAT_DATE' => $dateContrat,
-            'CONTRAT_DATE_DEBUT' => $dateDebut,
-            'CONTRAT_DATE_FIN' => $dateFin,
+            'CONTRAT_DATE' => self::formatDate($dateContrat),
+            'CONTRAT_DATE_DEBUT' => self::formatDate($dateDebut),
+            'CONTRAT_DATE_FIN' => self::formatDate($dateFin),
             'CONTRAT_DUREE_MOIS' => $dureeMois,
             'CONTRAT_LOYER_TTC' => $contrat['contrat_loyer_ttc'] ?? '',
             'CONTRAT_LOYER_HT' => $contrat['contrat_loyer_ht'] ?? '',
@@ -1269,13 +1294,13 @@ class DocumentRenderer
             'CONTRAT_CAUTION' => $contrat['contrat_caution'] ?? '',
             'CONTRAT_STATUT' => $contrat['contrat_statut'] ?? '',
             'CONTRAT_MODE_SIGNATURE' => $contrat['contrat_mode_signature'] ?? '',
-            'CONTRAT_PACK_MONTANT_TTC' => $contrat['contrat_pack_montant_ttc'] ?? '',
-            'CONTRAT_PACK_LOYER_TTC' => $contrat['contrat_pack_loyer_ttc'] ?? '',
+            'CONTRAT_PACK_MONTANT_TTC' => $contrat['contrat_pack_montant_ttc'] ?? self::calcPackMontantTtc($contrat),
+            'CONTRAT_PACK_LOYER_TTC' => $contrat['contrat_pack_loyer_ttc'] ?? ($contrat['contrat_loyer_ttc'] ?? ''),
             'CONTRAT_TYPE_RENOUVELLEMENT' => $contrat['contrat_type_renouvellement'] ?? '',
             'CONTRAT_RENOUV_TVA_POURCENT' => $contrat['contrat_renouv_tva_pourcent'] ?? '',
             'CONTRAT_RENOUV_LOYER_HT' => $contrat['contrat_renouv_loyer_ht'] ?? '',
             'CONTRAT_RENOUV_LOYER_TTC' => $contrat['contrat_renouv_loyer_ttc'] ?? '',
-            'CONTRAT_RENOUV_ANNUEL_TTC' => $contrat['contrat_renouv_annuel_ttc'] ?? '',
+            'CONTRAT_RENOUV_ANNUEL_TTC' => $contrat['contrat_renouv_annuel_ttc'] ?? self::calcRenouvAnnuelTtc($contrat),
             'ACTIVITES' => $activitiesList,
             'ACTIVITES_INLINE' => $activitiesInline,
             'ACTIVITES_PLAIN' => $activitiesInline,
