@@ -8,7 +8,7 @@ set -e
 
 PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
 PHP_PORT=8080
-URL="http://localhost:$PHP_PORT/"
+URL="http://localhost:$PHP_PORT/?autologin=1"
 
 echo "========================================"
 echo "  Center Domiciliation - Launcher"
@@ -119,7 +119,28 @@ echo "      Serveur PHP lance sur le port $PHP_PORT (PID: $PHP_PID)"
 echo ""
 
 echo "Application ouverte : $URL"
-open "$URL" 2>/dev/null || xdg-open "$URL" 2>/dev/null || echo "Ouvre ce lien : $URL"
+# ----- Ouverture Chrome automatique -----
+CHROME_PATHS=(
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+    "/usr/bin/google-chrome"
+    "/usr/bin/google-chrome-stable"
+    "/snap/bin/chrome"
+)
+CHROME_PATH=""
+for candidate in "${CHROME_PATHS[@]}"; do
+    if [ -x "$candidate" ]; then
+        CHROME_PATH="$candidate"
+        break
+    fi
+done
+
+if [ -n "$CHROME_PATH" ]; then
+    "$CHROME_PATH" "$URL" &
+    echo "Chrome ouvert avec le profil par defaut (super admin)."
+else
+    echo "[ATTENTION] Chrome introuvable. Ouverture du navigateur par defaut."
+    open "$URL" 2>/dev/null || xdg-open "$URL" 2>/dev/null || echo "Ouvre ce lien manuellement : $URL"
+fi
 
 echo ""
 echo "Le serveur PHP tourne en arriere-plan."

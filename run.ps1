@@ -9,7 +9,7 @@ param(
 
 $ProjectRoot = $PSScriptRoot
 $ProjectName = Split-Path -Leaf $ProjectRoot
-$url = "http://localhost/$ProjectName/"
+$url = "http://localhost/$ProjectName/?autologin=1"
 
 # ----- Détection XAMPP -----
 if (-not $XamppPath) {
@@ -238,10 +238,23 @@ if (-not $apacheRunning) {
 
 Write-Host ""
 Write-Host "Application ouverte : $url" -ForegroundColor Green
-try {
-    Start-Process $url
-} catch {
-    Write-Host "Ouvre ce lien : $url" -ForegroundColor White
+# ----- Ouverture Chrome automatique -----
+$chromePaths = @(
+    "${env:ProgramFiles}\Google\Chrome\Application\chrome.exe",
+    "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe",
+    "$env:LOCALAPPDATA\Google\Chrome\Application\chrome.exe"
+)
+$chromePath = $chromePaths | Where-Object { Test-Path $_ } | Select-Object -First 1
+if ($chromePath) {
+    Start-Process -FilePath $chromePath -ArgumentList $url
+    Write-Host "Chrome ouvert avec le profil par defaut (super admin)." -ForegroundColor Green
+} else {
+    Write-Host "[ATTENTION] Chrome introuvable. Ouverture du navigateur par defaut." -ForegroundColor Yellow
+    try {
+        Start-Process $url
+    } catch {
+        Write-Host "Ouvre ce lien manuellement : $url" -ForegroundColor White
+    }
 }
 
 Write-Host ""
