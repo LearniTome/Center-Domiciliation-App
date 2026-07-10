@@ -221,7 +221,11 @@ function handle_quick_create(PDO $pdo, array $allowedTables, array $user): array
             $data['societe_source'] = 'creation';
         }
     }
-    $data['created_by'] = (int) $user['id'];
+    $colStmt = $pdo->prepare("SHOW COLUMNS FROM {$table} LIKE 'created_by'");
+    $colStmt->execute();
+    if ($colStmt->fetch()) {
+        $data['created_by'] = (int) $user['id'];
+    }
 
     if (empty($data)) {
         http_response_code(400);
@@ -235,7 +239,7 @@ function handle_quick_create(PDO $pdo, array $allowedTables, array $user): array
     $newId = (int) $pdo->lastInsertId();
 
     if (function_exists('log_activity')) {
-        log_activity($pdo, 'create', $table, $newId, $user['id'] ?? 0);
+        log_activity($pdo, 'create', $table, $newId, null, 'Quick create via API');
     }
 
     $fetch = $pdo->prepare("SELECT * FROM {$table} WHERE id = :id");

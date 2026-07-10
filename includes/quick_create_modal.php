@@ -16,9 +16,10 @@
  *   $quickCreateFields = [...];
  *   require __DIR__ . '/../../includes/quick_create_modal.php';
  */
-$modalKey = $quickCreateModalKey ?? 'quick-create';
+$modalKey = $quickCreateModalKey ?? '';
+$modalAttr = $modalKey !== '' ? 'quick-create-' . $modalKey : 'quick-create';
 ?>
-<div class="modal-overlay" data-modal="<?= e($modalKey) ?>">
+<div class="modal-overlay" data-modal="<?= e($modalAttr) ?>">
     <div class="modal-panel">
         <div class="modal-header">
             <h3 style="font-weight:700;color:var(--info)"><?= e($quickCreateTitle ?? 'Nouvel enregistrement') ?></h3>

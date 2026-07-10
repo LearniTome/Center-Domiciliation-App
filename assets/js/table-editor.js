@@ -5,7 +5,7 @@
     var csrfToken = null;
     function getCsrfToken() {
         if (csrfToken) return csrfToken;
-        var el = document.querySelector('input[name="_csrf_token"]');
+        var el = document.querySelector('input[name="csrf_token"]') || document.querySelector('input[name="_csrf_token"]');
         if (el) csrfToken = el.value;
         return csrfToken;
     }
