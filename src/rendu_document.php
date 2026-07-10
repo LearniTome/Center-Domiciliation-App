@@ -310,6 +310,7 @@ class DocumentRenderer
 
         $patterns = [
             '/\{\%p\s+for\s+a\s+in\s+ACTIVITIES_LIST\s*\%\}(.*?)\{\%p\s+endfor\s*\%\}/s',
+            '/\{\%p\s+for\s+a\s+in\s+ACTIVITES_LIST\s*\%\}(.*?)\{\%p\s+endfor\s*\%\}/s',
             '/\{\%p\s+for\s+a\s+in\s+ACTIVITIES\s*\%\}(.*?)\{\%p\s+endfor\s*\%\}/s',
             '/\{\%p\s+for\s+a\s+in\s+ACTIVITES\s*\%\}(.*?)\{\%p\s+endfor\s*\%\}/s',
         ];

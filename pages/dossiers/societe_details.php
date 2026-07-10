@@ -296,10 +296,15 @@ $docTypeLabels = [
     'cin_gerant' => 'CIN Gerant',
 ];
 ?>
+<?php if ($editing): ?>
+    <form method="post">
+        <?= csrf_input() ?>
+<?php endif; ?>
 <div class="section-title-row">
     <h2><?= e($societe['societe_raison_sociale']) ?></h2>
     <div class="table-actions">
         <?php if ($editing): ?>
+            <button class="btn btn-next" type="submit"><span class="material-symbols-outlined">check</span> Enregistrer</button>
             <a class="btn btn-cancel" href="<?= e(app_url('societe', ['id' => $societeId])) ?>"><span class="material-symbols-outlined">close</span> Annuler</a>
         <?php else: ?>
             <a class="btn btn-info" href="<?= e(app_url('societe', ['id' => $societeId, 'edit' => '1'])) ?>"><span class="material-symbols-outlined">edit</span> Modifier</a>
@@ -342,8 +347,6 @@ $docTypeLabels = [
 
 <?php if ($editing): ?>
     <section class="card stack">
-        <form method="post" class="stack">
-            <?= csrf_input() ?>
             <div class="form-grid">
                 <h3 class="section-title">Procedure</h3>
                 <label class="field">
@@ -534,11 +537,8 @@ $docTypeLabels = [
                     <input name="societe_telephone" value="<?= e((string) $societe['societe_telephone']) ?>">
                 </label>
             </div>
-            <div>
-                <button class="btn btn-next" type="submit"><span class="material-symbols-outlined">check</span> Enregistrer</button>
-            </div>
-        </form>
     </section>
+    </form>
 <?php else: ?>
     <article class="card stack">
         <div class="form-grid">
