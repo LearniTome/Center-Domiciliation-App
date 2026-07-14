@@ -807,10 +807,8 @@ class DocumentRenderer
             $capitalDetenu = $a['associe_capital_detenu'] ?? '';
             $isGerant = (int) ($a['associe_est_gerant'] ?? 0) === 1 ? 'Gerant' : 'Associe';
 
-            $nomComplet = $a['associe_nom_complet'] ?? '';
-            $nomParts = explode(' ', $nomComplet, 2);
-            $prenom = count($nomParts) > 1 ? $nomParts[0] : '';
-            $nom = count($nomParts) > 1 ? $nomParts[1] : $nomComplet;
+            $nom = $a['associe_nom'] ?? '';
+            $prenom = $a['associe_prenom'] ?? '';
 
             $associeList[] = [
                 'associe_nom' => $nom,
@@ -1018,10 +1016,8 @@ class DocumentRenderer
 
         $associeList = [];
         foreach ($associes as $a) {
-            $nomComplet = $a['associe_nom_complet'] ?? '';
-            $nomParts = explode(' ', $nomComplet, 2);
-            $prenom = count($nomParts) > 1 ? $nomParts[0] : '';
-            $nom = count($nomParts) > 1 ? $nomParts[1] : $nomComplet;
+            $nom = $a['associe_nom'] ?? '';
+            $prenom = $a['associe_prenom'] ?? '';
             $associeList[] = [
                 'associe_nom' => $nom,
                 'associe_prenom' => $prenom,
@@ -1341,10 +1337,8 @@ class DocumentRenderer
 
         $associeList = [];
         foreach ($associes as $a) {
-            $nomComplet = $a['associe_nom_complet'] ?? '';
-            $nomParts = explode(' ', $nomComplet, 2);
-            $prenom = count($nomParts) > 1 ? $nomParts[0] : '';
-            $nom = count($nomParts) > 1 ? $nomParts[1] : $nomComplet;
+            $nom = $a['associe_nom'] ?? '';
+            $prenom = $a['associe_prenom'] ?? '';
 
             $associeList[] = [
                 'associe_nom' => $nom,
