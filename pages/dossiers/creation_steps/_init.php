@@ -28,6 +28,7 @@ if (!isset($_SESSION['creation_wizard']) || !is_array($_SESSION['creation_wizard
             'associe_qualite' => $associeDefaults['associe_qualite'] ?? '',
             'associe_parts' => $associeDefaults['associe_parts'] ?? '',
             'associe_est_gerant' => ($associeDefaults['associe_est_gerant'] ?? false) ? '1' : '0',
+            'associe_duree_gerance' => '',
         ]],
         'contrat' => $defaults['contrat'] ?? [],
         'uploaded_docs' => [],
@@ -177,6 +178,7 @@ if (!is_array($associesData) || $associesData === []) {
         'associe_capital_detenu' => '',
         'associe_part_percent' => '',
         'associe_est_gerant' => ($associeDefaults['associe_est_gerant'] ?? false) ? '1' : '0',
+        'associe_duree_gerance' => '',
     ]];
 }
 

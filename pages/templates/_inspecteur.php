@@ -14,7 +14,36 @@ if ($templatePath === false || $templatePath === '' || !str_starts_with($templat
         <h2>Template introuvable</h2>
         <p>Le fichier demande n'existe pas ou n'est pas accessible.</p>
         <a class="btn" href="<?= e(app_url('templates')) ?>">Retour aux templates</a>
-    </section>
+<script>
+(function(){
+    var toast = document.createElement('div');
+    toast.className = 'copy-toast';
+    toast.textContent = 'Copie !';
+    document.body.appendChild(toast);
+
+    document.querySelectorAll('.var-copy-btn').forEach(function(el){
+        el.addEventListener('click', function(){
+            var val = el.getAttribute('data-var');
+            navigator.clipboard.writeText(val).then(function(){
+                toast.textContent = 'Copie : ' + val;
+                toast.classList.add('show');
+                setTimeout(function(){ toast.classList.remove('show'); }, 1500);
+            });
+        });
+    });
+})();
+</script>
+<style>
+.copy-toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--text); color: var(--bg); padding: 8px 18px; border-radius: 6px;
+    font-size: 0.85rem; font-weight: 500; opacity: 0; pointer-events: none;
+    transition: opacity .2s, transform .2s; z-index: 9999;
+}
+.copy-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.var-copy-btn:hover { text-decoration: underline; }
+</style>
+</section>
     <?php
     return;
 }
@@ -236,7 +265,7 @@ if (is_post()) {
                     $mapped = $variableLabels[$upperVar] ?? null;
                     ?>
                     <tr>
-                        <td><code style="color:var(--primary)">{{ <?= e($var) ?> }}</code></td>
+                        <td><code class="var-copy-btn" data-var="{{ <?= e($var) ?> }}" style="color:var(--primary);cursor:pointer" title="Cliquer pour copier">{{ <?= e($var) ?> }}</code></td>
                         <td>
                             <?php if ($mapped): ?>
                                 <span style="color:var(--text-secondary);font-size:0.8rem">
@@ -275,4 +304,35 @@ if (is_post()) {
             </div>
         <?php endif; ?>
     </article>
+<div id="copy-toast" style="display:none;position:fixed;top:24px;right:24px;background:var(--success);color:#fff;padding:12px 20px;border-radius:8px;font-size:0.9rem;font-weight:600;z-index:9999;box-shadow:0 4px 14px rgba(0,0,0,.25);transition:opacity .3s,transform .3s;transform:translateY(-10px);opacity:0">
+    <span class="material-symbols-outlined" style="vertical-align:middle;margin-right:6px">check_circle</span>
+    <span id="copy-toast-text"></span>
+</div>
+<script>
+(function(){
+    var toast = document.getElementById('copy-toast');
+    var toastText = document.getElementById('copy-toast-text');
+    var timer = null;
+
+    document.querySelectorAll('.var-copy-btn').forEach(function(el){
+        el.addEventListener('click', function(){
+            var val = el.getAttribute('data-var');
+            navigator.clipboard.writeText(val).then(function(){
+                toastText.textContent = 'Variable copiee : ' + val;
+                toast.style.display = 'block';
+                requestAnimationFrame(function(){
+                    toast.style.opacity = '1';
+                    toast.style.transform = 'translateY(0)';
+                });
+                clearTimeout(timer);
+                timer = setTimeout(function(){
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateY(-10px)';
+                    setTimeout(function(){ toast.style.display = 'none'; }, 300);
+                }, 2000);
+            });
+        });
+    });
+})();
+</script>
 </section>

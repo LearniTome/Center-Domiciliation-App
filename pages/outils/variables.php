@@ -66,6 +66,19 @@ $formFieldLabels = [
     'ASSOCIE_PARTS' => 'associe_parts',
     'ASSOCIE_CAPITAL_DETENU' => 'associe_capital_detenu',
     'ASSOCIE_EST_GERANT' => 'associe_est_gerant',
+    'ASSOCIE_POURCENTAGE' => 'associe_pourcentage',
+    'ASSOCIE_NUMEROTATION' => 'associe_numerotation',
+    'GERANT_NOM_COMPLET' => 'gerant_nom_complet',
+    'GERANT_CIVILITE' => 'gerant_civilite',
+    'GERANT_NOM' => 'gerant_nom',
+    'GERANT_PRENOM' => 'gerant_prenom',
+    'GERANT_CIN' => 'gerant_cin',
+    'GERANT_DATE_NAISSANCE' => 'gerant_date_naissance',
+    'GERANT_LIEU_NAISSANCE' => 'gerant_lieu_naissance',
+    'GERANT_NATIONALITE' => 'gerant_nationalite',
+    'GERANT_ADRESSE' => 'gerant_adresse',
+    'GERANT_QUALITE' => 'gerant_qualite',
+    'GERANT_DUREE_GERANCE' => 'gerant_duree_gerance',
     'CONTRAT_TYPE' => 'contrat_type_domiciliation',
     'CONTRAT_TYPE_DOMICILIATION' => 'contrat_type_domiciliation',
     'CONTRAT_DATE' => 'contrat_date',
@@ -126,6 +139,19 @@ $fieldLabels = [
     'associe_parts' => 'Parts',
     'associe_capital_detenu' => 'Capital détenu (DH)',
     'associe_est_gerant' => 'Gérant',
+    'associe_pourcentage' => 'Pourcentage du capital',
+    'associe_numerotation' => 'Numérotation des parts',
+    'gerant_nom_complet' => 'Nom complet gérant',
+    'gerant_civilite' => 'Civilité gérant',
+    'gerant_nom' => 'Nom gérant',
+    'gerant_prenom' => 'Prénom gérant',
+    'gerant_cin' => 'CIN gérant',
+    'gerant_date_naissance' => 'Date naissance gérant',
+    'gerant_lieu_naissance' => 'Lieu naissance gérant',
+    'gerant_nationalite' => 'Nationalité gérant',
+    'gerant_adresse' => 'Adresse gérant',
+    'gerant_qualite' => 'Qualité gérant',
+    'gerant_duree_gerance' => 'Durée de gérance',
     'contrat_type_domiciliation' => 'Type contrat domiciliation',
     'contrat_date' => 'Date du contrat',
     'contrat_date_debut' => 'Date de début',
@@ -238,7 +264,7 @@ if ($formUsed === 'used') {
         <tbody>
             <?php foreach ($filteredFormVars as $fv): ?>
             <tr class="<?= $fv['in_templates'] ? 'row-mapped' : 'row-unmapped' ?>">
-                <td><code class="var-code-primary">{{ <?= e($fv['name']) ?> }}</code></td>
+                <td><code class="var-copy-btn" data-var="{{ <?= e($fv['name']) ?> }}" style="color:var(--primary);cursor:pointer" title="Cliquer pour copier">{{ <?= e($fv['name']) ?> }}</code></td>
                 <td><?= e($fv['section']) ?></td>
                 <td><code><?= e($fv['field']) ?></code></td>
                 <td><?= $fv['libelle'] ? e($fv['libelle']) : '<span class="text-muted">&mdash;</span>' ?></td>
@@ -270,6 +296,37 @@ if ($formUsed === 'used') {
             var code = row.querySelector('code');
             if (!code) return;
             row.style.display = code.textContent.toLowerCase().includes(q) ? '' : 'none';
+        });
+    });
+})();
+</script>
+<div id="copy-toast" style="display:none;position:fixed;top:24px;right:24px;background:var(--success);color:#fff;padding:12px 20px;border-radius:8px;font-size:0.9rem;font-weight:600;z-index:9999;box-shadow:0 4px 14px rgba(0,0,0,.25);transition:opacity .3s,transform .3s;transform:translateY(-10px);opacity:0">
+    <span class="material-symbols-outlined" style="vertical-align:middle;margin-right:6px">check_circle</span>
+    <span id="copy-toast-text"></span>
+</div>
+<script>
+(function(){
+    var toast = document.getElementById('copy-toast');
+    var toastText = document.getElementById('copy-toast-text');
+    var timer = null;
+
+    document.querySelectorAll('.var-copy-btn').forEach(function(el){
+        el.addEventListener('click', function(){
+            var val = el.getAttribute('data-var');
+            navigator.clipboard.writeText(val).then(function(){
+                toastText.textContent = 'Variable copiee : ' + val;
+                toast.style.display = 'block';
+                requestAnimationFrame(function(){
+                    toast.style.opacity = '1';
+                    toast.style.transform = 'translateY(0)';
+                });
+                clearTimeout(timer);
+                timer = setTimeout(function(){
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateY(-10px)';
+                    setTimeout(function(){ toast.style.display = 'none'; }, 300);
+                }, 2000);
+            });
         });
     });
 })();

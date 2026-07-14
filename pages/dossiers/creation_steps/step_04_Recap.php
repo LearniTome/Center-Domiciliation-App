@@ -75,6 +75,9 @@ if ($step === 4):
                     <div class="item"><span class="label">Lieu naissance</span><span class="value"><?= e($associe['associe_lieu_naissance'] ?: '-') ?></span></div>
                     <div class="item"><span class="label">Qualite</span><span class="value"><?= e($associe['associe_qualite'] ?: '-') ?></span></div>
                     <div class="item"><span class="label">Gerant</span><span class="value"><?= ((string) ($associe['associe_est_gerant'] ?? '0') === '1') ? 'Oui' : 'Non' ?></span></div>
+                    <?php if ((string) ($associe['associe_est_gerant'] ?? '0') === '1'): ?>
+                    <div class="item"><span class="label">Duree de gerance</span><span class="value"><?= e($associe['associe_duree_gerance'] ?: '-') ?></span></div>
+                    <?php endif; ?>
                     <div class="item"><span class="label">Parts</span><span class="value"><?= e((string) ($associe['associe_parts'] ?? '-')) ?></span></div>
                     <div class="item"><span class="label">Capital detenu</span><span class="value"><?= e((string) ($associe['associe_capital_detenu'] ?? '-')) ?> DH</span></div>
                 </div>

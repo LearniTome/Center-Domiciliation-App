@@ -40,6 +40,7 @@ if (is_post() && $step === 2) {
                 'associe_capital_detenu' => trim((string) ($associe['capital_detenu'] ?? '')),
                 'associe_part_percent' => trim((string) ($associe['part_percent'] ?? '')),
                 'associe_est_gerant' => ((string) ($associe['est_gerant'] ?? '0') === '1') ? '1' : '0',
+                'associe_duree_gerance' => trim((string) ($associe['duree_gerance'] ?? '')),
             ];
 
             $isEmpty = $item['associe_nom_complet'] === ''
@@ -211,9 +212,20 @@ if ($step === 2):
                     </label>
                     <label class="field">
                         <span>Gerant</span>
-                        <select data-field-name="est_gerant" name="associes[<?= $index ?>][est_gerant]">
+                        <select data-field-name="est_gerant" name="associes[<?= $index ?>][est_gerant]" data-gerant-toggle>
                             <option value="0" <?= (string) ($associe['associe_est_gerant'] ?? '0') === '0' ? 'selected' : '' ?>>Non</option>
                             <option value="1" <?= (string) ($associe['associe_est_gerant'] ?? '0') === '1' ? 'selected' : '' ?>>Oui</option>
+                        </select>
+                    </label>
+                    <label class="field" data-duree-gerant-field <?= (string) ($associe['associe_est_gerant'] ?? '0') === '1' ? '' : 'style="display:none"' ?>>
+                        <span>Duree de gerance</span>
+                        <select data-field-name="duree_gerance" name="associes[<?= $index ?>][duree_gerance]">
+                            <option value="Indeterminee" <?= ($associe['associe_duree_gerance'] ?? '') === 'Indeterminee' ? 'selected' : '' ?>>Indeterminee</option>
+                            <option value="1 an" <?= ($associe['associe_duree_gerance'] ?? '') === '1 an' ? 'selected' : '' ?>>1 an</option>
+                            <option value="2 ans" <?= ($associe['associe_duree_gerance'] ?? '') === '2 ans' ? 'selected' : '' ?>>2 ans</option>
+                            <option value="3 ans" <?= ($associe['associe_duree_gerance'] ?? '') === '3 ans' ? 'selected' : '' ?>>3 ans</option>
+                            <option value="5 ans" <?= ($associe['associe_duree_gerance'] ?? '') === '5 ans' ? 'selected' : '' ?>>5 ans</option>
+                            <option value="Autre" <?= ($associe['associe_duree_gerance'] ?? '') === 'Autre' ? 'selected' : '' ?>>Autre</option>
                         </select>
                     </label>
                 </div>
@@ -361,9 +373,20 @@ if ($step === 2):
                 </label>
                 <label class="field">
                     <span>Gerant</span>
-                    <select data-field-name="est_gerant">
+                    <select data-field-name="est_gerant" data-gerant-toggle>
                         <option value="0" selected>Non</option>
                         <option value="1">Oui</option>
+                    </select>
+                </label>
+                <label class="field" data-duree-gerant-field style="display:none">
+                    <span>Duree de gerance</span>
+                    <select data-field-name="duree_gerance">
+                        <option value="Indeterminee">Indeterminee</option>
+                        <option value="1 an">1 an</option>
+                        <option value="2 ans">2 ans</option>
+                        <option value="3 ans">3 ans</option>
+                        <option value="5 ans">5 ans</option>
+                        <option value="Autre">Autre</option>
                     </select>
                 </label>
             </div>
@@ -401,6 +424,20 @@ if ($step === 2):
     closeBtn.addEventListener('click', function() { modal.classList.remove('show'); });
     modal.addEventListener('click', function(e) {
         if (e.target === modal) modal.classList.remove('show');
+    });
+})();
+</script>
+<script>
+(function(){
+    document.querySelectorAll('[data-gerant-toggle]').forEach(function(sel){
+        function toggle(){
+            var row = sel.closest('[data-associe-row]') || sel.closest('.associe-row') || sel.closest('div');
+            if (!row) return;
+            var field = row.querySelector('[data-duree-gerant-field]');
+            if (field) field.style.display = sel.value === '1' ? '' : 'none';
+        }
+        sel.addEventListener('change', toggle);
+        toggle();
     });
 })();
 </script>

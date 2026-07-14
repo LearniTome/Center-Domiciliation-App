@@ -48,9 +48,84 @@ class DocumentRenderer
     public function render(array $context, string $outputName = ''): string
     {
         $xml = $this->readXml();
+        $xml = $this->normalizeSplitVariables($xml);
         $xml = $this->processLoops($xml, $context);
         $xml = $this->replaceValues($xml, $context);
         return $this->saveDocx($xml, $outputName);
+    }
+
+    private function normalizeSplitVariables(string $xml): string
+    {
+        $dom = new DOMDocument('1.0', 'UTF-8');
+        $dom->preserveWhiteSpace = true;
+        if ($dom->loadXML($xml) === false) {
+            return $xml;
+        }
+
+        $xp = new DOMXPath($dom);
+        $textNodes = $xp->query('//w:t');
+        if ($textNodes === false || $textNodes->length === 0) {
+            return $xml;
+        }
+
+        $delimiters = [
+            ['open' => '{{', 'close' => '}}'],
+            ['open' => '{%p', 'close' => '%}'],
+        ];
+
+        $i = 0;
+        $count = $textNodes->length;
+        while ($i < $count) {
+            $node = $textNodes->item($i);
+            $text = $node->nodeValue;
+
+            foreach ($delimiters as $delim) {
+                $openPos = strpos($text, $delim['open']);
+                if ($openPos === false) {
+                    continue;
+                }
+                $closePos = strpos($text, $delim['close'], $openPos + strlen($delim['open']));
+                if ($closePos !== false) {
+                    $inner = substr($text, $openPos + strlen($delim['open']), $closePos - $openPos - strlen($delim['open']));
+                    if (strpos($inner, '<') === false) {
+                        continue;
+                    }
+                    $clean = trim(preg_replace('#\s+#', ' ', $inner));
+                    $node->nodeValue = substr($text, 0, $openPos) . $delim['open'] . ' ' . $clean . ' ' . $delim['close'];
+                    continue;
+                }
+
+                $prefix = substr($text, 0, $openPos);
+                $merged = substr($text, $openPos);
+                $mergedNodes = [];
+
+                $j = $i + 1;
+                while ($j < $count) {
+                    $nextNode = $textNodes->item($j);
+                    $nextText = $nextNode->nodeValue;
+                    $merged .= $nextText;
+                    $mergedNodes[] = $nextNode;
+
+                    $closePos = strpos($merged, $delim['close']);
+                    if ($closePos !== false) {
+                        $inner = substr($merged, strlen($delim['open']), $closePos - strlen($delim['open']));
+                        $inner = trim(preg_replace('#<[^>]+>#', '', $inner));
+                        $inner = preg_replace('#\s+#', ' ', $inner);
+                        $inner = trim($inner);
+                        $node->nodeValue = $prefix . $delim['open'] . ' ' . $inner . ' ' . $delim['close'];
+                        foreach ($mergedNodes as $mn) {
+                            $mn->nodeValue = '';
+                        }
+                        break;
+                    }
+                    $j++;
+                }
+            }
+            $i++;
+        }
+
+        $result = $dom->saveXML();
+        return $result !== false ? $result : $xml;
     }
 
     private function readXml(): string
@@ -251,19 +326,65 @@ class DocumentRenderer
 
     private function processAssocieLoop(string $xml, array $context): string
     {
-        $pattern = '/\{\%p\s+for\s+a\s+in\s+associes\s*\%\}(.*?)\{\%p\s+endfor\s*\%\}/s';
-        return preg_replace_callback($pattern, function ($matches) use ($context) {
-            $block = $matches[1];
+        $fieldMap = [
+            'a.EST_GERANT'       => 'associe_est_gerant',
+            'a.NOM'              => 'associe_nom',
+            'a.PRENOM'           => 'associe_prenom',
+            'a.CIN'              => 'associe_cin',
+            'a.NATIONALITE'      => 'associe_nationalite',
+            'a.QUALITE'          => 'associe_qualite',
+            'a.CIVILITE'         => 'associe_civilite',
+            'a.DATE_NAISSANCE'   => 'associe_date_naissance',
+            'a.LIEU_NAISSANCE'   => 'associe_lieu_naissance',
+            'a.DATE_VALIDITE_CIN'=> 'associe_date_validite_cin',
+            'a.CAPITAL_DETENU'   => 'associe_capital_detenu',
+            'a.ADRESSE'          => 'adresse',
+            'a.EMAIL'            => 'email',
+            'a.TELEPHONE'        => 'telephone',
+        ];
+
+        $pattern = '/\{\%p\s+for\s+a\s+in\s+associes(?:\s+where\s+(a\.\w+)\s*(==|!=)\s*\'([^\']*)\')?\s*\%\}(.*?)\{\%p\s+endfor\s*\%\}/s';
+        return preg_replace_callback($pattern, function ($matches) use ($context, $fieldMap) {
+            $whereField = $matches[1] ?? null;
+            $whereOp    = $matches[2] ?? null;
+            $whereValue = $matches[3] ?? null;
+            $block      = $matches[4];
+
             $associes = $context['associes'] ?? [];
+
+            if ($whereField !== null && $whereOp !== null && $whereValue !== null) {
+                $key = $fieldMap[$whereField] ?? null;
+                if ($key !== null) {
+                    $filtered = [];
+                    foreach ($associes as $a) {
+                        $val = $a[$key] ?? '';
+                        if (($whereOp === '==' && $val === $whereValue)
+                            || ($whereOp === '!=' && $val !== $whereValue)) {
+                            $filtered[] = $a;
+                        }
+                    }
+                    $associes = $filtered;
+                }
+            }
+
+            $totalParts = 0;
+            foreach ($associes as $a) {
+                $totalParts += (int) ($a['associe_parts'] ?? 0);
+            }
+            $totalCapital = (float) ($context['SOCIETE_CAPITAL'] ?? 0);
+
+            $cumulativeParts = 0;
             $result = '';
             foreach ($associes as $i => $associe) {
                 $item = $block;
+                $item = str_replace('{{ a.INDEX }}', (string) ($i + 1), $item);
                 $item = str_replace('{{ a.NOM }}', $associe['associe_nom'] ?? '', $item);
                 $item = str_replace('{{ a.PRENOM }}', $associe['associe_prenom'] ?? '', $item);
                 $item = str_replace('{{ a.CIN }}', $associe['associe_cin'] ?? '', $item);
                 $item = str_replace('{{ a.NATIONALITE }}', $associe['associe_nationalite'] ?? '', $item);
                 $item = str_replace('{{ a.QUALITE }}', $associe['associe_qualite'] ?? '', $item);
-                $item = str_replace('{{ a.PARTS }}', (string) ($associe['associe_parts'] ?? ''), $item);
+                $parts = (int) ($associe['associe_parts'] ?? 0);
+                $item = str_replace('{{ a.PARTS }}', (string) $parts, $item);
                 $item = str_replace('{{ a.EST_GERANT }}', $associe['associe_est_gerant'] ?? 'Non', $item);
                 $prefix = $associe['associe_civilite'] ?? 'M.';
                 $fullName = trim($prefix . ' ' . ($associe['associe_prenom'] ?? '') . ' ' . ($associe['associe_nom'] ?? ''));
@@ -273,6 +394,16 @@ class DocumentRenderer
                 $item = str_replace('{{ a.TELEPHONE }}', $associe['telephone'] ?? '', $item);
                 $item = str_replace('{{ a.DATE_NAISSANCE }}', $associe['associe_date_naissance'] ?? '', $item);
                 $item = str_replace('{{ a.LIEU_NAISSANCE }}', $associe['associe_lieu_naissance'] ?? '', $item);
+                $item = str_replace('{{ a.CIVILITE }}', $associe['associe_civilite'] ?? '', $item);
+                $item = str_replace('{{ a.DATE_VALIDITE_CIN }}', $associe['associe_date_validite_cin'] ?? '', $item);
+                $item = str_replace('{{ a.CAPITAL_DETENU }}', (string) ($associe['associe_capital_detenu'] ?? ''), $item);
+                $numStart = $cumulativeParts + 1;
+                $cumulativeParts += $parts;
+                $item = str_replace('{{ a.NUMEROTATION }}', $numStart . ' a ' . $cumulativeParts, $item);
+                $associeCapital = (float) ($associe['associe_capital_detenu'] ?? 0);
+                $pourcentage = $totalCapital > 0 ? round(($associeCapital / $totalCapital) * 100, 2) : 0;
+                $item = str_replace('{{ a.POURCENTAGE }}', number_format($pourcentage, 2, ',', '.') . ' %', $item);
+                $item = str_replace('{{ a.DUREE_GERANCE }}', $associe['associe_duree_gerance'] ?? '', $item);
                 $result .= $item;
                 if ($i < count($associes) - 1) {
                     $result .= "\n";
@@ -691,6 +822,7 @@ class DocumentRenderer
                 'associe_parts' => $parts,
                 'associe_est_gerant' => $isGerant,
                 'associe_civilite' => $a['associe_civilite'] ?? 'M.',
+                'associe_duree_gerance' => $a['associe_duree_gerance'] ?? '',
                 'adresse' => $adresse,
                 'email' => $email,
                 'telephone' => $phone,
@@ -705,6 +837,19 @@ class DocumentRenderer
         $fPrenom = $firstAssocie['associe_prenom'] ?? '';
         $fCivilite = $firstAssocie['associe_civilite'] ?? 'M.';
         $fNomComplet = trim("$fCivilite $fPrenom $fNom");
+
+        $gerant = null;
+        foreach ($associeList as $a) {
+            if (($a['associe_est_gerant'] ?? '') === 'Gerant') {
+                $gerant = $a;
+                break;
+            }
+        }
+        if ($gerant === null) {
+            $gerant = $firstAssocie;
+        }
+        $gCivilite = $gerant['associe_civilite'] ?? 'M.';
+        $gNomComplet = trim("$gCivilite " . ($gerant['associe_prenom'] ?? '') . ' ' . ($gerant['associe_nom'] ?? ''));
 
         $now = new DateTime();
         $dateContrat = $contrat['contrat_date'] ?? ($contrat['contrat_date_debut'] ?? $now->format('Y-m-d'));
@@ -762,6 +907,19 @@ class DocumentRenderer
             'ASSOCIE_PARTS' => $firstAssocie['associe_parts'] ?? '',
             'ASSOCIE_CAPITAL_DETENU' => $firstAssocie['associe_capital_detenu'] ?? '',
             'ASSOCIE_EST_GERANT' => $firstAssocie['associe_est_gerant'] ?? '',
+            'GERANT_NOM_COMPLET' => $gNomComplet,
+            'GERANT_CIVILITE' => $gCivilite,
+            'GERANT_NOM' => $gerant['associe_nom'] ?? '',
+            'GERANT_PRENOM' => $gerant['associe_prenom'] ?? '',
+            'GERANT_CIN' => $gerant['associe_cin'] ?? '',
+            'GERANT_DATE_NAISSANCE' => self::formatDate($gerant['associe_date_naissance'] ?? ''),
+            'GERANT_LIEU_NAISSANCE' => $gerant['associe_lieu_naissance'] ?? '',
+            'GERANT_NATIONALITE' => $gerant['associe_nationalite'] ?? '',
+            'GERANT_ADRESSE' => $gerant['adresse'] ?? '',
+            'GERANT_TELEPHONE' => $gerant['telephone'] ?? '',
+            'GERANT_EMAIL' => $gerant['email'] ?? '',
+            'GERANT_QUALITE' => $gerant['associe_qualite'] ?? '',
+            'GERANT_DUREE_GERANCE' => $gerant['associe_duree_gerance'] ?? '',
             'CONTRAT_TYPE' => $contrat['contrat_type'] ?? '',
             'CONTRAT_TYPE_DOMICILIATION' => $contrat['contrat_type_domiciliation'] ?? '',
             'CONTRAT_DATE' => self::formatDate($dateContrat),
@@ -879,6 +1037,7 @@ class DocumentRenderer
                 'associe_date_naissance' => $a['associe_date_naissance'] ?? '',
                 'associe_lieu_naissance' => $a['associe_lieu_naissance'] ?? '',
                 'associe_capital_detenu' => $a['associe_capital_detenu'] ?? '',
+                'associe_duree_gerance' => $a['associe_duree_gerance'] ?? '',
             ];
         }
 
@@ -887,6 +1046,19 @@ class DocumentRenderer
         $fPrenom = $firstAssocie['associe_prenom'] ?? '';
         $fCivilite = $firstAssocie['associe_civilite'] ?? 'M.';
         $fNomComplet = trim("$fCivilite $fPrenom $fNom");
+
+        $gerant = null;
+        foreach ($associeList as $a) {
+            if (($a['associe_est_gerant'] ?? '') === 'Gerant') {
+                $gerant = $a;
+                break;
+            }
+        }
+        if ($gerant === null) {
+            $gerant = $firstAssocie;
+        }
+        $gCivilite = $gerant['associe_civilite'] ?? 'M.';
+        $gNomComplet = trim("$gCivilite " . ($gerant['associe_prenom'] ?? '') . ' ' . ($gerant['associe_nom'] ?? ''));
 
         return [
             'societe' => $societe,
@@ -923,6 +1095,17 @@ class DocumentRenderer
             'ASSOCIE_QUALITE' => $firstAssocie['associe_qualite'] ?? '',
             'ASSOCIE_PARTS' => (string) ($firstAssocie['associe_parts'] ?? ''),
             'ASSOCIE_EST_GERANT' => $firstAssocie['associe_est_gerant'] ?? '',
+            'GERANT_NOM_COMPLET' => $gNomComplet,
+            'GERANT_CIVILITE' => $gCivilite,
+            'GERANT_NOM' => $gerant['associe_nom'] ?? '',
+            'GERANT_PRENOM' => $gerant['associe_prenom'] ?? '',
+            'GERANT_CIN' => $gerant['associe_cin'] ?? '',
+            'GERANT_DATE_NAISSANCE' => self::formatDate($gerant['associe_date_naissance'] ?? ''),
+            'GERANT_LIEU_NAISSANCE' => $gerant['associe_lieu_naissance'] ?? '',
+            'GERANT_NATIONALITE' => $gerant['associe_nationalite'] ?? '',
+            'GERANT_ADRESSE' => $gerant['adresse'] ?? '',
+            'GERANT_QUALITE' => $gerant['associe_qualite'] ?? '',
+            'GERANT_DUREE_GERANCE' => $gerant['associe_duree_gerance'] ?? '',
             'CESSION_DATE' => self::formatDate($cession['cession_date'] ?? ''),
             'CESSION_DOSSIER' => $cession['cession_dossier'] ?? '',
             'CESSION_STATUS' => $cession['cession_status'] ?? 'brouillon',
@@ -1178,6 +1361,7 @@ class DocumentRenderer
                 'associe_date_naissance' => $a['associe_date_naissance'] ?? '',
                 'associe_lieu_naissance' => $a['associe_lieu_naissance'] ?? '',
                 'associe_capital_detenu' => $a['associe_capital_detenu'] ?? '',
+                'associe_duree_gerance' => $a['associe_duree_gerance'] ?? '',
             ];
         }
 
@@ -1186,6 +1370,19 @@ class DocumentRenderer
         $fPrenom = $firstAssocie['associe_prenom'] ?? '';
         $fCivilite = $firstAssocie['associe_civilite'] ?? 'M.';
         $fNomComplet = trim("$fCivilite $fPrenom $fNom");
+
+        $gerant = null;
+        foreach ($associeList as $a) {
+            if (($a['associe_est_gerant'] ?? '') === 'Gerant') {
+                $gerant = $a;
+                break;
+            }
+        }
+        if ($gerant === null) {
+            $gerant = $firstAssocie;
+        }
+        $gCivilite = $gerant['associe_civilite'] ?? 'M.';
+        $gNomComplet = trim("$gCivilite " . ($gerant['associe_prenom'] ?? '') . ' ' . ($gerant['associe_nom'] ?? ''));
 
         $now = new DateTime();
         $dateContrat = $contrat['contrat_date'] ?? ($contrat['contrat_date_debut'] ?? $now->format('Y-m-d'));
@@ -1281,6 +1478,17 @@ class DocumentRenderer
             'ASSOCIE_PARTS' => $firstAssocie['associe_parts'] ?? '',
             'ASSOCIE_CAPITAL_DETENU' => $firstAssocie['associe_capital_detenu'] ?? '',
             'ASSOCIE_EST_GERANT' => $firstAssocie['associe_est_gerant'] ?? '',
+            'GERANT_NOM_COMPLET' => $gNomComplet,
+            'GERANT_CIVILITE' => $gCivilite,
+            'GERANT_NOM' => $gerant['associe_nom'] ?? '',
+            'GERANT_PRENOM' => $gerant['associe_prenom'] ?? '',
+            'GERANT_CIN' => $gerant['associe_cin'] ?? '',
+            'GERANT_DATE_NAISSANCE' => self::formatDate($gerant['associe_date_naissance'] ?? ''),
+            'GERANT_LIEU_NAISSANCE' => $gerant['associe_lieu_naissance'] ?? '',
+            'GERANT_NATIONALITE' => $gerant['associe_nationalite'] ?? '',
+            'GERANT_ADRESSE' => $gerant['adresse'] ?? '',
+            'GERANT_QUALITE' => $gerant['associe_qualite'] ?? '',
+            'GERANT_DUREE_GERANCE' => $gerant['associe_duree_gerance'] ?? '',
             'CONTRAT_TYPE' => $contrat['contrat_type'] ?? '',
             'CONTRAT_TYPE_DOMICILIATION' => $contrat['contrat_type_domiciliation'] ?? '',
             'CONTRAT_DATE' => self::formatDate($dateContrat),
