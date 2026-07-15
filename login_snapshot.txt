@@ -1,0 +1,11 @@
+uid=38_0 RootWebArea "Connexion | Center Domiciliation App" url="http://localhost/Center-Domiciliation-App/index.php?page=connexion"
+  uid=38_1 main
+    uid=38_2 heading "Connexion" level="1"
+    uid=38_3 StaticText "location_city"
+    uid=38_4 heading "Connexion" level="2"
+    uid=38_5 StaticText "Centre de Domiciliation — Espace collaborateur"
+    uid=38_6 StaticText "EMAIL"
+    uid=38_7 textbox "EMAIL" required
+    uid=38_8 StaticText "MOT DE PASSE"
+    uid=38_9 textbox "MOT DE PASSE" required
+    uid=38_10 button "login Se connecter"

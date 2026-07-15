@@ -1,26 +1,4 @@
-/.idea/
-/.vscode/
-/vendor/
-/storage/logs/
-/storage/cache/
-/uploads/
 /.env
 /.env.local
-/composer.phar
-/*.log
-/*.txt
-/*.png
 
-/output/
 
-backups/
-/config/ai.local.php
-
-/dossiers_generer/*
-!/dossiers_generer/**/.gitkeep
-.opencode/skill_cache/
-tmp_test/
-*.DS_Store
-.opencode/tmp/
-/screenshots/
-/docs/screenshots/pv_ago_step4_recap.png
