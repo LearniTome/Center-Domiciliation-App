@@ -592,6 +592,9 @@ class TemplateEditor
             $zip = new ZipArchive();
             if ($zip->open($path) === true) {
                 $xml = $zip->getFromName('word/document.xml');
+                if ($xml === false || $xml === null) {
+                    $xml = $zip->getFromName('word\\document.xml');
+                }
                 $zip->close();
                 if ($xml !== false && $xml !== null) {
                     return $xml;
@@ -843,6 +846,7 @@ class TemplateEditor
                 'ASSOCIE_PARTS' => 'Nombre de parts',
                 'ASSOCIE_CAPITAL_DETENU' => 'Capital detenu',
                 'ASSOCIE_EST_GERANT' => 'Est gerant',
+                'ASSOCIE_ROLE_LABEL' => 'Label role (gérant/associé)',
             ],
             'Contrat' => [
                 'CONTRAT_TYPE' => 'Type de contrat',

@@ -80,7 +80,7 @@ if (is_post() && $step === 2) {
             'associe_adresse' => trim((string) ($_POST['associe_adresse'][$i] ?? '')),
             'associe_telephone' => trim((string) ($_POST['associe_telephone'][$i] ?? '')),
             'associe_email' => trim((string) ($_POST['associe_email'][$i] ?? '')),
-            'associe_qualite' => trim((string) ($_POST['associe_qualite'][$i] ?? 'Gerant')),
+            'associe_qualite' => trim((string) ($_POST['associe_qualite'][$i] ?? 'Gérant')),
             'associe_parts' => (string) ($_POST['associe_parts'][$i] ?? ''),
             'associe_capital_detenu' => (string) ($_POST['associe_capital_detenu'][$i] ?? ''),
             'associe_est_gerant' => ($_POST['associe_est_gerant'][$i] ?? '0') === '1' ? '1' : '0',

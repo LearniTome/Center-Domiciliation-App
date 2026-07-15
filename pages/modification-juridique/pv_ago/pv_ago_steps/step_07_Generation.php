@@ -74,7 +74,7 @@ if (is_post() && $step === 7) {
                 'heure' => $wizard['heure_ago'] ?? '10:00',
                 'lieu' => $wizard['lieu_ago'] ?? 'au siege social',
                 'pres' => $wizard['president_nom'] ?? '',
-                'presq' => $wizard['president_qualite'] ?? 'Gerant',
+                'presq' => $wizard['president_qualite'] ?? 'Gérant',
                 'exo' => $wizard['exercice_clos'] ?? '',
                 'tp' => !empty($wizard['total_parts']) ? (int) $wizard['total_parts'] : null,
                 'pp' => !empty($wizard['parts_presentes']) ? (int) $wizard['parts_presentes'] : null,

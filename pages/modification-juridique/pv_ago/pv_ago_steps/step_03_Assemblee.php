@@ -9,7 +9,7 @@ if (is_post() && $step === 3) {
     $wizard['heure_ago'] = $_POST['heure_ago'] ?? '10:00';
     $wizard['lieu_ago'] = $_POST['lieu_ago'] ?? 'au siege social';
     $wizard['president_nom'] = $_POST['president_nom'] ?? '';
-    $wizard['president_qualite'] = $_POST['president_qualite'] ?? 'Gerant';
+    $wizard['president_qualite'] = $_POST['president_qualite'] ?? 'Gérant';
     $wizard['exercice_clos'] = $_POST['exercice_clos'] ?? '31/12/' . (date('Y') - 1);
     $wizard['total_parts'] = $_POST['total_parts'] ?? '';
     $wizard['parts_presentes'] = $_POST['parts_presentes'] ?? '';
@@ -57,7 +57,7 @@ if ($step === 3):
                 </div>
                 <div class="field">
                     <span>Qualite du president</span>
-                    <input type="text" name="president_qualite" value="<?= e($wizard['president_qualite'] ?? 'Gerant') ?>">
+                    <input type="text" name="president_qualite" value="<?= e($wizard['president_qualite'] ?? 'Gérant') ?>">
                 </div>
                 <div class="field">
                     <span>Exercice clos le</span>

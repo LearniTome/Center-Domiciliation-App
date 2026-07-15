@@ -17,7 +17,7 @@ if (!isset($_SESSION['pv_ago_wizard']) || !is_array($_SESSION['pv_ago_wizard']))
         'heure_ago' => '10:00',
         'lieu_ago' => 'au siege social',
         'president_nom' => '',
-        'president_qualite' => 'Gerant',
+        'president_qualite' => 'Gérant',
         'exercice_clos' => '31/12/' . (date('Y') - 1),
         'total_parts' => '',
         'parts_presentes' => '',
@@ -139,7 +139,7 @@ if ($editingId > 0 && !isset($_SESSION['_pv_ago_loaded'])) {
             $wizard['heure_ago'] = $dbPv['heure_ago'] ?? '10:00';
             $wizard['lieu_ago'] = $dbPv['lieu_ago'] ?? 'au siege social';
             $wizard['president_nom'] = $dbPv['president_nom'] ?? '';
-            $wizard['president_qualite'] = $dbPv['president_qualite'] ?? 'Gerant';
+            $wizard['president_qualite'] = $dbPv['president_qualite'] ?? 'Gérant';
             $wizard['exercice_clos'] = $dbPv['exercice_clos'] ?? '31/12/' . (date('Y') - 1);
             $wizard['total_parts'] = $dbPv['total_parts'] ?? '';
             $wizard['parts_presentes'] = $dbPv['parts_presentes'] ?? '';

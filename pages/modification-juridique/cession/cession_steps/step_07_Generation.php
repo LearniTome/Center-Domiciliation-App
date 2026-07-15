@@ -75,7 +75,7 @@ $stmt->execute([
                         'adr' => $a['associe_adresse'] ?? '',
                         'tel' => $a['associe_telephone'] ?? '',
                         'email' => $a['associe_email'] ?? '',
-                        'qual' => $a['associe_qualite'] ?? 'Gerant',
+                        'qual' => $a['associe_qualite'] ?? 'Gérant',
                         'parts' => !empty($a['associe_parts']) ? (int) $a['associe_parts'] : null,
                         'capital' => $capitalDetenu ?: null,
                         'gerant' => ($a['associe_est_gerant'] ?? '0') === '1' ? 1 : 0,

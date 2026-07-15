@@ -42,8 +42,8 @@ function pv_ago_calculs(array $w, array $soc): array
     $resolutions = [];
     $socName = $soc['societe_raison_sociale'] ?? $w['societe']['societe_raison_sociale'] ?? 'la societe';
     $forme = $soc['societe_forme_juridique'] ?? $w['societe']['societe_forme_juridique'] ?? 'SARL';
-    $president = $w['president_nom'] ?? 'le Gerant';
-    $presidentQualite = $w['president_qualite'] ?? 'Gerant';
+    $president = $w['president_nom'] ?? 'le Gérant';
+    $presidentQualite = $w['president_qualite'] ?? 'Gérant';
     $exercice = $w['exercice_clos'] ?? '31/12/2025';
     $dateAgo = $w['date_ago'] ?? date('Y-m-d');
 

@@ -112,9 +112,16 @@ class DocumentRenderer
                         $inner = trim(preg_replace('#<[^>]+>#', '', $inner));
                         $inner = preg_replace('#\s+#', ' ', $inner);
                         $inner = trim($inner);
+                        $suffixStart = $closePos + strlen($delim['close']);
+                        $suffix = substr($merged, $suffixStart);
                         $node->nodeValue = $prefix . $delim['open'] . ' ' . $inner . ' ' . $delim['close'];
-                        foreach ($mergedNodes as $mn) {
-                            $mn->nodeValue = '';
+                        $lastIdx = count($mergedNodes) - 1;
+                        foreach ($mergedNodes as $idx => $mn) {
+                            if ($idx === $lastIdx && $suffix !== '') {
+                                $mn->nodeValue = $suffix;
+                            } else {
+                                $mn->nodeValue = '';
+                            }
                         }
                         break;
                     }
@@ -404,6 +411,7 @@ class DocumentRenderer
                 $pourcentage = $totalCapital > 0 ? round(($associeCapital / $totalCapital) * 100, 2) : 0;
                 $item = str_replace('{{ a.POURCENTAGE }}', number_format($pourcentage, 2, ',', '.') . ' %', $item);
                 $item = str_replace('{{ a.DUREE_GERANCE }}', $associe['associe_duree_gerance'] ?? '', $item);
+                $item = str_replace('{{ a.ROLE_LABEL }}', ($associe['associe_est_gerant'] ?? '') === 'Gerant' ? 'gérant' : 'associé', $item);
                 $result .= $item;
                 if ($i < count($associes) - 1) {
                     $result .= "\n";
@@ -759,7 +767,7 @@ class DocumentRenderer
 
         $activitiesList = $societeActivities ?: $allActivities;
         $activitiesCount = count($activitiesList);
-        $activitiesInline = implode(', ', $activitiesList);
+        $activitiesInline = implode('; ', $activitiesList);
         $activitiesBullets = '';
         $activitiesContinuationBullets = '';
         foreach ($activitiesList as $i => $act) {
@@ -905,6 +913,7 @@ class DocumentRenderer
             'ASSOCIE_PARTS' => $firstAssocie['associe_parts'] ?? '',
             'ASSOCIE_CAPITAL_DETENU' => $firstAssocie['associe_capital_detenu'] ?? '',
             'ASSOCIE_EST_GERANT' => $firstAssocie['associe_est_gerant'] ?? '',
+            'ASSOCIE_ROLE_LABEL' => ($firstAssocie['associe_est_gerant'] ?? '') === 'Gerant' ? 'gérant' : 'associé',
             'GERANT_NOM_COMPLET' => $gNomComplet,
             'GERANT_CIVILITE' => $gCivilite,
             'GERANT_NOM' => $gerant['associe_nom'] ?? '',
@@ -1091,6 +1100,7 @@ class DocumentRenderer
             'ASSOCIE_QUALITE' => $firstAssocie['associe_qualite'] ?? '',
             'ASSOCIE_PARTS' => (string) ($firstAssocie['associe_parts'] ?? ''),
             'ASSOCIE_EST_GERANT' => $firstAssocie['associe_est_gerant'] ?? '',
+            'ASSOCIE_ROLE_LABEL' => ($firstAssocie['associe_est_gerant'] ?? '') === 'Gerant' ? 'gérant' : 'associé',
             'GERANT_NOM_COMPLET' => $gNomComplet,
             'GERANT_CIVILITE' => $gCivilite,
             'GERANT_NOM' => $gerant['associe_nom'] ?? '',
@@ -1396,7 +1406,7 @@ class DocumentRenderer
                 $allActivities = array_map(static fn(array $row): string => $row['activite'], $activitesStmt->fetchAll());
                 $activitiesList = $allActivities;
                 $activitiesCount = count($activitiesList);
-                $activitiesInline = implode(', ', $activitiesList);
+                $activitiesInline = implode('; ', $activitiesList);
                 foreach ($activitiesList as $i => $act) {
                     $prefix = '  \\item ';
                     $activitiesBullets .= $prefix . $act . "\n";
@@ -1472,6 +1482,7 @@ class DocumentRenderer
             'ASSOCIE_PARTS' => $firstAssocie['associe_parts'] ?? '',
             'ASSOCIE_CAPITAL_DETENU' => $firstAssocie['associe_capital_detenu'] ?? '',
             'ASSOCIE_EST_GERANT' => $firstAssocie['associe_est_gerant'] ?? '',
+            'ASSOCIE_ROLE_LABEL' => ($firstAssocie['associe_est_gerant'] ?? '') === 'Gerant' ? 'gérant' : 'associé',
             'GERANT_NOM_COMPLET' => $gNomComplet,
             'GERANT_CIVILITE' => $gCivilite,
             'GERANT_NOM' => $gerant['associe_nom'] ?? '',

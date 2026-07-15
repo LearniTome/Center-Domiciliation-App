@@ -34,6 +34,9 @@ class TemplateAnalyzer
             if ($zip->open($path) === true) {
                 $xml = $zip->getFromName('word/document.xml');
                 if ($xml === false) {
+                    $xml = $zip->getFromName('word\\document.xml');
+                }
+                if ($xml === false) {
                     $xml = $zip->getFromName('document.xml');
                 }
                 $zip->close();

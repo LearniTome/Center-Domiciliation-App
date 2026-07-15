@@ -183,12 +183,12 @@ INSERT INTO ref_lieux_naissance (lieu_naissance) VALUES
 
 -- Données de référence pour les qualités d'associé
 INSERT INTO ref_qualites_associe (qualite_associe) VALUES
-('Gerant'),
-('Associe unique'),
-('Associe majoritaire'),
-('Associe minoritaire'),
-('President'),
-('Directeur General'),
+('Gérant'),
+('Associé unique'),
+('Associé majoritaire'),
+('Associé minoritaire'),
+('Président'),
+('Directeur Général'),
 ('Actionnaire'),
 ('Porteur de parts');
 
@@ -356,8 +356,8 @@ INSERT IGNORE INTO ref_villes (ville) VALUES
 ('Rabat');
 
 INSERT IGNORE INTO ref_qualites_associe (qualite_associe) VALUES
-('Gerant'),
-('Associe unique');
+('Gérant'),
+('Associé unique');
 
 -- RBAC Seed Data
 INSERT IGNORE INTO roles (id, nom, description, is_internal, is_system, sort_order) VALUES
