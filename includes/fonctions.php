@@ -132,6 +132,12 @@ function int_value(array $source, string $key): ?int
     return (int) $value;
 }
 
+function date_value(array $source, string $key): ?string
+{
+    $value = field_value($source, $key);
+    return $value !== '' ? $value : null;
+}
+
 function dashboard_count(?PDO $pdo, string $table): int
 {
     if (!$pdo) {

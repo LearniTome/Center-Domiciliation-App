@@ -56,83 +56,68 @@ class DocumentRenderer
 
     private function normalizeSplitVariables(string $xml): string
     {
-        $dom = new DOMDocument('1.0', 'UTF-8');
-        $dom->preserveWhiteSpace = true;
-        if ($dom->loadXML($xml) === false) {
-            return $xml;
-        }
-
-        $xp = new DOMXPath($dom);
-        $textNodes = $xp->query('//w:t');
-        if ($textNodes === false || $textNodes->length === 0) {
-            return $xml;
-        }
-
         $delimiters = [
             ['open' => '{{', 'close' => '}}'],
             ['open' => '{%p', 'close' => '%}'],
         ];
 
-        $i = 0;
-        $count = $textNodes->length;
-        while ($i < $count) {
-            $node = $textNodes->item($i);
-            $text = $node->nodeValue;
+        $tPattern = '#(<w:t(?:\s[^>]*)?>)(.*?)(</w:t>)#s';
+        preg_match_all($tPattern, $xml, $tMatches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER);
+        if (empty($tMatches)) {
+            return $xml;
+        }
+
+        $replacements = [];
+        $tCount = count($tMatches);
+
+        for ($i = 0; $i < $tCount; $i++) {
+            $text = $tMatches[$i][2][0];
+            $textOffset = $tMatches[$i][2][1];
 
             foreach ($delimiters as $delim) {
                 $openPos = strpos($text, $delim['open']);
                 if ($openPos === false) {
                     continue;
                 }
+
                 $closePos = strpos($text, $delim['close'], $openPos + strlen($delim['open']));
                 if ($closePos !== false) {
                     $inner = substr($text, $openPos + strlen($delim['open']), $closePos - $openPos - strlen($delim['open']));
-                    if (strpos($inner, '<') === false) {
-                        continue;
+                    if (strpos($inner, '<') !== false) {
+                        $clean = preg_replace('#<[^>]+>#', '', $inner);
+                        $clean = preg_replace('/\s+/', ' ', trim($clean));
+                        $newText = substr($text, 0, $openPos) . $delim['open'] . ' ' . $clean . ' ' . $delim['close'] . substr($text, $closePos + strlen($delim['close']));
+                        $replacements[] = ['start' => $textOffset, 'length' => strlen($text), 'new' => $newText];
                     }
-                    $clean = trim(preg_replace('#\s+#', ' ', $inner));
-                    $node->nodeValue = substr($text, 0, $openPos) . $delim['open'] . ' ' . $clean . ' ' . $delim['close'];
                     continue;
                 }
 
                 $prefix = substr($text, 0, $openPos);
                 $merged = substr($text, $openPos);
-                $mergedNodes = [];
 
-                $j = $i + 1;
-                while ($j < $count) {
-                    $nextNode = $textNodes->item($j);
-                    $nextText = $nextNode->nodeValue;
-                    $merged .= $nextText;
-                    $mergedNodes[] = $nextNode;
-
+                for ($j = $i + 1; $j < $tCount; $j++) {
+                    $merged .= $tMatches[$j][2][0];
                     $closePos = strpos($merged, $delim['close']);
                     if ($closePos !== false) {
                         $inner = substr($merged, strlen($delim['open']), $closePos - strlen($delim['open']));
-                        $inner = trim(preg_replace('#<[^>]+>#', '', $inner));
-                        $inner = preg_replace('#\s+#', ' ', $inner);
-                        $inner = trim($inner);
-                        $suffixStart = $closePos + strlen($delim['close']);
-                        $suffix = substr($merged, $suffixStart);
-                        $node->nodeValue = $prefix . $delim['open'] . ' ' . $inner . ' ' . $delim['close'];
-                        $lastIdx = count($mergedNodes) - 1;
-                        foreach ($mergedNodes as $idx => $mn) {
-                            if ($idx === $lastIdx && $suffix !== '') {
-                                $mn->nodeValue = $suffix;
-                            } else {
-                                $mn->nodeValue = '';
-                            }
+                        $inner = preg_replace('#<[^>]+>#', '', $inner);
+                        $inner = preg_replace('/\s+/', ' ', trim($inner));
+                        $replacements[] = ['start' => $textOffset, 'length' => strlen($text), 'new' => $prefix . $delim['open'] . ' ' . $inner . ' ' . $delim['close']];
+                        for ($k = $i + 1; $k <= $j; $k++) {
+                            $replacements[] = ['start' => $tMatches[$k][2][1], 'length' => strlen($tMatches[$k][2][0]), 'new' => ''];
                         }
                         break;
                     }
-                    $j++;
                 }
             }
-            $i++;
         }
 
-        $result = $dom->saveXML();
-        return $result !== false ? $result : $xml;
+        usort($replacements, static fn(array $a, array $b): int => $b['start'] <=> $a['start']);
+        foreach ($replacements as $r) {
+            $xml = substr_replace($xml, $r['new'], $r['start'], $r['length']);
+        }
+
+        return $xml;
     }
 
     private function readXml(): string

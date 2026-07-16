@@ -92,7 +92,7 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
             'collaborateur_email' => field_value($_POST, 'collaborateur_email'),
             'email' => field_value($_POST, 'email'),
             'telephone' => '',
-            'date_debut' => field_value($_POST, 'date_debut'),
+            'date_debut' => date_value($_POST, 'date_debut'),
             'statut' => field_value($_POST, 'statut', 'actif'),
             'notes' => field_value($_POST, 'notes'),
             'role_id' => $roleId,
