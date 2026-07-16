@@ -114,6 +114,53 @@ if ($gitCheck) {
 } else {
     Write-Host "[Git] Git non trouve, synchronisation ignoree" -ForegroundColor Gray
 }
+
+# ----- Sync DB (import latest dump from exports/) -----
+$DbName = "center_domiciliation"
+$ExportDir = Join-Path $ProjectRoot "database\exports"
+$MysqldumpPath = Join-Path $XamppPath "mysql\bin\mysqldump.exe"
+$MysqlPath = Join-Path $XamppPath "mysql\bin\mysql.exe"
+
+if (Test-Path $MysqlPath) {
+    $latestDump = Get-ChildItem $ExportDir -Filter "*.sql" -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -like "${DbName}_*" } |
+        Sort-Object LastWriteTime -Descending |
+        Select-Object -First 1
+
+    if ($latestDump) {
+        $dbExists = & $MysqlPath -u root -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='$DbName'" 2>&1 | Select-String $DbName
+        $importNeeded = $false
+
+        if (-not $dbExists) {
+            Write-Host "[Sync] Base $DbName introuvable, import necessaire..." -ForegroundColor Yellow
+            $importNeeded = $true
+        } else {
+            $tableCount = & $MysqlPath -u root -N -e "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='$DbName'" 2>&1
+            $tableCount = $tableCount.Trim()
+            if ($tableCount -eq "0") {
+                Write-Host "[Sync] Base $DbName vide, import necessaire..." -ForegroundColor Yellow
+                $importNeeded = $true
+            }
+        }
+
+        if ($importNeeded) {
+            Write-Host "[Sync] Import du dump: $($latestDump.Name)..." -ForegroundColor Yellow
+            & $MysqlPath -u root -e "CREATE DATABASE IF NOT EXISTS ``$DbName`` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci" 2>&1 | Out-Null
+            & $MysqlPath -u root $DbName < $latestDump.FullName 2>&1 | Out-Null
+            if ($LASTEXITCODE -eq 0) {
+                Write-Host "      DB importee avec succes" -ForegroundColor Green
+            } else {
+                Write-Host "      [ATTENTION] Echec de l'import DB" -ForegroundColor Yellow
+            }
+        } else {
+            Write-Host "[Sync] DB $DbName a jour ($tableCount tables)" -ForegroundColor Green
+        }
+    } else {
+        Write-Host "[Sync] Aucun dump dans database/exports/" -ForegroundColor Gray
+    }
+} else {
+    Write-Host "[Sync] mysql introuvable, sync DB ignoree" -ForegroundColor Gray
+}
 Write-Host ""
 
 # ----- Verification du lien symlink -----
@@ -265,9 +312,41 @@ Write-Host "Pour les arreter :" -ForegroundColor Yellow
 Write-Host "  taskkill /f /im httpd.exe" -ForegroundColor White
 Write-Host "  taskkill /f /im mysqld.exe" -ForegroundColor White
 Write-Host ""
-Write-Host "--- Apres avoir travaille, pousse tes changements :" -ForegroundColor Cyan
-Write-Host "  git add -A" -ForegroundColor White
-Write-Host "  git commit -m ""description du changement""" -ForegroundColor White
-Write-Host "  git push" -ForegroundColor White
+Write-Host "--- Quand tu as termine, appuie sur Entree pour exporter et pousser." -ForegroundColor Cyan
+Write-Host "    Ou ferme simplement la fenetre." -ForegroundColor Gray
 Write-Host ""
-pause
+
+$null = Read-Host
+
+# ----- Auto-export DB + commit + push -----
+Write-Host ""
+Write-Host "[Sync] Export de la base $DbName..." -ForegroundColor Yellow
+$dumpFile = Join-Path $ExportDir "$(Get-Date -Format 'yyyy-MM-dd_HHmmss').sql"
+if (Test-Path $MysqldumpPath) {
+    & $MysqldumpPath -u root --no-create-info --complete-insert --skip-extended-insert $DbName 2>&1 | Out-File -FilePath $dumpFile -Encoding UTF8
+    if ($LASTEXITCODE -eq 0 -and (Test-Path $dumpFile)) {
+        $size = [math]::Round((Get-Item $dumpFile).Length / 1KB, 1)
+        Write-Host "      Export: $size KB" -ForegroundColor Green
+    } else {
+        Write-Host "      [ATTENTION] Echec de l'export" -ForegroundColor Yellow
+        $dumpFile = $null
+    }
+} else {
+    Write-Host "      mysqldump introuvable, export ignore" -ForegroundColor Yellow
+    $dumpFile = $null
+}
+
+if ($dumpFile) {
+    Write-Host "[Sync] Git commit + push..." -ForegroundColor Yellow
+    Push-Location $ProjectRoot
+    & git add "database/exports/" 2>&1 | Out-Null
+    & git commit -m "sync: DB dump $(Split-Path $dumpFile -Leaf)" 2>&1 | Out-Null
+    & git push 2>&1 | Out-Null
+    Pop-Location
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "      Push termine !" -ForegroundColor Green
+    } else {
+        Write-Host "      [ATTENTION] Echec du push" -ForegroundColor Yellow
+    }
+}
+Write-Host ""
