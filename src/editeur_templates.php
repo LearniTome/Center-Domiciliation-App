@@ -632,7 +632,7 @@ class TemplateEditor
             $zip = new ZipArchive();
             if ($zip->open($path) === true) {
                 for ($i = 0; $i < $zip->numFiles; $i++) {
-                    $name = $zip->getNameIndex($i);
+                    $name = str_replace('\\', '/', $zip->getNameIndex($i));
                     $data = $zip->getFromIndex($i);
                     if ($data !== false) {
                         $files[$name] = $data;

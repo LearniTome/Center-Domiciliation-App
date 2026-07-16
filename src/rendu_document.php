@@ -359,6 +359,36 @@ class DocumentRenderer
                 }
             }
 
+            $strayPrefix = '';
+            $straySuffix = '';
+            if (preg_match('/^((?:<\/w:\w+>\s*)+)/s', $block, $pm)) {
+                $strayPrefix = $pm[1];
+                $block = substr($block, strlen($strayPrefix));
+            }
+            if (preg_match('/(.*<\/w:(?:p|tc|tr|tbl)>)(.*)$/s', $block, $sm)) {
+                $block = $sm[1];
+                $straySuffix = $sm[2];
+            }
+            $structuralTags = ['w:tbl', 'w:tr', 'w:tc', 'w:p', 'w:r'];
+            $excessClosing = '';
+            do {
+                $stripped = false;
+                foreach ($structuralTags as $tag) {
+                    $opens  = preg_match_all('/<' . preg_quote($tag) . '\b/', $block);
+                    $closes = preg_match_all('/<\/' . preg_quote($tag) . '>/', $block);
+                    if ($closes > $opens) {
+                        $pat = '/<\/' . preg_quote($tag) . '>$/';
+                        if (preg_match($pat, $block, $em)) {
+                            $excessClosing = $em[0] . $excessClosing;
+                            $block = substr($block, 0, -strlen($em[0]));
+                            $stripped = true;
+                            break;
+                        }
+                    }
+                }
+            } while ($stripped);
+            $straySuffix = $excessClosing . $straySuffix;
+
             $totalParts = 0;
             foreach ($associes as $a) {
                 $totalParts += (int) ($a['associe_parts'] ?? 0);
@@ -378,8 +408,8 @@ class DocumentRenderer
                 $parts = (int) ($associe['associe_parts'] ?? 0);
                 $item = str_replace('{{ a.PARTS }}', (string) $parts, $item);
                 $item = str_replace('{{ a.EST_GERANT }}', $associe['associe_est_gerant'] ?? 'Non', $item);
-                $prefix = $associe['associe_civilite'] ?? 'M.';
-                $fullName = trim($prefix . ' ' . ($associe['associe_prenom'] ?? '') . ' ' . ($associe['associe_nom'] ?? ''));
+                $civ = $associe['associe_civilite'] ?? 'M.';
+                $fullName = trim($civ . ' ' . ($associe['associe_prenom'] ?? '') . ' ' . ($associe['associe_nom'] ?? ''));
                 $item = str_replace('{{ a.NOM_COMPLET }}', $fullName, $item);
                 $item = str_replace('{{ a.ADRESSE }}', $associe['adresse'] ?? '', $item);
                 $item = str_replace('{{ a.EMAIL }}', $associe['email'] ?? '', $item);
@@ -402,7 +432,7 @@ class DocumentRenderer
                     $result .= "\n";
                 }
             }
-            return $result;
+            return $strayPrefix . $result . $straySuffix;
         }, $xml);
     }
 
@@ -619,7 +649,7 @@ class DocumentRenderer
                     new RecursiveDirectoryIterator($tmpDir, RecursiveDirectoryIterator::SKIP_DOTS)
                 );
                 foreach ($files as $file) {
-                    $relative = substr($file->getPathname(), strlen($tmpDir) + 1);
+                    $relative = str_replace(DIRECTORY_SEPARATOR, '/', substr($file->getPathname(), strlen($tmpDir) + 1));
                     $zip->addFile($file->getPathname(), $relative);
                 }
                 $zip->close();
