@@ -102,9 +102,14 @@ class DocumentRenderer
                         $inner = substr($merged, strlen($delim['open']), $closePos - strlen($delim['open']));
                         $inner = preg_replace('#<[^>]+>#', '', $inner);
                         $inner = preg_replace('/\s+/', ' ', trim($inner));
+                        $afterCloseInMerged = substr($merged, $closePos + strlen($delim['close']));
                         $replacements[] = ['start' => $textOffset, 'length' => strlen($text), 'new' => $prefix . $delim['open'] . ' ' . $inner . ' ' . $delim['close']];
                         for ($k = $i + 1; $k <= $j; $k++) {
-                            $replacements[] = ['start' => $tMatches[$k][2][1], 'length' => strlen($tMatches[$k][2][0]), 'new' => ''];
+                            if ($k === $j) {
+                                $replacements[] = ['start' => $tMatches[$k][2][1], 'length' => strlen($tMatches[$k][2][0]), 'new' => $afterCloseInMerged];
+                            } else {
+                                $replacements[] = ['start' => $tMatches[$k][2][1], 'length' => strlen($tMatches[$k][2][0]), 'new' => ''];
+                            }
                         }
                         break;
                     }
