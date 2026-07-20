@@ -3783,7 +3783,7 @@ tr[data-coverage], .row-mapped {
 }
 .a4-page {
     width: 21cm; height: 29.7cm; padding: 1.5cm 2cm;
-    background: white; color: #1a1a1a;
+    background: var(--panel); color: var(--text);
     font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; font-size: 11pt;
     line-height: 1.15; box-shadow: 0 2px 10px rgba(0,0,0,0.25);
     box-sizing: border-box; overflow: hidden; position: relative;
@@ -3792,24 +3792,25 @@ tr[data-coverage], .row-mapped {
 .a4-page::after {
     content: "Page " counter(page-num);
     position: absolute; bottom: 0.4cm; right: 0.6cm;
-    font-size: 8pt; color: #bbb;
+    font-size: 8pt; color: var(--text-secondary);
     font-family: Calibri, Arial, sans-serif;
     pointer-events: none;
 }
 .a4-page hr.page-break {
-    border: 0; border-top: 2px dashed #ccc; margin: 2cm 0;
+    border: 0; border-top: 2px dashed var(--line); margin: 2cm 0;
     page-break-after: always; break-after: page;
 }
-.a4-page h1 { font-size: 18pt; font-weight: 700; margin: 12pt 0 6pt; }
-.a4-page h2 { font-size: 16pt; font-weight: 700; margin: 10pt 0 4pt; }
-.a4-page h3 { font-size: 14pt; font-weight: 600; margin: 8pt 0 4pt; }
-.a4-page h4 { font-size: 12pt; font-weight: 600; margin: 6pt 0 3pt; }
-.a4-page p { margin: 0 0 8pt; }
+.a4-page h1 { font-size: 18pt; font-weight: 700; margin: 12pt 0 6pt; color: var(--text); }
+.a4-page h2 { font-size: 16pt; font-weight: 700; margin: 10pt 0 4pt; color: var(--text); }
+.a4-page h3 { font-size: 14pt; font-weight: 600; margin: 8pt 0 4pt; color: var(--info); }
+.a4-page h4 { font-size: 12pt; font-weight: 600; margin: 6pt 0 3pt; color: var(--text-secondary); }
+.a4-page p { margin: 0 0 8pt; color: var(--text); }
 .a4-page table { width: 100%; border-collapse: collapse; margin: 6pt 0; }
-.a4-page td, .a4-page th { border: 1px solid #999; padding: 4pt; }
+.a4-page td, .a4-page th { border: 1px solid var(--line); padding: 4pt; color: var(--text); }
+.a4-page th { background: var(--panel-strong); }
 .a4-page var {
-    color: #0090e7; font-style: normal; font-family: 'Courier New', monospace;
-    background: #e8f4fd; padding: 0 3px; border-radius: 2px;
+    color: var(--primary); font-style: normal; font-family: 'Courier New', monospace;
+    background: rgba(0,144,231,0.12); padding: 0 3px; border-radius: 2px;
 }
 .editor-source {
     width: 100%; min-height: 400px; padding: 1rem;
@@ -3820,8 +3821,8 @@ tr[data-coverage], .row-mapped {
 }
 .editor-preview {
     width: 100%; min-height: 400px; padding: 1.5cm 2cm;
-    background: white; border: 1px solid var(--line);
-    border-radius: 0 0 var(--radius-sm) var(--radius-sm); color: #1a1a1a;
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 0 0 var(--radius-sm) var(--radius-sm); color: var(--text);
     font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; font-size: 11pt;
     line-height: 1.15; overflow: visible; box-sizing: border-box;
     max-width: 21cm; margin: 0 auto; box-shadow: 0 2px 12px rgba(0,0,0,0.2);

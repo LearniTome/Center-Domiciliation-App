@@ -209,85 +209,188 @@ const formatFR = (v, decimals = 2) => {
     });
 };
 
-const testData = {
-    // societe (step 1) — societe_dossier exclu car genere automatiquement par PHP
-    'societe_raison_sociale': 'TEST SARL AU',
-    'societe_forme_juridique': 'SARL AU',
-    'societe_ice': '123456789000012',
-    'societe_date_ice': '2025-01-15',
-    'societe_rc': '123456',
-    'societe_if': '12345678',
-    'societe_ville': 'Casablanca',
-    'societe_email': 'contact@test-sarl.ma',
-    'societe_telephone': '0522123456',
-    'societe_capital': '100000',
-    'societe_part_social': '1000',
-    'societe_valeur_nominale': '100',
-    'societe_date_exp_cert_neg': '2027-01-15',
-    'societe_adresse_siege': 'HAY MOULAY ABDELLAH RUE 300 N 152 ETG 2 AIN CHOCK, CASABLANCA',
-    'societe_tribunal': 'Casablanca',
-    'tribunal_type': 'Tribunal de commerce',
-    'societe_type_generation': 'creation',
-    'societe_procedure_creation': 'normal',
-    'societe_mode_depot': 'depot_physique',
-    // contrat (step 3)
-    'contrat_type': 'Domiciliation commerciale',
-    'contrat_date': '2026-01-01',
-    'contrat_duree_mois': '12',
-    'contrat_type_domiciliation': 'Personne Morale',
-    'contrat_type_autre': '',
-    'contrat_date_debut': '2026-01-01',
-    'contrat_date_fin': '2026-12-31',
-    'contrat_tva_pourcent': '20',
-    'contrat_loyer_ht': '83.33',
-    'contrat_loyer_ttc': '100',
-    'contrat_total_ht': '1200',
-    'contrat_type_renouvellement': 'Annuel',
-    'contrat_renouv_tva_pourcent': '20',
-    'contrat_renouv_loyer_ht': '166.67',
-    'contrat_renouv_loyer_ttc': '200',
-    'contrat_renouv_total_ht': '2400',
-    'contrat_statut': 'actif',
-    'contrat_notes': 'Contrat de test pour validation',
-    // associe (step 2) — short keys, matched after stripping associes[N] prefix
-    'civilite': 'Mr',
-    'nom': 'BENANI',
-    'prenom': 'Ahmed',
-    'nom_complet': 'Mr Ahmed BENANI',
-    'cin': 'AB123456',
-    'date_validite_cin': '2028-05-15',
-    'date_naissance': '1990-05-15',
-    'lieu_naissance': 'Casablanca',
-    'nationalite': 'Marocaine',
-    'telephone': '0612345678',
-    'email': 'ahmed.benani@test.ma',
-    'adresse': '123 Rue Mohammed V, Casablanca',
-    'qualite': 'Associe',
-    'parts': '1000',
-    'capital_detenu': '100000',
-    'part_percent': '',
-    'est_gerant': '1',
+function randFrom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function randDate(startYear, endYear) {
+    const y = randInt(startYear, endYear);
+    const m = String(randInt(1, 12)).padStart(2, '0');
+    const d = String(randInt(1, 28)).padStart(2, '0');
+    return y + '-' + m + '-' + d;
+}
+function randPhone() {
+    return '0' + randInt(5, 7) + String(randInt(10000000, 99999999));
+}
+function randCIN() {
+    const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    return letters[randInt(0, letters.length - 1)] + letters[randInt(0, letters.length - 1)] + randInt(100000, 999999);
+}
+function randEmail(prenom, nom) {
+    const slug = (prenom + '.' + nom).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+    const domains = ['gmail.com', 'yahoo.fr', 'outlook.com', 'hotmail.ma'];
+    return slug + randInt(1, 99) + '@' + randFrom(domains);
+}
+function randAddr(ville) {
+    const rues = ['Rue Mohammed V', 'Boulevard Hassan II', 'Avenue des FAR', 'Rue Moulay Youssef', 'Boulevard Anfa', 'Rue Ibn Batouta', 'Avenue Fal Ould Oumeir', 'Rue Zerktouni'];
+    return randInt(1, 200) + ' ' + randFrom(rues) + ', ' + ville;
+}
+
+const randNames = {
+    noms: ['BENALI', 'IDRISSI', 'AMRANI', 'MOUSSAIDI', 'TAZI', 'BENNANI', 'CHAKIR', 'EL FASSI', 'ALAOUI', 'BENJELLOUN', 'MKOUK', 'KABBAJ', 'SAIDI', 'Ziani', 'BOUZID', 'TAHRI', 'HAMI', 'EL KHALDI', 'RHILO', 'GUERRAOUI', 'BLOUZA', 'MSSAoudi', 'BENKIRANE', 'CHRAIBI', 'LAKHRIFI'],
+    prenoms_m: ['Ahmed', 'Mohamed', 'Youssef', 'Khalid', 'Hamid', 'Rachid', 'Omar', 'Karim', 'Said', 'Ali', 'Hassan', 'Mehdi', 'Amine', 'Driss', 'Reda', 'Taha', 'Ismail', 'Ayoub', 'Zakaria', 'Mounir'],
+    prenoms_f: ['Fatima', 'Khadija', 'Amina', 'Salma', 'Nadia', 'Sara', 'Leila', 'Najat', 'Samira', 'Hanane', 'Imane', 'Asmae', 'Zineb', 'Houda', 'Siham', 'Latifa', 'Meryem', 'Soumia', 'Rajae', 'Wafae'],
+    villes: ['Casablanca', 'Rabat', 'Marrakech', 'Fes', 'Tangier', 'Agadir', 'Meknes', 'Oujda', 'Kenitra', 'Tetouan', 'Safi', 'Mohamadia', 'Khemisset', 'Beni Mellal', 'Settat'],
+    activites: ['Commerce general', 'Prestation de services', 'Conseil et audit', 'Transport et logistique', 'Informatique et technologies', 'Import-export', 'BTP et construction', 'Immobilier', 'Industrie manufacturiere', 'Habillement et textile']
 };
 
-document.addEventListener('click', (event) => {
-    const button = event.target.closest('[data-fill-test]');
+function generateTestData() {
+    var nom = randFrom(randNames.noms);
+    var isF = Math.random() > 0.5;
+    var prenom = isF ? randFrom(randNames.prenoms_f) : randFrom(randNames.prenoms_m);
+    var civilite = isF ? 'Mme' : 'Mr';
+    var ville = randFrom(randNames.villes);
+    var capital = randFrom([50000, 100000, 200000, 500000, 1000000]);
+    var partSocial = randFrom([100, 500, 1000, 2000, 5000, 10000]);
+    var vn = randFrom([50, 100, 200, 500, 1000]);
+    var loyerHt = randFrom([83.33, 166.67, 250, 500, 750, 1000, 1500]);
+    var tva = 20;
+    var loyerTtc = Math.round(loyerHt * (1 + tva / 100) * 100) / 100;
+    var duree = randFrom([6, 12, 24, 36]);
+    var debut = randDate(2025, 2026);
+    var debutD = new Date(debut);
+    var finD = new Date(debutD);
+    finD.setMonth(finD.getMonth() + duree);
+    var fin = finD.toISOString().slice(0, 10);
+    var ice = String(randInt(100000000, 999999999)) + String(randInt(100000, 999999));
+
+    return {
+        _societe: {
+            'societe_raison_sociale': 'SARL ' + randFrom(['ATLAS', 'MAGHREB', 'AL AMAL', 'ATLAS', 'SODIA', 'SOTRA', 'SOTEX', 'SOCIED', 'COTRA', 'INTRA']) + ' ' + randFrom(['TRADING', 'CONSULTING', 'SERVICES', 'GROUP', 'INVEST', 'TECH', 'SOLUTIONS', 'INDUSTRIE', 'DISTRIBUTION', 'INTERNATIONAL']),
+            'societe_type_generation': 'creation',
+            'societe_procedure_creation': 'normal',
+            'societe_mode_depot': 'depot_physique',
+            'societe_date_ice': randDate(2024, 2025),
+            'societe_rc': String(randInt(100000, 999999)),
+            'societe_if': String(randInt(100000, 999999)),
+            'societe_email': 'contact@' + nom.toLowerCase().replace(/[^a-z]/g, '') + '.ma',
+            'societe_telephone': randPhone(),
+            'societe_capital': String(capital),
+            'societe_part_social': String(partSocial),
+            'societe_valeur_nominale': String(vn),
+            'societe_date_exp_cert_neg': randDate(2027, 2030),
+            'societe_ville': ville,
+            'societe_adresse_siege': '',
+            'societe_tribunal': '',
+            'tribunal_type': 'Tribunal de commerce',
+            'societe_activites_statuts': [],
+            'societe_ice': ice
+        },
+        _associe: {
+            'civilite': civilite,
+            'nom': nom,
+            'prenom': prenom,
+            'nom_complet': civilite + ' ' + prenom + ' ' + nom,
+            'cin': randCIN(),
+            'date_validite_cin': randDate(2028, 2035),
+            'date_naissance': randDate(1965, 2000),
+            'lieu_naissance': '',
+            'nationalite': 'Marocaine',
+            'telephone': randPhone(),
+            'email': randEmail(prenom, nom),
+            'adresse': randAddr(ville),
+            'qualite': '',
+            'parts': String(partSocial),
+            'capital_detenu': String(capital),
+            'part_percent': '',
+            'est_gerant': Math.random() > 0.5 ? '1' : '0',
+            'duree_gerance': '12'
+        },
+        _contrat: {
+            'contrat_type': 'Domiciliation commerciale',
+            'contrat_date': randDate(2025, 2026),
+            'contrat_duree_mois': String(duree),
+            'contrat_type_domiciliation': 'Personne Morale',
+            'contrat_type_autre': '',
+            'contrat_date_debut': debut,
+            'contrat_date_fin': fin,
+            'contrat_tva_pourcent': String(tva),
+            'contrat_loyer_ht': String(loyerHt),
+            'contrat_loyer_ttc': String(loyerTtc),
+            'contrat_total_ht': String(Math.round(loyerHt * duree * 100) / 100),
+            'contrat_type_renouvellement': randFrom(['Annuel', 'Biennal', 'Tacite reconduction']),
+            'contrat_renouv_tva_pourcent': String(tva),
+            'contrat_renouv_loyer_ht': String(Math.round(loyerHt * 1.05 * 100) / 100),
+            'contrat_renouv_loyer_ttc': String(Math.round(loyerHt * 1.05 * (1 + tva / 100) * 100) / 100),
+            'contrat_renouv_total_ht': String(Math.round(loyerHt * 1.05 * duree * 100) / 100),
+            'contrat_statut': 'actif',
+            'contrat_notes': 'Contrat genere automatiquement pour test',
+            'contrat_date_exp_cert_neg': ''
+        }
+    };
+}
+
+function isSelectEmpty(selectEl) {
+    if (!selectEl || selectEl.tagName !== 'SELECT') return true;
+    var v = selectEl.value;
+    return !v || v === 'Selectionner' || v === 'selectionner';
+}
+function pickRandomOption(selectEl) {
+    if (!selectEl || selectEl.tagName !== 'SELECT') return;
+    var opts = Array.from(selectEl.options).filter(function(o) {
+        return o.value && o.value !== 'Selectionner' && o.value !== 'selectionner' && !o.disabled;
+    });
+    if (opts.length) selectEl.value = randFrom(opts).value;
+}
+
+function pickRandomAddrOption(selectEl, villeVal) {
+    if (!selectEl || selectEl.tagName !== 'SELECT') return;
+    var opts = Array.from(selectEl.options).filter(function(o) {
+        if (!o.value || o.value === 'Selectionner') return false;
+        var v = o.getAttribute('data-ville');
+        return !v || v === villeVal;
+    });
+    if (!opts.length) opts = Array.from(selectEl.options).filter(function(o) {
+        return o.value && o.value !== 'Selectionner';
+    });
+    if (opts.length) selectEl.value = randFrom(opts).value;
+}
+
+document.addEventListener('click', function(event) {
+    var button = event.target.closest('[data-fill-test]');
     if (!button) return;
     event.preventDefault();
 
-    const form = button.closest('form');
+    var form = button.closest('form');
     if (!form) return;
 
-    form.querySelectorAll('input, select, textarea').forEach((field) => {
-        const name = field.getAttribute('name');
+    var data = generateTestData();
+    var step = button.getAttribute('data-fill-test');
+    var source = {};
+
+    if (step === '1' || (!step && form.querySelector('[name="societe_raison_sociale"]'))) {
+        source = data._societe;
+    } else if (step === '2' || (!step && form.querySelector('[name*="[nom]"]'))) {
+        source = data._associe;
+    } else if (step === '3' || (!step && form.querySelector('[name="contrat_type"]'))) {
+        source = data._contrat;
+    } else {
+        source = Object.assign({}, data._societe, data._associe, data._contrat);
+    }
+
+    form.querySelectorAll('input, select, textarea').forEach(function(field) {
+        var name = field.getAttribute('name');
         if (!name) return;
 
-        const key = name.replace(/^associes\[\d+\]\[(\w+)\]$/, '$1');
-        const value = testData[key];
-        if (value === undefined) return;
+        var key = name.replace(/^associes\[\d+\]\[(\w+)\]$/, '$1')
+                      .replace(/^associe_\w+\[\d+\]$/, '')
+                      .replace(/^\w+\[\d+\]$/, '');
+
+        var value = source[key];
+        if (value === undefined || value === '') return;
 
         if (field.tagName === 'SELECT') {
-            const option = Array.from(field.options).find((opt) => opt.value === value);
-            if (option) field.value = value;
+            var opt = Array.from(field.options).find(function(o) { return o.value === value; });
+            if (opt) field.value = value;
+            else pickRandomOption(field);
         } else if (field.type === 'checkbox' || field.type === 'radio') {
             field.checked = String(field.value) === String(value);
         } else {
@@ -295,13 +398,39 @@ document.addEventListener('click', (event) => {
         }
     });
 
-    form.querySelectorAll('input, select, textarea').forEach(function(field) {
-        var name = field.getAttribute('name');
-        if (!name) return;
-        var key = name.replace(/^associes\[\d+\]\[(\w+)\]$/, '$1');
-        if (testData[key] === undefined) return;
-        field.dispatchEvent(new Event('input', { bubbles: true }));
-        field.dispatchEvent(new Event('change', { bubbles: true }));
+    var villeEl = form.querySelector('[name="societe_ville"]');
+    var villeVal = villeEl ? villeEl.value : '';
+    var addrEl = form.querySelector('[name="societe_adresse_siege"]');
+    if (addrEl && isSelectEmpty(addrEl)) pickRandomAddrOption(addrEl, villeVal);
+
+    var tribEl = form.querySelector('[name="societe_tribunal"]');
+    if (tribEl && isSelectEmpty(tribEl)) pickRandomOption(tribEl);
+
+    var fjEl = form.querySelector('[name="societe_forme_juridique"]');
+    if (fjEl && isSelectEmpty(fjEl)) pickRandomOption(fjEl);
+
+    var actStatuts = form.querySelector('[name="societe_activites_statuts[]"]');
+    if (actStatuts && isSelectEmpty(actStatuts)) pickRandomOption(actStatuts);
+
+    var actOmpic = form.querySelector('[name="societe_activites_ompic"]');
+    if (actOmpic && isSelectEmpty(actOmpic)) pickRandomOption(actOmpic);
+
+    var lieuxN = form.querySelectorAll('[name*="[lieu_naissance]"]');
+    lieuxN.forEach(function(el) { if (isSelectEmpty(el)) pickRandomOption(el); });
+
+    var quals = form.querySelectorAll('[name*="[qualite]"]');
+    quals.forEach(function(el) { if (isSelectEmpty(el)) pickRandomOption(el); });
+
+    var natSelects = form.querySelectorAll('[name*="[nationalite]"]');
+    natSelects.forEach(function(el) {
+        var natOpts = Array.from(el.options).filter(function(o) { return o.value === 'Marocaine'; });
+        if (natOpts.length) el.value = 'Marocaine';
+        else pickRandomOption(el);
+    });
+
+    form.querySelectorAll('input, select, textarea').forEach(function(f) {
+        f.dispatchEvent(new Event('input', { bubbles: true }));
+        f.dispatchEvent(new Event('change', { bubbles: true }));
     });
 });
 

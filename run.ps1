@@ -128,14 +128,14 @@ if (Test-Path $MysqlPath) {
         Select-Object -First 1
 
     if ($latestDump) {
-        $dbExists = & $MysqlPath -u root -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='$DbName'" 2>&1 | Select-String $DbName
+        $dbExists = & $MysqlPath -u root --default-character-set=utf8mb4 -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='$DbName'" 2>&1 | Select-String $DbName
         $importNeeded = $false
 
         if (-not $dbExists) {
             Write-Host "[Sync] Base $DbName introuvable, import necessaire..." -ForegroundColor Yellow
             $importNeeded = $true
         } else {
-            $tableCount = & $MysqlPath -u root -N -e "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='$DbName'" 2>&1
+            $tableCount = & $MysqlPath -u root --default-character-set=utf8mb4 -N -e "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='$DbName'" 2>&1
             $tableCount = $tableCount.Trim()
             if ($tableCount -eq "0") {
                 Write-Host "[Sync] Base $DbName vide, import necessaire..." -ForegroundColor Yellow
@@ -145,8 +145,8 @@ if (Test-Path $MysqlPath) {
 
         if ($importNeeded) {
             Write-Host "[Sync] Import du dump: $($latestDump.Name)..." -ForegroundColor Yellow
-            & $MysqlPath -u root -e "CREATE DATABASE IF NOT EXISTS ``$DbName`` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci" 2>&1 | Out-Null
-            cmd /c "`"$MysqlPath`" -u root `"$DbName`" < `"$($latestDump.FullName)`"" 2>&1 | Out-Null
+            & $MysqlPath -u root --default-character-set=utf8mb4 -e "CREATE DATABASE IF NOT EXISTS ``$DbName`` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci" 2>&1 | Out-Null
+            cmd /c "`"$MysqlPath`" -u root --default-character-set=utf8mb4 `"$DbName`" < `"$($latestDump.FullName)`"" 2>&1 | Out-Null
             if ($LASTEXITCODE -eq 0) {
                 Write-Host "      DB importee avec succes" -ForegroundColor Green
             } else {
@@ -323,7 +323,7 @@ Write-Host ""
 Write-Host "[Sync] Export de la base $DbName..." -ForegroundColor Yellow
 $dumpFile = Join-Path $ExportDir "$(Get-Date -Format 'yyyy-MM-dd_HHmmss').sql"
 if (Test-Path $MysqldumpPath) {
-    & $MysqldumpPath -u root --no-create-info --complete-insert --skip-extended-insert $DbName 2>&1 | Out-File -FilePath $dumpFile -Encoding UTF8
+    & $MysqldumpPath -u root --default-character-set=utf8mb4 --no-create-info --complete-insert --skip-extended-insert $DbName 2>&1 | Out-File -FilePath $dumpFile -Encoding UTF8
     if ($LASTEXITCODE -eq 0 -and (Test-Path $dumpFile)) {
         $size = [math]::Round((Get-Item $dumpFile).Length / 1KB, 1)
         Write-Host "      Export: $size KB" -ForegroundColor Green
