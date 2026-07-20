@@ -122,10 +122,7 @@ if (is_post() && isset($_POST['_action']) && $_POST['_action'] === 'delete' && (
                     <span>Prenom <span class="field-required">*</span></span>
                     <input name="associe_prenom" value="<?= e((string) ($associe['associe_prenom'] ?: '')) ?>" data-auto-nom required>
                 </label>
-                <label class="field">
-                    <span>Nom complet</span>
-                    <input name="associe_nom_complet" value="<?= e((string) $associe['associe_nom_complet']) ?>" readonly>
-                </label>
+                <input name="associe_nom_complet" value="<?= e((string) $associe['associe_nom_complet']) ?>" type="hidden">
                 <label class="field">
                     <span>CIN</span>
                     <input name="associe_cin" value="<?= e((string) $associe['associe_cin']) ?>">
