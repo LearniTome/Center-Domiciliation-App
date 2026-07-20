@@ -146,7 +146,7 @@ if (Test-Path $MysqlPath) {
         if ($importNeeded) {
             Write-Host "[Sync] Import du dump: $($latestDump.Name)..." -ForegroundColor Yellow
             & $MysqlPath -u root -e "CREATE DATABASE IF NOT EXISTS ``$DbName`` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci" 2>&1 | Out-Null
-            & $MysqlPath -u root $DbName < $latestDump.FullName 2>&1 | Out-Null
+            cmd /c "`"$MysqlPath`" -u root `"$DbName`" < `"$($latestDump.FullName)`"" 2>&1 | Out-Null
             if ($LASTEXITCODE -eq 0) {
                 Write-Host "      DB importee avec succes" -ForegroundColor Green
             } else {
