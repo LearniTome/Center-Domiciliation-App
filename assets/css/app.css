@@ -54,6 +54,7 @@ a:hover {
     position: relative;
     display: grid;
     grid-template-columns: 260px 1fr;
+    grid-template-rows: 1fr;
     height: 100vh;
     overflow: hidden;
 }
@@ -403,11 +404,19 @@ a:hover {
 }
 
 .main {
-    flex: 1;
     padding: 1.5rem;
     overflow-y: auto;
     overflow-x: hidden;
+    flex: 1;
     min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.main > .card:last-child,
+.main > article:last-child,
+.main > section:last-of-type {
+    flex: 1;
 }
 
 .page-header {
@@ -3782,11 +3791,11 @@ tr[data-coverage], .row-mapped {
     counter-reset: page-num;
 }
 .a4-page {
-    width: 21cm; height: 29.7cm; padding: 1.5cm 2cm;
+    width: 21cm; min-height: 29.7cm; padding: 1.5cm 2cm;
     background: var(--panel); color: var(--text);
     font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; font-size: 11pt;
     line-height: 1.15; box-shadow: 0 2px 10px rgba(0,0,0,0.25);
-    box-sizing: border-box; overflow: hidden; position: relative;
+    box-sizing: border-box; overflow: visible; position: relative;
     counter-increment: page-num;
 }
 .a4-page::after {
@@ -4542,7 +4551,7 @@ tr[data-coverage], .row-mapped {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    height: 100vh;
+    height: 100%;
 }
 .top-bar-left {
     display: flex;
