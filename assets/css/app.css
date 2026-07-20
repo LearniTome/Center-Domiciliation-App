@@ -404,7 +404,7 @@ a:hover {
 }
 
 .main {
-    padding: 1.5rem;
+    padding: 1.5rem 1.5rem 0;
     overflow-y: auto;
     overflow-x: hidden;
     flex: 1;
