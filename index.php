@@ -222,6 +222,26 @@ if (function_exists('has_permission')) {
         $pageActions = '<a class="btn btn-cancel" href="' . e(app_url('cessions')) . '"><span class="material-symbols-outlined">close</span> Annuler</a>';
         $pageActions .= '<a class="btn btn-back" href="' . e(app_url('cession', ['reset' => '1'])) . '" data-confirm="Reinitialiser l assistant ?"><span class="material-symbols-outlined">restart_alt</span> Reinitialiser</a>';
     }
+    if ($page === 'associe' && !empty($_GET['id'])) {
+        $associeId = (int) $_GET['id'];
+        if (!isset($pdo) || !$pdo) {
+            $pageActions = '';
+        } else {
+            $stmt = $pdo->prepare('SELECT associe_nom_complet FROM associes WHERE id = :id');
+            $stmt->execute(['id' => $associeId]);
+            $associeForActions = $stmt->fetch();
+            if ($associeForActions) {
+                if (isset($_GET['edit'])) {
+                    $pageActions = '<a class="btn btn-cancel" href="' . e(app_url('associe', ['id' => $associeId])) . '"><span class="material-symbols-outlined">close</span> Annuler</a>';
+                } else {
+                    $pageActions = '<a class="btn btn-info" href="' . e(app_url('associe', ['id' => $associeId, 'edit' => '1'])) . '"><span class="material-symbols-outlined">edit</span> Modifier</a>';
+                    $pageActions .= '<form method="post" style="display:inline" onsubmit="return confirm(\'Supprimer cet associe ? Cette action est irreversible.\');">' . csrf_input() . '<input type="hidden" name="_action" value="delete"><button class="btn btn-danger" type="submit"><span class="material-symbols-outlined">delete</span> Supprimer</button></form>';
+                }
+                $pageActions .= '<a class="btn btn-back" href="' . e(app_url('associes')) . '"><span class="material-symbols-outlined">arrow_back</span> Retour</a>';
+            }
+        }
+        unset($associeForActions, $stmt);
+    }
 }
 
 require __DIR__ . '/includes/entete.php';
