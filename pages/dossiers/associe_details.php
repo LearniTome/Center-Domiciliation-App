@@ -349,9 +349,9 @@ if (is_post() && isset($_POST['_action']) && $_POST['_action'] === 'delete' && (
     })();
     </script>
 <?php else: ?>
-    <article class="card stack">
-        <div class="form-grid">
-            <h3 class="section-title">Identite</h3>
+    <section class="grid two">
+        <article class="card stack">
+            <h3 class="section-title"><span class="material-symbols-outlined">badge</span> Identite</h3>
             <div class="info-grid">
                 <div><span>Civilite</span><strong><?= e($associe['associe_civilite'] ?: '-') ?></strong></div>
                 <div><span>Nom</span><strong><?= e($associe['associe_nom'] ?: '-') ?></strong></div>
@@ -363,45 +363,49 @@ if (is_post() && isset($_POST['_action']) && $_POST['_action'] === 'delete' && (
                 <div><span>Lieu naissance</span><strong><?= e($associe['associe_lieu_naissance'] ?: '-') ?></strong></div>
                 <div><span>Nationalite</span><strong><?= e($associe['associe_nationalite'] ?: '-') ?></strong></div>
             </div>
+        </article>
 
-            <h3 class="section-title">Contact</h3>
+        <article class="card stack">
+            <h3 class="section-title"><span class="material-symbols-outlined">contact_mail</span> Contact</h3>
             <div class="info-grid">
-                <div><span>Telephone</span><strong><?= e($associe['associe_telephone'] ?: '-') ?></strong></div>
-                <div><span>Email</span><strong><?= e($associe['associe_email'] ?: '-') ?></strong></div>
+                <div><span>Telephone</span><strong><a href="tel:<?= e($associe['associe_telephone']) ?>"><?= e($associe['associe_telephone'] ?: '-') ?></a></strong></div>
+                <div><span>Email</span><strong><a href="mailto:<?= e($associe['associe_email']) ?>"><?= e($associe['associe_email'] ?: '-') ?></a></strong></div>
                 <div class="full"><span>Adresse</span><strong><?= e($associe['associe_adresse'] ?: '-') ?></strong></div>
             </div>
+        </article>
+    </section>
 
-            <h3 class="section-title">Statut</h3>
+    <section class="grid two">
+        <article class="card stack">
+            <h3 class="section-title"><span class="material-symbols-outlined">toggle_off</span> Statut</h3>
             <div class="info-grid">
-                <div><span>Qualite</span><strong><?= e($associe['associe_qualite'] ?: '-') ?></strong></div>
+                <div><span>Qualite</span><strong><span class="badge badge-info"><?= e($associe['associe_qualite'] ?: '-') ?></span></strong></div>
+                <div><span>Gerant</span><strong><?php if ((int) $associe['associe_est_gerant'] === 1): ?><span class="badge badge-success">Gerant</span><?php else: ?><span class="badge badge-secondary">Associe</span><?php endif; ?></strong></div>
                 <div><span>Parts</span><strong><?= $associe['associe_parts'] !== null ? e((string) $associe['associe_parts']) : '-' ?></strong></div>
                 <div><span>Capital detenu</span><strong><?= format_money($associe['associe_capital_detenu'] !== null ? (float) $associe['associe_capital_detenu'] : null) ?></strong></div>
                 <div><span>% Capital social</span><strong><?= $associe['associe_part_percent'] !== null ? e(number_format((float) $associe['associe_part_percent'], 2, ',', ' ') . ' %') : '-' ?></strong></div>
-                <div><span>Gerant</span><strong><?= (int) $associe['associe_est_gerant'] === 1 ? 'Oui' : 'Non' ?></strong></div>
             </div>
-        </div>
-    </article>
+        </article>
 
-    <?php if ($societe): ?>
-    <article class="card">
-        <div class="section-header">
-            <a href="<?= e(app_url('societe', ['id' => (int) $associe['societe_id']])) ?>" class="section-link"><h3>Societe liee</h3></a>
-        </div>
-        <div class="info-grid">
-            <div><span>Raison sociale</span><strong><?= e($societe['societe_raison_sociale']) ?></strong></div>
-            <div><span>Forme juridique</span><strong><?= e($societe['societe_forme_juridique'] ?: '-') ?></strong></div>
-            <div><span>Capital</span><strong><?= format_money($societeCapital) ?></strong></div>
-            <div><span>Parts sociales</span><strong><?= e((string) $societeTotalParts) ?></strong></div>
-            <div><span>ICE</span><strong><?= e($societe['societe_ice'] ?: '-') ?></strong></div>
-            <div><span>Ville</span><strong><?= e($societe['societe_ville'] ?: '-') ?></strong></div>
-        </div>
-    </article>
-    <?php endif; ?>
+        <?php if ($societe): ?>
+        <article class="card stack">
+            <h3 class="section-title"><span class="material-symbols-outlined">business</span> Societe liee</h3>
+            <div class="info-grid">
+                <div><span>Raison sociale</span><strong><a href="<?= e(app_url('societe', ['id' => (int) $associe['societe_id']])) ?>"><?= e($societe['societe_raison_sociale']) ?></a></strong></div>
+                <div><span>Forme juridique</span><strong><?= e($societe['societe_forme_juridique'] ?: '-') ?></strong></div>
+                <div><span>Capital</span><strong><?= format_money($societeCapital) ?></strong></div>
+                <div><span>Parts sociales</span><strong><?= e((string) $societeTotalParts) ?></strong></div>
+                <div><span>ICE</span><strong><?= e($societe['societe_ice'] ?: '-') ?></strong></div>
+                <div><span>Ville</span><strong><?= e($societe['societe_ville'] ?: '-') ?></strong></div>
+            </div>
+        </article>
+        <?php endif; ?>
+    </section>
 
     <?php if (count($otherAssocies) > 1): ?>
     <article class="card">
         <div class="section-title-row">
-            <h3>Repartition des parts</h3>
+            <h3><span class="material-symbols-outlined">pie_chart</span> Repartition des parts</h3>
             <div class="table-actions">
                 <a class="btn btn-info" href="<?= e(app_url('societe', ['id' => (int) $associe['societe_id']])) ?>"><span class="material-symbols-outlined">visibility</span> Voir la societe</a>
             </div>
@@ -422,16 +426,68 @@ if (is_post() && isset($_POST['_action']) && $_POST['_action'] === 'delete' && (
                     <?php foreach ($otherAssocies as $a): ?>
                     <tr<?= (int) $a['id'] === $associeId ? ' style="background:var(--primary-bg);font-weight:600"' : '' ?>>
                         <td><a href="<?= e(app_url('associe', ['id' => (int) $a['id']])) ?>"><?= e($a['associe_nom_complet']) ?></a></td>
-                        <td><?= e($a['associe_qualite'] ?: '-') ?></td>
+                        <td><span class="badge badge-info"><?= e($a['associe_qualite'] ?: '-') ?></span></td>
                         <td><?= $a['associe_parts'] !== null ? e((string) $a['associe_parts']) : '-' ?></td>
                         <td><?= $a['associe_capital_detenu'] !== null ? format_money((float) $a['associe_capital_detenu']) : '-' ?></td>
                         <td><?= $a['associe_part_percent'] !== null ? e(number_format((float) $a['associe_part_percent'], 2, ',', ' ') . ' %') : '-' ?></td>
-                        <td><?= (int) $a['associe_est_gerant'] === 1 ? 'Oui' : 'Non' ?></td>
+                        <td><?php if ((int) $a['associe_est_gerant'] === 1): ?><span class="badge badge-success">Gerant</span><?php else: ?><span class="badge badge-secondary">Associe</span><?php endif; ?></td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
         </div>
+
+        <?php if ($societeTotalParts > 0): ?>
+        <div style="margin-top:1rem;">
+            <div style="display:flex;height:28px;border-radius:var(--radius-sm);overflow:hidden;background:var(--line);">
+                <?php
+                $barColors = ['#4a6cf7', '#00d25b', '#8f5fe8', '#ff6b35', '#e8a838'];
+                $ci = 0;
+                foreach ($otherAssocies as $a):
+                    $pct = (int) ($a['associe_parts'] ?? 0);
+                    if ($pct <= 0) continue;
+                    $barW = round(($pct / $societeTotalParts) * 100, 1);
+                    $color = $barColors[$ci % count($barColors)];
+                    $ci++;
+                ?>
+                <div style="width:<?= $barW ?>%;background:<?= $color ?>;display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;transition:width 0.3s" title="<?= e($a['associe_nom_complet']) ?>: <?= $pct ?> parts (<?= $barW ?>%)">
+                    <?php if ($barW > 8): ?><?= $barW ?>%<?php endif; ?>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:0.75rem;margin-top:0.5rem;font-size:0.75rem;">
+                <?php
+                $ci = 0;
+                foreach ($otherAssocies as $a):
+                    $pct = (int) ($a['associe_parts'] ?? 0);
+                    if ($pct <= 0) continue;
+                    $color = $barColors[$ci % count($barColors)];
+                    $ci++;
+                ?>
+                <span style="display:inline-flex;align-items:center;gap:4px;">
+                    <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:<?= $color ?>"></span>
+                    <?= e($a['associe_nom_complet']) ?>: <?= $pct ?> parts
+                </span>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
     </article>
     <?php endif; ?>
 <?php endif; ?>
+
+<style>
+.section-title .material-symbols-outlined {
+    font-size: 1.2rem;
+    vertical-align: middle;
+    margin-right: 6px;
+    color: var(--text-secondary);
+}
+.info-grid a {
+    color: var(--primary);
+    text-decoration: none;
+}
+.info-grid a:hover {
+    text-decoration: underline;
+}
+</style>
