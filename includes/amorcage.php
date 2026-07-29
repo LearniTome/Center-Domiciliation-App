@@ -22,6 +22,7 @@ require_once __DIR__ . '/../src/service_claude.php';
 $flash = pull_flash();
 $dbError = null;
 
+$pdo = null;
 try {
     $pdo = db();
 } catch (Throwable $exception) {

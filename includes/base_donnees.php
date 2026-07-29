@@ -7,7 +7,12 @@ function db(): PDO
     static $pdo = null;
 
     if ($pdo instanceof PDO) {
-        return $pdo;
+        try {
+            $pdo->query('SELECT 1');
+            return $pdo;
+        } catch (Throwable) {
+            $pdo = null;
+        }
     }
 
     global $dbConfig;
