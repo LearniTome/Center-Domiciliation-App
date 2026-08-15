@@ -196,7 +196,48 @@ if (is_post() && isset($_POST['delete_upload']) && ($pdo ?? null) instanceof PDO
     redirect_to('societe', ['id' => $societeId]);
 }
 
-if (is_post() && !isset($_POST['validate_submit']) && !isset($_POST['delete_submit']) && !isset($_POST['restore_submit']) && !isset($_POST['delete_upload']) && ($pdo ?? null) instanceof PDO) {
+if (is_post() && isset($_POST['upload_societe_doc']) && ($pdo ?? null) instanceof PDO) {
+    verify_csrf();
+    $docType = $_POST['doc_type'] ?? '';
+    $associeIdx = isset($_POST['associe_idx']) && $_POST['associe_idx'] !== '' ? (int) $_POST['associe_idx'] : null;
+    $validTypes = ['certificat_negatif', 'cin_gerant'];
+    if (in_array($docType, $validTypes, true) && isset($_FILES['doc_file']) && $_FILES['doc_file']['error'] === UPLOAD_ERR_OK) {
+        $file = $_FILES['doc_file'];
+        $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $allowedExt = $docType === 'certificat_negatif' ? ['pdf'] : ['pdf', 'jpg', 'jpeg', 'png'];
+        if (in_array($extension, $allowedExt, true)) {
+            $socName = trim(preg_replace('/[^a-zA-Z0-9-]/', '_', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $societe['societe_raison_sociale'] ?? 'Societe')));
+            $socName = preg_replace('/_+/', '_', $socName);
+            $socName = trim($socName, '_');
+            $prefix = $docType === 'certificat_negatif' ? 'CN' : 'CIN';
+            $newFilename = date('Y-m-d') . '_' . $prefix . '_' . $socName . '_' . time() . '.' . $extension;
+            $uploadDir = __DIR__ . '/../../uploads/dossiers/' . $societeId . '/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+            $dest = $uploadDir . $newFilename;
+            if (move_uploaded_file($file['tmp_name'], $dest)) {
+                $stmt = $pdo->prepare('INSERT INTO uploaded_docs (societe_id, doc_type, associe_idx, filename_original, filename_stored, filepath, taille_ko) VALUES (:sid, :doc_type, :associe_idx, :orig, :stored, :path, :taille)');
+                $stmt->execute([
+                    'sid' => $societeId,
+                    'doc_type' => $docType,
+                    'associe_idx' => $docType === 'cin_gerant' ? $associeIdx : null,
+                    'orig' => $file['name'],
+                    'stored' => $newFilename,
+                    'path' => $dest,
+                    'taille' => round(filesize($dest) / 1024, 1),
+                ]);
+                log_activity($pdo, 'upload', 'document', $societeId, ($societe['societe_raison_sociale'] ?? '') . ' — upload ' . $docType);
+                set_flash('success', 'Document uploade avec succes.');
+                redirect_to('societe', ['id' => $societeId]);
+            }
+        }
+    }
+    set_flash('error', 'Fichier invalide ou type non autorise.');
+    redirect_to('societe', ['id' => $societeId]);
+}
+
+if (is_post() && !isset($_POST['validate_submit']) && !isset($_POST['delete_submit']) && !isset($_POST['restore_submit']) && !isset($_POST['delete_upload']) && !isset($_POST['upload_societe_doc']) && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
     $activitesStatuts = $_POST['societe_activites_statuts'] ?? [];
     $allStatuts = is_array($activitesStatuts) ? array_map('trim', $activitesStatuts) : [];
@@ -274,7 +315,7 @@ if ($editing) {
 
 $associes = ($pdo ?? null) instanceof PDO
     ? (function (PDO $pdo, int $societeId): array {
-        $stmt = $pdo->prepare('SELECT id, associe_nom_complet, associe_cin, associe_nationalite, associe_qualite, associe_parts, associe_est_gerant FROM associes WHERE societe_id = :societe_id ORDER BY id DESC');
+        $stmt = $pdo->prepare('SELECT id, associe_nom_complet, associe_cin, associe_nationalite, associe_qualite, associe_parts, associe_est_gerant, associe_date_validite_cin FROM associes WHERE societe_id = :societe_id ORDER BY id DESC');
         $stmt->execute(['societe_id' => $societeId]);
         return $stmt->fetchAll();
     })($pdo, $societeId)
@@ -289,7 +330,11 @@ $contrats = ($pdo ?? null) instanceof PDO
     : [];
 
 $collabCount = ($pdo ?? null) instanceof PDO
-    ? (int) $pdo->prepare("SELECT COUNT(*) FROM collaborateurs")->fetchColumn()
+    ? (int) (function (PDO $pdo, int $societeId): int {
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM collaborateurs WHERE societe_id = :societe_id");
+        $stmt->execute(['societe_id' => $societeId]);
+        return (int) $stmt->fetchColumn();
+    })($pdo, $societeId)
     : 0;
 
 $documents = fetch_all_documents($pdo ?? null, $societeId);
@@ -305,6 +350,101 @@ $uploadedDocsList = ($pdo ?? null) instanceof PDO
 $docTypeLabels = [
     'certificat_negatif' => 'Certificat Negatif',
     'cin_gerant' => 'CIN Gerant',
+];
+
+// ─── Alertes d'echeances ─────────────────────────────────────────────────
+$alerts = [];
+$today = new DateTimeImmutable('today');
+if (($pdo ?? null) instanceof PDO && !$editing) {
+    $expCertNeg = $societe['societe_date_exp_cert_neg'] ?? null;
+    if ($expCertNeg) {
+        $d = DateTimeImmutable::createFromFormat('Y-m-d', (string) $expCertNeg);
+        if ($d) {
+            $d = $d->setTime(0, 0);
+            $days = $today->diff($d)->days;
+            if ($d < $today) {
+                $alerts[] = ['type' => 'urgent', 'icon' => 'warning', 'label' => "Certificat negatif expire le " . format_date((string) $expCertNeg)];
+            } elseif ($days <= 15) {
+                $alerts[] = ['type' => 'warning', 'icon' => 'schedule', 'label' => "Certificat negatif expire dans {$days} jour(s) (" . format_date((string) $expCertNeg) . ")"];
+            }
+        }
+    }
+    foreach ($associes as $a) {
+        $cinExp = $a['associe_date_validite_cin'] ?? null;
+        if (!$cinExp) continue;
+        $d = DateTimeImmutable::createFromFormat('Y-m-d', (string) $cinExp);
+        if (!$d) continue;
+        $d = $d->setTime(0, 0);
+        if ($d < $today) {
+            $alerts[] = ['type' => 'urgent', 'icon' => 'badge', 'label' => "CIN expiree : " . e($a['associe_nom_complet']) . " (le " . format_date((string) $cinExp) . ")"];
+        } elseif ($today->diff($d)->days <= 30) {
+            $alerts[] = ['type' => 'warning', 'icon' => 'badge', 'label' => "CIN expire bientot : " . e($a['associe_nom_complet']) . " (le " . format_date((string) $cinExp) . ")"];
+        }
+    }
+    foreach ($contrats as $c) {
+        if (strtolower((string) ($c['contrat_statut'] ?? '')) !== 'actif') continue;
+        $fin = $c['contrat_date_fin'] ?? null;
+        if (!$fin) continue;
+        $d = DateTimeImmutable::createFromFormat('Y-m-d', (string) $fin);
+        if (!$d) continue;
+        $d = $d->setTime(0, 0);
+        $days = $today->diff($d)->days;
+        if ($d < $today) {
+            $alerts[] = ['type' => 'urgent', 'icon' => 'event_busy', 'label' => "Contrat arrive a terme : " . e($c['contrat_type']) . " (le " . format_date((string) $fin) . ")"];
+        } elseif ($days <= 30) {
+            $alerts[] = ['type' => 'warning', 'icon' => 'event', 'label' => "Contrat a renouveler sous {$days} jour(s) : " . e($c['contrat_type']) . " (le " . format_date((string) $fin) . ")"];
+        }
+    }
+}
+
+// ─── Suivi administratif ─────────────────────────────────────────────────
+$suiviEtapes = [];
+$suiviProgress = 0;
+if (($pdo ?? null) instanceof PDO && has_permission('societes.suivi')) {
+    $stmt = $pdo->prepare('SELECT * FROM societe_suivi_etapes WHERE societe_id = :sid ORDER BY ordre');
+    $stmt->execute(['sid' => $societeId]);
+    $suiviEtapes = $stmt->fetchAll();
+    $suiviTotal = count($suiviEtapes);
+    $suiviDone = count(array_filter($suiviEtapes, fn($e) => $e['statut'] === 'termine'));
+    $suiviProgress = $suiviTotal > 0 ? round($suiviDone / $suiviTotal * 100) : 0;
+}
+$suiviStepLabels = $isCreation
+    ? [
+        'certificat_negatif' => 'Certificat negatif',
+        'redaction_statuts'  => 'Redaction des statuts',
+        'signature'          => 'Signature',
+        'enregistrement'     => 'Enregistrement',
+        'depot_greffe'       => 'Depot au greffe',
+        'publication_jal_bo' => 'Publication JAL/BO',
+        'rc'                 => 'Immatriculation RC',
+        'remise'             => 'Remise de documents',
+    ]
+    : [
+        'contrat_domiciliation' => 'Contrat de domiciliation',
+        'redaction'             => 'Redaction des documents',
+        'signature'             => 'Signature',
+        'enregistrement'        => 'Enregistrement',
+        'depot_greffe'          => 'Depot au greffe',
+        'publication_jal'       => 'Publication JAL',
+        'rc_modificatif'        => 'RC modificatif',
+        'remise'                => 'Remise de documents',
+    ];
+
+// ─── Historique d'activite ───────────────────────────────────────────────
+$activiteLogs = [];
+if (($pdo ?? null) instanceof PDO && !$editing) {
+    $stmt = $pdo->prepare("SELECT action, entity_type, entity_id, entity_label, details, user_nom, created_at FROM activity_logs WHERE entity_type IN ('societe','document') AND entity_id = :sid ORDER BY created_at DESC LIMIT 10");
+    $stmt->execute(['sid' => $societeId]);
+    $activiteLogs = $stmt->fetchAll();
+}
+$actionLabels = [
+    'create' => 'Creation',
+    'update' => 'Modification',
+    'validate' => 'Validation',
+    'restore' => 'Restauration',
+    'delete' => 'Suppression',
+    'upload' => 'Upload',
+    'generation' => 'Generation',
 ];
 ?>
 <?php if ($editing): ?>
@@ -330,6 +470,18 @@ $docTypeLabels = [
         <a class="btn btn-back" href="<?= e(app_url($retourPage)) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
     </div>
 </div>
+
+<?php if (!$editing): ?>
+<nav class="anchor-nav" aria-label="Navigation dans la fiche">
+    <a href="#societe-infos"><span class="material-symbols-outlined">business</span> Societe</a>
+    <?php if ($suiviEtapes): ?><a href="#suivi"><span class="material-symbols-outlined">track_changes</span> Suivi</a><?php endif; ?>
+    <?php if ($activiteLogs): ?><a href="#historique"><span class="material-symbols-outlined">history</span> Historique</a><?php endif; ?>
+    <a href="#associes"><span class="material-symbols-outlined">group</span> Associes</a>
+    <a href="#contrats"><span class="material-symbols-outlined">description</span> Contrats</a>
+    <a href="#documents"><span class="material-symbols-outlined">folder</span> Documents</a>
+    <?php if (!empty($uploadedDocsList) || !$editing): ?><a href="#documents-uploades"><span class="material-symbols-outlined">upload_file</span> Uploads</a><?php endif; ?>
+</nav>
+<?php endif; ?>
 
 <section class="stats small stats-bottom-margin">
     <article class="stat">
@@ -377,6 +529,48 @@ $docTypeLabels = [
         <strong><?= e($societe['societe_ville'] ?: '-') ?></strong>
     </article>
 </section>
+
+<?php if (!$editing): ?>
+<?php if (!empty($alerts)): ?>
+<section class="card" id="alertes">
+    <div class="section-title-row">
+        <h3 style="color:var(--danger)"><span class="material-symbols-outlined">warning</span> Alertes d'echeances <span>(<?= count($alerts) ?>)</span></h3>
+    </div>
+    <div class="alerts-list">
+        <div class="alert-group">
+            <?php foreach ($alerts as $a): ?>
+            <div class="alert-item <?= $a['type'] ?>">
+                <span class="material-symbols-outlined" style="color:<?= $a['type'] === 'urgent' ? 'var(--danger)' : 'var(--warning)' ?>"><?= $a['icon'] ?></span>
+                <span><?= $a['label'] ?></span>
+            </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</section>
+<?php endif; ?>
+
+<?php if ($suiviEtapes): ?>
+<article class="card" id="suivi">
+    <div class="section-title-row">
+        <h3 style="color:var(--success)"><span class="material-symbols-outlined">track_changes</span> Suivi administratif</h3>
+        <div class="table-actions">
+            <a class="btn btn-info" href="<?= e(app_url('societe_suivi', ['id' => $societeId])) ?>"><span class="material-symbols-outlined">open_in_new</span> Voir le suivi complet</a>
+        </div>
+    </div>
+    <div class="progress-bar" style="height:4px;background:var(--line);border-radius:2px;margin-bottom:.75rem;overflow:hidden">
+        <div style="height:100%;width:<?= $suiviProgress ?>%;background:var(--success);border-radius:2px;transition:width .3s ease"></div>
+    </div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+        <?php foreach ($suiviEtapes as $e): ?>
+        <a href="<?= e(app_url('societe_suivi', ['id' => $societeId, 'open' => $e['id']])) ?>" style="display:flex;align-items:center;gap:.35rem;padding:4px 10px;border-radius:20px;font-size:.8rem;text-decoration:none;border:1px solid <?= $e['statut'] === 'termine' ? 'var(--success)' : ($e['statut'] === 'en_cours' ? 'var(--warning)' : 'var(--line)') ?>;color:<?= $e['statut'] === 'termine' ? 'var(--success)' : ($e['statut'] === 'en_cours' ? 'var(--warning)' : 'var(--text-muted)') ?>;background:<?= $e['statut'] === 'termine' ? 'rgba(0,184,148,0.08)' : ($e['statut'] === 'en_cours' ? 'rgba(255,107,53,0.08)' : 'transparent') ?>" title="<?= e($suiviStepLabels[$e['etape']] ?? $e['etape']) ?>">
+            <span class="material-symbols-outlined" style="font-size:1rem"><?= $e['statut'] === 'termine' ? 'check_circle' : ($e['statut'] === 'en_cours' ? 'radio_button_checked' : 'radio_button_unchecked') ?></span>
+            <span><?= $suiviStepLabels[$e['etape']] ?? e($e['etape']) ?></span>
+        </a>
+        <?php endforeach; ?>
+    </div>
+</article>
+<?php endif; ?>
+<?php endif; ?>
 
 <?php if ($editing): ?>
     <section class="card stack">
@@ -577,7 +771,7 @@ $docTypeLabels = [
     </section>
     </form>
 <?php else: ?>
-    <article class="card stack">
+    <article class="card stack" id="societe-infos">
         <div class="form-grid">
             <h3 class="section-title">Procedure</h3>
             <div class="info-grid">
@@ -629,7 +823,37 @@ $docTypeLabels = [
     </article>
 <?php endif; ?>
 
-<article class="card">
+<?php if (!$editing && $activiteLogs): ?>
+<article class="card" id="historique">
+    <div class="section-title-row">
+        <h3 style="color:var(--info)"><span class="material-symbols-outlined">history</span> Historique d'activite</h3>
+    </div>
+    <div class="timeline-list">
+        <?php foreach ($activiteLogs as $log): ?>
+        <div class="timeline-item">
+            <span class="timeline-dot"></span>
+            <div class="timeline-content">
+                <div class="timeline-title">
+                    <strong><?= $actionLabels[$log['action']] ?? e($log['action']) ?></strong>
+                    <?php if ($log['entity_label']): ?>
+                    <span>&mdash; <?= e($log['entity_label']) ?></span>
+                    <?php endif; ?>
+                </div>
+                <?php if ($log['details']): ?>
+                <p><?= e($log['details']) ?></p>
+                <?php endif; ?>
+                <div class="timeline-meta">
+                    <span><?= e($log['user_nom'] ?: '-') ?></span>
+                    <span class="timeline-date"><?= format_date($log['created_at']) ?></span>
+                </div>
+            </div>
+        </div>
+        <?php endforeach; ?>
+    </div>
+</article>
+<?php endif; ?>
+
+<article class="card" id="associes">
     <div class="section-header">
         <a href="<?= e(app_url('associes')) ?>" class="section-link"><h3>Associes lies (<?= count($associes) ?>)</h3></a>
     </div>
@@ -666,7 +890,7 @@ $docTypeLabels = [
     <?php endif; ?>
 </article>
 
-<article class="card">
+<article class="card" id="contrats">
     <div class="section-header">
         <a href="<?= e(app_url('contrats')) ?>" class="section-link"><h3>Contrats lies (<?= count($contrats) ?>)</h3></a>
     </div>
@@ -701,7 +925,7 @@ $docTypeLabels = [
     <?php endif; ?>
 </article>
 
-<article class="card">
+<article class="card" id="documents">
     <div class="section-header">
         <a href="<?= e(app_url('documents', ['societe_id' => $societeId])) ?>" class="section-link"><h3>Documents generes (<?= count($documents) ?>)</h3></a>
     </div>
@@ -802,11 +1026,55 @@ $docTypeLabels = [
     <?php endif; ?>
 </article>
 
-<?php if (!empty($uploadedDocsList)): ?>
-<article class="card">
+<article class="card" id="documents-uploades">
     <div class="section-header">
         <h2>Documents uploades</h2>
     </div>
+    <?php if (!$editing): ?>
+    <div class="upload-box" style="padding:.75rem;margin-bottom:1rem;background:var(--bg);border:1px dashed var(--line);border-radius:6px">
+        <form method="post" enctype="multipart/form-data" style="display:flex;gap:.75rem;align-items:flex-end;flex-wrap:wrap">
+            <?= csrf_input() ?>
+            <input type="hidden" name="upload_societe_doc" value="1">
+            <label class="field" style="flex:0 0 auto;min-width:160px;margin-bottom:0">
+                <span>Type de document</span>
+                <select name="doc_type" id="upload-doc-type">
+                    <option value="certificat_negatif">Certificat Negatif</option>
+                    <option value="cin_gerant">CIN Gerant</option>
+                </select>
+            </label>
+            <label class="field" style="flex:0 0 auto;min-width:200px;margin-bottom:0" id="upload-associe-field" hidden>
+                <span>Gerant / Associe</span>
+                <select name="associe_idx">
+                    <?php foreach ($associes as $i => $a): ?>
+                        <option value="<?= $i ?>"><?= e($a['associe_nom_complet']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <label class="field" style="flex:1 1 200px;margin-bottom:0">
+                <span>Fichier (PDF, ou JPG/PNG pour CIN)</span>
+                <input type="file" name="doc_file" accept=".pdf,.jpg,.jpeg,.png" required>
+            </label>
+            <button type="submit" class="btn btn-next"><span class="material-symbols-outlined">upload</span> Uploader</button>
+        </form>
+    </div>
+    <script>
+    (function(){
+        var type = document.getElementById('upload-doc-type');
+        var associe = document.getElementById('upload-associe-field');
+        function toggle(){
+            if (associe) associe.hidden = type.value !== 'cin_gerant';
+        }
+        if (type) type.addEventListener('change', toggle);
+        toggle();
+    })();
+    </script>
+    <?php endif; ?>
+    <?php if (empty($uploadedDocsList)): ?>
+        <div class="empty-state">
+            <span class="material-symbols-outlined">upload_file</span>
+            <p class="table-empty">Aucun document uploade. Utilisez le formulaire ci-dessus pour ajouter un certificat negatif ou une CIN de gerant.</p>
+        </div>
+    <?php else: ?>
     <div class="table-scroll">
         <table data-sortable>
             <thead>
@@ -847,8 +1115,8 @@ $docTypeLabels = [
             </tbody>
         </table>
     </div>
+    <?php endif; ?>
 </article>
-<?php endif; ?>
 
 <div id="loading-overlay">
     <div class="loader-card">

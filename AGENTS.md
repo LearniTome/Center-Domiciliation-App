@@ -31,7 +31,7 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
   - Ne PAS mettre de titre H2 en double dans la page — le H1 du `page-header` suffit.
 - **Page files** (`pages/{group}/{page}.php`): Self-contained — PHP logic at top (POST handling, data fetching), HTML at bottom. Pages are grouped by sidebar section:
   - `accueil/` — dashboard, notifications
-  - `dossiers/` — sociétés, associés, contrats, collaborateurs
+  - `dossiers/` — sociétés, associés, contrats, collaborateurs, societe_suivi
   - `modification-juridique/` — modifications
   - `modification-juridique/cession/` — cessions, cession, cession_dossier, cession_steps
   - `templates/` — templates, generation, documents
@@ -83,6 +83,8 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 ## URL Patterns
 - List pages sociétés: `page=creations` (dossiers création), `page=domiciliations` (dossiers domiciliation), `page=societes` (toutes, hors menu, conservée pour compatibilité)
 - Detail page: `index.php?page=societe&id=1`
+- Suivi administratif société: `index.php?page=societe_suivi&id=1` — étapes par type de génération (création vs domiciliation), toggle étape, statut/dates/notes, upload/delete de documents. Fichiers dans `uploads/suivi/{societeId}/`, chemin DB relatif depuis la racine (lien via `word_url()`). Paramètre optionnel `open={etapeId}` pour ouvrir une étape au chargement.
+- Fiche société (`societe_details.php`): sections ancrées via barre sticky (`.anchor-nav`) — `#societe-infos`, `#suivi`, `#historique`, `#associes`, `#contrats`, `#documents`, `#documents-uploades`. Alertes échéances (certificat négatif ≤15j/expiré, CIN gérants ≤30j/expirée, contrats actifs ≤30j/échus). Timeline historique (dernieres `activity_logs` pour `societe`/`document`). Upload direct de certificat négatif / CIN gérant vers `uploads/dossiers/{societeId}/` (INSERT `uploaded_docs` + `log_activity('upload','document',...)`), type de document + associé géré en JS.
 - Search: `index.php?page=creations&q=term` — use `search_term()` + `like_term()`
 
 ## Database (MySQL via PDO)
@@ -104,7 +106,7 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - **Configuration** (`configuration.php`): Unified page with tabs for all 8 reference tables (formes-juridiques, villes, tribunaux, nationalites, lieux-naissance, adresses, qualites-associe, activites). Add/edit/delete inline. L'onglet `formes-juridiques` affiche une colonne **Dossier Templates** pour lier chaque forme juridique à un dossier dans `templates/`. Si le dossier n'existe pas, il est créé automatiquement lors de l'ajout ou la modification.
 - **Wizard** (`creation_steps/_main.php`): 6-step session-based wizard (Societe, Associes, Contrat, Recapitulatif, Documents, Generation) with JS dynamic associate forms. Step 5 "Documents" requires uploading Certificat Negatif (PDF) and CIN des Gerants (PDF/image) before generation. Steps are in separate files under `creation_steps/`.
 - **Double numérotation de dossier**: `societes` stocke `societe_dossier_domiciliation_number` (`DOM-YYYY-NNN`, domiciliation) et `societe_dossier_creation_number` (`CRE-YYYY-NNN`, création). Les deux numéros sont auto-générés à l'init du wizard via `next_dossier_number(?PDO, string $prefix, string $column)` (`includes/fonctions.php` — whitelist colonnes `['societe_dossier_domiciliation_number','societe_dossier_creation_number']`, format `sprintf('%s-%s-%03d', prefix, year, max+1)`). Le champ `societe_dossier_creation_number` n'est conservé (POST step_01 / UPDATE `societe_details.php`) et inséré (INSERT step_06) que si `societe_type_generation === 'creation'`, sinon il est vidé/NULL. Affiché conditionnellement (mode création) dans : step_01 (champ `[data-depends-type-gen]`), step_04 (récap), fiche société (lecture + édition avec toggle JS), liste sociétés (colonne `dossier-creation` + export), `generation.php` (détail dossier), et injecté dans les DOCX comme variable `SOCIETE_DOSSIER_CREATION`.
-- **Detail page** (`societe_details.php`): Single record view with related data tables (associates, contracts, collaborators inline)
+- **Detail page** (`societe_details.php`): Single record view with related data tables (associates, contracts, collaborators inline). En mode lecture : carte alertes échéances, carte suivi administratif (progression + liens vers `societe_suivi`), timeline historique, upload direct de documents (certificat négatif / CIN gérant).
 
 ## Template Patterns
 - Layout: `<section class="grid two">` for two-column, `<section class="card">` for single

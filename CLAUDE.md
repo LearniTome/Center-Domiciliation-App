@@ -26,7 +26,8 @@ Application PHP vanilla de gestion de dossiers de domiciliation d'entreprises.
 
 ## Pages principales
 - `societes` — liste des sociétés avec recherche, CSV, suppression
-- `societe&id=X` — détail d'une société (associés, contrats, collaborateurs)
+- `societe&id=X` — détail d'une société (associés, contrats, collaborateurs, alertes, historique, upload)
+- `societe_suivi&id=X` — suivi administratif par type de génération (étapes, upload/delete documents)
 - `associes`, `contrats` — listes similaires
 - `creation` — wizard 6 étapes avec formulaire dynamique JS
 - `cession` — wizard 3 étapes cession de parts sociales
