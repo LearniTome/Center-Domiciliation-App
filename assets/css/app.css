@@ -17,6 +17,7 @@
     --btn-back: #ff6b35;
     --btn-next: #00b894;
     --font: 'Rubik', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --page-zoom: 0.85;
     --radius: 8px;
     --radius-sm: 4px;
     --radius-lg: 12px;
@@ -37,7 +38,7 @@ body {
     font-weight: 400;
     font-size: 1rem;
     line-height: 1.5;
-    zoom: 0.85;
+    zoom: var(--page-zoom);
 }
 
 a {
@@ -55,7 +56,7 @@ a:hover {
     display: grid;
     grid-template-columns: 260px 1fr;
     grid-template-rows: 1fr;
-    height: 100vh;
+    height: calc(100vh / var(--page-zoom));
     overflow: hidden;
 }
 
@@ -70,7 +71,7 @@ a:hover {
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    height: calc(100vh / var(--page-zoom));
 }
 
 .brand {
@@ -404,7 +405,7 @@ a:hover {
 }
 
 .main {
-    padding: 1.5rem 1.5rem 0;
+    padding: 1.5rem 1.5rem 2rem;
     overflow-y: auto;
     overflow-x: hidden;
     flex: 1;

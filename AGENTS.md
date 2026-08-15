@@ -274,6 +274,18 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - **Headers/footers**: Always scan `word/header*.xml` and `word/footer*.xml` too, not just `word/document.xml`
 - **ZipArchive**: Must be enabled in `C:\xampp\php\php.ini` (`extension=zip`) + Apache restart
 
+## Lancement multi-projets (Windows, PHP intégré)
+- **`dev-server.ps1`** : un serveur PHP intégré par projet, sur son propre port — aucune config Apache à toucher. Permet de développer plusieurs projets en parallèle.
+- Usage : `powershell -ExecutionPolicy Bypass -File .\dev-server.ps1 -Project <chemin> -Port <port> [-NoBrowser]`
+  - `-Project` : chemin du projet (défaut : dossier courant)
+  - `-Port` : port (défaut 8000, auto-incrémenté si occupé)
+  - `-NoBrowser` : ne pas ouvrir Chrome (utilisé par les agents)
+  - Détecte automatiquement `public/` comme document root si présent
+- **Commande opencode `/dev`** (`.opencode/command/dev.md`) : lance le serveur de dev en arrière-plan et vérifie que l'app répond (200/302).
+- **Limite** : le serveur intégré ignore `.htaccess` — réserver `run.ps1`/Apache aux projets qui en dépendent.
+- Arrêt : `Get-NetTCPConnection -LocalPort <port> -State Listen | % { Stop-Process -Id $_.OwningProcess -Force }`
+- MySQL reste démarré via `run.ps1` (XAMPP) ou manuellement.
+
 ## macOS Setup (Shell Scripts)
 - **`setup.sh`** : Installation complète via Homebrew (PHP, MySQL, Node.js, Composer, LibreOffice). Lance une seule fois.
 - **`run.sh`** : Démarre MySQL + serveur PHP intégré sur le port 8080.
@@ -343,7 +355,7 @@ npx -y @berthojoris/mcp-mysql-server "mysql://root@127.0.0.1:3306/center_domicil
 
 ## Root Directory Cleanliness
 - **No `.txt` or `.png` files in root** — place documentation text files in `docs/`, screenshots in `docs/screenshots/`
-- Root should only contain: `index.php`, `run.ps1`, `run.sh`, `setup.ps1`, `setup.sh`, `opencode.json`, `AGENTS.md`, `CLAUDE.md`, `.gitignore`, and directories
+- Root should only contain: `index.php`, `run.ps1`, `run.sh`, `setup.ps1`, `setup.sh`, `dev-server.ps1`, `opencode.json`, `AGENTS.md`, `CLAUDE.md`, `.gitignore`, and directories
 - `.gitignore` already blocks `/*.txt` and `/*.png` from root to prevent accidental commits
 
 ## Auto-Migration System
