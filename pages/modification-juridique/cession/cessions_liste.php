@@ -45,7 +45,7 @@ if (($pdo ?? null) instanceof PDO) {
     if ($query !== '') {
         $likeTerm = like_term($query);
         $stmt = $pdo->prepare('
-            SELECT c.*, s.societe_raison_sociale, s.societe_dossier AS ste_dossier,
+            SELECT c.*, s.societe_raison_sociale, s.societe_dossier_domiciliation_number AS ste_dossier,
                    (SELECT COUNT(*) FROM cession_parts cp WHERE cp.cession_id = c.id) AS nb_lignes,
                    (SELECT COALESCE(SUM(cp.parts_cedees), 0) FROM cession_parts cp WHERE cp.cession_id = c.id) AS total_parts
             FROM cessions c
@@ -59,7 +59,7 @@ if (($pdo ?? null) instanceof PDO) {
         $cessions = $stmt->fetchAll();
     } else {
         $sql = '
-            SELECT c.*, s.societe_raison_sociale, s.societe_dossier AS ste_dossier,
+            SELECT c.*, s.societe_raison_sociale, s.societe_dossier_domiciliation_number AS ste_dossier,
                    (SELECT COUNT(*) FROM cession_parts cp WHERE cp.cession_id = c.id) AS nb_lignes,
                    (SELECT COALESCE(SUM(cp.parts_cedees), 0) FROM cession_parts cp WHERE cp.cession_id = c.id) AS total_parts
             FROM cessions c

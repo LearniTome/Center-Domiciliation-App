@@ -101,7 +101,7 @@ if (is_post() && $step === 1) {
             'societe_tribunal_type' => trim((string) ($_POST['societe_tribunal_type'] ?? '')),
             'societe_email' => trim((string) ($_POST['societe_email'] ?? '')),
             'societe_telephone' => trim((string) ($_POST['societe_telephone'] ?? '')),
-            'societe_dossier' => trim((string) ($_POST['societe_dossier'] ?? '')),
+            'societe_dossier_domiciliation_number' => trim((string) ($_POST['societe_dossier_domiciliation_number'] ?? '')),
             'societe_type_generation' => trim((string) ($_POST['societe_type_generation'] ?? 'cession')),
             'societe_procedure_creation' => trim((string) ($_POST['societe_procedure_creation'] ?? '')),
             'societe_mode_depot' => trim((string) ($_POST['societe_mode_depot'] ?? '')),
@@ -130,7 +130,7 @@ if ($step === 1):
             <option value="">-- Selectionnez une societe --</option>
             <?php foreach ($societesList as $s): ?>
                 <option value="<?= (int) $s['id'] ?>" <?= $wizard['societe_id'] === (int) $s['id'] ? 'selected' : '' ?>>
-                    <?= e($s['societe_raison_sociale']) ?> (<?= e($s['societe_dossier'] ?? '') ?>) - <?= e($s['societe_forme_juridique'] ?? '') ?>
+                    <?= e($s['societe_raison_sociale']) ?> (<?= e($s['societe_dossier_domiciliation_number'] ?? '') ?>) - <?= e($s['societe_forme_juridique'] ?? '') ?>
                 </option>
             <?php endforeach; ?>
         </select>
@@ -195,7 +195,7 @@ if ($step === 1):
             <h3 class="section-title">Identifiants</h3>
             <label class="field">
                 <span>Dossier cession</span>
-                <input name="societe_dossier" value="<?= e((string) $societeData['societe_dossier']) ?>">
+                <input name="societe_dossier_domiciliation_number" value="<?= e((string) $societeData['societe_dossier_domiciliation_number']) ?>">
             </label>
             <label class="field">
                 <span>Raison sociale</span>
@@ -463,7 +463,7 @@ if ($step === 1):
 
             var rs = randFrom(razSociete);
             form.querySelector('[name="societe_raison_sociale"]') && (form.querySelector('[name="societe_raison_sociale"]').value = rs);
-            form.querySelector('[name="societe_dossier"]') && (form.querySelector('[name="societe_dossier"]').value = 'CESS-' + randInt(100, 999));
+            form.querySelector('[name="societe_dossier_domiciliation_number"]') && (form.querySelector('[name="societe_dossier_domiciliation_number"]').value = 'CESS-' + randInt(100, 999));
             var fj = form.querySelector('[name="societe_forme_juridique"]');
             if (fj) {
                 var opts = Array.from(fj.options).filter(function(o) { return o.value; });

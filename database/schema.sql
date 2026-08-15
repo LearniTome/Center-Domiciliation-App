@@ -6,8 +6,8 @@ USE `center_domiciliation`;
 
 CREATE TABLE IF NOT EXISTS societes (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    societe_dossier VARCHAR(120) DEFAULT NULL,
-    societe_dossier_creation VARCHAR(120) DEFAULT NULL,
+    societe_dossier_domiciliation_number VARCHAR(120) DEFAULT NULL,
+    societe_dossier_creation_number VARCHAR(120) DEFAULT NULL,
     societe_raison_sociale VARCHAR(255) NOT NULL,
     den_ste VARCHAR(255) DEFAULT NULL,
     societe_forme_juridique VARCHAR(120) DEFAULT NULL,

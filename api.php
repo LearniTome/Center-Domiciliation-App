@@ -52,8 +52,8 @@ $importTableConfig = [
     'societes' => [
         'columnMap' => [
             'Raison sociale' => 'societe_raison_sociale',
-            'Dossier domiciliation' => 'societe_dossier',
-            'Dossier creation' => 'societe_dossier_creation',
+            'Dossier domiciliation' => 'societe_dossier_domiciliation_number',
+            'Dossier creation' => 'societe_dossier_creation_number',
             'Forme juridique' => 'societe_forme_juridique',
             'ICE' => 'societe_ice',
             'RC' => 'societe_rc',
@@ -122,7 +122,7 @@ $response = ['success' => false, 'message' => 'Action inconnue.'];
 
 $allowedTables = [
     'societes' => [
-        'societe_raison_sociale', 'societe_dossier', 'societe_dossier_creation', 'societe_forme_juridique',
+        'societe_raison_sociale', 'societe_dossier_domiciliation_number', 'societe_dossier_creation_number', 'societe_forme_juridique',
         'societe_ice', 'societe_rc', 'societe_if', 'societe_tp', 'societe_cnss',
         'societe_capital', 'societe_part_social', 'societe_valeur_nominale',
         'societe_date_ice', 'societe_date_exp_cert_neg',

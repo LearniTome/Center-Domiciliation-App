@@ -245,7 +245,7 @@ INSERT INTO ref_activites_ompic (code, libelle, sort_order) VALUES
 ('96', 'Autres services personnels', 36);
 
 INSERT INTO societes (
-    societe_dossier, societe_raison_sociale, societe_forme_juridique, societe_ice, societe_date_ice, societe_rc, societe_if,
+    societe_dossier_domiciliation_number, societe_raison_sociale, societe_forme_juridique, societe_ice, societe_date_ice, societe_rc, societe_if,
     societe_capital, societe_part_social, societe_valeur_nominale, societe_date_exp_cert_neg, societe_adresse, societe_adresse_siege, societe_ville, societe_tribunal, societe_email,
     societe_telephone, societe_type_generation, societe_procedure_creation, societe_mode_depot
 ) VALUES

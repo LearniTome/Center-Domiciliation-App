@@ -140,9 +140,9 @@ function date_value(array $source, string $key): ?string
 
 function next_dossier_number(?PDO $pdo, string $prefix, string $column): string
 {
-    $allowedColumns = ['societe_dossier', 'societe_dossier_creation'];
+    $allowedColumns = ['societe_dossier_domiciliation_number', 'societe_dossier_creation_number'];
     if (!in_array($column, $allowedColumns, true)) {
-        $column = 'societe_dossier';
+        $column = 'societe_dossier_domiciliation_number';
     }
     $currentYear = date('Y');
     $num = 1;

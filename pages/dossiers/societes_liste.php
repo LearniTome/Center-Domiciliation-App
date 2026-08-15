@@ -93,8 +93,8 @@ if (($pdo ?? null) instanceof PDO) {
             return [
                 $societe['id'],
                 $societe['societe_raison_sociale'],
-                $societe['societe_dossier'],
-                $societe['societe_dossier_creation'] ?? '',
+                $societe['societe_dossier_domiciliation_number'],
+                $societe['societe_dossier_creation_number'] ?? '',
                 $societe['societe_forme_juridique'],
                 $societe['societe_source'] ?? 'creation',
                 $societe['societe_ice'],
@@ -191,8 +191,8 @@ if (($pdo ?? null) instanceof PDO) {
                 <?php foreach ($societes as $societe): ?>
                     <tr data-id="<?= (int) $societe['id'] ?>">
                         <td data-bulk-cell><input type="checkbox" data-bulk-checkbox title="Selectionner"></td>
-                        <td<?= $canEdit ? ' data-editable="societe_dossier"' : '' ?>><?= e($societe['societe_dossier'] ?? '-') ?></td>
-                        <td<?= $canEdit ? ' data-editable="societe_dossier_creation"' : '' ?>><?= e($societe['societe_dossier_creation'] ?? '-') ?></td>
+                        <td<?= $canEdit ? ' data-editable="societe_dossier_domiciliation_number"' : '' ?>><?= e($societe['societe_dossier_domiciliation_number'] ?? '-') ?></td>
+                        <td<?= $canEdit ? ' data-editable="societe_dossier_creation_number"' : '' ?>><?= e($societe['societe_dossier_creation_number'] ?? '-') ?></td>
                         <td<?= $canEdit ? ' data-editable="societe_source" data-editable-options="' . $sourceJson . '"' : '' ?>>
                             <?php $src = $societe['societe_source'] ?? 'creation'; ?>
                             <?php if ($src === 'cession'): ?>
@@ -233,8 +233,8 @@ if (($pdo ?? null) instanceof PDO) {
             <template data-row-template>
                 <tr data-id="">
                     <td data-bulk-cell><input type="checkbox" data-bulk-checkbox title="Selectionner"></td>
-                    <td data-cell="societe_dossier"></td>
-                    <td data-cell="societe_dossier_creation"></td>
+                    <td data-cell="societe_dossier_domiciliation_number"></td>
+                    <td data-cell="societe_dossier_creation_number"></td>
                     <td><span class="badge badge-success" style="font-size:0.65rem">Creation</span></td>
                     <td data-cell-link="societe" data-cell-value="id" data-cell-label="societe_raison_sociale"></td>
                     <td data-cell="societe_forme_juridique"></td>

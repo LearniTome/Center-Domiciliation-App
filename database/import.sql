@@ -10,8 +10,8 @@ USE `center_domiciliation`;
 
 CREATE TABLE IF NOT EXISTS societes (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    societe_dossier VARCHAR(120) DEFAULT NULL,
-    societe_dossier_creation VARCHAR(120) DEFAULT NULL,
+    societe_dossier_domiciliation_number VARCHAR(120) DEFAULT NULL,
+    societe_dossier_creation_number VARCHAR(120) DEFAULT NULL,
     societe_raison_sociale VARCHAR(255) NOT NULL,
     den_ste VARCHAR(255) DEFAULT NULL,
     societe_forme_juridique VARCHAR(120) DEFAULT NULL,
@@ -664,7 +664,7 @@ VALUES (@banque, 1), (@assurance, 1), (@autre, 1);
 -- ============================================================
 
 INSERT INTO societes (
-    societe_dossier, societe_dossier_creation, societe_raison_sociale, societe_forme_juridique, societe_ice, societe_date_ice, societe_rc, societe_if,
+    societe_dossier_domiciliation_number, societe_dossier_creation_number, societe_raison_sociale, societe_forme_juridique, societe_ice, societe_date_ice, societe_rc, societe_if,
     societe_capital, societe_part_social, societe_valeur_nominale, societe_date_exp_cert_neg, societe_adresse, societe_adresse_siege, societe_ville, societe_tribunal, societe_email,
     societe_telephone, societe_type_generation, societe_procedure_creation, societe_mode_depot
 ) VALUES

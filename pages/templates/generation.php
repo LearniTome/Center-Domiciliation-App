@@ -486,9 +486,9 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
                 <span class="help-text"><?= e($selectedSociete['societe_forme_juridique'] ?: '-') ?></span>
             </div>
             <div class="societe-summary-details">
-                <div class="detail-item"><span class="detail-label">Dossier</span><span class="detail-value"><?= e($selectedSociete['societe_dossier'] ?: '-') ?></span></div>
+                <div class="detail-item"><span class="detail-label">Dossier</span><span class="detail-value"><?= e($selectedSociete['societe_dossier_domiciliation_number'] ?: '-') ?></span></div>
                 <?php if (($selectedSociete['societe_type_generation'] ?? '') === 'creation'): ?>
-                    <div class="detail-item"><span class="detail-label">Dossier création</span><span class="detail-value"><?= e($selectedSociete['societe_dossier_creation'] ?: '-') ?></span></div>
+                    <div class="detail-item"><span class="detail-label">Dossier création</span><span class="detail-value"><?= e($selectedSociete['societe_dossier_creation_number'] ?: '-') ?></span></div>
                 <?php endif; ?>
                 <div class="detail-item"><span class="detail-label">E-mail</span><span class="detail-value"><?= e($selectedSociete['societe_email'] ?: '-') ?></span></div>
                 <div class="detail-item"><span class="detail-label">ICE</span><span class="detail-value"><?= e($selectedSociete['societe_ice'] ?: '-') ?></span></div>

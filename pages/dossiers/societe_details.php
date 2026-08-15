@@ -205,8 +205,8 @@ if (is_post() && !isset($_POST['validate_submit']) && !isset($_POST['delete_subm
 
     $stmt = $pdo->prepare('
         UPDATE societes SET
-            societe_dossier = :societe_dossier,
-            societe_dossier_creation = :societe_dossier_creation,
+            societe_dossier_domiciliation_number = :societe_dossier_domiciliation_number,
+            societe_dossier_creation_number = :societe_dossier_creation_number,
             societe_raison_sociale = :societe_raison_sociale,
             societe_forme_juridique = :societe_forme_juridique,
             societe_ice = :societe_ice,
@@ -231,8 +231,8 @@ if (is_post() && !isset($_POST['validate_submit']) && !isset($_POST['delete_subm
         WHERE id = :id
     ');
     $stmt->execute([
-        'societe_dossier' => field_value($_POST, 'societe_dossier'),
-        'societe_dossier_creation' => (field_value($_POST, 'societe_type_generation') === 'creation') ? field_value($_POST, 'societe_dossier_creation') : null,
+        'societe_dossier_domiciliation_number' => field_value($_POST, 'societe_dossier_domiciliation_number'),
+        'societe_dossier_creation_number' => (field_value($_POST, 'societe_type_generation') === 'creation') ? field_value($_POST, 'societe_dossier_creation_number') : null,
         'societe_raison_sociale' => field_value($_POST, 'societe_raison_sociale'),
         'societe_forme_juridique' => field_value($_POST, 'societe_forme_juridique'),
         'societe_ice' => field_value($_POST, 'societe_ice'),
@@ -347,12 +347,12 @@ $docTypeLabels = [
     </article>
     <article class="stat">
         <span><?= e($dossierLabel) ?></span>
-        <strong><?= e($societe['societe_dossier'] ?: '-') ?></strong>
+        <strong><?= e($societe['societe_dossier_domiciliation_number'] ?: '-') ?></strong>
     </article>
     <?php if ($isCreation): ?>
     <article class="stat">
         <span>N° Dossier Creation</span>
-        <strong><?= e($societe['societe_dossier_creation'] ?: '-') ?></strong>
+        <strong><?= e($societe['societe_dossier_creation_number'] ?: '-') ?></strong>
     </article>
     <?php endif; ?>
     <article class="stat">
@@ -408,11 +408,11 @@ $docTypeLabels = [
                 <h3 class="section-title">Identifiants</h3>
                 <label class="field">
                     <span><?= e($dossierLabel) ?></span>
-                    <input name="societe_dossier" value="<?= e((string) $societe['societe_dossier']) ?>">
+                    <input name="societe_dossier_domiciliation_number" value="<?= e((string) $societe['societe_dossier_domiciliation_number']) ?>">
                 </label>
                 <label class="field" id="field-dossier-creation" style="<?= (string) $societe['societe_type_generation'] === 'creation' ? '' : 'display:none' ?>">
                     <span>N° Dossier Creation</span>
-                    <input name="societe_dossier_creation" value="<?= e((string) ($societe['societe_dossier_creation'] ?? '')) ?>">
+                    <input name="societe_dossier_creation_number" value="<?= e((string) ($societe['societe_dossier_creation_number'] ?? '')) ?>">
                 </label>
                 <label class="field">
                     <span>Raison sociale</span>
@@ -589,9 +589,9 @@ $docTypeLabels = [
 
             <h3 class="section-title">Identifiants</h3>
             <div class="info-grid">
-                <div><span><?= e($dossierLabel) ?></span><strong><?= e($societe['societe_dossier'] ?: '-') ?></strong></div>
+                <div><span><?= e($dossierLabel) ?></span><strong><?= e($societe['societe_dossier_domiciliation_number'] ?: '-') ?></strong></div>
                 <?php if ($isCreation): ?>
-                <div><span>N° Dossier Creation</span><strong><?= e($societe['societe_dossier_creation'] ?: '-') ?></strong></div>
+                <div><span>N° Dossier Creation</span><strong><?= e($societe['societe_dossier_creation_number'] ?: '-') ?></strong></div>
                 <?php endif; ?>
                 <div><span>Forme juridique</span><strong><?= e($societe['societe_forme_juridique'] ?: '-') ?></strong></div>
                 <div><span>ICE</span><strong><?= e($societe['societe_ice'] ?: '-') ?></strong></div>

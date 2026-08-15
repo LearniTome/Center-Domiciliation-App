@@ -50,7 +50,7 @@ if (($pdo ?? null) instanceof PDO) {
                 c.created_at,
                 c.updated_at,
                 s.societe_raison_sociale,
-                s.societe_dossier AS ste_dossier,
+                s.societe_dossier_domiciliation_number AS ste_dossier,
                 (SELECT COUNT(*) FROM cession_parts cp WHERE cp.cession_id = c.id) AS nb_lignes
             FROM cessions c
             LEFT JOIN societes s ON s.id = c.societe_id

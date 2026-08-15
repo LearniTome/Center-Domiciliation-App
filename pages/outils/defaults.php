@@ -61,8 +61,8 @@ $sectionDefaults = $defaults[$currentSection] ?? [];
 
 $fieldLabels = [
     'societe' => [
-        'societe_dossier' => 'N° dossier domiciliation',
-        'societe_dossier_creation' => 'N° dossier creation',
+        'societe_dossier_domiciliation_number' => 'N° dossier domiciliation',
+        'societe_dossier_creation_number' => 'N° dossier creation',
         'societe_forme_juridique' => 'Forme juridique',
         'societe_capital' => 'Capital social',
         'societe_part_social' => 'Nombre de parts sociales',

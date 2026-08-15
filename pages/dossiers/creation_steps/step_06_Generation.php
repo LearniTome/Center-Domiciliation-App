@@ -21,20 +21,20 @@ if (is_post() && $step === 6) {
 
             $societeStmt = $pdo->prepare('
                 INSERT INTO societes (
-                    societe_dossier, societe_dossier_creation, societe_raison_sociale, societe_forme_juridique, societe_ice, societe_date_ice, societe_rc, societe_if,
+                    societe_dossier_domiciliation_number, societe_dossier_creation_number, societe_raison_sociale, societe_forme_juridique, societe_ice, societe_date_ice, societe_rc, societe_if,
                     societe_activites_statuts, societe_activites_ompic,
                     societe_capital, societe_part_social, societe_valeur_nominale, societe_date_exp_cert_neg, societe_adresse_siege, societe_ville, societe_tribunal, societe_email,
                     societe_telephone, societe_type_generation, societe_procedure_creation, societe_mode_depot, societe_tribunal_type, created_by
                 ) VALUES (
-                    :societe_dossier, :societe_dossier_creation, :societe_raison_sociale, :societe_forme_juridique, :societe_ice, :societe_date_ice, :societe_rc, :societe_if,
+                    :societe_dossier_domiciliation_number, :societe_dossier_creation_number, :societe_raison_sociale, :societe_forme_juridique, :societe_ice, :societe_date_ice, :societe_rc, :societe_if,
                     :societe_activites_statuts, :societe_activites_ompic,
                     :societe_capital, :societe_part_social, :societe_valeur_nominale, :societe_date_exp_cert_neg, :societe_adresse_siege, :societe_ville, :societe_tribunal, :societe_email,
                     :societe_telephone, :societe_type_generation, :societe_procedure_creation, :societe_mode_depot, :societe_tribunal_type, :created_by
                 )
             ');
             $societeStmt->execute([
-                'societe_dossier' => $wizard['societe']['societe_dossier'] ?? null,
-                'societe_dossier_creation' => ($wizard['societe']['societe_type_generation'] ?? '') === 'creation' ? ($wizard['societe']['societe_dossier_creation'] ?? null) : null,
+                'societe_dossier_domiciliation_number' => $wizard['societe']['societe_dossier_domiciliation_number'] ?? null,
+                'societe_dossier_creation_number' => ($wizard['societe']['societe_type_generation'] ?? '') === 'creation' ? ($wizard['societe']['societe_dossier_creation_number'] ?? null) : null,
                 'societe_raison_sociale' => $wizard['societe']['societe_raison_sociale'] ?? '',
                 'societe_forme_juridique' => $wizard['societe']['societe_forme_juridique'] ?? '',
                 'societe_ice' => $wizard['societe']['societe_ice'] ?? '',

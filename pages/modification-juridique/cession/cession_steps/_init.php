@@ -52,7 +52,7 @@ $tribunalTypes = [];
 $allTribunaux = [];
 
 if (($pdo ?? null) instanceof PDO) {
-    $stmt = $pdo->query('SELECT id, societe_raison_sociale, societe_dossier, societe_forme_juridique, societe_capital, societe_part_social, societe_ville FROM societes ORDER BY societe_raison_sociale');
+    $stmt = $pdo->query('SELECT id, societe_raison_sociale, societe_dossier_domiciliation_number, societe_forme_juridique, societe_capital, societe_part_social, societe_ville FROM societes ORDER BY societe_raison_sociale');
     $societesList = $stmt->fetchAll();
     $stmt = $pdo->query('SELECT * FROM ref_formes_juridiques ORDER BY forme_juridique');
     $formesJuridiques = $stmt->fetchAll();
@@ -71,7 +71,7 @@ if (($pdo ?? null) instanceof PDO) {
 }
 
 $societeData = array_merge([
-    'societe_dossier' => '',
+    'societe_dossier_domiciliation_number' => '',
     'societe_raison_sociale' => '',
     'societe_forme_juridique' => '',
     'societe_ice' => '',

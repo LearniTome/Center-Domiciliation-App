@@ -11,7 +11,7 @@ $documents = [];
 
 if ($cessionId > 0 && ($pdo ?? null) instanceof PDO) {
     $stmt = $pdo->prepare('
-        SELECT c.*, s.societe_raison_sociale, s.societe_dossier AS ste_dossier,
+        SELECT c.*, s.societe_raison_sociale, s.societe_dossier_domiciliation_number AS ste_dossier,
                s.societe_forme_juridique, s.societe_ville, s.societe_capital, s.societe_part_social
         FROM cessions c
         LEFT JOIN societes s ON s.id = c.societe_id

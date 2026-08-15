@@ -6,8 +6,8 @@ if (!isset($_SESSION['creation_wizard']) || !is_array($_SESSION['creation_wizard
 
     $associeDefaults = $defaults['associe'] ?? [];
 
-    $defaults['societe']['societe_dossier'] = next_dossier_number($pdo ?? null, 'DOM', 'societe_dossier');
-    $defaults['societe']['societe_dossier_creation'] = next_dossier_number($pdo ?? null, 'CRE', 'societe_dossier_creation');
+    $defaults['societe']['societe_dossier_domiciliation_number'] = next_dossier_number($pdo ?? null, 'DOM', 'societe_dossier_domiciliation_number');
+    $defaults['societe']['societe_dossier_creation_number'] = next_dossier_number($pdo ?? null, 'CRE', 'societe_dossier_creation_number');
 
     $_SESSION['creation_wizard'] = [
         'societe' => $defaults['societe'] ?? [],
@@ -105,8 +105,8 @@ if (isset($_GET['cancel']) && $_GET['cancel'] === '1') {
 }
 
 $societeData = array_merge([
-    'societe_dossier' => '',
-    'societe_dossier_creation' => '',
+    'societe_dossier_domiciliation_number' => '',
+    'societe_dossier_creation_number' => '',
     'societe_raison_sociale' => '',
     'societe_forme_juridique' => '',
     'societe_ice' => '',

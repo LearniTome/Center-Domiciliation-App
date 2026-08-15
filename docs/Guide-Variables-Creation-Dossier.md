@@ -25,7 +25,7 @@ Tous les champs du formulaire de creation de dossier (`pages/dossiers/creation_s
 
 | Champ name | Libellé | Type | Exemple | Variable template | Col DB |
 |---|---|---|---|---|---|
-| `societe_dossier` | Dossier domiciliation | text | `DOM-2026-001` | `SOCIETE_DOSSIER` | `societe_dossier` |
+| `societe_dossier_domiciliation_number` | Dossier domiciliation | text | `DOM-2026-001` | `SOCIETE_DOSSIER` | `societe_dossier_domiciliation_number` |
 | `societe_raison_sociale` | Raison sociale | text | `MA SOCIETE SARL` | `SOCIETE_RAISON_SOCIALE` | `societe_raison_sociale` |
 | `societe_forme_juridique` | Forme juridique | select | `SARL AU`, `SARL`, `SA` | `SOCIETE_FORME_JURIDIQUE` | `societe_forme_juridique` |
 | `societe_ice` | ICE | text | `003829326000013` | `SOCIETE_ICE` | `societe_ice` |

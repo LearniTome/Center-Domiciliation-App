@@ -28,8 +28,8 @@ Inserez `{{ NOM_VARIABLE }}` dans vos documents Word (.docx).
 | `SOCIETE_ADRESSE_SIEGE` | Adresse du siege social | `societe_adresse_siege` | `societe_adresse_siege` | Creation + Domiciliation |
 | `SOCIETE_EMAIL` | Email | `societe_email` | `societe_email` | Creation + Domiciliation |
 | `SOCIETE_TELEPHONE` | Telephone | `societe_telephone` | `societe_telephone` | Creation + Domiciliation |
-| `SOCIETE_DOSSIER` | Dossier domiciliation | `societe_dossier` | `societe_dossier` | Domiciliation |
-| `SOCIETE_DOSSIER_CREATION` | Dossier creation | `societe_dossier_creation` | `societe_dossier_creation` | Creation |
+| `SOCIETE_DOSSIER` | Dossier domiciliation | `societe_dossier_domiciliation_number` | `societe_dossier_domiciliation_number` | Domiciliation |
+| `SOCIETE_DOSSIER_CREATION` | Dossier creation | `societe_dossier_creation_number` | `societe_dossier_creation_number` | Creation |
 | `SOCIETE_TYPE_GENERATION` | Type de generation | `societe_type_generation` | `type_generation` | Tous |
 | `SOCIETE_PROCEDURE_CREATION` | Procedure de creation | `societe_procedure_creation` | `procedure_creation` | Creation |
 | `SOCIETE_MODE_DEPOT` | Mode de depot | `societe_mode_depot` | `mode_depot_creation` | Creation (Depot-Legal) |
