@@ -138,6 +138,22 @@ function date_value(array $source, string $key): ?string
     return $value !== '' ? $value : null;
 }
 
+function next_dossier_number(?PDO $pdo, string $prefix, string $column): string
+{
+    $allowedColumns = ['societe_dossier', 'societe_dossier_creation'];
+    if (!in_array($column, $allowedColumns, true)) {
+        $column = 'societe_dossier';
+    }
+    $currentYear = date('Y');
+    $num = 1;
+    if ($pdo) {
+        $stmt = $pdo->prepare("SELECT COALESCE(MAX(CAST(SUBSTRING_INDEX({$column}, '-', -1) AS UNSIGNED)), 0) FROM societes WHERE {$column} LIKE :pattern");
+        $stmt->execute(['pattern' => "{$prefix}-{$currentYear}-%"]);
+        $num = (int) $stmt->fetchColumn() + 1;
+    }
+    return sprintf('%s-%s-%03d', $prefix, $currentYear, $num);
+}
+
 function dashboard_count(?PDO $pdo, string $table): int
 {
     if (!$pdo) {

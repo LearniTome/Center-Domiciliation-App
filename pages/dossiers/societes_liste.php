@@ -94,6 +94,7 @@ if (($pdo ?? null) instanceof PDO) {
                 $societe['id'],
                 $societe['societe_raison_sociale'],
                 $societe['societe_dossier'],
+                $societe['societe_dossier_creation'] ?? '',
                 $societe['societe_forme_juridique'],
                 $societe['societe_source'] ?? 'creation',
                 $societe['societe_ice'],
@@ -111,7 +112,7 @@ if (($pdo ?? null) instanceof PDO) {
         }, $societes);
 
         $headers = [
-            'ID', 'Raison sociale', 'Dossier domiciliation', 'Forme juridique',
+            'ID', 'Raison sociale', 'Dossier domiciliation', 'Dossier creation', 'Forme juridique',
             'Origine', 'ICE', 'Date cert. negatif', 'RC', 'IF',
             'Activites (Statuts)', 'Activites (OMPIC)', 'Tribunal', 'Ville',
             'Email', 'Telephone', 'Capital',
@@ -168,6 +169,7 @@ if (($pdo ?? null) instanceof PDO) {
                 <tr>
                     <th data-bulk-col><input type="checkbox" data-bulk-select-all title="Tout selectionner"></th>
                     <th data-col="dossier">Dossier</th>
+                    <th data-col="dossier-creation">Dossier creation</th>
                     <th data-col="source">Origine</th>
                     <th data-col="raison-sociale">Raison sociale</th>
                     <th data-col="forme">Forme</th>
@@ -190,6 +192,7 @@ if (($pdo ?? null) instanceof PDO) {
                     <tr data-id="<?= (int) $societe['id'] ?>">
                         <td data-bulk-cell><input type="checkbox" data-bulk-checkbox title="Selectionner"></td>
                         <td<?= $canEdit ? ' data-editable="societe_dossier"' : '' ?>><?= e($societe['societe_dossier'] ?? '-') ?></td>
+                        <td<?= $canEdit ? ' data-editable="societe_dossier_creation"' : '' ?>><?= e($societe['societe_dossier_creation'] ?? '-') ?></td>
                         <td<?= $canEdit ? ' data-editable="societe_source" data-editable-options="' . $sourceJson . '"' : '' ?>>
                             <?php $src = $societe['societe_source'] ?? 'creation'; ?>
                             <?php if ($src === 'cession'): ?>
@@ -231,6 +234,7 @@ if (($pdo ?? null) instanceof PDO) {
                 <tr data-id="">
                     <td data-bulk-cell><input type="checkbox" data-bulk-checkbox title="Selectionner"></td>
                     <td data-cell="societe_dossier"></td>
+                    <td data-cell="societe_dossier_creation"></td>
                     <td><span class="badge badge-success" style="font-size:0.65rem">Creation</span></td>
                     <td data-cell-link="societe" data-cell-value="id" data-cell-label="societe_raison_sociale"></td>
                     <td data-cell="societe_forme_juridique"></td>

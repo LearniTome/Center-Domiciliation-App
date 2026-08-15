@@ -34,6 +34,7 @@
 | `SOCIETE_DATE_EXP_CERT_NEG` | Societe | `societe_date_exp_cert_neg` |
 | `SOCIETE_DATE_ICE` | Societe | `societe_date_ice` |
 | `SOCIETE_DOSSIER` | Societe | `societe_dossier` |
+| `SOCIETE_DOSSIER_CREATION` | Societe | `societe_dossier_creation` |
 | `SOCIETE_EMAIL` | Societe | `societe_email` |
 | `SOCIETE_FORME_JURIDIQUE` | Societe | `societe_forme_juridique` |
 | `SOCIETE_ICE` | Societe | `societe_ice` |

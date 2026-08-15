@@ -198,6 +198,7 @@ if (is_post() && !isset($_POST['validate_submit']) && !isset($_POST['delete_subm
     $stmt = $pdo->prepare('
         UPDATE societes SET
             societe_dossier = :societe_dossier,
+            societe_dossier_creation = :societe_dossier_creation,
             societe_raison_sociale = :societe_raison_sociale,
             societe_forme_juridique = :societe_forme_juridique,
             societe_ice = :societe_ice,
@@ -223,6 +224,7 @@ if (is_post() && !isset($_POST['validate_submit']) && !isset($_POST['delete_subm
     ');
     $stmt->execute([
         'societe_dossier' => field_value($_POST, 'societe_dossier'),
+        'societe_dossier_creation' => (field_value($_POST, 'societe_type_generation') === 'creation') ? field_value($_POST, 'societe_dossier_creation') : null,
         'societe_raison_sociale' => field_value($_POST, 'societe_raison_sociale'),
         'societe_forme_juridique' => field_value($_POST, 'societe_forme_juridique'),
         'societe_ice' => field_value($_POST, 'societe_ice'),
@@ -351,7 +353,7 @@ $docTypeLabels = [
                 <h3 class="section-title">Procedure</h3>
                 <label class="field">
                     <span>Type generation</span>
-                    <select name="societe_type_generation">
+                    <select name="societe_type_generation" data-type-gen>
                         <option value="">Selectionner</option>
                         <option value="creation" <?= (string) $societe['societe_type_generation'] === 'creation' ? 'selected' : '' ?>>Creation</option>
                         <option value="domiciliation" <?= (string) $societe['societe_type_generation'] === 'domiciliation' ? 'selected' : '' ?>>Domiciliation</option>
@@ -377,6 +379,10 @@ $docTypeLabels = [
                 <label class="field">
                     <span>Dossier domiciliation</span>
                     <input name="societe_dossier" value="<?= e((string) $societe['societe_dossier']) ?>">
+                </label>
+                <label class="field" id="field-dossier-creation" style="<?= (string) $societe['societe_type_generation'] === 'creation' ? '' : 'display:none' ?>">
+                    <span>Dossier creation</span>
+                    <input name="societe_dossier_creation" value="<?= e((string) ($societe['societe_dossier_creation'] ?? '')) ?>">
                 </label>
                 <label class="field">
                     <span>Raison sociale</span>
@@ -553,6 +559,10 @@ $docTypeLabels = [
 
             <h3 class="section-title">Identifiants</h3>
             <div class="info-grid">
+                <div><span>Dossier domiciliation</span><strong><?= e($societe['societe_dossier'] ?: '-') ?></strong></div>
+                <?php if (($societe['societe_type_generation'] ?? '') === 'creation'): ?>
+                <div><span>Dossier creation</span><strong><?= e($societe['societe_dossier_creation'] ?: '-') ?></strong></div>
+                <?php endif; ?>
                 <div><span>Forme juridique</span><strong><?= e($societe['societe_forme_juridique'] ?: '-') ?></strong></div>
                 <div><span>ICE</span><strong><?= e($societe['societe_ice'] ?: '-') ?></strong></div>
                 <div><span>Date cert. negatif</span><strong><?= format_date($societe['societe_date_ice'] ?? null) ?></strong></div>
@@ -837,6 +847,14 @@ $docTypeLabels = [
             window.location.href = this.dataset.href;
         });
     });
+    var typeGenSelect = document.querySelector('select[data-type-gen]');
+    if (typeGenSelect) {
+        var toggleDossierCreation = function () {
+            var field = document.getElementById('field-dossier-creation');
+            if (field) field.style.display = typeGenSelect.value === 'creation' ? '' : 'none';
+        };
+        typeGenSelect.addEventListener('change', toggleDossierCreation);
+    }
 })();
 </script>
 

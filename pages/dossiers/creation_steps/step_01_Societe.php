@@ -13,6 +13,7 @@ if (is_post() && $step === 1) {
 
     $societe = [
         'societe_dossier' => field_value($_POST, 'societe_dossier'),
+        'societe_dossier_creation' => (field_value($_POST, 'societe_type_generation') === 'creation') ? field_value($_POST, 'societe_dossier_creation') : '',
         'societe_raison_sociale' => field_value($_POST, 'societe_raison_sociale'),
         'societe_forme_juridique' => field_value($_POST, 'societe_forme_juridique'),
         'societe_ice' => field_value($_POST, 'societe_ice'),
@@ -97,6 +98,10 @@ if ($step === 1):
         <label class="field">
             <span>Dossier domiciliation</span>
             <input name="societe_dossier" value="<?= e((string) $societeData['societe_dossier']) ?>">
+        </label>
+        <label class="field" data-depends-type-gen style="<?= (string) $societeData['societe_type_generation'] !== 'creation' ? 'display:none' : '' ?>">
+            <span>Dossier creation</span>
+            <input name="societe_dossier_creation" value="<?= e((string) $societeData['societe_dossier_creation']) ?>">
         </label>
         <label class="field">
             <span>Raison sociale</span>

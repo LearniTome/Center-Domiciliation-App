@@ -6,13 +6,8 @@ if (!isset($_SESSION['creation_wizard']) || !is_array($_SESSION['creation_wizard
 
     $associeDefaults = $defaults['associe'] ?? [];
 
-    $dossierNum = 1;
-    $currentYear = date('Y');
-    if (($pdo ?? null) instanceof PDO) {
-        $maxNum = $pdo->query("SELECT COALESCE(MAX(CAST(SUBSTRING_INDEX(societe_dossier, '-', -1) AS UNSIGNED)), 0) FROM societes WHERE societe_dossier LIKE 'DOM-{$currentYear}-%'")->fetchColumn();
-        $dossierNum = (int) $maxNum + 1;
-    }
-    $defaults['societe']['societe_dossier'] = sprintf('DOM-%s-%03d', $currentYear, $dossierNum);
+    $defaults['societe']['societe_dossier'] = next_dossier_number($pdo ?? null, 'DOM', 'societe_dossier');
+    $defaults['societe']['societe_dossier_creation'] = next_dossier_number($pdo ?? null, 'CRE', 'societe_dossier_creation');
 
     $_SESSION['creation_wizard'] = [
         'societe' => $defaults['societe'] ?? [],
@@ -111,6 +106,7 @@ if (isset($_GET['cancel']) && $_GET['cancel'] === '1') {
 
 $societeData = array_merge([
     'societe_dossier' => '',
+    'societe_dossier_creation' => '',
     'societe_raison_sociale' => '',
     'societe_forme_juridique' => '',
     'societe_ice' => '',
