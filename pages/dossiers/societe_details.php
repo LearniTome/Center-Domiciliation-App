@@ -74,6 +74,7 @@ $procLabels = ['normal' => 'Normale', 'acceleree' => 'Acceleree'];
 $depotLabels = ['depot_physique' => 'Depot Physique', 'depot_en_ligne' => 'Depot En Ligne'];
 $procLabel = $procLabels[$societe['societe_procedure_creation'] ?? ''] ?? ($societe['societe_procedure_creation'] ?? '-');
 $depotLabel = $depotLabels[$societe['societe_mode_depot'] ?? ''] ?? ($societe['societe_mode_depot'] ?? '-');
+$dossierLabel = ((string) ($societe['societe_source'] ?? '') === 'cession') ? 'N° Dossier Cession' : 'N° Dossier Domiciliation';
 
 if (is_post() && isset($_POST['validate_submit']) && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
@@ -345,12 +346,12 @@ $docTypeLabels = [
         </strong>
     </article>
     <article class="stat">
-        <span>N Dossier Domiciliation</span>
+        <span><?= e($dossierLabel) ?></span>
         <strong><?= e($societe['societe_dossier'] ?: '-') ?></strong>
     </article>
     <?php if ($isCreation): ?>
     <article class="stat">
-        <span>N Dossier Creation</span>
+        <span>N° Dossier Creation</span>
         <strong><?= e($societe['societe_dossier_creation'] ?: '-') ?></strong>
     </article>
     <?php endif; ?>
@@ -406,11 +407,11 @@ $docTypeLabels = [
                 </label>
                 <h3 class="section-title">Identifiants</h3>
                 <label class="field">
-                    <span>N Dossier Domiciliation</span>
+                    <span><?= e($dossierLabel) ?></span>
                     <input name="societe_dossier" value="<?= e((string) $societe['societe_dossier']) ?>">
                 </label>
                 <label class="field" id="field-dossier-creation" style="<?= (string) $societe['societe_type_generation'] === 'creation' ? '' : 'display:none' ?>">
-                    <span>N Dossier Creation</span>
+                    <span>N° Dossier Creation</span>
                     <input name="societe_dossier_creation" value="<?= e((string) ($societe['societe_dossier_creation'] ?? '')) ?>">
                 </label>
                 <label class="field">
@@ -588,9 +589,9 @@ $docTypeLabels = [
 
             <h3 class="section-title">Identifiants</h3>
             <div class="info-grid">
-                <div><span>N Dossier Domiciliation</span><strong><?= e($societe['societe_dossier'] ?: '-') ?></strong></div>
+                <div><span><?= e($dossierLabel) ?></span><strong><?= e($societe['societe_dossier'] ?: '-') ?></strong></div>
                 <?php if ($isCreation): ?>
-                <div><span>N Dossier Creation</span><strong><?= e($societe['societe_dossier_creation'] ?: '-') ?></strong></div>
+                <div><span>N° Dossier Creation</span><strong><?= e($societe['societe_dossier_creation'] ?: '-') ?></strong></div>
                 <?php endif; ?>
                 <div><span>Forme juridique</span><strong><?= e($societe['societe_forme_juridique'] ?: '-') ?></strong></div>
                 <div><span>ICE</span><strong><?= e($societe['societe_ice'] ?: '-') ?></strong></div>
