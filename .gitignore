@@ -2,3 +2,8 @@
 /.env.local
 /tmp_test/
 
+# Graphify - fichiers machine-spécifiques + cache régénérable (les sorties graph.html/graph.json/GRAPH_REPORT.md sont versionnées)
+graphify-out/.graphify_python
+graphify-out/.graphify_root
+graphify-out/cache/
+

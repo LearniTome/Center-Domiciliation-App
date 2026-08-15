@@ -1,0 +1,2078 @@
+{
+  ".vscode/settings.json": {
+    "mtime": 1778494330.088917,
+    "seen": 1786803714.866004,
+    "ast_hash": "1ea7d2ea00de79476cc2b0ee80eae445",
+    "semantic_hash": "1ea7d2ea00de79476cc2b0ee80eae445"
+  },
+  "_debug_tpl.php": {
+    "mtime": 1784203359.1939895,
+    "seen": 1786803714.8660092,
+    "ast_hash": "82b363e7cdd93de39952f183a31d02d7",
+    "semantic_hash": "82b363e7cdd93de39952f183a31d02d7"
+  },
+  "ajax/generation.php": {
+    "mtime": 1781850437.714284,
+    "seen": 1786803714.8660114,
+    "ast_hash": "efe2c9e3f676863420b7d9f048d1feb8",
+    "semantic_hash": "efe2c9e3f676863420b7d9f048d1feb8"
+  },
+  "api.php": {
+    "mtime": 1783681793.8445027,
+    "seen": 1786803714.8660126,
+    "ast_hash": "6683a26a94e1c2044a0c23ad1ffee8e7",
+    "semantic_hash": "6683a26a94e1c2044a0c23ad1ffee8e7"
+  },
+  "assets/js/app.js": {
+    "mtime": 1784556011.3923097,
+    "seen": 1786803714.8660138,
+    "ast_hash": "65e5fe611c87f69c133c3ce5ccc34f9f",
+    "semantic_hash": "65e5fe611c87f69c133c3ce5ccc34f9f"
+  },
+  "assets/js/table-editor.js": {
+    "mtime": 1783681473.330423,
+    "seen": 1786803714.8660147,
+    "ast_hash": "79d07c9cb10cf0a6cc24dd1648634c1b",
+    "semantic_hash": "79d07c9cb10cf0a6cc24dd1648634c1b"
+  },
+  "chrome-debug.ps1": {
+    "mtime": 1780832053.22199,
+    "seen": 1786803714.866016,
+    "ast_hash": "b592fcf3b15cb0cd8d6f469cfe45c193",
+    "semantic_hash": "b592fcf3b15cb0cd8d6f469cfe45c193"
+  },
+  "composer.json": {
+    "mtime": 1782033542.9047358,
+    "seen": 1786803714.8660169,
+    "ast_hash": "708e61d3ef95524262286dcc2d6245a6",
+    "semantic_hash": "708e61d3ef95524262286dcc2d6245a6"
+  },
+  "config/ai.php": {
+    "mtime": 1780316056.9381902,
+    "seen": 1786803714.8660178,
+    "ast_hash": "f3aef0c3eac48a002b3b5228dca0d4ec",
+    "semantic_hash": "f3aef0c3eac48a002b3b5228dca0d4ec"
+  },
+  "config/app.php": {
+    "mtime": 1782632167.8890724,
+    "seen": 1786803714.8660185,
+    "ast_hash": "8029e49068fd6cfb3a6e6bd45f9d12b4",
+    "semantic_hash": "8029e49068fd6cfb3a6e6bd45f9d12b4"
+  },
+  "config/database.php": {
+    "mtime": 1778529833.3774796,
+    "seen": 1786803714.8660192,
+    "ast_hash": "0a4da6ac81884e9b48f08df91c462c11",
+    "semantic_hash": "0a4da6ac81884e9b48f08df91c462c11"
+  },
+  "config/defaults.json": {
+    "mtime": 1782632167.8900797,
+    "seen": 1786803714.8660207,
+    "ast_hash": "58788f98d4267e15d58a714ea827c60c",
+    "semantic_hash": "58788f98d4267e15d58a714ea827c60c"
+  },
+  "config/templates.php": {
+    "mtime": 1782632167.8900797,
+    "seen": 1786803714.8660214,
+    "ast_hash": "581056b395bb0ccd3be7baad256613c6",
+    "semantic_hash": "581056b395bb0ccd3be7baad256613c6"
+  },
+  "database/exports/2026-07-20_084740.sql": {
+    "mtime": 1784533660.6509902,
+    "seen": 1786803714.8660223,
+    "ast_hash": "49ae6eba2239cc717b797add2b53025e",
+    "semantic_hash": "49ae6eba2239cc717b797add2b53025e"
+  },
+  "database/exports/2026-07-20_142138.sql": {
+    "mtime": 1784553702.6034403,
+    "seen": 1786803714.866023,
+    "ast_hash": "0debf1bbeb2b05fe07ad0a1c305d66cc",
+    "semantic_hash": "0debf1bbeb2b05fe07ad0a1c305d66cc"
+  },
+  "database/exports/2026-07-21_212826.sql": {
+    "mtime": 1784665711.0984187,
+    "seen": 1786803714.8660243,
+    "ast_hash": "e420871d43b2afd5783d3348b4c5eb33",
+    "semantic_hash": "e420871d43b2afd5783d3348b4c5eb33"
+  },
+  "database/exports/center_domiciliation_2026-06-12.sql": {
+    "mtime": 1781850437.714284,
+    "seen": 1786803714.8660252,
+    "ast_hash": "64637823c17c35c9ff0cdad32d066313",
+    "semantic_hash": "64637823c17c35c9ff0cdad32d066313"
+  },
+  "database/exports/center_domiciliation_2026-06-12_full.sql": {
+    "mtime": 1781850437.7198484,
+    "seen": 1786803714.866026,
+    "ast_hash": "5e0fdffa9acb8984e2d348ebf6fe3bca",
+    "semantic_hash": "5e0fdffa9acb8984e2d348ebf6fe3bca"
+  },
+  "database/exports/center_domiciliation_2026-07-16_164140.sql": {
+    "mtime": 1784534259.3897853,
+    "seen": 1786803714.8660266,
+    "ast_hash": "ec9a9b5ab0e1be8fb89b9ef44e04056f",
+    "semantic_hash": "ec9a9b5ab0e1be8fb89b9ef44e04056f"
+  },
+  "database/exports/center_domiciliation_2026-07-16_164523.sql": {
+    "mtime": 1784533491.7770436,
+    "seen": 1786803714.8660278,
+    "ast_hash": "60500836c77fbbcf45a4092fbf07f2ac",
+    "semantic_hash": "60500836c77fbbcf45a4092fbf07f2ac"
+  },
+  "database/import.sql": {
+    "mtime": 1780934242.4327354,
+    "seen": 1786803714.8660285,
+    "ast_hash": "15a59766407e3796ab54fcaa3a4c8a14",
+    "semantic_hash": "15a59766407e3796ab54fcaa3a4c8a14"
+  },
+  "database/migration_add_tribunal_type.sql": {
+    "mtime": 1778869379.270708,
+    "seen": 1786803714.8660295,
+    "ast_hash": "c81dd50105b06e873d14f4f664e365c5",
+    "semantic_hash": "c81dd50105b06e873d14f4f664e365c5"
+  },
+  "database/migration_rbac.sql": {
+    "mtime": 1780401709.1582139,
+    "seen": 1786803714.8660312,
+    "ast_hash": "e9e76650fa74049492da6244d1f78cb5",
+    "semantic_hash": "e9e76650fa74049492da6244d1f78cb5"
+  },
+  "database/migration_rename_columns.sql": {
+    "mtime": 1778933783.8738465,
+    "seen": 1786803714.866032,
+    "ast_hash": "4d9ea07856423a44da433890d6d8432f",
+    "semantic_hash": "4d9ea07856423a44da433890d6d8432f"
+  },
+  "database/migrations/20260401_000001_add_tribunal_type.sql": {
+    "mtime": 1778869379.270708,
+    "seen": 1786803714.8660326,
+    "ast_hash": "c81dd50105b06e873d14f4f664e365c5",
+    "semantic_hash": "c81dd50105b06e873d14f4f664e365c5"
+  },
+  "database/migrations/20260401_000002_rename_columns.sql": {
+    "mtime": 1778933783.8738465,
+    "seen": 1786803714.8660336,
+    "ast_hash": "4d9ea07856423a44da433890d6d8432f",
+    "semantic_hash": "4d9ea07856423a44da433890d6d8432f"
+  },
+  "database/migrations/20260401_000003_rbac.sql": {
+    "mtime": 1780401709.1582139,
+    "seen": 1786803714.8660345,
+    "ast_hash": "e9e76650fa74049492da6244d1f78cb5",
+    "semantic_hash": "e9e76650fa74049492da6244d1f78cb5"
+  },
+  "database/migrations/20260401_000004_template_folder.sql": {
+    "mtime": 1780832785.1634061,
+    "seen": 1786803714.8660355,
+    "ast_hash": "a53b16c0a72e53769272634bdd35852d",
+    "semantic_hash": "a53b16c0a72e53769272634bdd35852d"
+  },
+  "database/migrations/20260608_000005_add_ref_fonctions.sql": {
+    "mtime": 1780934996.5101833,
+    "seen": 1786803714.8660362,
+    "ast_hash": "fe524e7ea0fc18a020a0d9efe4446195",
+    "semantic_hash": "fe524e7ea0fc18a020a0d9efe4446195"
+  },
+  "database/migrations/20260609_000006_create_notifications.sql": {
+    "mtime": 1781850437.7198484,
+    "seen": 1786803714.8660371,
+    "ast_hash": "5f3296b947f7e672a60cd6d5088273a2",
+    "semantic_hash": "5f3296b947f7e672a60cd6d5088273a2"
+  },
+  "database/migrations/20260612_000001_cession_parts.sql": {
+    "mtime": 1781850437.7198484,
+    "seen": 1786803714.866038,
+    "ast_hash": "d7a52b433a87d728f715c77722dbded7",
+    "semantic_hash": "d7a52b433a87d728f715c77722dbded7"
+  },
+  "database/migrations/20260612_000002_cession_permissions.sql": {
+    "mtime": 1781850437.7198484,
+    "seen": 1786803714.8660388,
+    "ast_hash": "8c134caaa8922b76786a06be30312ed8",
+    "semantic_hash": "8c134caaa8922b76786a06be30312ed8"
+  },
+  "database/migrations/20260612_000003_cession_pourcentage_gerant.sql": {
+    "mtime": 1781850437.7198484,
+    "seen": 1786803714.8660398,
+    "ast_hash": "056c28dc543783e0b683c1b14b1910bf",
+    "semantic_hash": "056c28dc543783e0b683c1b14b1910bf"
+  },
+  "database/migrations/20260612_000004_societe_source.sql": {
+    "mtime": 1781850437.7198484,
+    "seen": 1786803714.866041,
+    "ast_hash": "fedb7cd9fa0933e1ee9fd1dc2bf908cf",
+    "semantic_hash": "fedb7cd9fa0933e1ee9fd1dc2bf908cf"
+  },
+  "database/migrations/20260613_000001_add_societe_tp.sql": {
+    "mtime": 1781850437.7219133,
+    "seen": 1786803714.8660417,
+    "ast_hash": "64f98885608d1e085acd47d288d7b2d9",
+    "semantic_hash": "64f98885608d1e085acd47d288d7b2d9"
+  },
+  "database/migrations/20260613_000003_cessionnaire_fields.sql": {
+    "mtime": 1781850437.7219133,
+    "seen": 1786803714.8660426,
+    "ast_hash": "5a2dcc63a7853af7bf99068e6fe2eacb",
+    "semantic_hash": "5a2dcc63a7853af7bf99068e6fe2eacb"
+  },
+  "database/migrations/20260615_000001_add_societe_cnss.sql": {
+    "mtime": 1781850437.7219133,
+    "seen": 1786803714.8660433,
+    "ast_hash": "2538add08ab0e41aa24bb9a1a5e31382",
+    "semantic_hash": "2538add08ab0e41aa24bb9a1a5e31382"
+  },
+  "database/migrations/20260615_000002_add_cession_id.sql": {
+    "mtime": 1781850437.7230477,
+    "seen": 1786803714.866044,
+    "ast_hash": "2bd208be25d623adfdcc5db09b92a226",
+    "semantic_hash": "2bd208be25d623adfdcc5db09b92a226"
+  },
+  "database/migrations/20260621_000001_create_user_sessions.sql": {
+    "mtime": 1782031947.1898928,
+    "seen": 1786803714.866045,
+    "ast_hash": "d8bd9a04ba31531d7da5171b83b513de",
+    "semantic_hash": "d8bd9a04ba31531d7da5171b83b513de"
+  },
+  "database/migrations/20260621_000002_import_permissions.sql": {
+    "mtime": 1782033609.437459,
+    "seen": 1786803714.866046,
+    "ast_hash": "eaf661abf7cf7af4383c49c6146e5b41",
+    "semantic_hash": "eaf661abf7cf7af4383c49c6146e5b41"
+  },
+  "database/migrations/20260626_000001_create_pv_ago.sql": {
+    "mtime": 1782632167.8910885,
+    "seen": 1786803714.866047,
+    "ast_hash": "97b5ceb611ad963cb365c2cc01e09c5b",
+    "semantic_hash": "97b5ceb611ad963cb365c2cc01e09c5b"
+  },
+  "database/migrations/20260626_000002_fix_pv_ago_exercice_clos_length.sql": {
+    "mtime": 1782632167.8910885,
+    "seen": 1786803714.8660479,
+    "ast_hash": "387c4cf72bcdd3de0cd486f4fd597414",
+    "semantic_hash": "387c4cf72bcdd3de0cd486f4fd597414"
+  },
+  "database/migrations/20260626_000003_add_adresse_ville.sql": {
+    "mtime": 1782632167.8920884,
+    "seen": 1786803714.8660488,
+    "ast_hash": "ba5e4956ea2da2e9cae787999dcc2354",
+    "semantic_hash": "ba5e4956ea2da2e9cae787999dcc2354"
+  },
+  "database/migrations/20260628_000001_cession_status_valider.sql": {
+    "mtime": 1782637343.600552,
+    "seen": 1786803714.86605,
+    "ast_hash": "75272416e453f6eab298baaca1408769",
+    "semantic_hash": "75272416e453f6eab298baaca1408769"
+  },
+  "database/migrations/20260628_000002_pv_ago_status_valider.sql": {
+    "mtime": 1782637335.4462588,
+    "seen": 1786803714.866051,
+    "ast_hash": "74e3dbfa1ccbcdc3170fb875e24524e3",
+    "semantic_hash": "74e3dbfa1ccbcdc3170fb875e24524e3"
+  },
+  "database/migrations/20260628_000003_cession_suivi.sql": {
+    "mtime": 1782638343.5593839,
+    "seen": 1786803714.866052,
+    "ast_hash": "b8306271a51163c0a22a2cba6cbe3c37",
+    "semantic_hash": "b8306271a51163c0a22a2cba6cbe3c37"
+  },
+  "database/migrations/20260628_000004_cession_suivi_permission.sql": {
+    "mtime": 1782638410.0750098,
+    "seen": 1786803714.8660529,
+    "ast_hash": "1468e613fd89d4d1457fd5abfa422880",
+    "semantic_hash": "1468e613fd89d4d1457fd5abfa422880"
+  },
+  "database/migrations/20260628_000005_pv_resolutions_templates.sql": {
+    "mtime": 1782743352.4407842,
+    "seen": 1786803714.8660536,
+    "ast_hash": "7149f0854e31b35985a39fc289ea9a84",
+    "semantic_hash": "7149f0854e31b35985a39fc289ea9a84"
+  },
+  "database/migrations/20260628_000006_pv_resolutions_column.sql": {
+    "mtime": 1782743352.443834,
+    "seen": 1786803714.8660543,
+    "ast_hash": "b7a285b8c0c0dc967114524e2884c1c7",
+    "semantic_hash": "b7a285b8c0c0dc967114524e2884c1c7"
+  },
+  "database/migrations/20260714_225720_add_duree_gerance_to_associes.sql": {
+    "mtime": 1784153912.902959,
+    "seen": 1786803714.8660555,
+    "ast_hash": "a0d81e3f91e98a347366a194e8a27159",
+    "semantic_hash": "a0d81e3f91e98a347366a194e8a27159"
+  },
+  "database/migrations/20260729_000001_add_created_by_to_societes.sql": {
+    "mtime": 1785358378.2801263,
+    "seen": 1786803714.8660562,
+    "ast_hash": "4411365592b5f21f2e12374b18fd620a",
+    "semantic_hash": "4411365592b5f21f2e12374b18fd620a"
+  },
+  "database/schema.sql": {
+    "mtime": 1780590977.6453013,
+    "seen": 1786803714.8660572,
+    "ast_hash": "192f2a1422a552756d072f7fb8c3715e",
+    "semantic_hash": "192f2a1422a552756d072f7fb8c3715e"
+  },
+  "database/seed.sql": {
+    "mtime": 1784157308.1608756,
+    "seen": 1786803714.8660579,
+    "ast_hash": "33de2bfffc7740f2825594125fe4ccbb",
+    "semantic_hash": "33de2bfffc7740f2825594125fe4ccbb"
+  },
+  "database/seed_rbac.sql": {
+    "mtime": 1781850437.7240984,
+    "seen": 1786803714.866059,
+    "ast_hash": "11934899550e9f4f8b5a5c3257b1b1e7",
+    "semantic_hash": "11934899550e9f4f8b5a5c3257b1b1e7"
+  },
+  "dev-server.ps1": {
+    "mtime": 1786801271.203648,
+    "seen": 1786803714.8660598,
+    "ast_hash": "b6615f75ee610268252fff93a1a26534",
+    "semantic_hash": "b6615f75ee610268252fff93a1a26534"
+  },
+  "generate_hash.php": {
+    "mtime": 1782049646.569328,
+    "seen": 1786803714.8660605,
+    "ast_hash": "d89c97c75c082aa133fb061da507adaf",
+    "semantic_hash": "d89c97c75c082aa133fb061da507adaf"
+  },
+  "includes/amorcage.php": {
+    "mtime": 1785357750.4269123,
+    "seen": 1786803714.8660614,
+    "ast_hash": "72a0e757d398fa2d4ab82823c48e8c00",
+    "semantic_hash": "72a0e757d398fa2d4ab82823c48e8c00"
+  },
+  "includes/base_donnees.php": {
+    "mtime": 1785357756.0769517,
+    "seen": 1786803714.8660624,
+    "ast_hash": "88f4535cbaa7b2325621bb2c393167c0",
+    "semantic_hash": "88f4535cbaa7b2325621bb2c393167c0"
+  },
+  "includes/bulk_edit_modal.php": {
+    "mtime": 1782034292.4928792,
+    "seen": 1786803714.8660634,
+    "ast_hash": "b37e5c2874f4d7f7d330fce0cbdefb6b",
+    "semantic_hash": "b37e5c2874f4d7f7d330fce0cbdefb6b"
+  },
+  "includes/entete.php": {
+    "mtime": 1782632573.3857956,
+    "seen": 1786803714.866064,
+    "ast_hash": "c9ba6739bce92623da6011964055382e",
+    "semantic_hash": "c9ba6739bce92623da6011964055382e"
+  },
+  "includes/fonctions.php": {
+    "mtime": 1784203359.2304103,
+    "seen": 1786803714.8660648,
+    "ast_hash": "fcc98a53870dc47e37a1bd2f7f0d91e4",
+    "semantic_hash": "fcc98a53870dc47e37a1bd2f7f0d91e4"
+  },
+  "includes/import_excel_modal.php": {
+    "mtime": 1782045124.0477273,
+    "seen": 1786803714.866066,
+    "ast_hash": "07385b8b5867243e33d0e4dda1a15634",
+    "semantic_hash": "07385b8b5867243e33d0e4dda1a15634"
+  },
+  "includes/import_excel_section.php": {
+    "mtime": 1782033642.5925279,
+    "seen": 1786803714.8660667,
+    "ast_hash": "10541806abc5ae3ea03aa8eabee4a206",
+    "semantic_hash": "10541806abc5ae3ea03aa8eabee4a206"
+  },
+  "includes/migrations.php": {
+    "mtime": 1784535205.9012995,
+    "seen": 1786803714.8660676,
+    "ast_hash": "3b295e1c519723426742c67256c6e819",
+    "semantic_hash": "3b295e1c519723426742c67256c6e819"
+  },
+  "includes/navigation.php": {
+    "mtime": 1782743352.4458342,
+    "seen": 1786803714.8660684,
+    "ast_hash": "228970ebb0d2c6e0cd62f5aaba3e18a9",
+    "semantic_hash": "228970ebb0d2c6e0cd62f5aaba3e18a9"
+  },
+  "includes/pied_page.php": {
+    "mtime": 1782034109.518411,
+    "seen": 1786803714.8660693,
+    "ast_hash": "231b23b5298c365549bd50b3c8c2d8a2",
+    "semantic_hash": "231b23b5298c365549bd50b3c8c2d8a2"
+  },
+  "includes/quick_create_modal.php": {
+    "mtime": 1783681364.5382876,
+    "seen": 1786803714.86607,
+    "ast_hash": "52b852a5a6a11f46a28adfaf632a9f4c",
+    "semantic_hash": "52b852a5a6a11f46a28adfaf632a9f4c"
+  },
+  "includes/rendu_configuration.php": {
+    "mtime": 1782632167.8968015,
+    "seen": 1786803714.866071,
+    "ast_hash": "4531eaea6e6842a8bbd8d0f951314afd",
+    "semantic_hash": "4531eaea6e6842a8bbd8d0f951314afd"
+  },
+  "index.php": {
+    "mtime": 1784540562.781988,
+    "seen": 1786803714.8660717,
+    "ast_hash": "54336046fe96f867c627904fe4bcc454",
+    "semantic_hash": "54336046fe96f867c627904fe4bcc454"
+  },
+  "opencode.json": {
+    "mtime": 1780832053.2239902,
+    "seen": 1786803714.8660727,
+    "ast_hash": "0d26265b418fa0b3beb55b5986fb765a",
+    "semantic_hash": "0d26265b418fa0b3beb55b5986fb765a"
+  },
+  "pages/accueil/dashboard.php": {
+    "mtime": 1782747989.925376,
+    "seen": 1786803714.8660736,
+    "ast_hash": "67453f08370709874cf4bf665eee48cc",
+    "semantic_hash": "67453f08370709874cf4bf665eee48cc"
+  },
+  "pages/accueil/notifications.php": {
+    "mtime": 1782032925.7425284,
+    "seen": 1786803714.8660743,
+    "ast_hash": "ea1a4fdceaf51dfba8aa14f569450930",
+    "semantic_hash": "ea1a4fdceaf51dfba8aa14f569450930"
+  },
+  "pages/auth/connexion.php": {
+    "mtime": 1782032928.4575975,
+    "seen": 1786803714.8660753,
+    "ast_hash": "0c2a74cce6a2ee3735cdde41b923f148",
+    "semantic_hash": "0c2a74cce6a2ee3735cdde41b923f148"
+  },
+  "pages/auth/deconnexion.php": {
+    "mtime": 1781850437.8241363,
+    "seen": 1786803714.8660762,
+    "ast_hash": "849ebf0bd2db5d272918043362c9781b",
+    "semantic_hash": "849ebf0bd2db5d272918043362c9781b"
+  },
+  "pages/auth/not-found.php": {
+    "mtime": 1781850437.8252296,
+    "seen": 1786803714.866077,
+    "ast_hash": "35e3f1087a479893371aa38afd8012e3",
+    "semantic_hash": "35e3f1087a479893371aa38afd8012e3"
+  },
+  "pages/configuration/activite.php": {
+    "mtime": 1781850437.8252296,
+    "seen": 1786803714.8660781,
+    "ast_hash": "985f36a4b8d7935eb4fd2c75553f6af9",
+    "semantic_hash": "985f36a4b8d7935eb4fd2c75553f6af9"
+  },
+  "pages/configuration/activites-ompic.php": {
+    "mtime": 1781850437.8262484,
+    "seen": 1786803714.866079,
+    "ast_hash": "01744bc41083ae86b217c78a60b16cb6",
+    "semantic_hash": "01744bc41083ae86b217c78a60b16cb6"
+  },
+  "pages/configuration/activites.php": {
+    "mtime": 1781850437.8268769,
+    "seen": 1786803714.8660798,
+    "ast_hash": "25a23da89b8befa538aca1848c83d202",
+    "semantic_hash": "25a23da89b8befa538aca1848c83d202"
+  },
+  "pages/configuration/adresses.php": {
+    "mtime": 1781850437.8268769,
+    "seen": 1786803714.8660808,
+    "ast_hash": "2d6f616d8088e4f0237ec79279396f1f",
+    "semantic_hash": "2d6f616d8088e4f0237ec79279396f1f"
+  },
+  "pages/configuration/configuration.php": {
+    "mtime": 1781850437.8268769,
+    "seen": 1786803714.8660815,
+    "ast_hash": "7aa37becd05d4fbe27feaf1c77f2bedc",
+    "semantic_hash": "7aa37becd05d4fbe27feaf1c77f2bedc"
+  },
+  "pages/configuration/fonctions.php": {
+    "mtime": 1781850437.8268769,
+    "seen": 1786803714.866083,
+    "ast_hash": "303c1e33a4dfc4d345cf101a3c02d8ba",
+    "semantic_hash": "303c1e33a4dfc4d345cf101a3c02d8ba"
+  },
+  "pages/configuration/formes-juridiques.php": {
+    "mtime": 1781850437.8268769,
+    "seen": 1786803714.8660836,
+    "ast_hash": "8a4acdb40f999c8da923c8d8f086a30c",
+    "semantic_hash": "8a4acdb40f999c8da923c8d8f086a30c"
+  },
+  "pages/configuration/lieux-naissance.php": {
+    "mtime": 1781850437.8292525,
+    "seen": 1786803714.8660846,
+    "ast_hash": "8b6fd8312ffd9a910142a034a7cb8dc4",
+    "semantic_hash": "8b6fd8312ffd9a910142a034a7cb8dc4"
+  },
+  "pages/configuration/nationalites.php": {
+    "mtime": 1781850437.8299294,
+    "seen": 1786803714.8660853,
+    "ast_hash": "e90a6e723c730bf74d9e29615901a384",
+    "semantic_hash": "e90a6e723c730bf74d9e29615901a384"
+  },
+  "pages/configuration/notif-ajax.php": {
+    "mtime": 1781850437.8299294,
+    "seen": 1786803714.8660865,
+    "ast_hash": "a7e7d137aa2c09f15fe44d3b0898a216",
+    "semantic_hash": "a7e7d137aa2c09f15fe44d3b0898a216"
+  },
+  "pages/configuration/notifications-manage.php": {
+    "mtime": 1782032926.4254322,
+    "seen": 1786803714.8660872,
+    "ast_hash": "7a81d3cdaec7fd3d90eb62529b67b6dd",
+    "semantic_hash": "7a81d3cdaec7fd3d90eb62529b67b6dd"
+  },
+  "pages/configuration/pv-templates.php": {
+    "mtime": 1782743352.4478378,
+    "seen": 1786803714.866089,
+    "ast_hash": "1dca8915c48119973909b66a6fb594bf",
+    "semantic_hash": "1dca8915c48119973909b66a6fb594bf"
+  },
+  "pages/configuration/qualites-associe.php": {
+    "mtime": 1781850437.8299294,
+    "seen": 1786803714.8660903,
+    "ast_hash": "464fe3d01b69d9acf6a6b0aff40b3d51",
+    "semantic_hash": "464fe3d01b69d9acf6a6b0aff40b3d51"
+  },
+  "pages/configuration/role.php": {
+    "mtime": 1781850437.8299294,
+    "seen": 1786803714.866091,
+    "ast_hash": "8d675d339640efcb53fd184ac6f6ccd4",
+    "semantic_hash": "8d675d339640efcb53fd184ac6f6ccd4"
+  },
+  "pages/configuration/roles.php": {
+    "mtime": 1782632903.3590457,
+    "seen": 1786803714.8660917,
+    "ast_hash": "1a8b6cfce2d4190c487defd1794e07a4",
+    "semantic_hash": "1a8b6cfce2d4190c487defd1794e07a4"
+  },
+  "pages/configuration/setup.php": {
+    "mtime": 1781850437.8299294,
+    "seen": 1786803714.8660927,
+    "ast_hash": "9a63e2903d462d4980c41b328ffee72b",
+    "semantic_hash": "9a63e2903d462d4980c41b328ffee72b"
+  },
+  "pages/configuration/tribunaux.php": {
+    "mtime": 1781850437.8299294,
+    "seen": 1786803714.8660936,
+    "ast_hash": "6cdcb0a0f1983058ef82bbdac35d7803",
+    "semantic_hash": "6cdcb0a0f1983058ef82bbdac35d7803"
+  },
+  "pages/configuration/villes.php": {
+    "mtime": 1781850437.8299294,
+    "seen": 1786803714.8660946,
+    "ast_hash": "3162a34eb5a136d6576d14d9d0271d28",
+    "semantic_hash": "3162a34eb5a136d6576d14d9d0271d28"
+  },
+  "pages/dossiers/associe_details.php": {
+    "mtime": 1784560079.036464,
+    "seen": 1786803714.8660953,
+    "ast_hash": "db3cd63736d13ed37f8a8f566af7a7b4",
+    "semantic_hash": "db3cd63736d13ed37f8a8f566af7a7b4"
+  },
+  "pages/dossiers/associes_liste.php": {
+    "mtime": 1782743352.448837,
+    "seen": 1786803714.8660965,
+    "ast_hash": "5a67e11791b39ba31b3f47be0cfb657d",
+    "semantic_hash": "5a67e11791b39ba31b3f47be0cfb657d"
+  },
+  "pages/dossiers/collaborateur_details.php": {
+    "mtime": 1784203359.2324257,
+    "seen": 1786803714.8660972,
+    "ast_hash": "e8b85654efc936cd6ef80fd7e7dc07c9",
+    "semantic_hash": "e8b85654efc936cd6ef80fd7e7dc07c9"
+  },
+  "pages/dossiers/collaborateurs_liste.php": {
+    "mtime": 1782743352.448837,
+    "seen": 1786803714.8660982,
+    "ast_hash": "912d7974bb48d2f82b54c4781d6fe9b2",
+    "semantic_hash": "912d7974bb48d2f82b54c4781d6fe9b2"
+  },
+  "pages/dossiers/contrats_liste.php": {
+    "mtime": 1782743352.4503436,
+    "seen": 1786803714.8660989,
+    "ast_hash": "d17bd1a0a4737c315a0bcdb83d0b5797",
+    "semantic_hash": "d17bd1a0a4737c315a0bcdb83d0b5797"
+  },
+  "pages/dossiers/creation_steps/_init.php": {
+    "mtime": 1784153912.9039583,
+    "seen": 1786803714.8661,
+    "ast_hash": "350d572438d1911e66239daa136d571b",
+    "semantic_hash": "350d572438d1911e66239daa136d571b"
+  },
+  "pages/dossiers/creation_steps/_main.php": {
+    "mtime": 1782635166.3181612,
+    "seen": 1786803714.8661008,
+    "ast_hash": "b4b39c0d801c8a67f13770d3354ec663",
+    "semantic_hash": "b4b39c0d801c8a67f13770d3354ec663"
+  },
+  "pages/dossiers/creation_steps/step_01_Societe.php": {
+    "mtime": 1784203359.2334242,
+    "seen": 1786803714.8661017,
+    "ast_hash": "b83d69c7957afdf5df4cade98627b3ad",
+    "semantic_hash": "b83d69c7957afdf5df4cade98627b3ad"
+  },
+  "pages/dossiers/creation_steps/step_02_Associes.php": {
+    "mtime": 1784153912.9049582,
+    "seen": 1786803714.8661027,
+    "ast_hash": "963404049afc2002425c6729e4c3bb72",
+    "semantic_hash": "963404049afc2002425c6729e4c3bb72"
+  },
+  "pages/dossiers/creation_steps/step_03_Contrat.php": {
+    "mtime": 1784203359.2344246,
+    "seen": 1786803714.8661036,
+    "ast_hash": "92170aeaa1cc0a9262fc77b0c8119177",
+    "semantic_hash": "92170aeaa1cc0a9262fc77b0c8119177"
+  },
+  "pages/dossiers/creation_steps/step_04_Recap.php": {
+    "mtime": 1784153912.9069586,
+    "seen": 1786803714.8661046,
+    "ast_hash": "b9d429aca1b397c58317076df6b03bb2",
+    "semantic_hash": "b9d429aca1b397c58317076df6b03bb2"
+  },
+  "pages/dossiers/creation_steps/step_05_Upload.php": {
+    "mtime": 1781850437.838688,
+    "seen": 1786803714.8661056,
+    "ast_hash": "dcecf3dad56792248deeb87d4ebff6dd",
+    "semantic_hash": "dcecf3dad56792248deeb87d4ebff6dd"
+  },
+  "pages/dossiers/creation_steps/step_06_Generation.php": {
+    "mtime": 1784153912.908963,
+    "seen": 1786803714.8661063,
+    "ast_hash": "8052a1591d3895c7cddbec6420190d76",
+    "semantic_hash": "8052a1591d3895c7cddbec6420190d76"
+  },
+  "pages/dossiers/societe_details.php": {
+    "mtime": 1784203359.235425,
+    "seen": 1786803714.8661075,
+    "ast_hash": "b746fea8de0012c55e3d54180a4aec0a",
+    "semantic_hash": "b746fea8de0012c55e3d54180a4aec0a"
+  },
+  "pages/dossiers/societes_liste.php": {
+    "mtime": 1782636398.786092,
+    "seen": 1786803714.8661082,
+    "ast_hash": "1572ea432c49c845d1efb7266a9d8a75",
+    "semantic_hash": "1572ea432c49c845d1efb7266a9d8a75"
+  },
+  "pages/modification-juridique/cession/cession_details_dossier.php": {
+    "mtime": 1782743352.4518642,
+    "seen": 1786803714.866109,
+    "ast_hash": "96870d8754bb4a64844db79087e672d4",
+    "semantic_hash": "96870d8754bb4a64844db79087e672d4"
+  },
+  "pages/modification-juridique/cession/cession_steps/_init.php": {
+    "mtime": 1782844589.9064436,
+    "seen": 1786803714.8661098,
+    "ast_hash": "a9f6ef9657479c62ecc40c8393f6a532",
+    "semantic_hash": "a9f6ef9657479c62ecc40c8393f6a532"
+  },
+  "pages/modification-juridique/cession/cession_steps/_main.php": {
+    "mtime": 1782844602.6231802,
+    "seen": 1786803714.866111,
+    "ast_hash": "776bc4783e73dcb750683ff0e70d428e",
+    "semantic_hash": "776bc4783e73dcb750683ff0e70d428e"
+  },
+  "pages/modification-juridique/cession/cession_steps/step_00_Mode.php": {
+    "mtime": 1781850437.8431966,
+    "seen": 1786803714.866112,
+    "ast_hash": "e498c711f88e35b52cfe03feb3645aea",
+    "semantic_hash": "e498c711f88e35b52cfe03feb3645aea"
+  },
+  "pages/modification-juridique/cession/cession_steps/step_01_Societe.php": {
+    "mtime": 1782746819.5427878,
+    "seen": 1786803714.8661127,
+    "ast_hash": "9f4a4656273fa075a4999d96ede8633e",
+    "semantic_hash": "9f4a4656273fa075a4999d96ede8633e"
+  },
+  "pages/modification-juridique/cession/cession_steps/step_02_Associes_Parts.php": {
+    "mtime": 1784157310.2506685,
+    "seen": 1786803714.8661134,
+    "ast_hash": "5e7b7a84ffaf18b32a413bc7c99cc2e7",
+    "semantic_hash": "5e7b7a84ffaf18b32a413bc7c99cc2e7"
+  },
+  "pages/modification-juridique/cession/cession_steps/step_04_Recap.php": {
+    "mtime": 1782844610.7698631,
+    "seen": 1786803714.8661144,
+    "ast_hash": "99c4b8f9a2a9db51b1869c5a770dbb4b",
+    "semantic_hash": "99c4b8f9a2a9db51b1869c5a770dbb4b"
+  },
+  "pages/modification-juridique/cession/cession_steps/step_05_Pv.php": {
+    "mtime": 1782844644.5687754,
+    "seen": 1786803714.8661153,
+    "ast_hash": "bda322e23cb3393a58ae09697adb7f38",
+    "semantic_hash": "bda322e23cb3393a58ae09697adb7f38"
+  },
+  "pages/modification-juridique/cession/cession_steps/step_06_Upload.php": {
+    "mtime": 1782844650.047425,
+    "seen": 1786803714.8661163,
+    "ast_hash": "222f3362bbab9c8344b3f3a073c03470",
+    "semantic_hash": "222f3362bbab9c8344b3f3a073c03470"
+  },
+  "pages/modification-juridique/cession/cession_steps/step_07_Generation.php": {
+    "mtime": 1784157326.0590882,
+    "seen": 1786803714.8661172,
+    "ast_hash": "065762b75e4acb6bc5c568d1b89f5b20",
+    "semantic_hash": "065762b75e4acb6bc5c568d1b89f5b20"
+  },
+  "pages/modification-juridique/cession/cession_suivi.php": {
+    "mtime": 1782638580.3754108,
+    "seen": 1786803714.866118,
+    "ast_hash": "383909ddbd3afe55474846ad73857874",
+    "semantic_hash": "383909ddbd3afe55474846ad73857874"
+  },
+  "pages/modification-juridique/cession/cessions_liste.php": {
+    "mtime": 1782639551.6234653,
+    "seen": 1786803714.866119,
+    "ast_hash": "f9d17971f008f9b3cff6959e3f8ba2d3",
+    "semantic_hash": "f9d17971f008f9b3cff6959e3f8ba2d3"
+  },
+  "pages/modification-juridique/modifications_juridiques.php": {
+    "mtime": 1782637318.2533712,
+    "seen": 1786803714.8661196,
+    "ast_hash": "ffb32f02cbd042117c168c3499b7b88d",
+    "semantic_hash": "ffb32f02cbd042117c168c3499b7b88d"
+  },
+  "pages/modification-juridique/pv_ago/pv_ago_steps/_init.php": {
+    "mtime": 1784157374.9993556,
+    "seen": 1786803714.8661208,
+    "ast_hash": "765211c3743aff48b83eb36d200efa93",
+    "semantic_hash": "765211c3743aff48b83eb36d200efa93"
+  },
+  "pages/modification-juridique/pv_ago/pv_ago_steps/_main.php": {
+    "mtime": 1782632167.9075007,
+    "seen": 1786803714.8661215,
+    "ast_hash": "0605e1a6a02dc77d6cffe3e1597894d8",
+    "semantic_hash": "0605e1a6a02dc77d6cffe3e1597894d8"
+  },
+  "pages/modification-juridique/pv_ago/pv_ago_steps/step_00_Mode.php": {
+    "mtime": 1782748208.100066,
+    "seen": 1786803714.8661225,
+    "ast_hash": "72cff83aef5cd1d15074becbd06e613a",
+    "semantic_hash": "72cff83aef5cd1d15074becbd06e613a"
+  },
+  "pages/modification-juridique/pv_ago/pv_ago_steps/step_01_Societe.php": {
+    "mtime": 1782633025.9126623,
+    "seen": 1786803714.8661232,
+    "ast_hash": "1ac6e7dd13180fc7c4e6e338d0008309",
+    "semantic_hash": "1ac6e7dd13180fc7c4e6e338d0008309"
+  },
+  "pages/modification-juridique/pv_ago/pv_ago_steps/step_02_Associes.php": {
+    "mtime": 1782633025.915714,
+    "seen": 1786803714.866124,
+    "ast_hash": "7bc6f8dcdced4a302a8e90a970e473a9",
+    "semantic_hash": "7bc6f8dcdced4a302a8e90a970e473a9"
+  },
+  "pages/modification-juridique/pv_ago/pv_ago_steps/step_03_Assemblee.php": {
+    "mtime": 1784157376.543944,
+    "seen": 1786803714.866125,
+    "ast_hash": "9654534ccec2189976f14a50275393bb",
+    "semantic_hash": "9654534ccec2189976f14a50275393bb"
+  },
+  "pages/modification-juridique/pv_ago/pv_ago_steps/step_04_Finances.php": {
+    "mtime": 1782633025.9257045,
+    "seen": 1786803714.8661258,
+    "ast_hash": "cce3bcac8d8adfcd1deea2866e1b7463",
+    "semantic_hash": "cce3bcac8d8adfcd1deea2866e1b7463"
+  },
+  "pages/modification-juridique/pv_ago/pv_ago_steps/step_05_Resolutions.php": {
+    "mtime": 1784157359.8010528,
+    "seen": 1786803714.8661265,
+    "ast_hash": "0369e51f2f4b2753a033b9ae589a6317",
+    "semantic_hash": "0369e51f2f4b2753a033b9ae589a6317"
+  },
+  "pages/modification-juridique/pv_ago/pv_ago_steps/step_06_Recap.php": {
+    "mtime": 1782633025.9352558,
+    "seen": 1786803714.8661277,
+    "ast_hash": "0680b46d2bb8a6c1867868bd075a7030",
+    "semantic_hash": "0680b46d2bb8a6c1867868bd075a7030"
+  },
+  "pages/modification-juridique/pv_ago/pv_ago_steps/step_07_Generation.php": {
+    "mtime": 1784157360.8859906,
+    "seen": 1786803714.8661284,
+    "ast_hash": "b903f92d68af748489d0d7485f6c18ed",
+    "semantic_hash": "b903f92d68af748489d0d7485f6c18ed"
+  },
+  "pages/modification-juridique/pv_ago/pv_details.php": {
+    "mtime": 1782637326.9550593,
+    "seen": 1786803714.8661292,
+    "ast_hash": "8e291782da28cec613e44e165a806542",
+    "semantic_hash": "8e291782da28cec613e44e165a806542"
+  },
+  "pages/outils/ai-assistant.php": {
+    "mtime": 1781850437.8482904,
+    "seen": 1786803714.86613,
+    "ast_hash": "264dca49fe431d61ab04365e4a72b526",
+    "semantic_hash": "264dca49fe431d61ab04365e4a72b526"
+  },
+  "pages/outils/analyse-couverture.php": {
+    "mtime": 1781850437.8482904,
+    "seen": 1786803714.8661308,
+    "ast_hash": "aef53c9d2369a3e3ded634da4b8739dc",
+    "semantic_hash": "aef53c9d2369a3e3ded634da4b8739dc"
+  },
+  "pages/outils/convert-word-pdf.php": {
+    "mtime": 1781850437.848946,
+    "seen": 1786803714.8661318,
+    "ast_hash": "3edaf7d2e1b403c3d747338f12787dda",
+    "semantic_hash": "3edaf7d2e1b403c3d747338f12787dda"
+  },
+  "pages/outils/defaults.php": {
+    "mtime": 1781850437.848946,
+    "seen": 1786803714.8661327,
+    "ast_hash": "5ba4574fabf3919a79bb36a907042008",
+    "semantic_hash": "5ba4574fabf3919a79bb36a907042008"
+  },
+  "pages/outils/variables.php": {
+    "mtime": 1784153912.9101622,
+    "seen": 1786803714.8661335,
+    "ast_hash": "c8c5044532ef619b6395c44b00708463",
+    "semantic_hash": "c8c5044532ef619b6395c44b00708463"
+  },
+  "pages/templates/_editeur.php": {
+    "mtime": 1784157335.532057,
+    "seen": 1786803714.8661346,
+    "ast_hash": "7e55a02439819232dd6e6c4d40ac2318",
+    "semantic_hash": "7e55a02439819232dd6e6c4d40ac2318"
+  },
+  "pages/templates/_gestionnaire.php": {
+    "mtime": 1781949775.8641355,
+    "seen": 1786803714.8661354,
+    "ast_hash": "a8c2be23bf197b7f6539f115f64da64b",
+    "semantic_hash": "a8c2be23bf197b7f6539f115f64da64b"
+  },
+  "pages/templates/_inspecteur.php": {
+    "mtime": 1784153912.912161,
+    "seen": 1786803714.8661363,
+    "ast_hash": "6b7ad36468456184a9b2a9873993c8e2",
+    "semantic_hash": "6b7ad36468456184a9b2a9873993c8e2"
+  },
+  "pages/templates/documents.php": {
+    "mtime": 1782033768.0769129,
+    "seen": 1786803714.866137,
+    "ast_hash": "2a2d112420d3dace467c3e075215c85a",
+    "semantic_hash": "2a2d112420d3dace467c3e075215c85a"
+  },
+  "pages/templates/download_all.php": {
+    "mtime": 1781850437.8510673,
+    "seen": 1786803714.8661382,
+    "ast_hash": "68fc2c0c406a53a0f93fea811805961b",
+    "semantic_hash": "68fc2c0c406a53a0f93fea811805961b"
+  },
+  "pages/templates/generation.php": {
+    "mtime": 1783675522.2057292,
+    "seen": 1786803714.866139,
+    "ast_hash": "588a0924b91affc39fcc1cfc32cf0964",
+    "semantic_hash": "588a0924b91affc39fcc1cfc32cf0964"
+  },
+  "pages/templates/templates.php": {
+    "mtime": 1781860778.0015054,
+    "seen": 1786803714.86614,
+    "ast_hash": "5b8259a7702c47c5e9e62c714d6af6fa",
+    "semantic_hash": "5b8259a7702c47c5e9e62c714d6af6fa"
+  },
+  "post-push-sync.ps1": {
+    "mtime": 1784533491.7780066,
+    "seen": 1786803714.8661406,
+    "ast_hash": "db8767892d87fa0beb51f8a56138c877",
+    "semantic_hash": "db8767892d87fa0beb51f8a56138c877"
+  },
+  "router.php": {
+    "mtime": 1781850437.8530464,
+    "seen": 1786803714.8661416,
+    "ast_hash": "cd4bcbd2a64d99c56c7a09274c4d0a1a",
+    "semantic_hash": "cd4bcbd2a64d99c56c7a09274c4d0a1a"
+  },
+  "run.ps1": {
+    "mtime": 1784666113.7967844,
+    "seen": 1786803714.8661425,
+    "ast_hash": "f401911e21074f762e01ffd247032258",
+    "semantic_hash": "f401911e21074f762e01ffd247032258"
+  },
+  "run.sh": {
+    "mtime": 1783673198.7393217,
+    "seen": 1786803714.8661432,
+    "ast_hash": "d8acd82e3fc752a49e20b8c646bdadd9",
+    "semantic_hash": "d8acd82e3fc752a49e20b8c646bdadd9"
+  },
+  "scripts/_check_coverage.php": {
+    "mtime": 1781850437.854632,
+    "seen": 1786803714.8661442,
+    "ast_hash": "4583c5e4aca400accf5f7f81e0659b72",
+    "semantic_hash": "4583c5e4aca400accf5f7f81e0659b72"
+  },
+  "scripts/renomme_variables_docx.php": {
+    "mtime": 1778935189.1004155,
+    "seen": 1786803714.8661451,
+    "ast_hash": "38e3cf78c18cd871f3cdfda8dbd407b3",
+    "semantic_hash": "38e3cf78c18cd871f3cdfda8dbd407b3"
+  },
+  "scripts/renomme_variables_docx.ps1": {
+    "mtime": 1778935376.5995164,
+    "seen": 1786803714.866146,
+    "ast_hash": "e182455282d43f703ccdf42cd5d31240",
+    "semantic_hash": "e182455282d43f703ccdf42cd5d31240"
+  },
+  "setup.ps1": {
+    "mtime": 1782634584.3011012,
+    "seen": 1786803714.866147,
+    "ast_hash": "45dfb48102fb3852432714ffe0d8769e",
+    "semantic_hash": "45dfb48102fb3852432714ffe0d8769e"
+  },
+  "setup.sh": {
+    "mtime": 1782634591.6106055,
+    "seen": 1786803714.8661478,
+    "ast_hash": "9fa44fa0ff9303e3d6f854d2ed66705a",
+    "semantic_hash": "9fa44fa0ff9303e3d6f854d2ed66705a"
+  },
+  "src/analyseur_templates.php": {
+    "mtime": 1784158893.4106822,
+    "seen": 1786803714.866149,
+    "ast_hash": "8c371d405da7ed94120876b8884c2d2b",
+    "semantic_hash": "8c371d405da7ed94120876b8884c2d2b"
+  },
+  "src/editeur_templates.php": {
+    "mtime": 1784205737.2054138,
+    "seen": 1786803714.8661497,
+    "ast_hash": "55ae319211d2714771c091a7f0f98065",
+    "semantic_hash": "55ae319211d2714771c091a7f0f98065"
+  },
+  "src/rendu_document.php": {
+    "mtime": 1784533491.780009,
+    "seen": 1786803714.8661504,
+    "ast_hash": "c0c9ebcae9c5553032901fa88219a8c4",
+    "semantic_hash": "c0c9ebcae9c5553032901fa88219a8c4"
+  },
+  "src/service_claude.php": {
+    "mtime": 1781850437.8589976,
+    "seen": 1786803714.8661513,
+    "ast_hash": "73027afaa164fd099322ae05462bc92d",
+    "semantic_hash": "73027afaa164fd099322ae05462bc92d"
+  },
+  "sync.ps1": {
+    "mtime": 1784533491.7810085,
+    "seen": 1786803714.8661523,
+    "ast_hash": "a6c68dd6d4dcb69e500d13cea878f977",
+    "semantic_hash": "a6c68dd6d4dcb69e500d13cea878f977"
+  },
+  ".opencode/command/dev.md": {
+    "mtime": 1786801278.0976224,
+    "seen": 1786803714.8661532,
+    "ast_hash": "d382b3fe8b32792a0ca01741cf8d42c5",
+    "semantic_hash": "d382b3fe8b32792a0ca01741cf8d42c5"
+  },
+  ".opencode/skill_cache/deleteme.txt": {
+    "mtime": 1780421064.9284892,
+    "seen": 1786803714.866154,
+    "ast_hash": "600cb14e6e0710fc0a1d347440523a02",
+    "semantic_hash": "600cb14e6e0710fc0a1d347440523a02"
+  },
+  ".opencode/skills/awesome-design/SKILL.md": {
+    "mtime": 1780399116.7592273,
+    "seen": 1786803714.866155,
+    "ast_hash": "fe3c16fa2b840b738c56dd3cee11197f",
+    "semantic_hash": "fe3c16fa2b840b738c56dd3cee11197f"
+  },
+  ".opencode/skills/database/SKILL.md": {
+    "mtime": 1780315345.858693,
+    "seen": 1786803714.8661559,
+    "ast_hash": "ace5c6e0af99e3150013dd86a2e849e8",
+    "semantic_hash": "ace5c6e0af99e3150013dd86a2e849e8"
+  },
+  ".opencode/skills/docx-template/SKILL.md": {
+    "mtime": 1781850437.7073336,
+    "seen": 1786803714.8661568,
+    "ast_hash": "d0038979b887734816595b2a9beeaea7",
+    "semantic_hash": "d0038979b887734816595b2a9beeaea7"
+  },
+  ".opencode/skills/manual-test/SKILL.md": {
+    "mtime": 1780399120.728133,
+    "seen": 1786803714.8661578,
+    "ast_hash": "8dc1d6f95b3c1071b37ff7ba511b4aa1",
+    "semantic_hash": "8dc1d6f95b3c1071b37ff7ba511b4aa1"
+  },
+  ".opencode/skills/manus/SKILL.md": {
+    "mtime": 1778694197.6626215,
+    "seen": 1786803714.8661585,
+    "ast_hash": "4b91d8635b92bc34056601f7a6affd30",
+    "semantic_hash": "4b91d8635b92bc34056601f7a6affd30"
+  },
+  ".opencode/skills/openwolf/SKILL.md": {
+    "mtime": 1778750179.4140513,
+    "seen": 1786803714.8661594,
+    "ast_hash": "7173f702ec28cccd0560305abfb760f7",
+    "semantic_hash": "7173f702ec28cccd0560305abfb760f7"
+  },
+  ".opencode/skills/screenshot-agent/SKILL.md": {
+    "mtime": 1782745327.2351854,
+    "seen": 1786803714.8661604,
+    "ast_hash": "0473e5e928fa7d94093024fbc3a6e882",
+    "semantic_hash": "0473e5e928fa7d94093024fbc3a6e882"
+  },
+  ".opencode/skills/security/SKILL.md": {
+    "mtime": 1780315354.497436,
+    "seen": 1786803714.866161,
+    "ast_hash": "9936806a6445aeff0476822562c47d9d",
+    "semantic_hash": "9936806a6445aeff0476822562c47d9d"
+  },
+  ".opencode/skills/ui-design/SKILL.md": {
+    "mtime": 1780399109.003937,
+    "seen": 1786803714.8661618,
+    "ast_hash": "a1e6324bfc8cfe442cfe0715a71b6aa6",
+    "semantic_hash": "a1e6324bfc8cfe442cfe0715a71b6aa6"
+  },
+  "AGENTS.md": {
+    "mtime": 1786801311.9428742,
+    "seen": 1786803714.866163,
+    "ast_hash": "17cde3de11288dd569a06df047d2cfd4",
+    "semantic_hash": "17cde3de11288dd569a06df047d2cfd4"
+  },
+  "CLAUDE.md": {
+    "mtime": 1781850437.7131517,
+    "seen": 1786803714.8661637,
+    "ast_hash": "e2049fb142b7460aa470653c65ec1055",
+    "semantic_hash": "e2049fb142b7460aa470653c65ec1055"
+  },
+  "README.md": {
+    "mtime": 1781850437.714284,
+    "seen": 1786803714.8661668,
+    "ast_hash": "7e3aa0e602eabb937cf94ad9760f8951",
+    "semantic_hash": "7e3aa0e602eabb937cf94ad9760f8951"
+  },
+  "docs/DESIGN_SYSTEM.md": {
+    "mtime": 1780399146.9605987,
+    "seen": 1786803714.8661678,
+    "ast_hash": "69b9da1738771af7b13826696057866d",
+    "semantic_hash": "69b9da1738771af7b13826696057866d"
+  },
+  "docs/Guide-Variables-Creation-Dossier.md": {
+    "mtime": 1781850437.7251244,
+    "seen": 1786803714.8661687,
+    "ast_hash": "f61fe1e9f5676623992bb92313d650f4",
+    "semantic_hash": "f61fe1e9f5676623992bb92313d650f4"
+  },
+  "docs/Guide-Variables-Templates-Documents.md": {
+    "mtime": 1781850437.7263234,
+    "seen": 1786803714.8661697,
+    "ast_hash": "9fe417d0575735ad42eb2f1788aa3e70",
+    "semantic_hash": "9fe417d0575735ad42eb2f1788aa3e70"
+  },
+  "docs/after-fix.txt": {
+    "mtime": 1780316830.8682206,
+    "seen": 1786803714.8661706,
+    "ast_hash": "87ef8840787f57ed2d0950f524b11e40",
+    "semantic_hash": "87ef8840787f57ed2d0950f524b11e40"
+  },
+  "docs/analysis.md": {
+    "mtime": 1781850437.7273302,
+    "seen": 1786803714.8661714,
+    "ast_hash": "7a18bf01fbe40177c5b9f095022cbc07",
+    "semantic_hash": "7a18bf01fbe40177c5b9f095022cbc07"
+  },
+  "docs/cession/Acte_Cession_SIGMATEX_28102021.md": {
+    "mtime": 1781850437.7273302,
+    "seen": 1786803714.8661723,
+    "ast_hash": "5f987fb0715573385fe8784c76d2e9a5",
+    "semantic_hash": "5f987fb0715573385fe8784c76d2e9a5"
+  },
+  "docs/cession/PV_SIGMATEX_28102021.md": {
+    "mtime": 1781850437.728337,
+    "seen": 1786803714.8661733,
+    "ast_hash": "f62a1c0848c2bb1bd0d30d9348d14758",
+    "semantic_hash": "f62a1c0848c2bb1bd0d30d9348d14758"
+  },
+  "docs/php-xampp-migration-master-prompt.md": {
+    "mtime": 1778529833.3942597,
+    "seen": 1786803714.866174,
+    "ast_hash": "011d1dcbea4048b3e53dbf6d40d8baa3",
+    "semantic_hash": "011d1dcbea4048b3e53dbf6d40d8baa3"
+  },
+  "docs/screenshots/cession-step1-after.txt": {
+    "mtime": 1782746417.5714858,
+    "seen": 1786803714.8661747,
+    "ast_hash": "69518747a358a14c42f4a77e6fe118e8",
+    "semantic_hash": "69518747a358a14c42f4a77e6fe118e8"
+  },
+  "docs/screenshots/cession-step1-snapshot.txt": {
+    "mtime": 1782745394.0423017,
+    "seen": 1786803714.8661757,
+    "ast_hash": "d464c6395e2c99126a561e679836fc89",
+    "semantic_hash": "d464c6395e2c99126a561e679836fc89"
+  },
+  "docs/screenshots/cession-step1.txt": {
+    "mtime": 1781850437.7328877,
+    "seen": 1786803714.8661766,
+    "ast_hash": "fda34c0b383f14ba1f3aa3a1f6f6e4f1",
+    "semantic_hash": "fda34c0b383f14ba1f3aa3a1f6f6e4f1"
+  },
+  "docs/screenshots/cessions_list.txt": {
+    "mtime": 1782639564.569054,
+    "seen": 1786803714.8661776,
+    "ast_hash": "9be08325e7fa0d9dc8b66c41bfd899f5",
+    "semantic_hash": "9be08325e7fa0d9dc8b66c41bfd899f5"
+  },
+  "docs/screenshots/dashboard-snapshot.txt": {
+    "mtime": 1780836944.384338,
+    "seen": 1786803714.8661783,
+    "ast_hash": "871ec5697b68d091aa3d19e71d827f9c",
+    "semantic_hash": "871ec5697b68d091aa3d19e71d827f9c"
+  },
+  "docs/screenshots/societe-detail-page.txt": {
+    "mtime": 1780837009.7741108,
+    "seen": 1786803714.866179,
+    "ast_hash": "db67aefd46524b81a9e1bbe06b762f48",
+    "semantic_hash": "db67aefd46524b81a9e1bbe06b762f48"
+  },
+  "docs/screenshots/societe-detail.txt": {
+    "mtime": 1780836995.0196044,
+    "seen": 1786803714.8661802,
+    "ast_hash": "e0d88634646ec36362ecdc4e53b1b399",
+    "semantic_hash": "e0d88634646ec36362ecdc4e53b1b399"
+  },
+  "docs/screenshots/societes-snapshot.txt": {
+    "mtime": 1780836508.1875703,
+    "seen": 1786803714.866181,
+    "ast_hash": "6ed28d43f52e356209f58729beb3d627",
+    "semantic_hash": "6ed28d43f52e356209f58729beb3d627"
+  },
+  "docs/setup/XAMPP_SETUP.md": {
+    "mtime": 1778529833.3834026,
+    "seen": 1786803714.8661819,
+    "ast_hash": "28300b1cab9732691225e17425a697b9",
+    "semantic_hash": "28300b1cab9732691225e17425a697b9"
+  },
+  "docs/variables-formulaires.md": {
+    "mtime": 1780581075.2367575,
+    "seen": 1786803714.8661826,
+    "ast_hash": "f77833cfcf025cf6912d19f29c9650cd",
+    "semantic_hash": "f77833cfcf025cf6912d19f29c9650cd"
+  },
+  "docs/wizard-etapes-4-5.md": {
+    "mtime": 1778766134.369565,
+    "seen": 1786803714.8661838,
+    "ast_hash": "03baab479e371df7dbe9376e9ffaa509",
+    "semantic_hash": "03baab479e371df7dbe9376e9ffaa509"
+  },
+  "login_snapshot.txt": {
+    "mtime": 1780586907.1295462,
+    "seen": 1786803714.8661845,
+    "ast_hash": "d7d28c391f9a39e6013f9e222cfd96f9",
+    "semantic_hash": "d7d28c391f9a39e6013f9e222cfd96f9"
+  },
+  "templates/_Guides/Charte-Nommage-Dossiers-Docs.md": {
+    "mtime": 1778529977.3085177,
+    "seen": 1786803714.8661854,
+    "ast_hash": "205b32582acbe18a9fc2570123322027",
+    "semantic_hash": "205b32582acbe18a9fc2570123322027"
+  },
+  "templates/_Guides/Charte-Nommage-Dossiers-Docs_v2.md": {
+    "mtime": 1778529977.3087354,
+    "seen": 1786803714.8661861,
+    "ast_hash": "50f36feab380b6273386f3a1d114f052",
+    "semantic_hash": "50f36feab380b6273386f3a1d114f052"
+  },
+  "templates/_Guides/Charte-Nommage-Dossiers-Docs_v3.md": {
+    "mtime": 1778529977.3097425,
+    "seen": 1786803714.866187,
+    "ast_hash": "43d1089822ea9b3db59d4a9da54f4676",
+    "semantic_hash": "43d1089822ea9b3db59d4a9da54f4676"
+  },
+  "templates/_Guides/Charte-Nommage-Generation_v4.md": {
+    "mtime": 1778529977.3097425,
+    "seen": 1786803714.866188,
+    "ast_hash": "f812c0fe6b22e9f155612255d1c7e817",
+    "semantic_hash": "f812c0fe6b22e9f155612255d1c7e817"
+  },
+  "templates/_Guides/GUIDE_BOUCLES_TEMPLATES.md": {
+    "mtime": 1778529977.3097425,
+    "seen": 1786803714.866189,
+    "ast_hash": "e7017195763a63745df10dce3ea0265b",
+    "semantic_hash": "e7017195763a63745df10dce3ea0265b"
+  },
+  "dossiers_dom/2026-05-18_SARL-AU_PHP-OUTPUT-SARL/SARL AU_2026-06-06_Attestation-Domiciliation-Initiale_PHP-OUTPUT-SARL_Brouillon.pdf": {
+    "mtime": 1784203359.1965024,
+    "seen": 1786803714.8661897,
+    "ast_hash": "ede02fb2ef481cf553c7b71e5326609e",
+    "semantic_hash": "ede02fb2ef481cf553c7b71e5326609e"
+  },
+  "dossiers_dom/2026-05-18_SARL-AU_PHP-OUTPUT-SARL/_uploads/2026-06-06_CIN_PHP_Output_PHP_OUTPUT_SARL.pdf": {
+    "mtime": 1784203359.197509,
+    "seen": 1786803714.866191,
+    "ast_hash": "db6ae7b95ab38b94867bffa11c4f736e",
+    "semantic_hash": "db6ae7b95ab38b94867bffa11c4f736e"
+  },
+  "dossiers_dom/2026-05-18_SARL-AU_PHP-OUTPUT-SARL/_uploads/2026-06-06_CN_PHP_OUTPUT_SARL.pdf": {
+    "mtime": 1784203359.197509,
+    "seen": 1786803714.8661919,
+    "ast_hash": "3ce7a39aaae55c721c5a4e3555a0469f",
+    "semantic_hash": "3ce7a39aaae55c721c5a4e3555a0469f"
+  },
+  "dossiers_dom/2026-06-06_SARL-AU_Test-PDF-Karim/SARL AU_2026-06-06_Attestation-Domiciliation-Initiale_Test-PDF-Karim.pdf": {
+    "mtime": 1784203359.2101302,
+    "seen": 1786803714.8661926,
+    "ast_hash": "6ab25125e76e284eb278fac5e4f9d7b1",
+    "semantic_hash": "6ab25125e76e284eb278fac5e4f9d7b1"
+  },
+  "dossiers_dom/2026-06-06_SARL-AU_Test-PDF-Karim/SARL AU_2026-06-06_Contrat-Domiciliation_Test-PDF-Karim.pdf": {
+    "mtime": 1784203359.2171588,
+    "seen": 1786803714.8661938,
+    "ast_hash": "30f54cc897b6e656acab2a5ece5a471b",
+    "semantic_hash": "30f54cc897b6e656acab2a5ece5a471b"
+  },
+  "dossiers_dom/2026-06-06_SARL-AU_Test-PDF-Karim/SARL AU_2026-06-06_Contrat-Domiciliation_Test-PDF-Karim_Brouillon.pdf": {
+    "mtime": 1784203359.2196834,
+    "seen": 1786803714.8661945,
+    "ast_hash": "c5c1d501ca8625fbb9d7c1098e168a4d",
+    "semantic_hash": "c5c1d501ca8625fbb9d7c1098e168a4d"
+  },
+  "dossiers_generer/dossiers_cession/2026-06-13_SARL-AU_FADAA-DOI/SARL AU_2026-06-13_Acte-Cession-Parts_FADAA-DOI.pdf": {
+    "mtime": 1781850437.7765534,
+    "seen": 1786803714.8661952,
+    "ast_hash": "5f8a6ccd9f0f1ae09fe9b2513159ab00",
+    "semantic_hash": "5f8a6ccd9f0f1ae09fe9b2513159ab00"
+  },
+  "dossiers_generer/dossiers_cession/2026-06-13_SARL-AU_FADAA-DOI/SARL AU_2026-06-13_Annonce-Legale-Cession_FADAA-DOI.pdf": {
+    "mtime": 1781850437.7797134,
+    "seen": 1786803714.8661962,
+    "ast_hash": "24514db59da0778b4a0468c0bb436328",
+    "semantic_hash": "24514db59da0778b4a0468c0bb436328"
+  },
+  "dossiers_generer/dossiers_cession/2026-06-13_SARL-AU_FADAA-DOI/SARL AU_2026-06-13_Declaration-Modificative-RC_FADAA-DOI.pdf": {
+    "mtime": 1781850437.7797134,
+    "seen": 1786803714.866197,
+    "ast_hash": "5e3d9f0c4c15a140dcb0765ddc1738a5",
+    "semantic_hash": "5e3d9f0c4c15a140dcb0765ddc1738a5"
+  },
+  "dossiers_generer/dossiers_cession/2026-06-13_SARL-AU_FADAA-DOI/SARL AU_2026-06-13_PV-AGE-Cession_FADAA-DOI.pdf": {
+    "mtime": 1781850437.7797134,
+    "seen": 1786803714.8661978,
+    "ast_hash": "c671171acf330e8926858ad11507f147",
+    "semantic_hash": "c671171acf330e8926858ad11507f147"
+  },
+  "dossiers_generer/dossiers_cession/2026-06-15_SARL-AU_ALMASA/SARL_AU_2026-06-15_Acte-Cession-Parts_ALMASA.pdf": {
+    "mtime": 1781850437.7817397,
+    "seen": 1786803714.8661988,
+    "ast_hash": "9eb62ed4736f8b355aacda327d98b189",
+    "semantic_hash": "9eb62ed4736f8b355aacda327d98b189"
+  },
+  "dossiers_generer/dossiers_cession/2026-06-15_SARL-AU_ALMASA/SARL_AU_2026-06-15_Annonce-Legale-Cession_ALMASA.pdf": {
+    "mtime": 1781850437.7817397,
+    "seen": 1786803714.8661995,
+    "ast_hash": "78492d12536a728ff095f95b07bd10de",
+    "semantic_hash": "78492d12536a728ff095f95b07bd10de"
+  },
+  "dossiers_generer/dossiers_cession/2026-06-15_SARL-AU_ALMASA/SARL_AU_2026-06-15_Declaration-Modificative-RC_ALMASA.pdf": {
+    "mtime": 1781850437.783747,
+    "seen": 1786803714.8662007,
+    "ast_hash": "d3f5c1ec055835c6b315f218baddf7e3",
+    "semantic_hash": "d3f5c1ec055835c6b315f218baddf7e3"
+  },
+  "dossiers_generer/dossiers_cession/2026-06-15_SARL-AU_ALMASA/SARL_AU_2026-06-15_PV-AGE-Cession_ALMASA.pdf": {
+    "mtime": 1781850437.783747,
+    "seen": 1786803714.8662014,
+    "ast_hash": "e0de593649ec6e15cdeb7d69d50fd291",
+    "semantic_hash": "e0de593649ec6e15cdeb7d69d50fd291"
+  },
+  "dossiers_generer/dossiers_cession/2026-06-19_SARL-AU_MEDITERRANEE-INVEST/SARL_AU_2026-06-19_Acte-Cession-Parts_MEDITERRANEE-INVEST.pdf": {
+    "mtime": 1781863374.2319617,
+    "seen": 1786803714.866202,
+    "ast_hash": "fc84cc62d22d6c42308ae1391d384d5a",
+    "semantic_hash": "fc84cc62d22d6c42308ae1391d384d5a"
+  },
+  "dossiers_generer/dossiers_cession/2026-06-19_SARL-AU_MEDITERRANEE-INVEST/SARL_AU_2026-06-19_Annonce-Legale-Cession_MEDITERRANEE-INVEST.pdf": {
+    "mtime": 1781863390.7987604,
+    "seen": 1786803714.866203,
+    "ast_hash": "f8c4c9379a6173c73fa254fab22afe0b",
+    "semantic_hash": "f8c4c9379a6173c73fa254fab22afe0b"
+  },
+  "dossiers_generer/dossiers_cession/2026-06-19_SARL-AU_MEDITERRANEE-INVEST/SARL_AU_2026-06-19_Declaration-Modificative-RC_MEDITERRANEE-INVEST.pdf": {
+    "mtime": 1781863386.9789555,
+    "seen": 1786803714.8662038,
+    "ast_hash": "624e7bd63c754a516127d440f000e7d9",
+    "semantic_hash": "624e7bd63c754a516127d440f000e7d9"
+  },
+  "dossiers_generer/dossiers_cession/2026-06-19_SARL-AU_MEDITERRANEE-INVEST/SARL_AU_2026-06-19_PV-AGE-Cession_MEDITERRANEE-INVEST.pdf": {
+    "mtime": 1781863378.00091,
+    "seen": 1786803714.8662047,
+    "ast_hash": "69c4bed1273ef5ca2fd0aa58f356c4c3",
+    "semantic_hash": "69c4bed1273ef5ca2fd0aa58f356c4c3"
+  },
+  "dossiers_generer/dossiers_cession/2026-06-20_SARL-AU_SEO-SERVICES/SARL_AU_2026-06-20_Acte-Cession-Parts_SEO-SERVICES.pdf": {
+    "mtime": 1781952806.273055,
+    "seen": 1786803714.8662057,
+    "ast_hash": "a678a5066c504dd777bf5b9175558be8",
+    "semantic_hash": "a678a5066c504dd777bf5b9175558be8"
+  },
+  "dossiers_generer/dossiers_cession/2026-06-20_SARL-AU_SEO-SERVICES/SARL_AU_2026-06-20_Annonce-Legale-Cession_SEO-SERVICES.pdf": {
+    "mtime": 1781952822.2184622,
+    "seen": 1786803714.8662064,
+    "ast_hash": "0ca4be9b3e5adf2282cf705ea58bdc06",
+    "semantic_hash": "0ca4be9b3e5adf2282cf705ea58bdc06"
+  },
+  "dossiers_generer/dossiers_cession/2026-06-20_SARL-AU_SEO-SERVICES/SARL_AU_2026-06-20_Declaration-Modificative-RC_SEO-SERVICES.pdf": {
+    "mtime": 1781952817.264757,
+    "seen": 1786803714.8662076,
+    "ast_hash": "d95e070798def78e5e531d029feb9f88",
+    "semantic_hash": "d95e070798def78e5e531d029feb9f88"
+  },
+  "dossiers_generer/dossiers_cession/2026-06-20_SARL-AU_SEO-SERVICES/SARL_AU_2026-06-20_PV-AGE-Cession_SEO-SERVICES.pdf": {
+    "mtime": 1781952810.7713277,
+    "seen": 1786803714.8662083,
+    "ast_hash": "b4ec17eed96bf954a7cd10ff976b37ee",
+    "semantic_hash": "b4ec17eed96bf954a7cd10ff976b37ee"
+  },
+  "dossiers_generer/dossiers_cession/2026-06-20_SARL-AU_Test-Wizard-SARL-AU/SARL_AU_2026-06-20_Acte-Cession-Parts_Test-Wizard-SARL-AU.pdf": {
+    "mtime": 1781946699.523841,
+    "seen": 1786803714.8662093,
+    "ast_hash": "cee9b43cbdab577cd236de1420fa2294",
+    "semantic_hash": "cee9b43cbdab577cd236de1420fa2294"
+  },
+  "dossiers_generer/dossiers_cession/2026-06-20_SARL-AU_Test-Wizard-SARL-AU/SARL_AU_2026-06-20_Annonce-Legale-Cession_Test-Wizard-SARL-AU.pdf": {
+    "mtime": 1781946736.7004278,
+    "seen": 1786803714.86621,
+    "ast_hash": "33cd0d34bc3b12215aa5ce1fa7cb7de0",
+    "semantic_hash": "33cd0d34bc3b12215aa5ce1fa7cb7de0"
+  },
+  "dossiers_generer/dossiers_cession/2026-06-20_SARL-AU_Test-Wizard-SARL-AU/SARL_AU_2026-06-20_Declaration-Modificative-RC_Test-Wizard-SARL-AU.pdf": {
+    "mtime": 1781946710.2099297,
+    "seen": 1786803714.8662107,
+    "ast_hash": "85390472cff3bc379c072cd6f83f9f33",
+    "semantic_hash": "85390472cff3bc379c072cd6f83f9f33"
+  },
+  "dossiers_generer/dossiers_cession/2026-06-20_SARL-AU_Test-Wizard-SARL-AU/SARL_AU_2026-06-20_PV-AGE-Cession_Test-Wizard-SARL-AU.pdf": {
+    "mtime": 1781946703.9092467,
+    "seen": 1786803714.8662117,
+    "ast_hash": "b75fe6b2430ec106137bcaa9cfd78f68",
+    "semantic_hash": "b75fe6b2430ec106137bcaa9cfd78f68"
+  },
+  "dossiers_generer/dossiers_cession/2026-06-20_SARL_TECHNOVA-SARL/SARL_2026-06-20_Acte-Cession-Parts_TECHNOVA-SARL.pdf": {
+    "mtime": 1781952403.3141484,
+    "seen": 1786803714.8662126,
+    "ast_hash": "f02f7e321734fbc1812553103f0a53e5",
+    "semantic_hash": "f02f7e321734fbc1812553103f0a53e5"
+  },
+  "dossiers_generer/dossiers_cession/2026-06-20_SARL_TECHNOVA-SARL/SARL_2026-06-20_Annonce-Legale-Cession_TECHNOVA-SARL.pdf": {
+    "mtime": 1781952416.930842,
+    "seen": 1786803714.8662136,
+    "ast_hash": "0e4ab9ecfb3b496996a8412b271b4be6",
+    "semantic_hash": "0e4ab9ecfb3b496996a8412b271b4be6"
+  },
+  "dossiers_generer/dossiers_cession/2026-06-20_SARL_TECHNOVA-SARL/SARL_2026-06-20_Declaration-Modificative-RC_TECHNOVA-SARL.pdf": {
+    "mtime": 1781952413.1233256,
+    "seen": 1786803714.8662145,
+    "ast_hash": "a3bc2bcfa2b60c7f2676413daf17611c",
+    "semantic_hash": "a3bc2bcfa2b60c7f2676413daf17611c"
+  },
+  "dossiers_generer/dossiers_cession/2026-06-20_SARL_TECHNOVA-SARL/SARL_2026-06-20_PV-AGE-Cession_TECHNOVA-SARL.pdf": {
+    "mtime": 1781952408.0918546,
+    "seen": 1786803714.8662155,
+    "ast_hash": "b3936508c33f7b24c62608861f906a3c",
+    "semantic_hash": "b3936508c33f7b24c62608861f906a3c"
+  },
+  "dossiers_generer/dossiers_cession/2026-06-20_SARL_Test-Nouvelle-SARL-Cession/SARL_2026-06-20_Acte-Cession-Parts_Test-Nouvelle-SARL-Cession.pdf": {
+    "mtime": 1781949815.3099697,
+    "seen": 1786803714.8662162,
+    "ast_hash": "18eb500bb891e056406551178cf191d6",
+    "semantic_hash": "18eb500bb891e056406551178cf191d6"
+  },
+  "dossiers_generer/dossiers_cession/2026-06-20_SARL_Test-Nouvelle-SARL-Cession/SARL_2026-06-20_Annonce-Legale-Cession_Test-Nouvelle-SARL-Cession.pdf": {
+    "mtime": 1781949831.0854936,
+    "seen": 1786803714.8662171,
+    "ast_hash": "3f99b595d1f515bb713ebc9680e0d066",
+    "semantic_hash": "3f99b595d1f515bb713ebc9680e0d066"
+  },
+  "dossiers_generer/dossiers_cession/2026-06-20_SARL_Test-Nouvelle-SARL-Cession/SARL_2026-06-20_Declaration-Modificative-RC_Test-Nouvelle-SARL-Cession.pdf": {
+    "mtime": 1781949826.5672376,
+    "seen": 1786803714.866218,
+    "ast_hash": "1cf9c05538a4ab62c3cb4e4c8bd82015",
+    "semantic_hash": "1cf9c05538a4ab62c3cb4e4c8bd82015"
+  },
+  "dossiers_generer/dossiers_cession/2026-06-20_SARL_Test-Nouvelle-SARL-Cession/SARL_2026-06-20_PV-AGE-Cession_Test-Nouvelle-SARL-Cession.pdf": {
+    "mtime": 1781949819.8043184,
+    "seen": 1786803714.866219,
+    "ast_hash": "a1b96ae97961434e710614ed45703ffb",
+    "semantic_hash": "a1b96ae97961434e710614ed45703ffb"
+  },
+  "dossiers_generer/dossiers_cession/2026-06-29_Succurssale-Marocaine_SLAIAOBBHG/Succurssale_Marocaine_2026-06-29_Acte-Cession-Parts_SLAIAOBBHG.pdf": {
+    "mtime": 1782750578.544033,
+    "seen": 1786803714.8662198,
+    "ast_hash": "9d48ec73ea226480c2b8915d113b3110",
+    "semantic_hash": "9d48ec73ea226480c2b8915d113b3110"
+  },
+  "dossiers_generer/dossiers_cession/2026-06-29_Succurssale-Marocaine_SLAIAOBBHG/Succurssale_Marocaine_2026-06-29_Annonce-Legale-Cession_SLAIAOBBHG.pdf": {
+    "mtime": 1782750594.7874677,
+    "seen": 1786803714.8662205,
+    "ast_hash": "f7e8b7e1bbd247168cf19509b1764a95",
+    "semantic_hash": "f7e8b7e1bbd247168cf19509b1764a95"
+  },
+  "dossiers_generer/dossiers_cession/2026-06-29_Succurssale-Marocaine_SLAIAOBBHG/Succurssale_Marocaine_2026-06-29_Declaration-Modificative-RC_SLAIAOBBHG.pdf": {
+    "mtime": 1782750590.2892118,
+    "seen": 1786803714.8662214,
+    "ast_hash": "68855410e693fce0d1337eb894d83bb3",
+    "semantic_hash": "68855410e693fce0d1337eb894d83bb3"
+  },
+  "dossiers_generer/dossiers_cession/2026-06-29_Succurssale-Marocaine_SLAIAOBBHG/Succurssale_Marocaine_2026-06-29_PV-AGE-Cession_SLAIAOBBHG.pdf": {
+    "mtime": 1782750583.0746415,
+    "seen": 1786803714.8662224,
+    "ast_hash": "93bc4eb994b4a423bdd9e56e1bc90622",
+    "semantic_hash": "93bc4eb994b4a423bdd9e56e1bc90622"
+  },
+  "dossiers_generer/dossiers_creation/2026-05-18_SARL-AU_ANALIK/_uploads/2026-07-29_CIN_ABOLABA_MOUSA_ANALIK.pdf": {
+    "mtime": 1785358283.372885,
+    "seen": 1786803714.8662233,
+    "ast_hash": "f9ce5c612bf31e78a74ba6fead3d4c9c",
+    "semantic_hash": "f9ce5c612bf31e78a74ba6fead3d4c9c"
+  },
+  "dossiers_generer/dossiers_creation/2026-05-18_SARL-AU_ANALIK/_uploads/2026-07-29_CN_ANALIK.pdf": {
+    "mtime": 1785358283.371887,
+    "seen": 1786803714.866224,
+    "ast_hash": "6010a73652b2ac181a9a54d95e838690",
+    "semantic_hash": "6010a73652b2ac181a9a54d95e838690"
+  },
+  "dossiers_generer/dossiers_creation/2026-05-18_SARL-AU_TEST-CREATION-SARL/_uploads/2026-06-28_CIN_ALAOUI_Mehdi_TEST_CREATION_SARL.pdf": {
+    "mtime": 1782635037.3115375,
+    "seen": 1786803714.866225,
+    "ast_hash": "8c292227f0f9fdbb5f19034f0f00f94b",
+    "semantic_hash": "8c292227f0f9fdbb5f19034f0f00f94b"
+  },
+  "dossiers_generer/dossiers_creation/2026-05-18_SARL-AU_TEST-CREATION-SARL/_uploads/2026-06-28_CN_TEST_CREATION_SARL.pdf": {
+    "mtime": 1782635037.3095298,
+    "seen": 1786803714.866226,
+    "ast_hash": "8c292227f0f9fdbb5f19034f0f00f94b",
+    "semantic_hash": "8c292227f0f9fdbb5f19034f0f00f94b"
+  },
+  "dossiers_generer/dossiers_creation/2026-05-18_SARL_BAATRI/_uploads/2026-07-16_CIN_AWAL_Ahmed_BAATRI.pdf": {
+    "mtime": 1784156493.3661008,
+    "seen": 1786803714.8662267,
+    "ast_hash": "9a0c59a7602b57e14e1b8841450a96eb",
+    "semantic_hash": "9a0c59a7602b57e14e1b8841450a96eb"
+  },
+  "dossiers_generer/dossiers_creation/2026-05-18_SARL_BAATRI/_uploads/2026-07-16_CN_BAATRI.pdf": {
+    "mtime": 1784156493.3661008,
+    "seen": 1786803714.8662276,
+    "ast_hash": "9a0c59a7602b57e14e1b8841450a96eb",
+    "semantic_hash": "9a0c59a7602b57e14e1b8841450a96eb"
+  },
+  "dossiers_generer/dossiers_creation/2026-05-18_SARL_EXCELENCIA-TRAV/_uploads/2026-07-16_CIN_CHAKIR_Rachid_EXCELENCIA_TRAV.pdf": {
+    "mtime": 1784204992.8051116,
+    "seen": 1786803714.8662286,
+    "ast_hash": "0fc50f938bd73472b4d97868a36e3abf",
+    "semantic_hash": "0fc50f938bd73472b4d97868a36e3abf"
+  },
+  "dossiers_generer/dossiers_creation/2026-05-18_SARL_EXCELENCIA-TRAV/_uploads/2026-07-16_CIN_ELKHATTABY_Brahim_EXCELENCIA_TRAV.pdf": {
+    "mtime": 1784204992.8031113,
+    "seen": 1786803714.8662295,
+    "ast_hash": "9a0c59a7602b57e14e1b8841450a96eb",
+    "semantic_hash": "9a0c59a7602b57e14e1b8841450a96eb"
+  },
+  "dossiers_generer/dossiers_creation/2026-05-18_SARL_EXCELENCIA-TRAV/_uploads/2026-07-16_CN_EXCELENCIA_TRAV.pdf": {
+    "mtime": 1784204992.8021107,
+    "seen": 1786803714.8662302,
+    "ast_hash": "9aa86aea8387fa01c961454c4979eec0",
+    "semantic_hash": "9aa86aea8387fa01c961454c4979eec0"
+  },
+  "dossiers_generer/dossiers_creation/2026-05-18_SARL_KAMARAD/_uploads/2026-07-15_CIN_BENANI_Ahmed_KAMARAD.pdf": {
+    "mtime": 1784203359.2216842,
+    "seen": 1786803714.866231,
+    "ast_hash": "db6ae7b95ab38b94867bffa11c4f736e",
+    "semantic_hash": "db6ae7b95ab38b94867bffa11c4f736e"
+  },
+  "dossiers_generer/dossiers_creation/2026-05-18_SARL_KAMARAD/_uploads/2026-07-15_CN_KAMARAD.pdf": {
+    "mtime": 1784203359.222688,
+    "seen": 1786803714.866232,
+    "ast_hash": "3ce7a39aaae55c721c5a4e3555a0469f",
+    "semantic_hash": "3ce7a39aaae55c721c5a4e3555a0469f"
+  },
+  "dossiers_generer/dossiers_creation/2026-07-07_SARL-AU_ANFURA-CREATIVE/SARL AU_2026-07-07_Contrat-Domiciliation_ANFURA-CREATIVE.pdf": {
+    "mtime": 1783421539.6769369,
+    "seen": 1786803714.8662329,
+    "ast_hash": "931a1872e60bcfcb44bec5c5afe70691",
+    "semantic_hash": "931a1872e60bcfcb44bec5c5afe70691"
+  },
+  "dossiers_generer/dossiers_creation/2026-07-07_SARL-AU_ANFURA-CREATIVE/_uploads/2026-07-07_CN_ANFURA_CREATIVE.pdf": {
+    "mtime": 1783420592.003879,
+    "seen": 1786803714.8662336,
+    "ast_hash": "1314fe65bee11be60c261b6fbb30031b",
+    "semantic_hash": "1314fe65bee11be60c261b6fbb30031b"
+  },
+  "dossiers_generer/dossiers_domiciliation/2026-06-02_SARL-AU_GITREIO/SARL AU_2026-06-02_Annonce-Legale-Journal_GITREIO.pdf": {
+    "mtime": 1780848411.3674796,
+    "seen": 1786803714.8662345,
+    "ast_hash": "1db79f1b69830276fab50c6a1f532f17",
+    "semantic_hash": "1db79f1b69830276fab50c6a1f532f17"
+  },
+  "dossiers_generer/dossiers_domiciliation/2026-06-02_SARL-AU_GITREIO/SARL AU_2026-06-02_Attestation-Domiciliation-Initiale_GITREIO.pdf": {
+    "mtime": 1780848433.8171706,
+    "seen": 1786803714.8662355,
+    "ast_hash": "c2dc5fdf5775e0790ebc9b61b1f231e7",
+    "semantic_hash": "c2dc5fdf5775e0790ebc9b61b1f231e7"
+  },
+  "dossiers_generer/dossiers_domiciliation/2026-06-02_SARL-AU_GITREIO/SARL AU_2026-06-02_Contrat-Domiciliation_GITREIO.pdf": {
+    "mtime": 1780848436.5994911,
+    "seen": 1786803714.8662364,
+    "ast_hash": "f586c3fe3e7a6cb15989f4a7a978000b",
+    "semantic_hash": "f586c3fe3e7a6cb15989f4a7a978000b"
+  },
+  "dossiers_generer/dossiers_domiciliation/2026-06-02_SARL-AU_GITREIO/SARL AU_2026-06-02_Declaration-Immatriculation-RC_GITREIO.pdf": {
+    "mtime": 1780848416.0696504,
+    "seen": 1786803714.8662372,
+    "ast_hash": "a5849189dd80823caecf656c7985da3c",
+    "semantic_hash": "a5849189dd80823caecf656c7985da3c"
+  },
+  "dossiers_generer/dossiers_domiciliation/2026-06-02_SARL-AU_GITREIO/SARL AU_2026-06-02_Depot-Legal-Constitution_GITREIO.pdf": {
+    "mtime": 1780848420.698478,
+    "seen": 1786803714.8662379,
+    "ast_hash": "4f08b15bea35475e2934e40176a07073",
+    "semantic_hash": "4f08b15bea35475e2934e40176a07073"
+  },
+  "dossiers_generer/dossiers_domiciliation/2026-06-02_SARL-AU_GITREIO/SARL AU_2026-06-02_Statuts_GITREIO.pdf": {
+    "mtime": 1780848425.6742232,
+    "seen": 1786803714.866239,
+    "ast_hash": "4140995ffcbb87a187c9c5d9bd6573eb",
+    "semantic_hash": "4140995ffcbb87a187c9c5d9bd6573eb"
+  },
+  "dossiers_generer/dossiers_domiciliation/2026-06-07_SARL-AU_AMAR-STE/SARL AU_2026-06-01_Attestation-Domiciliation-Initiale_AMAR-STE.pdf": {
+    "mtime": 1780835116.236948,
+    "seen": 1786803714.8662398,
+    "ast_hash": "f5d88557bf4220dcd64ff9ab8c8ca58f",
+    "semantic_hash": "f5d88557bf4220dcd64ff9ab8c8ca58f"
+  },
+  "dossiers_generer/dossiers_domiciliation/2026-06-07_SARL-AU_AMAR-STE/SARL AU_2026-06-01_Contrat-Domiciliation_AMAR-STE.pdf": {
+    "mtime": 1780835121.2903483,
+    "seen": 1786803714.8662405,
+    "ast_hash": "17fa9c3aa577f29fde2e78f7e59d5ca0",
+    "semantic_hash": "17fa9c3aa577f29fde2e78f7e59d5ca0"
+  },
+  "dossiers_generer/dossiers_domiciliation/2026-06-07_SARL-AU_AMAR-STE/SARL AU_2026-06-01_Declaration-Immatriculation-RC_AMAR-STE.pdf": {
+    "mtime": 1780835125.7413664,
+    "seen": 1786803714.8662415,
+    "ast_hash": "051dbe276780585488a9049b74684d89",
+    "semantic_hash": "051dbe276780585488a9049b74684d89"
+  },
+  "dossiers_generer/dossiers_domiciliation/2026-06-07_SARL-AU_AMAR-STE/SARL AU_2026-06-01_Depot-Legal-Constitution_AMAR-STE.pdf": {
+    "mtime": 1780835130.113244,
+    "seen": 1786803714.8662424,
+    "ast_hash": "061fdde6d60d1314ed70f6076ebe4056",
+    "semantic_hash": "061fdde6d60d1314ed70f6076ebe4056"
+  },
+  "dossiers_generer/dossiers_domiciliation/2026-06-07_SARL-AU_AMAR-STE/SARL AU_2026-06-01_Statuts_AMAR-STE.pdf": {
+    "mtime": 1780835134.820842,
+    "seen": 1786803714.8662434,
+    "ast_hash": "745357421aca5a5985bf159bb6bc8efc",
+    "semantic_hash": "745357421aca5a5985bf159bb6bc8efc"
+  },
+  "dossiers_generer/dossiers_domiciliation/2026-06-07_SARL-AU_AMAR-STE/SARL AU_2026-06-07_Annonce-Legale-Journal_AMAR-STE.pdf": {
+    "mtime": 1780835763.0066314,
+    "seen": 1786803714.866244,
+    "ast_hash": "2f069121e67dccaf7d299cc0eb8e0dfb",
+    "semantic_hash": "2f069121e67dccaf7d299cc0eb8e0dfb"
+  },
+  "dossiers_generer/dossiers_pv_ago/SARL_2026-06-28_Test-Import-SARL/SARL_2026-06-28_PV-AGO_Test-Import-SARL.pdf": {
+    "mtime": 1782633849.4011426,
+    "seen": 1786803714.866245,
+    "ast_hash": "8732d6491b3a007ce638a8a889bd53f0",
+    "semantic_hash": "8732d6491b3a007ce638a8a889bd53f0"
+  },
+  "uploads/dossiers/11/2026-06-06_CIN_Test_User_Test_SARL_AU.pdf": {
+    "mtime": 1784203359.238424,
+    "seen": 1786803714.866246,
+    "ast_hash": "cb10d95f8ff301a1b6e665752eec5326",
+    "semantic_hash": "cb10d95f8ff301a1b6e665752eec5326"
+  },
+  "uploads/dossiers/11/2026-06-06_CN_Test_SARL_AU.pdf": {
+    "mtime": 1784203359.2394257,
+    "seen": 1786803714.8662467,
+    "ast_hash": "770f9939323cd2fdbcf55bc0e659cdba",
+    "semantic_hash": "770f9939323cd2fdbcf55bc0e659cdba"
+  },
+  "uploads/dossiers/12/2026-06-06_CIN___Test_PDF_Karim.pdf": {
+    "mtime": 1784203359.2394257,
+    "seen": 1786803714.8662474,
+    "ast_hash": "49f13c4ac528eeaa751d1170aa1e1f07",
+    "semantic_hash": "49f13c4ac528eeaa751d1170aa1e1f07"
+  },
+  "uploads/dossiers/12/2026-06-06_CN_Test_PDF_Karim.pdf": {
+    "mtime": 1784203359.240428,
+    "seen": 1786803714.8662484,
+    "ast_hash": "49f13c4ac528eeaa751d1170aa1e1f07",
+    "semantic_hash": "49f13c4ac528eeaa751d1170aa1e1f07"
+  },
+  "uploads/dossiers/15/certificat_negatif_20260601_203213.pdf": {
+    "mtime": 1780338733.3670652,
+    "seen": 1786803714.8662493,
+    "ast_hash": "733e9f0972f5c4d0c87a0e8c963b0741",
+    "semantic_hash": "733e9f0972f5c4d0c87a0e8c963b0741"
+  },
+  "uploads/dossiers/15/cin_gerant_0_20260601_203213.pdf": {
+    "mtime": 1780338733.3875773,
+    "seen": 1786803714.86625,
+    "ast_hash": "3a6f19d6ce9e461aa8bce253106d5746",
+    "semantic_hash": "3a6f19d6ce9e461aa8bce253106d5746"
+  },
+  "uploads/dossiers/16/2026-06-01_CIN_BENANI_Ahmed_AMAR_STE.pdf": {
+    "mtime": 1780339112.8954856,
+    "seen": 1786803714.866251,
+    "ast_hash": "3a6f19d6ce9e461aa8bce253106d5746",
+    "semantic_hash": "3a6f19d6ce9e461aa8bce253106d5746"
+  },
+  "uploads/dossiers/16/2026-06-01_CN_AMAR_STE.pdf": {
+    "mtime": 1780339112.8768644,
+    "seen": 1786803714.866252,
+    "ast_hash": "733e9f0972f5c4d0c87a0e8c963b0741",
+    "semantic_hash": "733e9f0972f5c4d0c87a0e8c963b0741"
+  },
+  "uploads/dossiers/17/2026-06-02_CIN_BENANI_Ahmed_GITREIO.pdf": {
+    "mtime": 1780409548.504571,
+    "seen": 1786803714.866253,
+    "ast_hash": "3a6f19d6ce9e461aa8bce253106d5746",
+    "semantic_hash": "3a6f19d6ce9e461aa8bce253106d5746"
+  },
+  "uploads/dossiers/17/2026-06-02_CN_GITREIO.pdf": {
+    "mtime": 1780409548.4855175,
+    "seen": 1786803714.8662539,
+    "ast_hash": "733e9f0972f5c4d0c87a0e8c963b0741",
+    "semantic_hash": "733e9f0972f5c4d0c87a0e8c963b0741"
+  },
+  "assets/img/generation.png": {
+    "mtime": 1780261032.7729359,
+    "seen": 1786803714.8662548,
+    "ast_hash": "bb72bbb42fa392e3debf4a2f7b7797f4",
+    "semantic_hash": "bb72bbb42fa392e3debf4a2f7b7797f4"
+  },
+  "assets/img/generation2.png": {
+    "mtime": 1780261091.6258523,
+    "seen": 1786803714.8662558,
+    "ast_hash": "44a518a0c9c7b30aa1a67a1271b4cd06",
+    "semantic_hash": "44a518a0c9c7b30aa1a67a1271b4cd06"
+  },
+  "assets/img/generation3.png": {
+    "mtime": 1780261133.8487124,
+    "seen": 1786803714.8662567,
+    "ast_hash": "fd9a645d6fd9f3886e93aaed3a4acde1",
+    "semantic_hash": "fd9a645d6fd9f3886e93aaed3a4acde1"
+  },
+  "connexion_page.png": {
+    "mtime": 1782048826.9258223,
+    "seen": 1786803714.8662574,
+    "ast_hash": "393f0213cccc1b7b85368e648eecda50",
+    "semantic_hash": "393f0213cccc1b7b85368e648eecda50"
+  },
+  "docs/screenshots/associe24_dark_clean.png": {
+    "mtime": 1784558712.8352098,
+    "seen": 1786803714.8662584,
+    "ast_hash": "db5a6cd19a03495d9bf0bd077069874f",
+    "semantic_hash": "db5a6cd19a03495d9bf0bd077069874f"
+  },
+  "docs/screenshots/associe24_dark_final.png": {
+    "mtime": 1784560115.694408,
+    "seen": 1786803714.866259,
+    "ast_hash": "70f8d117142c6234aa487e33c1653544",
+    "semantic_hash": "70f8d117142c6234aa487e33c1653544"
+  },
+  "docs/screenshots/associe24_final.png": {
+    "mtime": 1784559911.9874153,
+    "seen": 1786803714.8662603,
+    "ast_hash": "cc3d95ae3454f6db8ccad11801a75fda",
+    "semantic_hash": "cc3d95ae3454f6db8ccad11801a75fda"
+  },
+  "docs/screenshots/associe_A4_dark.png": {
+    "mtime": 1784558453.354544,
+    "seen": 1786803714.8662612,
+    "ast_hash": "b262ffcfcb26c589c67bce3f7fceb64f",
+    "semantic_hash": "b262ffcfcb26c589c67bce3f7fceb64f"
+  },
+  "docs/screenshots/associe_detail_A4_dark.png": {
+    "mtime": 1784558407.0203722,
+    "seen": 1786803714.866262,
+    "ast_hash": "b262ffcfcb26c589c67bce3f7fceb64f",
+    "semantic_hash": "b262ffcfcb26c589c67bce3f7fceb64f"
+  },
+  "docs/screenshots/associe_detail_dark.png": {
+    "mtime": 1784557935.1388986,
+    "seen": 1786803714.8662632,
+    "ast_hash": "bf50d8777f26a4f0c4970a97aa455da6",
+    "semantic_hash": "bf50d8777f26a4f0c4970a97aa455da6"
+  },
+  "docs/screenshots/cession-step0-ui.png": {
+    "mtime": 1781850437.7294092,
+    "seen": 1786803714.8662639,
+    "ast_hash": "cd9c6e06937d0fad7e5649329f797942",
+    "semantic_hash": "cd9c6e06937d0fad7e5649329f797942"
+  },
+  "docs/screenshots/cession-step0.png": {
+    "mtime": 1781850437.7313755,
+    "seen": 1786803714.8662648,
+    "ast_hash": "cd9c6e06937d0fad7e5649329f797942",
+    "semantic_hash": "cd9c6e06937d0fad7e5649329f797942"
+  },
+  "docs/screenshots/cession-step1-form.png": {
+    "mtime": 1782745445.2875922,
+    "seen": 1786803714.8662658,
+    "ast_hash": "2becc8266fa201ccb557d7474ebcd2c5",
+    "semantic_hash": "2becc8266fa201ccb557d7474ebcd2c5"
+  },
+  "docs/screenshots/cession-step1-full.png": {
+    "mtime": 1782746516.346347,
+    "seen": 1786803714.8662667,
+    "ast_hash": "3a8ea94c602441b9f99616a98e8e98a2",
+    "semantic_hash": "3a8ea94c602441b9f99616a98e8e98a2"
+  },
+  "docs/screenshots/cession-step1-now.png": {
+    "mtime": 1782746440.3522987,
+    "seen": 1786803714.8662677,
+    "ast_hash": "a06df930e8bcb519f011dba33ac4243d",
+    "semantic_hash": "a06df930e8bcb519f011dba33ac4243d"
+  },
+  "docs/screenshots/cession-step1.png": {
+    "mtime": 1782745394.5759616,
+    "seen": 1786803714.8662684,
+    "ast_hash": "aff3aff0d0c303809ff5867c4fdb1356",
+    "semantic_hash": "aff3aff0d0c303809ff5867c4fdb1356"
+  },
+  "docs/screenshots/cession-step2.png": {
+    "mtime": 1781850437.7359307,
+    "seen": 1786803714.8662694,
+    "ast_hash": "05e9f2ee3dee73024f92fe5f52081d92",
+    "semantic_hash": "05e9f2ee3dee73024f92fe5f52081d92"
+  },
+  "docs/screenshots/cession-step3.png": {
+    "mtime": 1781850437.7387261,
+    "seen": 1786803714.8662703,
+    "ast_hash": "624b3a68a2d71aaff21957dcfc8d4cd8",
+    "semantic_hash": "624b3a68a2d71aaff21957dcfc8d4cd8"
+  },
+  "docs/screenshots/cession-step4.png": {
+    "mtime": 1781850437.7417288,
+    "seen": 1786803714.866271,
+    "ast_hash": "51be1ba841f002f11769178f39c4f025",
+    "semantic_hash": "51be1ba841f002f11769178f39c4f025"
+  },
+  "docs/screenshots/cession-v2-step0.png": {
+    "mtime": 1781850437.7431958,
+    "seen": 1786803714.866272,
+    "ast_hash": "cd9c6e06937d0fad7e5649329f797942",
+    "semantic_hash": "cd9c6e06937d0fad7e5649329f797942"
+  },
+  "docs/screenshots/cession-v2-step1.png": {
+    "mtime": 1781850437.7447052,
+    "seen": 1786803714.866273,
+    "ast_hash": "891cad8ddbd58044a7b8297fdb4c211f",
+    "semantic_hash": "891cad8ddbd58044a7b8297fdb4c211f"
+  },
+  "docs/screenshots/cession-v2-step2.png": {
+    "mtime": 1781850437.7462122,
+    "seen": 1786803714.8662739,
+    "ast_hash": "05e9f2ee3dee73024f92fe5f52081d92",
+    "semantic_hash": "05e9f2ee3dee73024f92fe5f52081d92"
+  },
+  "docs/screenshots/cession-v2-step3.png": {
+    "mtime": 1781850437.74823,
+    "seen": 1786803714.8662746,
+    "ast_hash": "624b3a68a2d71aaff21957dcfc8d4cd8",
+    "semantic_hash": "624b3a68a2d71aaff21957dcfc8d4cd8"
+  },
+  "docs/screenshots/cession-v2-step4-table.png": {
+    "mtime": 1781850437.752241,
+    "seen": 1786803714.8662753,
+    "ast_hash": "9aa7d482ec94ba7a9eb64f4dcdf6d343",
+    "semantic_hash": "9aa7d482ec94ba7a9eb64f4dcdf6d343"
+  },
+  "docs/screenshots/cession-v2-step4-v2.png": {
+    "mtime": 1781850437.7542458,
+    "seen": 1786803714.8662763,
+    "ast_hash": "ce3ebc68e425892c26b2d169b3841391",
+    "semantic_hash": "ce3ebc68e425892c26b2d169b3841391"
+  },
+  "docs/screenshots/cession-v2-step4.png": {
+    "mtime": 1781850437.7566245,
+    "seen": 1786803714.8662772,
+    "ast_hash": "6adf5930cae980fbdfb73402e96e903e",
+    "semantic_hash": "6adf5930cae980fbdfb73402e96e903e"
+  },
+  "docs/screenshots/cession_dossier.png": {
+    "mtime": 1781850437.760658,
+    "seen": 1786803714.866278,
+    "ast_hash": "d1c965e3d179ef1d0d2bb8e0144c4428",
+    "semantic_hash": "d1c965e3d179ef1d0d2bb8e0144c4428"
+  },
+  "docs/screenshots/cession_nouvelle_societe.png": {
+    "mtime": 1781850437.7626686,
+    "seen": 1786803714.866279,
+    "ast_hash": "98439ce268e0c93e3540555fbbac34a6",
+    "semantic_hash": "98439ce268e0c93e3540555fbbac34a6"
+  },
+  "docs/screenshots/collab_edit_grid.png": {
+    "mtime": 1780934242.4655688,
+    "seen": 1786803714.8662796,
+    "ast_hash": "630a117fb3faace83fd909dc7ad8be0c",
+    "semantic_hash": "630a117fb3faace83fd909dc7ad8be0c"
+  },
+  "docs/screenshots/collaborateur-page.png": {
+    "mtime": 1780421944.606416,
+    "seen": 1786803714.8662806,
+    "ast_hash": "d5d09e75583205d4e60deffa6b3607aa",
+    "semantic_hash": "d5d09e75583205d4e60deffa6b3607aa"
+  },
+  "docs/screenshots/collaborateur-pm-page.png": {
+    "mtime": 1780421964.2233207,
+    "seen": 1786803714.8662815,
+    "ast_hash": "00349b82220cba3c0b0da7b8ef245ee3",
+    "semantic_hash": "00349b82220cba3c0b0da7b8ef245ee3"
+  },
+  "docs/screenshots/collaborateur-type-selector.png": {
+    "mtime": 1780421956.2577658,
+    "seen": 1786803714.8662822,
+    "ast_hash": "6c05194b55ffb6d84680b4e9b4631772",
+    "semantic_hash": "6c05194b55ffb6d84680b4e9b4631772"
+  },
+  "docs/screenshots/collaborateur_spacing.png": {
+    "mtime": 1780934242.466572,
+    "seen": 1786803714.866283,
+    "ast_hash": "244568927fea4aea24832d8b37cff71d",
+    "semantic_hash": "244568927fea4aea24832d8b37cff71d"
+  },
+  "docs/screenshots/collaborateur_spacing_after.png": {
+    "mtime": 1780934242.4675703,
+    "seen": 1786803714.866284,
+    "ast_hash": "193bee08d5a283cc15e7f7447603a1a8",
+    "semantic_hash": "193bee08d5a283cc15e7f7447603a1a8"
+  },
+  "docs/screenshots/dashboard-layout.png": {
+    "mtime": 1782032606.891135,
+    "seen": 1786803714.8662848,
+    "ast_hash": "36a0befa19229c41760ca30e6f73e143",
+    "semantic_hash": "36a0befa19229c41760ca30e6f73e143"
+  },
+  "docs/screenshots/dashboard-scrolled.png": {
+    "mtime": 1782032614.517853,
+    "seen": 1786803714.8662858,
+    "ast_hash": "c9b49530b513378fc56276240cd39b6d",
+    "semantic_hash": "c9b49530b513378fc56276240cd39b6d"
+  },
+  "docs/screenshots/dashboard-test.png": {
+    "mtime": 1780836936.114628,
+    "seen": 1786803714.8662865,
+    "ast_hash": "cb83bea3b56125646a6da8232a1e28c3",
+    "semantic_hash": "cb83bea3b56125646a6da8232a1e28c3"
+  },
+  "docs/screenshots/dashboard-topbar-fixed.png": {
+    "mtime": 1782032746.725216,
+    "seen": 1786803714.8662875,
+    "ast_hash": "05fd3975aadad362e6d28d8566e62954",
+    "semantic_hash": "05fd3975aadad362e6d28d8566e62954"
+  },
+  "docs/screenshots/dashboard.png": {
+    "mtime": 1780842003.4598913,
+    "seen": 1786803714.8662882,
+    "ast_hash": "9e842a60756002b7e0252dae9e8c1c2b",
+    "semantic_hash": "9e842a60756002b7e0252dae9e8c1c2b"
+  },
+  "docs/screenshots/dashboard_alignment.png": {
+    "mtime": 1780842703.6106822,
+    "seen": 1786803714.866289,
+    "ast_hash": "8455229dca394693fbe1080a85b8c414",
+    "semantic_hash": "8455229dca394693fbe1080a85b8c414"
+  },
+  "docs/screenshots/dashboard_clickable_titles.png": {
+    "mtime": 1780842420.9617236,
+    "seen": 1786803714.8662899,
+    "ast_hash": "1ae387d232f74f8e1fac5ed50909159c",
+    "semantic_hash": "1ae387d232f74f8e1fac5ed50909159c"
+  },
+  "docs/screenshots/dashboard_dossiers_complets.png": {
+    "mtime": 1780843875.3372743,
+    "seen": 1786803714.866291,
+    "ast_hash": "638dbdb3d22d78a5f366605dfe1b5e17",
+    "semantic_hash": "638dbdb3d22d78a5f366605dfe1b5e17"
+  },
+  "docs/screenshots/dashboard_grids_aligned.png": {
+    "mtime": 1780842827.886128,
+    "seen": 1786803714.8662918,
+    "ast_hash": "3dbbecdab3d1c05d2a2c854ca67fcc89",
+    "semantic_hash": "3dbbecdab3d1c05d2a2c854ca67fcc89"
+  },
+  "docs/screenshots/dashboard_journal_final.png": {
+    "mtime": 1780843601.9181724,
+    "seen": 1786803714.8662927,
+    "ast_hash": "0d7521d67d0ce83bfd1aadd348adc0a7",
+    "semantic_hash": "0d7521d67d0ce83bfd1aadd348adc0a7"
+  },
+  "docs/screenshots/dashboard_journal_truncated.png": {
+    "mtime": 1780843293.2050245,
+    "seen": 1786803714.8662934,
+    "ast_hash": "c6697c5935a2c561cbd3896b9e55f512",
+    "semantic_hash": "c6697c5935a2c561cbd3896b9e55f512"
+  },
+  "docs/screenshots/dashboard_single_column.png": {
+    "mtime": 1780842974.0206378,
+    "seen": 1786803714.8662944,
+    "ast_hash": "fbfea4b334702c68bd6c16f6979b7a51",
+    "semantic_hash": "fbfea4b334702c68bd6c16f6979b7a51"
+  },
+  "docs/screenshots/dashboard_tables.png": {
+    "mtime": 1780842239.8505013,
+    "seen": 1786803714.8662953,
+    "ast_hash": "f7bee8da05c3feb581b3ce4085c9391e",
+    "semantic_hash": "f7bee8da05c3feb581b3ce4085c9391e"
+  },
+  "docs/screenshots/dashboard_val_compact.png": {
+    "mtime": 1780843106.4145062,
+    "seen": 1786803714.8662963,
+    "ast_hash": "28ebeb441e53cae23b6e128b227b7edb",
+    "semantic_hash": "28ebeb441e53cae23b6e128b227b7edb"
+  },
+  "docs/screenshots/dashboard_val_right.png": {
+    "mtime": 1780843192.3754933,
+    "seen": 1786803714.866297,
+    "ast_hash": "53786a1cec631d5e5467eee9d1084129",
+    "semantic_hash": "53786a1cec631d5e5467eee9d1084129"
+  },
+  "docs/screenshots/fonctions-page.png": {
+    "mtime": 1780423757.8708787,
+    "seen": 1786803714.8662982,
+    "ast_hash": "b010e4fd56a7f59a09266421b84e2886",
+    "semantic_hash": "b010e4fd56a7f59a09266421b84e2886"
+  },
+  "docs/screenshots/generation-icons.png": {
+    "mtime": 1780836476.7320485,
+    "seen": 1786803714.866299,
+    "ast_hash": "ac203a541e49bc949399c347cc7aa2d3",
+    "semantic_hash": "ac203a541e49bc949399c347cc7aa2d3"
+  },
+  "docs/screenshots/logout-topbar.png": {
+    "mtime": 1782033068.8775635,
+    "seen": 1786803714.8662999,
+    "ast_hash": "11cfd01e7d6d9796002f29ff58fc09b2",
+    "semantic_hash": "11cfd01e7d6d9796002f29ff58fc09b2"
+  },
+  "docs/screenshots/nav-current.png": {
+    "mtime": 1780316944.4489434,
+    "seen": 1786803714.8663006,
+    "ast_hash": "9020f4a129eb265f0820daaef8958615",
+    "semantic_hash": "9020f4a129eb265f0820daaef8958615"
+  },
+  "docs/screenshots/nav-scroll-fixed.png": {
+    "mtime": 1780316978.5535922,
+    "seen": 1786803714.8663015,
+    "ast_hash": "73fbe7d232088705902a1dfd11e7779b",
+    "semantic_hash": "73fbe7d232088705902a1dfd11e7779b"
+  },
+  "docs/screenshots/notif-manage-fixed.png": {
+    "mtime": 1782032951.5808723,
+    "seen": 1786803714.8663025,
+    "ast_hash": "71b3f85f18c880b336508a978b831331",
+    "semantic_hash": "71b3f85f18c880b336508a978b831331"
+  },
+  "docs/screenshots/notifications-fixed.png": {
+    "mtime": 1782032935.9559138,
+    "seen": 1786803714.8663032,
+    "ast_hash": "04c8d977a01812cce22be4469d3205f9",
+    "semantic_hash": "04c8d977a01812cce22be4469d3205f9"
+  },
+  "docs/screenshots/pv_ago_3_records.png": {
+    "mtime": 1782633444.9964356,
+    "seen": 1786803714.866304,
+    "ast_hash": "a6e5f64c7362c156f7924fdf8f1dd3f3",
+    "semantic_hash": "a6e5f64c7362c156f7924fdf8f1dd3f3"
+  },
+  "docs/screenshots/roles-fixed.png": {
+    "mtime": 1782032943.9130523,
+    "seen": 1786803714.866305,
+    "ast_hash": "2115a92b92dd40736a3fbbbc10cf6cef",
+    "semantic_hash": "2115a92b92dd40736a3fbbbc10cf6cef"
+  },
+  "docs/screenshots/sidebar-check.png": {
+    "mtime": 1780316757.993018,
+    "seen": 1786803714.8663058,
+    "ast_hash": "d4bbf5d46878ed843cb11b3193c06ad9",
+    "semantic_hash": "d4bbf5d46878ed843cb11b3193c06ad9"
+  },
+  "docs/screenshots/sidebar-fixed.png": {
+    "mtime": 1780316809.5443425,
+    "seen": 1786803714.8663068,
+    "ast_hash": "79efeefad5bf0b3e92ef9fedf51e697c",
+    "semantic_hash": "79efeefad5bf0b3e92ef9fedf51e697c"
+  },
+  "docs/screenshots/societe-full.png": {
+    "mtime": 1781850437.763675,
+    "seen": 1786803714.8663075,
+    "ast_hash": "637129ed65fbe4f30cd6150ac7cb9f88",
+    "semantic_hash": "637129ed65fbe4f30cd6150ac7cb9f88"
+  },
+  "docs/screenshots/societe-titres.png": {
+    "mtime": 1781850437.7646756,
+    "seen": 1786803714.8663087,
+    "ast_hash": "f80e27c0f9a806417d3ed230f8cebcc0",
+    "semantic_hash": "f80e27c0f9a806417d3ed230f8cebcc0"
+  },
+  "docs/screenshots/societe-view.png": {
+    "mtime": 1781850437.7656884,
+    "seen": 1786803714.8663094,
+    "ast_hash": "f546df5fe74de541d79610b7ffdd20f5",
+    "semantic_hash": "f546df5fe74de541d79610b7ffdd20f5"
+  },
+  "docs/screenshots/societes-icons.png": {
+    "mtime": 1780836499.304103,
+    "seen": 1786803714.8663101,
+    "ast_hash": "019666ca6d203f9b0cb36666a0473c7b",
+    "semantic_hash": "019666ca6d203f9b0cb36666a0473c7b"
+  },
+  "docs/screenshots/test_scroll.png": {
+    "mtime": 1784560458.8506756,
+    "seen": 1786803714.8663108,
+    "ast_hash": "744fad542675149f45227c93b10e5354",
+    "semantic_hash": "744fad542675149f45227c93b10e5354"
+  },
+  "docs/screenshots/test_societes_scroll.png": {
+    "mtime": 1784560508.6293964,
+    "seen": 1786803714.866312,
+    "ast_hash": "9308e3be6a9bc98284c5fb908c4fe140",
+    "semantic_hash": "9308e3be6a9bc98284c5fb908c4fe140"
+  },
+  "docs/screenshots/wizard-grid-apres.png": {
+    "mtime": 1781850437.7667077,
+    "seen": 1786803714.8663127,
+    "ast_hash": "37e28f08ea95673b195e235dc601bea8",
+    "semantic_hash": "37e28f08ea95673b195e235dc601bea8"
+  },
+  "docs/screenshots/wizard-grid.png": {
+    "mtime": 1781850437.7677193,
+    "seen": 1786803714.8663137,
+    "ast_hash": "9489e8ae68e011fc60f606c3b33272e0",
+    "semantic_hash": "9489e8ae68e011fc60f606c3b33272e0"
+  },
+  "docs/screenshots/wizard-spacing.png": {
+    "mtime": 1781850437.7687604,
+    "seen": 1786803714.8663144,
+    "ast_hash": "3f226a3b671d9b7c47501e82e6d6b309",
+    "semantic_hash": "3f226a3b671d9b7c47501e82e6d6b309"
+  },
+  "docs/screenshots/wizard_header.png": {
+    "mtime": 1782635198.4758677,
+    "seen": 1786803714.8663154,
+    "ast_hash": "bb5fe26cb18fd517d1966296af3562b6",
+    "semantic_hash": "bb5fe26cb18fd517d1966296af3562b6"
+  },
+  "docs/screenshots/wizard_step1.png": {
+    "mtime": 1780935376.7070432,
+    "seen": 1786803714.8663163,
+    "ast_hash": "8ec54851239057b353e668eafb292c0c",
+    "semantic_hash": "8ec54851239057b353e668eafb292c0c"
+  },
+  "docs/screenshots/wizard_step4_recap_dark.png": {
+    "mtime": 1784559945.8071067,
+    "seen": 1786803714.8663304,
+    "ast_hash": "b971bf941948b7ff0aa7891deb059349",
+    "semantic_hash": "b971bf941948b7ff0aa7891deb059349"
+  },
+  "docs/screenshots/wizard_step6.png": {
+    "mtime": 1782635212.6255975,
+    "seen": 1786803714.8663313,
+    "ast_hash": "60f37568ddf0cce580c3ba8c2d5ec562",
+    "semantic_hash": "60f37568ddf0cce580c3ba8c2d5ec562"
+  },
+  "dossiers_generer/dossiers_creation/2026-07-07_SARL-AU_ANFURA-CREATIVE/_uploads/2026-07-07_CIN_MOHAMED_ZARKOUNE_ANFURA_CREATIVE.jpeg": {
+    "mtime": 1783420592.0048866,
+    "seen": 1786803714.8663325,
+    "ast_hash": "120d77fbc5ec657537ad63e4e9b3b86a",
+    "semantic_hash": "120d77fbc5ec657537ad63e4e9b3b86a"
+  },
+  "societes_table.png": {
+    "mtime": 1782048055.911975,
+    "seen": 1786803714.8663332,
+    "ast_hash": "87548b3a78272354fc3187e744506555",
+    "semantic_hash": "87548b3a78272354fc3187e744506555"
+  }
+}

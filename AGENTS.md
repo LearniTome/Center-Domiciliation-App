@@ -358,6 +358,17 @@ npx -y @berthojoris/mcp-mysql-server "mysql://root@127.0.0.1:3306/center_domicil
 - Root should only contain: `index.php`, `run.ps1`, `run.sh`, `setup.ps1`, `setup.sh`, `dev-server.ps1`, `opencode.json`, `AGENTS.md`, `CLAUDE.md`, `.gitignore`, and directories
 - `.gitignore` already blocks `/*.txt` and `/*.png` from root to prevent accidental commits
 
+## Knowledge Graph (graphify)
+
+Un graphe de connaissances du projet est généré par le skill `/graphify` (skill Claude installé dans `~/.claude/skills/graphify/`) et stocké dans `graphify-out/`.
+
+- **Sorties versionnées** (commit à chaque build) : `graph.html` (graphe interactif, ~938 nœuds/1162 arêtes), `graph.json` (données brutes), `GRAPH_REPORT.md` (rapport : God Nodes, Surprising Connections, communautés), `cost.json` (coût tokens cumulé), `manifest.json` (pour les mises à jour incrémentales `--update`), `.graphify_labels.json` (noms des communautés)
+- **Non versionnés** (`.gitignore`) : `.graphify_python` (chemin interpréteur uv, machine-spécifique), `.graphify_root` (racine de scan), `cache/` (cache d'extraction régénérable ~1 Mo)
+- **Régénération** : `/graphify` depuis la racine du projet ; au-delà de ~500 fichiers, le skill demande un filtre (utiliser « tout sauf vendor » — le périmètre est ~356 fichiers : code 158, document 41, paper 82, image 75)
+- **Extraction** : AST pour le code (546 nœuds) + extraction sémantique par sous-agents pour docs/PDF/images (392 nœuds). Sans clé `GEMINI_API_KEY`, l'extraction sémantique est faite par les sous-agents de la session. Les PDF/images non lisibles par le modèle produisent des nœuds dérivés des noms de fichiers (marqués INFERRED/AMBIGUOUS)
+- **Mise à jour incrémentale** : `graphify --update` ré-extrait uniquement les fichiers modifiés (utilise `manifest.json` + `cache/`)
+- **Requêtes** : `/graphify query "<question>"` interroge `graphify-out/graph.json` existant sans reconstruire
+
 ## Auto-Migration System
 
 Le système de migration automatique synchronise le schéma DB entre plusieurs PC (XAMPP local).
