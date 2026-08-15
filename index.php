@@ -12,7 +12,7 @@ $allowedPages = [
     'nationalites', 'lieux-naissance', 'qualites-associe', 'fonctions',
     'activites', 'activites-ompic',
     'dashboard',
-    'societe', 'societes', 'associe', 'associes', 'contrats',
+    'societe', 'societes', 'creations', 'domiciliations', 'associe', 'associes', 'contrats',
     'collaborateur', 'collaborateurs',
     'generation', 'templates',
     'documents', 'download_all',
@@ -33,6 +33,8 @@ $pageDir = [
     // Dossiers
     'creation' => 'dossiers',
     'societes' => 'dossiers',
+    'creations' => 'dossiers',
+    'domiciliations' => 'dossiers',
     'societe' => 'dossiers',
     'associes' => 'dossiers',
     'associe' => 'dossiers',
@@ -87,6 +89,8 @@ $pageDir = [
 // Custom filenames for pages where the file != the page name
 $pageFile = [
     'societes' => 'societes_liste',
+    'creations' => 'creations_liste',
+    'domiciliations' => 'domiciliations_liste',
     'societe' => 'societe_details',
     'associes' => 'associes_liste',
     'associe' => 'associe_details',
@@ -144,6 +148,8 @@ $pageTitleMap = [
     'dashboard' => 'Tableau de bord',
     'societe' => 'Fiche societe',
     'societes' => 'Societes',
+    'creations' => 'Creations',
+    'domiciliations' => 'Domiciliations',
     'associes' => 'Associes',
     'associe' => 'Fiche associe',
     'contrats' => 'Contrats',

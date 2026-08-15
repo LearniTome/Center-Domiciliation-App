@@ -795,6 +795,8 @@ function get_page_permission(string $page): ?string
         'dashboard' => 'dashboard.view',
 
         'societes' => 'societes.view',
+        'creations' => 'societes.view',
+        'domiciliations' => 'societes.view',
         'societe' => 'societes.view',
 
         'associes' => 'associes.view',
@@ -1558,6 +1560,8 @@ function page_display_name(string $page): string
     $map = [
         'dashboard' => 'Tableau de bord',
         'societes' => 'Sociétés',
+        'creations' => 'Créations',
+        'domiciliations' => 'Domiciliations',
         'societe' => 'Détail société',
         'creation' => 'Nouveau dossier',
         'associes' => 'Associés',

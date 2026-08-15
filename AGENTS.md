@@ -81,9 +81,9 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - `ensure_template_folder(string folderName): bool` — crée `templates/<folder>/` si inexistant
 
 ## URL Patterns
-- List page: `index.php?page=societes`
+- List pages sociétés: `page=creations` (dossiers création), `page=domiciliations` (dossiers domiciliation), `page=societes` (toutes, hors menu, conservée pour compatibilité)
 - Detail page: `index.php?page=societe&id=1`
-- Search: `index.php?page=societes&q=term` — use `search_term()` + `like_term()`
+- Search: `index.php?page=creations&q=term` — use `search_term()` + `like_term()`
 
 ## Database (MySQL via PDO)
 - Host: `127.0.0.1:3306`, DB: `center_domiciliation`, user: `root`, pass: empty

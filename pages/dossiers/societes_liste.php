@@ -2,6 +2,12 @@
 
 declare(strict_types=1);
 
+// Page paramétrable : les wrappers creations_liste / domiciliations_liste définissent
+// $listeType (null = toutes, 'creation', 'domiciliation') et $listePage (clé de page pour les URLs).
+$listeType = $listeType ?? null;
+$listePage = $listePage ?? ($page ?? 'societes');
+$showCreationCol = ($listeType === null || $listeType === 'creation');
+
 $query = search_term();
 $user = current_user();
 $isAdmin = $user && in_array((int) $user['role_id'], [1, 2], true);
@@ -48,7 +54,7 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
         $stmt->execute(['id' => (int) $_POST['id']]);
         log_activity($pdo, 'delete', 'societe', (int) $_POST['id']);
         set_flash('success', 'Societe supprimee avec succes.');
-        redirect_to('societes');
+        redirect_to($listePage);
     }
 }
 
@@ -59,13 +65,22 @@ if (($pdo ?? null) instanceof PDO) {
         $userFilter = ' AND created_by = :user_id';
         $userParams['user_id'] = (int) $user['id'];
     }
+    $typeFilter = '';
+    $typeParams = [];
+    if ($listeType === 'creation') {
+        $typeFilter = ' AND societe_type_generation = :type_gen';
+        $typeParams['type_gen'] = 'creation';
+    } elseif ($listeType === 'domiciliation') {
+        $typeFilter = ' AND (societe_type_generation IS NULL OR societe_type_generation <> :type_gen)';
+        $typeParams['type_gen'] = 'creation';
+    }
     if ($query !== '') {
         $likeTerm = like_term($query);
         $stmt = $pdo->prepare('
             SELECT *
             FROM societes
             WHERE (societe_raison_sociale LIKE :term1 OR societe_forme_juridique LIKE :term2 OR societe_ice LIKE :term3 OR societe_ville LIKE :term4)
-            ' . $userFilter . '
+            ' . $userFilter . $typeFilter . '
             ORDER BY id DESC
         ');
         $params = [
@@ -73,17 +88,24 @@ if (($pdo ?? null) instanceof PDO) {
             'term2' => $likeTerm,
             'term3' => $likeTerm,
             'term4' => $likeTerm,
-        ] + $userParams;
+        ] + $userParams + $typeParams;
         $stmt->execute($params);
         $societes = $stmt->fetchAll();
     } else {
         $sql = 'SELECT * FROM societes';
+        $where = [];
         if ($userFilter) {
-            $sql .= ' WHERE created_by = :user_id';
+            $where[] = 'created_by = :user_id';
+        }
+        if ($typeFilter) {
+            $where[] = substr($typeFilter, 4); // enlève le ' AND '
+        }
+        if ($where) {
+            $sql .= ' WHERE ' . implode(' AND ', $where);
         }
         $sql .= ' ORDER BY id DESC';
         $stmt = $pdo->prepare($sql);
-        $stmt->execute($userParams);
+        $stmt->execute($userParams + $typeParams);
         $societes = $stmt->fetchAll();
     }
 
@@ -119,9 +141,9 @@ if (($pdo ?? null) instanceof PDO) {
         ];
 
         if ($exportType === 'csv') {
-            export_csv('societes.csv', $headers, $rows);
+            export_csv($listePage . '.csv', $headers, $rows);
         } else {
-            export_excel('societes.xlsx', $headers, $rows);
+            export_excel($listePage . '.xlsx', $headers, $rows);
         }
     }
 } else {
@@ -138,15 +160,15 @@ if (($pdo ?? null) instanceof PDO) {
                 <button class="btn btn-next" type="button" data-quick-create-btn><span class="material-symbols-outlined">add</span> Nouvelle societe</button>
                 <?php endif; ?>
                 <button class="btn btn-secondary" type="button" data-col-toggle-btn><span class="material-symbols-outlined">view_column</span> Colonnes <span class="col-toggle-count" data-col-count>0/0</span></button>
-                <a class="btn btn-info" href="<?= e(app_url('societes', ['export' => 'csv', 'q' => $query])) ?>"><span class="material-symbols-outlined">download</span> CSV</a>
-                <a class="btn btn-next" href="<?= e(app_url('societes', ['export' => 'xlsx', 'q' => $query])) ?>"><span class="material-symbols-outlined">table_chart</span> Excel</a>
+                <a class="btn btn-info" href="<?= e(app_url($listePage, ['export' => 'csv', 'q' => $query])) ?>"><span class="material-symbols-outlined">download</span> CSV</a>
+                <a class="btn btn-next" href="<?= e(app_url($listePage, ['export' => 'xlsx', 'q' => $query])) ?>"><span class="material-symbols-outlined">table_chart</span> Excel</a>
                 <?php if (has_permission('societes.import')): ?>
                 <button class="btn btn-secondary" type="button" data-import-btn="societes"><span class="material-symbols-outlined">upload_file</span> Importer Excel</button>
                 <?php endif; ?>
             </div>
         </div>
         <form method="get" class="stack search-bar">
-            <input type="hidden" name="page" value="societes">
+            <input type="hidden" name="page" value="<?= e($listePage) ?>">
             <div class="inline-form">
                 <input
                     type="search"
@@ -156,7 +178,7 @@ if (($pdo ?? null) instanceof PDO) {
                 >
                 <button type="submit"><span class="material-symbols-outlined">search</span> Rechercher</button>
                 <?php if ($query !== ''): ?>
-                    <a class="btn btn-cancel" href="<?= e(app_url('societes')) ?>"><span class="material-symbols-outlined">close</span> Effacer</a>
+                    <a class="btn btn-cancel" href="<?= e(app_url($listePage)) ?>"><span class="material-symbols-outlined">close</span> Effacer</a>
                 <?php endif; ?>
             </div>
         </form>
@@ -169,7 +191,9 @@ if (($pdo ?? null) instanceof PDO) {
                 <tr>
                     <th data-bulk-col><input type="checkbox" data-bulk-select-all title="Tout selectionner"></th>
                     <th data-col="dossier">N° Dossier</th>
+                    <?php if ($showCreationCol): ?>
                     <th data-col="dossier-creation">N° Dossier Creation</th>
+                    <?php endif; ?>
                     <th data-col="source">Origine</th>
                     <th data-col="raison-sociale">Raison sociale</th>
                     <th data-col="forme">Forme</th>
@@ -192,7 +216,9 @@ if (($pdo ?? null) instanceof PDO) {
                     <tr data-id="<?= (int) $societe['id'] ?>">
                         <td data-bulk-cell><input type="checkbox" data-bulk-checkbox title="Selectionner"></td>
                         <td<?= $canEdit ? ' data-editable="societe_dossier_domiciliation_number"' : '' ?>><?= e($societe['societe_dossier_domiciliation_number'] ?? '-') ?></td>
+                        <?php if ($showCreationCol): ?>
                         <td<?= $canEdit ? ' data-editable="societe_dossier_creation_number"' : '' ?>><?= e($societe['societe_dossier_creation_number'] ?? '-') ?></td>
+                        <?php endif; ?>
                         <td<?= $canEdit ? ' data-editable="societe_source" data-editable-options="' . $sourceJson . '"' : '' ?>>
                             <?php $src = $societe['societe_source'] ?? 'creation'; ?>
                             <?php if ($src === 'cession'): ?>
@@ -234,8 +260,10 @@ if (($pdo ?? null) instanceof PDO) {
                 <tr data-id="">
                     <td data-bulk-cell><input type="checkbox" data-bulk-checkbox title="Selectionner"></td>
                     <td data-cell="societe_dossier_domiciliation_number"></td>
+                    <?php if ($showCreationCol): ?>
                     <td data-cell="societe_dossier_creation_number"></td>
-                    <td><span class="badge badge-success" style="font-size:0.65rem">Creation</span></td>
+                    <?php endif; ?>
+                    <td><span class="badge <?= $listeType === 'domiciliation' ? 'badge-info' : 'badge-success' ?>" style="font-size:0.65rem"><?= $listeType === 'domiciliation' ? 'Domiciliation' : 'Creation' ?></span></td>
                     <td data-cell-link="societe" data-cell-value="id" data-cell-label="societe_raison_sociale"></td>
                     <td data-cell="societe_forme_juridique"></td>
                     <td data-cell="societe_ice"></td>
@@ -252,7 +280,7 @@ if (($pdo ?? null) instanceof PDO) {
                     <td data-cell-actions>
                         <a class="btn-icon primary" href="" title="Voir"><span class="material-symbols-outlined">visibility</span></a>
                         <a class="btn-icon info" href="" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
-                        <form method="post" action="index.php?page=societes">
+                        <form method="post" action="index.php?page=<?= e($listePage) ?>">
                             <input type="hidden" name="action" value="delete">
                             <input type="hidden" name="id" value="">
                             <input type="hidden" name="_csrf_token" value="">
@@ -268,6 +296,10 @@ if (($pdo ?? null) instanceof PDO) {
     <?php
     $quickCreateTitle = 'Nouvelle societe';
     $quickCreateTable = 'societes';
+    $quickCreateDefaults = [];
+    if ($listeType === 'creation' || $listeType === 'domiciliation') {
+        $quickCreateDefaults['societe_type_generation'] = $listeType;
+    }
     $adressesSimple = [];
     if (!empty($adressesAll)) {
         foreach ($adressesAll as $r) {
@@ -275,6 +307,7 @@ if (($pdo ?? null) instanceof PDO) {
         }
     }
     $quickCreateFields = [
+        ['type' => 'hidden', 'name' => 'societe_type_generation', 'value' => $listeType ?? ''],
         ['type' => 'title', 'label' => 'Identifiants'],
         ['name' => 'societe_raison_sociale', 'label' => 'Raison sociale', 'type' => 'text', 'required' => true],
         ['name' => 'societe_forme_juridique', 'label' => 'Forme juridique', 'type' => 'select', 'options' => $formesOptions, 'required' => true],

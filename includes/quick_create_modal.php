@@ -35,6 +35,8 @@ $modalAttr = $modalKey !== '' ? 'quick-create-' . $modalKey : 'quick-create';
                         <h3 class="section-title"><?= e($field['label'] ?? '') ?></h3>
                     <?php elseif (($field['type'] ?? '') === 'title-secondary'): ?>
                         <h4 style="grid-column:1/-1;font-size:0.8rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-secondary);margin:8px 0 2px;padding:0"><?= e($field['label'] ?? '') ?></h4>
+                    <?php elseif (($field['type'] ?? '') === 'hidden'): ?>
+                        <input type="hidden" name="<?= e($field['name'] ?? '') ?>" value="<?= e((string) ($field['value'] ?? ($quickCreateDefaults[$field['name']] ?? ''))) ?>">
                     <?php elseif (($field['type'] ?? '') === 'dynamic-select' && isset($field['options'])): ?>
                         <h3 class="section-title"><?= e($field['label'] ?? '') ?></h3>
                         <div data-dynamic-select="<?= e($field['name'] ?? '') ?>" style="grid-column:1/-1">

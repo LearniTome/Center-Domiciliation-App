@@ -212,9 +212,25 @@ function handle_quick_create(PDO $pdo, array $allowedTables, array $user): array
 
     $allowedCols = $allowedTables[$table];
     $data = [];
+    $emptyToNull = [];
+    $colStmt = $pdo->prepare("SHOW COLUMNS FROM {$table}");
+    $colStmt->execute();
+    $hasCreatedBy = false;
+    foreach ($colStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        if (preg_match('/^(date|datetime|timestamp|decimal|double|float|int|bigint|tinyint|smallint|mediumint)\b/i', $row['Type'])) {
+            $emptyToNull[$row['Field']] = true;
+        }
+        if ($row['Field'] === 'created_by') {
+            $hasCreatedBy = true;
+        }
+    }
     foreach ($allowedCols as $col) {
         if (isset($_POST[$col])) {
-            $data[$col] = $_POST[$col];
+            $value = $_POST[$col];
+            if ($value === '' && isset($emptyToNull[$col])) {
+                $value = null;
+            }
+            $data[$col] = $value;
         }
     }
     if ($table === 'societes') {
@@ -222,9 +238,7 @@ function handle_quick_create(PDO $pdo, array $allowedTables, array $user): array
             $data['societe_source'] = 'creation';
         }
     }
-    $colStmt = $pdo->prepare("SHOW COLUMNS FROM {$table} LIKE 'created_by'");
-    $colStmt->execute();
-    if ($colStmt->fetch()) {
+    if ($hasCreatedBy) {
         $data['created_by'] = (int) $user['id'];
     }
 

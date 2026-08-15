@@ -60,7 +60,7 @@ if (!$societe) {
     <section class="card stack">
         <h2>Societe introuvable</h2>
         <p>La fiche demandee n'existe pas ou n'est plus disponible.</p>
-        <a class="btn" href="<?= e(app_url('societes')) ?>">Retour aux societes</a>
+        <a class="btn" href="<?= e(app_url($retourPage)) ?>">Retour aux societes</a>
     </section>
     <?php
     return;
@@ -70,6 +70,7 @@ $editing = isset($_GET['edit']) && $_GET['edit'] === '1';
 
 $typeGen = (string) ($societe['societe_type_generation'] ?? '');
 $isCreation = $typeGen === 'creation';
+$retourPage = $isCreation ? 'creations' : 'domiciliations';
 $procLabels = ['normal' => 'Normale', 'acceleree' => 'Acceleree'];
 $depotLabels = ['depot_physique' => 'Depot Physique', 'depot_en_ligne' => 'Depot En Ligne'];
 $procLabel = $procLabels[$societe['societe_procedure_creation'] ?? ''] ?? ($societe['societe_procedure_creation'] ?? '-');
@@ -326,7 +327,7 @@ $docTypeLabels = [
             <a class="btn btn-info" href="<?= e(app_url('societe', ['id' => $societeId, 'edit' => '1'])) ?>"><span class="material-symbols-outlined">edit</span> Modifier</a>
             <a class="btn btn-next" href="<?= e(app_url('generation', ['societe_id' => $societeId])) ?>"><span class="material-symbols-outlined">sync</span> <?= count($documents) > 0 ? 'Regenerer documents' : 'Generer documents' ?></a>
         <?php endif; ?>
-        <a class="btn btn-back" href="<?= e(app_url('societes')) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
+        <a class="btn btn-back" href="<?= e(app_url($retourPage)) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
     </div>
 </div>
 

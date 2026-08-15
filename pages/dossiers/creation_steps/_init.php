@@ -101,7 +101,7 @@ if (isset($_GET['cancel']) && $_GET['cancel'] === '1') {
     unset($_SESSION['creation_wizard']);
     log_activity($pdo, 'cancel', 'wizard');
     set_flash('success', 'Creation annulee.');
-    redirect_to('societes');
+    redirect_to('creations');
 }
 
 $societeData = array_merge([
