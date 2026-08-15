@@ -68,6 +68,13 @@ if (!$societe) {
 
 $editing = isset($_GET['edit']) && $_GET['edit'] === '1';
 
+$typeGen = (string) ($societe['societe_type_generation'] ?? '');
+$isCreation = $typeGen === 'creation';
+$procLabels = ['normal' => 'Normale', 'acceleree' => 'Acceleree'];
+$depotLabels = ['depot_physique' => 'Depot Physique', 'depot_en_ligne' => 'Depot En Ligne'];
+$procLabel = $procLabels[$societe['societe_procedure_creation'] ?? ''] ?? ($societe['societe_procedure_creation'] ?? '-');
+$depotLabel = $depotLabels[$societe['societe_mode_depot'] ?? ''] ?? ($societe['societe_mode_depot'] ?? '-');
+
 if (is_post() && isset($_POST['validate_submit']) && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
     $selected = $_POST['selected_files'] ?? [];
@@ -303,7 +310,13 @@ $docTypeLabels = [
         <?= csrf_input() ?>
 <?php endif; ?>
 <div class="section-title-row">
-    <h2><?= e($societe['societe_raison_sociale']) ?></h2>
+    <h2><?= e($societe['societe_raison_sociale']) ?>
+        <?php if ($isCreation): ?>
+            <span class="statut-badge valide">Creation</span>
+        <?php else: ?>
+            <span class="statut-badge actif">Domiciliation</span>
+        <?php endif; ?>
+    </h2>
     <div class="table-actions">
         <?php if ($editing): ?>
             <button class="btn btn-next" type="submit"><span class="material-symbols-outlined">check</span> Enregistrer</button>
@@ -318,9 +331,29 @@ $docTypeLabels = [
 
 <section class="stats small stats-bottom-margin">
     <article class="stat">
-        <span>Societe</span>
+        <span>Forme juridique</span>
         <strong><?= e($societe['societe_forme_juridique'] ?: '-') ?></strong>
     </article>
+    <article class="stat">
+        <span>Type de generation</span>
+        <strong>
+            <?php if ($isCreation): ?>
+                <span class="statut-badge valide">Creation</span>
+            <?php else: ?>
+                <span class="statut-badge actif">Domiciliation</span>
+            <?php endif; ?>
+        </strong>
+    </article>
+    <article class="stat">
+        <span>N Dossier Domiciliation</span>
+        <strong><?= e($societe['societe_dossier'] ?: '-') ?></strong>
+    </article>
+    <?php if ($isCreation): ?>
+    <article class="stat">
+        <span>N Dossier Creation</span>
+        <strong><?= e($societe['societe_dossier_creation'] ?: '-') ?></strong>
+    </article>
+    <?php endif; ?>
     <article class="stat">
         <span>Associes</span>
         <strong><?= count($associes) ?></strong>
@@ -336,10 +369,6 @@ $docTypeLabels = [
     <article class="stat">
         <span>Documents</span>
         <strong><?= count($documents) ?></strong>
-    </article>
-    <article class="stat">
-        <span>Dossier</span>
-        <strong><?= e($societe['societe_dossier'] ?: '-') ?></strong>
     </article>
     <article class="stat">
         <span>Ville</span>
@@ -377,11 +406,11 @@ $docTypeLabels = [
                 </label>
                 <h3 class="section-title">Identifiants</h3>
                 <label class="field">
-                    <span>Dossier domiciliation</span>
+                    <span>N Dossier Domiciliation</span>
                     <input name="societe_dossier" value="<?= e((string) $societe['societe_dossier']) ?>">
                 </label>
                 <label class="field" id="field-dossier-creation" style="<?= (string) $societe['societe_type_generation'] === 'creation' ? '' : 'display:none' ?>">
-                    <span>Dossier creation</span>
+                    <span>N Dossier Creation</span>
                     <input name="societe_dossier_creation" value="<?= e((string) ($societe['societe_dossier_creation'] ?? '')) ?>">
                 </label>
                 <label class="field">
@@ -550,18 +579,18 @@ $docTypeLabels = [
         <div class="form-grid">
             <h3 class="section-title">Procedure</h3>
             <div class="info-grid">
-                <div><span>Type generation</span><strong><?= e($societe['societe_type_generation'] ?: '-') ?></strong></div>
-                <?php if (($societe['societe_type_generation'] ?? '') === 'creation'): ?>
-                    <div><span>Procedure creation</span><strong><?= e($societe['societe_procedure_creation'] ?: '-') ?></strong></div>
-                    <div class="full"><span>Mode depot creation</span><strong><?= e($societe['societe_mode_depot'] ?: '-') ?></strong></div>
+                <div><span>Type generation</span><strong><?= e($typeGen ?: '-') ?></strong></div>
+                <?php if ($isCreation): ?>
+                    <div><span>Procedure creation</span><strong><?= e($procLabel) ?></strong></div>
+                    <div class="full"><span>Mode depot creation</span><strong><?= e($depotLabel) ?></strong></div>
                 <?php endif; ?>
             </div>
 
             <h3 class="section-title">Identifiants</h3>
             <div class="info-grid">
-                <div><span>Dossier domiciliation</span><strong><?= e($societe['societe_dossier'] ?: '-') ?></strong></div>
-                <?php if (($societe['societe_type_generation'] ?? '') === 'creation'): ?>
-                <div><span>Dossier creation</span><strong><?= e($societe['societe_dossier_creation'] ?: '-') ?></strong></div>
+                <div><span>N Dossier Domiciliation</span><strong><?= e($societe['societe_dossier'] ?: '-') ?></strong></div>
+                <?php if ($isCreation): ?>
+                <div><span>N Dossier Creation</span><strong><?= e($societe['societe_dossier_creation'] ?: '-') ?></strong></div>
                 <?php endif; ?>
                 <div><span>Forme juridique</span><strong><?= e($societe['societe_forme_juridique'] ?: '-') ?></strong></div>
                 <div><span>ICE</span><strong><?= e($societe['societe_ice'] ?: '-') ?></strong></div>

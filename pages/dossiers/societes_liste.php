@@ -168,8 +168,8 @@ if (($pdo ?? null) instanceof PDO) {
                 <thead>
                 <tr>
                     <th data-bulk-col><input type="checkbox" data-bulk-select-all title="Tout selectionner"></th>
-                    <th data-col="dossier">Dossier</th>
-                    <th data-col="dossier-creation">Dossier creation</th>
+                    <th data-col="dossier">N Dossier Domiciliation</th>
+                    <th data-col="dossier-creation">N Dossier Creation</th>
                     <th data-col="source">Origine</th>
                     <th data-col="raison-sociale">Raison sociale</th>
                     <th data-col="forme">Forme</th>
