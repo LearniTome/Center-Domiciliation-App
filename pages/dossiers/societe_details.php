@@ -467,11 +467,6 @@ $actionLabels = [
 <?php endif; ?>
 <div class="section-title-row">
     <h2><?= e($societe['societe_raison_sociale']) ?>
-        <?php if ($isCreation): ?>
-            <span class="statut-badge valide">Creation</span>
-        <?php else: ?>
-            <span class="statut-badge actif">Domiciliation</span>
-        <?php endif; ?>
     </h2>
     <div class="table-actions">
         <?php if ($editing): ?>
