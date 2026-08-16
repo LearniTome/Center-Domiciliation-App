@@ -787,7 +787,7 @@ $actionLabels = [
 <?php else: ?>
     <article class="card stack" id="societe-infos">
         <div class="info-cards">
-            <section class="info-card">
+            <section class="info-card" style="--card-accent: var(--primary)">
                 <div class="info-card-title" style="color:var(--primary)">
                     <span class="material-symbols-outlined">assignment</span>
                     <h3>Procedure</h3>
@@ -801,7 +801,7 @@ $actionLabels = [
                 </div>
             </section>
 
-            <section class="info-card">
+            <section class="info-card" style="--card-accent: var(--info)">
                 <div class="info-card-title" style="color:var(--info)">
                     <span class="material-symbols-outlined">badge</span>
                     <h3>Identifiants</h3>
@@ -824,7 +824,7 @@ $actionLabels = [
                 </div>
             </section>
 
-            <section class="info-card">
+            <section class="info-card" style="--card-accent: var(--success)">
                 <div class="info-card-title" style="color:var(--success)">
                     <span class="material-symbols-outlined">account_balance_wallet</span>
                     <h3>Capital</h3>
@@ -836,7 +836,7 @@ $actionLabels = [
                 </div>
             </section>
 
-            <section class="info-card">
+            <section class="info-card" style="--card-accent: var(--warning)">
                 <div class="info-card-title" style="color:var(--warning)">
                     <span class="material-symbols-outlined">location_on</span>
                     <h3>Adresse</h3>
@@ -848,7 +848,7 @@ $actionLabels = [
                 </div>
             </section>
 
-            <section class="info-card">
+            <section class="info-card" style="--card-accent: var(--btn-back)">
                 <div class="info-card-title" style="color:var(--btn-back)">
                     <span class="material-symbols-outlined">contact_mail</span>
                     <h3>Contact</h3>

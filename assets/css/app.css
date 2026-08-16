@@ -1350,51 +1350,73 @@ td.col-pdf .pdf-pending {
 /* Fiche societe — cartes d'information (mode lecture) */
 .info-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 0.75rem;
-    align-items: start;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    align-items: stretch;
 }
 .info-card {
+    position: relative;
     border: 1px solid var(--line);
-    border-radius: var(--radius);
-    padding: 0.7rem;
-    margin-top: 0;
+    border-radius: var(--radius-lg);
+    padding: 1.1rem 1.2rem;
+    background: linear-gradient(180deg, var(--panel-strong) 0%, var(--panel) 100%);
+    transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
+    overflow: hidden;
+}
+.info-card::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+    background: var(--card-accent, var(--primary));
+    opacity: 0.85;
+}
+.info-card:hover {
+    border-color: color-mix(in srgb, var(--card-accent, var(--primary)) 45%, var(--line));
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
 }
 .info-card-title {
     display: flex;
     align-items: center;
-    gap: 6px;
-    margin-bottom: 0.5rem;
-    padding-bottom: 6px;
+    gap: 8px;
+    margin-bottom: 0.7rem;
+    padding-bottom: 0.6rem;
     border-bottom: 1px solid var(--line);
 }
 .info-card-title .material-symbols-outlined {
-    font-size: 1.1rem;
+    font-size: 1.15rem;
+    padding: 6px;
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, currentColor 12%, transparent);
+    color: inherit;
 }
 .info-card-title h3 {
     margin: 0;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
     color: inherit;
 }
 .info-card .info-grid {
-    gap: 6px 14px;
+    gap: 4px 16px;
 }
 .info-card .info-grid > div {
-    padding: 4px 0;
+    padding: 5px 0;
 }
 .info-card .info-grid > div > span {
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
     color: var(--text-secondary);
 }
 .info-card .info-grid > div > strong {
-    font-size: 0.9rem;
+    font-size: 0.92rem;
     color: var(--text);
     font-weight: 600;
+    line-height: 1.35;
+    word-break: break-word;
 }
 .info-card .info-grid .text-warning { color: var(--warning); }
 .info-card .info-grid .text-danger { color: var(--danger); }
