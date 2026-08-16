@@ -1352,18 +1352,19 @@ td.col-pdf .pdf-pending {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
     gap: 1rem;
-    align-items: start;
+    align-items: stretch;
 }
 .info-col {
     display: grid;
     gap: 1rem;
-    align-content: start;
+    grid-auto-rows: 1fr;
 }
 .info-col-wide {
     grid-template-columns: 1fr;
 }
 .info-card {
     position: relative;
+    height: 100%;
     border: 1px solid var(--line);
     border-radius: var(--radius-lg);
     padding: 1.1rem 1.2rem;
