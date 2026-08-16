@@ -347,6 +347,11 @@ Le projet utilise 3 serveurs MCP configurés dans `opencode.json` :
 | **chrome-devtools** | `chrome-devtools-mcp` | Automatisation navigateur (tests UI, debug visuel) |
 | **mysql-dev** | `@berthojoris/mcp-mysql-server` | Requêtes SQL directes sur la base locale |
 
+### Connexion MySQL depuis le `.env`
+- Le serveur MCP `mysql-dev` est lancé via `scripts/mysql-mcp.mjs` (wrapper Node) qui lit `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD` depuis `.env` — pas de valeurs en dur.
+- Les scripts PowerShell qui parlent à MySQL (`scripts/sync.ps1`, `scripts/post-push-sync.ps1`) chargent `.env` via `scripts/_env.ps1` (dot-source) et utilisent `$env:DB_*`.
+- Pour tester manuellement : `node scripts/mysql-mcp.mjs` (reste actif en stdio) ou `mysql -u "$(Get-Content .env | Select-String '^DB_USERNAME=' | ForEach-Object {$_.ToString().Split('=')[1]})"`.
+
 ### Prérequis
 - **Node.js ≥ 18** installé et dans le `PATH`
 - Les packages sont téléchargés automatiquement par `npx` au premier lancement d'OpenCode
@@ -355,7 +360,7 @@ Le projet utilise 3 serveurs MCP configurés dans `opencode.json` :
 ```powershell
 npx -y @modelcontextprotocol/server-memory --version
 npx -y chrome-devtools-mcp@latest --no-usage-statistics --version
-npx -y @berthojoris/mcp-mysql-server "mysql://root@127.0.0.1:3306/center_domiciliation" "list,read" --version
+node scripts/mysql-mcp.mjs
 ```
 
 ### Dépannage
@@ -366,7 +371,7 @@ npx -y @berthojoris/mcp-mysql-server "mysql://root@127.0.0.1:3306/center_domicil
 ## Root Directory Cleanliness
 - **No `.txt` or `.png` files in root** — place documentation text files in `docs/`, screenshots in `docs/screenshots/`
 - Root should only contain: `index.php`, `run.ps1`, `router.php`, `api.php`, `.env.example`, `composer.json`, `composer.lock`, `composer.phar`, `opencode.json`, `AGENTS.md`, `README.md`, `.gitignore`, and directories
-- **Scripts d'outillage** (`.ps1`/`.sh`/`.cmd`) rangés dans `scripts/` : `run.sh`, `setup.ps1`, `setup.sh`, `dev-server.ps1`, `sync.ps1`, `post-push-sync.ps1`, `git-push.cmd`, `chrome-debug.ps1` — seul `run.ps1` (lanceur XAMPP) reste à la racine
+- **Scripts d'outillage** (`.ps1`/`.sh`/`.cmd`) rangés dans `scripts/` : `run.sh`, `setup.ps1`, `setup.sh`, `dev-server.ps1`, `sync.ps1`, `post-push-sync.ps1`, `git-push.cmd`, `chrome-debug.ps1`, `_env.ps1` (chargeur `.env` pour PowerShell), `mysql-mcp.mjs` (wrapper MCP MySQL) — seul `run.ps1` (lanceur XAMPP) reste à la racine
 - `.gitignore` already blocks `/*.txt` and `/*.png` from root to prevent accidental commits
 
 ## Knowledge Graph (graphify)

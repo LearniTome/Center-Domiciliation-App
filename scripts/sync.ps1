@@ -4,7 +4,8 @@ param(
 )
 
 $ProjectRoot = Split-Path $PSScriptRoot -Parent
-$DbName = "center_domiciliation"
+. "$PSScriptRoot\_env.ps1"
+$DbName = $env:DB_NAME
 $ExportDir = Join-Path $ProjectRoot "database\exports"
 
 # ----- Detection XAMPP -----
@@ -61,7 +62,7 @@ function Export-Database {
     $file = Join-Path $ExportDir "${DbName}_${date}.sql"
 
     Write-Host "[Export] Dump de $DbName..." -ForegroundColor Yellow
-    & $Mysqldump -u root --no-create-info --complete-insert --skip-extended-insert $DbName 2>&1 | Out-File -FilePath $file -Encoding UTF8
+    & $Mysqldump -u $env:DB_USERNAME $(if ($env:DB_PASSWORD) { "--password=$env:DB_PASSWORD" }) --no-create-info --complete-insert --skip-extended-insert $DbName 2>&1 | Out-File -FilePath $file -Encoding UTF8
 
     if ($LASTEXITCODE -ne 0) {
         Write-Host "[ERREUR] Echec du dump." -ForegroundColor Red
@@ -107,8 +108,8 @@ function Import-Database {
 
     Write-Host "[Import] Restauration depuis $FilePath..." -ForegroundColor Yellow
 
-    & $Mysql -u root -e "DROP DATABASE IF EXISTS ``$DbName``; CREATE DATABASE ``$DbName`` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>&1 | Out-Null
-    & $Mysql -u root $DbName < $FilePath 2>&1 | Out-Null
+    & $Mysql -u $env:DB_USERNAME $(if ($env:DB_PASSWORD) { "--password=$env:DB_PASSWORD" }) -e "DROP DATABASE IF EXISTS ``$DbName``; CREATE DATABASE ``$DbName`` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>&1 | Out-Null
+    & $Mysql -u $env:DB_USERNAME $(if ($env:DB_PASSWORD) { "--password=$env:DB_PASSWORD" }) $DbName < $FilePath 2>&1 | Out-Null
 
     if ($LASTEXITCODE -eq 0) {
         Write-Host "      Import reussi !" -ForegroundColor Green
