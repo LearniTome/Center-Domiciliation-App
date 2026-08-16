@@ -6,7 +6,7 @@
 
 set -e
 
-PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PHP_PORT=8080
 URL="http://localhost:$PHP_PORT/?autologin=1"
 

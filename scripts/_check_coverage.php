@@ -1,6 +1,6 @@
 <?php
 require __DIR__ . '/../src/analyseur_templates.php';
-$dir = __DIR__ . '/templates';
+$dir = __DIR__ . '/../templates';
 $templates = TemplateAnalyzer::scanTemplates($dir);
 $analysis = TemplateAnalyzer::analyzeCoverage($templates);
 echo 'Total variables: ' . $analysis['summary']['total_variables'] . "\n";

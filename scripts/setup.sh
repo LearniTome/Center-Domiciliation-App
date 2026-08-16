@@ -6,7 +6,7 @@
 
 set -e
 
-PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PROJECT_NAME="$(basename "$PROJECT_ROOT")"
 PHP_PORT=8080
 URL="http://localhost:$PHP_PORT/"
@@ -235,7 +235,7 @@ echo "Application :  $URL"
 echo "phpMyAdmin :   (non disponible - utilise TablePlus ou Sequel Ace)"
 echo ""
 echo "Prochaine etape :"
-echo "  1. Configure l'API Claude dans config/ai.local.php (optionnel)"
+echo "  1. Copie .env.example vers .env et configure la cle API Anthropic (optionnel)"
 echo "  2. Connecte-toi avec les identifiants de seed.sql"
 echo ""
 

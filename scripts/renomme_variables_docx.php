@@ -10,7 +10,7 @@ declare(strict_types=1);
  * Le script modifie les fichiers sur place (backup .bak créé).
  */
 
-$templatesDir = __DIR__ . DIRECTORY_SEPARATOR . 'templates';
+$templatesDir = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'templates';
 
 $replacements = [
     // Societe

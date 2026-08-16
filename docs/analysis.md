@@ -30,7 +30,6 @@
 ```
 ├── index.php              # Front controller (21 pages)
 ├── AGENTS.md              # Instructions projet
-├── CLAUDE.md              # Mémoire projet
 ├── run.ps1                # Lanceur XAMPP
 ├── opencode.json          # Config MCP memory
 ├── config/

@@ -3,7 +3,7 @@ param(
     [string]$XamppPath = ""
 )
 
-$ProjectRoot = $PSScriptRoot
+$ProjectRoot = Split-Path $PSScriptRoot -Parent
 $DbName = "center_domiciliation"
 $ExportDir = Join-Path $ProjectRoot "database\exports"
 

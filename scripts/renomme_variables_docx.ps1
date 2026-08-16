@@ -1,4 +1,4 @@
-$templatesDir = Join-Path $PSScriptRoot "templates"
+$templatesDir = Join-Path (Split-Path $PSScriptRoot -Parent) "templates"
 
 $mapping = @{
     'DENOMINATION_SOCIALE'    = 'SOCIETE_RAISON_SOCIALE'

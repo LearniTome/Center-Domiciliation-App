@@ -12,7 +12,7 @@ param(
 $ErrorActionPreference = "Continue"
 
 # ----- 1. Chemins dynamiques -----
-$ProjectRoot = $PSScriptRoot  # Le dossier où se trouve setup.ps1
+$ProjectRoot = Split-Path $PSScriptRoot -Parent  # Racine du projet (un niveau au-dessus de scripts/)
 $ProjectName = Split-Path -Leaf $ProjectRoot
 $HtdocsLink  = ""  # sera défini après détection XAMPP
 
@@ -572,7 +572,7 @@ Write-Host "Application :  $url" -ForegroundColor Green
 Write-Host "phpMyAdmin :   http://localhost/phpmyadmin" -ForegroundColor Green
 Write-Host ""
 Write-Host "Prochaine etape :" -ForegroundColor Yellow
-Write-Host "  1. Configure l'API Claude dans config/ai.local.php (optionnel)" -ForegroundColor White
+Write-Host "  1. Copie .env.example vers .env et configure la cle API Anthropic (optionnel)" -ForegroundColor White
 Write-Host "  2. Connecte-toi avec les identifiants de seed.sql" -ForegroundColor White
 Write-Host ""
 

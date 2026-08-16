@@ -56,7 +56,7 @@ if (-not (Test-Path $HtdocsLink)) {
         }
         Write-Host "      $HtdocsLink -> $ProjectRoot" -ForegroundColor Green
     } catch {
-        Write-Host "[ATTENTION] Impossible de creer le lien. Lance .\setup.ps1 en Admin." -ForegroundColor Yellow
+        Write-Host "[ATTENTION] Impossible de creer le lien. Lance .\scripts\setup.ps1 en Admin." -ForegroundColor Yellow
     }
     Write-Host ""
 }

@@ -12,7 +12,7 @@ Démarre le serveur de développement de ce projet avec la nouvelle approche mul
    ```
    Docroot : la racine du projet, ou `public/` si le projet a un `public/index.php`. Utilise plutôt `dev-server.ps1` avec `-NoBrowser` si tu préfères :
    ```
-   powershell -NoProfile -ExecutionPolicy Bypass -File .\dev-server.ps1 -Project . -Port <port> -NoBrowser
+   powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\dev-server.ps1 -Project . -Port <port> -NoBrowser
    ```
 3. **Vérification** : attends ~2s puis teste avec `curl.exe -s -o NUL -w "%{http_code}" http://localhost:<port>/` — un code 200 ou 302 confirme que l'app répond.
 4. Confirme à l'utilisateur l'URL `http://localhost:<port>/` et le port utilisé.
