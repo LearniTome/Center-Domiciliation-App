@@ -1350,7 +1350,7 @@ td.col-pdf .pdf-pending {
 /* Fiche societe — cartes d'information (mode lecture) */
 .info-cards {
     display: grid;
-    grid-template-columns: 1.4fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 1rem;
     align-items: start;
 }
