@@ -1350,9 +1350,17 @@ td.col-pdf .pdf-pending {
 /* Fiche societe — cartes d'information (mode lecture) */
 .info-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-template-columns: 1.4fr 1fr 1fr;
     gap: 1rem;
-    align-items: stretch;
+    align-items: start;
+}
+.info-col {
+    display: grid;
+    gap: 1rem;
+    align-content: start;
+}
+.info-col-wide {
+    grid-template-columns: 1fr;
 }
 .info-card {
     position: relative;
@@ -4050,6 +4058,7 @@ tr[data-coverage], .row-mapped {
 }
 @media (max-width: 900px) {
     .template-editor-layout { grid-template-columns: 1fr; }
+    .info-cards { grid-template-columns: 1fr; }
 }
 @media print {
     .template-editor-layout body { background: white !important; margin: 0 !important; padding: 0 !important; }

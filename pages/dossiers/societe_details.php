@@ -787,77 +787,83 @@ $actionLabels = [
 <?php else: ?>
     <article class="card stack" id="societe-infos">
         <div class="info-cards">
-            <section class="info-card" style="--card-accent: var(--primary)">
-                <div class="info-card-title" style="color:var(--primary)">
-                    <span class="material-symbols-outlined">assignment</span>
-                    <h3>Procedure</h3>
-                </div>
-                <div class="info-grid">
-                    <div><span>Type generation</span><strong><?php if ($isCreation): ?><span class="statut-badge valide">Creation</span><?php else: ?><span class="statut-badge actif">Domiciliation</span><?php endif; ?></strong></div>
-                    <?php if ($isCreation): ?>
-                        <div><span>Procedure creation</span><strong><?= e($procLabel) ?></strong></div>
-                        <div class="full"><span>Mode depot creation</span><strong><?= e($depotLabel) ?></strong></div>
-                    <?php endif; ?>
-                </div>
-            </section>
+            <div class="info-col info-col-wide">
+                <section class="info-card" style="--card-accent: var(--info)">
+                    <div class="info-card-title" style="color:var(--info)">
+                        <span class="material-symbols-outlined">badge</span>
+                        <h3>Identifiants</h3>
+                    </div>
+                    <div class="info-grid">
+                        <div><span><?= e($dossierLabel) ?></span><strong><?= e($societe['societe_dossier_domiciliation_number'] ?: '-') ?></strong></div>
+                        <?php if ($isCreation): ?>
+                        <div><span>N° Dossier Creation</span><strong><?= e($societe['societe_dossier_creation_number'] ?: '-') ?></strong></div>
+                        <?php endif; ?>
+                        <div><span>Forme juridique</span><strong><?= e($societe['societe_forme_juridique'] ?: '-') ?></strong></div>
+                        <div><span>ICE</span><strong><?= e($societe['societe_ice'] ?: '-') ?></strong></div>
+                        <div><span>Date cert. negatif</span><strong><?= format_date($societe['societe_date_ice'] ?? null) ?></strong></div>
+                        <div><span>Date exp. cert. neg.</span><strong class="<?= $certExpClass ?>"><?= format_date($societe['societe_date_exp_cert_neg'] ?? null) ?></strong></div>
+                        <div><span>RC</span><strong><?= e($societe['societe_rc'] ?: '-') ?></strong></div>
+                        <div><span>IF</span><strong><?= e($societe['societe_if'] ?: '-') ?></strong></div>
+                        <?php if (($societe['societe_type_generation'] ?? '') === 'creation'): ?>
+                        <div class="full"><span>Activites (Statuts)</span><strong><?= e(!empty($societe['societe_activites_statuts']) ? (string) $societe['societe_activites_statuts'] : '-') ?></strong></div>
+                        <?php endif; ?>
+                        <div class="full"><span>Activites (OMPIC)</span><strong><?= e(!empty($societe['societe_activites_ompic']) ? fetch_activites_ompic_display($pdo ?? null, (string) $societe['societe_activites_ompic']) : '-') ?></strong></div>
+                    </div>
+                </section>
+            </div>
 
-            <section class="info-card" style="--card-accent: var(--info)">
-                <div class="info-card-title" style="color:var(--info)">
-                    <span class="material-symbols-outlined">badge</span>
-                    <h3>Identifiants</h3>
-                </div>
-                <div class="info-grid">
-                    <div><span><?= e($dossierLabel) ?></span><strong><?= e($societe['societe_dossier_domiciliation_number'] ?: '-') ?></strong></div>
-                    <?php if ($isCreation): ?>
-                    <div><span>N° Dossier Creation</span><strong><?= e($societe['societe_dossier_creation_number'] ?: '-') ?></strong></div>
-                    <?php endif; ?>
-                    <div><span>Forme juridique</span><strong><?= e($societe['societe_forme_juridique'] ?: '-') ?></strong></div>
-                    <div><span>ICE</span><strong><?= e($societe['societe_ice'] ?: '-') ?></strong></div>
-                    <div><span>Date cert. negatif</span><strong><?= format_date($societe['societe_date_ice'] ?? null) ?></strong></div>
-                    <div><span>Date exp. cert. neg.</span><strong class="<?= $certExpClass ?>"><?= format_date($societe['societe_date_exp_cert_neg'] ?? null) ?></strong></div>
-                    <div><span>RC</span><strong><?= e($societe['societe_rc'] ?: '-') ?></strong></div>
-                    <div><span>IF</span><strong><?= e($societe['societe_if'] ?: '-') ?></strong></div>
-                    <?php if (($societe['societe_type_generation'] ?? '') === 'creation'): ?>
-                    <div class="full"><span>Activites (Statuts)</span><strong><?= e(!empty($societe['societe_activites_statuts']) ? (string) $societe['societe_activites_statuts'] : '-') ?></strong></div>
-                    <?php endif; ?>
-                    <div class="full"><span>Activites (OMPIC)</span><strong><?= e(!empty($societe['societe_activites_ompic']) ? fetch_activites_ompic_display($pdo ?? null, (string) $societe['societe_activites_ompic']) : '-') ?></strong></div>
-                </div>
-            </section>
+            <div class="info-col">
+                <section class="info-card" style="--card-accent: var(--primary)">
+                    <div class="info-card-title" style="color:var(--primary)">
+                        <span class="material-symbols-outlined">assignment</span>
+                        <h3>Procedure</h3>
+                    </div>
+                    <div class="info-grid">
+                        <div><span>Type generation</span><strong><?php if ($isCreation): ?><span class="statut-badge valide">Creation</span><?php else: ?><span class="statut-badge actif">Domiciliation</span><?php endif; ?></strong></div>
+                        <?php if ($isCreation): ?>
+                            <div><span>Procedure creation</span><strong><?= e($procLabel) ?></strong></div>
+                            <div class="full"><span>Mode depot creation</span><strong><?= e($depotLabel) ?></strong></div>
+                        <?php endif; ?>
+                    </div>
+                </section>
 
-            <section class="info-card" style="--card-accent: var(--success)">
-                <div class="info-card-title" style="color:var(--success)">
-                    <span class="material-symbols-outlined">account_balance_wallet</span>
-                    <h3>Capital</h3>
-                </div>
-                <div class="info-grid">
-                    <div><span>Capital</span><strong><?= format_money($societe['societe_capital'] !== null ? (float) $societe['societe_capital'] : null) ?></strong></div>
-                    <div><span>Part social</span><strong><?= format_number($societe['societe_part_social'] !== null ? (float) $societe['societe_part_social'] : null) ?></strong></div>
-                    <div><span>Valeur nominale</span><strong><?= format_money($societe['societe_valeur_nominale'] !== null ? (float) $societe['societe_valeur_nominale'] : null) ?></strong></div>
-                </div>
-            </section>
+                <section class="info-card" style="--card-accent: var(--success)">
+                    <div class="info-card-title" style="color:var(--success)">
+                        <span class="material-symbols-outlined">account_balance_wallet</span>
+                        <h3>Capital</h3>
+                    </div>
+                    <div class="info-grid">
+                        <div><span>Capital</span><strong><?= format_money($societe['societe_capital'] !== null ? (float) $societe['societe_capital'] : null) ?></strong></div>
+                        <div><span>Part social</span><strong><?= format_number($societe['societe_part_social'] !== null ? (float) $societe['societe_part_social'] : null) ?></strong></div>
+                        <div><span>Valeur nominale</span><strong><?= format_money($societe['societe_valeur_nominale'] !== null ? (float) $societe['societe_valeur_nominale'] : null) ?></strong></div>
+                    </div>
+                </section>
+            </div>
 
-            <section class="info-card" style="--card-accent: var(--warning)">
-                <div class="info-card-title" style="color:var(--warning)">
-                    <span class="material-symbols-outlined">location_on</span>
-                    <h3>Adresse</h3>
-                </div>
-                <div class="info-grid">
-                    <div class="full"><span>Adresse reference</span><strong><?= e($societe['societe_adresse_siege'] ?: '-') ?></strong></div>
-                    <div><span>Ville</span><strong><?= e($societe['societe_ville'] ?: '-') ?></strong></div>
-                    <div><span>Tribunal</span><strong><?= e($societe['societe_tribunal'] ?: '-') ?><?= $currentTribunalType ? ' ('.e($currentTribunalType).')' : '' ?></strong></div>
-                </div>
-            </section>
+            <div class="info-col">
+                <section class="info-card" style="--card-accent: var(--warning)">
+                    <div class="info-card-title" style="color:var(--warning)">
+                        <span class="material-symbols-outlined">location_on</span>
+                        <h3>Adresse</h3>
+                    </div>
+                    <div class="info-grid">
+                        <div class="full"><span>Adresse reference</span><strong><?= e($societe['societe_adresse_siege'] ?: '-') ?></strong></div>
+                        <div><span>Ville</span><strong><?= e($societe['societe_ville'] ?: '-') ?></strong></div>
+                        <div><span>Tribunal</span><strong><?= e($societe['societe_tribunal'] ?: '-') ?><?= $currentTribunalType ? ' ('.e($currentTribunalType).')' : '' ?></strong></div>
+                    </div>
+                </section>
 
-            <section class="info-card" style="--card-accent: var(--btn-back)">
-                <div class="info-card-title" style="color:var(--btn-back)">
-                    <span class="material-symbols-outlined">contact_mail</span>
-                    <h3>Contact</h3>
-                </div>
-                <div class="info-grid">
-                    <div><span>Email</span><strong><?= e($societe['societe_email'] ?: '-') ?></strong></div>
-                    <div><span>Telephone</span><strong><?= e($societe['societe_telephone'] ?: '-') ?></strong></div>
-                </div>
-            </section>
+                <section class="info-card" style="--card-accent: var(--btn-back)">
+                    <div class="info-card-title" style="color:var(--btn-back)">
+                        <span class="material-symbols-outlined">contact_mail</span>
+                        <h3>Contact</h3>
+                    </div>
+                    <div class="info-grid">
+                        <div><span>Email</span><strong><?= e($societe['societe_email'] ?: '-') ?></strong></div>
+                        <div><span>Telephone</span><strong><?= e($societe['societe_telephone'] ?: '-') ?></strong></div>
+                    </div>
+                </section>
+            </div>
         </div>
     </article>
 <?php endif; ?>
