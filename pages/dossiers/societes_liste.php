@@ -79,7 +79,7 @@ if (($pdo ?? null) instanceof PDO) {
         $stmt = $pdo->prepare('
             SELECT *
             FROM societes
-            WHERE (societe_raison_sociale LIKE :term1 OR societe_forme_juridique LIKE :term2 OR societe_ice LIKE :term3 OR societe_ville LIKE :term4)
+            WHERE (societe_dossier_domiciliation_number LIKE :term1 OR societe_dossier_creation_number LIKE :term2 OR societe_raison_sociale LIKE :term3 OR societe_forme_juridique LIKE :term4 OR societe_ice LIKE :term5 OR societe_ville LIKE :term6)
             ' . $userFilter . $typeFilter . '
             ORDER BY id DESC
         ');
@@ -88,6 +88,8 @@ if (($pdo ?? null) instanceof PDO) {
             'term2' => $likeTerm,
             'term3' => $likeTerm,
             'term4' => $likeTerm,
+            'term5' => $likeTerm,
+            'term6' => $likeTerm,
         ] + $userParams + $typeParams;
         $stmt->execute($params);
         $societes = $stmt->fetchAll();
@@ -173,7 +175,7 @@ if (($pdo ?? null) instanceof PDO) {
                 <input
                     type="search"
                     name="q"
-                    placeholder="Rechercher par societe, ICE, forme ou ville"
+                    placeholder="Rechercher par dossier, societe, ICE, forme ou ville"
                     value="<?= e($query) ?>"
                 >
                 <button type="submit"><span class="material-symbols-outlined">search</span> Rechercher</button>
