@@ -71,8 +71,8 @@ if (($pdo ?? null) instanceof PDO) {
         $typeFilter = ' AND societe_type_generation = :type_gen';
         $typeParams['type_gen'] = 'creation';
     } elseif ($listeType === 'domiciliation') {
-        $typeFilter = ' AND (societe_type_generation IS NULL OR societe_type_generation <> :type_gen)';
-        $typeParams['type_gen'] = 'creation';
+        $typeFilter = ' AND societe_type_generation = :type_gen';
+        $typeParams['type_gen'] = 'domiciliation';
     }
     if ($query !== '') {
         $likeTerm = like_term($query);
