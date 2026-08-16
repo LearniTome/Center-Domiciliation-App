@@ -499,30 +499,6 @@ $actionLabels = [
 
 <section class="stats small stats-bottom-margin">
     <article class="stat">
-        <span>Forme juridique</span>
-        <strong><?= e($societe['societe_forme_juridique'] ?: '-') ?></strong>
-    </article>
-    <article class="stat">
-        <span>Type de generation</span>
-        <strong>
-            <?php if ($isCreation): ?>
-                <span class="statut-badge valide">Creation</span>
-            <?php else: ?>
-                <span class="statut-badge actif">Domiciliation</span>
-            <?php endif; ?>
-        </strong>
-    </article>
-    <article class="stat">
-        <span><?= e($dossierLabel) ?></span>
-        <strong><?= e($societe['societe_dossier_domiciliation_number'] ?: '-') ?></strong>
-    </article>
-    <?php if ($isCreation): ?>
-    <article class="stat">
-        <span>N° Dossier Creation</span>
-        <strong><?= e($societe['societe_dossier_creation_number'] ?: '-') ?></strong>
-    </article>
-    <?php endif; ?>
-    <article class="stat">
         <span>Associes</span>
         <strong><?= count($associes) ?></strong>
     </article>
@@ -537,10 +513,6 @@ $actionLabels = [
     <article class="stat">
         <span>Documents</span>
         <strong><?= count($documents) ?></strong>
-    </article>
-    <article class="stat">
-        <span>Ville</span>
-        <strong><?= e($societe['societe_ville'] ?: '-') ?></strong>
     </article>
 </section>
 
