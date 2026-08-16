@@ -94,7 +94,8 @@ if (-not $mysqlRunning) {
 $apacheRunning = Get-Process -Name "httpd" -ErrorAction SilentlyContinue
 if (-not $apacheRunning) {
     Write-Host "[Apache] Demarrage..." -ForegroundColor Yellow
-    Start-Process -FilePath $ApacheBin -ArgumentList "-k run" -WindowStyle Hidden
+    # Mode console direct (sans -k run) : fonctionne meme sans service Apache2.4 installe
+    Start-Process -FilePath $ApacheBin -WindowStyle Hidden
     Start-Sleep -Seconds 3
     $apacheRunning = Get-Process -Name "httpd" -ErrorAction SilentlyContinue
     if ($apacheRunning) {
