@@ -11,23 +11,29 @@ Application PHP compatible XAMPP pour la gestion des dossiers de domiciliation :
 ## Installation
 
 1. Cloner ou copier le projet dans `C:\xampp\htdocs\Center-Domiciliation-App`
-2. Demarrer **Apache** et **MySQL** :
+2. Copier `.env.example` vers `.env` et ajuster si besoin (base de donnees, cle API IA) :
+   ```
+   copy .env.example .env
+   ```
+3. Demarrer **Apache** et **MySQL** :
    - **Automatiquement** : lancer `run.ps1` (PowerShell)
    - **Manuellement** : depuis le panneau XAMPP Control Panel
-3. Creer la base de donnees et importer le schema + donnees initiales :
+4. Creer la base de donnees et importer le schema + donnees initiales :
    ```
    mysql -u root center_domiciliation < database/import.sql
    ```
    Ou via phpMyAdmin : importer `database/import.sql`
-4. Ouvrir `http://localhost/Center-Domiciliation-App/`
+5. Ouvrir `http://localhost/Center-Domiciliation-App/`
 
 ## Structure
 
 ```
 ├── index.php              # Point d'entree unique (front controller ?page=)
 ├── run.ps1                # Lanceur XAMPP (Apache + MySQL)
+├── api.php                # Endpoint API JSON (table-editor)
+├── router.php             # Routeur serveur PHP integre
+├── .env.example           # Modele de configuration (.env local, ignore par git)
 ├── AGENTS.md              # Guide pour l'agent OpenCode
-├── CLAUDE.md              # Memoire projet IA
 ├── .gitignore
 ├── opencode.json
 │
@@ -142,7 +148,15 @@ Application PHP compatible XAMPP pour la gestion des dossiers de domiciliation :
 │   ├── _References/
 │   └── _Guides/
 │
-├── scripts/               # Utilitaires
+├── scripts/               # Scripts d'outillage (.ps1/.sh/.cmd)
+│   ├── run.sh             # Lanceur macOS/Linux (MySQL + PHP intégré)
+│   ├── setup.ps1          # Setup Windows (XAMPP)
+│   ├── setup.sh           # Setup macOS/Linux (Homebrew)
+│   ├── dev-server.ps1     # Serveur PHP intégré multi-projets
+│   ├── sync.ps1           # Sync DB + git
+│   ├── post-push-sync.ps1 # Export DB après push
+│   ├── git-push.cmd       # Push + export DB
+│   ├── chrome-debug.ps1   # Chrome remote debugging (MCP)
 │   ├── renomme_variables_docx.php
 │   ├── renomme_variables_docx.ps1
 │   └── _check_coverage.php

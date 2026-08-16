@@ -171,7 +171,7 @@ if ($templates) {
                 set_flash('error', "Erreur lors de la generation des suggestions IA.");
             }
         } else {
-            set_flash('error', "L'assistant IA n'est pas disponible. Configurez la cle API dans config/ai.local.php.");
+            set_flash('error', "L'assistant IA n'est pas disponible. Configurez la cle API dans le fichier .env.");
         }
         redirect_to('analyse-couverture');
     }

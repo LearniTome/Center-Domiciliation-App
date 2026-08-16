@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
-$scriptName = $_SERVER['SCRIPT_NAME'] ?? '/index.php';
-$baseUrl = rtrim(dirname($scriptName), '/') . '/index.php';
+require_once __DIR__ . '/../includes/env.php';
+
+$defaultBaseUrl = rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? '/index.php'), '/') . '/index.php';
+$envUrl = env_var('APP_URL', '');
+$baseUrl = $envUrl !== '' ? rtrim($envUrl, '/') . '/index.php' : $defaultBaseUrl;
 
 return [
-    'app_name' => 'Center Domiciliation App',
+    'app_name' => env_var('APP_NAME', 'Center Domiciliation App'),
     'base_url' => $baseUrl,
 ];
-

@@ -14,7 +14,7 @@ if (is_post() && isset($_POST['ask'])) {
         if ($response !== null) {
             $messages[] = ['role' => 'assistant', 'content' => $response];
         } else {
-            set_flash('error', "L'assistant IA n'est pas disponible. Veuillez configurer la cle API Anthropic dans config/ai.local.php.");
+            set_flash('error', "L'assistant IA n'est pas disponible. Veuillez configurer la cle API Anthropic dans le fichier .env.");
         }
         $_SESSION['ai_chat'] = $messages;
     }

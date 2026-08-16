@@ -88,7 +88,7 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - Search: `index.php?page=creations&q=term` — use `search_term()` + `like_term()`
 
 ## Database (MySQL via PDO)
-- Host: `127.0.0.1:3306`, DB: `center_domiciliation`, user: `root`, pass: empty
+- Host: `127.0.0.1:3306`, DB: `center_domiciliation`, user: `root`, pass: empty — surchargeable via `.env` (`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD`, `DB_CHARSET`)
 - Schema: `database/schema.sql` (tables + ref tables), seed: `database/seed.sql`
 - Core tables: `societes`, `associes`, `contrats`, `collaborateurs`, `uploaded_docs`
 - Ref tables: `ref_tribunaux`, `ref_ste_adresses`, `ref_nationalites`, `ref_lieux_naissance`, `ref_activites`, `ref_formes_juridiques`
@@ -232,7 +232,7 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
   - `generateClause()`: generates legal clauses (objet social, mentions légales, siège social)
   - `validateDossier()`: checks completeness/coherence of dossier data
   - `chat()`: multi-turn conversational assistant
-- **Config**: `config/ai.php` (defaults) + `config/ai.local.php` (gitignored, for API key)
+- **Config**: `.env` (gitignored, `ANTHROPIC_API_KEY`) chargé via `includes/env.php` + `config/ai.php` (defaults). `config/ai.local.php` (gitignored) reste supporté en surcharge.
 - **Available**: Check `ClaudeService::isAvailable()` — returns false if no API key
 - **Cache**: Responses cached in `$_SESSION['_claude_cache']` with configurable TTL
 
@@ -240,6 +240,13 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - **Wizard** (`creation_steps/_main.php`): "Remplir avec IA" button on steps 1-3 (stores suggestions in session, rendered as `data-apply-ai-fill` on button → JS fills fields). Step 5: "Valider avec IA" button (shows validation points), clause generation (3 types: objet social, mentions legales, siege social)
 - **Analyse de couverture** (`analyse-couverture.php`): "Suggérer avec IA" button → shows suggestions card with variable/action badges (rename/delete/keep)
 - **Assistant IA** (`ai-assistant.php`): Multi-turn chat with Claude, history stored in session
+
+## Variables d'environnement (.env)
+- Fichiers : `.env` (local, gitignoré) + `.env.example` (modèle versionné). Surcharge éventuelle `.env.local`.
+- Chargé par `includes/env.php` (loader maison, sans phpdotenv) → `require` au début des configs.
+- Lecture : `env_var('KEY', 'defaut')` (helper défini dans `includes/env.php`).
+- Variables : `APP_NAME`, `APP_ENV`, `APP_DEBUG`, `APP_URL` (vide → base_url dérivé de `SCRIPT_NAME`), `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD`, `DB_CHARSET`, `ANTHROPIC_API_KEY`, `AI_MODEL`, `AI_MAX_TOKENS`, `AI_TEMPERATURE`, `AI_CACHE_TTL`.
+- Les variables déjà définies dans l'environnement système ne sont pas écrasées.
 
 ## Analyse de Couverture (pages/outils/analyse-couverture.php)
 - Page: `index.php?page=analyse-couverture`
@@ -278,8 +285,8 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - **ZipArchive**: Must be enabled in `C:\xampp\php\php.ini` (`extension=zip`) + Apache restart
 
 ## Lancement multi-projets (Windows, PHP intégré)
-- **`dev-server.ps1`** : un serveur PHP intégré par projet, sur son propre port — aucune config Apache à toucher. Permet de développer plusieurs projets en parallèle.
-- Usage : `powershell -ExecutionPolicy Bypass -File .\dev-server.ps1 -Project <chemin> -Port <port> [-NoBrowser]`
+- **`scripts/dev-server.ps1`** : un serveur PHP intégré par projet, sur son propre port — aucune config Apache à toucher. Permet de développer plusieurs projets en parallèle.
+- Usage : `powershell -ExecutionPolicy Bypass -File .\scripts\dev-server.ps1 -Project <chemin> -Port <port> [-NoBrowser]`
   - `-Project` : chemin du projet (défaut : dossier courant)
   - `-Port` : port (défaut 8000, auto-incrémenté si occupé)
   - `-NoBrowser` : ne pas ouvrir Chrome (utilisé par les agents)
@@ -290,9 +297,9 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - MySQL reste démarré via `run.ps1` (XAMPP) ou manuellement.
 
 ## macOS Setup (Shell Scripts)
-- **`setup.sh`** : Installation complète via Homebrew (PHP, MySQL, Node.js, Composer, LibreOffice). Lance une seule fois.
-- **`run.sh`** : Démarre MySQL + serveur PHP intégré sur le port 8080.
-- Exécution : `chmod +x setup.sh run.sh && ./setup.sh` puis `./run.sh`
+- **`scripts/setup.sh`** : Installation complète via Homebrew (PHP, MySQL, Node.js, Composer, LibreOffice). Lance une seule fois.
+- **`scripts/run.sh`** : Démarre MySQL + serveur PHP intégré sur le port 8080.
+- Exécution : `chmod +x scripts/setup.sh scripts/run.sh && ./scripts/setup.sh` puis `./scripts/run.sh`
 - URL : `http://localhost:8080/`
 
 ## Convertisseur DOCX → PDF
@@ -354,11 +361,12 @@ npx -y @berthojoris/mcp-mysql-server "mysql://root@127.0.0.1:3306/center_domicil
 ### Dépannage
 - Si un serveur MCP ne se lance pas, vérifie : `node --version`
 - `mysql-dev` nécessite MySQL en cours d'exécution sur le port 3306
-- `chrome-devtools` nécessite Chrome lancé avec : `.\chrome-debug.ps1`
+- `chrome-devtools` nécessite Chrome lancé avec : `.\scripts\chrome-debug.ps1`
 
 ## Root Directory Cleanliness
 - **No `.txt` or `.png` files in root** — place documentation text files in `docs/`, screenshots in `docs/screenshots/`
-- Root should only contain: `index.php`, `run.ps1`, `run.sh`, `setup.ps1`, `setup.sh`, `dev-server.ps1`, `opencode.json`, `AGENTS.md`, `CLAUDE.md`, `.gitignore`, and directories
+- Root should only contain: `index.php`, `run.ps1`, `router.php`, `api.php`, `.env.example`, `composer.json`, `composer.lock`, `composer.phar`, `opencode.json`, `AGENTS.md`, `README.md`, `.gitignore`, and directories
+- **Scripts d'outillage** (`.ps1`/`.sh`/`.cmd`) rangés dans `scripts/` : `run.sh`, `setup.ps1`, `setup.sh`, `dev-server.ps1`, `sync.ps1`, `post-push-sync.ps1`, `git-push.cmd`, `chrome-debug.ps1` — seul `run.ps1` (lanceur XAMPP) reste à la racine
 - `.gitignore` already blocks `/*.txt` and `/*.png` from root to prevent accidental commits
 
 ## Knowledge Graph (graphify)

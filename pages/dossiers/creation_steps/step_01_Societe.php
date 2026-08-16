@@ -43,7 +43,7 @@ if (is_post() && $step === 1) {
             $suggestions = ClaudeService::autoFill($societe);
             $_SESSION['creation_wizard']['ai_suggestions'] = ['step1' => $suggestions];
         } else {
-            set_flash('error', "L'assistant IA n'est pas disponible. Configurez la cle API dans config/ai.local.php.");
+            set_flash('error', "L'assistant IA n'est pas disponible. Configurez la cle API dans le fichier .env.");
         }
         redirect_to('creation', ['step' => 1]);
     }
