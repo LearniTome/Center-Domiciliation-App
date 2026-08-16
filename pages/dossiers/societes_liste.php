@@ -41,7 +41,7 @@ $societeDefaults = load_defaults('societe');
 $formesJson = e(json_encode(array_values($formesOptions)));
 $villesJson = e(json_encode(array_values($villesOptions)));
 $tribunauxJson = e(json_encode(array_values($tribunauxOptions)));
-$sourceOptions = ['creation', 'cession'];
+$sourceOptions = ['creation', 'domiciliation', 'cession'];
 $sourceJson = e(json_encode($sourceOptions));
 $tribunalTypesJson = e(json_encode($tribunalTypes));
 

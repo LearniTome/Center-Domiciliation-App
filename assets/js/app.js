@@ -1052,12 +1052,23 @@ document.addEventListener('input', (e) => {
 })();
 
 (function () {
-    document.querySelectorAll('table[data-sortable]').forEach(function (table) {
-        var thead = table.querySelector('thead');
-        if (!thead) return;
-        var ths = thead.querySelectorAll('th[data-col]');
-        var tbody = table.querySelector('tbody');
-        if (!tbody) return;
+     document.querySelectorAll('table[data-sortable]').forEach(function (table) {
+         var thead = table.querySelector('thead');
+         if (!thead) return;
+         var ths = thead.querySelectorAll('th[data-col]');
+         var tbody = table.querySelector('tbody');
+         if (!tbody) return;
+
+         // Une valeur est numérique seulement si, une fois épurée (espaces, virgule décimale),
+         // elle forme un nombre complet. "DOM-2026-001" contient des lettres => tri texte.
+         function isFiniteNumber(v) {
+             if (/[A-Za-z]/.test(v)) return false;
+             var cleaned = v.replace(/\s/g, '').replace(',', '.');
+             if (cleaned === '' || cleaned === '-') return false;
+             var n = parseFloat(cleaned);
+             return !isNaN(n) && String(n) === cleaned;
+         }
+
 
         ths.forEach(function (th) {
             th.style.cursor = 'pointer';
@@ -1100,7 +1111,7 @@ document.addEventListener('input', (e) => {
 
                     var aNum = parseFloat(aVal.replace(/[^\d.,-]/g, '').replace(',', '.'));
                     var bNum = parseFloat(bVal.replace(/[^\d.,-]/g, '').replace(',', '.'));
-                    var isNum = !isNaN(aNum) && !isNaN(bNum);
+                    var isNum = isFiniteNumber(aVal) && isFiniteNumber(bVal);
 
                     var cmp = isNum ? aNum - bNum : aVal.localeCompare(bVal, 'fr', { numeric: true });
                     return newOrder === 'asc' ? cmp : -cmp;
