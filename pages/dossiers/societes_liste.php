@@ -190,7 +190,7 @@ if (($pdo ?? null) instanceof PDO) {
                 <thead>
                 <tr>
                     <th data-bulk-col><input type="checkbox" data-bulk-select-all title="Tout selectionner"></th>
-                    <th data-col="dossier">N° Dossier</th>
+                    <th data-col="dossier">N° Dossier Domiciliation</th>
                     <?php if ($showCreationCol): ?>
                     <th data-col="dossier-creation">N° Dossier Creation</th>
                     <?php endif; ?>
