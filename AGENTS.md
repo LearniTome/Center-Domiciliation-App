@@ -224,6 +224,13 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - **security** — CSRF/XSS/injection/fichiers à chaque nouvelle fonctionnalité
 - **manual-test** — checklist pré-commit (PHP lint, navigation, formulaires, UI, DB)
 - **dolibarr** — fonctionnalités type ERP/Dolibarr (modules, hooks, triggers, permissions, workflow statuts, numérotation, API REST) + intégration Dolibarr ; référence `.opencode/skills/dolibarr/` (architecture.md, api-rest.md, patterns-vanilla-php.md). Version générique multi-projets dans `~/.agents/skills/dolibarr/`. Agent dédié : `.opencode/agent/dolibarr.md`
+- **protocole-cto** — pilotage en 3 phases : planification (`/plan`), exécution sans placeholder (`/execute`), modification chirurgicale (`/modify <fonctionnalité>`). Feuille de route/tâches dans `docs/ROADMAP.md`
+
+## OpenCode Commands (.opencode/command/)
+- **/plan** — audit + hypothèses + feuille de route AVANT tout code (KISS, versions à jour, structure respectée)
+- **/execute** — implémentation production-ready : zéro TODO, auto-validation (`php -l`, logs), mise à jour de `docs/ROADMAP.md` après chaque tâche
+- **/modify** — ajout de fonctionnalité en mode chirurgie : analyse d'impact d'abord, périmètre confiné, test anti-régression
+- **/dev** — lance le serveur de dev en arrière-plan et vérifie que l'app répond
 
 ## Claude AI Integration
 - **ClaudeService** (`src/service_claude.php`): Static class with cURL to Anthropic API
