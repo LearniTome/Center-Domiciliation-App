@@ -408,9 +408,9 @@ foreach ($filteredTemplates as $tpl) {
     }
 }
 
-$genTypeOrder = $genUser && $genUser['collaborateur_type'] !== 'interne'
-    ? ['domiciliation']
-    : ['creation', 'domiciliation'];
+$genTypeOrder = ($genIsAdmin || ($genUser && $genUser['collaborateur_type'] === 'interne'))
+    ? ['creation', 'domiciliation']
+    : ['domiciliation'];
 
 $docTypesConfig = $templatesConfig['document_types'];
 

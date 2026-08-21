@@ -27,11 +27,13 @@
 - [ ] RAS — charte appliquée (skills ui-design / awesome-design)
 
 ### Qualité
-- [ ] Aucune suite de tests automatisée (PHPUnit optionnel sur `src/` : TemplateAnalyzer, DocumentRenderer)
+- [x] Suite de tests PHPUnit 11 sur `src/` : TemplateAnalyzer (extraction/rename/delete) + DocumentRenderer (rendu `_VAR_`, fusion split-runs, boucle cession_parts) — `vendor/bin/phpunit` (15 tests)
 - [ ] Vérification manuelle avant commit : skill manual-test
 
 ## Tâches terminées
 
+- [x] 2026-08-21 — Fix generation.php : l'admin (`collaborateur_type` NULL) ne voyait que les templates Domiciliation — les admins/interne voient désormais Creation + Domiciliation
+- [x] 2026-08-21 — PHPUnit 11.5.56 (require-dev) + tests TemplateAnalyzer / DocumentRenderer
 - [x] 2026-08-21 — Dompdf 3.1.5 → 3.1.6 : corrige 6 CVE (lecture de fichier local via SVG data-URI, fuite filesystem, DoS images surdimensionnées, contournement chroot)
 - [x] 2026-08-21 — PhpSpreadsheet 5.8.0 → 5.9.0 (`composer audit` : 0 vulnérabilité restante)
 - [x] 2026-08-21 — Conversion des variables templates `{{ VAR }}` → `_VAR_` (29 .docx, 589 variables) + adaptation DocumentRenderer / TemplateAnalyzer / UI
