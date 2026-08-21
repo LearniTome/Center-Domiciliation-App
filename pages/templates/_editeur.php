@@ -679,9 +679,9 @@ $varExamples = [
                             <td class="var-type"><?= e($category) ?></td>
                             <td class="var-cell">
                                 <button type="button" class="var-btn" draggable="true"
-                                    data-var="{{ <?= e($varName) ?> }}"
+                                    data-var="_<?= e($varName) ?>_"
                                     title="<?= e($varLabel) ?><?= $example ? '  ex: ' . e($example) : '' ?>">
-                                    <code>{{ <?= e($varName) ?> }}</code>
+                                    <code>_<?= e($varName) ?>_</code>
                                 </button>
                             </td>
                             <td class="var-label"><?= e($varLabel) ?></td>

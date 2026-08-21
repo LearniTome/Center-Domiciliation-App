@@ -441,7 +441,7 @@ if ($aiSuggestions !== null) {
     document.querySelectorAll('.delete-var-form').forEach(function(form){
         form.addEventListener('submit', function(e){
             var varName = form.querySelector('input[name="var_name"]').value;
-            if (!confirm('Supprimer {{ ' + varName + ' }} de tous les templates ?')) {
+            if (!confirm('Supprimer _' + varName + '_ de tous les templates ?')) {
                 e.preventDefault();
                 return;
             }

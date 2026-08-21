@@ -281,7 +281,9 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - **Mise à jour parts**: après validation, met à jour `associe_parts` et `associe_capital_detenu` dans la table `associes`
 
 ## DOCX Manipulation Gotchas
-- **Underscore split**: `{{ CIVILITE_ASSOCIE }}` can be split across `<w:t>` as `{{ CIVILITE` + ` ` + `ASSOCIE }}`. Always use `[\s_]*` in regex patterns, not literal `_`.
+- **Format des variables** : depuis la conversion `scripts/convertir_variables_underscore.php`, les templates utilisent `_VAR_` (ex `_ASSOCIE_ADRESSE_`) au lieu de `{{ VAR }}`. Le renderer (`DocumentRenderer`) et `TemplateAnalyzer` acceptent les deux formats ; le format canonique pour les nouveaux templates est `_VAR_`. Les boucles `{%p for ... %}` restent inchangées.
+- **Tokens collés aux cellules** : `strip_tags()` concatène les textes des cellules voisines (`commerciale_SOCIETE_RAISON_SOCIALE_Sigle`) — l'extraction se fait donc par nœud `w:t` + passe sur les clés connues de `getExpectedContextKeys()`.
+- **Underscore split**: `{{ CIVILITE_ASSOCIE }}` can be split across `<w:t>` as `{{ CIVILITE` + ` ` + `ASSOCIE }}`. Always use `[\s_]*` in regex patterns, not literal `_`. Idem pour `_VAR_` : `normalizeSplitUnderscoreVariables()` fusionne les tokens coupés avant rendu.
 - **Headers/footers**: Always scan `word/header*.xml` and `word/footer*.xml` too, not just `word/document.xml`
 - **ZipArchive**: Must be enabled in `C:\xampp\php\php.ini` (`extension=zip`) + Apache restart
 

@@ -4,6 +4,7 @@
 /_debug_output/
 /dossiers_dom/
 /dossiers_generer/
+/backups/
 
 # Graphify - fichiers machine-sp�cifiques + cache r�g�n�rable (les sorties graph.html/graph.json/GRAPH_REPORT.md sont versionn�es)
 graphify-out/.graphify_python

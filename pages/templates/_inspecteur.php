@@ -267,7 +267,7 @@ if (is_post()) {
                     $mapped = $variableLabels[$upperVar] ?? null;
                     ?>
                     <tr>
-                        <td><code class="var-copy-btn" data-var="{{ <?= e($var) ?> }}" style="color:var(--primary);cursor:pointer" title="Cliquer pour copier">{{ <?= e($var) ?> }}</code></td>
+                        <td><code class="var-copy-btn" data-var="_<?= e($var) ?>_" style="color:var(--primary);cursor:pointer" title="Cliquer pour copier">_<?= e($var) ?>_</code></td>
                         <td>
                             <?php if ($mapped): ?>
                                 <span style="color:var(--text-secondary);font-size:0.8rem">
@@ -295,7 +295,7 @@ if (is_post()) {
                                     <?= csrf_input() ?>
                                     <input type="hidden" name="action" value="delete_var">
                                     <input type="hidden" name="var_name" value="<?= e($var) ?>">
-                                    <button type="submit" class="btn-icon danger" title="Supprimer" data-confirm="Supprimer {{ <?= e($var) ?> }} de tous les templates de ce dossier ?"><span class="material-symbols-outlined">delete</span></button>
+                                    <button type="submit" class="btn-icon danger" title="Supprimer" data-confirm="Supprimer _<?= e($var) ?>_ de tous les templates de ce dossier ?"><span class="material-symbols-outlined">delete</span></button>
                                 </form>
                             </div>
                         </td>

@@ -266,7 +266,7 @@ if ($formUsed === 'used') {
         <tbody>
             <?php foreach ($filteredFormVars as $fv): ?>
             <tr class="<?= $fv['in_templates'] ? 'row-mapped' : 'row-unmapped' ?>">
-                <td><code class="var-copy-btn" data-var="{{ <?= e($fv['name']) ?> }}" style="color:var(--primary);cursor:pointer" title="Cliquer pour copier">{{ <?= e($fv['name']) ?> }}</code></td>
+                <td><code class="var-copy-btn" data-var="_<?= e($fv['name']) ?>_" style="color:var(--primary);cursor:pointer" title="Cliquer pour copier">_<?= e($fv['name']) ?>_</code></td>
                 <td><?= e($fv['section']) ?></td>
                 <td><code><?= e($fv['field']) ?></code></td>
                 <td><?= $fv['libelle'] ? e($fv['libelle']) : '<span class="text-muted">&mdash;</span>' ?></td>

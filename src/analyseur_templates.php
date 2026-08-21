@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 class TemplateAnalyzer
 {
+    private const UNDERSCORE_VAR_PATTERN = '/(?<![_A-Za-z0-9.])_(?![_\\s])([A-Za-z0-9](?:[A-Za-z0-9.]|_(?=[A-Za-z0-9.]))*)_(?![A-Za-z0-9._])/u';
+
     public static function extractVariables(string $docxPath): array
     {
         if (!file_exists($docxPath)) {
@@ -17,14 +19,56 @@ class TemplateAnalyzer
 
         $text = strip_tags($xml);
 
-        preg_match_all('/\{\{(.*?)\}\}/', $text, $matches);
+        $variables = [];
 
-        $variables = array_map('trim', $matches[1]);
+        // Tokens {{ VAR }} sur le texte global
+        preg_match_all('/\{\{(.*?)\}\}/', $text, $matches);
+        foreach ($matches[1] as $v) {
+            $variables[] = trim($v);
+        }
+
+        // Tokens _VAR_ par noeud w:t : evite les collages entre cellules voisines
+        foreach (self::collectWtTexts($xml) as $nodeText) {
+            preg_match_all(self::UNDERSCORE_VAR_PATTERN, $nodeText, $usMatches);
+            foreach ($usMatches[1] as $v) {
+                $variables[] = trim($v);
+            }
+        }
+
+        // Tokens _VAR_ connus sur le texte global (colles au texte ou coupes entre runs)
+        foreach (self::getExpectedContextKeys() as $key) {
+            $upper = strtoupper(trim($key));
+            if ($upper !== '' && str_contains($text, '_' . $upper . '_')) {
+                $variables[] = $upper;
+            }
+        }
+
         $variables = array_filter($variables, static fn (string $v): bool => $v !== '');
         $variables = array_unique($variables);
         sort($variables);
 
         return array_values($variables);
+    }
+
+    /**
+     * Retourne le contenu de chaque noeud w:t du XML Word.
+     */
+    private static function collectWtTexts(string $xml): array
+    {
+        $texts = [];
+        $doc = new DOMDocument();
+        $suppress = libxml_use_internal_errors(true);
+        $doc->loadXML($xml);
+        libxml_use_internal_errors($suppress);
+
+        $nodes = (new DOMXPath($doc))->query('//*[local-name()="t"]');
+        if ($nodes !== false) {
+            foreach ($nodes as $node) {
+                $texts[] = $node->textContent;
+            }
+        }
+
+        return $texts;
     }
 
     private static function readDocxXml(string $path): ?string
@@ -513,7 +557,8 @@ class TemplateAnalyzer
 
         $patterns = [];
         foreach ($variableNames as $name) {
-            $escaped = str_replace('_', '[\s_]*', preg_quote($name, '/'));
+            $escaped = str_replace('_', '[\\s_]*', preg_quote($name, '/'));
+            $patterns[] = '/(?<![_A-Za-z0-9.])_' . $escaped . '_(?![A-Za-z0-9._])/iu';
             $patterns[] = '/\{\{\s*' . $escaped . '\s*\}\}/iu';
         }
 
@@ -657,9 +702,9 @@ class TemplateAnalyzer
             return ['modified' => 0, 'errors' => ['ZipArchive requis ou dossier introuvable.']];
         }
 
-        $escaped = str_replace('_', '[\s_]*', preg_quote($oldName, '/'));
-        $pattern = '/\{\{\s*' . $escaped . '\s*\}\}/iu';
-        $replacement = '{{ ' . $newName . ' }}';
+        $escaped = str_replace('_', '[\\s_]*', preg_quote($oldName, '/'));
+        $pattern = '/(?<![_A-Za-z0-9.])_' . $escaped . '_(?![A-Za-z0-9._])|\{\{\s*' . $escaped . '\s*\}\}/iu';
+        $replacement = '_' . $newName . '_';
 
         $iterator = new RecursiveIteratorIterator(
             new RecursiveDirectoryIterator($templatesDir, RecursiveDirectoryIterator::SKIP_DOTS)

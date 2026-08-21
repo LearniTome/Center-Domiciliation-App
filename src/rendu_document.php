@@ -49,6 +49,7 @@ class DocumentRenderer
     {
         $xml = $this->readXml();
         $xml = $this->normalizeSplitVariables($xml);
+        $xml = $this->normalizeSplitUnderscoreVariables($xml);
         $xml = $this->processLoops($xml, $context);
         $xml = $this->replaceValues($xml, $context);
         return $this->saveDocx($xml, $outputName);
@@ -123,6 +124,131 @@ class DocumentRenderer
         }
 
         return $xml;
+    }
+
+    /**
+     * Fusionne les variables _VAR_ coupees entre plusieurs runs w:t d'un meme paragraphe.
+     * Detection 1 : tokens connus (cles de contexte + variables de boucle) presents
+     * dans le texte combine mais dans aucun noeud individuel.
+     * Detection 2 : regex generique pour les variables personnalisees bien delimitees.
+     * Ne reecrit un paragraphe que lorsqu'un token est reellement coupe.
+     */
+    private function normalizeSplitUnderscoreVariables(string $xml): string
+    {
+        if (!str_contains($xml, '_')) {
+            return $xml;
+        }
+
+        $knownTokens = $this->knownUnderscoreTokens();
+        $genericPattern = '/(?<![_A-Za-z0-9.])_(?![_\\s])([A-Za-z0-9](?:[A-Za-z0-9.]|_(?=[A-Za-z0-9.]))*)_(?![A-Za-z0-9._])/u';
+
+        $doc = new DOMDocument();
+        $suppress = libxml_use_internal_errors(true);
+        $doc->loadXML($xml);
+        libxml_use_internal_errors($suppress);
+
+        $xpath = new DOMXPath($doc);
+        $xpath->registerNamespace('w', 'http://schemas.openxmlformats.org/wordprocessingml/2006/main');
+        $paragraphs = $xpath->query('//w:p');
+        if ($paragraphs === false || $paragraphs->length === 0) {
+            return $xml;
+        }
+
+        $modified = false;
+        foreach ($paragraphs as $p) {
+            $textNodes = $xpath->query('.//w:t', $p);
+            if ($textNodes === false || $textNodes->length < 2) {
+                continue;
+            }
+
+            $combined = '';
+            $nodeTexts = [];
+            foreach ($textNodes as $tn) {
+                $combined .= $tn->textContent;
+                $nodeTexts[] = $tn->textContent;
+            }
+
+            $splitFound = false;
+
+            // Detection par tokens connus
+            foreach ($knownTokens as $token) {
+                if (!str_contains($combined, $token)) {
+                    continue;
+                }
+                foreach ($nodeTexts as $nodeText) {
+                    if (str_contains($nodeText, $token)) {
+                        continue 2;
+                    }
+                }
+                $splitFound = true;
+                break;
+            }
+
+            // Detection generique : plus de tokens dans le combine que la somme des noeuds
+            if (!$splitFound) {
+                $perNode = 0;
+                foreach ($nodeTexts as $nodeText) {
+                    $perNode += (int) preg_match_all($genericPattern, $nodeText);
+                }
+                $splitFound = preg_match_all($genericPattern, $combined) > $perNode;
+            }
+
+            if (!$splitFound) {
+                continue;
+            }
+
+            $textNodes->item(0)->textContent = $combined;
+            for ($i = 1; $i < $textNodes->length; $i++) {
+                $textNodes->item($i)->textContent = '';
+            }
+            $modified = true;
+        }
+
+        if (!$modified) {
+            return $xml;
+        }
+
+        $out = $doc->saveXML();
+        return $out !== false ? $out : $xml;
+    }
+
+    /**
+     * Tokens _XXX_ attendus : cles de contexte canoniques + variables de boucle.
+     */
+    private function knownUnderscoreTokens(): array
+    {
+        static $cache = null;
+        if ($cache !== null) {
+            return $cache;
+        }
+
+        $tokens = [];
+        if (class_exists('TemplateAnalyzer') && method_exists('TemplateAnalyzer', 'getExpectedContextKeys')) {
+            foreach (TemplateAnalyzer::getExpectedContextKeys() as $key) {
+                $upper = strtoupper(trim((string) $key));
+                if ($upper !== '') {
+                    $tokens[] = '_' . $upper . '_';
+                }
+            }
+        }
+
+        $loopVars = [
+            'c.CEDANT_NOM_COMPLET', 'c.CEDANT_CIN', 'c.CEDANT_TYPE',
+            'c.CESSIONNAIRE_NOM_COMPLET', 'c.CESSIONNAIRE_CIN', 'c.CESSIONNAIRE_TYPE',
+            'c.PARTS_CEDEES', 'c.PRIX_UNITAIRE', 'c.PRIX_TOTAL',
+            'a.INDEX', 'a.NOM', 'a.PRENOM', 'a.CIN', 'a.NATIONALITE', 'a.QUALITE',
+            'a.PARTS', 'a.EST_GERANT', 'a.NOM_COMPLET', 'a.ADRESSE', 'a.EMAIL',
+            'a.TELEPHONE', 'a.DATE_NAISSANCE', 'a.LIEU_NAISSANCE', 'a.CIVILITE',
+            'a.DATE_VALIDITE_CIN', 'a.CAPITAL_DETENU', 'a.NUMEROTATION',
+            'a.POURCENTAGE', 'a.DUREE_GERANCE', 'a.ROLE_LABEL',
+            'r.TITLE', 'r.CONTENT', 'a',
+        ];
+        foreach ($loopVars as $v) {
+            $tokens[] = '_' . $v . '_';
+        }
+
+        $cache = $tokens;
+        return $cache;
     }
 
     private function readXml(): string
@@ -303,15 +429,15 @@ class DocumentRenderer
             $result = '';
             foreach ($parts as $i => $part) {
                 $item = $block;
-                $item = str_replace('{{ c.CEDANT_NOM_COMPLET }}', $part['cedant_nom_complet'] ?? '', $item);
-                $item = str_replace('{{ c.CEDANT_CIN }}', $part['cedant_cin'] ?? '', $item);
-                $item = str_replace('{{ c.CEDANT_TYPE }}', $part['cedant_type'] ?? 'existant', $item);
-                $item = str_replace('{{ c.CESSIONNAIRE_NOM_COMPLET }}', $part['cessionnaire_nom_complet'] ?? '', $item);
-                $item = str_replace('{{ c.CESSIONNAIRE_CIN }}', $part['cessionnaire_cin'] ?? '', $item);
-                $item = str_replace('{{ c.CESSIONNAIRE_TYPE }}', $part['cessionnaire_type'] ?? 'existant', $item);
-                $item = str_replace('{{ c.PARTS_CEDEES }}', (string) ($part['parts_cedees'] ?? ''), $item);
-                $item = str_replace('{{ c.PRIX_UNITAIRE }}', (string) ($part['prix_unitaire'] ?? ''), $item);
-                $item = str_replace('{{ c.PRIX_TOTAL }}', (string) ($part['prix_total'] ?? ''), $item);
+                $item = str_replace('_c.CEDANT_NOM_COMPLET_', $part['cedant_nom_complet'] ?? '', $item);
+                $item = str_replace('_c.CEDANT_CIN_', $part['cedant_cin'] ?? '', $item);
+                $item = str_replace('_c.CEDANT_TYPE_', $part['cedant_type'] ?? 'existant', $item);
+                $item = str_replace('_c.CESSIONNAIRE_NOM_COMPLET_', $part['cessionnaire_nom_complet'] ?? '', $item);
+                $item = str_replace('_c.CESSIONNAIRE_CIN_', $part['cessionnaire_cin'] ?? '', $item);
+                $item = str_replace('_c.CESSIONNAIRE_TYPE_', $part['cessionnaire_type'] ?? 'existant', $item);
+                $item = str_replace('_c.PARTS_CEDEES_', (string) ($part['parts_cedees'] ?? ''), $item);
+                $item = str_replace('_c.PRIX_UNITAIRE_', (string) ($part['prix_unitaire'] ?? ''), $item);
+                $item = str_replace('_c.PRIX_TOTAL_', (string) ($part['prix_total'] ?? ''), $item);
                 $result .= $item;
                 if ($i < count($parts) - 1) {
                     $result .= "\n";
@@ -404,34 +530,34 @@ class DocumentRenderer
             $result = '';
             foreach ($associes as $i => $associe) {
                 $item = $block;
-                $item = str_replace('{{ a.INDEX }}', (string) ($i + 1), $item);
-                $item = str_replace('{{ a.NOM }}', $associe['associe_nom'] ?? '', $item);
-                $item = str_replace('{{ a.PRENOM }}', $associe['associe_prenom'] ?? '', $item);
-                $item = str_replace('{{ a.CIN }}', $associe['associe_cin'] ?? '', $item);
-                $item = str_replace('{{ a.NATIONALITE }}', $associe['associe_nationalite'] ?? '', $item);
-                $item = str_replace('{{ a.QUALITE }}', $associe['associe_qualite'] ?? '', $item);
+                $item = str_replace('_a.INDEX_', (string) ($i + 1), $item);
+                $item = str_replace('_a.NOM_', $associe['associe_nom'] ?? '', $item);
+                $item = str_replace('_a.PRENOM_', $associe['associe_prenom'] ?? '', $item);
+                $item = str_replace('_a.CIN_', $associe['associe_cin'] ?? '', $item);
+                $item = str_replace('_a.NATIONALITE_', $associe['associe_nationalite'] ?? '', $item);
+                $item = str_replace('_a.QUALITE_', $associe['associe_qualite'] ?? '', $item);
                 $parts = (int) ($associe['associe_parts'] ?? 0);
-                $item = str_replace('{{ a.PARTS }}', (string) $parts, $item);
-                $item = str_replace('{{ a.EST_GERANT }}', $associe['associe_est_gerant'] ?? 'Non', $item);
+                $item = str_replace('_a.PARTS_', (string) $parts, $item);
+                $item = str_replace('_a.EST_GERANT_', $associe['associe_est_gerant'] ?? 'Non', $item);
                 $civ = $associe['associe_civilite'] ?? 'M.';
                 $fullName = trim($civ . ' ' . ($associe['associe_prenom'] ?? '') . ' ' . ($associe['associe_nom'] ?? ''));
-                $item = str_replace('{{ a.NOM_COMPLET }}', $fullName, $item);
-                $item = str_replace('{{ a.ADRESSE }}', $associe['adresse'] ?? '', $item);
-                $item = str_replace('{{ a.EMAIL }}', $associe['email'] ?? '', $item);
-                $item = str_replace('{{ a.TELEPHONE }}', $associe['telephone'] ?? '', $item);
-                $item = str_replace('{{ a.DATE_NAISSANCE }}', $associe['associe_date_naissance'] ?? '', $item);
-                $item = str_replace('{{ a.LIEU_NAISSANCE }}', $associe['associe_lieu_naissance'] ?? '', $item);
-                $item = str_replace('{{ a.CIVILITE }}', $associe['associe_civilite'] ?? '', $item);
-                $item = str_replace('{{ a.DATE_VALIDITE_CIN }}', $associe['associe_date_validite_cin'] ?? '', $item);
-                $item = str_replace('{{ a.CAPITAL_DETENU }}', (string) ($associe['associe_capital_detenu'] ?? ''), $item);
+                $item = str_replace('_a.NOM_COMPLET_', $fullName, $item);
+                $item = str_replace('_a.ADRESSE_', $associe['adresse'] ?? '', $item);
+                $item = str_replace('_a.EMAIL_', $associe['email'] ?? '', $item);
+                $item = str_replace('_a.TELEPHONE_', $associe['telephone'] ?? '', $item);
+                $item = str_replace('_a.DATE_NAISSANCE_', $associe['associe_date_naissance'] ?? '', $item);
+                $item = str_replace('_a.LIEU_NAISSANCE_', $associe['associe_lieu_naissance'] ?? '', $item);
+                $item = str_replace('_a.CIVILITE_', $associe['associe_civilite'] ?? '', $item);
+                $item = str_replace('_a.DATE_VALIDITE_CIN_', $associe['associe_date_validite_cin'] ?? '', $item);
+                $item = str_replace('_a.CAPITAL_DETENU_', (string) ($associe['associe_capital_detenu'] ?? ''), $item);
                 $numStart = $cumulativeParts + 1;
                 $cumulativeParts += $parts;
-                $item = str_replace('{{ a.NUMEROTATION }}', $numStart . ' a ' . $cumulativeParts, $item);
+                $item = str_replace('_a.NUMEROTATION_', $numStart . ' a ' . $cumulativeParts, $item);
                 $associeCapital = (float) ($associe['associe_capital_detenu'] ?? 0);
                 $pourcentage = $totalCapital > 0 ? round(($associeCapital / $totalCapital) * 100, 2) : 0;
-                $item = str_replace('{{ a.POURCENTAGE }}', number_format($pourcentage, 2, ',', '.') . ' %', $item);
-                $item = str_replace('{{ a.DUREE_GERANCE }}', $associe['associe_duree_gerance'] ?? '', $item);
-                $item = str_replace('{{ a.ROLE_LABEL }}', ($associe['associe_est_gerant'] ?? '') === 'Gerant' ? 'gérant' : 'associé', $item);
+                $item = str_replace('_a.POURCENTAGE_', number_format($pourcentage, 2, ',', '.') . ' %', $item);
+                $item = str_replace('_a.DUREE_GERANCE_', $associe['associe_duree_gerance'] ?? '', $item);
+                $item = str_replace('_a.ROLE_LABEL_', ($associe['associe_est_gerant'] ?? '') === 'Gerant' ? 'gérant' : 'associé', $item);
                 $result .= $item;
                 if ($i < count($associes) - 1) {
                     $result .= "\n";
@@ -452,8 +578,8 @@ class DocumentRenderer
                 $item = $block;
                 $title = 'Résolution ' . ($i + 1) . ' : ' . ($r['title'] ?? '');
                 $content = str_replace("\n", '</w:t></w:r><w:r><w:rPr><w:sz w:val="22"/><w:szCs w:val="22"/></w:rPr><w:br/><w:t xml:space="preserve">', $r['content'] ?? '');
-                $item = str_replace('{{ r.TITLE }}', $title, $item);
-                $item = str_replace('{{ r.CONTENT }}', $content, $item);
+                $item = str_replace('_r.TITLE_', $title, $item);
+                $item = str_replace('_r.CONTENT_', $content, $item);
                 $result .= $item;
             }
             return $result;
@@ -479,7 +605,7 @@ class DocumentRenderer
                 $block = $matches[1];
                 $result = '';
                 foreach ($list as $i => $activity) {
-                    $item = str_replace('{{ a }}', $activity, $block);
+                    $item = str_replace('_a_', $activity, $block);
                     $result .= $item;
                     if ($i < count($list) - 1) {
                         $result .= "\n";
@@ -497,6 +623,7 @@ class DocumentRenderer
         $flat = $this->flattenContext($context);
 
         foreach ($flat as $key => $value) {
+            $xml = str_replace('_' . $key . '_', (string) $value, $xml);
             $xml = str_replace('{{ ' . $key . ' }}', (string) $value, $xml);
             $xml = str_replace('{{' . $key . '}}', (string) $value, $xml);
         }
