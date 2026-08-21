@@ -531,6 +531,10 @@ class DocumentRenderer
             foreach ($associes as $i => $associe) {
                 $item = $block;
                 $item = str_replace('_a.INDEX_', (string) ($i + 1), $item);
+                // NOM_COMPLET avant NOM : evite que le token court consomme le debut du long (_a.NOM_COMPLET_)
+                $civ = $associe['associe_civilite'] ?? 'M.';
+                $fullName = trim($civ . ' ' . ($associe['associe_prenom'] ?? '') . ' ' . ($associe['associe_nom'] ?? ''));
+                $item = str_replace('_a.NOM_COMPLET_', $fullName, $item);
                 $item = str_replace('_a.NOM_', $associe['associe_nom'] ?? '', $item);
                 $item = str_replace('_a.PRENOM_', $associe['associe_prenom'] ?? '', $item);
                 $item = str_replace('_a.CIN_', $associe['associe_cin'] ?? '', $item);
@@ -539,9 +543,6 @@ class DocumentRenderer
                 $parts = (int) ($associe['associe_parts'] ?? 0);
                 $item = str_replace('_a.PARTS_', (string) $parts, $item);
                 $item = str_replace('_a.EST_GERANT_', $associe['associe_est_gerant'] ?? 'Non', $item);
-                $civ = $associe['associe_civilite'] ?? 'M.';
-                $fullName = trim($civ . ' ' . ($associe['associe_prenom'] ?? '') . ' ' . ($associe['associe_nom'] ?? ''));
-                $item = str_replace('_a.NOM_COMPLET_', $fullName, $item);
                 $item = str_replace('_a.ADRESSE_', $associe['adresse'] ?? '', $item);
                 $item = str_replace('_a.EMAIL_', $associe['email'] ?? '', $item);
                 $item = str_replace('_a.TELEPHONE_', $associe['telephone'] ?? '', $item);
@@ -621,6 +622,10 @@ class DocumentRenderer
     private function replaceValues(string $xml, array $context): string
     {
         $flat = $this->flattenContext($context);
+
+        // Cles les plus longues d'abord : evite que _SOCIETE_ADRESSE_ consomme le debut de _SOCIETE_ADRESSE_SIEGE_
+        $keyLengths = array_map('strlen', array_keys($flat));
+        array_multisort($keyLengths, SORT_DESC, $flat);
 
         foreach ($flat as $key => $value) {
             $xml = str_replace('_' . $key . '_', (string) $value, $xml);

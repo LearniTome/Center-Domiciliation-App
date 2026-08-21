@@ -51,6 +51,29 @@ final class DocumentRendererTest extends TestCase
         $this->assertStringNotContainsString('{{', $xml);
     }
 
+    public function testRenderLongerKeysReplacedBeforeTheirPrefixes(): void
+    {
+        $template = $this->tmpDir . DIRECTORY_SEPARATOR . 'prefix.docx';
+        DocxFixture::create(
+            $template,
+            'Siege : _SOCIETE_ADRESSE_SIEGE_.',
+            'Debut : _CONTRAT_DATE_DEBUT_, date : _CONTRAT_DATE_.'
+        );
+        $renderer = new DocumentRenderer($template, $this->tmpDir);
+
+        // Reproduit le contexte reel : societe.societe_adresse vide genere la cle bare SOCIETE_ADRESSE
+        $outPath = $renderer->render([
+            'societe' => ['societe_adresse' => '', 'societe_adresse_siege' => '123 Boulevard Hassan II'],
+            'contrat' => ['contrat_date' => '21/08/2026', 'contrat_date_debut' => '01/09/2026'],
+        ]);
+
+        $xml = DocxFixture::readDocumentXml($outPath);
+        $this->assertStringContainsString('123 Boulevard Hassan II', $xml);
+        $this->assertStringNotContainsString('SIEGE_', $xml);
+        $this->assertStringContainsString('Debut : 01/09/2026, date : 21/08/2026.', $xml);
+        $this->assertStringNotContainsString('_CONTRAT_DATE_', str_replace('_CONTRAT_DATE_DEBUT_', '', $xml));
+    }
+
     public function testRenderMergesVariableSplitAcrossRuns(): void
     {
         $template = $this->tmpDir . DIRECTORY_SEPARATOR . 'split.docx';
@@ -109,6 +132,27 @@ final class DocumentRendererTest extends TestCase
         $xml = DocxFixture::readDocumentXml($outPath);
         $this->assertStringNotContainsString('Ligne', $xml);
         $this->assertStringNotContainsString('{%p', $xml);
+    }
+
+    public function testAssocieLoopLongerTokensReplacedBeforeTheirPrefixes(): void
+    {
+        $block = '{%p for a in associes %}Associe _a.NOM_COMPLET_ (nom : _a.NOM_, prenom : _a.PRENOM_).{%p endfor %}';
+        $template = $this->tmpDir . DIRECTORY_SEPARATOR . 'associes.docx';
+        DocxFixture::createRaw(
+            $template,
+            DocxFixture::wrapBody(DocxFixture::paragraph($block))
+        );
+        $renderer = new DocumentRenderer($template, $this->tmpDir);
+
+        $outPath = $renderer->render([
+            'associes' => [
+                ['associe_nom' => 'ABOLABA', 'associe_prenom' => 'Karim', 'associe_civilite' => 'M.'],
+            ],
+        ]);
+
+        $xml = DocxFixture::readDocumentXml($outPath);
+        $this->assertStringContainsString('Associe M. Karim ABOLABA (nom : ABOLABA, prenom : Karim).', str_replace("\n", '', $xml));
+        $this->assertStringNotContainsString('COMPLET_', $xml);
     }
 
     public function testRenderGeneratesDefaultOutputName(): void

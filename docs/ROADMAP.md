@@ -32,6 +32,7 @@
 
 ## Tâches terminées
 
+- [x] 2026-08-21 — Fix collisions de tokens dans le rendu : `_SOCIETE_ADRESSE_` consommait `_SOCIETE_ADRESSE_SIEGE_` (restait « SIEGE_ ») et `_a.NOM_` mangeait `_a.NOM_COMPLET_` — tri par longueur décroissante dans replaceValues + réordonnancement boucle associes ; token malformé corrigé dans SARL AU/2026-07 Statuts ; 2 tests de régression
 - [x] 2026-08-21 — Fix generation.php : l'admin (`collaborateur_type` NULL) ne voyait que les templates Domiciliation — les admins/interne voient désormais Creation + Domiciliation
 - [x] 2026-08-21 — PHPUnit 11.5.56 (require-dev) + tests TemplateAnalyzer / DocumentRenderer
 - [x] 2026-08-21 — Dompdf 3.1.5 → 3.1.6 : corrige 6 CVE (lecture de fichier local via SVG data-URI, fuite filesystem, DoS images surdimensionnées, contournement chroot)
