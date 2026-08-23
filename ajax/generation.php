@@ -60,6 +60,18 @@ if ($action === 'generate_docx') {
             $docType = preg_replace('/_?Template$/i', '', $parts[1]);
         }
         if ($docType !== '' && ($pdo ?? null) instanceof PDO) {
+            // Societe de type domiciliation : uniquement les types autorises (Attestation + Contrat)
+            if (($soc['societe_type_generation'] ?? '') === 'domiciliation') {
+                $allowedTypes = null;
+                if (file_exists(__DIR__ . '/../config/templates.php')) {
+                    $tplCfg = require __DIR__ . '/../config/templates.php';
+                    $allowedTypes = $tplCfg['template_mapping']['domiciliation'] ?? [];
+                }
+                if (is_array($allowedTypes) && !in_array($docType, $allowedTypes, true)) {
+                    echo json_encode(['success' => false, 'error' => 'Type de document non autorise pour une societe en domiciliation']);
+                    exit;
+                }
+            }
             $vStmt = $pdo->prepare("SELECT COUNT(*) FROM documents_generes WHERE societe_id = ? AND doc_type = ? AND valide = 1");
             $vStmt->execute([$societeId, $docType]);
             if ((int) $vStmt->fetchColumn() > 0) {

@@ -33,6 +33,13 @@ if ($societeId > 0) {
     }
 }
 
+// Mode global : aucune société selectionnee -> tous les documents de toutes les sociétés
+$genGlobalMode = ($selectedSociete === null);
+
+// Société de type domiciliation : uniquement Attestation + Contrat de domiciliation
+$genIsDomOnly = ($selectedSociete && ($selectedSociete['societe_type_generation'] ?? '') === 'domiciliation');
+$genDomTypes = $templatesConfig['template_mapping']['domiciliation'] ?? [];
+
 $allTemplates = TemplateAnalyzer::scanTemplates($templatesDir);
 
 function filterTemplatesByLegalForm(array $templates, string $form, ?PDO $pdo = null): array
@@ -60,14 +67,22 @@ $context = [];
 
 if ($selectedSociete) {
     $filteredTemplates = filterTemplatesByLegalForm($allTemplates, $legalForm, $pdo ?? null);
+    if ($genIsDomOnly) {
+        $filteredTemplates = array_values(array_filter(
+            $filteredTemplates,
+            fn(array $tpl): bool => in_array($tpl['doc_type'], $genDomTypes, true)
+        ));
+    }
 }
 
 $sessionFiles = $_SESSION['gen_files'][$societeId] ?? [];
 $statusFilter = field_value($_GET, 'statut');
 
 $dbDocs = [];
-if (($pdo ?? null) instanceof PDO && $societeId > 0) {
-    $allDbDocs = fetch_all_documents($pdo, $societeId);
+if (($pdo ?? null) instanceof PDO) {
+    // societe_id = 0 (mode global) -> toutes les sociétés ; scope par utilisateur pour les non-admins
+    $scopeUser = $societeId > 0 ? null : $genUserId;
+    $allDbDocs = fetch_all_documents($pdo, $societeId > 0 ? $societeId : null, null, null, $scopeUser);
     if ($statusFilter === 'valide') {
         $dbDocs = array_values(array_filter($allDbDocs, fn($d) => (int) $d['valide'] === 1));
     } elseif ($statusFilter === 'brouillon') {
@@ -115,6 +130,10 @@ if (is_post() && !isset($_POST['delete_submit']) && !isset($_POST['validate_subm
             $docType = preg_replace('/_?Template$/i', '', implode('_', array_slice($parts, 2)));
         } elseif (count($parts) === 3) {
             $docType = preg_replace('/_?Template$/i', '', $parts[1]);
+        }
+
+        if ($genIsDomOnly && $docType !== '' && !in_array($docType, $genDomTypes, true)) {
+            continue;
         }
 
         if ($docType !== '' && in_array($docType, $existingValidatedTypes, true)) {
@@ -180,13 +199,13 @@ if (is_post() && !isset($_POST['delete_submit']) && !isset($_POST['validate_subm
     }
 }
 
-if (is_post() && isset($_POST['delete_submit']) && $societeId > 0) {
+if (is_post() && isset($_POST['delete_submit']) && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
     $selected = $_POST['selected_files'] ?? [];
 
     if (count($selected) > 0 && ($pdo ?? null) instanceof PDO) {
         $placeholders = implode(',', array_fill(0, count($selected), '?'));
-        $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf FROM documents_generes WHERE id IN ($placeholders)");
+        $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf, societe_id FROM documents_generes WHERE id IN ($placeholders)");
         $stmt->execute(array_map('intval', $selected));
         $docs = $stmt->fetchAll();
         foreach ($docs as $doc) {
@@ -195,22 +214,25 @@ if (is_post() && isset($_POST['delete_submit']) && $societeId > 0) {
         }
         $stmt = $pdo->prepare("DELETE FROM documents_generes WHERE id IN ($placeholders)");
         $stmt->execute(array_map('intval', $selected));
-        $_SESSION['gen_files'][$societeId] = array_values(array_filter($_SESSION['gen_files'][$societeId] ?? [], fn($f) => !in_array($f['docx'], array_column($docs, 'fichier_docx'))));
+        $affectedSocieteIds = array_unique(array_map(fn($d) => (int) $d['societe_id'], $docs));
+        foreach ($affectedSocieteIds as $sid) {
+            $_SESSION['gen_files'][$sid] = array_values(array_filter($_SESSION['gen_files'][$sid] ?? [], fn($f) => !in_array($f['docx'], array_column($docs, 'fichier_docx'))));
+        }
         set_flash('error', count($selected) . ' document(s) supprime(s).');
-        log_activity($pdo, 'delete', 'document_genere', $societeId, 'Suppression — ' . count($selected) . ' doc(s)');
+        log_activity($pdo, 'delete', 'document_genere', (int) ($docs[0]['societe_id'] ?? 0), 'Suppression — ' . count($selected) . ' doc(s)');
         $params = ['societe_id' => $societeId];
         if ($statusFilter) $params['statut'] = $statusFilter;
         redirect_to('generation', $params);
     }
 }
 
-if (is_post() && isset($_POST['validate_submit']) && $societeId > 0) {
+if (is_post() && isset($_POST['validate_submit']) && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
     $selected = $_POST['selected_files'] ?? [];
 
     if (count($selected) > 0 && ($pdo ?? null) instanceof PDO) {
         $placeholders = implode(',', array_fill(0, count($selected), '?'));
-        $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf, doc_type FROM documents_generes WHERE valide = 0 AND id IN ($placeholders)");
+        $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf, doc_type, societe_id FROM documents_generes WHERE valide = 0 AND id IN ($placeholders)");
         $stmt->execute(array_map('intval', $selected));
         $docs = $stmt->fetchAll();
         $updateStmt = $pdo->prepare("UPDATE documents_generes SET valide = 1, fichier_docx = :fichier_docx, fichier_pdf = :fichier_pdf WHERE id = :id");
@@ -230,10 +252,14 @@ if (is_post() && isset($_POST['validate_submit']) && $societeId > 0) {
                 'fichier_pdf' => $doc['fichier_pdf'],
                 'id' => $doc['id'],
             ]);
-            foreach ($_SESSION['gen_files'][$societeId] ?? [] as &$sf) {
-                if ($sf['docx'] === $oldDocx) {
-                    $sf['docx'] = $newDocx;
-                    $sf['name'] = str_replace('_Brouillon.docx', '.docx', $sf['name']);
+            unset($sf);
+        }
+        $affectedSocieteIds = array_unique(array_map(fn($d) => (int) $d['societe_id'], $docs));
+        foreach ($affectedSocieteIds as $sid) {
+            foreach ($_SESSION['gen_files'][$sid] ?? [] as &$sf) {
+                if (in_array($sf['docx'] ?? '', array_column($docs, 'fichier_docx'), true)) {
+                    $sf['docx'] = str_replace('_Brouillon.docx', '.docx', (string) $sf['docx']);
+                    $sf['name'] = str_replace('_Brouillon.docx', '.docx', (string) $sf['name']);
                 }
             }
             unset($sf);
@@ -243,10 +269,12 @@ if (is_post() && isset($_POST['validate_submit']) && $societeId > 0) {
         if (!empty($cleanTypes)) {
             $typePlaceholders = implode(',', array_fill(0, count($cleanTypes), '?'));
             $delStmt = $pdo->prepare("DELETE FROM documents_generes WHERE id NOT IN ($placeholders) AND societe_id = ? AND valide = 0 AND doc_type IN ($typePlaceholders)");
-            $delStmt->execute(array_merge(array_map('intval', $selected), [$societeId], $cleanTypes));
+            foreach ($affectedSocieteIds as $sid) {
+                $delStmt->execute(array_merge(array_map('intval', $selected), [$sid], $cleanTypes));
+            }
         }
         set_flash('success', count($selected) . ' document(s) valide(s).');
-        log_activity($pdo, 'validate', 'document_genere', $societeId, 'Validation — ' . count($selected) . ' doc(s)');
+        log_activity($pdo, 'validate', 'document_genere', (int) ($docs[0]['societe_id'] ?? 0), 'Validation — ' . count($selected) . ' doc(s)');
         $params = ['societe_id' => $societeId];
         if ($statusFilter) $params['statut'] = $statusFilter;
         redirect_to('generation', $params);
@@ -349,12 +377,12 @@ if (is_post() && isset($_POST['generate_pdf_submit']) && $societeId > 0) {
     redirect_to('generation', $params);
 }
 
-if (is_post() && isset($_POST['restore_submit']) && $societeId > 0) {
+if (is_post() && isset($_POST['restore_submit']) && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
     $selected = $_POST['selected_files'] ?? [];
     if (count($selected) > 0 && ($pdo ?? null) instanceof PDO) {
         $placeholders = implode(',', array_fill(0, count($selected), '?'));
-        $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf FROM documents_generes WHERE valide = 1 AND id IN ($placeholders)");
+        $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf, societe_id FROM documents_generes WHERE valide = 1 AND id IN ($placeholders)");
         $stmt->execute(array_map('intval', $selected));
         $docs = $stmt->fetchAll();
         $updateStmt = $pdo->prepare("UPDATE documents_generes SET valide = 0, fichier_docx = :fichier_docx, fichier_pdf = NULL WHERE id = :id");
@@ -372,16 +400,19 @@ if (is_post() && isset($_POST['restore_submit']) && $societeId > 0) {
                 'fichier_docx' => $newDocx,
                 'id' => $doc['id'],
             ]);
-            foreach ($_SESSION['gen_files'][$societeId] ?? [] as &$sf) {
-                if ($sf['docx'] === $oldDocx) {
-                    $sf['docx'] = $newDocx;
-                    $sf['name'] = str_replace('.docx', '_Brouillon.docx', $sf['name']);
+        }
+        $affectedSocieteIds = array_unique(array_map(fn($d) => (int) $d['societe_id'], $docs));
+        foreach ($affectedSocieteIds as $sid) {
+            foreach ($_SESSION['gen_files'][$sid] ?? [] as &$sf) {
+                if (in_array($sf['docx'] ?? '', array_column($docs, 'fichier_docx'), true)) {
+                    $sf['docx'] = preg_replace('/\.docx$/i', '_Brouillon.docx', (string) $sf['docx']);
+                    $sf['name'] = str_replace('.docx', '_Brouillon.docx', (string) $sf['name']);
                 }
             }
             unset($sf);
         }
         set_flash('success', count($selected) . ' document(s) restaure(s) en brouillon.');
-        log_activity($pdo, 'restore', 'document_genere', $societeId, 'Restauration brouillon — ' . count($selected) . ' doc(s)');
+        log_activity($pdo, 'restore', 'document_genere', (int) ($docs[0]['societe_id'] ?? 0), 'Restauration brouillon — ' . count($selected) . ' doc(s)');
         $params = ['societe_id' => $societeId];
         if ($statusFilter) $params['statut'] = $statusFilter;
         redirect_to('generation', $params);
@@ -408,9 +439,13 @@ foreach ($filteredTemplates as $tpl) {
     }
 }
 
-$genTypeOrder = ($genIsAdmin || ($genUser && $genUser['collaborateur_type'] === 'interne'))
-    ? ['creation', 'domiciliation']
-    : ['domiciliation'];
+if ($genIsDomOnly) {
+    $genTypeOrder = ['domiciliation'];
+} else {
+    $genTypeOrder = ($genIsAdmin || ($genUser && $genUser['collaborateur_type'] === 'interne'))
+        ? ['creation', 'domiciliation']
+        : ['domiciliation'];
+}
 
 $docTypesConfig = $templatesConfig['document_types'];
 
@@ -444,8 +479,12 @@ $hasPendingPdf = false;
 $hasPdfDocs = false;
 $dlWordCount = 0;
 $dlPdfCount = 0;
+$tplValidatedTypes = [];
+$tplBrouillonTypes = [];
 if (($pdo ?? null) instanceof PDO && $societeId > 0) {
     $allDocs = fetch_all_documents($pdo, $societeId);
+    $tplValidatedTypes = array_unique(array_filter(array_column(array_filter($allDocs, fn($d) => (int) $d['valide'] === 1), 'doc_type')));
+    $tplBrouillonTypes = array_unique(array_filter(array_column(array_filter($allDocs, fn($d) => (int) $d['valide'] === 0), 'doc_type')));
     $validatedDocs = array_filter($allDocs, fn($d) => (int) $d['valide'] === 1);
     $hasValidatedDocs = count($validatedDocs) > 0;
     $hasPendingPdf = count(array_filter($validatedDocs, fn($d) => empty($d['fichier_pdf']))) > 0;
@@ -459,7 +498,11 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
 <section class="card stack">
     <div class="section-header">
         <div>
-            <p class="warning-text" style="color:var(--warning);font-weight:600;font-size:0.95rem;margin:0"><span class="material-symbols-outlined" style="font-size:1.1rem;vertical-align:middle">warning</span> Selectionnez une societe puis les templates a generer.</p>
+            <?php if (!$selectedSociete): ?>
+                <p class="warning-text" style="color:var(--warning);font-weight:600;font-size:0.95rem;margin:0"><span class="material-symbols-outlined" style="font-size:1.1rem;vertical-align:middle">warning</span> Selectionnez une societe puis les templates a generer.</p>
+            <?php else: ?>
+                <p class="help-text" style="margin:0"><span class="material-symbols-outlined" style="font-size:1.1rem;vertical-align:middle;color:var(--success)">check_circle</span> Cochez les templates puis lancez la generation — les documents valides ne sont pas regeneres.</p>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -507,6 +550,18 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
                 <?= csrf_input() ?>
                 <input type="hidden" name="societe_id" value="<?= $societeId ?>">
 
+                <div class="gen-toolbar">
+                    <div class="gen-toolbar-search">
+                        <span class="material-symbols-outlined">search</span>
+                        <input type="search" id="tpl-search" placeholder="Rechercher un template..." autocomplete="off">
+                    </div>
+                    <div class="table-actions">
+                        <button type="button" class="btn btn-secondary" data-tpl-sel="all"><span class="material-symbols-outlined">done_all</span> Tout</button>
+                        <button type="button" class="btn btn-secondary" data-tpl-sel="none"><span class="material-symbols-outlined">deselect</span> Aucun</button>
+                        <button type="button" class="btn btn-secondary" data-tpl-sel="invert"><span class="material-symbols-outlined">swap_vert</span> Inverser</button>
+                    </div>
+                </div>
+
                 <div class="table-scroll">
                     <table data-sortable style="white-space: nowrap">
                         <thead>
@@ -516,23 +571,26 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
                                 <th data-col="fichier">Fichier</th>
                                 <th data-col="champs">Champs</th>
                                 <th data-col="groupe">Groupe</th>
+                                <th>Modifie le</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="tpl-tbody">
                             <?php foreach ($genTypeOrder as $gt): if (empty($templatesByGenType[$gt])) continue; ?>
                                 <?php foreach ($templatesByGenType[$gt] as $tpl): ?>
+                                    <?php $tplModTime = file_exists($tpl['path']) ? filemtime($tpl['path']) : null; ?>
                                     <tr>
                                         <td class="col-check"><input type="checkbox" name="templates[]" value="<?= e($tpl['path']) ?>" checked></td>
                                         <td>
                                             <span class="material-symbols-outlined" style="color:var(--primary);margin-right:6px">article</span>
                                             <?= e($docTypesConfig[$tpl['doc_type']] ?? $tpl['doc_type']) ?>
                                         </td>
-                                        <td><span class="help-text"><?= e(basename($tpl['path'])) ?></span></td>
+                                        <td><span class="help-text"><?= e(basename($tpl['path'])) ?></span><?php if (in_array($tpl['doc_type'], $tplValidatedTypes, true)): ?> <span class="statut-badge valide" title="Un document valide existe deja pour cette societe — il ne sera pas regenere">Valide</span><?php elseif (in_array($tpl['doc_type'], $tplBrouillonTypes, true)): ?> <span class="statut-badge brouillon" title="Un brouillon existe deja pour cette societe">Brouillon</span><?php endif; ?></td>
                                         <td><?= count($tpl['variables']) ?></td>
                                         <td>
                                             <span class="material-symbols-outlined" style="color:var(--primary);margin-right:4px"><?= $genTypeIcons[$gt] ?? 'description' ?></span>
                                             <?= e($templatesConfig['generation_types'][$gt] ?? $gt) ?>
                                         </td>
+                                        <td><span class="help-text"><?= $tplModTime ? date('d/m/Y', $tplModTime) : '-' ?></span></td>
                                     </tr>
                                 <?php endforeach; ?>
                             <?php endforeach; ?>
@@ -540,20 +598,79 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
                 </table>
             </div>
             <div class="table-actions table-actions-top">
+                <span class="help-text" id="tpl-count"></span>
                 <button type="submit" class="btn btn-next">
                     <span class="material-symbols-outlined">sync</span>
-                    Generer
+                    Generer (<span id="tpl-gen-count">0</span>)
                 </button>
             </div>
         </form>
 
         <script>
-        document.getElementById('select-all')?.addEventListener('change', function() {
-                const form = document.getElementById('gen-form');
-                const checkboxes = form.querySelectorAll('input[name="templates[]"]');
-                checkboxes.forEach(c => c.checked = this.checked);
+        (function() {
+            var form = document.getElementById('gen-form');
+            if (!form) return;
+            var checkboxes = form.querySelectorAll('input[name="templates[]"]');
+            var countEl = document.getElementById('tpl-count');
+            var genCountEl = document.getElementById('tpl-gen-count');
+            var selectAll = document.getElementById('select-all');
+
+            function updateCount() {
+                var total = checkboxes.length;
+                var checked = form.querySelectorAll('input[name="templates[]"]:checked').length;
+                if (genCountEl) genCountEl.textContent = checked;
+                if (countEl) {
+                    countEl.textContent = checked + ' template(s) selectionne(s) sur ' + total;
+                    countEl.style.color = checked === 0 ? 'var(--danger)' : '';
+                    countEl.style.fontWeight = checked === 0 ? '600' : '';
+                }
+                if (selectAll) selectAll.checked = total > 0 && checked === total;
+            }
+
+            function setVisible(box, visible) {
+                box.closest('tr').style.display = visible ? '' : 'none';
+            }
+
+            checkboxes.forEach(function(cb) {
+                cb.addEventListener('change', updateCount);
             });
-            </script>
+
+            if (selectAll) selectAll.addEventListener('change', function() {
+                form.querySelectorAll('#tpl-tbody tr').forEach(function(tr) {
+                    if (tr.style.display !== 'none') {
+                        var c = tr.querySelector('input[name="templates[]"]');
+                        if (c) c.checked = selectAll.checked;
+                    }
+                });
+                updateCount();
+            });
+
+            form.querySelectorAll('[data-tpl-sel]').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var mode = btn.getAttribute('data-tpl-sel');
+                    form.querySelectorAll('#tpl-tbody tr').forEach(function(tr) {
+                        if (tr.style.display === 'none') return;
+                        var c = tr.querySelector('input[name="templates[]"]');
+                        if (!c) return;
+                        if (mode === 'all') c.checked = true;
+                        else if (mode === 'none') c.checked = false;
+                        else c.checked = !c.checked;
+                    });
+                    updateCount();
+                });
+            });
+
+            var searchInput = document.getElementById('tpl-search');
+            if (searchInput) searchInput.addEventListener('input', function() {
+                var term = this.value.toLowerCase().trim();
+                form.querySelectorAll('#tpl-tbody tr').forEach(function(tr) {
+                    setVisible(tr, term === '' || tr.textContent.toLowerCase().indexOf(term) !== -1);
+                });
+            });
+
+            updateCount();
+        })();
+        </script>
         <?php else: ?>
             <div class="empty-state">
                 <span class="material-symbols-outlined" style="font-size:2rem;color:var(--text-secondary)">description</span>
@@ -593,7 +710,7 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
     <div class="section-header">
         <div>
             <h2>Documents generes</h2>
-            <p class="help-text"><?= count($dbDocs) ?> fichier(s)</p>
+            <p class="help-text"><?= count($dbDocs) ?> fichier(s)<?= $genGlobalMode ? ' — toutes les societes' : '' ?></p>
         </div>
         <div class="table-actions">
             <a class="btn <?= $statusFilter === '' ? 'btn-next' : 'btn-secondary' ?>" href="<?= e(app_url('generation', ['societe_id' => $societeId])) ?>">Tous</a>
@@ -611,6 +728,7 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
                     <thead>
                         <tr>
                             <th class="col-check"><input type="checkbox" id="select-all-files" title="Selectionner tout"></th>
+                            <?php if ($genGlobalMode): ?><th data-col="societe">Societe</th><?php endif; ?>
                             <th data-col="type">Type de document</th>
                             <th data-col="fichier">Fichier</th>
                             <th data-col="taille">Taille</th>
@@ -626,6 +744,9 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
                             <?php $modifTime = file_exists($doc['fichier_docx']) ? filemtime($doc['fichier_docx']) : null; ?>
                             <tr>
                                 <td class="col-check"><input type="checkbox" name="selected_files[]" value="<?= e((string) $doc['id']) ?>" data-doc-name="<?= e($doc['doc_type'] ?? 'Document') ?>"></td>
+                                <?php if ($genGlobalMode): ?>
+                                    <td><a href="<?= e(app_url('societe', ['id' => (int) $doc['societe_id']])) ?>"><?= e($doc['societe_raison_sociale'] ?: ('#' . $doc['societe_id'])) ?></a></td>
+                                <?php endif; ?>
                                 <td>
                                     <span class="material-symbols-outlined" style="color:var(--primary);margin-right:6px">article</span>
                                     <?= e($docTypesConfig[$doc['doc_type']] ?? $doc['doc_type']) ?>
@@ -662,7 +783,7 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
                                             <a class="btn-icon danger" href="<?= e(download_url($doc['fichier_pdf'])) ?>" download title="Telecharger PDF">
                                                 <span class="material-symbols-outlined">picture_as_pdf</span>
                                             </a>
-                                        <?php elseif ($doc['valide']): ?>
+                                        <?php elseif ($doc['valide'] && !$genGlobalMode): ?>
                                             <a class="btn-icon warning" href="#" onclick="event.preventDefault(); window.generateSinglePdf(<?= (int) $doc['id'] ?>)" title="Generer PDF">
                                                 <span class="material-symbols-outlined">picture_as_pdf</span>
                                             </a>
@@ -693,7 +814,7 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
                     <span class="material-symbols-outlined">task_alt</span> Valider
                 </button>
             <?php endif; ?>
-                <?php if ($hasValidatedDocs): ?>
+                <?php if ($hasValidatedDocs && !$genGlobalMode): ?>
                 <?php if ($hasPendingPdf): ?>
                 <button type="submit" class="btn btn-info" name="generate_pdf_submit" value="1">
                     <span class="material-symbols-outlined">picture_as_pdf</span> Generer PDF

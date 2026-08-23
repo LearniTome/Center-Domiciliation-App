@@ -3237,6 +3237,25 @@ td.col-pdf .pdf-pending {
     font-variant-numeric: tabular-nums; color: var(--text-secondary);
 }
 #gen-progress-overlay .progress-file-item.done { opacity: 0.7; }
+
+/* ---- Generateur Documents : toolbar templates ---- */
+.gen-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px; flex-wrap: wrap;
+}
+.gen-toolbar-search {
+    display: flex; align-items: center; gap: 6px;
+    flex: 1 1 260px; max-width: 420px;
+    border: 1px solid var(--line); border-radius: 8px;
+    padding: 6px 10px; background: var(--surface);
+}
+.gen-toolbar-search .material-symbols-outlined {
+    font-size: 1.1rem; color: var(--text-muted); flex-shrink: 0;
+}
+.gen-toolbar-search input[type="search"] {
+    border: none; outline: none; background: transparent;
+    color: var(--text); width: 100%; font-size: 0.9rem;
+}
 #gen-progress-overlay .progress-file-item.done .pfi-name { text-decoration: line-through; }
 #gen-progress-overlay .progress-file-item.error .pfi-name { color: var(--danger); }
 #gen-progress-overlay .progress-file-item.active { background: rgba(74,108,247,0.08); }
