@@ -65,6 +65,7 @@ $navSections = [
         'items' => [
             'creations' => ['Creations', 'rocket_launch'],
             'domiciliations' => ['Domiciliations', 'business'],
+            'societes' => ['Societes', 'domain'],
             'associes' => ['Associes', 'group'],
             'contrats' => ['Contrats', 'description'],
             'collaborateurs' => ['Collaborateurs', 'work'],
@@ -83,7 +84,7 @@ $navSections = [
         'icon' => 'article',
         'items' => [
             'templates' => ['Templates', 'edit_note'],
-            'generation' => ['Generateur de dossiers', 'sync'],
+            'generation' => ['Generateur Documents', 'sync'],
             'documents' => ['Documents generes', 'article'],
         ],
     ],
