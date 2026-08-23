@@ -68,6 +68,11 @@ if (is_post() && $step === 1) {
         redirect_to('creation', ['step' => 1]);
     }
 
+    if (count($allStatuts) < 3) {
+        set_flash('error', 'Au moins 3 activites (statuts) sont requises.');
+        redirect_to('creation', ['step' => 1]);
+    }
+
     redirect_to('creation', ['step' => 2]);
 }
 
@@ -175,7 +180,7 @@ if ($step === 1):
         <div data-statuts-section style="grid-column:1/-1">
         <h3 class="section-title">Activites (Statuts)</h3>
         <label class="field full">
-            <span>Activites pour les statuts</span>
+            <span>Activites pour les statuts <small style="color:var(--text-muted);font-weight:normal">(minimum 3 requis)</small></span>
             <div data-activites-group="statuts">
                 <div data-activites-container>
                     <?php
