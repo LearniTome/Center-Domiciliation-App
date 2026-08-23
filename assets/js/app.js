@@ -13,26 +13,28 @@ document.querySelectorAll('[data-confirm]').forEach((element) => {
         try { localStorage.setItem('sidebar_collapsed', shell.classList.contains('collapsed') ? '1' : '0'); } catch (e) {}
     };
     const updateToggleTitle = () => {
-        const btn = document.querySelector('[data-sidebar-toggle]');
-        if (btn) {
-            const isCollapsed = shell.classList.contains('collapsed');
+        if (!shell) return;
+        const isCollapsed = shell.classList.contains('collapsed');
+        document.querySelectorAll('[data-sidebar-toggle]').forEach((btn) => {
             btn.title = isCollapsed ? 'Developper la barre de navigation' : 'Reduire la barre de navigation';
-            var icon = btn.querySelector('.material-symbols-outlined');
-            if (icon) { icon.textContent = isCollapsed ? 'chevron_right' : 'chevron_left'; }
-        }
+            // La fleche chevron n'existe que sur le bouton .sidebar-toggle (le logo garde son icone)
+            if (btn.classList.contains('sidebar-toggle')) {
+                var icon = btn.querySelector('.material-symbols-outlined');
+                if (icon) { icon.textContent = isCollapsed ? 'chevron_right' : 'chevron_left'; }
+            }
+        });
     };
-    const toggleTrigger = selector => {
-        const el = document.querySelector(selector);
-        if (el && shell) {
+    const bindToggles = () => {
+        if (!shell) return;
+        document.querySelectorAll('[data-sidebar-toggle]').forEach((el) => {
             el.addEventListener('click', () => {
                 shell.classList.toggle('collapsed');
                 saveSidebarState();
                 updateToggleTitle();
             });
-        }
+        });
     };
-    toggleTrigger('[data-sidebar-toggle]');
-    toggleTrigger('.brand-badge');
+    bindToggles();
     updateToggleTitle();
 
     const main = document.querySelector('.main');
@@ -46,6 +48,7 @@ document.querySelectorAll('[data-confirm]').forEach((element) => {
         });
     }
 })();
+
 (function () {
     function saveState() {
         var state = {};
