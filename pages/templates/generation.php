@@ -429,18 +429,20 @@ $genTypeIcons = [
 ];
 $genTypeMapping = $templatesConfig['template_matching_patterns'] ?? [];
 
+// Attribution exclusive : un template n'apparait que dans UN seul groupe.
+// Ordre de priorite : groupes specifiques d'abord, "creation" en dernier (sur-ensemble).
+$genGroupPriority = ['domiciliation', 'cession', 'pv_ago', 'creation'];
+
 $templatesByGenType = [];
 foreach ($filteredTemplates as $tpl) {
-    $matched = false;
-    foreach ($genTypeMapping as $type => $docTypes) {
-        if (doc_type_matches_patterns($tpl['doc_type'], $docTypes)) {
-            $templatesByGenType[$type][] = $tpl;
-            $matched = true;
+    $assigned = null;
+    foreach ($genGroupPriority as $type) {
+        if (isset($genTypeMapping[$type]) && doc_type_matches_patterns($tpl['doc_type'], $genTypeMapping[$type])) {
+            $assigned = $type;
+            break;
         }
     }
-    if (!$matched) {
-        $templatesByGenType['creation'][] = $tpl;
-    }
+    $templatesByGenType[$assigned ?? 'creation'][] = $tpl;
 }
 
 if ($genIsDomOnly) {
