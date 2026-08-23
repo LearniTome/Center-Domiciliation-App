@@ -546,7 +546,7 @@ if (($pdo ?? null) instanceof PDO && $societeId > 0) {
                 <div class="detail-item"><span class="detail-label">Tribunal</span><span class="detail-value"><?= e($selectedSociete['societe_tribunal'] ?: '-') ?></span></div>
                 <div class="detail-item"><span class="detail-label">IF</span><span class="detail-value"><?= e($selectedSociete['societe_if'] ?: '-') ?></span></div>
                 <div class="detail-item"><span class="detail-label">Capital</span><span class="detail-value"><?= $selectedSociete['societe_capital'] ? number_format((float) $selectedSociete['societe_capital'], 0, ',', ' ') . ' DH' : '-' ?></span></div>
-                <div class="detail-item"><span class="detail-label">Type</span><span class="detail-value"><?= e($selectedSociete['societe_type_generation'] ?: '-') ?></span></div>
+                <div class="detail-item"><span class="detail-label">Type</span><span class="detail-value"><?= e(match ($selectedSociete['societe_type_generation'] ?? '') { 'creation' => 'Création', 'domiciliation' => 'Domiciliation', default => '-' }) ?></span></div>
                 <div class="detail-item full-width"><span class="detail-label">Adresse</span><span class="detail-value"><?= e($selectedSociete['societe_adresse_siege'] ?: $selectedSociete['societe_adresse'] ?: '-') ?></span></div>
             </div>
         </div>
