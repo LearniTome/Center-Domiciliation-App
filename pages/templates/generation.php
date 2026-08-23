@@ -38,7 +38,7 @@ $genGlobalMode = ($selectedSociete === null);
 
 // Société de type domiciliation : uniquement Attestation + Contrat de domiciliation
 $genIsDomOnly = ($selectedSociete && ($selectedSociete['societe_type_generation'] ?? '') === 'domiciliation');
-$genDomTypes = $templatesConfig['template_mapping']['domiciliation'] ?? [];
+$genDomTypes = $templatesConfig['template_matching_patterns']['domiciliation'] ?? [];
 
 $allTemplates = TemplateAnalyzer::scanTemplates($templatesDir);
 
@@ -70,7 +70,7 @@ if ($selectedSociete) {
     if ($genIsDomOnly) {
         $filteredTemplates = array_values(array_filter(
             $filteredTemplates,
-            fn(array $tpl): bool => in_array($tpl['doc_type'], $genDomTypes, true)
+            fn(array $tpl): bool => doc_type_matches_patterns($tpl['doc_type'], $genDomTypes)
         ));
     }
 }
@@ -427,13 +427,13 @@ $genTypeIcons = [
     'creation' => 'post_add',
     'domiciliation' => 'location_city',
 ];
-$genTypeMapping = $templatesConfig['template_mapping'];
+$genTypeMapping = $templatesConfig['template_matching_patterns'] ?? [];
 
 $templatesByGenType = [];
 foreach ($filteredTemplates as $tpl) {
     $matched = false;
     foreach ($genTypeMapping as $type => $docTypes) {
-        if (in_array($tpl['doc_type'], $docTypes, true)) {
+        if (doc_type_matches_patterns($tpl['doc_type'], $docTypes)) {
             $templatesByGenType[$type][] = $tpl;
             $matched = true;
         }

@@ -40,4 +40,12 @@ return [
         'cession' => ['Acte-Cession-Parts', 'PV-AGE-Cession', 'Declaration-Modificative-RC', 'Annonce-Legale-Cession'],
         'pv_ago' => ['PV-AGO'],
     ],
+
+    // Motifs de matching tolerants (prefixe, insensible a la casse/ponctuation/variantes "_Template v2")
+    'template_matching_patterns' => [
+        'creation' => ['Statuts', 'Annonce-Legale-Journal', 'Depot-Legal-Constitution', 'Declaration-Immatriculation-RC', 'Attestation-Domiciliation', 'Contrat-Domiciliation'],
+        'domiciliation' => ['Contrat-Domiciliation', 'Attestation-Domiciliation'],
+        'cession' => ['Acte-Cession-Parts', 'PV-AGE-Cession', 'Declaration-Modificative-RC', 'Annonce-Legale-Cession'],
+        'pv_ago' => ['PV-AGO'],
+    ],
 ];

@@ -67,9 +67,9 @@ if ($action === 'generate_docx') {
                 $allowedTypes = null;
                 if (file_exists(__DIR__ . '/../config/templates.php')) {
                     $tplCfg = require __DIR__ . '/../config/templates.php';
-                    $allowedTypes = $tplCfg['template_mapping']['domiciliation'] ?? [];
+                    $allowedTypes = $tplCfg['template_matching_patterns']['domiciliation'] ?? [];
                 }
-                if (is_array($allowedTypes) && !in_array($docType, $allowedTypes, true)) {
+                if (is_array($allowedTypes) && !doc_type_matches_patterns($docType, $allowedTypes)) {
                     echo json_encode(['success' => false, 'error' => 'Type de document non autorise pour une societe en domiciliation']);
                     exit;
                 }

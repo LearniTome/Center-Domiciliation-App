@@ -661,6 +661,35 @@ function ensure_template_folder(string $folderName): bool
     return mkdir($dir, 0777, true);
 }
 
+/**
+ * Matching tolerant d'un doc_type contre des motifs de prefixe.
+ * Normalise la casse/ponctuation et ignore les variantes "_Template v2" du nom de fichier.
+ * Ex : "Attestation-Domiciliation-Template v2" correspond au motif "Attestation-Domiciliation".
+ */
+function doc_type_matches_patterns(string $docType, array $patterns): bool
+{
+    $normalize = static function (string $s): string {
+        $s = strtolower($s);
+        $s = preg_replace('/template.*$/', '', $s) ?? $s;
+
+        return preg_replace('/[^a-z0-9]/', '', $s) ?? $s;
+    };
+
+    $nDoc = $normalize($docType);
+    if ($nDoc === '') {
+        return false;
+    }
+
+    foreach ($patterns as $pattern) {
+        $nPattern = $normalize((string) $pattern);
+        if ($nPattern !== '' && str_starts_with($nDoc, $nPattern)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 // ─── Auth Helpers ───────────────────────────────────────────
 
 function current_user(): ?array
