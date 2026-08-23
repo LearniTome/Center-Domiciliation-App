@@ -4876,23 +4876,35 @@ tr[data-coverage], .row-mapped {
     width: 340px;
 }
 
-.top-bar-logout {
+.top-bar-user-exit {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    width: 32px;
+    gap: 4px;
     height: 32px;
-    border-radius: 50%;
-    color: var(--danger);
+    padding: 0 10px;
+    border-radius: 16px;
     text-decoration: none;
-    transition: background var(--transition), color var(--transition);
+    transition: background var(--transition);
 }
-.top-bar-logout:hover {
+.top-bar-user-exit:hover {
     background: rgba(252, 66, 74, 0.12);
+}
+.top-bar-user-icon {
+    font-size: 1.3rem;
+    color: var(--primary);
+}
+.top-bar-user-exit:hover .top-bar-user-icon {
     color: var(--danger);
 }
-.top-bar-logout .material-symbols-outlined {
-    font-size: 1.2rem;
+.top-bar-exit-sep {
+    width: 1px;
+    height: 14px;
+    background: var(--line);
+    margin: 0 2px;
+}
+.top-bar-exit-icon {
+    font-size: 1.15rem;
+    color: var(--danger);
 }
 
 /* ==========================================

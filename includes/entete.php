@@ -78,9 +78,10 @@ $noSidebar = in_array($page ?? '', ['connexion', 'deconnexion'], true);
                     </div>
                 </div>
             </div>
-            <span class="top-bar-avatar material-symbols-outlined" title="<?= e(($_topUser['nom_complet'] ?? '') . ' — ' . get_role_name()) ?>">account_circle</span>
-            <a href="<?= e(app_url('deconnexion')) ?>" class="top-bar-logout" title="Deconnexion">
-                <span class="material-symbols-outlined">logout</span>
+            <a href="<?= e(app_url('deconnexion')) ?>" class="top-bar-user-exit" title="<?= e(($_topUser['nom_complet'] ?? '') . ' — Deconnexion') ?>">
+                <span class="material-symbols-outlined top-bar-user-icon">account_circle</span>
+                <span class="top-bar-exit-sep"></span>
+                <span class="material-symbols-outlined top-bar-exit-icon">logout</span>
             </a>
         </div>
     </header>
