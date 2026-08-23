@@ -114,7 +114,9 @@ if (is_post() && !isset($_POST['delete_submit']) && !isset($_POST['validate_subm
     $folderDate = $context['contrat_date'] ?? $today;
     $folderName = $folderDate . '_' . $forme . '_' . $clientName;
     $folderName = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', $folderName), '-');
-    $outputDir = __DIR__ . '/../../dossiers_generer/dossiers_domiciliation/' . $folderName;
+    // Emplacement selon le type de generation : creation -> dossiers_creation, sinon dossiers_domiciliation
+    $genOutputRoot = (($selectedSociete['societe_type_generation'] ?? '') === 'creation') ? 'dossiers_creation' : 'dossiers_domiciliation';
+    $outputDir = __DIR__ . '/../../dossiers_generer/' . $genOutputRoot . '/' . $folderName;
     if (!is_dir($outputDir)) {
         mkdir($outputDir, 0777, true);
     }
@@ -302,7 +304,9 @@ if (is_post() && isset($_POST['generate_pdf_submit']) && $societeId > 0) {
         $folderDate = $context['contrat_date'] ?? $today;
         $folderName = $folderDate . '_' . $forme . '_' . $clientName;
         $folderName = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', $folderName), '-');
-        $subfolderDir = __DIR__ . '/../../dossiers_generer/dossiers_domiciliation/' . $folderName;
+        // Emplacement selon le type de generation : creation -> dossiers_creation, sinon dossiers_domiciliation
+        $pdfRegenRoot = (($selectedSociete['societe_type_generation'] ?? '') === 'creation') ? 'dossiers_creation' : 'dossiers_domiciliation';
+        $subfolderDir = __DIR__ . '/../../dossiers_generer/' . $pdfRegenRoot . '/' . $folderName;
         if (!is_dir($subfolderDir)) {
             mkdir($subfolderDir, 0777, true);
         }

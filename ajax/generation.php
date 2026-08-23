@@ -45,7 +45,9 @@ if ($action === 'generate_docx') {
         $folderDate = $context['contrat_date'] ?? $today;
         $folderName = $folderDate . '_' . $forme . '_' . $clientName;
         $folderName = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', $folderName), '-');
-        $outputDir = __DIR__ . '/../dossiers_generer/dossiers_domiciliation/' . $folderName;
+        // Emplacement selon le type de generation : creation -> dossiers_creation, sinon dossiers_domiciliation
+        $outputRoot = (($soc['societe_type_generation'] ?? '') === 'creation') ? 'dossiers_creation' : 'dossiers_domiciliation';
+        $outputDir = __DIR__ . '/../dossiers_generer/' . $outputRoot . '/' . $folderName;
         if (!is_dir($outputDir)) {
             mkdir($outputDir, 0777, true);
         }
@@ -134,7 +136,9 @@ if ($action === 'generate_pdf') {
             $folderDate = $context['contrat_date'] ?? $today;
             $folderName = $folderDate . '_' . $forme . '_' . $clientName;
             $folderName = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', $folderName), '-');
-            $docxDir = __DIR__ . '/../dossiers_generer/dossiers_domiciliation/' . $folderName;
+            // Emplacement selon le type de generation : creation -> dossiers_creation, sinon dossiers_domiciliation
+            $pdfRegenRoot = (($soc['societe_type_generation'] ?? '') === 'creation') ? 'dossiers_creation' : 'dossiers_domiciliation';
+            $docxDir = __DIR__ . '/../dossiers_generer/' . $pdfRegenRoot . '/' . $folderName;
             if (!is_dir($docxDir)) {
                 mkdir($docxDir, 0777, true);
             }
