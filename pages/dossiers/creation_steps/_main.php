@@ -96,6 +96,12 @@ if ($aiSuggestions !== null) {
         document.querySelectorAll('[data-depends-type-gen]').forEach(function(el) {
             el.style.display = show ? '' : 'none';
         });
+        if (show) {
+            var proc = document.querySelector('select[name="societe_procedure_creation"]');
+            if (proc && !proc.value) proc.value = 'normal';
+            var depot = document.querySelector('select[name="societe_mode_depot"]');
+            if (depot && !depot.value) depot.value = 'depot_physique';
+        }
     });
     </script>
 </section>

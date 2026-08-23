@@ -212,6 +212,15 @@ if ($page === 'templates') {
 
 $pageTitle = $pageTitleMap[$page] ?? 'Center Domiciliation App';
 
+// Titre dynamique du wizard selon le type (Nouvelle creation / Nouvelle domiciliation)
+if ($page === 'creation') {
+    $wizardType = $_GET['type'] ?? '';
+    if (!in_array($wizardType, ['creation', 'domiciliation'], true)) {
+        $wizardType = (string) ($_SESSION['creation_wizard']['societe']['societe_type_generation'] ?? '');
+    }
+    $pageTitle = $wizardType === 'creation' ? 'Nouvelle création' : 'Nouvelle domiciliation';
+}
+
 // Page-level permission check (except public pages)
 $publicPages = ['setup', 'not-found'];
 if (!in_array($page, $publicPages, true)) {

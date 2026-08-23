@@ -17,25 +17,15 @@ if (isset($_GET['import_msg']) && $_GET['import_msg'] !== '') {
     set_flash('success', htmlspecialchars($_GET['import_msg']));
 }
 
-// Reference data for quick create / bulk edit
+// Reference data for bulk edit + inline editable selects
 $formesOptions = [];
 $villesOptions = [];
 $tribunauxOptions = [];
-$adressesOptions = [];
-$tribunalTypes = [];
-$activitesOptions = [];
 if (($pdo ?? null) instanceof PDO) {
     $formesOptions = fetch_reference_options($pdo, 'ref_formes_juridiques', 'forme_juridique');
     $villesOptions = fetch_reference_options($pdo, 'ref_villes', 'ville');
     $tribunauxOptions = fetch_reference_options($pdo, 'ref_tribunaux', 'tribunal');
-    $adressesOptions = fetch_reference_options($pdo, 'ref_ste_adresses', 'adresse');
-    $tribunalTypes = fetch_tribunaux_types($pdo);
-    $tribunauxAll = fetch_tribunaux_all($pdo);
-    $adressesAll = fetch_adresses_all($pdo);
-    $activitesOptions = fetch_reference_options($pdo, 'ref_activites', 'activite');
 }
-
-$societeDefaults = load_defaults('societe');
 
 // JSON-encoded option arrays for inline editable selects
 $formesJson = e(json_encode(array_values($formesOptions)));
@@ -43,7 +33,6 @@ $villesJson = e(json_encode(array_values($villesOptions)));
 $tribunauxJson = e(json_encode(array_values($tribunauxOptions)));
 $sourceOptions = ['creation', 'domiciliation', 'cession'];
 $sourceJson = e(json_encode($sourceOptions));
-$tribunalTypesJson = e(json_encode($tribunalTypes));
 
 if (is_post() && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
@@ -159,7 +148,9 @@ if (($pdo ?? null) instanceof PDO) {
             <span class="page-count"><?= count($societes) ?> enregistrement(s)</span>
             <div class="table-actions">
                 <?php if (has_permission('societes.create')): ?>
-                <button class="btn btn-next" type="button" data-quick-create-btn><span class="material-symbols-outlined">add</span> Nouvelle societe</button>
+                <?php foreach ($listeType === null ? ['creation', 'domiciliation'] : [$listeType] as $wizardType): ?>
+                <a class="btn btn-next" href="<?= e(app_url('creation', ['reset' => '1', 'type' => $wizardType])) ?>"><span class="material-symbols-outlined">add</span> Nouvelle <?= $wizardType === 'creation' ? 'création' : 'domiciliation' ?></a>
+                <?php endforeach; ?>
                 <?php endif; ?>
                 <button class="btn btn-secondary" type="button" data-col-toggle-btn><span class="material-symbols-outlined">view_column</span> Colonnes <span class="col-toggle-count" data-col-count>0/0</span></button>
                 <a class="btn btn-info" href="<?= e(app_url($listePage, ['export' => 'csv', 'q' => $query])) ?>"><span class="material-symbols-outlined">download</span> CSV</a>
@@ -258,128 +249,10 @@ if (($pdo ?? null) instanceof PDO) {
                 <?php endforeach; ?>
                 </tbody>
             </table>
-            <template data-row-template>
-                <tr data-id="">
-                    <td data-bulk-cell><input type="checkbox" data-bulk-checkbox title="Selectionner"></td>
-                    <td data-cell="societe_dossier_domiciliation_number"></td>
-                    <?php if ($showCreationCol): ?>
-                    <td data-cell="societe_dossier_creation_number"></td>
-                    <?php endif; ?>
-                    <td><span class="badge <?= $listeType === 'domiciliation' ? 'badge-info' : 'badge-success' ?>" style="font-size:0.65rem"><?= $listeType === 'domiciliation' ? 'Domiciliation' : 'Creation' ?></span></td>
-                    <td data-cell-link="societe" data-cell-value="id" data-cell-label="societe_raison_sociale"></td>
-                    <td data-cell="societe_forme_juridique"></td>
-                    <td data-cell="societe_ice"></td>
-                    <td data-cell="societe_date_ice"></td>
-                    <td data-cell="societe_rc"></td>
-                    <td data-cell="societe_if"></td>
-                    <td data-cell="societe_capital"></td>
-                    <td data-cell="societe_ville"></td>
-                    <td data-cell="societe_tribunal"></td>
-                    <td data-cell="societe_telephone"></td>
-                    <td data-cell="societe_email"></td>
-                    <td data-cell="created_at"></td>
-                    <td data-cell="updated_at"></td>
-                    <td data-cell-actions>
-                        <a class="btn-icon primary" href="" title="Voir"><span class="material-symbols-outlined">visibility</span></a>
-                        <a class="btn-icon info" href="" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
-                        <form method="post" action="index.php?page=<?= e($listePage) ?>">
-                            <input type="hidden" name="action" value="delete">
-                            <input type="hidden" name="id" value="">
-                            <input type="hidden" name="_csrf_token" value="">
-                            <button class="btn-icon danger" type="submit" data-confirm="Supprimer cette societe ?" title="Supprimer"><span class="material-symbols-outlined">delete</span></button>
-                        </form>
-                    </td>
-                </tr>
-            </template>
             </div>
         <?php endif; ?>
     </article>
 
-    <?php
-    $quickCreateTitle = 'Nouvelle societe';
-    $quickCreateTable = 'societes';
-    $quickCreateDefaults = [];
-    if ($listeType === 'creation' || $listeType === 'domiciliation') {
-        $quickCreateDefaults['societe_type_generation'] = $listeType;
-    }
-    $adressesSimple = [];
-    if (!empty($adressesAll)) {
-        foreach ($adressesAll as $r) {
-            $adressesSimple[] = $r['ste_adresse'];
-        }
-    }
-    $quickCreateFields = [
-        ['type' => 'hidden', 'name' => 'societe_type_generation', 'value' => $listeType ?? ''],
-        ['type' => 'title', 'label' => 'Identifiants'],
-        ['name' => 'societe_raison_sociale', 'label' => 'Raison sociale', 'type' => 'text', 'required' => true],
-        ['name' => 'societe_forme_juridique', 'label' => 'Forme juridique', 'type' => 'select', 'options' => $formesOptions, 'required' => true],
-        ['name' => 'societe_ice', 'label' => 'ICE', 'type' => 'text'],
-        ['name' => 'societe_date_ice', 'label' => 'Date cert. negatif', 'type' => 'date'],
-        ['name' => 'societe_date_exp_cert_neg', 'label' => 'Date exp. cert. negatif', 'type' => 'date'],
-        ['name' => 'societe_rc', 'label' => 'RC', 'type' => 'text'],
-        ['name' => 'societe_if', 'label' => 'IF', 'type' => 'text'],
-        ['name' => 'societe_tp', 'label' => 'TP', 'type' => 'text'],
-        ['name' => 'societe_cnss', 'label' => 'CNSS', 'type' => 'text'],
-        ['name' => 'societe_activites_statuts', 'label' => 'Activites (Statuts)', 'type' => 'dynamic-select', 'options' => $activitesOptions],
-        ['type' => 'title', 'label' => 'Capital'],
-        ['name' => 'societe_capital', 'label' => 'Capital', 'type' => 'number'],
-        ['name' => 'societe_part_social', 'label' => 'Part social', 'type' => 'number'],
-        ['name' => 'societe_valeur_nominale', 'label' => 'Valeur nominale', 'type' => 'number'],
-        ['type' => 'title', 'label' => 'Adresse'],
-        ['name' => 'societe_adresse_siege', 'label' => 'Adresse de reference', 'type' => 'select', 'options' => $adressesSimple],
-        ['name' => 'societe_ville', 'label' => 'Ville', 'type' => 'select', 'options' => $villesOptions],
-        ['name' => 'societe_tribunal_type', 'label' => 'Type tribunal', 'type' => 'select', 'options' => $tribunalTypes],
-        ['name' => 'societe_tribunal', 'label' => 'Tribunal', 'type' => 'select', 'options' => $tribunauxOptions],
-        ['type' => 'title', 'label' => 'Contact'],
-        ['name' => 'societe_email', 'label' => 'Email', 'type' => 'email'],
-        ['name' => 'societe_telephone', 'label' => 'Telephone', 'type' => 'text'],
-    ];
-    require __DIR__ . '/../../includes/quick_create_modal.php'; ?>
-    <script>
-    (function() {
-        var form = document.querySelector('[data-modal="quick-create"] [data-quick-create-form]');
-        if (!form) return;
-
-        form.addEventListener('click', function(e) {
-            var addBtn = e.target.closest('[data-dynamic-add]');
-            if (addBtn) {
-                var container = form.querySelector('[data-dynamic-select="' + addBtn.getAttribute('data-dynamic-add') + '"]');
-                var tmpl = form.querySelector('[data-dynamic-template]');
-                if (container && tmpl) {
-                    var clone = tmpl.content.cloneNode(true);
-                    container.appendChild(clone);
-                }
-                return;
-            }
-            var rmBtn = e.target.closest('[data-dynamic-remove]');
-            if (rmBtn) {
-                var item = rmBtn.closest('[data-dynamic-item]');
-                var parent = item ? item.parentNode : null;
-                if (parent && parent.querySelectorAll('[data-dynamic-item]').length > 1) {
-                    parent.removeChild(item);
-                }
-            }
-        });
-
-        form.addEventListener('submit', function() {
-            var dynSelects = form.querySelectorAll('[data-dynamic-select]');
-            dynSelects.forEach(function(container) {
-                var items = container.querySelectorAll('[data-dynamic-item]');
-                var vals = [];
-                items.forEach(function(item) {
-                    var sel = item.querySelector('[data-dynamic-option]');
-                    if (sel && sel.value) vals.push(sel.value);
-                });
-                var name = container.getAttribute('data-dynamic-select');
-                var h = document.createElement('input');
-                h.type = 'hidden';
-                h.name = name;
-                h.value = vals.join(', ');
-                form.appendChild(h);
-            });
-        });
-    })();
-    </script>
     <?php
     $bulkEditTitle = 'Modifier les societes selectionnees';
     $bulkEditTable = 'societes';

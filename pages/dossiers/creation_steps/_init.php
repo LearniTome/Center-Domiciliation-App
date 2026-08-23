@@ -1,6 +1,17 @@
 <?php
 declare(strict_types=1);
 
+// Type de generation demande depuis une liste (ex: ?type=creation) — whitelist stricte
+$requestedType = $_GET['type'] ?? '';
+if (!in_array($requestedType, ['creation', 'domiciliation'], true)) {
+    $requestedType = '';
+} elseif ($requestedType === 'creation') {
+    $wizardUser = current_user();
+    if ($wizardUser && $wizardUser['collaborateur_type'] !== 'interne' && ($wizardUser['role_id'] ?? 0) !== 1) {
+        $requestedType = 'domiciliation';
+    }
+}
+
 if (!isset($_SESSION['creation_wizard']) || !is_array($_SESSION['creation_wizard'])) {
     $defaults = load_defaults();
 
@@ -32,6 +43,22 @@ if (!isset($_SESSION['creation_wizard']) || !is_array($_SESSION['creation_wizard
 }
 
 $wizard = &$_SESSION['creation_wizard'];
+
+// Application du type demande + verrou (arrivee depuis une liste Creations/Domiciliations)
+if ($requestedType !== '') {
+    $wizard['societe']['societe_type_generation'] = $requestedType;
+    if ($requestedType === 'creation') {
+        if ((string) ($wizard['societe']['societe_procedure_creation'] ?? '') === '') {
+            $wizard['societe']['societe_procedure_creation'] = 'normal';
+        }
+        if ((string) ($wizard['societe']['societe_mode_depot'] ?? '') === '') {
+            $wizard['societe']['societe_mode_depot'] = 'depot_physique';
+        }
+    }
+    $wizard['type_locked'] = true;
+}
+$typeLocked = !empty($wizard['type_locked']);
+
 $step = max(1, min(6, (int) ($_GET['step'] ?? 1)));
 $adressesOptions = fetch_reference_options($pdo ?? null, 'ref_ste_adresses', 'ste_adresse');
 $adressesAll = fetch_adresses_all($pdo ?? null);
@@ -93,7 +120,7 @@ if (isset($_GET['reset']) && $_GET['reset'] === '1') {
     unset($_SESSION['creation_wizard']);
     log_activity($pdo, 'reset', 'wizard');
     set_flash('success', 'Assistant reinitialise.');
-    redirect_to('creation');
+    redirect_to('creation', $requestedType !== '' ? ['type' => $requestedType] : []);
 }
 
 if (isset($_GET['cancel']) && $_GET['cancel'] === '1') {
@@ -133,6 +160,7 @@ $wizardUser = current_user();
 $isExterne = $wizardUser && $wizardUser['collaborateur_type'] !== 'interne' && ($wizardUser['role_id'] ?? 0) !== 1;
 if ($isExterne) {
     $societeData['societe_type_generation'] = 'domiciliation';
+    $wizard['societe']['societe_type_generation'] = 'domiciliation';
 }
 
 $tribunalTypes = fetch_tribunaux_types($pdo ?? null);

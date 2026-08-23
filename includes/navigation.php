@@ -63,7 +63,6 @@ $navSections = [
     'Dossiers' => [
         'icon' => 'folder',
         'items' => [
-            'creation' => ['Nouveau dossier', 'note_add'],
             'creations' => ['Creations', 'rocket_launch'],
             'domiciliations' => ['Domiciliations', 'business'],
             'associes' => ['Associes', 'group'],

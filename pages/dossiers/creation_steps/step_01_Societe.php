@@ -5,6 +5,21 @@ declare(strict_types=1);
 if (is_post() && $step === 1) {
     $navAction = $_POST['nav_action'] ?? 'next';
 
+    // Verrou serveur : le type impose par la liste d'appel ne peut pas etre contourné
+    if ($typeLocked && (string) ($wizard['societe']['societe_type_generation'] ?? '') !== '') {
+        $_POST['societe_type_generation'] = (string) $wizard['societe']['societe_type_generation'];
+    }
+
+    // Defaults mode creation : procedure normale + depot physique si non renseignes
+    if (field_value($_POST, 'societe_type_generation') === 'creation') {
+        if (field_value($_POST, 'societe_procedure_creation') === '') {
+            $_POST['societe_procedure_creation'] = 'normal';
+        }
+        if (field_value($_POST, 'societe_mode_depot') === '') {
+            $_POST['societe_mode_depot'] = 'depot_physique';
+        }
+    }
+
     $activitesStatuts = $_POST['societe_activites_statuts'] ?? [];
     $allStatuts = is_array($activitesStatuts) ? array_map('trim', $activitesStatuts) : [];
     $allStatuts = array_unique(array_filter($allStatuts));
@@ -70,8 +85,11 @@ if ($step === 1):
     <div class="form-grid">
         <h3 class="section-title">Procedure</h3>
         <label class="field">
-            <span>Type generation</span>
-            <select name="societe_type_generation" data-type-gen>
+            <span>Type generation<?= $typeLocked ? ' (imposé)' : '' ?></span>
+            <?php if ($typeLocked): ?>
+            <input type="hidden" name="societe_type_generation" value="<?= e((string) $societeData['societe_type_generation']) ?>">
+            <?php endif; ?>
+            <select name="societe_type_generation" data-type-gen<?= $typeLocked ? ' disabled title="Type impose par la liste d\'appel"' : '' ?>>
                 <option value="">Selectionner</option>
                 <option value="creation" <?= (string) $societeData['societe_type_generation'] === 'creation' ? 'selected' : '' ?>>Création</option>
                 <option value="domiciliation" <?= (string) $societeData['societe_type_generation'] === 'domiciliation' ? 'selected' : '' ?>>Domiciliation</option>
