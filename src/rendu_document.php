@@ -908,16 +908,15 @@ class DocumentRenderer
         $stmt->execute(['id' => $societeId]);
         $contrat = $stmt->fetch() ?: [];
 
-        $activitesStmt = $pdo->prepare('SELECT activite FROM ref_activites ORDER BY sort_order, activite');
-        $activitesStmt->execute();
-        $allActivities = array_map(static fn(array $row): string => $row['activite'], $activitesStmt->fetchAll());
-
         $societeActivities = [];
         if (!empty($societe['societe_activites_statuts'])) {
-            $societeActivities = array_map('trim', explode(',', (string) $societe['societe_activites_statuts']));
+            $societeActivities = array_values(array_filter(
+                array_map('trim', explode(',', (string) $societe['societe_activites_statuts'])),
+                static fn(string $a): bool => $a !== ''
+            ));
         }
 
-        $activitiesList = $societeActivities ?: $allActivities;
+        $activitiesList = $societeActivities;
         $activitiesCount = count($activitiesList);
         $activitiesInline = implode('; ', $activitiesList);
         $activitiesBullets = '';
@@ -941,8 +940,6 @@ class DocumentRenderer
             } catch (Throwable) {
                 $certNegList = [$certNegCode];
             }
-        } else {
-            $certNegList = $allActivities;
         }
         $certNegCount = count($certNegList);
         $certNegInline = implode(', ', $certNegList);
@@ -1550,26 +1547,21 @@ class DocumentRenderer
         $dureeMois = $contrat['contrat_duree_mois'] ?? '';
 
         $activitiesList = [];
-        $activitiesInline = '';
+        if (!empty($societe['societe_activites_statuts'])) {
+            $activitiesList = array_values(array_filter(
+                array_map('trim', explode(',', (string) $societe['societe_activites_statuts'])),
+                static fn(string $a): bool => $a !== ''
+            ));
+        }
+        $activitiesCount = count($activitiesList);
+        $activitiesInline = implode('; ', $activitiesList);
         $activitiesBullets = '';
         $activitiesContinuationBullets = '';
-        $activitiesCount = 0;
-
-        if ($pdo !== null) {
-            try {
-                $activitesStmt = $pdo->query('SELECT activite FROM ref_activites ORDER BY sort_order, activite');
-                $allActivities = array_map(static fn(array $row): string => $row['activite'], $activitesStmt->fetchAll());
-                $activitiesList = $allActivities;
-                $activitiesCount = count($activitiesList);
-                $activitiesInline = implode('; ', $activitiesList);
-                foreach ($activitiesList as $i => $act) {
-                    $prefix = '  \\item ';
-                    $activitiesBullets .= $prefix . $act . "\n";
-                    if ($i < $activitiesCount - 1) {
-                        $activitiesContinuationBullets .= $prefix . $act . "\n";
-                    }
-                }
-            } catch (Throwable $e) {
+        foreach ($activitiesList as $i => $act) {
+            $prefix = '  \\item ';
+            $activitiesBullets .= $prefix . $act . "\n";
+            if ($i < $activitiesCount - 1) {
+                $activitiesContinuationBullets .= $prefix . $act . "\n";
             }
         }
 
