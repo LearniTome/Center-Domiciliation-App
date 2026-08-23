@@ -120,20 +120,6 @@ $navSections = [
 ];
 ?>
 <aside class="sidebar">
-    <div class="brand">
-        <span class="brand-badge">
-            <span class="material-symbols-outlined">location_city</span>
-        </span>
-        <div class="brand-text">
-            <strong>Center Domiciliation</strong>
-            <?php if (is_logged_in()): ?>
-                <small style="display:block;font-size:0.6rem;color:var(--text-secondary);margin-top:2px;">
-                    <?= e(get_role_name()) ?>
-                </small>
-            <?php endif; ?>
-        </div>
-    </div>
-
     <?php
         $_navNotifCount = 0;
         if (is_logged_in()) {

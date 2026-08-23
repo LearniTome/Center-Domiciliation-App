@@ -4113,10 +4113,10 @@ tr[data-coverage], .row-mapped {
      }
      .shell:not(.collapsed) .sidebar {
          position: fixed;
-         top: 0;
+         top: 46px;
          left: 0;
          width: 260px;
-         height: 100vh;
+         height: calc(100vh - 46px);
          z-index: 100;
          border-right: 1px solid var(--line);
      }
@@ -4150,12 +4150,22 @@ tr[data-coverage], .row-mapped {
      }
  }
 
+@media (max-width: 760px) {
+    .top-bar-page,
+    .top-bar-clock,
+    .top-bar-clock-icon,
+    .top-bar-appname {
+        display: none;
+    }
+}
+
 @media print {
-     /* Hide navigation and UI elements */
-     .shell {
-         display: block;
-         height: auto;
-     }
+    /* Hide navigation and UI elements */
+    .app-frame { display: block !important; height: auto !important; }
+    .shell {
+        display: block;
+        height: auto;
+    }
      .sidebar,
      .table-actions,
      .btn,
@@ -4716,7 +4726,24 @@ tr[data-coverage], .row-mapped {
 }
 
 /* ==========================================
-   Top Bar (user info + clock + notifications)
+   App Frame (top bar pleine largeur + shell)
+   ========================================== */
+.app-frame {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh / var(--page-zoom));
+}
+.app-frame .shell {
+    flex: 1;
+    min-height: 0;
+    height: auto;
+}
+.app-frame .sidebar {
+    height: auto;
+}
+
+/* ==========================================
+   Top Bar (logo | page | horloge | notifs | user)
    ========================================== */
 .top-bar {
     display: flex;
@@ -4729,6 +4756,39 @@ tr[data-coverage], .row-mapped {
     flex-wrap: wrap;
     min-height: 44px;
     flex-shrink: 0;
+    position: relative;
+    z-index: 150;
+}
+.top-bar-brand,
+.top-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+.top-bar-appname {
+    font-weight: 500;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+.top-bar-brand .brand-badge {
+    cursor: pointer;
+}
+.top-bar-page {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text);
+    padding-left: 12px;
+    margin-left: 4px;
+    border-left: 1px solid var(--line);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 34vw;
+}
+.top-bar-clock-icon {
+    font-size: 1rem;
+    color: var(--text-muted);
 }
 
 .shell-body {
