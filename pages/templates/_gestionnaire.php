@@ -197,6 +197,8 @@ $sortedFolders = array_merge($nonEmpty, $empty);
                 <a class="btn btn-next" href="#" onclick="document.getElementById('upload-form').classList.toggle('hidden'); return false;"><span class="material-symbols-outlined">add</span> Ajouter un template</a>
                 <a class="btn btn-info" href="#" onclick="document.getElementById('copy-form').classList.toggle('hidden'); return false;"><span class="material-symbols-outlined">content_copy</span> Copier</a>
                 <a class="btn" href="#" onclick="document.getElementById('backup-form').classList.toggle('hidden'); return false;"><span class="material-symbols-outlined">download</span> Backup</a>
+                <a class="btn btn-info" href="#" onclick="expandAllTemplates(); return false;" title="Ouvrir tous les dossiers"><span class="material-symbols-outlined">unfold_more</span> Tout déplier</a>
+                <a class="btn btn-cancel" href="#" onclick="collapseAllTemplates(); return false;" title="Replier tous les dossiers"><span class="material-symbols-outlined">unfold_less</span> Tout replier</a>
             </div>
         </div>
 
@@ -267,13 +269,13 @@ $sortedFolders = array_merge($nonEmpty, $empty);
                 <?php $hasItems = (bool) $items; ?>
                 <div class="accordion-item">
                     <h3 class="accordion-header">
-                        <button type="button" class="accordion-trigger" aria-expanded="<?= $hasItems ? 'true' : 'false' ?>" onclick="toggleAccordion(this)">
-                            <span class="accordion-label"><?= e($folderLabels[$folder] ?? $folder) ?></span>
-                            <span class="accordion-count"><?= count($items) ?></span>
-                            <span class="material-symbols-outlined accordion-chevron">expand_more</span>
-                        </button>
-                    </h3>
-                    <div class="accordion-panel" <?= $hasItems ? '' : 'hidden' ?>>
+                        <button type="button" class="accordion-trigger" aria-expanded="false" onclick="toggleAccordion(this)">
+                        <span class="accordion-label"><?= e($folderLabels[$folder] ?? $folder) ?></span>
+                        <span class="accordion-count"><?= count($items) ?></span>
+                        <span class="material-symbols-outlined accordion-chevron">expand_more</span>
+                    </button>
+                </h3>
+                <div class="accordion-panel" hidden>
                         <?php if ($hasItems): ?>
                         <div class="table-scroll">
                         <table data-sortable>
@@ -338,5 +340,23 @@ function toggleAccordion(btn) {
     if (panel) {
         panel.hidden = expanded;
     }
+}
+
+function setAllTemplatesPanels(expanded) {
+    document.querySelectorAll('.accordion-item .accordion-trigger').forEach(function(btn) {
+        btn.setAttribute('aria-expanded', String(expanded));
+        var panel = btn.closest('.accordion-item').querySelector('.accordion-panel');
+        if (panel) {
+            panel.hidden = !expanded;
+        }
+    });
+}
+
+function expandAllTemplates() {
+    setAllTemplatesPanels(true);
+}
+
+function collapseAllTemplates() {
+    setAllTemplatesPanels(false);
 }
 </script>
