@@ -13,7 +13,7 @@ jobs:
   deploy:
     name: FTP deploy vers cPanel
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -29,15 +29,15 @@ jobs:
           protocol: ftps
           port: 21
           local-dir: ./          # racine du repo
-          server-dir: public_html/
+          server-dir: app.centirio.ma/   # document root du sous-domaine
           # Garde un fichier d'etat sur le serveur pour ne transferer
           # que les fichiers modifies entre deux deploiements.
           dangerous-clean-slate: false
           exclude: |
-            **/.git*
-            **/.github*
-            **/.opencode*
-            **/.vscode*
+            **/.git/**
+            **/.github/**
+            **/.opencode/**
+            **/.vscode/**
             **/node_modules/**
             **/docs/**
             **/scripts/**
