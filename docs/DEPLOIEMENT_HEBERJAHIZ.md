@@ -22,7 +22,7 @@ Les migrations (`database/migrations/`) s'appliquent automatiquement au premier
 chargement de la page — rien a faire ensuite.
 
 ### 1.3 Fichier .env
-Dans **File Manager** → `public_html/` → creer `.env` :
+Dans **File Manager** → `app.centirio.ma/` (document root du sous-domaine) → creer `.env` :
 
 ```env
 APP_NAME=Center Domiciliation App
@@ -65,12 +65,18 @@ Repo GitHub → **Settings → Secrets and variables → Actions → New reposit
 git push origin php-haja
 ```
 
-- Le workflow `.github/workflows/deploy-heberjahiz.yml` se declenche et pousse
-  les fichiers vers `public_html/` en FTPS.
-- Premier deploiement lent (~50 Mo avec `vendor/`), ensuite **sync incremental** :
-  seuls les fichiers modifies sont transferes.
+- Le workflow `.github/workflows/deploy-heberjahiz.yml` :
+  1. **Zippe** le repo (hors `.git`, docs, scripts, tests, dossiers_generer, backups…)
+  2. **Upload** un seul fichier `app.zip` vers `app.centirio.ma/` en FTPS
+     (un seul transfert : les sessions FTPS longues sont coupees par le serveur)
+  3. Declenche `_deploy_extract.php` en HTTPS (token protege) qui **decompresse**
+     sur place puis supprime le zip et s'auto-supprime
+- Duree : **2 a 4 minutes** par deploiement (tout est retransfere a chaque push).
 - Suivi : onglet **Actions** du repo GitHub.
 - Deploiement manuel possible : onglet Actions → *Deploy Heberjahiz* → **Run workflow**.
+
+> L'extraction ajoute/met a jour les fichiers mais n'efface pas les anciens
+> fichiers devenus inutiles — nettoyage ponctuel via File Manager si besoin.
 
 ## 4. Rollback
 
@@ -87,9 +93,11 @@ Le revert est redeploye automatiquement.
 
 | Symptome | Cause probable / solution |
 |---|---|
-| Echec FTP dans Actions | Verifier les secrets ; si le port FTPS 21 explicite est refuse, tester `protocol: ftp` (depannage) ou demander a Heberjahiz |
+| Echec upload FTP dans Actions | Verifier les secrets ; le port FTPS explicite 21 doit etre ouvert |
+| Etape "Extraction" en echec (pas de reponse HTTP) | Le domaine app.centirio.ma ne pointe pas encore ou SSL absent — verifier DNS/AutoSSL puis relancer le workflow (le zip est deja sur le serveur) |
+| `EXTRACT_FAIL_*` | Zip corrompu ou droits insuffisants sur `app.centirio.ma/` (passer en 0755 via File Manager) |
 | Erreur 500 au chargement | Verifier version PHP ≥ 8.1 et extensions (1.1) |
-| Page "Erreur de connexion BD" | Verifier `.env` : nom/user BDD prefixes par le compte cPanel |
+| Page "Erreur de connexion BD" | Verifier `.env` : nom/user BDD prefixes par le compte cPanel, `DB_HOST=localhost` |
 | Migrations echouent au premier chargement | Message affiche en haut du tableau de bord ; reimporter schema.sql puis vider `_migrations` dans phpMyAdmin |
 | PDF non genere | Normal sans LibreOffice/Word : le fallback PHPWord→Dompdf est utilise automatiquement (rendu simplifie) |
-| Fichier supprime du repo toujours present sur le serveur | Le sync incremental conserve l'historique ; pour un nettoyage complet mettre temporairement `dangerous-clean-slate: true` dans le workflow |
+| Fichiers obsolètes sur le serveur | L'extraction n'efface pas — supprimer a la main dans File Manager si necessaire |
