@@ -2750,6 +2750,18 @@ td.col-pdf .pdf-pending {
 .section-title-row h3 {
     margin: 0;
 }
+.section-title-row .material-symbols-outlined {
+    font-size: 22px;
+    vertical-align: -4px;
+    margin-right: 6px;
+}
+
+/* Description sous le titre de section */
+.section-description {
+    margin: 0 0 0.75rem;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
 
 /* Stats bottom margin */
 .stats-bottom-margin {

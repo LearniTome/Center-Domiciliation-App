@@ -9,21 +9,62 @@ $templatesDir = __DIR__ . '/../../templates';
 
 $folderLabels = $templatesConfig['folder_labels'];
 $docTypes = $templatesConfig['document_types'];
+$templateSections = $templatesConfig['template_sections'] ?? [];
 
-$displayFolders = ['_Racine-Actifs', '_Cession_SARL', '_Cession_SARLAU'];
+// Formes juridiques depuis la BD -> rattachées automatiquement a la section 'creation'
+$dbFormeFolders = [];
 if (($pdo ?? null) instanceof PDO) {
     $stmt = $pdo->query("SELECT forme_juridique, template_folder FROM ref_formes_juridiques ORDER BY id");
-    $allForms = $stmt->fetchAll();
-    foreach ($allForms as $form) {
+    foreach ($stmt->fetchAll() as $form) {
         $name = (string) $form['forme_juridique'];
         $tf = (string) ($form['template_folder'] ?? '');
         $key = $tf !== '' ? $tf : $name;
-        if (!in_array($key, $displayFolders, true)) {
-            $displayFolders[] = $key;
-        }
+        $dbFormeFolders[] = $key;
         if (!isset($folderLabels[$key])) {
             $folderLabels[$key] = $name;
         }
+    }
+}
+
+// Dossiers physiques presents sur le disque
+$physicalFolders = [];
+if (is_dir($templatesDir)) {
+    $items = scandir($templatesDir);
+    foreach ($items as $item) {
+        if ($item === '.' || $item === '..') continue;
+        if (is_dir($templatesDir . DIRECTORY_SEPARATOR . $item)) {
+            $physicalFolders[] = $item;
+        }
+    }
+    sort($physicalFolders);
+}
+
+// Union ordonnee de tous les dossiers affichables (selects upload/copie/backup)
+$assigned = [];
+foreach ($templateSections as $sec) {
+    foreach (($sec['folders'] ?? []) as $k) {
+        if (!in_array($k, $assigned, true)) {
+            $assigned[] = $k;
+        }
+    }
+}
+foreach ($dbFormeFolders as $k) {
+    if (!in_array($k, $assigned, true)) {
+        $assigned[] = $k;
+    }
+}
+foreach ($physicalFolders as $k) {
+    if (!in_array($k, $assigned, true)) {
+        $assigned[] = $k;
+    }
+}
+$displayFolders = $assigned;
+
+// Ensure folder exists on disk for display (create if missing)
+foreach ($displayFolders as $folder) {
+    $path = $templatesDir . DIRECTORY_SEPARATOR . $folder;
+    if (!is_dir($path)) {
+        @mkdir($path, 0777, true);
     }
 }
 
@@ -154,38 +195,64 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
 $templates = TemplateAnalyzer::scanTemplates($templatesDir);
 $grouped = TemplateAnalyzer::groupByFolder($templates);
 
-$templateFolders = [];
-if (is_dir($templatesDir)) {
-    $items = scandir($templatesDir);
-    foreach ($items as $item) {
-        if ($item === '.' || $item === '..') continue;
-        if (is_dir($templatesDir . DIRECTORY_SEPARATOR . $item)) {
-            $templateFolders[] = $item;
+// Assemblage des sections : dossiers explicites + formes juridiques (creation) + regex + restants
+$usedKeys = [];
+$sectionsRender = [];
+foreach ($templateSections as $sec) {
+    $keys = [];
+    $push = function (string $k) use (&$keys, &$usedKeys): void {
+        if (!in_array($k, $usedKeys, true)) {
+            $keys[] = $k;
+            $usedKeys[] = $k;
+        }
+    };
+    foreach (($sec['folders'] ?? []) as $k) {
+        $push((string) $k);
+    }
+    if (($sec['key'] ?? '') === 'creation') {
+        foreach ($dbFormeFolders as $k) {
+            $push($k);
         }
     }
-    sort($templateFolders);
+    foreach ($physicalFolders as $k) {
+        if (in_array($k, $usedKeys, true)) continue;
+        foreach (($sec['match'] ?? []) as $pat) {
+            if (@preg_match($pat, $k)) {
+                $push($k);
+                break;
+            }
+        }
+    }
+    // Dossiers non vides d'abord
+    usort($keys, function ($a, $b) use ($grouped) {
+        $ca = count($grouped[$a] ?? []);
+        $cb = count($grouped[$b] ?? []);
+        return $cb <=> $ca ?: strcasecmp($a, $b);
+    });
+    $sectionsRender[] = [
+        'key' => (string) ($sec['key'] ?? 'section'),
+        'label' => (string) ($sec['label'] ?? 'Section'),
+        'description' => (string) ($sec['description'] ?? ''),
+        'icon' => (string) ($sec['icon'] ?? 'folder'),
+        'folders' => $keys,
+    ];
 }
 
-// Ensure folder exists on disk for display (create if missing)
-foreach ($displayFolders as $folder) {
-    $path = $templatesDir . DIRECTORY_SEPARATOR . $folder;
-    if (!is_dir($path)) {
-        @mkdir($path, 0777, true);
-    }
+// Dossiers physiques non classes -> section "Autres"
+$leftovers = array_values(array_filter(
+    $physicalFolders,
+    fn(string $k): bool => !in_array($k, $usedKeys, true)
+));
+if ($leftovers !== []) {
+    usort($leftovers, fn($a, $b) => count($grouped[$b] ?? []) <=> count($grouped[$a] ?? []) ?: strcasecmp($a, $b));
+    $sectionsRender[] = [
+        'key' => 'autres',
+        'label' => 'Autres dossiers',
+        'description' => 'Ressources complementaires (guides, references).',
+        'icon' => 'folder_open',
+        'folders' => $leftovers,
+    ];
 }
-
-$sortedFolders = [];
-$nonEmpty = [];
-$empty = [];
-foreach ($displayFolders as $folder) {
-    $items = $grouped[$folder] ?? [];
-    if ($items) {
-        $nonEmpty[] = $folder;
-    } else {
-        $empty[] = $folder;
-    }
-}
-$sortedFolders = array_merge($nonEmpty, $empty);
 
 ?>
 <section>
@@ -231,7 +298,7 @@ $sortedFolders = array_merge($nonEmpty, $empty);
                 <input type="hidden" name="action" value="copy_templates">
                 <select name="source_folder" required>
                     <option value="">-- Depuis --</option>
-                    <?php foreach ($sortedFolders as $folder): ?>
+                    <?php foreach ($displayFolders as $folder): ?>
                         <?php $cnt = count($grouped[$folder] ?? []); ?>
                         <?php if ($cnt > 0): ?>
                             <option value="<?= e($folder) ?>"><?= e($folderLabels[$folder] ?? $folder) ?> (<?= $cnt ?>)</option>
@@ -263,10 +330,39 @@ $sortedFolders = array_merge($nonEmpty, $empty);
             </form>
         </div>
 
-        <?php if ($displayFolders): ?>
-            <?php foreach ($sortedFolders as $folder): ?>
-                <?php $items = $grouped[$folder] ?? []; ?>
-                <?php $hasItems = (bool) $items; ?>
+    </article>
+</section>
+
+<?php if (!$sectionsRender): ?>
+<section>
+    <article class="card">
+        <p class="table-empty">Aucun dossier de templates trouve. Creez un dossier dans <code>templates/</code> ou utilisez la page Configuration.</p>
+    </article>
+</section>
+<?php endif; ?>
+
+<?php foreach ($sectionsRender as $sec): ?>
+    <?php
+    $secCount = 0;
+    foreach ($sec['folders'] as $f) {
+        $secCount += count($grouped[$f] ?? []);
+    }
+    ?>
+<section>
+    <article class="card stack">
+        <div class="section-title-row">
+            <h2><span class="material-symbols-outlined"><?= e($sec['icon']) ?></span> <?= e($sec['label']) ?></h2>
+            <div class="table-actions">
+                <span class="page-count"><?= $secCount ?> template(s) &middot; <?= count($sec['folders']) ?> dossier(s)</span>
+            </div>
+        </div>
+        <?php if ($sec['description'] !== ''): ?>
+            <p class="section-description"><?= e($sec['description']) ?></p>
+        <?php endif; ?>
+
+        <?php foreach ($sec['folders'] as $folder): ?>
+            <?php $items = $grouped[$folder] ?? []; ?>
+            <?php $hasItems = (bool) $items; ?>
                 <div class="accordion-item">
                     <h3 class="accordion-header">
                         <button type="button" class="accordion-trigger" aria-expanded="false" onclick="toggleAccordion(this)">
@@ -319,12 +415,10 @@ $sortedFolders = array_merge($nonEmpty, $empty);
                         <?php endif; ?>
                     </div>
                 </div>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <p class="table-empty">Aucun dossier de templates trouve. Creez un dossier dans <code>templates/</code> ou utilisez la page Configuration.</p>
-        <?php endif; ?>
+        <?php endforeach; ?>
     </article>
 </section>
+<?php endforeach; ?>
 
 
 
