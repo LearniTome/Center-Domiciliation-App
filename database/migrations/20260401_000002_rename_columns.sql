@@ -1,7 +1,5 @@
 -- Migration : Renommer les colonnes des tables societes, associes, contrats
--- Execute: Get-Content database/migration_rename_columns.sql | mysql -u root center_domiciliation
-
-USE center_domiciliation;
+-- NB : pas de USE ici — la base est sélectionnée par le DSN (portabilité mutualisé).
 
 -- ============================================================
 -- Table: societes (colonnes encore anciennes)

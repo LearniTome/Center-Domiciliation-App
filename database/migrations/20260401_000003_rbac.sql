@@ -1,7 +1,6 @@
 -- RBAC: Roles, Permissions, and collaborateur auth migration
 -- Run: mysql -u root center_domiciliation < database/migration_rbac.sql
 
-USE center_domiciliation;
 
 -- 1. Roles table (fusionne avec collaborateur_type)
 CREATE TABLE IF NOT EXISTS roles (
