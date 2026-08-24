@@ -81,10 +81,13 @@ function run_migrations(PDO $pdo): array
             // since the schema may already be up-to-date
             $duplicatePatterns = [
                 '42S21',   // Column already exists
-                '42S22',   // Column not found (rename migration on fresh schema)
                 '42S01',   // Table already exists
-                '42000',   // Duplicate key (MariaDB specific)
+                '1091',    // Can't DROP; check that column/key exists
+                '1061',    // Duplicate key name (index already exists)
+                '1826',    // Duplicate foreign key constraint name
             ];
+            // NB : 42S22 ("Column not found") n'est PAS ignore — c'est une vraie erreur
+            // qui masquait des migrations echouees (cf. reparation dossiers 2026-08-24).
             $isDuplicate = false;
             foreach ($duplicatePatterns as $code) {
                 if (str_contains($msg, "SQLSTATE[$code]") || str_contains($msg, "($code)")) {
