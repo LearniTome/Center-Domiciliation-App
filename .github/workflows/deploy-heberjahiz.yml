@@ -1,0 +1,53 @@
+name: Deploy Heberjahiz
+
+on:
+  push:
+    branches: [php-haja]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-heberjahiz
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: FTP deploy vers cPanel
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy via FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          # Si Heberjahiz bloque le FTPS explicite (port 21), essayer :
+          #   protocol: ftp   (non chiffre, depannage uniquement)
+          protocol: ftps
+          port: 21
+          local-dir: ./          # racine du repo
+          server-dir: public_html/
+          # Garde un fichier d'etat sur le serveur pour ne transferer
+          # que les fichiers modifies entre deux deploiements.
+          dangerous-clean-slate: false
+          exclude: |
+            **/.git*
+            **/.github*
+            **/.opencode*
+            **/.vscode*
+            **/node_modules/**
+            **/docs/**
+            **/scripts/**
+            **/tests/**
+            **/graphify-out/**
+            **/database/exports/**
+            **/*.md
+            **/*.cmd
+            **/*.ps1
+            **/*.sh
+            **/*.mjs
+            **/.env*
+            _debug*.php

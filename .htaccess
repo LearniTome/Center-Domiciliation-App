@@ -1,0 +1,27 @@
+# ============================================================
+#  Center Domiciliation App - Protection serveur (cPanel)
+#  Sans effet en local : le serveur PHP integre ignore .htaccess
+# ============================================================
+
+# Pas de listage des repertoires
+Options -Indexes
+
+# --- Bloquer les fichiers sensibles ---
+# Dotfiles (.env, .gitignore...) + scripts de debug
+<FilesMatch "^(\.|_debug)">
+    Require all denied
+</FilesMatch>
+
+# Extensions sans usage web (docs, dumps, config CI, scripts)
+<FilesMatch "\.(md|sql|log|json|lock|yml|yaml|cmd|ps1|sh|mjs|ini)$">
+    Require all denied
+</FilesMatch>
+
+# --- Bloquer les repertoires de code interne ---
+# Code serveur uniquement : lu par PHP, jamais servi en direct.
+# uploads/, dossiers_generer/ et assets/ restent publics
+# (liens directs via word_url() / download_url()).
+RedirectMatch 403 ^/(includes|src|config|database|templates|scripts|docs|tests|graphify-out)(/|$)
+
+# Repertoires caches outillage
+RedirectMatch 403 /^\.(git|github|opencode|vscode)(/|$)
