@@ -225,12 +225,14 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - **manual-test** — checklist pré-commit (PHP lint, navigation, formulaires, UI, DB)
 - **dolibarr** — fonctionnalités type ERP/Dolibarr (modules, hooks, triggers, permissions, workflow statuts, numérotation, API REST) + intégration Dolibarr ; référence `.opencode/skills/dolibarr/` (architecture.md, api-rest.md, patterns-vanilla-php.md). Version générique multi-projets dans `~/.agents/skills/dolibarr/`. Agent dédié : `.opencode/agent/dolibarr.md`
 - **protocole-cto** — pilotage en 3 phases : planification (`/plan`), exécution sans placeholder (`/execute`), modification chirurgicale (`/modify <fonctionnalité>`). Feuille de route/tâches dans `docs/ROADMAP.md`
+- **heberjahiz-deploy** — déploiement et exploitation production sur Heberjahiz (app.centirio.ma) : pipeline GitHub Actions zip+extract, FTPS curl, baseline DB, scripts temporaires à jeton, dépannage. Agent dédié : `.opencode/agent/heberjahiz.md`
 
 ## OpenCode Commands (.opencode/command/)
 - **/plan** — audit + hypothèses + feuille de route AVANT tout code (KISS, versions à jour, structure respectée)
 - **/execute** — implémentation production-ready : zéro TODO, auto-validation (`php -l`, logs), mise à jour de `docs/ROADMAP.md` après chaque tâche
 - **/modify** — ajout de fonctionnalité en mode chirurgie : analyse d'impact d'abord, périmètre confiné, test anti-régression
 - **/dev** — lance le serveur de dev en arrière-plan et vérifie que l'app répond
+- **/deploy-heberjahiz** — push `php-haja` → workflow Deploy Heberjahiz → poll du run → vérifications HTTPS/login (voir skill heberjahiz-deploy)
 
 ## Claude AI Integration
 - **ClaudeService** (`src/service_claude.php`): Static class with cURL to Anthropic API
@@ -349,13 +351,21 @@ php -r "require 'vendor/autoload.php'; echo class_exists('\PhpOffice\PhpWord\IOF
 
 ## MCP Servers (OpenCode)
 
-Le projet utilise 3 serveurs MCP configurés dans `opencode.json` :
+Le projet utilise 4 serveurs MCP configurés dans `opencode.json` :
 
 | Serveur | Package npm | Rôle |
 |---------|------------|------|
 | **memory** | `@modelcontextprotocol/server-memory` | Mémoire contextuelle (knowledge graph) |
 | **chrome-devtools** | `chrome-devtools-mcp` | Automatisation navigateur (tests UI, debug visuel) |
 | **mysql-dev** | `@berthojoris/mcp-mysql-server` | Requêtes SQL directes sur la base locale |
+| **heberjahiz-db** *(désactivé)* | `@berthojoris/mcp-mysql-server` | Requêtes SQL en lecture sur la base prod `centiaxh_domiciliation`. Activation : (1) cPanel → MySQL distant → ajouter son IP ; (2) remplacer `MOT_DE_PASSE_A_REMPLIR` dans le DSN de `opencode.json` ; (3) passer `enabled: true` puis redémarrer opencode. Jamais de mot de passe réel versionné — remettre le placeholder avant tout commit. |
+
+### Déploiement production Heberjahiz
+
+- Cible : **https://app.centirio.ma** (docroot `/home/centiaxh/centirio.ma/app.centirio.ma/`)
+- Pipeline : push `php-haja` → workflow **Deploy Heberjahiz** (~2 min, zip + extracteur auto-destructeur)
+- Référence complète (procédures, quirks FTPS, baseline DB, dépannage) : skill `heberjahiz-deploy` + commande `/deploy-heberjahiz`
+- Secrets du repo : `FTP_HOST`, `FTP_USER`, `FTP_PASSWORD` (compte FTP chrooté dans le docroot)
 
 ### Connexion MySQL depuis le `.env`
 - Le serveur MCP `mysql-dev` est lancé via `scripts/mysql-mcp.mjs` (wrapper Node) qui lit `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD` depuis `.env` — pas de valeurs en dur.

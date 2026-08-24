@@ -20,6 +20,11 @@
       "type": "local",
       "command": ["npx", "-y", "@berthojoris/mcp-mysql-server", "mysql://user:pass@host:3306/center_domiciliation", "list,read"],
       "enabled": false
+    },
+    "heberjahiz-db": {
+      "type": "local",
+      "command": ["npx", "-y", "@berthojoris/mcp-mysql-server", "mysql://centiaxh_dom_user:MOT_DE_PASSE_A_REMPLIR@app.centirio.ma:3306/centiaxh_domiciliation", "list,read"],
+      "enabled": false
     }
   }
 }
