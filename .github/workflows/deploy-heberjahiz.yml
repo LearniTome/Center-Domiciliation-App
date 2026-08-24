@@ -41,10 +41,20 @@ jobs:
           FTP_USER: ${{ secrets.FTP_USER }}
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
         run: |
-          curl --ssl-reqd --connect-timeout 30 --max-time 900 \
-            -T dist_pkg/app.zip \
-            "ftp://$FTP_HOST/app.centirio.ma/app.zip" \
-            --user "$FTP_USER:$FTP_PASSWORD"
+          # -k : le certificat TLS du serveur FTP n'a pas le bon nom d'hote
+          # (emis par Heberjahiz pour un autre nom) - chiffrement conserve
+          UP=0
+          for i in 1 2 3; do
+            echo "Tentative $i..."
+            if curl -k --ssl-reqd --connect-timeout 30 --max-time 900 \
+              -T dist_pkg/app.zip \
+              "ftp://$FTP_HOST/app.centirio.ma/app.zip" \
+              --user "$FTP_USER:$FTP_PASSWORD"; then
+              UP=1; break
+            fi
+            sleep 10
+          done
+          [ "$UP" = "1" ] || exit 1
 
       - name: Extraction sur le serveur
         run: |
