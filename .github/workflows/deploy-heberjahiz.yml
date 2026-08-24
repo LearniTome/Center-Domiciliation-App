@@ -21,10 +21,11 @@ jobs:
       - name: Packager l'application
         run: |
           mkdir -p dist_pkg
-          # Extracteur embarque dans le zip, token unique par run
+          # Extracteur envoye A COTE du zip (sinon 404 : il ne peut s'executer
+          # qu'apres la premiere extraction). Token unique par run.
           TOKEN="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          sed "s/__TOKEN__/$TOKEN/" .github/deploy/extract_template.php > _deploy_extract.php
-          # Un seul transfert FTP au lieu de milliers de fichiers :
+          sed "s/__TOKEN__/$TOKEN/" .github/deploy/extract_template.php > dist_pkg/_deploy_extract.php
+          # Un seul gros transfert FTP au lieu de milliers de fichiers :
           # le serveur coupe les sessions TLS longues (err 553 / SSL alert 50)
           zip -qr dist_pkg/app.zip . \
             -x ".git/*" ".github/*" ".opencode/*" ".vscode/*" \
@@ -47,9 +48,13 @@ jobs:
           for i in 1 2 3; do
             echo "Tentative $i..."
             if curl -k --ssl-reqd --connect-timeout 30 --max-time 900 \
-              -T dist_pkg/app.zip \
-              "ftp://$FTP_HOST/app.centirio.ma/app.zip" \
-              --user "$FTP_USER:$FTP_PASSWORD"; then
+                -T dist_pkg/app.zip \
+                "ftp://$FTP_HOST/app.centirio.ma/app.zip" \
+                --user "$FTP_USER:$FTP_PASSWORD" \
+            && curl -k --ssl-reqd --connect-timeout 30 \
+                -T dist_pkg/_deploy_extract.php \
+                "ftp://$FTP_HOST/app.centirio.ma/_deploy_extract.php" \
+                --user "$FTP_USER:$FTP_PASSWORD"; then
               UP=1; break
             fi
             sleep 10
