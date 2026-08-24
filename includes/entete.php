@@ -42,7 +42,7 @@ $noSidebar = in_array($page ?? '', ['connexion', 'deconnexion'], true);
     ?>
     <header class="top-bar">
         <div class="top-bar-left">
-            <span class="brand-badge" data-sidebar-toggle title="Reduire/Developper la navigation"><span class="material-symbols-outlined">location_city</span></span>
+            <span class="brand-badge" data-sidebar-toggle title="Reduire/Developper la navigation"><?php $_topLogo = get_centre_logo_path($pdo ?? null); if ($_topLogo !== ''): ?><img src="<?= e($_topLogo) ?>" alt="" style="width:22px;height:22px;border-radius:4px;object-fit:cover;display:block"><?php else: ?><span class="material-symbols-outlined">location_city</span><?php endif; ?></span>
             <strong class="top-bar-appname">Centre Domiciliation</strong>
             <span class="top-bar-page" title="<?= e($pageTitle) ?>"><?= e($pageTitle) ?></span>
         </div>

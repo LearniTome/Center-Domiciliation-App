@@ -31,7 +31,7 @@ $villesOptions = $isAdresseTab ? fetch_reference_options($pdo ?? null, 'ref_vill
 $rows = [];
 if (($pdo ?? null) instanceof PDO) {
     try {
-        $selectCols = $isNmaTab ? "id, code, {$column}, sort_order, created_at, updated_at" : ($isTribunalTab ? "id, tribunal_type, {$column}, sort_order, created_at, updated_at" : ($isFormeJuridiqueTab ? "id, {$column}, template_folder, sort_order, created_at, updated_at" : ($isAdresseTab ? "id, {$column}, ville, sort_order, created_at, updated_at" : "id, {$column}, sort_order, created_at, updated_at")));
+        $selectCols = $isNmaTab ? "id, code, {$column}, sort_order, created_at, updated_at" : ($isTribunalTab ? "id, tribunal_type, {$column}, sort_order, created_at, updated_at" : ($isFormeJuridiqueTab ? "id, {$column}, template_folder, sort_order, created_at, updated_at" : ($isAdresseTab ? "id, {$column}, ville, code_postal, sort_order, created_at, updated_at" : "id, {$column}, sort_order, created_at, updated_at")));
         $orderBy = $isTribunalTab ? "FIELD(tribunal_type, 'Tribunal de commerce', 'Tribunal de Première Instance'), sort_order ASC, {$column} ASC" : "sort_order ASC, {$column} ASC";
         $stmt = $pdo->query("SELECT {$selectCols} FROM {$table} ORDER BY {$orderBy}");
         $rows = $stmt->fetchAll();
@@ -85,9 +85,10 @@ if (is_post()) {
                 $stmt->execute(['val' => $value, 'tf' => $templateFolder, 'so' => $max]);
             } elseif ($tab === 'adresses') {
                 $adresseVille = field_value($_POST, 'ville');
+                $adresseCodePostal = field_value($_POST, 'code_postal');
                 $max = $pdo->query("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM {$table}")->fetchColumn();
-                $stmt = $pdo->prepare("INSERT IGNORE INTO {$table} ({$column}, ville, sort_order) VALUES (:val, :ville, :so)");
-                $stmt->execute(['val' => $value, 'ville' => $adresseVille, 'so' => $max]);
+                $stmt = $pdo->prepare("INSERT IGNORE INTO {$table} ({$column}, ville, code_postal, sort_order) VALUES (:val, :ville, :cp, :so)");
+                $stmt->execute(['val' => $value, 'ville' => $adresseVille, 'cp' => $adresseCodePostal, 'so' => $max]);
             } else {
                 $stmt = $pdo->prepare("INSERT IGNORE INTO {$table} ({$column}, sort_order) VALUES (:val, :so)");
                 $max = $pdo->query("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM {$table}")->fetchColumn();
@@ -118,8 +119,9 @@ if (is_post()) {
                 $stmt->execute(['new' => $newValue, 'tf' => $newTemplateFolder, 'id' => $recordId]);
             } elseif ($tab === 'adresses') {
                 $newVille = field_value($_POST, 'ville');
-                $stmt = $pdo->prepare("UPDATE {$table} SET {$column} = :new, ville = :ville WHERE id = :id");
-                $stmt->execute(['new' => $newValue, 'ville' => $newVille, 'id' => $recordId]);
+                $newCodePostal = field_value($_POST, 'code_postal');
+                $stmt = $pdo->prepare("UPDATE {$table} SET {$column} = :new, ville = :ville, code_postal = :cp WHERE id = :id");
+                $stmt->execute(['new' => $newValue, 'ville' => $newVille, 'cp' => $newCodePostal, 'id' => $recordId]);
             } else {
                 $stmt = $pdo->prepare("UPDATE {$table} SET {$column} = :new WHERE id = :id");
                 $stmt->execute(['new' => $newValue, 'id' => $recordId]);
@@ -201,10 +203,14 @@ if (is_post()) {
                 <input type="hidden" name="action" value="sort-az">
                 <button type="submit" class="btn btn-info"><span class="material-symbols-outlined">sort_by_alpha</span> Trier A-Z</button>
             </form>
+            <?php if ($isAdresseTab): ?>
+                <button type="button" class="btn btn-next" data-adresse-add-btn><span class="material-symbols-outlined">add</span> Ajouter une adresse</button>
+            <?php endif; ?>
             <a class="btn btn-back" href="<?= e(app_url('creation')) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
         </div>
     </div>
 
+    <?php if (!$isAdresseTab): ?>
     <form method="post" class="inline-form" style="margin-bottom:0.75rem">
         <?= csrf_input() ?>
         <input type="hidden" name="action" value="add">
@@ -234,6 +240,7 @@ if (is_post()) {
             <button type="submit" class="btn btn-next" style="padding:4px 10px;font-size:0.8125rem">Ajouter</button>
         </div>
     </form>
+    <?php endif; ?>
 
     <?php if (count($rows) > 0): ?>
         <?php $firstId = (int) $rows[0]['id']; $lastId = (int) $rows[count($rows) - 1]['id']; ?>
@@ -251,6 +258,7 @@ if (is_post()) {
                     <th><?= e($label) ?></th>
                     <?php if ($isAdresseTab): ?>
                         <th>Ville</th>
+                        <th>Code postal</th>
                     <?php endif; ?>
                     <?php if ($isFonctionsTab): ?>
                         <th style="width:80px;text-align:center">Personnes</th>
@@ -270,7 +278,7 @@ if (is_post()) {
                     <tr <?= $editKey === $val ? '' : 'draggable="true"' ?> data-record-id="<?= $rid ?>">
                         <?php if ($editKey === $val): ?>
                             <td style="text-align:center;color:var(--text-secondary)"><span class="material-symbols-outlined">drag_indicator</span></td>
-                            <td <?= $isTribunalTab || $isFormeJuridiqueTab || $isAdresseTab ? 'colspan="2"' : '' ?>>
+                            <td <?= $isAdresseTab ? 'colspan="3"' : ($isTribunalTab || $isFormeJuridiqueTab ? 'colspan="2"' : '') ?>>
                                 <form method="post" style="display:flex;gap:4px">
                                     <?= csrf_input() ?>
                                     <input type="hidden" name="action" value="update">
@@ -291,6 +299,7 @@ if (is_post()) {
                                                 <option value="<?= e($v) ?>" <?= ($row['ville'] ?? '') === $v ? 'selected' : '' ?>><?= e($v) ?></option>
                                             <?php endforeach; ?>
                                         </select>
+                                        <input name="code_postal" value="<?= e((string) ($row['code_postal'] ?? '')) ?>" placeholder="Code postal..." style="width:90px;padding:2px 6px;font-size:0.8125rem">
                                     <?php endif; ?>
                                     <?php if ($isNmaTab): ?>
                                         <span style="padding:2px 6px;font-size:0.8125rem;color:var(--text-secondary)"><?= e((string) $row['code']) ?> -</span>
@@ -316,6 +325,7 @@ if (is_post()) {
                             <td><?= $isNmaTab ? e((string) $row['code'] . ' - ' . $val) : e($val) ?></td>
                             <?php if ($isAdresseTab): ?>
                                 <td><?= e($row['ville'] ?? '-') ?></td>
+                                <td><?= e($row['code_postal'] ?? '-') ?></td>
                             <?php endif; ?>
                             <?php if ($isFonctionsTab): ?>
                                 <td style="text-align:center;font-weight:600;color:var(--primary)"><?= (int) ($row['collab_count'] ?? 0) ?></td>
@@ -444,3 +454,60 @@ if (is_post()) {
         </div>
     <?php endif; ?>
 </section>
+
+<?php if ($isAdresseTab): ?>
+<div class="modal-overlay" data-modal="adresse-add">
+    <div class="modal-panel">
+        <div class="modal-header">
+            <h3 style="font-weight:700;color:var(--info)">Nouvelle adresse</h3>
+            <button class="btn-icon" type="button" data-modal-close title="Fermer"><span class="material-symbols-outlined">close</span></button>
+        </div>
+        <form method="post" class="stack">
+            <?= csrf_input() ?>
+            <input type="hidden" name="action" value="add">
+            <label class="field">
+                <span>Adresse *</span>
+                <input name="<?= e($column) ?>" required placeholder="Ex : 12 Rue Ibn Sina, Quartier des Affaires...">
+            </label>
+            <label class="field">
+                <span>Ville</span>
+                <select name="ville">
+                    <option value="">Sans ville</option>
+                    <?php foreach ($villesOptions ?? [] as $v): ?>
+                        <option value="<?= e($v) ?>"><?= e($v) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <label class="field">
+                <span>Code postal</span>
+                <input name="code_postal" placeholder="Ex : 20000">
+            </label>
+            <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:6px">
+                <button type="button" class="btn btn-cancel" data-modal-close><span class="material-symbols-outlined">close</span> Annuler</button>
+                <button type="submit" class="btn btn-next"><span class="material-symbols-outlined">check</span> Ajouter</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var modal = document.querySelector('[data-modal="adresse-add"]');
+    var openBtn = document.querySelector('[data-adresse-add-btn]');
+    if (!modal || !openBtn) return;
+    openBtn.addEventListener('click', function () {
+        modal.classList.add('open');
+        var first = modal.querySelector('input[name]');
+        if (first) first.focus();
+    });
+    modal.querySelectorAll('[data-modal-close]').forEach(function (el) {
+        el.addEventListener('click', function () { modal.classList.remove('open'); });
+    });
+    modal.addEventListener('click', function (e) {
+        if (e.target === modal) modal.classList.remove('open');
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') modal.classList.remove('open');
+    });
+});
+</script>
+<?php endif; ?>

@@ -662,6 +662,56 @@ function ensure_template_folder(string $folderName): bool
 }
 
 /**
+ * Fiche singleton du centre d'affaires (table centre_affaires, id = 1).
+ * Retourne un tableau de valeurs par defaut si la table est absente ou vide.
+ */
+function get_centre_affaires(?PDO $pdo): array
+{
+    static $cache = null;
+    if ($cache !== null) {
+        return $cache;
+    }
+
+    $defaults = [
+        'denomination' => '',
+        'adresse' => '',
+        'numero_if' => '',
+        'numero_ice' => '',
+        'numero_rc' => '',
+        'numero_tp' => '',
+        'numero_cnss' => '',
+        'adresse_dgi' => '',
+        'adresse_cnss' => '',
+        'logo_path' => '',
+    ];
+
+    if (!$pdo instanceof PDO) {
+        $cache = $defaults;
+
+        return $cache;
+    }
+
+    try {
+        $row = $pdo->query(
+            'SELECT denomination, adresse, numero_if, numero_ice, numero_rc, numero_tp, numero_cnss, adresse_dgi, adresse_cnss, logo_path FROM centre_affaires WHERE id = 1'
+        )->fetch();
+        $cache = array_merge($defaults, is_array($row) ? $row : []);
+    } catch (PDOException) {
+        $cache = $defaults;
+    }
+
+    return $cache;
+}
+
+/**
+ * Chemin relatif du logo du centre d'affaires ('' si aucun logo).
+ */
+function get_centre_logo_path(?PDO $pdo): string
+{
+    return trim((string) (get_centre_affaires($pdo)['logo_path'] ?? ''));
+}
+
+/**
  * Matching tolerant d'un doc_type contre des motifs de prefixe.
  * Normalise la casse/ponctuation et ignore les variantes "_Template v2" du nom de fichier.
  * Ex : "Attestation-Domiciliation-Template v2" correspond au motif "Attestation-Domiciliation".

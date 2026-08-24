@@ -7,7 +7,7 @@ ob_start();
 require __DIR__ . '/includes/amorcage.php';
 
 $allowedPages = [
-    'creation', 'configuration',
+    'creation', 'configuration', 'centre',
     'formes-juridiques', 'tribunaux', 'adresses', 'villes',
     'nationalites', 'lieux-naissance', 'qualites-associe', 'fonctions',
     'activites', 'activites-ompic',
@@ -68,6 +68,7 @@ $pageDir = [
     'ai-assistant' => 'outils',
     // Configuration
     'configuration' => 'configuration',
+    'centre' => 'configuration',
     'formes-juridiques' => 'configuration',
     'tribunaux' => 'configuration',
     'adresses' => 'configuration',
@@ -137,6 +138,7 @@ if ($page === 'notif-ajax') {
 $pageTitleMap = [
     'creation' => 'Nouveau dossier',
     'configuration' => 'Configuration',
+    'centre' => "Centre d'affaires",
     'formes-juridiques' => 'Formes juridiques',
     'tribunaux' => 'Tribunaux',
     'adresses' => 'Adresses',

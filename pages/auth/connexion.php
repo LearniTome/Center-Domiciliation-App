@@ -56,7 +56,11 @@ if (is_post()) {
 <section class="grid two">
     <article class="card stack" style="max-width:400px;margin:80px auto;">
         <div style="text-align:center;margin-bottom:1.5rem;">
-            <span class="material-symbols-outlined" style="font-size:3rem;color:var(--primary);">location_city</span>
+            <?php $_authLogo = get_centre_logo_path($pdo ?? null); if ($_authLogo !== ''): ?>
+                <img src="<?= e($_authLogo) ?>" alt="Logo" style="max-width:120px;max-height:80px;object-fit:contain;margin-bottom:6px">
+            <?php else: ?>
+                <span class="material-symbols-outlined" style="font-size:3rem;color:var(--primary);">location_city</span>
+            <?php endif; ?>
             <p class="help-text">Centre de Domiciliation — Espace collaborateur</p>
         </div>
 
