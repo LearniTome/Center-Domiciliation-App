@@ -532,7 +532,7 @@ class DocumentRenderer
                 $item = $block;
                 $item = str_replace('_a.INDEX_', (string) ($i + 1), $item);
                 // NOM_COMPLET avant NOM : evite que le token court consomme le debut du long (_a.NOM_COMPLET_)
-                $civ = $associe['associe_civilite'] ?? 'M.';
+                $civ = ($associe['associe_civilite'] ?: 'M.');
                 $fullName = trim($civ . ' ' . ($associe['associe_prenom'] ?? '') . ' ' . ($associe['associe_nom'] ?? ''));
                 $item = str_replace('_a.NOM_COMPLET_', $fullName, $item);
                 $item = str_replace('_a.NOM_', $associe['associe_nom'] ?? '', $item);
@@ -976,7 +976,7 @@ class DocumentRenderer
                 'associe_qualite' => $qualite,
                 'associe_parts' => $parts,
                 'associe_est_gerant' => $isGerant,
-                'associe_civilite' => $a['associe_civilite'] ?? 'M.',
+                'associe_civilite' => ($a['associe_civilite'] ?: 'M.'),
                 'associe_duree_gerance' => $a['associe_duree_gerance'] ?? '',
                 'adresse' => $adresse,
                 'email' => $email,
@@ -990,7 +990,7 @@ class DocumentRenderer
         $firstAssocie = $associeList[0] ?? [];
         $fNom = $firstAssocie['associe_nom'] ?? '';
         $fPrenom = $firstAssocie['associe_prenom'] ?? '';
-        $fCivilite = $firstAssocie['associe_civilite'] ?? 'M.';
+        $fCivilite = ($firstAssocie['associe_civilite'] ?: 'M.');
         $fNomComplet = trim("$fCivilite $fPrenom $fNom");
 
         $gerant = null;
@@ -1003,7 +1003,7 @@ class DocumentRenderer
         if ($gerant === null) {
             $gerant = $firstAssocie;
         }
-        $gCivilite = $gerant['associe_civilite'] ?? 'M.';
+        $gCivilite = ($gerant['associe_civilite'] ?: 'M.');
         $gNomComplet = trim("$gCivilite " . ($gerant['associe_prenom'] ?? '') . ' ' . ($gerant['associe_nom'] ?? ''));
 
         $now = new DateTime();
@@ -1027,6 +1027,7 @@ class DocumentRenderer
             'contrat' => $contrat,
             'activities' => $activitiesList,
             'SOCIETE_RAISON_SOCIALE' => $denSte,
+            'SOCIETE_SIGLE' => $societe['societe_sigle'] ?? '',
             'SOCIETE_FORME_JURIDIQUE' => $formeJur,
             'SOCIETE_ICE' => $ice,
             'SOCIETE_RC' => $societe['societe_rc'] ?? '',
@@ -1106,6 +1107,7 @@ class DocumentRenderer
             'NB_ACTIVITES' => (string) $activitiesCount,
             'ACTIVITES_OMPIC' => $certNegList,
             'OMPIC_INLINE' => $certNegInline,
+            'SOCIETE_ACTIVITE_OMPIC' => $certNegInline,
             'OMPIC_PUCES' => $certNegBullets,
             'NB_OMPIC' => (string) $certNegCount,
             'DATE' => $now->format('d/m/Y'),
@@ -1185,7 +1187,7 @@ class DocumentRenderer
                 'associe_qualite' => $a['associe_qualite'] ?? '',
                 'associe_parts' => $a['associe_parts'] ?? '',
                 'associe_est_gerant' => (int) ($a['associe_est_gerant'] ?? 0) === 1 ? 'Gerant' : 'Associe',
-                'associe_civilite' => $a['associe_civilite'] ?? 'M.',
+                'associe_civilite' => ($a['associe_civilite'] ?: 'M.'),
                 'adresse' => $a['associe_adresse'] ?? '',
                 'email' => $a['associe_email'] ?? '',
                 'telephone' => $a['associe_telephone'] ?? '',
@@ -1199,7 +1201,7 @@ class DocumentRenderer
         $firstAssocie = $associeList[0] ?? [];
         $fNom = $firstAssocie['associe_nom'] ?? '';
         $fPrenom = $firstAssocie['associe_prenom'] ?? '';
-        $fCivilite = $firstAssocie['associe_civilite'] ?? 'M.';
+        $fCivilite = ($firstAssocie['associe_civilite'] ?: 'M.');
         $fNomComplet = trim("$fCivilite $fPrenom $fNom");
 
         $gerant = null;
@@ -1212,7 +1214,7 @@ class DocumentRenderer
         if ($gerant === null) {
             $gerant = $firstAssocie;
         }
-        $gCivilite = $gerant['associe_civilite'] ?? 'M.';
+        $gCivilite = ($gerant['associe_civilite'] ?: 'M.');
         $gNomComplet = trim("$gCivilite " . ($gerant['associe_prenom'] ?? '') . ' ' . ($gerant['associe_nom'] ?? ''));
 
         return [
@@ -1221,6 +1223,7 @@ class DocumentRenderer
             'cession_parts' => $cessionParts,
             'cession' => $cession,
             'SOCIETE_RAISON_SOCIALE' => $societe['societe_raison_sociale'] ?? '',
+            'SOCIETE_SIGLE' => $societe['societe_sigle'] ?? '',
             'SOCIETE_FORME_JURIDIQUE' => $societe['societe_forme_juridique'] ?? '',
             'SOCIETE_ICE' => $societe['societe_ice'] ?? '',
             'SOCIETE_RC' => $societe['societe_rc'] ?? '',
@@ -1422,6 +1425,7 @@ class DocumentRenderer
             'pv_ago' => $pv,
             'societe' => $societe,
             'SOCIETE_RAISON_SOCIALE' => $societe['societe_raison_sociale'] ?? '',
+            'SOCIETE_SIGLE' => $societe['societe_sigle'] ?? '',
             'SOCIETE_FORME_JURIDIQUE' => $societe['societe_forme_juridique'] ?? '',
             'SOCIETE_ICE' => $societe['societe_ice'] ?? '',
             'SOCIETE_RC' => $societe['societe_rc'] ?? '',
@@ -1510,7 +1514,7 @@ class DocumentRenderer
                 'associe_qualite' => $a['associe_qualite'] ?? '',
                 'associe_parts' => $a['associe_parts'] ?? '',
                 'associe_est_gerant' => ((string) ($a['associe_est_gerant'] ?? '0') === '1') ? 'Gerant' : 'Associe',
-                'associe_civilite' => $a['associe_civilite'] ?? 'M.',
+                'associe_civilite' => ($a['associe_civilite'] ?: 'M.'),
                 'adresse' => $a['associe_adresse'] ?? '',
                 'email' => $a['associe_email'] ?? '',
                 'telephone' => $a['associe_telephone'] ?? '',
@@ -1524,7 +1528,7 @@ class DocumentRenderer
         $firstAssocie = $associeList[0] ?? [];
         $fNom = $firstAssocie['associe_nom'] ?? '';
         $fPrenom = $firstAssocie['associe_prenom'] ?? '';
-        $fCivilite = $firstAssocie['associe_civilite'] ?? 'M.';
+        $fCivilite = ($firstAssocie['associe_civilite'] ?: 'M.');
         $fNomComplet = trim("$fCivilite $fPrenom $fNom");
 
         $gerant = null;
@@ -1537,7 +1541,7 @@ class DocumentRenderer
         if ($gerant === null) {
             $gerant = $firstAssocie;
         }
-        $gCivilite = $gerant['associe_civilite'] ?? 'M.';
+        $gCivilite = ($gerant['associe_civilite'] ?: 'M.');
         $gNomComplet = trim("$gCivilite " . ($gerant['associe_prenom'] ?? '') . ' ' . ($gerant['associe_nom'] ?? ''));
 
         $now = new DateTime();
@@ -1594,6 +1598,7 @@ class DocumentRenderer
             'contrat' => $contrat,
             'activities' => $activitiesList,
             'SOCIETE_RAISON_SOCIALE' => $denSte,
+            'SOCIETE_SIGLE' => $societe['societe_sigle'] ?? '',
             'SOCIETE_FORME_JURIDIQUE' => $formeJur,
             'SOCIETE_ICE' => $ice,
             'SOCIETE_RC' => $societe['societe_rc'] ?? '',
@@ -1671,6 +1676,7 @@ class DocumentRenderer
             'NB_ACTIVITES' => (string) $activitiesCount,
             'ACTIVITES_OMPIC' => $certNegList,
             'OMPIC_INLINE' => $certNegInline,
+            'SOCIETE_ACTIVITE_OMPIC' => $certNegInline,
             'OMPIC_PUCES' => $certNegBullets,
             'NB_OMPIC' => (string) $certNegCount,
             'DATE' => $now->format('d/m/Y'),

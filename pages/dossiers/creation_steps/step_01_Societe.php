@@ -30,6 +30,7 @@ if (is_post() && $step === 1) {
         'societe_dossier_domiciliation_number' => field_value($_POST, 'societe_dossier_domiciliation_number'),
         'societe_dossier_creation_number' => (field_value($_POST, 'societe_type_generation') === 'creation') ? field_value($_POST, 'societe_dossier_creation_number') : '',
         'societe_raison_sociale' => field_value($_POST, 'societe_raison_sociale'),
+        'societe_sigle' => field_value($_POST, 'societe_sigle'),
         'societe_forme_juridique' => field_value($_POST, 'societe_forme_juridique'),
         'societe_ice' => field_value($_POST, 'societe_ice'),
         'societe_date_ice' => date_value($_POST, 'societe_date_ice'),
@@ -129,6 +130,10 @@ if ($step === 1):
         <label class="field">
             <span>Raison sociale</span>
             <input name="societe_raison_sociale" required value="<?= e((string) $societeData['societe_raison_sociale']) ?>">
+        </label>
+        <label class="field">
+            <span>Sigle</span>
+            <input name="societe_sigle" value="<?= e((string) ($societeData['societe_sigle'] ?? '')) ?>">
         </label>
         <label class="field">
             <span>Forme juridique</span>

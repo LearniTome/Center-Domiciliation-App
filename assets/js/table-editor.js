@@ -61,8 +61,24 @@
                                 showToast('success', json.message);
                                 return;
                             }
-                            // No data-table → reload to refresh dropdowns (e.g. wizard steps)
-                            location.reload();
+                            var dataCols = Object.keys(json.data).filter(function (k) { return k !== 'id'; });
+                            if (dataCols.length > 0) {
+                                var colName = dataCols[0];
+                                var newVal = json.data[colName];
+                                document.querySelectorAll('select[data-field-name="' + colName + '"]').forEach(function (sel) {
+                                    var exists = Array.from(sel.options).some(function (o) { return o.value === newVal; });
+                                    if (!exists) {
+                                        var opt = document.createElement('option');
+                                        opt.value = newVal;
+                                        opt.textContent = newVal;
+                                        sel.appendChild(opt);
+                                    }
+                                    sel.value = newVal;
+                                });
+                            }
+                            form.reset();
+                            close();
+                            showToast('success', json.message || 'Enregistre.');
                         } else {
                             showToast('error', json.message || 'Erreur lors de la creation.');
                         }

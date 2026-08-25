@@ -71,6 +71,8 @@ $activitesOptions = fetch_reference_options($pdo ?? null, 'ref_activites', 'acti
 $ompicOptions = fetch_activites_ompic_options($pdo ?? null);
 
 if (is_post() && isset($_POST['add_activite_ref']) && ($pdo ?? null) instanceof PDO) {
+    ob_clean();
+    header('Content-Type: application/json');
     verify_csrf();
     $newActivite = field_value($_POST, 'new_activite');
     $type = field_value($_POST, 'type', 'statuts');

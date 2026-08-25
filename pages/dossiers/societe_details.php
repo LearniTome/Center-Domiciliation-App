@@ -22,6 +22,8 @@ $defaultTribunal = ($societe && $societe['societe_tribunal']) ? $societe['societ
 $defaultVille = ($societe && $societe['societe_ville']) ? $societe['societe_ville'] : 'Casablanca';
 
 if (is_post() && isset($_POST['add_activite_ref']) && ($pdo ?? null) instanceof PDO) {
+    ob_clean();
+    header('Content-Type: application/json');
     verify_csrf();
     $newActivite = field_value($_POST, 'new_activite');
     $type = field_value($_POST, 'type', 'statuts');
@@ -251,6 +253,7 @@ if (is_post() && !isset($_POST['validate_submit']) && !isset($_POST['delete_subm
             societe_dossier_domiciliation_number = :societe_dossier_domiciliation_number,
             societe_dossier_creation_number = :societe_dossier_creation_number,
             societe_raison_sociale = :societe_raison_sociale,
+            societe_sigle = :societe_sigle,
             societe_forme_juridique = :societe_forme_juridique,
             societe_ice = :societe_ice,
             societe_date_ice = :societe_date_ice,
@@ -277,6 +280,7 @@ if (is_post() && !isset($_POST['validate_submit']) && !isset($_POST['delete_subm
         'societe_dossier_domiciliation_number' => field_value($_POST, 'societe_dossier_domiciliation_number'),
         'societe_dossier_creation_number' => (field_value($_POST, 'societe_type_generation') === 'creation') ? field_value($_POST, 'societe_dossier_creation_number') : null,
         'societe_raison_sociale' => field_value($_POST, 'societe_raison_sociale'),
+        'societe_sigle' => field_value($_POST, 'societe_sigle'),
         'societe_forme_juridique' => field_value($_POST, 'societe_forme_juridique'),
         'societe_ice' => field_value($_POST, 'societe_ice'),
         'societe_date_ice' => date_value($_POST, 'societe_date_ice'),
@@ -476,6 +480,9 @@ $actionLabels = [
         <?php else: ?>
             <a class="btn btn-info" href="<?= e(app_url('societe', ['id' => $societeId, 'edit' => '1'])) ?>"><span class="material-symbols-outlined">edit</span> Modifier</a>
             <a class="btn btn-next" href="<?= e(app_url('generation', ['societe_id' => $societeId])) ?>"><span class="material-symbols-outlined">sync</span> <?= count($documents) > 0 ? 'Regenerer documents' : 'Generer documents' ?></a>
+            <?php if (!empty($documents) || !empty($uploadedDocsList)): ?>
+            <a class="btn btn-info" href="<?= e(app_url('dossier_download', ['id' => $societeId])) ?>"><span class="material-symbols-outlined">folder_zip</span> Telecharger le dossier</a>
+            <?php endif; ?>
         <?php endif; ?>
         <a class="btn btn-back" href="<?= e(app_url($retourPage)) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
     </div>
@@ -594,6 +601,10 @@ $actionLabels = [
                 <label class="field">
                     <span>Raison sociale</span>
                     <input name="societe_raison_sociale" required value="<?= e((string) $societe['societe_raison_sociale']) ?>">
+                </label>
+                <label class="field">
+                    <span>Sigle</span>
+                    <input name="societe_sigle" value="<?= e((string) ($societe['societe_sigle'] ?? '')) ?>">
                 </label>
                 <label class="field">
                     <span>Forme juridique</span>
@@ -767,6 +778,7 @@ $actionLabels = [
                         <div><span>N° Dossier Creation</span><strong><?= e($societe['societe_dossier_creation_number'] ?: '-') ?></strong></div>
                         <?php endif; ?>
                         <div><span>Forme juridique</span><strong><?= e($societe['societe_forme_juridique'] ?: '-') ?></strong></div>
+                        <div><span>Sigle</span><strong><?= e($societe['societe_sigle'] ?: '-') ?></strong></div>
                         <div><span>ICE</span><strong><?= e($societe['societe_ice'] ?: '-') ?></strong></div>
                         <div><span>Date cert. negatif</span><strong><?= format_date($societe['societe_date_ice'] ?? null) ?></strong></div>
                         <div><span>Date exp. cert. neg.</span><strong class="<?= $certExpClass ?>"><?= format_date($societe['societe_date_exp_cert_neg'] ?? null) ?></strong></div>

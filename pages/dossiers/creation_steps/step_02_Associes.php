@@ -19,7 +19,8 @@ if (is_post() && $step === 2) {
             $prenom = trim((string) ($associe['prenom'] ?? ''));
             $nomComplet = trim((string) ($associe['nom_complet'] ?? ''));
             if ($nomComplet === '' && $nom !== '' && $prenom !== '') {
-                $nomComplet = $civilite !== '' ? "$civilite $prenom $nom" : "$prenom $nom";
+                $civ = $civilite !== '' ? $civilite : 'M.';
+                $nomComplet = "$civ $prenom $nom";
             }
 
             $item = [

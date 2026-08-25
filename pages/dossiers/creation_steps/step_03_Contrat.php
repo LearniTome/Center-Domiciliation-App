@@ -86,7 +86,7 @@ if ($step === 3):
         </label>
         <label class="field">
             <span>Date du contrat</span>
-            <input type="date" name="contrat_date" placeholder="18/05/2026" value="<?= e((string) ($contratData['contrat_date'] ?: '2026-05-18')) ?>">
+            <input type="date" name="contrat_date" value="<?= e((string) ($contratData['contrat_date'] ?: date('Y-m-d'))) ?>">
         </label>
         <label class="field">
             <span>Type contrat domiciliation</span>
@@ -101,7 +101,7 @@ if ($step === 3):
         <h3 class="section-title">Periode</h3>
         <label class="field">
             <span>Date de debut</span>
-            <input type="date" name="contrat_date_debut" data-date-debut placeholder="18/05/2026" value="<?= e((string) ($contratData['contrat_date_debut'] ?: '2026-05-18')) ?>">
+            <input type="date" name="contrat_date_debut" data-date-debut value="<?= e((string) ($contratData['contrat_date_debut'] ?: date('Y-m-d'))) ?>">
         </label>
         <label class="field">
             <span>Duree (mois)</span>
@@ -109,7 +109,7 @@ if ($step === 3):
         </label>
         <label class="field">
             <span>Date de fin</span>
-            <input type="date" name="contrat_date_fin" data-date-fin placeholder="18/05/2026" value="<?= e((string) $contratData['contrat_date_fin']) ?>" readonly>
+            <input type="date" name="contrat_date_fin" data-date-fin readonly>
         </label>
         <label class="field">
             <span>Statut</span>
