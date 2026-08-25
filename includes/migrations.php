@@ -91,7 +91,7 @@ function run_migrations(PDO $pdo): array
             // qui masquait des migrations echouees (cf. reparation dossiers 2026-08-24).
             $isDuplicate = false;
             foreach ($duplicatePatterns as $code) {
-                if (str_contains($msg, "SQLSTATE[$code]") || str_contains($msg, "($code)")) {
+                if (str_contains($msg, "SQLSTATE[$code]") || str_contains($msg, "($code)") || str_contains($msg, $code)) {
                     $isDuplicate = true;
                     break;
                 }

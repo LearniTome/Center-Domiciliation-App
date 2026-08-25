@@ -349,7 +349,7 @@ if (is_post()) {
                                         <button type="submit" class="btn-icon" title="Descendre" <?= $rid === $lastId ? 'disabled style="opacity:0.3"' : '' ?>><span class="material-symbols-outlined">expand_more</span></button>
                                     </form>
                                     <span style="width:6px;display:inline-block"></span>
-                                    <a class="btn-icon" href="<?= e(app_url($tab, ['edit' => $val])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
+                                    <button type="button" class="btn-icon" title="Modifier" data-edit-btn data-record-id="<?= $rid ?>" data-ste-adresse="<?= e($val) ?>" data-ville="<?= e((string) ($row['ville'] ?? '')) ?>" data-code-postal="<?= e((string) ($row['code_postal'] ?? '')) ?>"><span class="material-symbols-outlined">edit</span></button>
                                     <form method="post" style="display:inline">
                                         <?= csrf_input() ?>
                                         <input type="hidden" name="action" value="delete">
@@ -489,24 +489,83 @@ if (is_post()) {
         </form>
     </div>
 </div>
+<div class="modal-overlay" data-modal="adresse-edit">
+    <div class="modal-panel">
+        <div class="modal-header">
+            <h3 style="font-weight:700;color:var(--info)">Modifier l'adresse</h3>
+            <button class="btn-icon" type="button" data-modal-close title="Fermer"><span class="material-symbols-outlined">close</span></button>
+        </div>
+        <form method="post" class="stack">
+            <?= csrf_input() ?>
+            <input type="hidden" name="action" value="update">
+            <input type="hidden" name="record_id" value="" id="edit-record-id">
+            <label class="field">
+                <span>Adresse *</span>
+                <input name="<?= e($column) ?>" required id="edit-ste-adresse">
+            </label>
+            <label class="field">
+                <span>Ville</span>
+                <select name="ville" id="edit-ville">
+                    <option value="">Sans ville</option>
+                    <?php foreach ($villesOptions ?? [] as $v): ?>
+                        <option value="<?= e($v) ?>"><?= e($v) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <label class="field">
+                <span>Code postal</span>
+                <input name="code_postal" id="edit-code-postal" placeholder="Ex : 20000">
+            </label>
+            <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:6px">
+                <button type="button" class="btn btn-cancel" data-modal-close><span class="material-symbols-outlined">close</span> Annuler</button>
+                <button type="submit" class="btn btn-next"><span class="material-symbols-outlined">check</span> Enregistrer</button>
+            </div>
+        </form>
+    </div>
+</div>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    var modal = document.querySelector('[data-modal="adresse-add"]');
-    var openBtn = document.querySelector('[data-adresse-add-btn]');
-    if (!modal || !openBtn) return;
-    openBtn.addEventListener('click', function () {
+    var addModal = document.querySelector('[data-modal="adresse-add"]');
+    var editModal = document.querySelector('[data-modal="adresse-edit"]');
+    var openAddBtn = document.querySelector('[data-adresse-add-btn]');
+
+    if (addModal && openAddBtn) {
+        openAddBtn.addEventListener('click', function () {
+            addModal.classList.add('open');
+            var first = addModal.querySelector('input[name]');
+            if (first) first.focus();
+        });
+    }
+
+    function openModal(modal) {
+        if (!modal) return;
         modal.classList.add('open');
-        var first = modal.querySelector('input[name]');
+        var first = modal.querySelector('input:not([type=hidden]), select');
         if (first) first.focus();
+    }
+    function closeAllModals() {
+        document.querySelectorAll('.modal-overlay.open').forEach(function (m) { m.classList.remove('open'); });
+    }
+
+    document.querySelectorAll('[data-modal-close]').forEach(function (el) {
+        el.addEventListener('click', closeAllModals);
     });
-    modal.querySelectorAll('[data-modal-close]').forEach(function (el) {
-        el.addEventListener('click', function () { modal.classList.remove('open'); });
+    document.querySelectorAll('.modal-overlay').forEach(function (m) {
+        m.addEventListener('click', function (e) { if (e.target === m) m.classList.remove('open'); });
     });
-    modal.addEventListener('click', function (e) {
-        if (e.target === modal) modal.classList.remove('open');
-    });
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') modal.classList.remove('open');
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeAllModals(); });
+
+    document.querySelectorAll('[data-edit-btn]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            if (!editModal) return;
+            document.getElementById('edit-record-id').value = btn.getAttribute('data-record-id') || '';
+            document.getElementById('edit-ste-adresse').value = btn.getAttribute('data-ste-adresse') || '';
+            var villeSelect = document.getElementById('edit-ville');
+            var villeVal = btn.getAttribute('data-ville') || '';
+            villeSelect.value = villeVal;
+            document.getElementById('edit-code-postal').value = btn.getAttribute('data-code-postal') || '';
+            openModal(editModal);
+        });
     });
 });
 </script>
