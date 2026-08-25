@@ -23,18 +23,18 @@ if (!empty($_POST['add_activite_ref']) && ($pdo ?? null) instanceof PDO) {
             $stmt = $pdo->prepare("INSERT IGNORE INTO ref_activites_ompic (code, libelle, sort_order) VALUES (:code, :libelle, :so)");
             $max = $pdo->query("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM ref_activites_ompic")->fetchColumn();
             $stmt->execute(['code' => $ompicCode, 'libelle' => $nmaLibelle, 'so' => $max]);
-            echo json_encode(['success' => true, 'code' => $ompicCode, 'libelle' => $nmaLibelle]);
+            echo json_encode(['success' => true, 'code' => $ompicCode, 'libelle' => $nmaLibelle], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); // nosemgrep: echoed-request -- JSON output with hex flags
         } else {
             $check = $pdo->prepare('SELECT COUNT(*) FROM ref_activites WHERE activite = :name');
             $check->execute(['name' => $name]);
             if ($check->fetchColumn() > 0) {
-                echo json_encode(['success' => false, 'error' => "L'activite \"$name\" existe deja"]);
+                echo json_encode(['success' => false, 'error' => "L'activite \"$name\" existe deja"], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); // nosemgrep: echoed-request -- JSON output with hex flags
                 exit;
             }
             $max = $pdo->query("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM ref_activites")->fetchColumn();
             $stmt = $pdo->prepare('INSERT INTO ref_activites (activite, sort_order) VALUES (:name, :so)');
             $stmt->execute(['name' => $name, 'so' => $max]);
-            echo json_encode(['success' => true, 'value' => $name]);
+            echo json_encode(['success' => true, 'value' => $name], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); // nosemgrep: echoed-request -- JSON output with hex flags
         }
     } catch (Throwable $e) {
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);

@@ -96,7 +96,7 @@ if ($action === 'generate_docx') {
                 'taille_ko' => round(filesize($docxPath) / 1024, 1),
             ]);
             log_activity($pdo, 'generate', 'document', $societeId, 'Generation AJAX — ' . basename($docxPath));
-            echo json_encode(['success' => true, 'docx_path' => $docxPath, 'name' => $outName, 'doc_id' => (int) $pdo->lastInsertId()]);
+            echo json_encode(['success' => true, 'docx_path' => $docxPath, 'name' => $outName, 'doc_id' => (int) $pdo->lastInsertId()], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); // nosemgrep: echoed-request -- JSON output with hex flags
             exit;
         }
         echo json_encode(['success' => false, 'error' => 'Echec rendu DOCX']);

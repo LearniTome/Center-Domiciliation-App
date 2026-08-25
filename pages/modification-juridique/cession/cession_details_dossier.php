@@ -51,9 +51,9 @@ if (is_post() && isset($_POST['validate_submit']) && ($pdo ?? null) instanceof P
         set_flash('error', 'Selectionnez au moins un document.');
         redirect_to('cession_dossier', ['id' => $cessionId]);
     }
-    $placeholders = implode(',', array_fill(0, count($selected), '?'));
-    $stmt = $pdo->prepare("UPDATE documents_generes SET valide = 1 WHERE societe_id = ? AND id IN ($placeholders)");
-    $stmt->execute(array_merge([$societeId], array_map('intval', $selected)));
+    $in = build_in_params($selected);
+    $stmt = $pdo->prepare("UPDATE documents_generes SET valide = 1 WHERE societe_id = :sid AND id IN ({$in['sql']})"); // nosemgrep: tainted-sql-string -- values bound via named params
+    $stmt->execute(array_merge(['sid' => $societeId], $in['params']));
     set_flash('success', count($selected) . ' document(s) valide(s).');
     redirect_to('cession_dossier', ['id' => $cessionId]);
 }
@@ -62,16 +62,16 @@ if (is_post() && isset($_POST['delete_submit']) && ($pdo ?? null) instanceof PDO
     verify_csrf();
     $selected = $_POST['selected_files'] ?? [];
     if (count($selected) > 0) {
-        $placeholders = implode(',', array_fill(0, count($selected), '?'));
-        $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf FROM documents_generes WHERE societe_id = ? AND id IN ($placeholders)");
-        $stmt->execute(array_merge([$societeId], array_map('intval', $selected)));
+        $in = build_in_params($selected);
+        $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf FROM documents_generes WHERE societe_id = :sid AND id IN ({$in['sql']})"); // nosemgrep: tainted-sql-string -- values bound via named params
+        $stmt->execute(array_merge(['sid' => $societeId], $in['params']));
         $docs = $stmt->fetchAll();
         foreach ($docs as $doc) {
             if (file_exists($doc['fichier_docx'])) unlink($doc['fichier_docx']);
             if ($doc['fichier_pdf'] && file_exists($doc['fichier_pdf'])) unlink($doc['fichier_pdf']);
         }
-        $stmt = $pdo->prepare("DELETE FROM documents_generes WHERE id IN ($placeholders)");
-        $stmt->execute(array_map('intval', $selected));
+        $stmt = $pdo->prepare("DELETE FROM documents_generes WHERE id IN ({$in['sql']})"); // nosemgrep: tainted-sql-string -- values bound via named params
+        $stmt->execute($in['params']);
         set_flash('error', count($selected) . ' document(s) supprime(s).');
         redirect_to('cession_dossier', ['id' => $cessionId]);
     }
@@ -84,9 +84,9 @@ if (is_post() && isset($_POST['restore_submit']) && ($pdo ?? null) instanceof PD
         set_flash('error', 'Selectionnez au moins un document.');
         redirect_to('cession_dossier', ['id' => $cessionId]);
     }
-    $placeholders = implode(',', array_fill(0, count($selected), '?'));
-    $stmt = $pdo->prepare("UPDATE documents_generes SET valide = 0 WHERE societe_id = ? AND id IN ($placeholders)");
-    $stmt->execute(array_merge([$societeId], array_map('intval', $selected)));
+    $in = build_in_params($selected);
+    $stmt = $pdo->prepare("UPDATE documents_generes SET valide = 0 WHERE societe_id = :sid AND id IN ({$in['sql']})"); // nosemgrep: tainted-sql-string -- values bound via named params
+    $stmt->execute(array_merge(['sid' => $societeId], $in['params']));
     set_flash('success', count($selected) . ' document(s) restaure(s) en brouillon.');
     redirect_to('cession_dossier', ['id' => $cessionId]);
 }

@@ -334,8 +334,8 @@ if (is_post() && isset($_POST['_action']) && $_POST['_action'] === 'delete' && (
                 <div><span class="label">Nom</span><strong><?= e($associe['associe_nom'] ?: '-') ?></strong></div>
                 <div><span class="label">Prenom</span><strong><?= e($associe['associe_prenom'] ?: '-') ?></strong></div>
                 <div><span class="label">CIN</span><strong><?= e($associe['associe_cin'] ?: '-') ?></strong></div>
-                <div><span class="label">Date validite CIN</span><strong><?= format_date($associe['associe_date_validite_cin'] ?? null) ?></strong></div>
-                <div><span class="label">Date naissance</span><strong><?= format_date($associe['associe_date_naissance'] ?? null) ?></strong></div>
+                <div><span class="label">Date validite CIN</span><strong><?= e(format_date($associe['associe_date_validite_cin'] ?? null)) ?></strong></div>
+                <div><span class="label">Date naissance</span><strong><?= e(format_date($associe['associe_date_naissance'] ?? null)) ?></strong></div>
                 <div><span class="label">Lieu naissance</span><strong><?= e($associe['associe_lieu_naissance'] ?: '-') ?></strong></div>
                 <div><span class="label">Nationalite</span><strong><?= e($associe['associe_nationalite'] ?: '-') ?></strong></div>
             </div>
@@ -356,7 +356,7 @@ if (is_post() && isset($_POST['_action']) && $_POST['_action'] === 'delete' && (
                 <div><span class="label">Qualite</span><strong><span class="fiche-a4-badge-primary"><?= e($associe['associe_qualite'] ?: '-') ?></span></strong></div>
                 <div><span class="label">Gerant</span><strong><?php if ((int) $associe['associe_est_gerant'] === 1): ?><span class="fiche-a4-badge-success">Gerant</span><?php else: ?><span class="fiche-a4-badge-muted">Associe</span><?php endif; ?></strong></div>
                 <div><span class="label">Parts</span><strong><?= $associe['associe_parts'] !== null ? e((string) $associe['associe_parts']) : '-' ?></strong></div>
-                <div><span class="label">Capital detenu</span><strong><?= format_money($associe['associe_capital_detenu'] !== null ? (float) $associe['associe_capital_detenu'] : null) ?></strong></div>
+                <div><span class="label">Capital detenu</span><strong><?= e(format_money($associe['associe_capital_detenu'] !== null ? (float) $associe['associe_capital_detenu'] : null)) ?></strong></div>
                 <div><span class="label">% Capital social</span><strong><?= $associe['associe_part_percent'] !== null ? e(number_format((float) $associe['associe_part_percent'], 2, ',', ' ') . ' %') : '-' ?></strong></div>
             </div>
         </div>

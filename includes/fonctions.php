@@ -1672,3 +1672,29 @@ function page_display_name(string $page): string
     ];
     return $map[$base] ?? $page;
 }
+
+/**
+ * Build a safe IN clause with named placeholders for PDO.
+ * Returns ['sql' => ':ph0,:ph1,...', 'params' => ['ph0' => 1, 'ph1' => 2, ...]]
+ */
+function build_in_params(array $ids, string $prefix = 'ph'): array
+{
+    $clean = [];
+    foreach ($ids as $raw) {
+        $v = (int) $raw;
+        if ($v > 0) {
+            $clean[] = $v;
+        }
+    }
+    if ($clean === []) {
+        return ['sql' => 'NULL', 'params' => []];
+    }
+    $ph = [];
+    $params = [];
+    foreach ($clean as $i => $id) {
+        $key = "{$prefix}{$i}";
+        $ph[] = ":{$key}";
+        $params[$key] = $id;
+    }
+    return ['sql' => implode(',', $ph), 'params' => $params];
+}

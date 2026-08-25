@@ -113,15 +113,15 @@ if (is_post() && isset($_POST['delete_docs'])) {
     verify_csrf();
     $selected = $_POST['selected_docs'] ?? [];
     if (!empty($selected) && has_permission('pv_ago.delete')) {
-        $placeholders = implode(',', array_fill(0, count($selected), '?'));
-        $params = array_merge(array_map('intval', $selected), [$viewId]);
-        $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf FROM documents_generes WHERE id IN ($placeholders) AND pv_ago_id = ?");
+        $in = build_in_params($selected);
+        $params = array_merge($in['params'], ['pid' => $viewId]);
+        $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf FROM documents_generes WHERE id IN ({$in['sql']}) AND pv_ago_id = :pid"); // nosemgrep: tainted-sql-string -- values bound via named params
         $stmt->execute($params);
         foreach ($stmt->fetchAll() as $doc) {
             if (!empty($doc['fichier_docx']) && file_exists($doc['fichier_docx'])) unlink($doc['fichier_docx']);
             if (!empty($doc['fichier_pdf']) && file_exists($doc['fichier_pdf'])) unlink($doc['fichier_pdf']);
         }
-        $pdo->prepare("DELETE FROM documents_generes WHERE id IN ($placeholders) AND pv_ago_id = ?")->execute($params);
+        $pdo->prepare("DELETE FROM documents_generes WHERE id IN ({$in['sql']}) AND pv_ago_id = :pid")->execute($params); // nosemgrep: tainted-sql-string -- values bound via named params
         set_flash('success', count($selected) . ' document(s) supprime(s).');
     }
     redirect_to('pv_ago', ['id' => $viewId]);
@@ -438,8 +438,8 @@ $countStmt->execute($params);
 $total = (int) $countStmt->fetchColumn();
 $totalPages = max(1, (int) ceil($total / $perPage));
 
-$stmt = $pdo->prepare("SELECT p.*, s.societe_raison_sociale FROM pv_ago p LEFT JOIN societes s ON p.societe_id = s.id $where ORDER BY p.created_at DESC LIMIT $perPage OFFSET $offset");
-$stmt->execute($params);
+$stmt = $pdo->prepare("SELECT p.*, s.societe_raison_sociale FROM pv_ago p LEFT JOIN societes s ON p.societe_id = s.id $where ORDER BY p.created_at DESC LIMIT :limit OFFSET :offset");
+$stmt->execute(array_merge($params, ['limit' => $perPage, 'offset' => $offset]));
 $list = $stmt->fetchAll();
 ?>
 

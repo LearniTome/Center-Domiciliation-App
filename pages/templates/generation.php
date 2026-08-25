@@ -206,16 +206,16 @@ if (is_post() && isset($_POST['delete_submit']) && ($pdo ?? null) instanceof PDO
     $selected = $_POST['selected_files'] ?? [];
 
     if (count($selected) > 0 && ($pdo ?? null) instanceof PDO) {
-        $placeholders = implode(',', array_fill(0, count($selected), '?'));
-        $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf, societe_id FROM documents_generes WHERE id IN ($placeholders)");
-        $stmt->execute(array_map('intval', $selected));
+        $in = build_in_params($selected);
+        $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf, societe_id FROM documents_generes WHERE id IN ({$in['sql']})"); // nosemgrep: tainted-sql-string -- values bound via named params
+        $stmt->execute($in['params']);
         $docs = $stmt->fetchAll();
         foreach ($docs as $doc) {
             if (file_exists($doc['fichier_docx'])) unlink($doc['fichier_docx']);
             if ($doc['fichier_pdf'] && file_exists($doc['fichier_pdf'])) unlink($doc['fichier_pdf']);
         }
-        $stmt = $pdo->prepare("DELETE FROM documents_generes WHERE id IN ($placeholders)");
-        $stmt->execute(array_map('intval', $selected));
+        $stmt = $pdo->prepare("DELETE FROM documents_generes WHERE id IN ({$in['sql']})"); // nosemgrep: tainted-sql-string -- values bound via named params
+        $stmt->execute($in['params']);
         $affectedSocieteIds = array_unique(array_map(fn($d) => (int) $d['societe_id'], $docs));
         foreach ($affectedSocieteIds as $sid) {
             $_SESSION['gen_files'][$sid] = array_values(array_filter($_SESSION['gen_files'][$sid] ?? [], fn($f) => !in_array($f['docx'], array_column($docs, 'fichier_docx'))));
@@ -233,9 +233,9 @@ if (is_post() && isset($_POST['validate_submit']) && ($pdo ?? null) instanceof P
     $selected = $_POST['selected_files'] ?? [];
 
     if (count($selected) > 0 && ($pdo ?? null) instanceof PDO) {
-        $placeholders = implode(',', array_fill(0, count($selected), '?'));
-        $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf, doc_type, societe_id FROM documents_generes WHERE valide = 0 AND id IN ($placeholders)");
-        $stmt->execute(array_map('intval', $selected));
+        $in = build_in_params($selected);
+        $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf, doc_type, societe_id FROM documents_generes WHERE valide = 0 AND id IN ({$in['sql']})"); // nosemgrep: tainted-sql-string -- values bound via named params
+        $stmt->execute($in['params']);
         $docs = $stmt->fetchAll();
         $updateStmt = $pdo->prepare("UPDATE documents_generes SET valide = 1, fichier_docx = :fichier_docx, fichier_pdf = :fichier_pdf WHERE id = :id");
         foreach ($docs as $doc) {
@@ -269,10 +269,10 @@ if (is_post() && isset($_POST['validate_submit']) && ($pdo ?? null) instanceof P
         $cleanTypes = array_unique(array_map(fn($d) => $d['doc_type'] ?? '', $docs));
         $cleanTypes = array_values(array_filter($cleanTypes, fn($v) => $v !== ''));
         if (!empty($cleanTypes)) {
-            $typePlaceholders = implode(',', array_fill(0, count($cleanTypes), '?'));
-            $delStmt = $pdo->prepare("DELETE FROM documents_generes WHERE id NOT IN ($placeholders) AND societe_id = ? AND valide = 0 AND doc_type IN ($typePlaceholders)");
+            $typeIn = build_in_params($cleanTypes, 'dt');
+            $delStmt = $pdo->prepare("DELETE FROM documents_generes WHERE id NOT IN ({$in['sql']}) AND societe_id = :sid AND valide = 0 AND doc_type IN ({$typeIn['sql']})"); // nosemgrep: tainted-sql-string -- values bound via named params
             foreach ($affectedSocieteIds as $sid) {
-                $delStmt->execute(array_merge(array_map('intval', $selected), [$sid], $cleanTypes));
+                $delStmt->execute(array_merge($in['params'], ['sid' => (int) $sid], $typeIn['params']));
             }
         }
         set_flash('success', count($selected) . ' document(s) valide(s).');
@@ -287,9 +287,9 @@ if (is_post() && isset($_POST['generate_pdf_submit']) && $societeId > 0) {
     verify_csrf();
     $selected = $_POST['selected_files'] ?? [];
     if (count($selected) > 0 && ($pdo ?? null) instanceof PDO) {
-        $placeholders = implode(',', array_fill(0, count($selected), '?'));
-        $stmt = $pdo->prepare("SELECT * FROM documents_generes WHERE id IN ($placeholders) AND societe_id = ? AND valide = 1");
-        $stmt->execute(array_merge(array_map('intval', $selected), [$societeId]));
+        $in = build_in_params($selected);
+        $stmt = $pdo->prepare("SELECT * FROM documents_generes WHERE id IN ({$in['sql']}) AND societe_id = :sid AND valide = 1"); // nosemgrep: tainted-sql-string -- values bound via named params
+        $stmt->execute(array_merge($in['params'], ['sid' => $societeId]));
         $docs = $stmt->fetchAll();
         $generated = 0;
         $errors = 0;
@@ -385,9 +385,9 @@ if (is_post() && isset($_POST['restore_submit']) && ($pdo ?? null) instanceof PD
     verify_csrf();
     $selected = $_POST['selected_files'] ?? [];
     if (count($selected) > 0 && ($pdo ?? null) instanceof PDO) {
-        $placeholders = implode(',', array_fill(0, count($selected), '?'));
-        $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf, societe_id FROM documents_generes WHERE valide = 1 AND id IN ($placeholders)");
-        $stmt->execute(array_map('intval', $selected));
+        $in = build_in_params($selected);
+        $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf, societe_id FROM documents_generes WHERE valide = 1 AND id IN ({$in['sql']})"); // nosemgrep: tainted-sql-string -- values bound via named params
+        $stmt->execute($in['params']);
         $docs = $stmt->fetchAll();
         $updateStmt = $pdo->prepare("UPDATE documents_generes SET valide = 0, fichier_docx = :fichier_docx, fichier_pdf = NULL WHERE id = :id");
         foreach ($docs as $doc) {

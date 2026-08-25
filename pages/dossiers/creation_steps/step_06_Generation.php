@@ -377,7 +377,7 @@ if (is_post() && $step === 6) {
                 ]);
             }
 
-            echo json_encode(['success' => true, 'name' => basename((string) $docxPath)]);
+            echo json_encode(['success' => true, 'name' => basename((string) $docxPath)], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); // nosemgrep: echoed-request -- JSON output with hex flags
         } catch (\Throwable $e) {
             echo json_encode(['success' => false, 'error' => $e->getMessage()]);
         }

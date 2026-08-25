@@ -249,7 +249,7 @@ function handle_quick_create(PDO $pdo, array $allowedTables, array $user): array
 
     $cols = implode(', ', array_keys($data));
     $placeholders = implode(', ', array_map(fn(string $c) => ":$c", array_keys($data)));
-    $stmt = $pdo->prepare("INSERT INTO {$table} ({$cols}) VALUES ({$placeholders})");
+    $stmt = $pdo->prepare("INSERT INTO {$table} ({$cols}) VALUES ({$placeholders})"); // nosemgrep: tainted-sql-string -- $table/$cols validated via $allowedTables whitelist
     $stmt->execute($data);
     $newId = (int) $pdo->lastInsertId();
 
@@ -257,7 +257,7 @@ function handle_quick_create(PDO $pdo, array $allowedTables, array $user): array
         log_activity($pdo, 'create', $table, $newId, null, 'Quick create via API');
     }
 
-    $fetch = $pdo->prepare("SELECT * FROM {$table} WHERE id = :id");
+    $fetch = $pdo->prepare("SELECT * FROM {$table} WHERE id = :id"); // nosemgrep: tainted-sql-string -- $table validated via $allowedTables whitelist
     $fetch->execute(['id' => $newId]);
     $record = $fetch->fetch(PDO::FETCH_ASSOC);
 
@@ -281,7 +281,7 @@ function handle_inline_update(PDO $pdo, array $allowedTables): array
         return ['success' => false, 'message' => 'Colonne non autorisee.'];
     }
 
-    $stmt = $pdo->prepare("UPDATE {$table} SET {$column} = :val WHERE id = :id");
+    $stmt = $pdo->prepare("UPDATE {$table} SET {$column} = :val WHERE id = :id"); // nosemgrep: tainted-sql-string -- $table/$column validated via $allowedTables whitelist
     $stmt->execute(['val' => $value, 'id' => $id]);
 
     return ['success' => true, 'message' => 'Mis a jour avec succes.'];
@@ -317,11 +317,11 @@ function handle_bulk_update(PDO $pdo, array $allowedTables): array
     }
 
     $setParts = implode(', ', array_map(fn(string $c) => "{$c} = :{$c}", array_keys($updates)));
-    $placeholders = implode(',', array_fill(0, count($ids), '?'));
-    $stmt = $pdo->prepare("UPDATE {$table} SET {$setParts} WHERE id IN ({$placeholders})");
+    $in = build_in_params($ids);
+    $stmt = $pdo->prepare("UPDATE {$table} SET {$setParts} WHERE id IN ({$in['sql']})"); // nosemgrep: tainted-sql-string -- $table validated via $allowedTables whitelist
     $params = array_values($updates);
-    foreach ($ids as $id) {
-        $params[] = $id;
+    foreach ($in['params'] as $k => $v) {
+        $params[$k] = $v;
     }
     $stmt->execute($params);
 
@@ -540,7 +540,7 @@ function handle_import_confirm(PDO $pdo, array $user, array $config): array
 
             $cols = implode(', ', array_keys($data));
             $placeholders = ':' . implode(', :', array_keys($data));
-            $stmt = $pdo->prepare("INSERT INTO {$table} ({$cols}) VALUES ({$placeholders})");
+            $stmt = $pdo->prepare("INSERT INTO {$table} ({$cols}) VALUES ({$placeholders})"); // nosemgrep: tainted-sql-string -- $table validated via $config whitelist
             $stmt->execute($data);
             $imported++;
         } catch (\Throwable $e) {

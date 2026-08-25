@@ -1,0 +1,207 @@
+uid=10_0 RootWebArea "Centre d'affaires | Center Domiciliation App" url="https://app.centirio.ma/index.php?page=centre"
+  uid=11_0 ignored
+    uid=11_1 ignored
+      uid=11_2 ignored
+        uid=10_1 banner
+          uid=11_3 ignored
+            uid=11_4 generic description="Reduire/Developper la navigation"
+              uid=11_5 ignored
+                uid=10_2 StaticText "location_city"
+                  uid=11_6 InlineTextBox "location_city"
+            uid=11_7 strong
+              uid=10_3 StaticText "Centre Domiciliation"
+                uid=11_6 InlineTextBox "Centre Domiciliation"
+            uid=11_8 generic
+              uid=10_4 StaticText "Centre d'affaires"
+                uid=11_6 InlineTextBox "Centre d'affaires"
+          uid=11_9 ignored
+            uid=11_10 ignored
+              uid=10_5 StaticText "schedule"
+                uid=11_6 InlineTextBox "schedule"
+            uid=11_11 generic
+          uid=11_12 ignored
+            uid=11_13 generic
+              uid=10_6 button "notifications 2" description="Notifications"
+                uid=11_14 ignored
+                  uid=11_15 StaticText "notifications"
+                    uid=11_6 InlineTextBox "notifications"
+                uid=11_16 ignored
+                  uid=11_17 StaticText "2"
+                    uid=11_6 InlineTextBox "2"
+            uid=10_7 link "account_circle logout" description="Abdeljalil — Deconnexion" url="https://app.centirio.ma/index.php?page=deconnexion"
+              uid=11_18 ignored
+                uid=10_8 StaticText "account_circle"
+                  uid=11_6 InlineTextBox "account_circle"
+              uid=11_19 ignored
+              uid=11_20 ignored
+                uid=10_9 StaticText "logout"
+                  uid=11_6 InlineTextBox "logout"
+        uid=11_21 generic
+          uid=10_10 complementary
+            uid=11_22 ignored
+              uid=10_11 navigation
+                uid=10_12 link "dashboard" description="Tableau de bord" url="https://app.centirio.ma/index.php?page=dashboard"
+                  uid=11_23 ignored
+                    uid=10_13 StaticText "dashboard"
+                      uid=11_6 InlineTextBox "dashboard"
+                uid=10_14 link "notifications 2" description="Notifications" url="https://app.centirio.ma/index.php?page=notifications"
+                  uid=11_24 ignored
+                    uid=10_15 StaticText "notifications"
+                      uid=11_6 InlineTextBox "notifications"
+                  uid=11_25 generic
+                    uid=10_16 StaticText "2"
+                      uid=11_6 InlineTextBox "2"
+                uid=11_26 ignored
+                  uid=11_27 generic
+                    uid=10_17 link "rocket_launch" description="Creations" url="https://app.centirio.ma/index.php?page=creations"
+                      uid=11_28 ignored
+                        uid=10_18 StaticText "rocket_launch"
+                          uid=11_6 InlineTextBox "rocket_launch"
+                    uid=10_19 link "business" description="Domiciliations" url="https://app.centirio.ma/index.php?page=domiciliations"
+                      uid=11_29 ignored
+                        uid=10_20 StaticText "business"
+                          uid=11_6 InlineTextBox "business"
+                    uid=10_21 link "domain" description="Societes" url="https://app.centirio.ma/index.php?page=societes"
+                      uid=11_30 ignored
+                        uid=10_22 StaticText "domain"
+                          uid=11_6 InlineTextBox "domain"
+                    uid=10_23 link "group" description="Associes" url="https://app.centirio.ma/index.php?page=associes"
+                      uid=11_31 ignored
+                        uid=10_24 StaticText "group"
+                          uid=11_6 InlineTextBox "group"
+                    uid=10_25 link "description" description="Contrats" url="https://app.centirio.ma/index.php?page=contrats"
+                      uid=11_32 ignored
+                        uid=10_26 StaticText "description"
+                          uid=11_6 InlineTextBox "description"
+                    uid=10_27 link "work" description="Collaborateurs" url="https://app.centirio.ma/index.php?page=collaborateurs"
+                      uid=11_33 ignored
+                        uid=10_28 StaticText "work"
+                          uid=11_6 InlineTextBox "work"
+                uid=11_34 ignored
+                  uid=11_35 generic
+                    uid=10_29 link "list_alt" description="Toutes les modifications" url="https://app.centirio.ma/index.php?page=modifications"
+                      uid=11_36 ignored
+                        uid=10_30 StaticText "list_alt"
+                          uid=11_6 InlineTextBox "list_alt"
+                    uid=10_31 link "transfer_within_a_station" description="Cession de parts" url="https://app.centirio.ma/index.php?page=cessions"
+                      uid=11_37 ignored
+                        uid=10_32 StaticText "transfer_within_a_station"
+                          uid=11_6 InlineTextBox "transfer_within_a_station"
+                    uid=10_33 link "checklist" description="Suivi administratif" url="https://app.centirio.ma/index.php?page=cession_suivi"
+                      uid=11_38 ignored
+                        uid=10_34 StaticText "checklist"
+                          uid=11_6 InlineTextBox "checklist"
+                    uid=10_35 link "groups" description="PV Assemblee Generale" url="https://app.centirio.ma/index.php?page=pv_ago"
+                      uid=11_39 ignored
+                        uid=10_36 StaticText "groups"
+                          uid=11_6 InlineTextBox "groups"
+                uid=11_40 ignored
+                  uid=11_41 generic
+                    uid=10_37 link "edit_note" description="Templates" url="https://app.centirio.ma/index.php?page=templates"
+                      uid=11_42 ignored
+                        uid=10_38 StaticText "edit_note"
+                          uid=11_6 InlineTextBox "edit_note"
+                    uid=10_39 link "sync" description="Generateur Documents" url="https://app.centirio.ma/index.php?page=generation"
+                      uid=11_43 ignored
+                        uid=10_40 StaticText "sync"
+                          uid=11_6 InlineTextBox "sync"
+                    uid=10_41 link "article" description="Documents generes" url="https://app.centirio.ma/index.php?page=documents"
+                      uid=11_44 ignored
+                        uid=10_42 StaticText "article"
+                          uid=11_6 InlineTextBox "article"
+                uid=11_45 ignored
+                  uid=11_46 generic
+                    uid=10_43 link "bar_chart" description="Analyse de couverture" url="https://app.centirio.ma/index.php?page=analyse-couverture"
+                      uid=11_47 ignored
+                        uid=10_44 StaticText "bar_chart"
+                          uid=11_6 InlineTextBox "bar_chart"
+                    uid=10_45 link "tune" description="Valeurs par defaut" url="https://app.centirio.ma/index.php?page=defaults"
+                      uid=11_48 ignored
+                        uid=10_46 StaticText "tune"
+                          uid=11_6 InlineTextBox "tune"
+                    uid=10_47 link "code" description="Gestion des variables" url="https://app.centirio.ma/index.php?page=variables"
+                      uid=11_49 ignored
+                        uid=10_48 StaticText "code"
+                          uid=11_6 InlineTextBox "code"
+                    uid=10_49 link "picture_as_pdf" description="Word to PDF" url="https://app.centirio.ma/index.php?page=convert-word-pdf"
+                      uid=11_50 ignored
+                        uid=10_50 StaticText "picture_as_pdf"
+                          uid=11_6 InlineTextBox "picture_as_pdf"
+                    uid=10_51 link "smart_toy" description="Assistant IA" url="https://app.centirio.ma/index.php?page=ai-assistant"
+                      uid=11_51 ignored
+                        uid=10_52 StaticText "smart_toy"
+                          uid=11_6 InlineTextBox "smart_toy"
+                uid=11_52 ignored
+                  uid=11_53 generic
+                    uid=10_53 link "admin_panel_settings" description="Gestion des roles" url="https://app.centirio.ma/index.php?page=roles"
+                      uid=11_54 ignored
+                        uid=10_54 StaticText "admin_panel_settings"
+                          uid=11_6 InlineTextBox "admin_panel_settings"
+                    uid=10_55 link "history" description="Journal d'activite" url="https://app.centirio.ma/index.php?page=activite"
+                      uid=11_55 ignored
+                        uid=10_56 StaticText "history"
+                          uid=11_6 InlineTextBox "history"
+                    uid=10_57 link "notifications" description="Gestion des notifications" url="https://app.centirio.ma/index.php?page=notifications-manage"
+                      uid=11_56 ignored
+                        uid=10_58 StaticText "notifications"
+                          uid=11_6 InlineTextBox "notifications"
+                    uid=10_59 link "apartment" description="Centre d'affaires" url="https://app.centirio.ma/index.php?page=centre"
+                      uid=11_57 ignored
+                        uid=10_60 StaticText "apartment"
+                          uid=11_6 InlineTextBox "apartment"
+                    uid=10_61 link "description" description="Formes juridiques" url="https://app.centirio.ma/index.php?page=formes-juridiques"
+                      uid=11_58 ignored
+                        uid=10_62 StaticText "description"
+                          uid=11_6 InlineTextBox "description"
+                    uid=10_63 link "balance" description="Tribunaux" url="https://app.centirio.ma/index.php?page=tribunaux"
+                      uid=11_59 ignored
+                        uid=10_64 StaticText "balance"
+                          uid=11_6 InlineTextBox "balance"
+                    uid=10_65 link "location_city" description="Villes" url="https://app.centirio.ma/index.php?page=villes"
+                      uid=11_60 ignored
+                        uid=10_66 StaticText "location_city"
+                          uid=11_6 InlineTextBox "location_city"
+                    uid=10_67 link "flag" description="Nationalites" url="https://app.centirio.ma/index.php?page=nationalites"
+                      uid=11_61 ignored
+                        uid=10_68 StaticText "flag"
+                          uid=11_6 InlineTextBox "flag"
+                    uid=10_69 link "location_on" description="Lieux de naissance" url="https://app.centirio.ma/index.php?page=lieux-naissance"
+                      uid=11_62 ignored
+                        uid=10_70 StaticText "location_on"
+                          uid=11_6 InlineTextBox "location_on"
+                    uid=10_71 link "home" description="Adresses" url="https://app.centirio.ma/index.php?page=adresses"
+                      uid=11_63 ignored
+                        uid=10_72 StaticText "home"
+                          uid=11_6 InlineTextBox "home"
+                    uid=10_73 link "badge" description="Qualites associe" url="https://app.centirio.ma/index.php?page=qualites-associe"
+                      uid=11_64 ignored
+                        uid=10_74 StaticText "badge"
+                          uid=11_6 InlineTextBox "badge"
+                    uid=10_75 link "assignment" description="Fonctions" url="https://app.centirio.ma/index.php?page=fonctions"
+                      uid=11_65 ignored
+                        uid=10_76 StaticText "assignment"
+                          uid=11_6 InlineTextBox "assignment"
+                    uid=10_77 link "work" description="Activites" url="https://app.centirio.ma/index.php?page=activites"
+                      uid=11_66 ignored
+                        uid=10_78 StaticText "work"
+                          uid=11_6 InlineTextBox "work"
+                    uid=10_79 link "verified" description="Activites Ompic" url="https://app.centirio.ma/index.php?page=activites-ompic"
+                      uid=11_67 ignored
+                        uid=10_80 StaticText "verified"
+                          uid=11_6 InlineTextBox "verified"
+                    uid=10_81 link "playlist_add_check" description="Modèles de résolutions PV" url="https://app.centirio.ma/index.php?page=pv-templates"
+                      uid=11_68 ignored
+                        uid=10_82 StaticText "playlist_add_check"
+                          uid=11_6 InlineTextBox "playlist_add_check"
+          uid=10_83 button "chevron_left" description="Reduire la barre de navigation"
+            uid=11_69 ignored
+              uid=11_70 StaticText "chevron_left"
+                uid=11_6 InlineTextBox "chevron_left"
+          uid=11_71 ignored
+            uid=10_84 main
+              uid=11_72 sectionheader
+                uid=11_73 ignored
+                  uid=10_85 heading "Centre d'affaires" level="1"
+                    uid=11_74 StaticText "Centre d'affaires"
+                      uid=11_6 InlineTextBox "Centre d'affaires"
+                  uid=11_75 ignored

@@ -81,9 +81,9 @@ $unreadCount = count_unread_notifications($pdo, (int) $user['id'], (int) ($user[
                         $link = $n['link'] ? e($n['link']) : null;
                         $timeAgo = time_ago($n['created_at'] ?? '');
                     ?>
-                    <div class="notif-item <?= $isUnread ? 'unread' : '' ?>" data-notif-id="<?= (int) $n['id'] ?>">
+                    <div class="notif-item <?= e($isUnread ? 'unread' : '') ?>" data-notif-id="<?= e((string)(int) $n['id']) ?>">
                         <div class="notif-icon <?= e($n['type'] ?? 'info') ?>">
-                            <span class="material-symbols-outlined"><?= $icon ?></span>
+                            <span class="material-symbols-outlined"><?= e($icon) ?></span>
                         </div>
                         <div class="notif-body">
                             <strong><?= e($n['title'] ?? '') ?></strong>
@@ -92,7 +92,7 @@ $unreadCount = count_unread_notifications($pdo, (int) $user['id'], (int) ($user[
                             <?php endif; ?>
                         </div>
                         <div class="notif-meta">
-                            <span><?= $timeAgo ?></span>
+                            <span><?= e($timeAgo) ?></span>
                             <?php if ($link): ?>
                                 <a href="<?= $link ?>" class="btn-icon info" title="Voir">
                                     <span class="material-symbols-outlined">visibility</span>
@@ -102,7 +102,7 @@ $unreadCount = count_unread_notifications($pdo, (int) $user['id'], (int) ($user[
                                 <form method="post" style="display:inline">
                                     <?= csrf_input() ?>
                                     <input type="hidden" name="action" value="mark_read">
-                                    <input type="hidden" name="id" value="<?= (int) $n['id'] ?>">
+                                    <input type="hidden" name="id" value="<?= e((string)(int) $n['id']) ?>">
                                     <button type="submit" class="btn-icon" title="Marquer comme lu">
                                         <span class="material-symbols-outlined">mark_email_read</span>
                                     </button>

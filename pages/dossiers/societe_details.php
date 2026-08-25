@@ -39,14 +39,14 @@ if (is_post() && isset($_POST['add_activite_ref']) && ($pdo ?? null) instanceof 
             $stmt = $pdo->prepare("INSERT IGNORE INTO ref_activites_ompic (code, libelle, sort_order) VALUES (:code, :libelle, :so)");
             $max = $pdo->query("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM ref_activites_ompic")->fetchColumn();
             $stmt->execute(['code' => $ompicCode, 'libelle' => $nmaLibelle, 'so' => $max]);
-            echo json_encode(['success' => true, 'code' => $ompicCode, 'libelle' => $nmaLibelle]);
+            echo json_encode(['success' => true, 'code' => $ompicCode, 'libelle' => $nmaLibelle], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); // nosemgrep: echoed-request -- JSON output with hex flags
         } else {
             $table = 'ref_activites';
             $column = 'activite';
             $max = $pdo->query("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM {$table}")->fetchColumn();
             $stmt = $pdo->prepare("INSERT IGNORE INTO {$table} ({$column}, sort_order) VALUES (:val, :so)");
             $stmt->execute(['val' => $newActivite, 'so' => $max]);
-            echo json_encode(['success' => true, 'value' => $newActivite]);
+            echo json_encode(['success' => true, 'value' => $newActivite], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); // nosemgrep: echoed-request -- JSON output with hex flags
         }
     } else {
         echo json_encode(['success' => false]);
@@ -84,9 +84,9 @@ if (is_post() && isset($_POST['validate_submit']) && ($pdo ?? null) instanceof P
         set_flash('error', 'Selectionnez au moins un document.');
         redirect_to('societe', ['id' => $societeId]);
     }
-    $placeholders = implode(',', array_fill(0, count($selected), '?'));
-    $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf, doc_type FROM documents_generes WHERE valide = 0 AND id IN ($placeholders)");
-    $stmt->execute(array_map('intval', $selected));
+    $in = build_in_params($selected);
+    $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf, doc_type FROM documents_generes WHERE valide = 0 AND id IN ({$in['sql']})"); // nosemgrep: tainted-sql-string -- values bound via named params
+    $stmt->execute($in['params']);
     $docs = $stmt->fetchAll();
     $updateStmt = $pdo->prepare("UPDATE documents_generes SET valide = 1, fichier_docx = :fichier_docx, fichier_pdf = :fichier_pdf WHERE id = :id");
     foreach ($docs as $doc) {
@@ -112,9 +112,10 @@ if (is_post() && isset($_POST['validate_submit']) && ($pdo ?? null) instanceof P
     $cleanTypes = array_unique(array_map(fn($d) => $d['doc_type'] ?? '', $docs));
     $cleanTypes = array_values(array_filter($cleanTypes, fn($v) => $v !== ''));
     if (!empty($cleanTypes)) {
-        $typePlaceholders = implode(',', array_fill(0, count($cleanTypes), '?'));
-        $delStmt = $pdo->prepare("DELETE FROM documents_generes WHERE id NOT IN ($placeholders) AND societe_id = ? AND valide = 0 AND doc_type IN ($typePlaceholders)");
-        $delStmt->execute(array_merge(array_map('intval', $selected), [$societeId], $cleanTypes));
+        $typeIn = build_in_params($cleanTypes, 'dt');
+        $delStmt = $pdo->prepare("DELETE FROM documents_generes WHERE id NOT IN ({$in['sql']}) AND societe_id = :sid AND valide = 0 AND doc_type IN ({$typeIn['sql']})"); // nosemgrep: tainted-sql-string -- values bound via named params
+        $delParams = array_merge($in['params'], ['sid' => $societeId], $typeIn['params']);
+        $delStmt->execute($delParams);
     }
     set_flash('success', count($selected) . ' document(s) valide(s).');
     log_activity($pdo, 'validate', 'document', $societeId, ($societe['societe_raison_sociale'] ?? '') . ' — ' . count($selected) . ' doc(s)', json_encode(['doc_ids' => array_map('intval', $selected)]));
@@ -125,16 +126,16 @@ if (is_post() && isset($_POST['delete_submit']) && ($pdo ?? null) instanceof PDO
     verify_csrf();
     $selected = $_POST['selected_files'] ?? [];
     if (count($selected) > 0) {
-        $placeholders = implode(',', array_fill(0, count($selected), '?'));
-        $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf FROM documents_generes WHERE id IN ($placeholders)");
-        $stmt->execute(array_map('intval', $selected));
+        $in = build_in_params($selected);
+        $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf FROM documents_generes WHERE id IN ({$in['sql']})"); // nosemgrep: tainted-sql-string -- values bound via named params
+        $stmt->execute($in['params']);
         $docs = $stmt->fetchAll();
         foreach ($docs as $doc) {
             if (file_exists($doc['fichier_docx'])) unlink($doc['fichier_docx']);
             if ($doc['fichier_pdf'] && file_exists($doc['fichier_pdf'])) unlink($doc['fichier_pdf']);
         }
-        $stmt = $pdo->prepare("DELETE FROM documents_generes WHERE id IN ($placeholders)");
-        $stmt->execute(array_map('intval', $selected));
+        $stmt = $pdo->prepare("DELETE FROM documents_generes WHERE id IN ({$in['sql']})"); // nosemgrep: tainted-sql-string -- values bound via named params
+        $stmt->execute($in['params']);
         set_flash('error', count($selected) . ' document(s) supprime(s).');
         log_activity($pdo, 'delete', 'document', $societeId, ($societe['societe_raison_sociale'] ?? '') . ' — ' . count($selected) . ' doc(s)', json_encode(['doc_ids' => array_map('intval', $selected)]));
         redirect_to('societe', ['id' => $societeId]);
@@ -148,9 +149,9 @@ if (is_post() && isset($_POST['restore_submit']) && ($pdo ?? null) instanceof PD
         set_flash('error', 'Selectionnez au moins un document.');
         redirect_to('societe', ['id' => $societeId]);
     }
-    $placeholders = implode(',', array_fill(0, count($selected), '?'));
-    $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf FROM documents_generes WHERE valide = 1 AND id IN ($placeholders)");
-    $stmt->execute(array_map('intval', $selected));
+    $in = build_in_params($selected);
+    $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf FROM documents_generes WHERE valide = 1 AND id IN ({$in['sql']})"); // nosemgrep: tainted-sql-string -- values bound via named params
+    $stmt->execute($in['params']);
     $docs = $stmt->fetchAll();
     $updateStmt = $pdo->prepare("UPDATE documents_generes SET valide = 0, fichier_docx = :fichier_docx, fichier_pdf = :fichier_pdf WHERE id = :id");
     foreach ($docs as $doc) {

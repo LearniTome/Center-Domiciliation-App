@@ -63,7 +63,7 @@ if ($step === 4):
                         <input type="text" name="report_a_nouveau_debiteur" value="<?= e($wizard['report_a_nouveau_debiteur'] ?? '0') ?>">
                     </div>
                     <div class="field">
-                        <span>Reserve legale existante (DH) <span class="help-text">plafond: <?= number_format($plafondRL, 2, ',', ' ') ?> DH</span></span>
+                        <span>Reserve legale existante (DH) <span class="help-text">plafond: <?= e(number_format($plafondRL, 2, ',', ' ')) ?> DH</span></span>
                         <input type="text" name="reserve_legale_existante" value="<?= e($wizard['reserve_legale_existante'] ?? '0') ?>">
                     </div>
                     <div class="field">
@@ -88,8 +88,8 @@ if ($step === 4):
                 </div>
                 <div class="form-grid cols-2">
                     <div class="field">
-                        <span>Dotation reserve legale (5%) <span class="help-text">auto: <?= number_format($RLDotation, 2, ',', ' ') ?> DH</span></span>
-                        <input type="text" name="reserve_legale_dotation_display" value="<?= number_format($RLDotation, 2, ',', ' ') ?>" disabled>
+                        <span>Dotation reserve legale (5%) <span class="help-text">auto: <?= e(number_format($RLDotation, 2, ',', ' ')) ?> DH</span></span>
+                        <input type="text" name="reserve_legale_dotation_display" value="<?= e(number_format($RLDotation, 2, ',', ' ')) ?>" disabled>
                     </div>
                     <div class="field">
                         <span>Dotation reserve statutaire (DH)</span>

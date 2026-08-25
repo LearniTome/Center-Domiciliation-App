@@ -241,7 +241,7 @@ if (is_post()) {
         <div class="section-header">
             <div>
                 <h2>Variables detectees</h2>
-                <p class="help-text"><?= count($variables) ?> variable(s) dans ce template</p>
+                <p class="help-text"><?= e((string) count($variables)) ?> variable(s) dans ce template</p>
             </div>
             <div class="table-actions">
                 <a class="btn btn-info" href="<?= e(app_url('analyse-couverture')) ?>"><span class="material-symbols-outlined">drive_file_rename_outline</span> Renommer en masse</a>
