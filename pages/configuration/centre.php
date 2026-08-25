@@ -48,7 +48,17 @@ if (is_post()) {
     if ($action === 'logo-upload') {
         $file = $_FILES['logo'] ?? null;
         if (!$file || !is_array($file) || ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
-            set_flash('error', 'Aucun fichier recu ou erreur d\'upload.');
+            $uploadErrors = [
+                UPLOAD_ERR_INI_SIZE   => 'Le fichier depasse la limite serveur (upload_max_filesize).',
+                UPLOAD_ERR_FORM_SIZE  => 'Le fichier depasse la limite du formulaire.',
+                UPLOAD_ERR_PARTIAL    => 'Transfert partiel — reessayez.',
+                UPLOAD_ERR_NO_FILE    => 'Aucun fichier recu.',
+                UPLOAD_ERR_NO_TMP_DIR => 'Repertoire temporaire manquant sur le serveur.',
+                UPLOAD_ERR_CANT_WRITE => 'Ecriture impossible sur le serveur.',
+            ];
+            $errCode = $file['error'] ?? UPLOAD_ERR_NO_FILE;
+            $msg = $uploadErrors[$errCode] ?? 'Erreur d\'upload (#' . $errCode . ').';
+            set_flash('error', $msg);
             redirect_to('centre');
         }
         if (($file['size'] ?? 0) > 2 * 1024 * 1024) {
@@ -56,22 +66,46 @@ if (is_post()) {
             redirect_to('centre');
         }
 
-        $finfo = new finfo(FILEINFO_MIME_TYPE);
-        $mime = $finfo->file($file['tmp_name']);
         $allowed = [
             'image/png' => 'png',
             'image/jpeg' => 'jpg',
             'image/webp' => 'webp',
             'image/gif' => 'gif',
         ];
+
+        $mime = '';
+        if (class_exists('finfo', false)) {
+            $fi = new finfo(FILEINFO_MIME_TYPE);
+            $mime = $fi->file($file['tmp_name']);
+        }
+        if ($mime === '' && function_exists('mime_content_type')) {
+            $mime = mime_content_type($file['tmp_name']) ?: '';
+        }
+        if ($mime === '' && isset($file['name'])) {
+            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            $extMap = ['png' => 'image/png', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'webp' => 'image/webp', 'gif' => 'image/gif'];
+            $mime = $extMap[$ext] ?? '';
+        }
+
         if (!isset($allowed[$mime])) {
-            set_flash('error', 'Format non supporte (PNG, JPG, WebP ou GIF uniquement).');
+            set_flash('error', 'Format non supporte (PNG, JPG, WebP ou GIF uniquement). Type detecte : ' . ($mime ?: 'inconnu'));
             redirect_to('centre');
         }
 
         $dir = __DIR__ . '/../../uploads/centre';
         if (!is_dir($dir)) {
-            mkdir($dir, 0777, true);
+            $parents = dirname($dir);
+            if (!is_dir($parents)) {
+                @mkdir($parents, 0755, true);
+            }
+            if (!@mkdir($dir, 0755, true) && !is_dir($dir)) {
+                set_flash('error', 'Impossible de creer le repertoire uploads/centre/. Verifiez les permissions.');
+                redirect_to('centre');
+            }
+        }
+        if (!is_writable($dir)) {
+            set_flash('error', 'Le repertoire uploads/centre/ n\'est pas accessible en ecriture.');
+            redirect_to('centre');
         }
 
         foreach (['png', 'jpg', 'jpeg', 'webp', 'gif'] as $oldExt) {
@@ -84,7 +118,7 @@ if (is_post()) {
         $ext = $allowed[$mime];
         $relativePath = 'uploads/centre/logo.' . $ext;
         if (!move_uploaded_file($file['tmp_name'], $dir . '/logo.' . $ext)) {
-            set_flash('error', 'Echec de l\'enregistrement du logo.');
+            set_flash('error', 'Echec de l\'enregistrement du logo (move_uploaded_file).');
             redirect_to('centre');
         }
 
