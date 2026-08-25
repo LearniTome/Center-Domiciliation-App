@@ -1,0 +1,22 @@
+title = "Center Domiciliation - Gitleaks config"
+
+[allowlist]
+description = "Global allowlist pour le projet Center Domiciliation"
+paths = [
+  '''\.env\.example$''',
+  '''\.opencode/''',
+  '''graphify-out/''',
+  '''vendor/''',
+  '''node_modules/''',
+  '''docs/''',
+  '''database/exports/''',
+  '''database/migrations/''',
+  '''scripts/''',
+  '''tests/''',
+  '''\.git/''',
+]
+regexes = [
+  '''centre_domiciliation''',
+  '''MOT_DE_PASSE_A_REMPLIR''',
+  '''placeholder''',
+]
