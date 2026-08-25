@@ -707,7 +707,8 @@ document.addEventListener('input', (e) => {
             var type = typeSelect.value;
             Array.from(tribSelect.options).forEach(function (opt) {
                 if (opt.value === '') return;
-                opt.style.display = !type || opt.getAttribute('data-type') === type ? '' : 'none';
+                var optType = opt.getAttribute('data-type');
+                opt.style.display = !type || !optType || optType === type ? '' : 'none';
             });
             if (tribSelect.value) {
                 var selected = tribSelect.options[tribSelect.selectedIndex];
@@ -729,7 +730,8 @@ document.addEventListener('input', (e) => {
             var ville = villeSelect.value;
             Array.from(addrSelect.options).forEach(function (opt) {
                 if (opt.value === '') return;
-                opt.style.display = !ville || opt.getAttribute('data-ville') === ville ? '' : 'none';
+                var optVille = opt.getAttribute('data-ville');
+                opt.style.display = !ville || !optVille || optVille === ville ? '' : 'none';
             });
             if (addrSelect.value) {
                 var selected = addrSelect.options[addrSelect.selectedIndex];
