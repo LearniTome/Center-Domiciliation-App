@@ -138,7 +138,7 @@ if ($step === 1):
         <label class="field">
             <span>Forme juridique</span>
             <div style="display:flex;gap:8px;align-items:center">
-                <select name="societe_forme_juridique" style="flex:1">
+                <select name="societe_forme_juridique" data-field-name="forme_juridique" style="flex:1">
                     <option value="">Selectionner</option>
                     <?php foreach ($formesJuridiquesOptions as $option): ?>
                         <option value="<?= e($option) ?>" <?= (string) $societeData['societe_forme_juridique'] === $option ? 'selected' : '' ?>><?= e($option) ?></option>
@@ -257,7 +257,7 @@ if ($step === 1):
         <label class="field full">
             <span>Adresse de reference</span>
             <div style="display:flex;gap:8px;align-items:center">
-                <select name="societe_adresse_siege" style="flex:1">
+                <select name="societe_adresse_siege" data-field-name="adresse" style="flex:1">
                     <option value="">Selectionner</option>
                     <?php foreach ($adressesAll as $opt): ?>
                         <option value="<?= e($opt['ste_adresse']) ?>" data-ville="<?= e($opt['ville'] ?? '') ?>" <?= (string) $societeData['societe_adresse_siege'] === $opt['ste_adresse'] ? 'selected' : '' ?>><?= e($opt['ste_adresse']) ?></option>
@@ -269,7 +269,7 @@ if ($step === 1):
         <label class="field">
             <span>Ville</span>
             <div style="display:flex;gap:8px;align-items:center">
-<select name="societe_ville" data-ville-filter style="flex:1">
+<select name="societe_ville" data-field-name="ville" data-ville-filter style="flex:1">
                     <option value="">Selectionner</option>
                     <?php foreach ($villesOptions as $option): ?>
                         <option value="<?= e($option) ?>" <?= $societeData['societe_ville'] === $option ? 'selected' : '' ?>><?= e($option) ?></option>
