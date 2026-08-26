@@ -1040,6 +1040,9 @@ $actionLabels = [
                 <button class="btn btn-danger" type="submit" name="delete_submit" value="1">
                     <span class="material-symbols-outlined">delete</span> Supprimer la selection
                 </button>
+                <a class="btn btn-info" href="<?= e(app_url('download_all', ['societe_id' => $societeId, 'type' => 'both'])) ?>">
+                    <span class="material-symbols-outlined">download</span> Telecharger tous
+                </a>
             </div>
         </form>
         <script>
