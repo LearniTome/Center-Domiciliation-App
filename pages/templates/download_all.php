@@ -25,9 +25,35 @@ if (empty($docs)) {
     redirect_to('generation', ['societe_id' => $societeId]);
 }
 
-$socName = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $soc['societe_raison_sociale'] ?? 'Societe')));
-$socName = trim(preg_replace('/-+/', '-', $socName), '-');
-$zipName = 'documents_' . $socName . '_' . date('Y-m-d') . '.zip';
+$typeGen = (string) ($soc['societe_type_generation'] ?? '');
+$typeLabel = $typeGen === 'creation' ? 'Creation' : 'Domiciliation';
+
+function dossier_sanitize(string $str): string
+{
+    $str = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $str);
+    $str = preg_replace('/[^a-zA-Z0-9]+/', '_', $str);
+    $str = trim($str, '_');
+    return $str !== '' ? $str : 'Dossier';
+}
+
+$raisonSociale = trim((string) ($soc['societe_raison_sociale'] ?? 'Societe'));
+$formeJuridique = trim((string) ($soc['societe_forme_juridique'] ?? ''));
+
+$socSanitized = dossier_sanitize($raisonSociale);
+$formeSanitized = dossier_sanitize($formeJuridique);
+
+$stmtContrat = $pdo->prepare('SELECT contrat_date FROM contrats WHERE societe_id = :sid ORDER BY id DESC LIMIT 1');
+$stmtContrat->execute(['sid' => $societeId]);
+$contratDate = $stmtContrat->fetchColumn();
+$folderDate = $contratDate ?: date('Y-m-d');
+
+$socUpper = strtoupper($socSanitized);
+$formeUpper = strtoupper($formeSanitized);
+$zipName = $folderDate . '_' . $typeLabel . '_' . $socSanitized;
+if ($formeSanitized !== '' && !str_ends_with($socUpper, $formeUpper)) {
+    $zipName .= '_' . $formeSanitized;
+}
+$zipName .= '.zip';
 
 $zip = new ZipArchive();
 $tmpFile = tempnam(sys_get_temp_dir(), 'zip_');
