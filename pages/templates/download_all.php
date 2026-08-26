@@ -62,19 +62,21 @@ if ($zip->open($tmpFile, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
     redirect_to('generation', ['societe_id' => $societeId]);
 }
 
+$rootFolder = rtrim($zipName, '.zip') . '/';
+
 $added = 0;
 foreach ($docs as $doc) {
     if ($type === 'word' || $type === 'both') {
         $docx = $doc['fichier_docx'] ?? '';
         if ($docx !== '' && file_exists($docx)) {
-            $zip->addFile($docx, 'Word/' . basename($docx));
+            $zip->addFile($docx, $rootFolder . 'Word/' . basename($docx));
             $added++;
         }
     }
     if ($type === 'pdf' || $type === 'both') {
         $pdf = $doc['fichier_pdf'] ?? '';
         if ($pdf !== '' && file_exists($pdf)) {
-            $zip->addFile($pdf, 'PDF/' . basename($pdf));
+            $zip->addFile($pdf, $rootFolder . 'PDF/' . basename($pdf));
             $added++;
         }
     }
