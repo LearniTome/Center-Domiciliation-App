@@ -26,6 +26,15 @@
 ### Frontend / UI
 - [ ] RAS — charte appliquée (skills ui-design / awesome-design)
 
+### Suivi administratif
+- [x] 2026-08-26 — Vue detail amelioree : stepper vertical, KPIs, auto-scroll vers etape courante
+- [x] 2026-08-26 — Vue pipeline Kanban 3 colonnes (En attente / En cours / Termine) avec drag & drop
+- [x] 2026-08-26 — Badge "En retard" sur etapes debutees depuis > 7 jours
+- [x] 2026-08-26 — Toggle vue Detail / Pipeline dans la barre d'actions
+- [x] 2026-08-26 — PDF recapitulatif client (Dompdf) : plan de travail complet, prochaines etapes, delais estimes
+- [x] 2026-08-26 — Sidebar : Suivi Creations + Suivi Domiciliations dans section Dossiers
+- [x] 2026-08-26 — Navigation supporte params query (type=creation|domiciliation)
+
 ### Qualité
 - [x] Suite de tests PHPUnit 11 sur `src/` : TemplateAnalyzer (extraction/rename/delete) + DocumentRenderer (rendu `_VAR_`, fusion split-runs, boucle cession_parts) — `vendor/bin/phpunit` (15 tests)
 - [ ] Vérification manuelle avant commit : skill manual-test

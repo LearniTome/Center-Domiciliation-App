@@ -878,6 +878,7 @@ function get_page_permission(string $page): ?string
         'domiciliations' => 'societes.view',
         'societe' => 'societes.view',
         'societe_suivi' => 'societes.suivi',
+        'suivi_pdf' => 'societes.suivi',
 
         'associes' => 'associes.view',
         'associe' => 'associes.view',

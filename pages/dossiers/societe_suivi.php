@@ -325,25 +325,46 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
 $progress = count($etapes) > 0 ? round(count(array_filter($etapes, fn($e) => $e['statut'] === 'termine')) / count($etapes) * 100) : 0;
 $completed = count(array_filter($etapes, fn($e) => $e['statut'] === 'termine'));
 $inProgress = count(array_filter($etapes, fn($e) => $e['statut'] === 'en_cours'));
+$pending = count($etapes) - $completed - $inProgress;
+
+// Detect overdue steps (started > 7 days ago, not finished)
+$overdue = 0;
+$today = new DateTime();
+foreach ($etapes as $e) {
+    if ($e['statut'] !== 'termine' && $e['date_debut']) {
+        $started = new DateTime($e['date_debut']);
+        if ($today->diff($started)->days > 7) {
+            $overdue++;
+        }
+    }
+}
+
+// Find current step (first en_cours)
+$currentStepId = null;
+foreach ($etapes as $e) {
+    if ($e['statut'] === 'en_cours') {
+        $currentStepId = (int) $e['id'];
+        break;
+    }
+}
+
+$kanbanView = isset($_GET['view']) && $_GET['view'] === 'kanban';
 ?>
 
 <div class="section-title-row">
     <h2>Suivi administratif — <?= e($societe['societe_raison_sociale'] ?? '-') ?></h2>
     <div class="table-actions">
-        <a class="btn btn-info" href="<?= e(app_url('societe', ['id' => $societeId])) ?>"><span class="material-symbols-outlined">info</span> Fiche societe</a>
+        <div class="view-toggle">
+            <button class="<?= !$kanbanView ? 'active' : '' ?>" onclick="location.href='<?= e(app_url('societe_suivi', ['id' => $societeId] + (!$kanbanView ? [] : ['view' => '']))) ?>'"><span class="material-symbols-outlined" style="font-size:1rem">view_list</span> Detail</button>
+            <button class="<?= $kanbanView ? 'active' : '' ?>" onclick="location.href='<?= e(app_url('societe_suivi', ['id' => $societeId, 'view' => 'kanban'])) ?>'"><span class="material-symbols-outlined" style="font-size:1rem">view_kanban</span> Pipeline</button>
+        </div>
+        <a class="btn btn-info" href="<?= e(app_url('suivi_pdf', ['id' => $societeId])) ?>" target="_blank"><span class="material-symbols-outlined">picture_as_pdf</span> PDF</a>
+        <a class="btn btn-info" href="<?= e(app_url('societe', ['id' => $societeId])) ?>"><span class="material-symbols-outlined">info</span> Fiche</a>
         <a class="btn btn-back" href="<?= e(app_url($isCreation ? 'creations' : 'domiciliations')) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
     </div>
 </div>
 
 <section class="stats small stats-bottom-margin">
-    <article class="stat">
-        <span>Societe</span>
-        <strong><?= e($societe['societe_raison_sociale'] ?? '-') ?></strong>
-    </article>
-    <article class="stat">
-        <span>Type de generation</span>
-        <strong><?= $isCreation ? 'Creation' : 'Domiciliation' ?></strong>
-    </article>
     <article class="stat">
         <span>Progression</span>
         <strong><?= $completed ?>/<?= count($etapes) ?></strong>
@@ -356,10 +377,20 @@ $inProgress = count(array_filter($etapes, fn($e) => $e['statut'] === 'en_cours')
         <span>Termine</span>
         <strong><?= $completed ?></strong>
     </article>
+    <?php if ($overdue > 0): ?>
+    <article class="stat" style="border-left:3px solid var(--danger)">
+        <span style="color:var(--danger)">En retard</span>
+        <strong style="color:var(--danger)"><?= $overdue ?></strong>
+    </article>
+    <?php endif; ?>
+    <article class="stat">
+        <span>Type</span>
+        <strong><span class="statut-badge <?= $isCreation ? 'valide' : 'warning' ?>"><?= $isCreation ? 'Creation' : 'Domiciliation' ?></span></strong>
+    </article>
 </section>
 
 <div class="progress-bar" style="height:6px;background:var(--line);border-radius:3px;margin-bottom:1.5rem;overflow:hidden">
-    <div style="height:100%;width:<?= $progress ?>%;background:var(--success);border-radius:3px;transition:width .3s ease"></div>
+    <div style="height:100%;width:<?= $progress ?>%;background:<?= $progress === 100 ? 'var(--success)' : ($overdue > 0 ? 'var(--danger)' : 'var(--primary)') ?>;border-radius:3px;transition:width .3s ease"></div>
 </div>
 
 <?php if (!$etapes): ?>
@@ -367,111 +398,260 @@ $inProgress = count(array_filter($etapes, fn($e) => $e['statut'] === 'en_cours')
         <h3>Aucune etape de suivi</h3>
         <p class="table-empty">Aucune etape de suivi n'est definie pour cette societe.</p>
     </section>
-<?php else: ?>
-<section class="timeline" style="display:flex;flex-direction:column;gap:.75rem">
-    <?php foreach ($etapes as $e): $eid = (int) $e['id']; ?>
-    <article class="card" id="etape-<?= $eid ?>" data-statut="<?= e($e['statut']) ?>">
-        <div class="timeline-header" style="display:flex;align-items:center;gap:.75rem;cursor:pointer" onclick="toggleStep(<?= $eid ?>)">
-            <span class="material-symbols-outlined" style="font-size:1.5rem;color:<?= $e['statut'] === 'termine' ? 'var(--success)' : ($e['statut'] === 'en_cours' ? 'var(--warning)' : 'var(--text-muted)') ?>">
-                <?= match ($e['statut']) {
-                    'termine' => 'check_circle',
-                    'en_cours' => 'radio_button_checked',
-                    default => 'radio_button_unchecked',
-                } ?>
-            </span>
-            <span class="material-symbols-outlined" style="font-size:1.3rem;color:var(--text-muted)"><?= e($stepIcons[$e['etape']] ?? 'help') ?></span>
-            <strong style="flex:1"><?= $stepLabels[$e['etape']] ?? e($e['etape']) ?></strong>
-            <span class="statut-badge <?= $statutBadges[$e['statut']] ?? 'brouillon' ?>"><?= $statutLabels[$e['statut']] ?? e($e['statut']) ?></span>
-            <?php if ($e['date_fin']): ?>
-            <small style="color:var(--text-muted)"><?= format_date($e['date_fin']) ?></small>
+<?php elseif ($kanbanView): ?>
+    <!-- ─── Vue Pipeline Kanban ──────────────────────────────────── -->
+    <?php
+    $grouped = ['en_attente' => [], 'en_cours' => [], 'termine' => []];
+    foreach ($etapes as $e) {
+        $grouped[$e['statut']][] = $e;
+    }
+    ?>
+    <div class="suivi-kanban" id="kanban-board">
+        <?php foreach (['en_attente', 'en_cours', 'termine'] as $colStatut):
+            $colEtapes = $grouped[$colStatut];
+            $colLabel = $statutLabels[$colStatut];
+        ?>
+        <div class="kanban-col" data-statut="<?= $colStatut ?>">
+            <div class="kanban-col-header <?= $colStatut ?>">
+                <span><?= $colLabel ?></span>
+                <span class="badge"><?= count($colEtapes) ?></span>
+            </div>
+            <?php foreach ($colEtapes as $e):
+                $eid = (int) $e['id'];
+                $total = count($etapes);
+                $termine = count(array_filter($etapes, fn($x) => $x['statut'] === 'termine'));
+                $pct = $total > 0 ? round($termine / $total * 100) : 0;
+                $isOverdue = $e['statut'] !== 'termine' && $e['date_debut'] && (new DateTime())->diff(new DateTime($e['date_debut']))->days > 7;
+            ?>
+            <div class="kanban-card" draggable="true" data-etape-id="<?= $eid ?>" data-statut="<?= $colStatut ?>">
+                <div class="kanban-card-title">
+                    <a href="<?= e(app_url('societe_suivi', ['id' => $societeId, 'open' => $eid])) ?>"><?= $stepLabels[$e['etape']] ?? e($e['etape']) ?></a>
+                </div>
+                <div class="kanban-card-meta">
+                    <span class="material-symbols-outlined" style="font-size:.9rem"><?= e($stepIcons[$e['etape']] ?? 'help') ?></span>
+                    <?php if ($isOverdue): ?>
+                        <span class="statut-badge retard">En retard</span>
+                    <?php endif; ?>
+                    <?php if ($e['date_fin']): ?>
+                        <span>Fin: <?= format_date($e['date_fin']) ?></span>
+                    <?php endif; ?>
+                    <?php $docCount = count($docsByEtape[$eid] ?? []); if ($docCount > 0): ?>
+                        <span class="material-symbols-outlined" style="font-size:.85rem">description</span> <?= $docCount ?>
+                    <?php endif; ?>
+                </div>
+                <div class="kanban-card-progress">
+                    <div class="kanban-card-progress-fill" style="width:<?= $e['statut'] === 'termine' ? 100 : ($e['statut'] === 'en_cours' ? 50 : 0) ?>%;background:<?= $e['statut'] === 'termine' ? 'var(--success)' : ($e['statut'] === 'en_cours' ? 'var(--warning)' : 'var(--line)') ?>"></div>
+                </div>
+            </div>
+            <?php endforeach; ?>
+            <?php if (empty($colEtapes)): ?>
+                <p style="font-size:.78rem;color:var(--text-muted);text-align:center;padding:1rem 0">Aucune etape</p>
             <?php endif; ?>
-            <span class="material-symbols-outlined toggle-icon" style="transition:transform .2s;color:var(--text-muted)" data-target="step-detail-<?= $eid ?>">expand_more</span>
         </div>
+        <?php endforeach; ?>
+    </div>
 
-        <div id="step-detail-<?= $eid ?>" class="step-detail" style="display:none;margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--line)">
-            <!-- Quick statut change -->
-            <div class="form-inline" style="display:flex;gap:.5rem;align-items:center;margin-bottom:.75rem;flex-wrap:wrap">
-                <span style="font-size:.85rem;color:var(--text-muted)">Statut :</span>
-                <form method="post" style="display:inline-flex;gap:.25rem">
-                    <?= csrf_input() ?>
-                    <input type="hidden" name="etape_id" value="<?= $eid ?>">
-                    <input type="hidden" name="update_statut" value="1">
-                    <?php foreach (['en_attente', 'en_cours', 'termine'] as $s): ?>
-                    <button type="submit" name="statut" value="<?= $s ?>" class="btn <?= $e['statut'] === $s ? 'btn-next' : '' ?>" style="font-size:.8rem;padding:3px 10px"><?= $statutLabels[$s] ?></button>
-                    <?php endforeach; ?>
-                </form>
-            </div>
+    <script>
+    (function() {
+        var board = document.getElementById('kanban-board');
+        if (!board) return;
+        var dragged = null;
 
-            <!-- Dates -->
-            <form method="post" style="display:flex;gap:.75rem;align-items:center;margin-bottom:.75rem;flex-wrap:wrap" class="form-inline">
-                <?= csrf_input() ?>
-                <input type="hidden" name="etape_id" value="<?= $eid ?>">
-                <input type="hidden" name="update_dates" value="1">
-                <label style="font-size:.85rem;color:var(--text-muted)">Debut :
-                    <input type="date" name="date_debut" value="<?= e($e['date_debut'] ?? '') ?>" style="padding:3px 8px;border:1px solid var(--line);border-radius:4px;font-size:.85rem">
-                </label>
-                <label style="font-size:.85rem;color:var(--text-muted)">Fin :
-                    <input type="date" name="date_fin" value="<?= e($e['date_fin'] ?? '') ?>" style="padding:3px 8px;border:1px solid var(--line);border-radius:4px;font-size:.85rem">
-                </label>
-                <button type="submit" class="btn" style="font-size:.8rem;padding:3px 10px"><span class="material-symbols-outlined">calendar_month</span> Dates</button>
-            </form>
+        board.addEventListener('dragstart', function(e) {
+            var card = e.target.closest('.kanban-card');
+            if (!card) return;
+            dragged = card;
+            card.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', card.dataset.etapeId);
+        });
 
-            <!-- Notes -->
-            <form method="post" style="margin-bottom:.75rem">
-                <?= csrf_input() ?>
-                <input type="hidden" name="etape_id" value="<?= $eid ?>">
-                <input type="hidden" name="update_notes" value="1">
-                <textarea name="notes" rows="2" placeholder="Notes..." style="width:100%;padding:6px 10px;border:1px solid var(--line);border-radius:4px;font-size:.85rem;resize:vertical"><?= e($e['notes'] ?? '') ?></textarea>
-                <button type="submit" class="btn" style="margin-top:.25rem;font-size:.8rem;padding:3px 10px"><span class="material-symbols-outlined">note</span> Enregistrer</button>
-            </form>
+        board.addEventListener('dragend', function(e) {
+            if (dragged) dragged.classList.remove('dragging');
+            dragged = null;
+            board.querySelectorAll('.kanban-col').forEach(function(c) { c.classList.remove('drag-over'); });
+        });
 
-            <!-- Documents -->
-            <div style="margin-bottom:.5rem">
-                <strong style="font-size:.85rem">Documents :</strong>
-                <?php if (!empty($docsByEtape[$eid])): ?>
-                <ul style="list-style:none;padding:0;margin:.5rem 0">
-                    <?php foreach ($docsByEtape[$eid] as $doc): ?>
-                    <li style="display:flex;align-items:center;gap:.5rem;padding:.25rem 0;font-size:.85rem">
-                        <span class="material-symbols-outlined" style="font-size:1.1rem;color:var(--primary)">description</span>
-                        <span><?= e($doc['nom']) ?></span>
-                        <a href="<?= e(word_url($doc['fichier'])) ?>" class="btn-icon primary" title="Telecharger" target="_blank">
-                            <span class="material-symbols-outlined">download</span>
-                        </a>
-                        <form method="post" style="display:inline" onsubmit="return confirm('Supprimer ce document ?')">
+        board.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            var col = e.target.closest('.kanban-col');
+            if (col) col.classList.add('drag-over');
+        });
+
+        board.addEventListener('dragleave', function(e) {
+            var col = e.target.closest('.kanban-col');
+            if (col && !col.contains(e.relatedTarget)) col.classList.remove('drag-over');
+        });
+
+        board.addEventListener('drop', function(e) {
+            e.preventDefault();
+            var col = e.target.closest('.kanban-col');
+            if (!col || !dragged) return;
+            col.classList.remove('drag-over');
+            var newStatut = col.dataset.statut;
+            var etapeId = dragged.dataset.etapeId;
+            if (newStatut === dragged.dataset.statut) return;
+
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.innerHTML = '<?= csrf_input() ?>' +
+                '<input type="hidden" name="etape_id" value="' + etapeId + '">' +
+                '<input type="hidden" name="update_statut" value="1">' +
+                '<input type="hidden" name="statut" value="' + newStatut + '">';
+            document.body.appendChild(form);
+            form.submit();
+        });
+    })();
+    </script>
+
+<?php else: ?>
+    <!-- ─── Vue Detail avec Stepper ──────────────────────────────── -->
+    <div class="suivi-layout">
+        <nav class="suivi-stepper">
+            <div class="suivi-stepper-title">Etapes</div>
+            <?php foreach ($etapes as $e): $eid = (int) $e['id']; ?>
+            <a class="suivi-step" href="#etape-<?= $eid ?>" onclick="openStep(<?= $eid ?>)">
+                <div class="suivi-step-dot <?= $e['statut'] === 'termine' ? 'success' : ($e['statut'] === 'en_cours' ? 'warning' : '') ?>">
+                    <?= match ($e['statut']) {
+                        'termine' => '<span class="material-symbols-outlined">check</span>',
+                        'en_cours' => '<span class="material-symbols-outlined">play_arrow</span>',
+                        default => ($stepLabels[$e['etape']] ?? $e['etape'])[0],
+                    } ?>
+                    <span class="suivi-step-line"></span>
+                </div>
+                <div class="suivi-step-info">
+                    <div class="step-label <?= $currentStepId === $eid ? 'active' : '' ?>"><?= $stepLabels[$e['etape']] ?? e($e['etape']) ?></div>
+                    <div class="step-meta">
+                        <?php if ($e['date_fin']): ?>
+                            <?= format_date($e['date_fin']) ?>
+                        <?php elseif ($e['date_debut']): ?>
+                            Depuis <?= format_date($e['date_debut']) ?>
+                        <?php else: ?>
+                            <?= $statutLabels[$e['statut']] ?>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </a>
+            <?php endforeach; ?>
+        </nav>
+
+        <div class="suivi-content">
+            <section class="timeline" style="display:flex;flex-direction:column;gap:.75rem">
+                <?php foreach ($etapes as $e): $eid = (int) $e['id'];
+                    $isOverdue = $e['statut'] !== 'termine' && $e['date_debut'] && (new DateTime())->diff(new DateTime($e['date_debut']))->days > 7;
+                    $docCount = count($docsByEtape[$eid] ?? []);
+                ?>
+                <article class="card" id="etape-<?= $eid ?>" data-statut="<?= e($e['statut']) ?>">
+                    <div class="timeline-header" style="display:flex;align-items:center;gap:.75rem;cursor:pointer" onclick="toggleStep(<?= $eid ?>)">
+                        <span class="material-symbols-outlined" style="font-size:1.5rem;color:<?= $e['statut'] === 'termine' ? 'var(--success)' : ($e['statut'] === 'en_cours' ? 'var(--warning)' : 'var(--text-muted)') ?>">
+                            <?= match ($e['statut']) {
+                                'termine' => 'check_circle',
+                                'en_cours' => 'radio_button_checked',
+                                default => 'radio_button_unchecked',
+                            } ?>
+                        </span>
+                        <span class="material-symbols-outlined" style="font-size:1.3rem;color:var(--text-muted)"><?= e($stepIcons[$e['etape']] ?? 'help') ?></span>
+                        <strong style="flex:1"><?= $stepLabels[$e['etape']] ?? e($e['etape']) ?></strong>
+                        <?php if ($isOverdue): ?>
+                            <span class="statut-badge retard">En retard</span>
+                        <?php endif; ?>
+                        <span class="statut-badge <?= $statutBadges[$e['statut']] ?? 'brouillon' ?>"><?= $statutLabels[$e['statut']] ?? e($e['statut']) ?></span>
+                        <?php if ($docCount > 0): ?>
+                            <span style="display:inline-flex;align-items:center;gap:2px;font-size:.75rem;color:var(--text-muted)"><span class="material-symbols-outlined" style="font-size:.9rem">description</span><?= $docCount ?></span>
+                        <?php endif; ?>
+                        <?php if ($e['date_fin']): ?>
+                        <small style="color:var(--text-muted)"><?= format_date($e['date_fin']) ?></small>
+                        <?php endif; ?>
+                        <span class="material-symbols-outlined toggle-icon" style="transition:transform .2s;color:var(--text-muted)" data-target="step-detail-<?= $eid ?>">expand_more</span>
+                    </div>
+
+                    <div id="step-detail-<?= $eid ?>" class="step-detail" style="display:none;margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--line)">
+                        <!-- Quick statut change -->
+                        <div class="form-inline" style="display:flex;gap:.5rem;align-items:center;margin-bottom:.75rem;flex-wrap:wrap">
+                            <span style="font-size:.85rem;color:var(--text-muted)">Statut :</span>
+                            <form method="post" style="display:inline-flex;gap:.25rem">
+                                <?= csrf_input() ?>
+                                <input type="hidden" name="etape_id" value="<?= $eid ?>">
+                                <input type="hidden" name="update_statut" value="1">
+                                <?php foreach (['en_attente', 'en_cours', 'termine'] as $s): ?>
+                                <button type="submit" name="statut" value="<?= $s ?>" class="btn <?= $e['statut'] === $s ? 'btn-next' : '' ?>" style="font-size:.8rem;padding:3px 10px"><?= $statutLabels[$s] ?></button>
+                                <?php endforeach; ?>
+                            </form>
+                        </div>
+
+                        <!-- Dates -->
+                        <form method="post" style="display:flex;gap:.75rem;align-items:center;margin-bottom:.75rem;flex-wrap:wrap" class="form-inline">
                             <?= csrf_input() ?>
-                            <input type="hidden" name="delete_document" value="1">
-                            <input type="hidden" name="doc_id" value="<?= (int) $doc['id'] ?>">
-                            <button type="submit" class="btn-icon danger" title="Supprimer">
-                                <span class="material-symbols-outlined">delete</span>
-                            </button>
+                            <input type="hidden" name="etape_id" value="<?= $eid ?>">
+                            <input type="hidden" name="update_dates" value="1">
+                            <label style="font-size:.85rem;color:var(--text-muted)">Debut :
+                                <input type="date" name="date_debut" value="<?= e($e['date_debut'] ?? '') ?>" style="padding:3px 8px;border:1px solid var(--line);border-radius:4px;font-size:.85rem">
+                            </label>
+                            <label style="font-size:.85rem;color:var(--text-muted)">Fin :
+                                <input type="date" name="date_fin" value="<?= e($e['date_fin'] ?? '') ?>" style="padding:3px 8px;border:1px solid var(--line);border-radius:4px;font-size:.85rem">
+                            </label>
+                            <button type="submit" class="btn" style="font-size:.8rem;padding:3px 10px"><span class="material-symbols-outlined">calendar_month</span> Dates</button>
                         </form>
-                        <small style="color:var(--text-muted)"><?= format_date($doc['uploaded_at']) ?></small>
-                    </li>
-                    <?php endforeach; ?>
-                </ul>
-                <?php else: ?>
-                <p style="font-size:.85rem;color:var(--text-muted);margin:.25rem 0">Aucun document.</p>
-                <?php endif; ?>
-            </div>
 
-            <!-- Upload document -->
-            <form method="post" enctype="multipart/form-data" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;padding:.5rem;background:var(--bg);border-radius:4px">
-                <?= csrf_input() ?>
-                <input type="hidden" name="etape_id" value="<?= $eid ?>">
-                <input type="hidden" name="upload_document" value="1">
-                <input type="text" name="doc_nom" placeholder="Nom du document" list="doc-suggest-<?= $eid ?>" style="padding:4px 8px;border:1px solid var(--line);border-radius:4px;font-size:.85rem;flex:1;min-width:140px" value="<?= e(($documentSuggestions[$e['etape']] ?? [null])[0]) ?>">
-                <datalist id="doc-suggest-<?= $eid ?>">
-                    <?php foreach ($documentSuggestions[$e['etape']] ?? [] as $s): ?>
-                    <option value="<?= e($s) ?>">
-                    <?php endforeach; ?>
-                </datalist>
-                <input type="file" name="doc_file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" required style="font-size:.85rem;max-width:160px">
-                <button type="submit" class="btn btn-next" style="font-size:.8rem;padding:4px 12px"><span class="material-symbols-outlined">upload</span> Ajouter</button>
-            </form>
+                        <!-- Notes -->
+                        <form method="post" style="margin-bottom:.75rem">
+                            <?= csrf_input() ?>
+                            <input type="hidden" name="etape_id" value="<?= $eid ?>">
+                            <input type="hidden" name="update_notes" value="1">
+                            <textarea name="notes" rows="2" placeholder="Notes..." style="width:100%;padding:6px 10px;border:1px solid var(--line);border-radius:4px;font-size:.85rem;resize:vertical"><?= e($e['notes'] ?? '') ?></textarea>
+                            <button type="submit" class="btn" style="margin-top:.25rem;font-size:.8rem;padding:3px 10px"><span class="material-symbols-outlined">note</span> Enregistrer</button>
+                        </form>
+
+                        <!-- Documents -->
+                        <div style="margin-bottom:.5rem">
+                            <strong style="font-size:.85rem">Documents :</strong>
+                            <?php if (!empty($docsByEtape[$eid])): ?>
+                            <ul style="list-style:none;padding:0;margin:.5rem 0">
+                                <?php foreach ($docsByEtape[$eid] as $doc): ?>
+                                <li style="display:flex;align-items:center;gap:.5rem;padding:.25rem 0;font-size:.85rem">
+                                    <span class="material-symbols-outlined" style="font-size:1.1rem;color:var(--primary)">description</span>
+                                    <span><?= e($doc['nom']) ?></span>
+                                    <a href="<?= e(word_url($doc['fichier'])) ?>" class="btn-icon primary" title="Telecharger" target="_blank">
+                                        <span class="material-symbols-outlined">download</span>
+                                    </a>
+                                    <form method="post" style="display:inline" onsubmit="return confirm('Supprimer ce document ?')">
+                                        <?= csrf_input() ?>
+                                        <input type="hidden" name="delete_document" value="1">
+                                        <input type="hidden" name="doc_id" value="<?= (int) $doc['id'] ?>">
+                                        <button type="submit" class="btn-icon danger" title="Supprimer">
+                                            <span class="material-symbols-outlined">delete</span>
+                                        </button>
+                                    </form>
+                                    <small style="color:var(--text-muted)"><?= format_date($doc['uploaded_at']) ?></small>
+                                </li>
+                                <?php endforeach; ?>
+                            </ul>
+                            <?php else: ?>
+                            <p style="font-size:.85rem;color:var(--text-muted);margin:.25rem 0">Aucun document.</p>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- Upload document -->
+                        <form method="post" enctype="multipart/form-data" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;padding:.5rem;background:var(--bg);border-radius:4px">
+                            <?= csrf_input() ?>
+                            <input type="hidden" name="etape_id" value="<?= $eid ?>">
+                            <input type="hidden" name="upload_document" value="1">
+                            <input type="text" name="doc_nom" placeholder="Nom du document" list="doc-suggest-<?= $eid ?>" style="padding:4px 8px;border:1px solid var(--line);border-radius:4px;font-size:.85rem;flex:1;min-width:140px" value="<?= e(($documentSuggestions[$e['etape']] ?? [null])[0]) ?>">
+                            <datalist id="doc-suggest-<?= $eid ?>">
+                                <?php foreach ($documentSuggestions[$e['etape']] ?? [] as $s): ?>
+                                <option value="<?= e($s) ?>">
+                                <?php endforeach; ?>
+                            </datalist>
+                            <input type="file" name="doc_file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" required style="font-size:.85rem;max-width:160px">
+                            <button type="submit" class="btn btn-next" style="font-size:.8rem;padding:4px 12px"><span class="material-symbols-outlined">upload</span> Ajouter</button>
+                        </form>
+                    </div>
+                </article>
+                <?php endforeach; ?>
+            </section>
         </div>
-    </article>
-    <?php endforeach; ?>
-</section>
+    </div>
 <?php endif; ?>
 
 <script>
@@ -483,6 +663,12 @@ function toggleStep(id) {
     detail.style.display = isOpen ? 'none' : 'block';
     icon.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
 }
+function openStep(id) {
+    var detail = document.getElementById('step-detail-' + id);
+    var icon = document.querySelector('#etape-' + id + ' .toggle-icon');
+    if (detail) { detail.style.display = 'block'; }
+    if (icon) { icon.style.transform = 'rotate(180deg)'; }
+}
 <?php if (isset($_GET['open'])): ?>
 document.addEventListener('DOMContentLoaded', function() {
     var id = <?= json_encode((string) $_GET['open']) ?>;
@@ -491,6 +677,11 @@ document.addEventListener('DOMContentLoaded', function() {
         var icon = document.querySelector('#etape-' + id + ' .toggle-icon');
         if (icon) icon.style.transform = 'rotate(180deg)';
         el.closest('.card')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+});
+<?php elseif ($currentStepId): ?>
+document.addEventListener('DOMContentLoaded', function() {
+    var el = document.getElementById('etape-<?= $currentStepId ?>');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
 });
 <?php endif; ?>
 </script>
