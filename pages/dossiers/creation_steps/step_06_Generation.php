@@ -61,6 +61,24 @@ if (is_post() && $step === 6) {
 
             $societeId = (int) $pdo->lastInsertId();
 
+            // Insert suivi etapes based on generation type
+            $genType = $wizard['societe']['societe_type_generation'] ?? 'domiciliation';
+            $suiviEtapes = ($genType === 'creation')
+                ? [
+                    ['certificat_negatif', 1], ['redaction_statuts', 2], ['signature', 3],
+                    ['enregistrement', 4], ['depot_greffe', 5], ['publication_jal_bo', 6],
+                    ['rc', 7], ['remise', 8],
+                ]
+                : [
+                    ['contrat_domiciliation', 1], ['redaction', 2], ['signature', 3],
+                    ['enregistrement', 4], ['depot_greffe', 5], ['publication_jal', 6],
+                    ['rc_modificatif', 7], ['remise', 8],
+                ];
+            $suiviStmt = $pdo->prepare('INSERT INTO societe_suivi_etapes (societe_id, etape, ordre) VALUES (:sid, :etape, :ordre)');
+            foreach ($suiviEtapes as [$etape, $ordre]) {
+                $suiviStmt->execute(['sid' => $societeId, 'etape' => $etape, 'ordre' => $ordre]);
+            }
+
             $associeStmt = $pdo->prepare('
                 INSERT INTO associes (societe_id, associe_civilite, associe_nom, associe_prenom, associe_nom_complet, associe_cin, associe_date_validite_cin, associe_date_naissance, associe_lieu_naissance, associe_nationalite, associe_adresse, associe_telephone, associe_email, associe_qualite, associe_parts, associe_capital_detenu, associe_part_percent, associe_est_gerant, associe_duree_gerance)
                 VALUES (:societe_id, :associe_civilite, :associe_nom, :associe_prenom, :associe_nom_complet, :associe_cin, :associe_date_validite_cin, :associe_date_naissance, :associe_lieu_naissance, :associe_nationalite, :associe_adresse, :associe_telephone, :associe_email, :associe_qualite, :associe_parts, :associe_capital_detenu, :associe_part_percent, :associe_est_gerant, :associe_duree_gerance)
