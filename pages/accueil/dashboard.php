@@ -103,7 +103,8 @@ $pctClass = $pctComplets >= 80 ? '' : ($pctComplets >= 50 ? 'warning' : 'danger'
 $renouvelerCount = 0;
 $resiliesMois = 0;
 $collabMainType = '';
-$incompletsCount = 0;
+$incompletsCreation = 0;
+$incompletsDomiciliation = 0;
 $templateCount = 0;
 $refTableCount = 0;
 if ($isConnected) {
@@ -130,13 +131,20 @@ if ($isConnected) {
         $resiliesMois = (int) $stmt->fetchColumn();
 
         $stmt = $pdo->prepare("
-            SELECT COUNT(*) FROM societes s
+            SELECT societe_type_generation, COUNT(*) AS cnt FROM societes s
             WHERE s.created_by = :uid
               AND NOT (EXISTS (SELECT 1 FROM associes a WHERE a.societe_id = s.id)
                    AND EXISTS (SELECT 1 FROM contrats c WHERE c.societe_id = s.id))
+            GROUP BY societe_type_generation
         ");
         $stmt->execute(['uid' => $userId]);
-        $incompletsCount = (int) $stmt->fetchColumn();
+        foreach ($stmt->fetchAll() as $row) {
+            if ($row['societe_type_generation'] === 'creation') {
+                $incompletsCreation = (int) $row['cnt'];
+            } else {
+                $incompletsDomiciliation += (int) $row['cnt'];
+            }
+        }
     } else {
         $renouvelerCount = (int) $pdo->query("
             SELECT COUNT(*) FROM contrats
@@ -149,11 +157,19 @@ if ($isConnected) {
               AND MONTH(created_at) = MONTH(CURDATE())
               AND YEAR(created_at) = YEAR(CURDATE())
         ")->fetchColumn();
-        $incompletsCount = (int) $pdo->query("
-            SELECT COUNT(*) FROM societes s
+        $incompletRows = $pdo->query("
+            SELECT societe_type_generation, COUNT(*) AS cnt FROM societes s
             WHERE NOT (EXISTS (SELECT 1 FROM associes a WHERE a.societe_id = s.id)
                    AND EXISTS (SELECT 1 FROM contrats c WHERE c.societe_id = s.id))
-        ")->fetchColumn();
+            GROUP BY societe_type_generation
+        ")->fetchAll();
+        foreach ($incompletRows as $row) {
+            if ($row['societe_type_generation'] === 'creation') {
+                $incompletsCreation = (int) $row['cnt'];
+            } else {
+                $incompletsDomiciliation += (int) $row['cnt'];
+            }
+        }
     }
     $collabMainType = (string) $pdo->query("
         SELECT collaborateur_type FROM collaborateurs
@@ -461,7 +477,12 @@ if ($isConnected) {
     <a class="dash-action dash-action-new" href="<?= e(app_url('creation')) ?>">
         <span class="material-symbols-outlined">add_circle</span>
         <strong>Creer un dossier</strong>
-        <small><?= $incompletsCount ?> dossiers incomplets</small>
+        <small><?= $incompletsCreation ?> creation(s) incomplete(s)</small>
+    </a>
+    <a class="dash-action dash-action-suivi" href="<?= e(app_url('domiciliations')) ?>">
+        <span class="material-symbols-outlined">apartment</span>
+        <strong>Domiciliation</strong>
+        <small><?= $incompletsDomiciliation ?> domiciliation(s) incomplete(s)</small>
     </a>
     <a class="dash-action dash-action-cession" href="<?= e(app_url('cession')) ?>">
         <span class="material-symbols-outlined">transfer_within_a_station</span>
