@@ -70,7 +70,8 @@ $navSections = [
             'associes' => ['Associes', 'group'],
             'contrats' => ['Contrats', 'description'],
             'collaborateurs' => ['Collaborateurs', 'work'],
-            'societe_suivi' => ['Suivi administratif', 'checklist'],
+            ['page' => 'societe_suivi', 'label' => 'Suivi Creations', 'icon' => 'rocket_launch', 'params' => ['type' => 'creation']],
+            ['page' => 'societe_suivi', 'label' => 'Suivi Domiciliations', 'icon' => 'business', 'params' => ['type' => 'domiciliation']],
         ],
     ],
     'Modification juridique' => [
@@ -176,8 +177,8 @@ $navSections = [
                             $itemPage = $item['page'];
                             $itemLabel = $item['label'];
                             $itemIcon = $item['icon'];
-                            $href = app_url($itemPage);
-                            $isActive = $page === $itemPage;
+                            $href = app_url($itemPage, $item['params'] ?? []);
+                            $isActive = $page === $itemPage && ($item['params']['type'] ?? null) === ($_GET['type'] ?? null);
                         } else {
                             $itemLabel = $item[0];
                             $itemIcon = $item[1];
