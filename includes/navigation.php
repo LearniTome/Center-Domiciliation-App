@@ -70,6 +70,7 @@ $navSections = [
             'associes' => ['Associes', 'group'],
             'contrats' => ['Contrats', 'description'],
             'collaborateurs' => ['Collaborateurs', 'work'],
+            'societe_suivi' => ['Suivi administratif', 'checklist'],
         ],
     ],
     'Modification juridique' => [

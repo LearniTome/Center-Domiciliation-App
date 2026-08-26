@@ -100,15 +100,131 @@ if ($societe && ($pdo ?? null) instanceof PDO) {
 }
 
 if (!$societe) {
-    if ($societeId === 0) {
-        redirect_to('domiciliations');
+    if ($societeId !== 0) {
+        http_response_code(404);
+        ?><section class="card stack">
+            <h2>Societe introuvable</h2>
+            <p>Le dossier demande n'existe pas.</p>
+            <a class="btn" href="<?= e(app_url('creations')) ?>">Retour aux societes</a>
+        </section><?php
+        return;
     }
-    http_response_code(404);
-    ?><section class="card stack">
-        <h2>Societe introuvable</h2>
-        <p>Le dossier demande n'existe pas.</p>
-        <a class="btn" href="<?= e(app_url($isCreation ? 'creations' : 'domiciliations')) ?>">Retour aux societes</a>
-    </section><?php
+
+    // ─── Liste de suivi de toutes les societes ────────────────────────────
+    $q = trim($_GET['q'] ?? '');
+    $filterType = $_GET['type'] ?? '';
+    $sql = 'SELECT s.*,
+                   (SELECT COUNT(*) FROM societe_suivi_etapes WHERE societe_id = s.id) AS total_etapes,
+                   (SELECT COUNT(*) FROM societe_suivi_etapes WHERE societe_id = s.id AND statut = \'termine\') AS termine_count,
+                   (SELECT COUNT(*) FROM societe_suivi_etapes WHERE societe_id = s.id AND statut = \'en_cours\') AS en_cours_count
+            FROM societes s';
+    $conditions = [];
+    $params = [];
+    if ($q !== '') {
+        $like = '%' . $q . '%';
+        $conditions[] = '(s.societe_raison_sociale LIKE :q1 OR s.societe_dossier_domiciliation_number LIKE :q2 OR s.societe_dossier_creation_number LIKE :q3 OR s.societe_ice LIKE :q4)';
+        $params['q1'] = $like;
+        $params['q2'] = $like;
+        $params['q3'] = $like;
+        $params['q4'] = $like;
+    }
+    if (in_array($filterType, ['creation', 'domiciliation'], true)) {
+        $conditions[] = 's.societe_type_generation = :type';
+        $params['type'] = $filterType;
+    }
+    if ($conditions !== []) {
+        $sql .= ' WHERE ' . implode(' AND ', $conditions);
+    }
+    $sql .= ' ORDER BY s.created_at DESC';
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    $allSocietes = $stmt->fetchAll();
+    ?>
+
+    <div class="section-title-row">
+        <h2>Suivi administratif</h2>
+        <div class="table-actions">
+            <form method="get" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+                <input type="hidden" name="page" value="societe_suivi">
+                <select name="type" style="padding:5px 8px;border:1px solid var(--line);border-radius:4px;font-size:.85rem">
+                    <option value="">Tous</option>
+                    <option value="creation" <?= $filterType === 'creation' ? 'selected' : '' ?>>Creation</option>
+                    <option value="domiciliation" <?= $filterType === 'domiciliation' ? 'selected' : '' ?>>Domiciliation</option>
+                </select>
+                <input type="search" name="q" value="<?= e($q) ?>" placeholder="Rechercher..." style="padding:5px 10px;border:1px solid var(--line);border-radius:4px;font-size:.85rem">
+                <button type="submit" class="btn" style="font-size:.8rem;padding:4px 10px"><span class="material-symbols-outlined">search</span></button>
+            </form>
+        </div>
+    </div>
+
+    <?php if (empty($allSocietes)): ?>
+        <div class="empty-state">
+            <span class="material-symbols-outlined">checklist</span>
+            <p class="table-empty">Aucune societe trouvee.</p>
+        </div>
+    <?php else: ?>
+    <div class="table-scroll">
+        <table data-sortable>
+            <thead>
+            <tr>
+                <th data-col="dossier">Dossier</th>
+                <th data-col="societe">Societe</th>
+                <th data-col="forme">Forme</th>
+                <th data-col="type">Type</th>
+                <th data-col="progression">Progression</th>
+                <th data-col="statut">Statut</th>
+                <th class="col-actions">Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <?php foreach ($allSocietes as $s):
+                $total = (int) $s['total_etapes'];
+                $termine = (int) $s['termine_count'];
+                $enCours = (int) $s['en_cours_count'];
+                $pct = $total > 0 ? round($termine / $total * 100) : 0;
+                if ($termine === $total && $total > 0) {
+                    $globalStatut = 'termine';
+                } elseif ($enCours > 0) {
+                    $globalStatut = 'en_cours';
+                } else {
+                    $globalStatut = 'en_attente';
+                }
+                $dossierNum = $s['societe_type_generation'] === 'creation'
+                    ? ($s['societe_dossier_creation_number'] ?? '-')
+                    : ($s['societe_dossier_domiciliation_number'] ?? '-');
+                $typeLabel = $s['societe_type_generation'] === 'creation' ? 'Creation' : 'Domiciliation';
+            ?>
+            <tr>
+                <td><?= e($dossierNum) ?></td>
+                <td><a href="<?= e(app_url('societe', ['id' => (int) $s['id']])) ?>" style="color:var(--primary);text-decoration:none;font-weight:500"><?= e($s['societe_raison_sociale'] ?? '-') ?></a></td>
+                <td><?= e($s['societe_forme_juridique'] ?? '-') ?></td>
+                <td><span class="statut-badge <?= $s['societe_type_generation'] === 'creation' ? 'valide' : 'warning' ?>"><?= $typeLabel ?></span></td>
+                <td>
+                    <div style="display:flex;align-items:center;gap:.5rem">
+                        <div style="flex:1;height:6px;background:var(--line);border-radius:3px;overflow:hidden;min-width:60px">
+                            <div style="height:100%;width:<?= $pct ?>%;background:<?= $pct === 100 ? 'var(--success)' : ($pct > 0 ? 'var(--info)' : 'var(--line)') ?>;border-radius:3px"></div>
+                        </div>
+                        <small style="color:var(--text-muted);white-space:nowrap"><?= $termine ?>/<?= $total ?></small>
+                    </div>
+                </td>
+                <td><span class="statut-badge <?= $statutBadges[$globalStatut] ?? 'brouillon' ?>"><?= $statutLabels[$globalStatut] ?? e($globalStatut) ?></span></td>
+                <td>
+                    <div class="table-actions">
+                        <a class="btn-icon primary" href="<?= e(app_url('societe_suivi', ['id' => (int) $s['id']])) ?>" title="Voir le suivi">
+                            <span class="material-symbols-outlined">visibility</span>
+                        </a>
+                        <a class="btn-icon" href="<?= e(app_url('societe', ['id' => (int) $s['id']])) ?>" title="Fiche societe">
+                            <span class="material-symbols-outlined">folder_open</span>
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+    <?php endif; ?>
+    <?php
     return;
 }
 
