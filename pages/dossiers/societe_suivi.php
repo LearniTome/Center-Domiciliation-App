@@ -99,6 +99,135 @@ if ($societe && ($pdo ?? null) instanceof PDO) {
     }
 }
 
+// ─── POST handlers (before any HTML output) ─────────────────────────────
+if (is_post() && ($pdo ?? null) instanceof PDO) {
+    verify_csrf();
+
+    // Quick advance step from list view
+    if (isset($_POST['quick_advance'])) {
+        $etapeId = (int) ($_POST['etape_id'] ?? 0);
+        if ($etapeId > 0) {
+            $stmt = $pdo->prepare('SELECT statut, societe_id FROM societe_suivi_etapes WHERE id = :id');
+            $stmt->execute(['id' => $etapeId]);
+            $etape = $stmt->fetch();
+            if ($etape) {
+                $nextMap = ['en_attente' => 'en_cours', 'en_cours' => 'termine'];
+                $newStatut = $nextMap[$etape['statut']] ?? null;
+                if ($newStatut) {
+                    $updates = ['statut = :statut'];
+                    $p = ['statut' => $newStatut, 'id' => $etapeId];
+                    if ($newStatut === 'en_cours') {
+                        $updates[] = 'date_debut = COALESCE(date_debut, CURDATE())';
+                    }
+                    if ($newStatut === 'termine') {
+                        $updates[] = 'date_fin = COALESCE(date_fin, CURDATE())';
+                    }
+                    $sql = 'UPDATE societe_suivi_etapes SET ' . implode(', ', $updates) . ' WHERE id = :id';
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute($p);
+                    set_flash('success', 'Etape avancee avec succes.');
+                }
+            }
+        }
+        $advType = $_GET['type'] ?? '';
+        $advSid = (int) ($_POST['societe_id'] ?? 0);
+        if ($advSid > 0) {
+            redirect_to('societe_suivi', ['id' => $advSid]);
+        } else {
+            redirect_to('societe_suivi', $advType !== '' ? ['type' => $advType] : []);
+        }
+    }
+
+    // Update statut (detail view)
+    if (isset($_POST['update_statut'])) {
+        $etapeId = (int) ($_POST['etape_id'] ?? 0);
+        $newStatut = $_POST['statut'] ?? '';
+        if ($etapeId > 0 && in_array($newStatut, ['en_attente', 'en_cours', 'termine'], true)) {
+            $updates = ['statut = :statut'];
+            $params = ['statut' => $newStatut, 'id' => $etapeId];
+            if ($newStatut === 'en_cours') {
+                $updates[] = 'date_debut = COALESCE(date_debut, CURDATE())';
+            }
+            if ($newStatut === 'termine') {
+                $updates[] = 'date_fin = COALESCE(date_fin, CURDATE())';
+            }
+            $sql = 'UPDATE societe_suivi_etapes SET ' . implode(', ', $updates) . ' WHERE id = :id AND societe_id = :sid';
+            $params['sid'] = $societeId;
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+            set_flash('success', 'Statut mis a jour.');
+        }
+        redirect_to('societe_suivi', ['id' => $societeId]);
+    }
+
+    // Update dates
+    if (isset($_POST['update_dates'])) {
+        $etapeId = (int) ($_POST['etape_id'] ?? 0);
+        $dateDebut = $_POST['date_debut'] ?: null;
+        $dateFin = $_POST['date_fin'] ?: null;
+        if ($etapeId > 0) {
+            $stmt = $pdo->prepare('UPDATE societe_suivi_etapes SET date_debut = :dd, date_fin = :df WHERE id = :id AND societe_id = :sid');
+            $stmt->execute(['dd' => $dateDebut, 'df' => $dateFin, 'id' => $etapeId, 'sid' => $societeId]);
+            set_flash('success', 'Dates mises a jour.');
+        }
+        redirect_to('societe_suivi', ['id' => $societeId]);
+    }
+
+    // Update notes
+    if (isset($_POST['update_notes'])) {
+        $etapeId = (int) ($_POST['etape_id'] ?? 0);
+        $notes = trim($_POST['notes'] ?? '');
+        if ($etapeId > 0) {
+            $stmt = $pdo->prepare('UPDATE societe_suivi_etapes SET notes = :notes WHERE id = :id AND societe_id = :sid');
+            $stmt->execute(['notes' => $notes ?: null, 'id' => $etapeId, 'sid' => $societeId]);
+            set_flash('success', 'Notes mises a jour.');
+        }
+        redirect_to('societe_suivi', ['id' => $societeId]);
+    }
+
+    // Upload document
+    if (isset($_POST['upload_document']) && isset($_FILES['doc_file']) && $_FILES['doc_file']['error'] === UPLOAD_ERR_OK) {
+        $etapeId = (int) ($_POST['etape_id'] ?? 0);
+        $nomDoc = trim($_POST['doc_nom'] ?? ($documentSuggestions[0] ?? 'Document'));
+        $allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+        $extension = strtolower(pathinfo($_FILES['doc_file']['name'], PATHINFO_EXTENSION));
+        if ($etapeId > 0 && in_array($_FILES['doc_file']['type'], $allowedTypes, true)) {
+            $uploadDir = __DIR__ . '/../../uploads/suivi/' . $societeId . '/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+            $filename = $etapeId . '_' . time() . '.' . $extension;
+            $dest = $uploadDir . $filename;
+            if (move_uploaded_file($_FILES['doc_file']['tmp_name'], $dest)) {
+                $stmt = $pdo->prepare('INSERT INTO societe_suivi_documents (etape_id, nom, fichier) VALUES (:eid, :nom, :fichier)');
+                $stmt->execute(['eid' => $etapeId, 'nom' => $nomDoc, 'fichier' => 'uploads/suivi/' . $societeId . '/' . $filename]);
+                set_flash('success', 'Document ajoute.');
+            }
+        } else {
+            set_flash('error', 'Type de fichier non autorise. Formats acceptes: PDF, JPEG, PNG, DOC, DOCX.');
+        }
+        redirect_to('societe_suivi', ['id' => $societeId]);
+    }
+
+    // Delete document
+    if (isset($_POST['delete_document'])) {
+        $docId = (int) ($_POST['doc_id'] ?? 0);
+        if ($docId > 0) {
+            $stmt = $pdo->prepare('SELECT d.id, d.fichier, e.societe_id FROM societe_suivi_documents d JOIN societe_suivi_etapes e ON e.id = d.etape_id WHERE d.id = :id');
+            $stmt->execute(['id' => $docId]);
+            $doc = $stmt->fetch();
+            if ($doc && (int) $doc['societe_id'] === $societeId) {
+                $filePath = __DIR__ . '/../../' . $doc['fichier'];
+                if (file_exists($filePath)) unlink($filePath);
+                $stmt = $pdo->prepare('DELETE FROM societe_suivi_documents WHERE id = :id');
+                $stmt->execute(['id' => $docId]);
+                set_flash('success', 'Document supprime.');
+            }
+        }
+        redirect_to('societe_suivi', ['id' => $societeId]);
+    }
+}
+
 if (!$societe) {
     if ($societeId !== 0) {
         http_response_code(404);
@@ -242,6 +371,7 @@ if (!$societe) {
                         <form method="post" style="display:inline" onsubmit="return confirm('Avancer cette etape au statut suivant ?')">
                             <?= csrf_input() ?>
                             <input type="hidden" name="etape_id" value="<?= $currentEtapeId ?>">
+                            <input type="hidden" name="societe_id" value="<?= (int) $s['id'] ?>">
                             <input type="hidden" name="quick_advance" value="1">
                             <button type="submit" class="btn-icon" title="Avancer : <?= e($currentStepLabel ?? '') ?>" style="color:var(--success)">
                                 <span class="material-symbols-outlined">play_circle</span>
@@ -251,6 +381,7 @@ if (!$societe) {
                         <form method="post" style="display:inline" onsubmit="return confirm('Demarrer cette etape ?')">
                             <?= csrf_input() ?>
                             <input type="hidden" name="etape_id" value="<?= $nextEtapeId ?>">
+                            <input type="hidden" name="societe_id" value="<?= (int) $s['id'] ?>">
                             <input type="hidden" name="quick_advance" value="1">
                             <button type="submit" class="btn-icon" title="Demarrer : <?= e($nextStepLabel ?? '') ?>" style="color:var(--info)">
                                 <span class="material-symbols-outlined">add_circle</span>
@@ -273,129 +404,6 @@ if (!$societe) {
     <?php endif; ?>
     <?php
     return;
-}
-
-// ─── POST handlers ────────────────────────────────────────────────────────
-if (is_post() && ($pdo ?? null) instanceof PDO) {
-    verify_csrf();
-
-    // Quick advance step from list view
-    if (isset($_POST['quick_advance'])) {
-        $etapeId = (int) ($_POST['etape_id'] ?? 0);
-        if ($etapeId > 0) {
-            $stmt = $pdo->prepare('SELECT statut, societe_id FROM societe_suivi_etapes WHERE id = :id');
-            $stmt->execute(['id' => $etapeId]);
-            $etape = $stmt->fetch();
-            if ($etape) {
-                $nextMap = ['en_attente' => 'en_cours', 'en_cours' => 'termine'];
-                $newStatut = $nextMap[$etape['statut']] ?? null;
-                if ($newStatut) {
-                    $updates = ['statut = :statut'];
-                    $p = ['statut' => $newStatut, 'id' => $etapeId];
-                    if ($newStatut === 'en_cours') {
-                        $updates[] = 'date_debut = COALESCE(date_debut, CURDATE())';
-                    }
-                    if ($newStatut === 'termine') {
-                        $updates[] = 'date_fin = COALESCE(date_fin, CURDATE())';
-                    }
-                    $sql = 'UPDATE societe_suivi_etapes SET ' . implode(', ', $updates) . ' WHERE id = :id';
-                    $stmt = $pdo->prepare($sql);
-                    $stmt->execute($p);
-                    set_flash('success', 'Etape avancee avec succes.');
-                }
-            }
-        }
-        redirect_to('societe_suivi', ['type' => $_GET['type'] ?? '']);
-    }
-
-    // Update statut
-    if (isset($_POST['update_statut'])) {
-        $etapeId = (int) ($_POST['etape_id'] ?? 0);
-        $newStatut = $_POST['statut'] ?? '';
-        if ($etapeId > 0 && in_array($newStatut, ['en_attente', 'en_cours', 'termine'], true)) {
-            $updates = ['statut = :statut'];
-            $params = ['statut' => $newStatut, 'id' => $etapeId];
-            if ($newStatut === 'en_cours') {
-                $updates[] = 'date_debut = COALESCE(date_debut, CURDATE())';
-            }
-            if ($newStatut === 'termine') {
-                $updates[] = 'date_fin = COALESCE(date_fin, CURDATE())';
-            }
-            $sql = 'UPDATE societe_suivi_etapes SET ' . implode(', ', $updates) . ' WHERE id = :id AND societe_id = :sid';
-            $params['sid'] = $societeId;
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute($params);
-            set_flash('success', 'Statut mis a jour.');
-        }
-        redirect_to('societe_suivi', ['id' => $societeId]);
-    }
-
-    // Update dates
-    if (isset($_POST['update_dates'])) {
-        $etapeId = (int) ($_POST['etape_id'] ?? 0);
-        $dateDebut = $_POST['date_debut'] ?: null;
-        $dateFin = $_POST['date_fin'] ?: null;
-        if ($etapeId > 0) {
-            $stmt = $pdo->prepare('UPDATE societe_suivi_etapes SET date_debut = :dd, date_fin = :df WHERE id = :id AND societe_id = :sid');
-            $stmt->execute(['dd' => $dateDebut, 'df' => $dateFin, 'id' => $etapeId, 'sid' => $societeId]);
-            set_flash('success', 'Dates mises a jour.');
-        }
-        redirect_to('societe_suivi', ['id' => $societeId]);
-    }
-
-    // Update notes
-    if (isset($_POST['update_notes'])) {
-        $etapeId = (int) ($_POST['etape_id'] ?? 0);
-        $notes = trim($_POST['notes'] ?? '');
-        if ($etapeId > 0) {
-            $stmt = $pdo->prepare('UPDATE societe_suivi_etapes SET notes = :notes WHERE id = :id AND societe_id = :sid');
-            $stmt->execute(['notes' => $notes ?: null, 'id' => $etapeId, 'sid' => $societeId]);
-            set_flash('success', 'Notes mises a jour.');
-        }
-        redirect_to('societe_suivi', ['id' => $societeId]);
-    }
-
-    // Upload document
-    if (isset($_POST['upload_document']) && isset($_FILES['doc_file']) && $_FILES['doc_file']['error'] === UPLOAD_ERR_OK) {
-        $etapeId = (int) ($_POST['etape_id'] ?? 0);
-        $nomDoc = trim($_POST['doc_nom'] ?? ($documentSuggestions[0] ?? 'Document'));
-        $allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-        $extension = strtolower(pathinfo($_FILES['doc_file']['name'], PATHINFO_EXTENSION));
-        if ($etapeId > 0 && in_array($_FILES['doc_file']['type'], $allowedTypes, true)) {
-            $uploadDir = __DIR__ . '/../../uploads/suivi/' . $societeId . '/';
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
-            }
-            $filename = $etapeId . '_' . time() . '.' . $extension;
-            $dest = $uploadDir . $filename;
-            if (move_uploaded_file($_FILES['doc_file']['tmp_name'], $dest)) {
-                $stmt = $pdo->prepare('INSERT INTO societe_suivi_documents (etape_id, nom, fichier) VALUES (:eid, :nom, :fichier)');
-                $stmt->execute(['eid' => $etapeId, 'nom' => $nomDoc, 'fichier' => 'uploads/suivi/' . $societeId . '/' . $filename]);
-                set_flash('success', 'Document ajoute.');
-            }
-        } else {
-            set_flash('error', 'Type de fichier non autorise. Formats acceptes: PDF, JPEG, PNG, DOC, DOCX.');
-        }
-        redirect_to('societe_suivi', ['id' => $societeId]);
-    }
-
-    // Delete document
-    if (isset($_POST['delete_document'])) {
-        $docId = (int) ($_POST['doc_id'] ?? 0);
-        if ($docId > 0) {
-            $stmt = $pdo->prepare('SELECT d.id, d.fichier, e.societe_id FROM societe_suivi_documents d JOIN societe_suivi_etapes e ON e.id = d.etape_id WHERE d.id = :id');
-            $stmt->execute(['id' => $docId]);
-            $doc = $stmt->fetch();
-            if ($doc && (int) $doc['societe_id'] === $societeId) {
-                $filePath = __DIR__ . '/../../' . $doc['fichier'];
-                if (file_exists($filePath)) unlink($filePath);
-                $stmt = $pdo->prepare('DELETE FROM societe_suivi_documents WHERE id = :id');
-                $stmt->execute(['id' => $docId]);
-                set_flash('success', 'Document supprime.');
-            }
-        }
-        redirect_to('societe_suivi', ['id' => $societeId]);
-    }
 }
 
 $progress = count($etapes) > 0 ? round(count(array_filter($etapes, fn($e) => $e['statut'] === 'termine')) / count($etapes) * 100) : 0;
