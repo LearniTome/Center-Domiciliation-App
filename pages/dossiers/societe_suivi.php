@@ -355,7 +355,7 @@ $kanbanView = isset($_GET['view']) && $_GET['view'] === 'kanban';
     <h2>Suivi administratif — <?= e($societe['societe_raison_sociale'] ?? '-') ?></h2>
     <div class="table-actions">
         <div class="view-toggle">
-            <button class="<?= !$kanbanView ? 'active' : '' ?>" onclick="location.href='<?= e(app_url('societe_suivi', ['id' => $societeId] + (!$kanbanView ? [] : ['view' => '']))) ?>'"><span class="material-symbols-outlined" style="font-size:1rem">view_list</span> Detail</button>
+            <button class="<?= !$kanbanView ? 'active' : '' ?>" onclick="location.href='<?= e(app_url('societe_suivi', ['id' => $societeId])) ?>'"><span class="material-symbols-outlined" style="font-size:1rem">view_list</span> Detail</button>
             <button class="<?= $kanbanView ? 'active' : '' ?>" onclick="location.href='<?= e(app_url('societe_suivi', ['id' => $societeId, 'view' => 'kanban'])) ?>'"><span class="material-symbols-outlined" style="font-size:1rem">view_kanban</span> Pipeline</button>
         </div>
         <a class="btn btn-info" href="<?= e(app_url('suivi_pdf', ['id' => $societeId])) ?>" target="_blank"><span class="material-symbols-outlined">picture_as_pdf</span> PDF</a>
@@ -418,9 +418,6 @@ $kanbanView = isset($_GET['view']) && $_GET['view'] === 'kanban';
             </div>
             <?php foreach ($colEtapes as $e):
                 $eid = (int) $e['id'];
-                $total = count($etapes);
-                $termine = count(array_filter($etapes, fn($x) => $x['statut'] === 'termine'));
-                $pct = $total > 0 ? round($termine / $total * 100) : 0;
                 $isOverdue = $e['statut'] !== 'termine' && $e['date_debut'] && (new DateTime())->diff(new DateTime($e['date_debut']))->days > 7;
             ?>
             <div class="kanban-card" draggable="true" data-etape-id="<?= $eid ?>" data-statut="<?= $colStatut ?>">
