@@ -476,12 +476,12 @@ if ($isConnected) {
     <?php if ($isAdmin): ?>
     <a class="dash-action dash-action-new" href="<?= e(app_url('creation')) ?>">
         <span class="material-symbols-outlined">add_circle</span>
-        <strong>Creer un dossier</strong>
+        <strong>Nouvelle Creation</strong>
         <small><?= $incompletsCreation ?> creation(s) incomplete(s)</small>
     </a>
     <a class="dash-action dash-action-suivi" href="<?= e(app_url('domiciliations')) ?>">
         <span class="material-symbols-outlined">apartment</span>
-        <strong>Domiciliation</strong>
+        <strong>Nouvelle Domiciliation</strong>
         <small><?= $incompletsDomiciliation ?> domiciliation(s) incomplete(s)</small>
     </a>
     <a class="dash-action dash-action-cession" href="<?= e(app_url('cession')) ?>">
