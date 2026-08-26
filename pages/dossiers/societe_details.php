@@ -120,7 +120,7 @@ if (is_post() && isset($_POST['validate_submit']) && ($pdo ?? null) instanceof P
         $delStmt->execute($delParams);
     }
     set_flash('success', count($selected) . ' document(s) valide(s).');
-    log_activity($pdo, 'validate', 'document', $societeId, ($societe['societe_raison_sociale'] ?? '') . ' — ' . count($selected) . ' doc(s)', json_encode(['doc_ids' => array_map('intval', $selected)]));
+    log_activity($pdo, 'validate', 'document', $societeId, ($societe['societe_raison_sociale'] ?? '') . ' — ' . count($selected) . ' doc(s)');
     redirect_to('societe', ['id' => $societeId]);
 }
 
@@ -139,7 +139,7 @@ if (is_post() && isset($_POST['delete_submit']) && ($pdo ?? null) instanceof PDO
         $stmt = $pdo->prepare("DELETE FROM documents_generes WHERE id IN ({$in['sql']})"); // nosemgrep: tainted-sql-string -- values bound via named params
         $stmt->execute($in['params']);
         set_flash('error', count($selected) . ' document(s) supprime(s).');
-        log_activity($pdo, 'delete', 'document', $societeId, ($societe['societe_raison_sociale'] ?? '') . ' — ' . count($selected) . ' doc(s)', json_encode(['doc_ids' => array_map('intval', $selected)]));
+        log_activity($pdo, 'delete', 'document', $societeId, ($societe['societe_raison_sociale'] ?? '') . ' — ' . count($selected) . ' doc(s)');
         redirect_to('societe', ['id' => $societeId]);
     }
 }
@@ -177,7 +177,7 @@ if (is_post() && isset($_POST['restore_submit']) && ($pdo ?? null) instanceof PD
         ]);
     }
     set_flash('success', count($selected) . ' document(s) restaure(s) en brouillon.');
-    log_activity($pdo, 'restore', 'document', $societeId, ($societe['societe_raison_sociale'] ?? '') . ' — ' . count($selected) . ' doc(s)', json_encode(['doc_ids' => array_map('intval', $selected)]));
+        log_activity($pdo, 'restore', 'document', $societeId, ($societe['societe_raison_sociale'] ?? '') . ' — ' . count($selected) . ' doc(s)');
     redirect_to('societe', ['id' => $societeId]);
 }
 
