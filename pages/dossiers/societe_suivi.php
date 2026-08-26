@@ -116,7 +116,12 @@ if (!$societe) {
     $sql = 'SELECT s.*,
                    (SELECT COUNT(*) FROM societe_suivi_etapes WHERE societe_id = s.id) AS total_etapes,
                    (SELECT COUNT(*) FROM societe_suivi_etapes WHERE societe_id = s.id AND statut = \'termine\') AS termine_count,
-                   (SELECT COUNT(*) FROM societe_suivi_etapes WHERE societe_id = s.id AND statut = \'en_cours\') AS en_cours_count
+                   (SELECT COUNT(*) FROM societe_suivi_etapes WHERE societe_id = s.id AND statut = \'en_cours\') AS en_cours_count,
+                   (SELECT e2.id FROM societe_suivi_etapes e2 WHERE e2.societe_id = s.id AND e2.statut = \'en_cours\' ORDER BY e2.ordre LIMIT 1) AS current_etape_id,
+                   (SELECT e2.etape FROM societe_suivi_etapes e2 WHERE e2.societe_id = s.id AND e2.statut = \'en_cours\' ORDER BY e2.ordre LIMIT 1) AS current_etape,
+                   (SELECT e3.id FROM societe_suivi_etapes e3 WHERE e3.societe_id = s.id AND e3.statut = \'en_attente\' ORDER BY e3.ordre LIMIT 1) AS next_etape_id,
+                   (SELECT e3.etape FROM societe_suivi_etapes e3 WHERE e3.societe_id = s.id AND e3.statut = \'en_attente\' ORDER BY e3.ordre LIMIT 1) AS next_etape,
+                   (SELECT COUNT(*) FROM societe_suivi_etapes e4 WHERE e4.societe_id = s.id AND e4.statut != \'termine\' AND e4.date_debut IS NOT NULL AND DATEDIFF(CURDATE(), e4.date_debut) > 7) AS overdue_count
             FROM societes s';
     $conditions = [];
     $params = [];
@@ -172,6 +177,7 @@ if (!$societe) {
                 <th data-col="forme">Forme</th>
                 <th data-col="type">Type</th>
                 <th data-col="progression">Progression</th>
+                <th data-col="etape">Etape courante</th>
                 <th data-col="statut">Statut</th>
                 <th class="col-actions">Actions</th>
             </tr>
@@ -182,6 +188,7 @@ if (!$societe) {
                 $termine = (int) $s['termine_count'];
                 $enCours = (int) $s['en_cours_count'];
                 $pct = $total > 0 ? round($termine / $total * 100) : 0;
+                $overdueCount = (int) ($s['overdue_count'] ?? 0);
                 if ($termine === $total && $total > 0) {
                     $globalStatut = 'termine';
                 } elseif ($enCours > 0) {
@@ -193,6 +200,10 @@ if (!$societe) {
                     ? ($s['societe_dossier_creation_number'] ?? '-')
                     : ($s['societe_dossier_domiciliation_number'] ?? '-');
                 $typeLabel = $s['societe_type_generation'] === 'creation' ? 'Creation' : 'Domiciliation';
+                $currentStepLabel = $s['current_etape'] ? ($stepLabels[$s['current_etape']] ?? $s['current_etape']) : null;
+                $currentEtapeId = $s['current_etape_id'] ? (int) $s['current_etape_id'] : null;
+                $nextStepLabel = $s['next_etape'] ? ($stepLabels[$s['next_etape']] ?? $s['next_etape']) : null;
+                $nextEtapeId = $s['next_etape_id'] ? (int) $s['next_etape_id'] : null;
             ?>
             <tr>
                 <td><?= e($dossierNum) ?></td>
@@ -207,9 +218,45 @@ if (!$societe) {
                         <small style="color:var(--text-muted);white-space:nowrap"><?= $termine ?>/<?= $total ?></small>
                     </div>
                 </td>
-                <td><span class="statut-badge <?= $statutBadges[$globalStatut] ?? 'brouillon' ?>"><?= $statutLabels[$globalStatut] ?? e($globalStatut) ?></span></td>
+                <td>
+                    <?php if ($currentStepLabel): ?>
+                        <span style="font-size:.82rem;font-weight:500"><?= e($currentStepLabel) ?></span>
+                    <?php elseif ($nextStepLabel): ?>
+                        <span style="font-size:.82rem;color:var(--text-muted)"><?= e($nextStepLabel) ?></span>
+                    <?php elseif ($pct === 100): ?>
+                        <span class="statut-badge valide" style="font-size:.72rem">Termine</span>
+                    <?php else: ?>
+                        <span style="font-size:.82rem;color:var(--text-muted)">—</span>
+                    <?php endif; ?>
+                </td>
+                <td>
+                    <?php if ($overdueCount > 0): ?>
+                        <span class="statut-badge retard" style="font-size:.72rem">En retard</span>
+                    <?php else: ?>
+                        <span class="statut-badge <?= $statutBadges[$globalStatut] ?? 'brouillon' ?>"><?= $statutLabels[$globalStatut] ?? e($globalStatut) ?></span>
+                    <?php endif; ?>
+                </td>
                 <td>
                     <div class="table-actions">
+                        <?php if ($currentEtapeId): ?>
+                        <form method="post" style="display:inline" onsubmit="return confirm('Avancer cette etape au statut suivant ?')">
+                            <?= csrf_input() ?>
+                            <input type="hidden" name="etape_id" value="<?= $currentEtapeId ?>">
+                            <input type="hidden" name="quick_advance" value="1">
+                            <button type="submit" class="btn-icon" title="Avancer : <?= e($currentStepLabel ?? '') ?>" style="color:var(--success)">
+                                <span class="material-symbols-outlined">play_circle</span>
+                            </button>
+                        </form>
+                        <?php elseif ($nextEtapeId): ?>
+                        <form method="post" style="display:inline" onsubmit="return confirm('Demarrer cette etape ?')">
+                            <?= csrf_input() ?>
+                            <input type="hidden" name="etape_id" value="<?= $nextEtapeId ?>">
+                            <input type="hidden" name="quick_advance" value="1">
+                            <button type="submit" class="btn-icon" title="Demarrer : <?= e($nextStepLabel ?? '') ?>" style="color:var(--info)">
+                                <span class="material-symbols-outlined">add_circle</span>
+                            </button>
+                        </form>
+                        <?php endif; ?>
                         <a class="btn-icon primary" href="<?= e(app_url('societe_suivi', ['id' => (int) $s['id']])) ?>" title="Voir le suivi">
                             <span class="material-symbols-outlined">visibility</span>
                         </a>
@@ -231,6 +278,35 @@ if (!$societe) {
 // ─── POST handlers ────────────────────────────────────────────────────────
 if (is_post() && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
+
+    // Quick advance step from list view
+    if (isset($_POST['quick_advance'])) {
+        $etapeId = (int) ($_POST['etape_id'] ?? 0);
+        if ($etapeId > 0) {
+            $stmt = $pdo->prepare('SELECT statut, societe_id FROM societe_suivi_etapes WHERE id = :id');
+            $stmt->execute(['id' => $etapeId]);
+            $etape = $stmt->fetch();
+            if ($etape) {
+                $nextMap = ['en_attente' => 'en_cours', 'en_cours' => 'termine'];
+                $newStatut = $nextMap[$etape['statut']] ?? null;
+                if ($newStatut) {
+                    $updates = ['statut = :statut'];
+                    $p = ['statut' => $newStatut, 'id' => $etapeId];
+                    if ($newStatut === 'en_cours') {
+                        $updates[] = 'date_debut = COALESCE(date_debut, CURDATE())';
+                    }
+                    if ($newStatut === 'termine') {
+                        $updates[] = 'date_fin = COALESCE(date_fin, CURDATE())';
+                    }
+                    $sql = 'UPDATE societe_suivi_etapes SET ' . implode(', ', $updates) . ' WHERE id = :id';
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute($p);
+                    set_flash('success', 'Etape avancee avec succes.');
+                }
+            }
+        }
+        redirect_to('societe_suivi', ['type' => $_GET['type'] ?? '']);
+    }
 
     // Update statut
     if (isset($_POST['update_statut'])) {
