@@ -26,7 +26,7 @@ $noSidebar = in_array($page ?? '', ['connexion', 'deconnexion'], true);
         .shell, .shell.collapsed { grid-template-columns: 1fr; }
         .sidebar, .sidebar-toggle, .top-bar { display: none; }
         .app-frame { display: block !important; }
-        .main { padding: 0 !important; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: calc(100vh / var(--page-zoom)); }
+        .main { padding: 0 !important; display: flex; flex-direction: column; min-height: calc(100vh / var(--page-zoom)); }
         .main::after { display: none !important; }
         .page-header, .page-count-bar { display: none !important; }
         <?php endif; ?>

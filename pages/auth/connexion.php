@@ -84,56 +84,70 @@ $_postEmail = field_value($_POST, 'email');
 $emailValue = $_postEmail !== '' ? $_postEmail : $savedEmail;
 $rememberChecked = ($rememberMe || $savedEmail !== '') ? ' checked' : '';
 ?>
-<section class="auth-page">
-    <div class="auth-card">
-        <div class="auth-brand">
-            <?php if ($logo !== ''): ?>
-                <img src="<?= e($logo) ?>" alt="Logo <?= e($denomination) ?>" class="auth-logo">
-            <?php else: ?>
-                <span class="auth-logo auth-logo-fallback material-symbols-outlined">location_city</span>
-            <?php endif; ?>
-            <h1 class="auth-title"><?= e($denomination !== '' ? $denomination : 'Centre Domiciliation') ?></h1>
-            <p class="auth-subtitle">Espace collaborateur</p>
-            <?php if ($adresse !== ''): ?>
-                <p class="auth-address"><span class="material-symbols-outlined">place</span><?= e($adresse) ?></p>
-            <?php endif; ?>
-        </div>
-
-        <?php if ($error): ?>
-            <div class="alert alert-error auth-error" role="alert">
-                <span class="material-symbols-outlined">error</span>
-                <span><?= e($error) ?></span>
+<section class="auth-split">
+    <div class="auth-side auth-side-form">
+        <div class="auth-card">
+            <div class="auth-brand">
+                <?php if ($logo !== ''): ?>
+                    <img src="<?= e($logo) ?>" alt="Logo <?= e($denomination) ?>" class="auth-logo">
+                <?php else: ?>
+                    <span class="auth-logo auth-logo-fallback material-symbols-outlined">location_city</span>
+                <?php endif; ?>
+                <h1 class="auth-title"><?= e($denomination !== '' ? $denomination : 'Centre Domiciliation') ?></h1>
+                <p class="auth-subtitle">Espace collaborateur</p>
+                <?php if ($adresse !== ''): ?>
+                    <p class="auth-address"><span class="material-symbols-outlined">place</span><?= e($adresse) ?></p>
+                <?php endif; ?>
             </div>
-        <?php endif; ?>
 
-        <form method="post" class="auth-form" novalidate>
-            <?= csrf_input() ?>
-            <label class="field">
-                <span>Email</span>
-                <input type="email" name="email" required autocomplete="email" placeholder="votre@email.com"
-                       value="<?= e($emailValue) ?>" autofocus>
-            </label>
+            <?php if ($error): ?>
+                <div class="alert alert-error auth-error" role="alert">
+                    <span class="material-symbols-outlined">error</span>
+                    <span><?= e($error) ?></span>
+                </div>
+            <?php endif; ?>
 
-            <label class="field">
-                <span>Mot de passe</span>
-                <span class="auth-password">
-                    <input type="password" name="password" required autocomplete="current-password"
-                           placeholder="Votre mot de passe" data-auth-password>
-                    <button type="button" class="auth-password-toggle" data-auth-password-toggle
-                            aria-label="Afficher le mot de passe" title="Afficher / masquer le mot de passe">
-                        <span class="material-symbols-outlined">visibility</span>
-                    </button>
-                </span>
-            </label>
+            <form method="post" class="auth-form" novalidate>
+                <?= csrf_input() ?>
+                <label class="field">
+                    <span>Email</span>
+                    <input type="email" name="email" required autocomplete="email" placeholder="votre@email.com"
+                           value="<?= e($emailValue) ?>" autofocus>
+                </label>
 
-            <label class="auth-remember">
-                <input type="checkbox" name="remember_me" value="1"<?= $rememberChecked ?>>
-                <span>Se souvenir de moi</span>
-            </label>
+                <label class="field">
+                    <span>Mot de passe</span>
+                    <span class="auth-password">
+                        <input type="password" name="password" required autocomplete="current-password"
+                               placeholder="Votre mot de passe" data-auth-password>
+                        <button type="button" class="auth-password-toggle" data-auth-password-toggle
+                                aria-label="Afficher le mot de passe" title="Afficher / masquer le mot de passe">
+                            <span class="material-symbols-outlined">visibility</span>
+                        </button>
+                    </span>
+                </label>
 
-            <button type="submit" class="auth-submit"><span class="material-symbols-outlined">login</span> Se connecter</button>
-        </form>
+                <label class="auth-remember">
+                    <input type="checkbox" name="remember_me" value="1"<?= $rememberChecked ?>>
+                    <span>Se souvenir de moi</span>
+                </label>
 
-        <p class="auth-footer"><span class="material-symbols-outlined">support_agent</span> Probleme de connexion ? Contactez l'administration.</p>
+                <button type="submit" class="auth-submit"><span class="material-symbols-outlined">login</span> Se connecter</button>
+            </form>
+
+            <p class="auth-footer"><span class="material-symbols-outlined">support_agent</span> Probleme de connexion ? Contactez l'administration.</p>
+        </div>
     </div>
+
+    <aside class="auth-side auth-side-visual">
+        <div class="auth-visual">
+            <?php if ($logo !== ''): ?>
+                <img src="<?= e($logo) ?>" alt="Logo <?= e($denomination) ?>" class="auth-visual-logo">
+            <?php else: ?>
+                <span class="auth-visual-icon material-symbols-outlined">corporate_fare</span>
+            <?php endif; ?>
+            <hr class="auth-visual-sep">
+            <p class="auth-visual-tagline">Gestion des dossiers de domiciliation, créations d'entreprise et suivi administratif.</p>
+        </div>
+    </aside>
 </section>
