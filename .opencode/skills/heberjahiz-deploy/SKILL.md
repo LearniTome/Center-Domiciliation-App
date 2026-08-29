@@ -1,6 +1,6 @@
 ---
 name: heberjahiz-deploy
-description: Déploie et opère l'app sur l'hébergement mutualisé Heberjahiz (app.centirio.ma) via GitHub Actions, FTPS zip+extract, baseline DB et scripts temporaires à jeton. Utiliser quand l'utilisateur parle de déploiement, deploy, push php-haja, mise en ligne, app.centirio.ma, FTP/FTPS, workflow Deploy Heberjahiz, secrets FTP, ou d'un problème visible uniquement en production.
+description: Déploie et opère l'app sur l'hébergement mutualisé Heberjahiz (app.centirio.ma) via GitHub Actions, FTPS zip+extract, baseline DB et scripts temporaires à jeton. Utiliser quand l'utilisateur parle de déploiement, deploy, push main, mise en ligne, app.centirio.ma, FTP/FTPS, workflow Deploy Heberjahiz, secrets FTP, ou d'un problème visible uniquement en production.
 license: MIT
 compatibility: opencode
 metadata:
@@ -13,7 +13,7 @@ metadata:
 ## Architecture du pipeline
 
 ```
-git push origin php-haja
+git push origin main
   └→ GitHub Actions (.github/workflows/deploy-heberjahiz.yml)   ~2 min
        1. Checkout + packaging dist_pkg/app.zip (exclusions lourdes/inutiles)
        2. Génération _deploy_extract.php depuis .github/deploy/extract_template.php
@@ -30,7 +30,7 @@ après ~14 min multi-fichiers) et refuse les dotfiles (`553`). Un seul upload bi
 
 | Fichier | Rôle |
 |---|---|
-| `.github/workflows/deploy-heberjahiz.yml` | Workflow complet (branch trigger : `php-haja`) |
+| `.github/workflows/deploy-heberjahiz.yml` | Workflow complet (branch trigger : `main`) |
 | `.github/deploy/extract_template.php` | Template extracteur (placeholder `__TOKEN__`) |
 | `.htaccess` (racine) | Protection web : bloque dotfiles, `_debug*`, extensions sensibles, dossiers internes ; garde `uploads/`, `assets/`, `templates/` publics |
 | `docs/DEPLOIEMENT_HEBERJAHIZ.md` | Guide historique setup initial |
@@ -74,7 +74,7 @@ curl -k --ssl-reqd -T fichier "ftp://$FTP_HOST/fichier" --user "$FTP_USER:$FTP_P
 ## Procédure de déploiement standard
 
 ```powershell
-git push origin php-haja
+git push origin main
 Start-Sleep 15
 $run = gh run list --repo LearniTome/Center-Domiciliation-App --workflow "Deploy Heberjahiz" --limit 1 --json databaseId --jq '.[0].databaseId'
 # poller : gh run view $run ... jusqu'à status=completed, conclusion=success

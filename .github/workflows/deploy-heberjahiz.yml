@@ -2,7 +2,7 @@ name: Deploy Heberjahiz
 
 on:
   push:
-    branches: [php-haja]
+    branches: [main]
   workflow_dispatch:
 
 concurrency:

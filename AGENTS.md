@@ -232,7 +232,7 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - **/execute** — implémentation production-ready : zéro TODO, auto-validation (`php -l`, logs), mise à jour de `docs/ROADMAP.md` après chaque tâche
 - **/modify** — ajout de fonctionnalité en mode chirurgie : analyse d'impact d'abord, périmètre confiné, test anti-régression
 - **/dev** — lance le serveur de dev en arrière-plan et vérifie que l'app répond
-- **/deploy-heberjahiz** — push `php-haja` → workflow Deploy Heberjahiz → poll du run → vérifications HTTPS/login (voir skill heberjahiz-deploy)
+- **/deploy-heberjahiz** — push `main` → workflow Deploy Heberjahiz → poll du run → vérifications HTTPS/login (voir skill heberjahiz-deploy)
 
 ## Claude AI Integration
 - **ClaudeService** (`src/service_claude.php`): Static class with cURL to Anthropic API
@@ -363,7 +363,7 @@ Le projet utilise 4 serveurs MCP configurés dans `opencode.json` :
 ### Déploiement production Heberjahiz
 
 - Cible : **https://app.centirio.ma** (docroot `/home/centiaxh/centirio.ma/app.centirio.ma/`)
-- Pipeline : push `php-haja` → workflow **Deploy Heberjahiz** (~2 min, zip + extracteur auto-destructeur)
+- Pipeline : push `main` → workflow **Deploy Heberjahiz** (~2 min, zip + extracteur auto-destructeur)
 - Référence complète (procédures, quirks FTPS, baseline DB, dépannage) : skill `heberjahiz-deploy` + commande `/deploy-heberjahiz`
 - Secrets du repo : `FTP_HOST`, `FTP_USER`, `FTP_PASSWORD` (compte FTP chrooté dans le docroot)
 

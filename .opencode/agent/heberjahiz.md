@@ -35,7 +35,7 @@ sécurité CSRF/XSS, structure des pages).
 
 ## Workflow type (déploiement)
 
-1. S'assurer que le travail est commité ; `git push origin php-haja`
+1. S'assurer que le travail est commité ; `git push origin main`
 2. Récupérer l'ID du run (`gh run list --workflow "Deploy Heberjahiz"`) et poller jusqu'à completion
 3. Contrôler `EXTRACT_OK` dans les logs de l'étape « Extraction sur le serveur »
 4. Vérifier HTTPS : 302 → connexion → 200 sans erreur MySQL (extraire le `<small>` PDO si erreur)

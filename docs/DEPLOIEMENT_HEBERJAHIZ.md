@@ -1,8 +1,11 @@
 # Deploiement Heberjahiz (cPanel mutualise)
 
-Deploiement automatique de la branche `php-haja` vers l'hebergement mutualise
+Deploiement automatique de la branche `main` (production) vers l'hebergement mutualise
 Heberjahiz via GitHub Actions (FTPS). Le `vendor/` etant versionne dans git,
 aucun Composer n'est requis sur le serveur.
+
+> Travail de developpement sur `php-haja` : pour mettre en production, copier
+> `php-haja` vers `main` (`git checkout main && git reset --hard php-haja && git push --force origin main`).
 
 ## 1. Setup cPanel (une seule fois)
 
@@ -62,7 +65,7 @@ Repo GitHub → **Settings → Secrets and variables → Actions → New reposit
 ## 3. Deploiement
 
 ```bash
-git push origin php-haja
+git push origin main
 ```
 
 - Le workflow `.github/workflows/deploy-heberjahiz.yml` :
@@ -81,7 +84,7 @@ git push origin php-haja
 ## 4. Rollback
 
 ```bash
-git revert <commit> && git push origin php-haja
+git revert <commit> && git push origin main
 ```
 Le revert est redeploye automatiquement.
 
