@@ -1869,3 +1869,22 @@ document.addEventListener('click', function (event) {
     })();
 })();
 
+// ── Auth : afficher / masquer le mot de passe ──
+(function () {
+    document.querySelectorAll('[data-auth-password-toggle]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var wrap = btn.closest('.auth-password');
+            var input = wrap ? wrap.querySelector('[data-auth-password]') : null;
+            if (!input) return;
+            var show = input.type === 'password';
+            input.type = show ? 'text' : 'password';
+            var icon = btn.querySelector('.material-symbols-outlined');
+            if (icon) {
+                icon.textContent = show ? 'visibility_off' : 'visibility';
+            }
+            btn.setAttribute('aria-label', show ? 'Masquer le mot de passe' : 'Afficher le mot de passe');
+            input.focus();
+        });
+    });
+})();
+

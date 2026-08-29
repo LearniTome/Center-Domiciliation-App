@@ -12,9 +12,9 @@ $noSidebar = in_array($page ?? '', ['connexion', 'deconnexion'], true);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= e($pageTitle) ?> | <?= e($config['app_name']) ?></title>
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260829">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png?v=20260829">
     <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
-    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,8 +26,9 @@ $noSidebar = in_array($page ?? '', ['connexion', 'deconnexion'], true);
         .shell, .shell.collapsed { grid-template-columns: 1fr; }
         .sidebar, .sidebar-toggle, .top-bar { display: none; }
         .app-frame { display: block !important; }
-        .main { padding: 2rem; }
+        .main { padding: 0 !important; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: calc(100vh / var(--page-zoom)); }
         .main::after { display: none !important; }
+        .page-header, .page-count-bar { display: none !important; }
         <?php endif; ?>
     </style>
 </head>

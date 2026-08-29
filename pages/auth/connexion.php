@@ -9,10 +9,15 @@ if (is_logged_in()) {
 
 $error = '';
 $redirect = $_GET['redirect'] ?? '';
+$savedEmail = (string) ($_COOKIE['auth_email'] ?? '');
+$rememberMe = false;
 
 if (is_post()) {
+    verify_csrf();
+
     $email = field_value($_POST, 'email');
     $password = field_value($_POST, 'password');
+    $rememberMe = ($_POST['remember_me'] ?? '') === '1';
 
     if ($email === '' || $password === '') {
         $error = 'Veuillez remplir tous les champs.';
@@ -42,6 +47,23 @@ if (is_post()) {
             $pdo->prepare('UPDATE collaborateurs SET last_login = NOW() WHERE id = :id')
                 ->execute(['id' => (int) $user['id']]);
 
+            // Remember me : conserver l'email dans un cookie (30 jours)
+            if ($rememberMe) {
+                setcookie('auth_email', $email, [
+                    'expires' => time() + 30 * 24 * 3600,
+                    'path' => '/',
+                    'httponly' => true,
+                    'samesite' => 'Lax',
+                ]);
+            } else {
+                setcookie('auth_email', '', [
+                    'expires' => time() - 3600,
+                    'path' => '/',
+                    'httponly' => true,
+                    'samesite' => 'Lax',
+                ]);
+            }
+
             set_flash('success', 'Bienvenue, ' . $user['nom_complet'] . ' !');
 
             if ($redirect !== '' && !str_starts_with($redirect, 'http://') && !str_starts_with($redirect, 'https://')) {
@@ -52,34 +74,66 @@ if (is_post()) {
         }
     }
 }
+
+$centre = get_centre_affaires($pdo ?? null);
+$denomination = trim((string) ($centre['denomination'] ?? ''));
+$adresse = trim((string) ($centre['adresse'] ?? ''));
+$logo = get_centre_logo_path($pdo ?? null);
+
+$_postEmail = field_value($_POST, 'email');
+$emailValue = $_postEmail !== '' ? $_postEmail : $savedEmail;
+$rememberChecked = ($rememberMe || $savedEmail !== '') ? ' checked' : '';
 ?>
-<section class="grid two">
-    <article class="card stack" style="max-width:400px;margin:80px auto;">
-        <div style="text-align:center;margin-bottom:1.5rem;">
-            <?php $_authLogo = get_centre_logo_path($pdo ?? null); if ($_authLogo !== ''): ?>
-                <img src="<?= e($_authLogo) ?>" alt="Logo" style="max-width:120px;max-height:80px;object-fit:contain;margin-bottom:6px">
+<section class="auth-page">
+    <div class="auth-card">
+        <div class="auth-brand">
+            <?php if ($logo !== ''): ?>
+                <img src="<?= e($logo) ?>" alt="Logo <?= e($denomination) ?>" class="auth-logo">
             <?php else: ?>
-                <span class="material-symbols-outlined" style="font-size:3rem;color:var(--primary);">location_city</span>
+                <span class="auth-logo auth-logo-fallback material-symbols-outlined">location_city</span>
             <?php endif; ?>
-            <p class="help-text">Centre de Domiciliation — Espace collaborateur</p>
+            <h1 class="auth-title"><?= e($denomination !== '' ? $denomination : 'Centre Domiciliation') ?></h1>
+            <p class="auth-subtitle">Espace collaborateur</p>
+            <?php if ($adresse !== ''): ?>
+                <p class="auth-address"><span class="material-symbols-outlined">place</span><?= e($adresse) ?></p>
+            <?php endif; ?>
         </div>
 
         <?php if ($error): ?>
-            <div class="alert alert-error"><?= e($error) ?></div>
+            <div class="alert alert-error auth-error" role="alert">
+                <span class="material-symbols-outlined">error</span>
+                <span><?= e($error) ?></span>
+            </div>
         <?php endif; ?>
 
-        <form method="post" class="stack">
+        <form method="post" class="auth-form" novalidate>
+            <?= csrf_input() ?>
             <label class="field">
                 <span>Email</span>
-                <input type="email" name="email" required autocomplete="email" placeholder="votre@email.com" value="<?= e(field_value($_POST, 'email')) ?>">
+                <input type="email" name="email" required autocomplete="email" placeholder="votre@email.com"
+                       value="<?= e($emailValue) ?>" autofocus>
             </label>
 
             <label class="field">
                 <span>Mot de passe</span>
-                <input type="password" name="password" required autocomplete="current-password" placeholder="Votre mot de passe">
+                <span class="auth-password">
+                    <input type="password" name="password" required autocomplete="current-password"
+                           placeholder="Votre mot de passe" data-auth-password>
+                    <button type="button" class="auth-password-toggle" data-auth-password-toggle
+                            aria-label="Afficher le mot de passe" title="Afficher / masquer le mot de passe">
+                        <span class="material-symbols-outlined">visibility</span>
+                    </button>
+                </span>
             </label>
 
-            <button type="submit"><span class="material-symbols-outlined">login</span> Se connecter</button>
+            <label class="auth-remember">
+                <input type="checkbox" name="remember_me" value="1"<?= $rememberChecked ?>>
+                <span>Se souvenir de moi</span>
+            </label>
+
+            <button type="submit" class="auth-submit"><span class="material-symbols-outlined">login</span> Se connecter</button>
         </form>
-    </article>
+
+        <p class="auth-footer"><span class="material-symbols-outlined">support_agent</span> Probleme de connexion ? Contactez l'administration.</p>
+    </div>
 </section>
