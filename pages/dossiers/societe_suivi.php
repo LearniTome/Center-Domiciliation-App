@@ -276,7 +276,7 @@ if (!$societe) {
     ?>
 
     <div class="section-title-row">
-        <h2>Suivi administratif</h2>
+        <h2>Liste des dossiers</h2>
         <div class="table-actions">
             <form method="get" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
                 <input type="hidden" name="page" value="societe_suivi">
@@ -434,19 +434,6 @@ foreach ($etapes as $e) {
 
 $kanbanView = isset($_GET['view']) && $_GET['view'] === 'kanban';
 ?>
-
-<div class="section-title-row">
-    <h2>Suivi administratif — <?= e($societe['societe_raison_sociale'] ?? '-') ?></h2>
-    <div class="table-actions">
-        <div class="view-toggle">
-            <button class="<?= !$kanbanView ? 'active' : '' ?>" onclick="location.href='<?= e(app_url('societe_suivi', ['id' => $societeId])) ?>'"><span class="material-symbols-outlined" style="font-size:1rem">view_list</span> Detail</button>
-            <button class="<?= $kanbanView ? 'active' : '' ?>" onclick="location.href='<?= e(app_url('societe_suivi', ['id' => $societeId, 'view' => 'kanban'])) ?>'"><span class="material-symbols-outlined" style="font-size:1rem">view_kanban</span> Pipeline</button>
-        </div>
-        <a class="btn btn-info" href="<?= e(app_url('suivi_pdf', ['id' => $societeId])) ?>" target="_blank"><span class="material-symbols-outlined">picture_as_pdf</span> PDF</a>
-        <a class="btn btn-info" href="<?= e(app_url('societe', ['id' => $societeId])) ?>"><span class="material-symbols-outlined">info</span> Fiche</a>
-        <a class="btn btn-back" href="<?= e(app_url($isCreation ? 'creations' : 'domiciliations')) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
-    </div>
-</div>
 
 <section class="stats small stats-bottom-margin">
     <article class="stat">
