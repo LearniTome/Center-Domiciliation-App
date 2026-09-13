@@ -30,14 +30,18 @@ $stepLabelsCreation = [
 ];
 
 $stepLabelsDomiciliation = [
-    'contrat_domiciliation' => 'Contrat de domiciliation',
-    'redaction'             => 'Redaction des documents',
-    'signature'             => 'Signature',
-    'enregistrement'        => 'Enregistrement',
-    'depot_greffe'          => 'Depot au greffe',
-    'publication_jal'       => 'Publication JAL',
-    'rc_modificatif'        => 'RC modificatif',
-    'remise'                => 'Remise de documents',
+    'recup_documents'           => 'Recuperation des documents',
+    'verification'              => 'Verification des documents',
+    'remplir_documents'         => 'Remplir les documents',
+    'envoi_contrats'            => 'Envoi des contrats au client',
+    'retour_contrats_legalises' => 'Retour des contrats legalises',
+    'legalisation_attestations' => 'Legalisation des attestations',
+    'appel_remise'              => 'Appel au client pour remise',
+    'attestation_enregistrement'=> "Attestation d'enregistrement",
+    'recup_dossier_final'       => 'Recuperation du dossier final',
+    'impression_dossier'        => 'Impression du dossier',
+    'classement_archivage'      => 'Classement et archivage chrono',
+    'archivage_cloud'           => 'Archivage cloud / serveur',
 ];
 
 $stepLabels = $isCreation ? $stepLabelsCreation : $stepLabelsDomiciliation;
@@ -107,14 +111,29 @@ $delaisEstimes = [
     'rc'                  => '5-10 jours',
     'rc_modificatif'      => '5-10 jours',
     'remise'              => '1 jour',
+    'recup_documents'           => '1-3 jours',
+    'verification'              => '1 jour',
+    'remplir_documents'         => '1 jour',
+    'envoi_contrats'            => '1 jour',
+    'retour_contrats_legalises' => '3-7 jours',
+    'legalisation_attestations' => '1-2 jours',
+    'appel_remise'              => '1 jour',
+    'attestation_enregistrement'=> '2 jours (48h ouvrées)',
+    'recup_dossier_final'       => '10-20 jours',
+    'impression_dossier'        => '1 jour',
+    'classement_archivage'      => '1 jour',
+    'archivage_cloud'           => '1 jour',
 ];
 
 // Collaborator info
-$collaborateur = null;
-if (!empty($societe['societe_collaborateur_id'])) {
-    $stmt = $pdo->prepare('SELECT * FROM collaborateurs WHERE id = :id');
-    $stmt->execute(['id' => $societe['societe_collaborateur_id']]);
-    $collaborateur = $stmt->fetch();
+$collabNom = 'Non attribue';
+if (($pdo ?? null) instanceof PDO) {
+    $stmt = $pdo->prepare('SELECT nom_complet FROM collaborateurs WHERE societe_id = :sid ORDER BY id LIMIT 1');
+    $stmt->execute(['sid' => $societeId]);
+    $collabRecord = $stmt->fetch();
+    if ($collabRecord && !empty($collabRecord['nom_complet'])) {
+        $collabNom = $collabRecord['nom_complet'];
+    }
 }
 
 // Build HTML
@@ -125,7 +144,6 @@ $dossierNum = $isCreation
     : ($societe['societe_dossier_domiciliation_number'] ?? '-');
 $formeJuridique = $societe['societe_forme_juridique'] ?? '-';
 $typeLabel = $isCreation ? 'Creation' : 'Domiciliation';
-$collabNom = $collaborateur ? trim(($collaborateur['collaborateur_prenom'] ?? '') . ' ' . ($collaborateur['collaborateur_nom'] ?? '')) : 'Non attribue';
 
 // Calculate dates
 $dateCreation = !empty($societe['societe_date_creation'])

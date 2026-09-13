@@ -15,14 +15,18 @@ $stepLabelsCreation = [
 ];
 
 $stepLabelsDomiciliation = [
-    'contrat_domiciliation' => 'Contrat de domiciliation',
-    'redaction'             => 'Redaction des documents',
-    'signature'             => 'Signature',
-    'enregistrement'        => 'Enregistrement',
-    'depot_greffe'          => 'Depot au greffe',
-    'publication_jal'       => 'Publication JAL',
-    'rc_modificatif'        => 'RC modificatif',
-    'remise'                => 'Remise de documents',
+    'recup_documents'           => 'Recuperation des documents',
+    'verification'              => 'Verification des documents',
+    'remplir_documents'         => 'Remplir les documents',
+    'envoi_contrats'            => 'Envoi des contrats au client',
+    'retour_contrats_legalises' => 'Retour des contrats legalises',
+    'legalisation_attestations' => 'Legalisation des attestations',
+    'appel_remise'              => 'Appel au client pour remise',
+    'attestation_enregistrement'=> "Attestation d'enregistrement",
+    'recup_dossier_final'       => 'Recuperation du dossier final',
+    'impression_dossier'        => 'Impression du dossier',
+    'classement_archivage'      => 'Classement et archivage chrono',
+    'archivage_cloud'           => 'Archivage cloud / serveur',
 ];
 
 $stepIcons = [
@@ -41,6 +45,18 @@ $stepIcons = [
     'rc_modificatif'     => 'assignment',
     'reglement'          => 'payments',
     'remise'             => 'move_up',
+    'recup_documents'           => 'inventory_2',
+    'verification'              => 'fact_check',
+    'remplir_documents'         => 'description',
+    'envoi_contrats'            => 'send',
+    'retour_contrats_legalises' => 'assignment_turned_in',
+    'legalisation_attestations' => 'verified',
+    'appel_remise'              => 'phone_in_talk',
+    'attestation_enregistrement'=> 'receipt_long',
+    'recup_dossier_final'       => 'folder_open',
+    'impression_dossier'        => 'print',
+    'classement_archivage'      => 'archive',
+    'archivage_cloud'           => 'cloud_done',
 ];
 
 $documentSuggestions = [
@@ -56,6 +72,16 @@ $documentSuggestions = [
     'rc'                 => ['Nouvel extrait RC'],
     'rc_modificatif'     => ['Nouvel extrait RC'],
     'remise'             => ['Bordereau de remise', 'PV de remise'],
+    'recup_documents'           => ['CIN des gerants', 'Certificat negatif OMPIC'],
+    'verification'              => ['CIN valide', 'Certificat negatif valide'],
+    'remplir_documents'         => ['Contrat de domiciliation', 'Attestation de domiciliation'],
+    'envoi_contrats'            => ['Contrats envoyes (4-6 copies)'],
+    'retour_contrats_legalises' => ['Contrats legalises (4-6 copies)'],
+    'legalisation_attestations' => ['Attestations legalisees (4-6 copies)'],
+    'appel_remise'              => ['Bordereau de remise'],
+    'attestation_enregistrement'=> ["Attestation d'enregistrement du contrat"],
+    'recup_dossier_final'       => ['Statuts', "Attestation d'enregistrement des statuts", 'Identifiant Fiscal', 'Taxe Professionnelle', 'Modele 7 (J)'],
+    'impression_dossier'        => ['Dossier imprime'],
 ];
 
 $statutBadges = [
@@ -96,6 +122,24 @@ if ($societe && ($pdo ?? null) instanceof PDO) {
     $documents = $stmt->fetchAll();
     foreach ($documents as $d) {
         $docsByEtape[$d['etape_id']][] = $d;
+    }
+}
+
+// ─── Alertes d'echeance (domiciliation uniquement) ───────────────────────
+$domExpiryAlerts = [];
+if ($societe && !$isCreation && ($pdo ?? null) instanceof PDO) {
+    $today = date('Y-m-d');
+    if (!empty($societe['societe_date_exp_cert_neg']) && $societe['societe_date_exp_cert_neg'] < $today) {
+        $domExpiryAlerts[] = 'Certificat negatif expire le ' . format_date($societe['societe_date_exp_cert_neg']);
+    }
+    $associeStmt = $pdo->prepare('SELECT associe_civilite, associe_nom, associe_prenom, associe_date_validite_cin FROM associes WHERE societe_id = :sid');
+    $associeStmt->execute(['sid' => $societeId]);
+    foreach ($associeStmt->fetchAll() as $ass) {
+        if (!empty($ass['associe_date_validite_cin']) && $ass['associe_date_validite_cin'] < $today) {
+            $nom = trim(($ass['associe_prenom'] ?? '') . ' ' . ($ass['associe_nom'] ?? ''));
+            $civilite = trim((string) ($ass['associe_civilite'] ?? ''));
+            $domExpiryAlerts[] = ($civilite !== '' ? $civilite . ' ' : '') . ($nom !== '' ? $nom : "CIN expiree d'un associe") . ' le ' . format_date($ass['associe_date_validite_cin']);
+        }
     }
 }
 
@@ -436,6 +480,19 @@ foreach ($etapes as $e) {
 
 $kanbanView = isset($_GET['view']) && $_GET['view'] === 'kanban';
 ?>
+
+<?php if ($domExpiryAlerts): ?>
+<div style="margin-bottom:1rem;padding:.6rem .9rem;border:1px solid var(--danger);border-left:3px solid var(--danger);border-radius:4px;background:rgba(252,66,74,0.07);color:var(--danger);font-size:.85rem">
+    <strong style="display:inline-flex;align-items:center;gap:.35rem">
+        <span class="material-symbols-outlined" style="font-size:1.1rem">warning</span> Echeances expirees — verification a faire
+    </strong>
+    <ul style="margin:.35rem 0 0;padding-left:1.1rem">
+        <?php foreach ($domExpiryAlerts as $alerte): ?>
+        <li><?= e($alerte) ?></li>
+        <?php endforeach; ?>
+    </ul>
+</div>
+<?php endif; ?>
 
 <section class="stats small stats-bottom-margin">
     <article class="stat">

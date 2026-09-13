@@ -70,9 +70,10 @@ if (is_post() && $step === 6) {
                     ['rc', 7], ['remise', 8],
                 ]
                 : [
-                    ['contrat_domiciliation', 1], ['redaction', 2], ['signature', 3],
-                    ['enregistrement', 4], ['depot_greffe', 5], ['publication_jal', 6],
-                    ['rc_modificatif', 7], ['remise', 8],
+                    ['recup_documents', 1], ['verification', 2], ['remplir_documents', 3],
+                    ['envoi_contrats', 4], ['retour_contrats_legalises', 5], ['legalisation_attestations', 6],
+                    ['appel_remise', 7], ['attestation_enregistrement', 8], ['recup_dossier_final', 9],
+                    ['impression_dossier', 10], ['classement_archivage', 11], ['archivage_cloud', 12],
                 ];
             $suiviStmt = $pdo->prepare('INSERT INTO societe_suivi_etapes (societe_id, etape, ordre) VALUES (:sid, :etape, :ordre)');
             foreach ($suiviEtapes as [$etape, $ordre]) {

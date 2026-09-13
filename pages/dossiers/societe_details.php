@@ -439,15 +439,37 @@ $suiviStepLabels = $isCreation
         'remise'             => 'Remise de documents',
     ]
     : [
-        'contrat_domiciliation' => 'Contrat de domiciliation',
-        'redaction'             => 'Redaction des documents',
-        'signature'             => 'Signature',
-        'enregistrement'        => 'Enregistrement',
-        'depot_greffe'          => 'Depot au greffe',
-        'publication_jal'       => 'Publication JAL',
-        'rc_modificatif'        => 'RC modificatif',
-        'remise'                => 'Remise de documents',
+        'recup_documents'           => 'Recuperation des documents',
+        'verification'              => 'Verification des documents',
+        'remplir_documents'         => 'Remplir les documents',
+        'envoi_contrats'            => 'Envoi des contrats au client',
+        'retour_contrats_legalises' => 'Retour des contrats legalises',
+        'legalisation_attestations' => 'Legalisation des attestations',
+        'appel_remise'              => 'Appel au client pour remise',
+        'attestation_enregistrement'=> "Attestation d'enregistrement",
+        'recup_dossier_final'       => 'Recuperation du dossier final',
+        'impression_dossier'        => 'Impression du dossier',
+        'classement_archivage'      => 'Classement et archivage chrono',
+        'archivage_cloud'           => 'Archivage cloud / serveur',
     ];
+
+// Alertes d'echeance domiciliation (affichage en dur sur l'etape Verification)
+$domExpiryAlerts = [];
+if (!$isCreation && ($pdo ?? null) instanceof PDO && has_permission('societes.suivi')) {
+    $today = date('Y-m-d');
+    if (!empty($societe['societe_date_exp_cert_neg']) && $societe['societe_date_exp_cert_neg'] < $today) {
+        $domExpiryAlerts[] = 'Certificat negatif expire le ' . format_date($societe['societe_date_exp_cert_neg']);
+    }
+    $associeStmt = $pdo->prepare('SELECT associe_civilite, associe_nom, associe_prenom, associe_date_validite_cin FROM associes WHERE societe_id = :sid');
+    $associeStmt->execute(['sid' => $societeId]);
+    foreach ($associeStmt->fetchAll() as $ass) {
+        if (!empty($ass['associe_date_validite_cin']) && $ass['associe_date_validite_cin'] < $today) {
+            $nom = trim(($ass['associe_prenom'] ?? '') . ' ' . ($ass['associe_nom'] ?? ''));
+            $civilite = trim((string) ($ass['associe_civilite'] ?? ''));
+            $domExpiryAlerts[] = ($civilite !== '' ? $civilite . ' ' : '') . ($nom !== '' ? $nom : "CIN expiree d'un associe") . ' le ' . format_date($ass['associe_date_validite_cin']);
+        }
+    }
+}
 
 // ─── Historique d'activite ───────────────────────────────────────────────
 $activiteLogs = [];
@@ -549,10 +571,27 @@ $actionLabels = [
     <div class="progress-bar" style="height:4px;background:var(--line);border-radius:2px;margin-bottom:.75rem;overflow:hidden">
         <div style="height:100%;width:<?= $suiviProgress ?>%;background:var(--success);border-radius:2px;transition:width .3s ease"></div>
     </div>
+    <?php if ($domExpiryAlerts): ?>
+    <div style="margin-bottom:.75rem;padding:.5rem .75rem;border:1px solid var(--danger);border-left:3px solid var(--danger);border-radius:4px;background:rgba(252,66,74,0.07);color:var(--danger);font-size:.82rem">
+        <strong style="display:inline-flex;align-items:center;gap:.35rem">
+            <span class="material-symbols-outlined" style="font-size:1rem">warning</span> Echeances expirees — verification a faire
+        </strong>
+        <ul style="margin:.3rem 0 0;padding-left:1.1rem">
+            <?php foreach ($domExpiryAlerts as $alerte): ?>
+            <li><?= e($alerte) ?></li>
+            <?php endforeach; ?>
+        </ul>
+    </div>
+    <?php endif; ?>
     <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-        <?php foreach ($suiviEtapes as $e): ?>
-        <a href="<?= e(app_url('societe_suivi', ['id' => $societeId, 'open' => $e['id']])) ?>" style="display:flex;align-items:center;gap:.35rem;padding:4px 10px;border-radius:20px;font-size:.8rem;text-decoration:none;border:1px solid <?= $e['statut'] === 'termine' ? 'var(--success)' : ($e['statut'] === 'en_cours' ? 'var(--warning)' : 'var(--line)') ?>;color:<?= $e['statut'] === 'termine' ? 'var(--success)' : ($e['statut'] === 'en_cours' ? 'var(--warning)' : 'var(--text-muted)') ?>;background:<?= $e['statut'] === 'termine' ? 'rgba(0,184,148,0.08)' : ($e['statut'] === 'en_cours' ? 'rgba(255,107,53,0.08)' : 'transparent') ?>" title="<?= e($suiviStepLabels[$e['etape']] ?? $e['etape']) ?>">
-            <span class="material-symbols-outlined" style="font-size:1rem"><?= $e['statut'] === 'termine' ? 'check_circle' : ($e['statut'] === 'en_cours' ? 'radio_button_checked' : 'radio_button_unchecked') ?></span>
+        <?php foreach ($suiviEtapes as $e):
+            $chipAlert = $e['etape'] === 'verification' && $domExpiryAlerts !== [];
+            $chipColor = $chipAlert ? 'var(--danger)' : ($e['statut'] === 'termine' ? 'var(--success)' : ($e['statut'] === 'en_cours' ? 'var(--warning)' : 'var(--line)'));
+            $chipText = $chipAlert ? 'var(--danger)' : ($e['statut'] === 'termine' ? 'var(--success)' : ($e['statut'] === 'en_cours' ? 'var(--warning)' : 'var(--text-muted)'));
+            $chipBg = $chipAlert ? 'rgba(252,66,74,0.12)' : ($e['statut'] === 'termine' ? 'rgba(0,184,148,0.08)' : ($e['statut'] === 'en_cours' ? 'rgba(255,107,53,0.08)' : 'transparent'));
+        ?>
+        <a href="<?= e(app_url('societe_suivi', ['id' => $societeId, 'open' => $e['id']])) ?>" style="display:flex;align-items:center;gap:.35rem;padding:4px 10px;border-radius:20px;font-size:.8rem;text-decoration:none;border:1px solid <?= $chipColor ?>;color:<?= $chipText ?>;background:<?= $chipBg ?>" title="<?= e($suiviStepLabels[$e['etape']] ?? $e['etape']) ?>">
+            <span class="material-symbols-outlined" style="font-size:1rem"><?= $chipAlert ? 'warning' : ($e['statut'] === 'termine' ? 'check_circle' : ($e['statut'] === 'en_cours' ? 'radio_button_checked' : 'radio_button_unchecked')) ?></span>
             <span><?= $suiviStepLabels[$e['etape']] ?? e($e['etape']) ?></span>
         </a>
         <?php endforeach; ?>
