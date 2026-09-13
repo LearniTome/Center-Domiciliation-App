@@ -77,7 +77,6 @@ if (is_post()) {
 
 $centre = get_centre_affaires($pdo ?? null);
 $denomination = trim((string) ($centre['denomination'] ?? ''));
-$adresse = trim((string) ($centre['adresse'] ?? ''));
 $logo = get_centre_logo_path($pdo ?? null);
 
 $_postEmail = field_value($_POST, 'email');
@@ -94,10 +93,8 @@ $rememberChecked = ($rememberMe || $savedEmail !== '') ? ' checked' : '';
                     <span class="auth-logo auth-logo-fallback material-symbols-outlined">location_city</span>
                 <?php endif; ?>
                 <h1 class="auth-title"><?= e($denomination !== '' ? $denomination : 'Centre Domiciliation') ?></h1>
-                <p class="auth-subtitle">Espace collaborateur</p>
-                <?php if ($adresse !== ''): ?>
-                    <p class="auth-address"><span class="material-symbols-outlined">place</span><?= e($adresse) ?></p>
-                <?php endif; ?>
+                <span class="auth-badge"><span class="material-symbols-outlined">verified_user</span> Espace collaborateur</span>
+                <p class="auth-welcome">Accédez à vos dossiers de domiciliation, créations d'entreprise et suivis administratifs.</p>
             </div>
 
             <?php if ($error): ?>
@@ -109,28 +106,37 @@ $rememberChecked = ($rememberMe || $savedEmail !== '') ? ' checked' : '';
 
             <form method="post" class="auth-form" novalidate>
                 <?= csrf_input() ?>
-                <label class="field">
-                    <span>Email</span>
-                    <input type="email" name="email" required autocomplete="email" placeholder="votre@email.com"
-                           value="<?= e($emailValue) ?>" autofocus>
-                </label>
 
-                <label class="field">
-                    <span>Mot de passe</span>
-                    <span class="auth-password">
-                        <input type="password" name="password" required autocomplete="current-password"
-                               placeholder="Votre mot de passe" data-auth-password>
-                        <button type="button" class="auth-password-toggle" data-auth-password-toggle
-                                aria-label="Afficher le mot de passe" title="Afficher / masquer le mot de passe">
-                            <span class="material-symbols-outlined">visibility</span>
-                        </button>
-                    </span>
-                </label>
+                <div class="auth-field">
+                    <label for="auth-email">Adresse email</label>
+                    <div class="auth-control">
+                        <span class="material-symbols-outlined auth-control-icon" aria-hidden="true">mail</span>
+                        <input type="email" id="auth-email" name="email" required autocomplete="email"
+                               placeholder="votre@email.com" value="<?= e($emailValue) ?>" autofocus>
+                    </div>
+                </div>
 
-                <label class="auth-remember">
-                    <input type="checkbox" name="remember_me" value="1"<?= $rememberChecked ?>>
-                    <span>Se souvenir de moi</span>
-                </label>
+                <div class="auth-field">
+                    <label for="auth-password">Mot de passe</label>
+                    <div class="auth-control">
+                        <span class="material-symbols-outlined auth-control-icon" aria-hidden="true">lock</span>
+                        <span class="auth-password">
+                            <input type="password" id="auth-password" name="password" required autocomplete="current-password"
+                                   placeholder="Votre mot de passe" data-auth-password>
+                            <button type="button" class="auth-password-toggle" data-auth-password-toggle
+                                    aria-label="Afficher le mot de passe" title="Afficher / masquer le mot de passe">
+                                <span class="material-symbols-outlined">visibility</span>
+                            </button>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="auth-meta">
+                    <label class="auth-remember">
+                        <input type="checkbox" name="remember_me" value="1"<?= $rememberChecked ?>>
+                        <span>Se souvenir de moi</span>
+                    </label>
+                </div>
 
                 <button type="submit" class="auth-submit"><span class="material-symbols-outlined">login</span> Se connecter</button>
             </form>
