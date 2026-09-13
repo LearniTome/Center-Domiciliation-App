@@ -34,6 +34,7 @@
 - [x] 2026-08-26 — PDF recapitulatif client (Dompdf) : plan de travail complet, prochaines etapes, delais estimes
 - [x] 2026-08-26 — Sidebar : Suivi Creations + Suivi Domiciliations dans section Dossiers
 - [x] 2026-08-26 — Navigation supporte params query (type=creation|domiciliation)
+- [x] 2026-09-13 — Workflow domiciliation reél en 12 étapes (Récupération docs → Vérification → Remplir → Envoi contrats → Retour légalisés → Légalisation attestations → Appel/remise → Attestation d'enregistrement 48h → Dossier final 10-20j → Impression → Classement → Archivage cloud) : labels/icônes/suggestions docs, seeding wizard, reset des sociétés existantes (migration 20260913_000001), bandeau + puce rouge échéances expirées (CIN gérants, certificat négatif), PDF suivi 12 étapes + délais, fix collaborateur via collaborateurs.societe_id — déployé en prod (10467db), validé visuellement
 
 ### Qualité
 - [x] Suite de tests PHPUnit 11 sur `src/` : TemplateAnalyzer (extraction/rename/delete) + DocumentRenderer (rendu `_VAR_`, fusion split-runs, boucle cession_parts) — `vendor/bin/phpunit` (15 tests)
