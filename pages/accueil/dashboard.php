@@ -73,7 +73,7 @@ if ($isConnected) {
         $stmt->execute(['uid' => $userId]);
         $pvAgoCount = (int) $stmt->fetchColumn();
 
-        $stmt = $pdo->prepare('SELECT COUNT(DISTINCT e.cession_id) FROM cession_suivi_etapes e INNER JOIN cessions c ON c.id = e.cession_id WHERE c.created_by = :uid');
+        $stmt = $pdo->prepare('SELECT COUNT(DISTINCT e.societe_id) FROM societe_suivi_etapes e INNER JOIN societes s ON s.id = e.societe_id WHERE s.created_by = :uid');
         $stmt->execute(['uid' => $userId]);
         $suiviCount = (int) $stmt->fetchColumn();
     } else {
@@ -86,7 +86,7 @@ if ($isConnected) {
 
         $cessionsCount = (int) $pdo->query("SELECT COUNT(*) FROM cessions")->fetchColumn();
         $pvAgoCount = (int) $pdo->query("SELECT COUNT(*) FROM pv_ago")->fetchColumn();
-        $suiviCount = (int) $pdo->query("SELECT COUNT(DISTINCT cession_id) FROM cession_suivi_etapes")->fetchColumn();
+        $suiviCount = (int) $pdo->query("SELECT COUNT(DISTINCT societe_id) FROM societe_suivi_etapes")->fetchColumn();
 
         $dossiersComplets = (int) $pdo->query("
             SELECT COUNT(*) FROM societes s
@@ -494,7 +494,7 @@ if ($isConnected) {
         <strong>Remplir un PV AGO</strong>
         <small><?= $pvAgoCount ?> existants</small>
     </a>
-    <a class="dash-action dash-action-suivi" href="<?= e(app_url('cession_suivi')) ?>">
+    <a class="dash-action dash-action-suivi" href="<?= e(app_url('societe_suivi')) ?>">
         <span class="material-symbols-outlined">checklist</span>
         <strong>Suivi administratif</strong>
         <small><?= $suiviCount ?> dossiers</small>
@@ -573,7 +573,7 @@ if ($isConnected) {
             <span class="dm-delta up">assemblees</span>
         </div>
     </a>
-    <a class="dash-metric" href="<?= e(app_url('cession_suivi')) ?>">
+    <a class="dash-metric" href="<?= e(app_url('societe_suivi')) ?>">
         <div class="dm-icon dm-icon-sui"><span class="material-symbols-outlined">checklist</span></div>
         <div class="dm-body">
             <span class="dm-label">Suivi</span>

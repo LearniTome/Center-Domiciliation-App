@@ -79,7 +79,7 @@ $navSections = [
         'items' => [
             'modifications' => ['Toutes les modifications', 'list_alt'],
             'cessions' => ['Cession de parts', 'transfer_within_a_station'],
-            'cession_suivi' => ['Suivi administratif', 'checklist'],
+            'cession_suivi' => ['Suivi des cessions', 'checklist'],
             'pv_ago' => ['PV Assemblee Generale', 'groups'],
         ],
     ],
