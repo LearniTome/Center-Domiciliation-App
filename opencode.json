@@ -23,8 +23,8 @@
     },
     "heberjahiz-db": {
       "type": "local",
-      "command": ["npx", "-y", "@berthojoris/mcp-mysql-server", "mysql://centiaxh_dom_user:MOT_DE_PASSE_A_REMPLIR@app.centirio.ma:3306/centiaxh_domiciliation", "list,read"],
-      "enabled": false
+      "command": ["node", "scripts/mysql-mcp-prod.mjs"],
+      "enabled": true
     }
   }
 }

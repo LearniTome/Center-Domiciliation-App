@@ -1,5 +1,6 @@
 /.env
 /.env.local
+/.env.remote
 /tmp_test/
 /_debug_output/
 /dossiers_dom/

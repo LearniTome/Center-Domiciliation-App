@@ -358,7 +358,7 @@ Le projet utilise 4 serveurs MCP configurés dans `opencode.json` :
 | **memory** | `@modelcontextprotocol/server-memory` | Mémoire contextuelle (knowledge graph) |
 | **chrome-devtools** | `chrome-devtools-mcp` | Automatisation navigateur (tests UI, debug visuel) |
 | **mysql-dev** | `@berthojoris/mcp-mysql-server` | Requêtes SQL directes sur la base locale |
-| **heberjahiz-db** *(désactivé)* | `@berthojoris/mcp-mysql-server` | Requêtes SQL en lecture sur la base prod `centiaxh_domiciliation`. Activation : (1) cPanel → MySQL distant → ajouter son IP ; (2) remplacer `MOT_DE_PASSE_A_REMPLIR` dans le DSN de `opencode.json` ; (3) passer `enabled: true` puis redémarrer opencode. Jamais de mot de passe réel versionné — remettre le placeholder avant tout commit. |
+| **heberjahiz-db** *(désactivé par défaut)* | `@berthojoris/mcp-mysql-server` | Requêtes SQL en lecture (défaut `list,read`) sur la base prod `centiaxh_domiciliation` via `scripts/mysql-mcp-prod.mjs`. Ce wrapper lit la connexion depuis `.env.remote` (gitignoré, jamais versionné) — construit l'URL `mysql://user:pass@host/db` avec `encodeURIComponent` sur le mot de passe. Activation : (1) créer `.env.remote` sur le poste (modèle : `.env` avec `DB_HOST=app.centirio.ma`…) ; (2) cPanel → MySQL distant → ajouter son IP ; (3) passer `enabled: true` dans `opencode.json` puis redémarrer opencode. Sans `.env.remote`, le wrapper échoue sur des crédentials vides — aucun mot de passe réel dans le repo. |
 
 ### Déploiement production Heberjahiz
 
