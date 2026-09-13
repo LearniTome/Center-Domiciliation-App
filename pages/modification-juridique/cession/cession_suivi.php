@@ -93,7 +93,125 @@ if ($cessionId > 0 && ($pdo ?? null) instanceof PDO) {
 
 if (!$cession) {
     if ($cessionId === 0) {
-        redirect_to('cessions');
+        // ─── Liste de suivi de toutes les cessions ────────────────────────────
+        $q = trim($_GET['q'] ?? '');
+        $sql = 'SELECT c.*, s.societe_raison_sociale, s.societe_forme_juridique,
+                       (SELECT COUNT(*) FROM cession_suivi_etapes e WHERE e.cession_id = c.id) AS total_etapes,
+                       (SELECT COUNT(*) FROM cession_suivi_etapes e WHERE e.cession_id = c.id AND e.statut = \'termine\') AS termine_count,
+                       (SELECT COUNT(*) FROM cession_suivi_etapes e WHERE e.cession_id = c.id AND e.statut = \'en_cours\') AS en_cours_count,
+                       (SELECT e2.id FROM cession_suivi_etapes e2 WHERE e2.cession_id = c.id AND e2.statut = \'en_cours\' ORDER BY e2.ordre LIMIT 1) AS current_etape_id,
+                       (SELECT e2.etape FROM cession_suivi_etapes e2 WHERE e2.cession_id = c.id AND e2.statut = \'en_cours\' ORDER BY e2.ordre LIMIT 1) AS current_etape,
+                       (SELECT e3.id FROM cession_suivi_etapes e3 WHERE e3.cession_id = c.id AND e3.statut = \'en_attente\' ORDER BY e3.ordre LIMIT 1) AS next_etape_id,
+                       (SELECT e3.etape FROM cession_suivi_etapes e3 WHERE e3.cession_id = c.id AND e3.statut = \'en_attente\' ORDER BY e3.ordre LIMIT 1) AS next_etape
+                FROM cessions c
+                LEFT JOIN societes s ON s.id = c.societe_id';
+        $conditions = [];
+        $params = [];
+        if ($q !== '') {
+            $like = '%' . $q . '%';
+            $conditions[] = '(s.societe_raison_sociale LIKE :q1 OR c.cession_dossier LIKE :q2)';
+            $params['q1'] = $like;
+            $params['q2'] = $like;
+        }
+        if ($conditions !== []) {
+            $sql .= ' WHERE ' . implode(' AND ', $conditions);
+        }
+        $sql .= ' ORDER BY c.created_at DESC';
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $allCessions = $stmt->fetchAll();
+        ?>
+
+        <div class="section-title-row">
+            <h2>Liste des dossiers de cession</h2>
+            <div class="table-actions">
+                <form method="get" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+                    <input type="hidden" name="page" value="cession_suivi">
+                    <input type="search" name="q" value="<?= e($q) ?>" placeholder="Rechercher..." style="padding:5px 10px;border:1px solid var(--line);border-radius:4px;font-size:.85rem">
+                    <button type="submit" class="btn" style="font-size:.8rem;padding:4px 10px"><span class="material-symbols-outlined">search</span></button>
+                </form>
+            </div>
+        </div>
+
+        <?php if (empty($allCessions)): ?>
+            <div class="empty-state">
+                <span class="material-symbols-outlined">checklist</span>
+                <p class="table-empty">Aucune cession trouvée.</p>
+            </div>
+        <?php else: ?>
+        <div class="table-scroll">
+            <table data-sortable>
+                <thead>
+                <tr>
+                    <th data-col="dossier">Dossier</th>
+                    <th data-col="societe">Societe</th>
+                    <th data-col="date">Date</th>
+                    <th data-col="progression">Progression</th>
+                    <th data-col="etape">Etape courante</th>
+                    <th data-col="statut">Statut</th>
+                    <th class="col-actions">Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($allCessions as $c):
+                    $total = (int) $c['total_etapes'];
+                    $termine = (int) $c['termine_count'];
+                    $enCours = (int) $c['en_cours_count'];
+                    $pct = $total > 0 ? round($termine / $total * 100) : 0;
+                    if ($termine === $total && $total > 0) {
+                        $globalStatut = 'termine';
+                    } elseif ($enCours > 0) {
+                        $globalStatut = 'en_cours';
+                    } else {
+                        $globalStatut = 'en_attente';
+                    }
+                    $currentStepLabel = $c['current_etape'] ? ($stepLabels[$c['current_etape']] ?? $c['current_etape']) : null;
+                    $nextStepLabel = $c['next_etape'] ? ($stepLabels[$c['next_etape']] ?? $c['next_etape']) : null;
+                ?>
+                <tr>
+                    <td><?= e($c['cession_dossier'] ?? '-') ?></td>
+                    <td><a href="<?= e(app_url('cession_dossier', ['id' => (int) $c['id']])) ?>" style="color:var(--primary);text-decoration:none;font-weight:500"><?= e($c['societe_raison_sociale'] ?? '-') ?></a></td>
+                    <td><?= e(format_date($c['cession_date'] ?? null)) ?></td>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:.5rem">
+                            <div style="flex:1;height:6px;background:var(--line);border-radius:3px;overflow:hidden;min-width:60px">
+                                <div style="height:100%;width:<?= $pct ?>%;background:<?= $pct === 100 ? 'var(--success)' : ($pct > 0 ? 'var(--info)' : 'var(--line)') ?>;border-radius:3px"></div>
+                            </div>
+                            <small style="color:var(--text-muted);white-space:nowrap"><?= $termine ?>/<?= $total ?></small>
+                        </div>
+                    </td>
+                    <td>
+                        <?php if ($currentStepLabel): ?>
+                            <span style="font-size:.82rem;font-weight:500"><?= e($currentStepLabel) ?></span>
+                        <?php elseif ($nextStepLabel): ?>
+                            <span style="font-size:.82rem;color:var(--text-muted)"><?= e($nextStepLabel) ?></span>
+                        <?php elseif ($pct === 100): ?>
+                            <span class="statut-badge valide" style="font-size:.72rem">Terminé</span>
+                        <?php else: ?>
+                            <span style="font-size:.82rem;color:var(--text-muted)">—</span>
+                        <?php endif; ?>
+                    </td>
+                    <td>
+                        <span class="statut-badge <?= $statutBadges[$globalStatut] ?? 'brouillon' ?>"><?= $statutLabels[$globalStatut] ?? e($globalStatut) ?></span>
+                    </td>
+                    <td>
+                        <div class="table-actions">
+                            <a class="btn-icon primary" href="<?= e(app_url('cession_suivi', ['id' => (int) $c['id']])) ?>" title="Voir le suivi">
+                                <span class="material-symbols-outlined">visibility</span>
+                            </a>
+                            <a class="btn-icon" href="<?= e(app_url('cession_dossier', ['id' => (int) $c['id']])) ?>" title="Dossier de cession">
+                                <span class="material-symbols-outlined">folder_open</span>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+        <?php endif; ?>
+        <?php
+        return;
     }
     http_response_code(404);
     ?><section class="card stack">
