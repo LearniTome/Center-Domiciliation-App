@@ -99,7 +99,7 @@ if (is_post() && isset($_POST['_action']) && $_POST['_action'] === 'delete' && (
 
 <?php if ($editing): ?>
     <section class="card stack">
-        <form method="post" class="stack" id="associe-form">
+        <form method="post" class="stack" id="associe-form" novalidate>
             <?= csrf_input() ?>
             <input type="hidden" id="societe_capital" value="<?= e((string) $societeCapital) ?>">
             <input type="hidden" id="societe_total_parts" value="<?= e((string) $societeTotalParts) ?>">
@@ -281,9 +281,10 @@ if (is_post() && isset($_POST['_action']) && $_POST['_action'] === 'delete' && (
         document.getElementById('associe-form').addEventListener('submit', function(e) {
             var nom = document.querySelector('[name="associe_nom"]').value.trim();
             var prenom = document.querySelector('[name="associe_prenom"]').value.trim();
-            if (!nom || !prenom) {
+            var complet = document.querySelector('[name="associe_nom_complet"]').value.trim();
+            if (!nom && !prenom && !complet) {
                 e.preventDefault();
-                alert('Veuillez saisir le nom et le prenom de l\'associe.');
+                alert('Veuillez saisir au moins le nom ou le prenom de l\'associe.');
             }
         });
 

@@ -996,7 +996,7 @@ input,
 select,
 textarea {
     width: 100%;
-    padding: 10px 14px;
+    padding: 6px 12px;
     border-radius: var(--radius-sm);
     border: 1px solid var(--line);
     background: var(--panel);
@@ -1029,7 +1029,7 @@ textarea::placeholder {
 }
 
 textarea {
-    min-height: 100px;
+    min-height: 64px;
     resize: vertical;
 }
 

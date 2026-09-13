@@ -328,10 +328,12 @@ if (!$societe) {
                 $dossierNum = $s['societe_type_generation'] === 'creation'
                     ? ($s['societe_dossier_creation_number'] ?? '-')
                     : ($s['societe_dossier_domiciliation_number'] ?? '-');
-                $typeLabel = $s['societe_type_generation'] === 'creation' ? 'Creation' : 'Domiciliation';
-                $currentStepLabel = $s['current_etape'] ? ($stepLabels[$s['current_etape']] ?? $s['current_etape']) : null;
+                $isRowCreation = (string) ($s['societe_type_generation'] ?? '') === 'creation';
+                $rowStepLabels = $isRowCreation ? $stepLabelsCreation : $stepLabelsDomiciliation;
+                $typeLabel = $isRowCreation ? 'Creation' : 'Domiciliation';
+                $currentStepLabel = $s['current_etape'] ? ($rowStepLabels[$s['current_etape']] ?? $s['current_etape']) : null;
                 $currentEtapeId = $s['current_etape_id'] ? (int) $s['current_etape_id'] : null;
-                $nextStepLabel = $s['next_etape'] ? ($stepLabels[$s['next_etape']] ?? $s['next_etape']) : null;
+                $nextStepLabel = $s['next_etape'] ? ($rowStepLabels[$s['next_etape']] ?? $s['next_etape']) : null;
                 $nextEtapeId = $s['next_etape_id'] ? (int) $s['next_etape_id'] : null;
             ?>
             <tr>
