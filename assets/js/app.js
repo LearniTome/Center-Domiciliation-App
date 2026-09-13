@@ -1888,3 +1888,36 @@ document.addEventListener('click', function (event) {
     });
 })();
 
+// ── Menu utilisateur : infos du compte + deconnexion ──
+(function () {
+    var toggle = document.querySelector('[data-user-menu-toggle]');
+    var wrap = toggle ? toggle.closest('.top-bar-user-wrap') : null;
+    if (!toggle || !wrap) return;
+
+    function setOpen(open) {
+        wrap.classList.toggle('open', open);
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+
+    toggle.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var willOpen = !wrap.classList.contains('open');
+        var notifDrop = document.querySelector('[data-notif-dropdown]');
+        if (notifDrop) notifDrop.classList.remove('open');
+        setOpen(willOpen);
+    });
+
+    document.addEventListener('click', function (e) {
+        if (!wrap.contains(e.target)) setOpen(false);
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') setOpen(false);
+    });
+
+    var bell = document.querySelector('[data-notif-bell]');
+    if (bell) bell.addEventListener('click', function () {
+        setOpen(false);
+    });
+})();
+

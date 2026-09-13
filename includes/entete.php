@@ -83,11 +83,47 @@ $noSidebar = in_array($page ?? '', ['connexion', 'deconnexion'], true);
                     </div>
                 </div>
             </div>
-            <a href="<?= e(app_url('deconnexion')) ?>" class="top-bar-user-exit" title="<?= e(($_topUser['nom_complet'] ?? '') . ' — Deconnexion') ?>">
-                <span class="material-symbols-outlined top-bar-user-icon">account_circle</span>
-                <span class="top-bar-exit-sep"></span>
-                <span class="material-symbols-outlined top-bar-exit-icon">logout</span>
-            </a>
+            <div class="top-bar-user-wrap">
+                <button type="button" class="top-bar-user-btn" data-user-menu-toggle title="Mon compte" aria-haspopup="true" aria-expanded="false">
+                    <span class="material-symbols-outlined top-bar-user-icon">account_circle</span>
+                    <span class="top-bar-user-name"><?= e($_topUser['nom_complet'] ?? '') ?></span>
+                    <span class="material-symbols-outlined top-bar-user-caret">expand_more</span>
+                </button>
+                <div class="top-bar-usermenu" data-user-menu>
+                    <div class="usermenu-header">
+                        <span class="material-symbols-outlined usermenu-avatar">account_circle</span>
+                        <div class="usermenu-identity">
+                            <strong class="usermenu-name"><?= e($_topUser['nom_complet'] ?? '') ?></strong>
+                            <?php if (!empty($_topUser['role_nom'])): ?>
+                            <span class="usermenu-role"><?= e($_topUser['role_nom']) ?></span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <div class="usermenu-info">
+                        <div class="usermenu-info-row">
+                            <span class="material-symbols-outlined">mail</span>
+                            <span><?= e(!empty($_topUser['email']) ? $_topUser['email'] : ($_topUser['collaborateur_email'] ?? '')) ?></span>
+                        </div>
+                        <?php if (!empty($_topUser['fonction'])): ?>
+                        <div class="usermenu-info-row">
+                            <span class="material-symbols-outlined">badge</span>
+                            <span><?= e($_topUser['fonction']) ?></span>
+                        </div>
+                        <?php endif; ?>
+                        <?php if (!empty($_topUser['telephone'])): ?>
+                        <div class="usermenu-info-row">
+                            <span class="material-symbols-outlined">call</span>
+                            <span><?= e($_topUser['telephone']) ?></span>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="usermenu-footer">
+                        <a href="<?= e(app_url('deconnexion')) ?>" class="usermenu-logout">
+                            <span class="material-symbols-outlined">logout</span> Deconnexion
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
     </header>
     <?php endif; ?>
