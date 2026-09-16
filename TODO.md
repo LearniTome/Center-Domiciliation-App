@@ -49,7 +49,12 @@
 
 ## P3 — Améliorations
 
-- [ ] Tâche 10 — Rate-limiting connexion (5 tentatives → délai croissant)
+- [x] Tâche 10 — Rate-limiting connexion (5 tentatives → délai croissant)
+      (table `login_attempts` migrée 20260916_000002 ; helpers login_throttle_state/
+       register_failure/clear dans fonctions.php ; fenêtre 20 min, purge 24 h, backoff
+       60 s×2^n plafonné 1 h ; comptage email OU IP (une IP partagée est verrouillée
+       brièvement si 5 échecs — anti-bruteforce assumé) ; calcul du délai côté SQL
+       pour éviter les écarts de fuseau PHP/MySQL ; succès → clear ; testé CLI + E2E en session neuve)
 - [ ] Tâche 11 — Montée PHP 8.2 → 8.3+ (local uniquement, tester zip/com_dotnet)
 
 ---
@@ -64,7 +69,8 @@
 8. ✅ Tâche 8 (focus trap + aria) → MutationObserver universel dans app.js
 9. ✅ Tâche 9 (CSS dedup) → stats, modal-overlay (.show réparé), perms-table
 10. ✅ Fix CI exit 126 → bit +x sur vendor/bin (phpunit, php-parse) ; run SUCCESS (test + deploy)
-11. ⏳ Reste : P3 (Tâches 10-11) au fil des semaines
+11. ✅ Tâche 10 (rate-limiting) → table login_attempts + 3 helpers + branchement connexion (testé CLI + E2E)
+12. ⏳ Reste : Tâche 11 (PHP 8.3, action XAMPP manuelle) au fil des semaines
 
 ## ⚠️ Avant push/deploy prod
 - Re-vérifier les doublons sur les numéros de dossier **en prod** (la migration UNIQUE échouera proprement si doublons).

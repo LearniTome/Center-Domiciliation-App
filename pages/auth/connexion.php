@@ -24,53 +24,69 @@ if (is_post()) {
     } elseif (!($pdo ?? null) instanceof PDO) {
         $error = 'Erreur de connexion a la base de donnees.';
     } else {
-        $stmt = $pdo->prepare('
-            SELECT c.*, r.nom AS role_nom
-            FROM collaborateurs c
-            LEFT JOIN roles r ON r.id = c.role_id
-            WHERE (c.email = :email1 OR c.collaborateur_email = :email2)
-              AND c.can_login = 1
-              AND c.statut = \'actif\'
-            LIMIT 1
-        ');
-        $stmt->execute(['email1' => $email, 'email2' => $email]);
-        $user = $stmt->fetch();
+        $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
+        $throttle = login_throttle_state($pdo, $email, $ip);
 
-        if (!$user || !password_verify($password, (string) ($user['password_hash'] ?? ''))) {
-            $error = 'Email ou mot de passe incorrect.';
+        if ($throttle['blocked']) {
+            $minutes = (int) ceil($throttle['retry_after'] / 60);
+            $error = $minutes >= 1
+                ? "Trop de tentatives de connexion. Réessayez dans {$minutes} min."
+                : 'Trop de tentatives de connexion. Réessayez dans quelques secondes.';
         } else {
-            $_SESSION['user_id'] = (int) $user['id'];
-            clear_user_cache();
-            log_activity($pdo, 'connexion', 'auth', (int) $user['id'], $user['nom_complet']);
+            $stmt = $pdo->prepare('
+                SELECT c.*, r.nom AS role_nom
+                FROM collaborateurs c
+                LEFT JOIN roles r ON r.id = c.role_id
+                WHERE (c.email = :email1 OR c.collaborateur_email = :email2)
+                  AND c.can_login = 1
+                  AND c.statut = \'actif\'
+                LIMIT 1
+            ');
+            $stmt->execute(['email1' => $email, 'email2' => $email]);
+            $user = $stmt->fetch();
 
-            // Update last_login
-            $pdo->prepare('UPDATE collaborateurs SET last_login = NOW() WHERE id = :id')
-                ->execute(['id' => (int) $user['id']]);
-
-            // Remember me : conserver l'email dans un cookie (30 jours)
-            if ($rememberMe) {
-                setcookie('auth_email', $email, [
-                    'expires' => time() + 30 * 24 * 3600,
-                    'path' => '/',
-                    'httponly' => true,
-                    'samesite' => 'Lax',
-                ]);
+            if (!$user || !password_verify($password, (string) ($user['password_hash'] ?? ''))) {
+                login_throttle_register_failure($pdo, $email, $ip);
+                $error = 'Email ou mot de passe incorrect.';
+                $attemptsLeft = LOGIN_MAX_ATTEMPTS - $throttle['count'] - 1;
+                if ($attemptsLeft > 0 && $attemptsLeft <= 2) {
+                    $error .= " ($attemptsLeft tentative(s) restante(s))";
+                }
             } else {
-                setcookie('auth_email', '', [
-                    'expires' => time() - 3600,
-                    'path' => '/',
-                    'httponly' => true,
-                    'samesite' => 'Lax',
-                ]);
-            }
+                login_throttle_clear($pdo, $email, $ip);
+                $_SESSION['user_id'] = (int) $user['id'];
+                clear_user_cache();
+                log_activity($pdo, 'connexion', 'auth', (int) $user['id'], $user['nom_complet']);
 
-            set_flash('success', 'Bienvenue, ' . $user['nom_complet'] . ' !');
+                // Update last_login
+                $pdo->prepare('UPDATE collaborateurs SET last_login = NOW() WHERE id = :id')
+                    ->execute(['id' => (int) $user['id']]);
 
-            if ($redirect !== '' && !str_starts_with($redirect, 'http://') && !str_starts_with($redirect, 'https://')) {
-                header('Location: ' . $redirect);
-                exit;
+                // Remember me : conserver l'email dans un cookie (30 jours)
+                if ($rememberMe) {
+                    setcookie('auth_email', $email, [
+                        'expires' => time() + 30 * 24 * 3600,
+                        'path' => '/',
+                        'httponly' => true,
+                        'samesite' => 'Lax',
+                    ]);
+                } else {
+                    setcookie('auth_email', '', [
+                        'expires' => time() - 3600,
+                        'path' => '/',
+                        'httponly' => true,
+                        'samesite' => 'Lax',
+                    ]);
+                }
+
+                set_flash('success', 'Bienvenue, ' . $user['nom_complet'] . ' !');
+
+                if ($redirect !== '' && !str_starts_with($redirect, 'http://') && !str_starts_with($redirect, 'https://')) {
+                    header('Location: ' . $redirect);
+                    exit;
+                }
+                redirect_to('dashboard');
             }
-            redirect_to('dashboard');
         }
     }
 }

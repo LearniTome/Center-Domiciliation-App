@@ -71,6 +71,9 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - `get_most_visited_pages(?PDO $pdo, int $limit = 5): array` — pages les plus consultées (depuis `activity_logs`)
 - `log_page_view(?PDO $pdo, string $page): void` — enregistre visite de page
 - `page_display_name(string $page): string` — traduit page en français
+- `login_throttle_state(?PDO $pdo, string $email, string $ip): array` — rate-limiting connexion : `['blocked','count','retry_after']`, comptage email OU IP sur fenêtre glissante 20 min (purge 24 h), bloque à partir de 5 échecs avec backoff `60 s × 2^(count-5)` plafonné 1 h ; délai calculé côté SQL (`TIMESTAMPDIFF` vs `NOW()`) pour éviter les écarts de fuseaux PHP/MySQL
+- `login_throttle_register_failure(?PDO $pdo, string $email, string $ip): void` — enregistre un échec de connexion (table `login_attempts`, constante `LOGIN_MAX_ATTEMPTS = 5`)
+- `login_throttle_clear(?PDO $pdo, string $email, string $ip): void` — purge les échecs (email OU IP) après connexion réussie
 - `export_csv(string filename, array headers, array rows): never`
 - `export_excel(string filename, array headers, array rows): never` — génère .xlsx via PhpSpreadsheet, auto-column width
 - `import_excel_preview(string table, array columnMap, array defaults): array|string` — lit .xlsx uploadé, mappe colonnes, retourne preview ou message d'erreur

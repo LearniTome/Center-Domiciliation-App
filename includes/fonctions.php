@@ -803,6 +803,78 @@ function require_auth(): void
     }
 }
 
+const LOGIN_MAX_ATTEMPTS = 5;
+const LOGIN_WINDOW_SECONDS = 20 * 60;
+const LOGIN_BACKOFF_SECONDS = 60;
+const LOGIN_BACKOFF_CAP = 3600;
+
+/**
+ * Rate-limiting connexion : compte les echecs recents (email OU IP) sur une
+ * fenetre glissante de 20 min, purge les traces de plus de 24 h.
+ * Au-delà de 5 echecs, delai croissant (60 s puis x2, plafonne a 1 h).
+ *
+ * @return array{blocked: bool, count: int, retry_after: int}
+ */
+function login_throttle_state(?PDO $pdo, string $email, string $ip): array
+{
+    $state = ['blocked' => false, 'count' => 0, 'retry_after' => 0];
+
+    if (!$pdo instanceof PDO) {
+        return $state;
+    }
+
+    // Purge des traces de plus de 24 h (evite la croissance illimitee de la table)
+    $pdo->exec('DELETE FROM login_attempts WHERE attempted_at < NOW() - INTERVAL 24 HOUR');
+
+    $stmt = $pdo->prepare('
+        SELECT COUNT(*) AS c, MAX(attempted_at) AS last_attempt,
+               TIMESTAMPDIFF(SECOND, MAX(attempted_at), NOW()) AS elapsed_s
+        FROM login_attempts
+        WHERE attempted_at >= NOW() - INTERVAL 20 MINUTE
+          AND (email = :email OR ip_address = :ip)
+    ');
+    $stmt->execute(['email' => $email, 'ip' => $ip]);
+    $row = $stmt->fetch();
+
+    $count = (int) ($row['c'] ?? 0);
+    $state['count'] = $count;
+
+    if ($count < LOGIN_MAX_ATTEMPTS) {
+        return $state;
+    }
+
+    // Delai croissant : 60 s apres 5 echecs, x2 a chaque echec supplementaire (plafonne a 1 h).
+    // elapsed_s evite tout melange de fuseaux PHP/MySQL : le delai restant est
+    // calcule par rapport a l'horloge du serveur de base de donnees.
+    $backoff = min(LOGIN_BACKOFF_CAP, LOGIN_BACKOFF_SECONDS * 2 ** ($count - LOGIN_MAX_ATTEMPTS));
+    $retryAfter = $backoff - (int) ($row['elapsed_s'] ?? 0);
+
+    if ($retryAfter > 0) {
+        $state['blocked'] = true;
+        $state['retry_after'] = $retryAfter;
+    }
+
+    return $state;
+}
+
+function login_throttle_register_failure(?PDO $pdo, string $email, string $ip): void
+{
+    if (!$pdo instanceof PDO || $email === '') {
+        return;
+    }
+    $stmt = $pdo->prepare('INSERT INTO login_attempts (email, ip_address) VALUES (:email, :ip)');
+    $stmt->execute(['email' => $email, 'ip' => $ip]);
+}
+
+function login_throttle_clear(?PDO $pdo, string $email, string $ip): void
+{
+    if (!$pdo instanceof PDO) {
+        return;
+    }
+    $stmt = $pdo->prepare('DELETE FROM login_attempts WHERE email = :email OR ip_address = :ip');
+    $stmt->execute(['email' => $email, 'ip' => $ip]);
+}
+
 function get_user_permissions(): array
 {
     if (!empty($_SESSION['_permissions_cache']) && is_array($_SESSION['_permissions_cache'])) {
