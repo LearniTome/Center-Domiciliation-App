@@ -6,8 +6,13 @@
 /dossiers_dom/
 /dossiers_generer/
 /backups/
+/composer.phar
+/database/exports/
+/uploads/dossiers/
+/uploads/tmp/
+/assets/fonts/*.woff2
 
-# Graphify - fichiers machine-sp�cifiques + cache r�g�n�rable (les sorties graph.html/graph.json/GRAPH_REPORT.md sont versionn�es)
+# Graphify - fichiers machine-sp?cifiques + cache r?g?n?rable (les sorties graph.html/graph.json/GRAPH_REPORT.md sont versionn?es)
 graphify-out/.graphify_python
 graphify-out/.graphify_root
 graphify-out/cache/
