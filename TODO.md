@@ -42,6 +42,10 @@
 - [x] Tâche 9 — Consolidation doublons CSS (stats, modal-overlay, perms-table)
       (2 blocs .stats fusionnés ; 2 définitions .modal-overlay unifiées → .show corrige le
        doc-viewer invisible (opacity 0) ; doublons checkbox/select-all-toggle/.perm-cell.empty supprimés)
+- [x] Fix CI (exit 126) — `vendor/bin/phpunit` + `vendor/bin/php-parse` committés sans bit +x
+      (mode 100644) → `./vendor/bin/phpunit` non exécutable sur le runner Linux.
+      Corrigé via `git update-index --chmod=+x` (mode 100755) — run de vérification SUCCESS.
+      ⚠️ Ne jamais ré-ajouter vendor/ sans préserver le bit +x (git sur Windows ne le traque pas).
 
 ## P3 — Améliorations
 
@@ -59,7 +63,8 @@
 7. ✅ Tâche 7 (dashboard_count) → whitelisted
 8. ✅ Tâche 8 (focus trap + aria) → MutationObserver universel dans app.js
 9. ✅ Tâche 9 (CSS dedup) → stats, modal-overlay (.show réparé), perms-table
-10. ⏳ Reste : P3 (Tâches 10-11) au fil des semaines
+10. ✅ Fix CI exit 126 → bit +x sur vendor/bin (phpunit, php-parse) ; run SUCCESS (test + deploy)
+11. ⏳ Reste : P3 (Tâches 10-11) au fil des semaines
 
 ## ⚠️ Avant push/deploy prod
 - Re-vérifier les doublons sur les numéros de dossier **en prod** (la migration UNIQUE échouera proprement si doublons).
