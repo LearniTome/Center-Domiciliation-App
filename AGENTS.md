@@ -68,8 +68,8 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - `auto_notify_action(string $action, string $entityType, int $entityId, string $description, array $extra = []): void` — crée notification automatique via `log_activity()` (17 types)
 - `update_user_session(int $userId, string $sessionId): void` — enregistre session active dans `user_sessions`
 - `get_online_users(?PDO $pdo): array` — utilisateurs actifs dans la dernière heure
-- `get_most_visited_pages(?PDO $pdo, int $limit = 5): array` — pages les plus consultées (depuis `page_views`)
-- `log_page_view(?PDO $pdo, int $userId, string $page): void` — enregistre visite de page
+- `get_most_visited_pages(?PDO $pdo, int $limit = 5): array` — pages les plus consultées (depuis `activity_logs`)
+- `log_page_view(?PDO $pdo, string $page): void` — enregistre visite de page
 - `page_display_name(string $page): string` — traduit page en français
 - `export_csv(string filename, array headers, array rows): never`
 - `export_excel(string filename, array headers, array rows): never` — génère .xlsx via PhpSpreadsheet, auto-column width
