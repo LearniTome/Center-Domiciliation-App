@@ -479,38 +479,12 @@ a:hover {
 
 .stats {
     display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: 1fr;
-    gap: 0.6rem;
-}
-
-.stats.small {
-    gap: 0.4rem;
-}
-
-.stats.compact {
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-}
-
-.stats.small {
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 0.6rem;
-}
-
-
-    
-
-
-.stats {
-    display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 1rem;
 }
-
 .stats.compact {
     grid-template-columns: repeat(3, minmax(0, 1fr));
 }
-
 .stats.small {
     grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 0.6rem;
@@ -1871,35 +1845,6 @@ td.col-pdf .pdf-pending {
 .perm-label span {
     line-height: 1.2;
 }
-.perms-table tbody td.perm-cell.empty {
-    opacity: 0.12;
-}
-.select-all-toggle {
-    font-size: 0.55rem;
-    cursor: pointer;
-    color: var(--primary);
-    background: none;
-    border: 1px solid var(--primary);
-    padding: 0 6px;
-    border-radius: 3px;
-    transition: background 0.12s ease;
-    font-weight: 500;
-    line-height: 1.5;
-    flex-shrink: 0;
-}
-.select-all-toggle:hover {
-    background: rgba(74, 108, 247, 0.08);
-}
-.perms-table tbody input[type="checkbox"] {
-    accent-color: var(--primary);
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
-}
-.perms-table tbody input[type="checkbox"]:disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
-}
 .select-all-toggle {
     font-size: 0.55rem;
     cursor: pointer;
@@ -2894,18 +2839,6 @@ td.col-pdf .pdf-pending {
 /* ==========================================
    Modal Viewer (societe.php)
    ========================================== */
-.modal-overlay {
-    display: none;
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.6);
-    z-index: 9999;
-    align-items: center;
-    justify-content: center;
-}
-.modal-overlay.show {
-    display: flex;
-}
 .modal-content {
     background: var(--panel);
     border-radius: 8px;
@@ -5103,17 +5036,17 @@ button[data-toggle-import] {
 .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 9999;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s ease;
 }
-
-.modal-overlay.open {
+.modal-overlay.open,
+.modal-overlay.show {
     opacity: 1;
     pointer-events: all;
 }

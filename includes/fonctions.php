@@ -160,6 +160,11 @@ function dashboard_count(?PDO $pdo, string $table): int
         return 0;
     }
 
+    $allowed = ['societes', 'associes', 'contrats', 'collaborateurs'];
+    if (!in_array($table, $allowed, true)) {
+        return 0;
+    }
+
     $stmt = $pdo->query("SELECT COUNT(*) FROM {$table}");
     return (int) $stmt->fetchColumn();
 }

@@ -1921,3 +1921,98 @@ document.addEventListener('click', function (event) {
     });
 })();
 
+// ── Modales : role dialog, aria-modal, focus trap, retour du focus ──
+// Couvre toutes les modales (.open / .show / .active) sans toucher aux call sites.
+// Detecte l'ouverture/fermeture via MutationObserver sur la classe du conteneur.
+(function () {
+    'use strict';
+
+    var FOCUSABLE = 'a[href], button:not([disabled]), textarea, select:not([disabled]), input:not([disabled]):not([type="hidden"]):not([type="checkbox"]), [tabindex]:not([tabindex="-1"]):not([disabled])';
+    var titleCounter = 0;
+
+    function getOpenClass(modal) {
+        if (modal.classList.contains('open')) return 'open';
+        if (modal.classList.contains('show')) return 'show';
+        if (modal.classList.contains('active')) return 'active';
+        return null;
+    }
+
+    function getPanel(modal) {
+        return modal.querySelector('.modal-panel, .modal-content, .modal-card, .dl-modal-card, .pv-modal-card') || modal;
+    }
+
+    function getTitle(panel) {
+        var el = panel.querySelector('.modal-header h3, .modal-title, .dl-modal-header');
+        if (!el) el = panel.querySelector('h1, h2, h3');
+        return el;
+    }
+
+    function initAria(modal) {
+        if (!modal.hasAttribute('role')) modal.setAttribute('role', 'dialog');
+        if (modal.getAttribute('aria-modal') !== 'true') modal.setAttribute('aria-modal', 'true');
+        var panel = getPanel(modal);
+        if (!panel.hasAttribute('aria-labelledby')) {
+            var title = getTitle(panel);
+            if (title) {
+                if (!title.id) title.id = 'modal-title-' + (++titleCounter);
+                panel.setAttribute('aria-labelledby', title.id);
+            }
+        }
+    }
+
+    function trapTab(e) {
+        var modal = trapTab._modal;
+        if (!modal) return;
+        if (e.key !== 'Tab') return;
+        var panel = getPanel(modal);
+        var nodes = panel.querySelectorAll(FOCUSABLE);
+        if (nodes.length === 0) {
+            e.preventDefault();
+            return;
+        }
+        var first = nodes[0];
+        var last = nodes[nodes.length - 1];
+        var active = document.activeElement;
+        if (e.shiftKey && (active === first || !panel.contains(active))) {
+            e.preventDefault();
+            last.focus();
+        } else if (!e.shiftKey && (active === last || !panel.contains(active))) {
+            e.preventDefault();
+            first.focus();
+        }
+    }
+
+    function onOpen(modal, opener) {
+        initAria(modal);
+        trapTab._modal = modal;
+        if (opener) trapTab._opener = opener;
+        document.addEventListener('keydown', trapTab);
+        var first = getPanel(modal).querySelector(FOCUSABLE);
+        if (first) first.focus();
+    }
+
+    function onClose(modal) {
+        if (trapTab._modal === modal) {
+            trapTab._modal = null;
+            document.removeEventListener('keydown', trapTab);
+        }
+        var opener = trapTab._opener;
+        trapTab._opener = null;
+        if (opener && opener.isConnected) opener.focus();
+    }
+
+    document.querySelectorAll('.modal-overlay, .dl-modal-overlay, .pv-modal-overlay').forEach(function (modal) {
+        var lastClass = getOpenClass(modal);
+        new MutationObserver(function () {
+            var cls = getOpenClass(modal);
+            if (cls === lastClass) return;
+            lastClass = cls;
+            if (cls) {
+                onOpen(modal, document.activeElement);
+            } else {
+                onClose(modal);
+            }
+        }).observe(modal, { attributes: true, attributeFilter: ['class'] });
+    });
+})();
+

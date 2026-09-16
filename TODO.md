@@ -33,9 +33,15 @@
 
 ## P2 — Sécurité / accessibilité / maintenance
 
-- [ ] Tâche 7 — Whitelist `dashboard_count()` dans fonctions.php
-- [ ] Tâche 8 — Focus trapping + aria-modal sur les modales
-- [ ] Tâche 9 — Consolidation doublons CSS (stats, modal-overlay, perms-table)
+- [x] Tâche 7 — Whitelist `dashboard_count()` dans fonctions.php
+      (pattern identique à fetch_all_records/fetch_record — helper inutilisé mais assaini)
+- [x] Tâche 8 — Focus trapping + aria-modal sur les modales
+      (MutationObserver universel dans app.js : role dialog, aria-modal, aria-labelledby,
+       trap Tab/Shift+Tab, retour du focus à l'ouvreur — couvre .open/.show/.active,
+       sans toucher aux call sites des modales)
+- [x] Tâche 9 — Consolidation doublons CSS (stats, modal-overlay, perms-table)
+      (2 blocs .stats fusionnés ; 2 définitions .modal-overlay unifiées → .show corrige le
+       doc-viewer invisible (opacity 0) ; doublons checkbox/select-all-toggle/.perm-cell.empty supprimés)
 
 ## P3 — Améliorations
 
@@ -50,7 +56,10 @@
 4. ✅ Tâche 4 (CI + PHPUnit) → job `test` bloque le deploy ; tests verts en local
 5. ✅ Tâche 5 (nettoyage git) → déversionnés (fichiers conservés sur disque, `.gitignore` à jour)
 6. ✅ Tâche 6 (AGENTS.md) → mention corrigée
-7. ⏳ Reste : P2 (Tâches 7-9) puis P3 (10-11) au fil des semaines
+7. ✅ Tâche 7 (dashboard_count) → whitelisted
+8. ✅ Tâche 8 (focus trap + aria) → MutationObserver universel dans app.js
+9. ✅ Tâche 9 (CSS dedup) → stats, modal-overlay (.show réparé), perms-table
+10. ⏳ Reste : P3 (Tâches 10-11) au fil des semaines
 
 ## ⚠️ Avant push/deploy prod
 - Re-vérifier les doublons sur les numéros de dossier **en prod** (la migration UNIQUE échouera proprement si doublons).
