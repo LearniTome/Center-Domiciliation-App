@@ -2016,3 +2016,123 @@ document.addEventListener('click', function (event) {
     });
 })();
 
+// ── Accessibilité : aria-label automatique sur les éléments icône-only ──
+// Evite de toucher aux call sites. Tout bouton/lien interactif dont le seul
+// contenu est un span.material-symbols-outlined (et sans aria-label/title/
+// texte) reçoit un libellé français dérivé du nom de l'icône (ligature).
+// Appliqué au chargement puis sur les nœuds ajoutés (lignes insérées par
+// quick-create, associés clonés, etc.).
+(function () {
+    'use strict';
+
+    var ICON_CLASS = 'span.material-symbols-outlined';
+    var TARGET_SELECTOR = 'button, a[href], [role="button"], summary, input[type="button"], input[type="submit"]';
+
+    var LABELS = {
+        'edit': 'Modifier',
+        'delete': 'Supprimer',
+        'visibility': 'Voir',
+        'add': 'Ajouter',
+        'add_circle': 'Ajouter',
+        'add_circle_outline': 'Ajouter',
+        'close': 'Fermer',
+        'download': 'Télécharger',
+        'upload': 'Importer',
+        'file_download': 'Télécharger',
+        'file_upload': 'Importer',
+        'chevron_left': 'Réduire le menu',
+        'chevron_right': 'Étendre le menu',
+        'more_vert': 'Plus d\'options',
+        'more_horiz': 'Plus d\'options',
+        'refresh': 'Actualiser',
+        'check': 'Valider',
+        'arrow_back': 'Précédent',
+        'arrow_forward': 'Suivant',
+        'search': 'Rechercher',
+        'filter_alt': 'Filtrer',
+        'picture_as_pdf': 'Afficher le PDF',
+        'notifications': 'Notifications',
+        'account_circle': 'Mon compte',
+        'logout': 'Se déconnecter',
+        'login': 'Se connecter',
+        'settings': 'Paramètres',
+        'menu': 'Menu',
+        'done_all': 'Tout sélectionner',
+        'expand_more': 'Étendre',
+        'expand_less': 'Réduire',
+        'arrow_drop_down': 'Ouvrir',
+        'info': 'Informations',
+        'warning': 'Avertissement',
+        'help': 'Aide',
+        'print': 'Imprimer',
+        'save': 'Enregistrer',
+        'attach_file': 'Joindre un fichier',
+        'open_in_new': 'Ouvrir dans un nouvel onglet',
+        'lock': 'Verrouillé',
+        'lock_open': 'Déverrouillé',
+        'sync': 'Synchroniser',
+        'play_arrow': 'Lancer',
+        'stop': 'Arrêter',
+        'check_circle': 'Valider',
+        'visibility_off': 'Masquer',
+        'file_copy': 'Dupliquer',
+        'list': 'Liste',
+        'grid_view': 'Grille',
+        'home': 'Accueil',
+        'person': 'Utilisateur',
+        'group': 'Équipe',
+        'content_copy': 'Copier',
+        'history': 'Historique',
+        'description': 'Document',
+        'folder': 'Dossier',
+        'folder_open': 'Ouvrir le dossier',
+        'verified_user': 'Vérifié',
+        'collapse_all': 'Tout réduire',
+        'expand_all': 'Tout déployer',
+        'view_column': 'Choix des colonnes',
+        'dashboard': 'Tableau de bord',
+        'analytics': 'Statistiques',
+        'swap_vert': 'Trier',
+        'unfold_more': 'Trier',
+        'keyboard_arrow_up': 'Réduire',
+        'keyboard_arrow_down': 'Étendre',
+        'tune': 'Options',
+        'apps': 'Applications'
+    };
+
+    function labelFor(el) {
+if (el.getAttribute('aria-label') || el.getAttribute('aria-labelledby')) {
+        return null;
+    }
+        var icons = el.querySelectorAll(ICON_CLASS);
+        if (icons.length !== 1) return null;
+        var clone = el.cloneNode(true);
+        clone.querySelectorAll(ICON_CLASS).forEach(function (n) { n.remove(); });
+        if ((clone.textContent || '').replace(/\s+/g, '') !== '') return null;
+        var name = (icons[0].textContent || '').replace(/\s+/g, '');
+        return LABELS[name] || null;
+    }
+
+    function applyTo(el) {
+        if (el.disabled) return;
+        var label = labelFor(el);
+        if (label) el.setAttribute('aria-label', label);
+    }
+
+    function labelIn(root) {
+        root.querySelectorAll(TARGET_SELECTOR).forEach(applyTo);
+    }
+
+    labelIn(document);
+    new MutationObserver(function (mutations) {
+        mutations.forEach(function (m) {
+            if (m.type !== 'childList') return;
+            m.addedNodes.forEach(function (n) {
+                if (!n || n.nodeType !== 1) return;
+                if (n.matches && n.matches(TARGET_SELECTOR)) applyTo(n);
+                labelIn(n);
+            });
+        });
+    }).observe(document.documentElement, { childList: true, subtree: true });
+})();
+
