@@ -196,21 +196,17 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
             if ($statutOk) {
                 $updates[] = 'statut = :statut';
                 $params['statut'] = $newStatut;
-                if ($newStatut === 'en_cours') {
-                    if ($dateDebut) {
-                        $updates[] = 'date_debut = :dd';
-                        $params['dd'] = $dateDebut;
-                    } else {
-                        $updates[] = 'date_debut = COALESCE(date_debut, CURDATE())';
-                    }
+                if ($dateDebut) {
+                    $updates[] = 'date_debut = :dd';
+                    $params['dd'] = $dateDebut;
+                } elseif ($newStatut === 'en_cours') {
+                    $updates[] = 'date_debut = COALESCE(date_debut, CURDATE())';
                 }
-                if ($newStatut === 'termine') {
-                    if ($dateFin) {
-                        $updates[] = 'date_fin = :df';
-                        $params['df'] = $dateFin;
-                    } else {
-                        $updates[] = 'date_fin = COALESCE(date_fin, CURDATE())';
-                    }
+                if ($dateFin) {
+                    $updates[] = 'date_fin = :df';
+                    $params['df'] = $dateFin;
+                } elseif ($newStatut === 'termine') {
+                    $updates[] = 'date_fin = COALESCE(date_fin, CURDATE())';
                 }
             }
             if ($dateOk) {

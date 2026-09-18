@@ -23,7 +23,7 @@ function word_url(string $filePath): string
         $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
         $scriptDir = dirname($_SERVER['SCRIPT_NAME'] ?? '');
-        $baseUrl = $protocol . '://' . $host . rtrim($scriptDir, '/');
+        $baseUrl = $protocol . '://' . $host . rtrim(str_replace('\\', '/', $scriptDir), '/');
     }
     $projectDir = dirname(__DIR__);
     $relative = str_replace($projectDir . DIRECTORY_SEPARATOR, '', $filePath);
