@@ -485,6 +485,54 @@ foreach ($etapes as $e) {
 }
 
 $kanbanView = isset($_GET['view']) && $_GET['view'] === 'kanban';
+$calendarView = isset($_GET['view']) && $_GET['view'] === 'calendar';
+
+// ─── Parametres de la vue calendrier ────────────────────────────────────
+$calendarMonth = '';
+if (isset($_GET['month']) && preg_match('/^\d{4}-\d{2}$/', (string) $_GET['month'])) {
+    [$calY, $calM] = array_map('intval', explode('-', (string) $_GET['month']));
+    if ($calY >= 2000 && $calY <= 2100 && $calM >= 1 && $calM <= 12) {
+        $calendarMonth = sprintf('%04d-%02d', $calY, $calM);
+    }
+}
+if ($calendarMonth === '') {
+    $calendarMonth = date('Y-m');
+}
+[$calY, $calM] = array_map('intval', explode('-', $calendarMonth));
+$frenchMonths = [1 => 'Janvier', 'Fevrier', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Aout', 'Septembre', 'Octobre', 'Novembre', 'Decembre'];
+$monthFirst = new DateTimeImmutable(sprintf('%04d-%02d-01', $calY, $calM));
+$monthLabel = $frenchMonths[$calM] . ' ' . $calY;
+$calPrev = $monthFirst->modify('-1 month')->format('Y-m');
+$calNext = $monthFirst->modify('+1 month')->format('Y-m');
+$calOffset = (int) $monthFirst->format('N') - 1;
+$calStart = $monthFirst->modify('-' . $calOffset . ' days');
+$calEnd = $calStart->modify('+41 days');
+$calendarDays = [];
+$undatedSteps = [];
+foreach ($etapes as $e) {
+    $deb = $e['date_debut'] ? new DateTimeImmutable($e['date_debut']) : null;
+    $fin = $e['date_fin'] ? new DateTimeImmutable($e['date_fin']) : null;
+    if (!$deb && !$fin) {
+        $undatedSteps[] = $e;
+        continue;
+    }
+    $start = $deb ?? $fin;
+    $end = $fin ?? $deb;
+    if ($deb && $fin && $end < $start) {
+        [$start, $end] = [$end, $start];
+    }
+    if ($end < $calStart || $start > $calEnd) {
+        continue;
+    }
+    $c = $start < $calStart ? $calStart : $start;
+    $endC = $end > $calEnd ? $calEnd : $end;
+    while ($c <= $endC) {
+        $calendarDays[$c->format('Y-m-d')][] = $e;
+        $c = $c->modify('+1 day');
+    }
+}
+$todayStr = date('Y-m-d');
+$dowLabels = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 ?>
 
 <?php if ($domExpiryAlerts): ?>
@@ -637,6 +685,72 @@ $kanbanView = isset($_GET['view']) && $_GET['view'] === 'kanban';
         });
     })();
     </script>
+
+<?php elseif ($calendarView): ?>
+    <!-- ─── Vue Calendrier ───────────────────────────────────────── -->
+    <section class="card stack">
+        <div class="calendar-nav">
+            <button class="btn" onclick="location.href='<?= e(app_url('societe_suivi', ['id' => $societeId, 'view' => 'calendar', 'month' => $calPrev])) ?>'">
+                <span class="material-symbols-outlined">chevron_left</span> Prec.
+            </button>
+            <strong class="calendar-title"><?= e($monthLabel) ?></strong>
+            <button class="btn" onclick="location.href='<?= e(app_url('societe_suivi', ['id' => $societeId, 'view' => 'calendar', 'month' => $calNext])) ?>'">
+                <span class="material-symbols-outlined">chevron_right</span> Suiv.
+            </button>
+            <button class="btn" onclick="location.href='<?= e(app_url('societe_suivi', ['id' => $societeId, 'view' => 'calendar'])) ?>'">
+                <span class="material-symbols-outlined">today</span> Aujourd'hui
+            </button>
+        </div>
+
+        <div class="calendar-grid">
+            <?php foreach ($dowLabels as $dw): ?>
+            <div class="calendar-dow"><?= $dw ?></div>
+            <?php endforeach; ?>
+            <?php $calCursor = $calStart; ?>
+            <?php for ($i = 0; $i < 42; $i++): ?>
+            <?php
+                $d = $calCursor->format('Y-m-d');
+                $isOther = (int) $calCursor->format('n') !== $calM;
+                $isToday = $d === $todayStr;
+                $dayEtapes = $calendarDays[$d] ?? [];
+            ?>
+            <div class="calendar-cell<?= $isOther ? ' other-month' : '' ?><?= $isToday ? ' today' : '' ?>">
+                <span class="calendar-daynum"><?= (int) $calCursor->format('j') ?></span>
+                <?php foreach ($dayEtapes as $de):
+                    $deOverdue = $de['statut'] !== 'termine' && $de['date_debut'] && (new DateTime())->diff(new DateTime($de['date_debut']))->days > 7;
+                    $chipClass = (string) $de['statut'] . ($deOverdue ? ' retard' : '');
+                    $chipTitle = ($stepLabels[$de['etape']] ?? $de['etape']) . ' — ' . format_date($de['date_debut']) . ' > ' . format_date($de['date_fin']);
+                ?>
+                <a class="cal-step-chip <?= e($chipClass) ?>" href="<?= e(app_url('societe_suivi', ['id' => $societeId, 'open' => (int) $de['id']])) ?>" title="<?= e($chipTitle) ?>">
+                    <?= e($stepLabels[$de['etape']] ?? $de['etape']) ?>
+                </a>
+                <?php endforeach; ?>
+            </div>
+            <?php $calCursor = $calCursor->modify('+1 day'); ?>
+            <?php endfor; ?>
+        </div>
+
+        <div class="calendar-legend">
+            <span><i class="lg-dot en_attente"></i> En attente</span>
+            <span><i class="lg-dot en_cours"></i> En cours</span>
+            <span><i class="lg-dot termine"></i> Termine</span>
+            <span><i class="lg-dot retard"></i> En retard</span>
+            <span><i class="lg-dot today"></i> Aujourd'hui</span>
+        </div>
+
+        <?php if ($undatedSteps): ?>
+        <div class="calendar-undated">
+            <strong><span class="material-symbols-outlined" style="font-size:1rem">event_busy</span> Sans date — a planifier</strong>
+            <div class="calendar-undated-list">
+                <?php foreach ($undatedSteps as $e): ?>
+                <a class="cal-step-chip <?= e($e['statut']) ?>" href="<?= e(app_url('societe_suivi', ['id' => $societeId, 'open' => (int) $e['id']])) ?>" title="<?= e(($stepLabels[$e['etape']] ?? $e['etape']) . ' — ' . ($statutLabels[$e['statut']] ?? $e['statut'])) ?>">
+                    <?= e($stepLabels[$e['etape']] ?? $e['etape']) ?>
+                </a>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+    </section>
 
 <?php else: ?>
     <!-- ─── Vue Detail avec Stepper ──────────────────────────────── -->

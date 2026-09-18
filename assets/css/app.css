@@ -5557,11 +5557,148 @@ input[data-bulk-checkbox] {
     background: var(--panel-strong);
 }
 
+/* ─── Vue Calendrier (suivi) ───────────────────────────────────── */
+.calendar-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+.calendar-nav .calendar-title {
+    font-size: 1rem;
+    text-transform: capitalize;
+}
+.calendar-nav .btn {
+    padding: 4px 10px;
+    font-size: .8rem;
+}
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+}
+.calendar-dow {
+    text-align: center;
+    font-size: .72rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    padding: 4px 0;
+}
+.calendar-cell {
+    min-height: 92px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 4px 6px;
+    background: var(--panel);
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    overflow: hidden;
+}
+.calendar-cell.other-month {
+    background: var(--bg);
+    opacity: .55;
+}
+.calendar-cell.today {
+    border: 2px solid var(--primary);
+}
+.calendar-daynum {
+    font-size: .72rem;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+.calendar-cell.today .calendar-daynum {
+    color: var(--primary);
+}
+.cal-step-chip {
+    display: block;
+    font-size: .7rem;
+    line-height: 1.15;
+    padding: 3px 6px;
+    border-radius: 4px;
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+.cal-step-chip:hover {
+    filter: brightness(1.06);
+}
+.cal-step-chip.en_attente {
+    background: rgba(160,160,175,.12);
+    color: var(--text-muted);
+}
+.cal-step-chip.en_cours {
+    background: rgba(255,171,0,.14);
+    color: var(--warning);
+    border-color: rgba(255,171,0,.45);
+}
+.cal-step-chip.termine {
+    background: rgba(0,184,148,.14);
+    color: var(--success);
+    border-color: rgba(0,184,148,.4);
+}
+.cal-step-chip.retard {
+    background: rgba(252,66,74,.12);
+    color: var(--danger);
+    border-color: rgba(252,66,74,.45);
+}
+.calendar-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem;
+    font-size: .75rem;
+    color: var(--text-muted);
+    margin-top: .9rem;
+    align-items: center;
+}
+.calendar-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+}
+.calendar-legend .lg-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    display: inline-block;
+}
+.lg-dot.en_attente { background: rgba(160,160,175,.55); }
+.lg-dot.en_cours { background: rgba(255,171,0,.85); }
+.lg-dot.termine { background: var(--success); }
+.lg-dot.retard { background: var(--danger); }
+.lg-dot.today { background: var(--primary); border-radius: 2px; }
+.calendar-undated {
+    margin-top: 1rem;
+    padding-top: .9rem;
+    border-top: 1px solid var(--line);
+}
+.calendar-undated > strong {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    font-size: .85rem;
+    margin-bottom: .5rem;
+}
+.calendar-undated-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+}
+
 @media (max-width: 900px) {
     .suivi-layout { grid-template-columns: 1fr; }
     .suivi-stepper { position: static; flex-direction: row; overflow-x: auto; gap: .5rem; padding: .5rem; }
     .suivi-step-line { display: none !important; }
     .suivi-kanban { grid-template-columns: 1fr; }
+    .calendar-cell { min-height: 64px; padding: 3px 4px; }
+    .calendar-grid { gap: 3px; }
+    .calendar-cell .cal-step-chip { font-size: .65rem; padding: 2px 4px; }
 }
 
 /* ── Pages Auth (connexion) ── */

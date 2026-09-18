@@ -277,16 +277,18 @@ if (function_exists('has_permission')) {
                 $pageSubtitle = (string) ($suiviSociete['societe_raison_sociale'] ?? '');
                 $suiviIsCreation = (string) ($suiviSociete['societe_type_generation'] ?? '') === 'creation';
                 $suiviKanban = isset($_GET['view']) && $_GET['view'] === 'kanban';
+                $suiviCalendar = isset($_GET['view']) && $_GET['view'] === 'calendar';
                 $pageActions = '<div class="view-toggle">'
-                    . '<button class="' . (!$suiviKanban ? 'active' : '') . '" onclick="location.href=\'' . e(app_url('societe_suivi', ['id' => $suiviId])) . '\'"><span class="material-symbols-outlined" style="font-size:1rem">view_list</span> Detail</button>'
+                    . '<button class="' . (!$suiviKanban && !$suiviCalendar ? 'active' : '') . '" onclick="location.href=\'' . e(app_url('societe_suivi', ['id' => $suiviId])) . '\'"><span class="material-symbols-outlined" style="font-size:1rem">view_list</span> Detail</button>'
                     . '<button class="' . ($suiviKanban ? 'active' : '') . '" onclick="location.href=\'' . e(app_url('societe_suivi', ['id' => $suiviId, 'view' => 'kanban'])) . '\'"><span class="material-symbols-outlined" style="font-size:1rem">view_kanban</span> Pipeline</button>'
+                    . '<button class="' . ($suiviCalendar ? 'active' : '') . '" onclick="location.href=\'' . e(app_url('societe_suivi', ['id' => $suiviId, 'view' => 'calendar'])) . '\'"><span class="material-symbols-outlined" style="font-size:1rem">calendar_month</span> Calendrier</button>'
                     . '</div>';
                 $pageActions .= '<a class="btn btn-info" href="' . e(app_url('suivi_pdf', ['id' => $suiviId])) . '" target="_blank"><span class="material-symbols-outlined">picture_as_pdf</span> PDF</a>';
                 $pageActions .= '<a class="btn btn-info" href="' . e(app_url('societe', ['id' => $suiviId])) . '"><span class="material-symbols-outlined">info</span> Fiche</a>';
                 $pageActions .= '<a class="btn btn-back" href="' . e(app_url($suiviIsCreation ? 'creations' : 'domiciliations')) . '"><span class="material-symbols-outlined">arrow_back</span> Retour</a>';
             }
         }
-        unset($suiviSociete, $stmt, $suiviIsCreation, $suiviKanban);
+        unset($suiviSociete, $stmt, $suiviIsCreation, $suiviKanban, $suiviCalendar);
     }
 }
 
