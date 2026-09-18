@@ -182,37 +182,47 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
         }
     }
 
-    // Update statut (detail view)
-    if (isset($_POST['update_statut'])) {
-        $etapeId = (int) ($_POST['etape_id'] ?? 0);
-        $newStatut = $_POST['statut'] ?? '';
-        if ($etapeId > 0 && in_array($newStatut, ['en_attente', 'en_cours', 'termine'], true)) {
-            $updates = ['statut = :statut'];
-            $params = ['statut' => $newStatut, 'id' => $etapeId];
-            if ($newStatut === 'en_cours') {
-                $updates[] = 'date_debut = COALESCE(date_debut, CURDATE())';
-            }
-            if ($newStatut === 'termine') {
-                $updates[] = 'date_fin = COALESCE(date_fin, CURDATE())';
-            }
-            $sql = 'UPDATE societe_suivi_etapes SET ' . implode(', ', $updates) . ' WHERE id = :id AND societe_id = :sid';
-            $params['sid'] = $societeId;
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute($params);
-            set_flash('success', 'Statut mis a jour.');
-        }
-        redirect_to('societe_suivi', ['id' => $societeId]);
-    }
-
-    // Update dates
-    if (isset($_POST['update_dates'])) {
+    // Update statut et/ou dates (formulaire unique : les dates saisies priment sur la date du jour)
+    if (isset($_POST['update_statut']) || isset($_POST['update_dates']) || isset($_POST['statut'])) {
         $etapeId = (int) ($_POST['etape_id'] ?? 0);
         $dateDebut = $_POST['date_debut'] ?: null;
         $dateFin = $_POST['date_fin'] ?: null;
-        if ($etapeId > 0) {
-            $stmt = $pdo->prepare('UPDATE societe_suivi_etapes SET date_debut = :dd, date_fin = :df WHERE id = :id AND societe_id = :sid');
-            $stmt->execute(['dd' => $dateDebut, 'df' => $dateFin, 'id' => $etapeId, 'sid' => $societeId]);
-            set_flash('success', 'Dates mises a jour.');
+        $newStatut = $_POST['statut'] ?? '';
+        $statutOk = isset($_POST['statut']) && in_array($newStatut, ['en_attente', 'en_cours', 'termine'], true);
+        $dateOk = isset($_POST['update_dates']);
+        if ($etapeId > 0 && ($statutOk || $dateOk)) {
+            $updates = [];
+            $params = ['id' => $etapeId, 'sid' => $societeId];
+            if ($statutOk) {
+                $updates[] = 'statut = :statut';
+                $params['statut'] = $newStatut;
+                if ($newStatut === 'en_cours') {
+                    if ($dateDebut) {
+                        $updates[] = 'date_debut = :dd';
+                        $params['dd'] = $dateDebut;
+                    } else {
+                        $updates[] = 'date_debut = COALESCE(date_debut, CURDATE())';
+                    }
+                }
+                if ($newStatut === 'termine') {
+                    if ($dateFin) {
+                        $updates[] = 'date_fin = :df';
+                        $params['df'] = $dateFin;
+                    } else {
+                        $updates[] = 'date_fin = COALESCE(date_fin, CURDATE())';
+                    }
+                }
+            }
+            if ($dateOk) {
+                $updates[] = 'date_debut = :dd';
+                $params['dd'] = $dateDebut;
+                $updates[] = 'date_fin = :df';
+                $params['df'] = $dateFin;
+            }
+            $sql = 'UPDATE societe_suivi_etapes SET ' . implode(', ', $updates) . ' WHERE id = :id AND societe_id = :sid';
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+            set_flash('success', $statutOk ? 'Statut mis a jour.' : 'Dates mises a jour.');
         }
         redirect_to('societe_suivi', ['id' => $societeId]);
     }
@@ -694,31 +704,24 @@ $kanbanView = isset($_GET['view']) && $_GET['view'] === 'kanban';
                     </div>
 
                     <div id="step-detail-<?= $eid ?>" class="step-detail" style="display:none;margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--line)">
-                        <!-- Quick statut change -->
-                        <div class="form-inline" style="display:flex;gap:.5rem;align-items:center;margin-bottom:.75rem;flex-wrap:wrap">
-                            <span style="font-size:.85rem;color:var(--text-muted)">Statut :</span>
-                            <form method="post" style="display:inline-flex;gap:.25rem">
-                                <?= csrf_input() ?>
-                                <input type="hidden" name="etape_id" value="<?= $eid ?>">
-                                <input type="hidden" name="update_statut" value="1">
+                        <form method="post" class="step-update-form" style="display:flex;flex-direction:column;gap:.75rem;margin-bottom:.75rem">
+                            <?= csrf_input() ?>
+                            <input type="hidden" name="etape_id" value="<?= $eid ?>">
+                            <div class="form-inline" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+                                <span style="font-size:.85rem;color:var(--text-muted)">Statut :</span>
                                 <?php foreach (['en_attente', 'en_cours', 'termine'] as $s): ?>
                                 <button type="submit" name="statut" value="<?= $s ?>" class="btn <?= $e['statut'] === $s ? 'btn-next' : '' ?>" style="font-size:.8rem;padding:3px 10px"><?= $statutLabels[$s] ?></button>
                                 <?php endforeach; ?>
-                            </form>
-                        </div>
-
-                        <!-- Dates -->
-                        <form method="post" style="display:flex;gap:.75rem;align-items:center;margin-bottom:.75rem;flex-wrap:wrap" class="form-inline">
-                            <?= csrf_input() ?>
-                            <input type="hidden" name="etape_id" value="<?= $eid ?>">
-                            <input type="hidden" name="update_dates" value="1">
-                            <label style="font-size:.85rem;color:var(--text-muted)">Debut :
-                                <input type="date" name="date_debut" value="<?= e($e['date_debut'] ?? '') ?>" style="padding:3px 8px;border:1px solid var(--line);border-radius:4px;font-size:.85rem">
-                            </label>
-                            <label style="font-size:.85rem;color:var(--text-muted)">Fin :
-                                <input type="date" name="date_fin" value="<?= e($e['date_fin'] ?? '') ?>" style="padding:3px 8px;border:1px solid var(--line);border-radius:4px;font-size:.85rem">
-                            </label>
-                            <button type="submit" class="btn" style="font-size:.8rem;padding:3px 10px"><span class="material-symbols-outlined">calendar_month</span> Dates</button>
+                            </div>
+                            <div class="form-inline" style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
+                                <label style="font-size:.85rem;color:var(--text-muted)">Debut :
+                                    <input type="date" name="date_debut" value="<?= e($e['date_debut'] ?? '') ?>" style="padding:3px 8px;border:1px solid var(--line);border-radius:4px;font-size:.85rem">
+                                </label>
+                                <label style="font-size:.85rem;color:var(--text-muted)">Fin :
+                                    <input type="date" name="date_fin" value="<?= e($e['date_fin'] ?? '') ?>" style="padding:3px 8px;border:1px solid var(--line);border-radius:4px;font-size:.85rem">
+                                </label>
+                                <button type="submit" name="update_dates" value="1" class="btn" style="font-size:.8rem;padding:3px 10px"><span class="material-symbols-outlined">calendar_month</span> Dates</button>
+                            </div>
                         </form>
 
                         <!-- Notes -->
