@@ -709,8 +709,9 @@ $kanbanView = isset($_GET['view']) && $_GET['view'] === 'kanban';
                             <input type="hidden" name="etape_id" value="<?= $eid ?>">
                             <div class="form-inline" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
                                 <span style="font-size:.85rem;color:var(--text-muted)">Statut :</span>
+                                <input type="hidden" name="statut" value="">
                                 <?php foreach (['en_attente', 'en_cours', 'termine'] as $s): ?>
-                                <button type="submit" name="statut" value="<?= $s ?>" class="btn <?= $e['statut'] === $s ? 'btn-next' : '' ?>" style="font-size:.8rem;padding:3px 10px"><?= $statutLabels[$s] ?></button>
+                                <button type="button" data-statut="<?= $s ?>" class="statut-btn btn <?= $e['statut'] === $s ? 'btn-next' : '' ?>" style="font-size:.8rem;padding:3px 10px"><?= $statutLabels[$s] ?></button>
                                 <?php endforeach; ?>
                             </div>
                             <div class="form-inline" style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
@@ -799,6 +800,15 @@ function openStep(id) {
     if (detail) { detail.style.display = 'block'; }
     if (icon) { icon.style.transform = 'rotate(180deg)'; }
 }
+document.addEventListener('click', function(e) {
+    var btn = e.target.closest('.statut-btn');
+    if (!btn) return;
+    var form = btn.closest('.step-update-form');
+    if (!form) return;
+    var hidden = form.querySelector('input[name="statut"]');
+    if (hidden) { hidden.value = btn.dataset.statut; }
+    form.submit();
+});
 <?php if (isset($_GET['open'])): ?>
 document.addEventListener('DOMContentLoaded', function() {
     var id = <?= json_encode((string) $_GET['open']) ?>;
