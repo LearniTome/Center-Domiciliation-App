@@ -61,17 +61,27 @@ $navSections = [
             'notifications' => ['Notifications', 'notifications'],
         ],
     ],
-    'Dossiers' => [
-        'icon' => 'folder',
+    'Créations' => [
+        'icon' => 'rocket_launch',
         'items' => [
-            'creations' => ['Creations', 'rocket_launch'],
-            'domiciliations' => ['Domiciliations', 'business'],
-            'societes' => ['Societes', 'domain'],
-            'associes' => ['Associes', 'group'],
+            'creations' => ['Dossiers de création', 'rocket_launch'],
+            ['page' => 'societe_suivi', 'label' => 'Suivi administratif', 'icon' => 'checklist', 'params' => ['type' => 'creation']],
+        ],
+    ],
+    'Domiciliations' => [
+        'icon' => 'business',
+        'items' => [
+            'domiciliations' => ['Dossiers de domiciliation', 'business'],
+            ['page' => 'societe_suivi', 'label' => 'Suivi administratif', 'icon' => 'checklist', 'params' => ['type' => 'domiciliation']],
+        ],
+    ],
+    'Répertoire' => [
+        'icon' => 'folder_shared',
+        'items' => [
+            'societes' => ['Sociétés (toutes)', 'domain'],
+            'associes' => ['Associés', 'group'],
             'contrats' => ['Contrats', 'description'],
             'collaborateurs' => ['Collaborateurs', 'work'],
-            ['page' => 'societe_suivi', 'label' => 'Suivi Creations', 'icon' => 'rocket_launch', 'params' => ['type' => 'creation']],
-            ['page' => 'societe_suivi', 'label' => 'Suivi Domiciliations', 'icon' => 'business', 'params' => ['type' => 'domiciliation']],
         ],
     ],
     'Modification juridique' => [
