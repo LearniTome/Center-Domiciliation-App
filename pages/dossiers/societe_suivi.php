@@ -276,6 +276,67 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
         }
         redirect_to('societe_suivi', ['id' => $societeId]);
     }
+
+    // Ajouter une etape manuelle (vue calendrier)
+    if (isset($_POST['add_etape'])) {
+        $nom = mb_substr(trim((string) ($_POST['etape_nom'] ?? '')), 0, 80);
+        $newStatut = $_POST['etape_statut'] ?? 'en_attente';
+        if (!in_array($newStatut, ['en_attente', 'en_cours', 'termine'], true)) {
+            $newStatut = 'en_attente';
+        }
+        $validDate = static function (string $v): ?string {
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $v)) {
+                return null;
+            }
+            $dt = DateTimeImmutable::createFromFormat('Y-m-d', $v);
+            return ($dt && $dt->format('Y-m-d') === $v) ? $v : null;
+        };
+        $dateDebut = $validDate(trim((string) ($_POST['etape_date_debut'] ?? '')));
+        $dateFin = $validDate(trim((string) ($_POST['etape_date_fin'] ?? '')));
+
+        if ($nom !== '' && $societeId > 0) {
+            $stmt = $pdo->prepare('SELECT COALESCE(MAX(ordre), 0) + 1 FROM societe_suivi_etapes WHERE societe_id = :sid');
+            $stmt->execute(['sid' => $societeId]);
+            $ordre = (int) $stmt->fetchColumn();
+
+            $stmt = $pdo->prepare('INSERT INTO societe_suivi_etapes (societe_id, etape, ordre, statut, date_debut, date_fin, created_by) VALUES (:sid, :etape, :ordre, :statut, :dd, :df, :by)');
+            $stmt->execute([
+                'sid'    => $societeId,
+                'etape'  => $nom,
+                'ordre'  => $ordre,
+                'statut' => $newStatut,
+                'dd'     => $dateDebut,
+                'df'     => $dateFin,
+                'by'     => $_SESSION['user_id'] ?? null,
+            ]);
+            log_activity($pdo, 'create', 'societe', $societeId, 'Suivi administratif', 'Etape ajoutee : ' . $nom);
+            set_flash('success', 'Etape ajoutee.');
+        } else {
+            set_flash('error', "Le libelle de l'etape est obligatoire.");
+        }
+        redirect_to('societe_suivi', ['id' => $societeId, 'view' => 'calendar']);
+    }
+
+    // Planifier une etape par glisser-deposer sur le calendrier (reponse JSON, sans redirection)
+    if (isset($_POST['calendar_plan'])) {
+        $etapeId = (int) ($_POST['etape_id'] ?? 0);
+        $day = trim((string) ($_POST['day'] ?? ''));
+        $ok = false;
+        if ($etapeId > 0 && $societeId > 0 && preg_match('/^\d{4}-\d{2}-\d{2}$/', $day)) {
+            $dt = DateTimeImmutable::createFromFormat('Y-m-d', $day);
+            if ($dt && $dt->format('Y-m-d') === $day) {
+                $stmt = $pdo->prepare('UPDATE societe_suivi_etapes SET date_debut = :day, date_fin = IF(date_fin IS NOT NULL AND date_fin < :daycmp, NULL, date_fin) WHERE id = :id AND societe_id = :sid');
+                $stmt->execute(['day' => $day, 'daycmp' => $day, 'id' => $etapeId, 'sid' => $societeId]);
+                $ok = true;
+            }
+        }
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['ok' => $ok, 'day' => $day, 'etape_id' => $etapeId]);
+        exit;
+    }
 }
 
 if (!$societe) {
@@ -577,7 +638,7 @@ $dowLabels = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
     <div style="height:100%;width:<?= $progress ?>%;background:<?= $progress === 100 ? 'var(--success)' : ($overdue > 0 ? 'var(--danger)' : 'var(--primary)') ?>;border-radius:3px;transition:width .3s ease"></div>
 </div>
 
-<?php if (!$etapes): ?>
+<?php if (!$etapes && !$calendarView): ?>
     <section class="card stack">
         <h3>Aucune etape de suivi</h3>
         <p class="table-empty">Aucune etape de suivi n'est definie pour cette societe.</p>
@@ -688,68 +749,130 @@ $dowLabels = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
 <?php elseif ($calendarView): ?>
     <!-- ─── Vue Calendrier ───────────────────────────────────────── -->
+    <?php
+    $pipelineGroups = ['en_cours' => [], 'en_attente' => [], 'termine' => []];
+    foreach ($undatedSteps as $e) {
+        if (isset($pipelineGroups[$e['statut']])) {
+            $pipelineGroups[$e['statut']][] = $e;
+        }
+    }
+    $pipelineCount = count($undatedSteps);
+    $pipelineOrder = ['en_cours', 'en_attente', 'termine'];
+    ?>
     <section class="card stack">
-        <div class="calendar-nav">
-            <button class="btn" onclick="location.href='<?= e(app_url('societe_suivi', ['id' => $societeId, 'view' => 'calendar', 'month' => $calPrev])) ?>'">
-                <span class="material-symbols-outlined">chevron_left</span> Prec.
-            </button>
-            <strong class="calendar-title"><?= e($monthLabel) ?></strong>
-            <button class="btn" onclick="location.href='<?= e(app_url('societe_suivi', ['id' => $societeId, 'view' => 'calendar', 'month' => $calNext])) ?>'">
-                <span class="material-symbols-outlined">chevron_right</span> Suiv.
-            </button>
-            <button class="btn" onclick="location.href='<?= e(app_url('societe_suivi', ['id' => $societeId, 'view' => 'calendar'])) ?>'">
-                <span class="material-symbols-outlined">today</span> Aujourd'hui
-            </button>
-        </div>
-
-        <div class="calendar-grid">
-            <?php foreach ($dowLabels as $dw): ?>
-            <div class="calendar-dow"><?= $dw ?></div>
-            <?php endforeach; ?>
-            <?php $calCursor = $calStart; ?>
-            <?php for ($i = 0; $i < 42; $i++): ?>
-            <?php
-                $d = $calCursor->format('Y-m-d');
-                $isOther = (int) $calCursor->format('n') !== $calM;
-                $isToday = $d === $todayStr;
-                $dayEtapes = $calendarDays[$d] ?? [];
-            ?>
-            <div class="calendar-cell<?= $isOther ? ' other-month' : '' ?><?= $isToday ? ' today' : '' ?>">
-                <span class="calendar-daynum"><?= (int) $calCursor->format('j') ?></span>
-                <?php foreach ($dayEtapes as $de):
-                    $deOverdue = $de['statut'] !== 'termine' && $de['date_debut'] && (new DateTime())->diff(new DateTime($de['date_debut']))->days > 7;
-                    $chipClass = (string) $de['statut'] . ($deOverdue ? ' retard' : '');
-                    $chipTitle = ($stepLabels[$de['etape']] ?? $de['etape']) . ' — ' . format_date($de['date_debut']) . ' > ' . format_date($de['date_fin']);
-                ?>
-                <a class="cal-step-chip <?= e($chipClass) ?>" href="<?= e(app_url('societe_suivi', ['id' => $societeId, 'open' => (int) $de['id']])) ?>" title="<?= e($chipTitle) ?>">
-                    <?= e($stepLabels[$de['etape']] ?? $de['etape']) ?>
-                </a>
-                <?php endforeach; ?>
+        <div class="calendar-toolbar">
+            <div class="calendar-nav">
+                <button class="btn" onclick="location.href='<?= e(app_url('societe_suivi', ['id' => $societeId, 'view' => 'calendar', 'month' => $calPrev])) ?>'">
+                    <span class="material-symbols-outlined">chevron_left</span> Prec.
+                </button>
+                <strong class="calendar-title"><?= e($monthLabel) ?></strong>
+                <button class="btn" onclick="location.href='<?= e(app_url('societe_suivi', ['id' => $societeId, 'view' => 'calendar', 'month' => $calNext])) ?>'">
+                    <span class="material-symbols-outlined">chevron_right</span> Suiv.
+                </button>
+                <button class="btn" onclick="location.href='<?= e(app_url('societe_suivi', ['id' => $societeId, 'view' => 'calendar'])) ?>'">
+                    <span class="material-symbols-outlined">today</span> Aujourd'hui
+                </button>
             </div>
-            <?php $calCursor = $calCursor->modify('+1 day'); ?>
-            <?php endfor; ?>
+            <button type="button" class="btn btn-next" id="add-etape-toggle" aria-expanded="false">
+                <span class="material-symbols-outlined">add</span> Ajouter une etape
+            </button>
         </div>
 
-        <div class="calendar-legend">
-            <span><i class="lg-dot en_attente"></i> En attente</span>
-            <span><i class="lg-dot en_cours"></i> En cours</span>
-            <span><i class="lg-dot termine"></i> Termine</span>
-            <span><i class="lg-dot retard"></i> En retard</span>
-            <span><i class="lg-dot today"></i> Aujourd'hui</span>
-        </div>
+        <form method="post" class="add-etape-form" id="add-etape-form" hidden>
+            <?= csrf_input() ?>
+            <input type="hidden" name="add_etape" value="1">
+            <label class="add-etape-field add-etape-grow">
+                <span>Libelle</span>
+                <input type="text" name="etape_nom" maxlength="80" required placeholder="Ex : Depot du dossier au greffe">
+            </label>
+            <label class="add-etape-field">
+                <span>Statut</span>
+                <select name="etape_statut">
+                    <option value="en_attente">En attente</option>
+                    <option value="en_cours">En cours</option>
+                    <option value="termine">Termine</option>
+                </select>
+            </label>
+            <label class="add-etape-field">
+                <span>Debut</span>
+                <input type="date" name="etape_date_debut">
+            </label>
+            <label class="add-etape-field">
+                <span>Fin</span>
+                <input type="date" name="etape_date_fin">
+            </label>
+            <div class="add-etape-actions">
+                <button type="submit" class="btn btn-next"><span class="material-symbols-outlined">check</span> Ajouter</button>
+                <button type="button" class="btn btn-cancel" id="add-etape-cancel"><span class="material-symbols-outlined">close</span> Annuler</button>
+            </div>
+        </form>
 
-        <?php if ($undatedSteps): ?>
-        <div class="calendar-undated">
-            <strong><span class="material-symbols-outlined" style="font-size:1rem">event_busy</span> Sans date — a planifier</strong>
-            <div class="calendar-undated-list">
-                <?php foreach ($undatedSteps as $e): ?>
-                <a class="cal-step-chip <?= e($e['statut']) ?>" href="<?= e(app_url('societe_suivi', ['id' => $societeId, 'open' => (int) $e['id']])) ?>" title="<?= e(($stepLabels[$e['etape']] ?? $e['etape']) . ' — ' . ($statutLabels[$e['statut']] ?? $e['statut'])) ?>">
-                    <?= e($stepLabels[$e['etape']] ?? $e['etape']) ?>
-                </a>
+        <div class="calendar-dnd">
+            <?php if ($pipelineCount > 0): ?>
+            <aside class="calendar-pipeline" id="calendar-pipeline">
+                <div class="calendar-pipeline-title">
+                    <span class="material-symbols-outlined">layers</span> A planifier
+                    <span class="badge"><?= $pipelineCount ?></span>
+                </div>
+                <p class="calendar-pipeline-hint">Glissez une etape sur un jour pour fixer sa date de debut.</p>
+                <?php foreach ($pipelineOrder as $st):
+                    if (empty($pipelineGroups[$st])) continue; ?>
+                <div class="calendar-pipeline-group" data-group="<?= e($st) ?>">
+                    <span class="pipeline-group-label"><i class="lg-dot <?= e($st) ?>"></i> <?= e($statutLabels[$st]) ?></span>
+                    <?php foreach ($pipelineGroups[$st] as $e):
+                        $pid = (int) $e['id'];
+                        $plabel = $stepLabels[$e['etape']] ?? $e['etape'];
+                    ?>
+                    <a class="cal-step-chip <?= e($st) ?> is-draggable" draggable="true" data-etape-id="<?= $pid ?>" data-statut="<?= e($st) ?>" href="<?= e(app_url('societe_suivi', ['id' => $societeId, 'open' => $pid])) ?>" title="<?= e($plabel . ' — ' . ($statutLabels[$st] ?? $st)) ?>">
+                        <?= e($plabel) ?>
+                    </a>
+                    <?php endforeach; ?>
+                </div>
                 <?php endforeach; ?>
+            </aside>
+            <?php endif; ?>
+
+            <div class="calendar-main">
+                <div class="calendar-grid">
+                    <?php foreach ($dowLabels as $dw): ?>
+                    <div class="calendar-dow"><?= $dw ?></div>
+                    <?php endforeach; ?>
+                    <?php $calCursor = $calStart; ?>
+                    <?php for ($i = 0; $i < 42; $i++): ?>
+                    <?php
+                        $d = $calCursor->format('Y-m-d');
+                        $isOther = (int) $calCursor->format('n') !== $calM;
+                        $isToday = $d === $todayStr;
+                        $dayEtapes = $calendarDays[$d] ?? [];
+                    ?>
+                    <div class="calendar-cell<?= $isOther ? ' other-month' : '' ?><?= $isToday ? ' today' : '' ?>" data-day="<?= e($d) ?>">
+                        <span class="calendar-daynum"><?= (int) $calCursor->format('j') ?></span>
+                        <?php foreach ($dayEtapes as $de):
+                            $deid = (int) $de['id'];
+                            $deOverdue = $de['statut'] !== 'termine' && $de['date_debut'] && (new DateTime())->diff(new DateTime($de['date_debut']))->days > 7;
+                            $chipClass = (string) $de['statut'] . ($deOverdue ? ' retard' : '');
+                            $deLabel = $stepLabels[$de['etape']] ?? $de['etape'];
+                            $chipTitle = $deLabel . ' — ' . format_date($de['date_debut']) . ' > ' . format_date($de['date_fin']);
+                        ?>
+                        <a class="cal-step-chip <?= e($chipClass) ?> is-draggable" draggable="true" data-etape-id="<?= $deid ?>" data-statut="<?= e($de['statut']) ?>" href="<?= e(app_url('societe_suivi', ['id' => $societeId, 'open' => $deid])) ?>" title="<?= e($chipTitle) ?>">
+                            <?= e($deLabel) ?>
+                        </a>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php $calCursor = $calCursor->modify('+1 day'); ?>
+                    <?php endfor; ?>
+                </div>
+
+                <div class="calendar-legend">
+                    <span><i class="lg-dot en_attente"></i> En attente</span>
+                    <span><i class="lg-dot en_cours"></i> En cours</span>
+                    <span><i class="lg-dot termine"></i> Termine</span>
+                    <span><i class="lg-dot retard"></i> En retard</span>
+                    <span><i class="lg-dot today"></i> Aujourd'hui</span>
+                    <span><span class="material-symbols-outlined" style="font-size:1rem">drag_indicator</span> Glisser sur un jour pour planifier</span>
+                </div>
             </div>
         </div>
-        <?php endif; ?>
     </section>
 
 <?php else: ?>
@@ -763,7 +886,7 @@ $dowLabels = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
                     <?= match ($e['statut']) {
                         'termine' => '<span class="material-symbols-outlined">check</span>',
                         'en_cours' => '<span class="material-symbols-outlined">play_arrow</span>',
-                        default => ($stepLabels[$e['etape']] ?? $e['etape'])[0],
+                        default => e(($stepLabels[$e['etape']] ?? $e['etape'])[0]),
                     } ?>
                     <span class="suivi-step-line"></span>
                 </div>
@@ -919,6 +1042,91 @@ document.addEventListener('click', function(e) {
     if (hidden) { hidden.value = btn.dataset.statut; }
     form.submit();
 });
+
+/* ─── Vue Calendrier : ajout d'etape + glisser-deposer ─────────────── */
+(function() {
+    var wrap = document.querySelector('.calendar-dnd');
+    if (!wrap) return;
+
+    var csrfEl = document.querySelector('#add-etape-form input[name="csrf_token"]');
+    var csrf = csrfEl ? csrfEl.value : '';
+    var postUrl = <?= json_encode(app_url('societe_suivi', ['id' => $societeId])) ?>;
+    var dragged = null;
+
+    function clearDrop() {
+        wrap.querySelectorAll('.calendar-cell.drop-over').forEach(function(c) { c.classList.remove('drop-over'); });
+    }
+
+    wrap.addEventListener('dragstart', function(e) {
+        var chip = e.target.closest('.cal-step-chip');
+        if (!chip || !chip.hasAttribute('draggable')) return;
+        dragged = chip;
+        chip.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', chip.dataset.etapeId || '');
+    });
+
+    wrap.addEventListener('dragend', function() {
+        if (dragged) dragged.classList.remove('dragging');
+        dragged = null;
+        clearDrop();
+    });
+
+    wrap.addEventListener('dragover', function(e) {
+        var cell = e.target.closest('.calendar-cell');
+        if (!cell || !dragged) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        cell.classList.add('drop-over');
+    });
+
+    wrap.addEventListener('dragleave', function(e) {
+        var cell = e.target.closest('.calendar-cell');
+        if (cell && !cell.contains(e.relatedTarget)) cell.classList.remove('drop-over');
+    });
+
+    wrap.addEventListener('drop', function(e) {
+        var cell = e.target.closest('.calendar-cell');
+        if (!cell || !dragged) return;
+        e.preventDefault();
+        cell.classList.remove('drop-over');
+
+        var chip = dragged;
+        var etapeId = chip.dataset.etapeId;
+        var day = cell.dataset.day;
+        if (!etapeId || !day) return;
+
+        var fd = new FormData();
+        fd.append('csrf_token', csrf);
+        fd.append('calendar_plan', '1');
+        fd.append('etape_id', etapeId);
+        fd.append('day', day);
+
+        fetch(postUrl, { method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function(r) { return r.json(); })
+            .then(function(res) {
+                if (!res || !res.ok) { window.location.reload(); return; }
+                chip.classList.remove('dragging');
+                window.location.reload();
+            })
+            .catch(function() { window.location.reload(); });
+    });
+
+    var toggle = document.getElementById('add-etape-toggle');
+    var form = document.getElementById('add-etape-form');
+    var cancel = document.getElementById('add-etape-cancel');
+    function showForm(show) {
+        if (!form) return;
+        form.hidden = !show;
+        if (toggle) toggle.setAttribute('aria-expanded', show ? 'true' : 'false');
+        if (show) {
+            var f = form.querySelector('input[name="etape_nom"]');
+            if (f) f.focus();
+        }
+    }
+    if (toggle && form) toggle.addEventListener('click', function() { showForm(form.hidden); });
+    if (cancel) cancel.addEventListener('click', function() { showForm(false); });
+})();
 <?php if (isset($_GET['open'])): ?>
 document.addEventListener('DOMContentLoaded', function() {
     var id = <?= json_encode((string) $_GET['open']) ?>;

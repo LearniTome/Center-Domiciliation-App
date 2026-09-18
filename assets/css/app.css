@@ -5690,6 +5690,114 @@ input[data-bulk-checkbox] {
     flex-wrap: wrap;
     gap: .4rem;
 }
+.calendar-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    flex-wrap: wrap;
+}
+.calendar-toolbar .calendar-nav {
+    margin-bottom: 0;
+    flex: 1;
+    justify-content: flex-start;
+}
+.add-etape-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: .6rem;
+    padding: .75rem;
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--success);
+    border-radius: 6px;
+    background: var(--bg);
+}
+.add-etape-field {
+    display: flex;
+    flex-direction: column;
+    gap: .2rem;
+    font-size: .78rem;
+    color: var(--text-muted);
+}
+.add-etape-field input,
+.add-etape-field select {
+    padding: 5px 8px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    font-size: .85rem;
+    background: var(--panel);
+    color: var(--text);
+}
+.add-etape-grow {
+    flex: 1;
+    min-width: 180px;
+}
+.add-etape-actions {
+    display: flex;
+    gap: .4rem;
+    align-items: center;
+}
+.calendar-dnd {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+}
+.calendar-main {
+    flex: 1;
+    min-width: 0;
+}
+.calendar-pipeline {
+    flex: 0 0 220px;
+    max-width: 220px;
+    padding-right: 1rem;
+    border-right: 1px solid var(--line);
+}
+.calendar-pipeline-title {
+    display: flex;
+    align-items: center;
+    gap: .35rem;
+    font-size: .9rem;
+    font-weight: 600;
+    margin-bottom: .35rem;
+}
+.calendar-pipeline-hint {
+    font-size: .72rem;
+    color: var(--text-muted);
+    margin: 0 0 .75rem;
+    line-height: 1.35;
+}
+.calendar-pipeline-group {
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+    margin-bottom: .75rem;
+}
+.pipeline-group-label {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    font-size: .72rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+.calendar-pipeline-group .cal-step-chip {
+    white-space: normal;
+}
+.cal-step-chip.is-draggable {
+    cursor: grab;
+}
+.cal-step-chip.is-draggable:active {
+    cursor: grabbing;
+}
+.cal-step-chip.dragging {
+    opacity: .45;
+}
+.calendar-cell.drop-over {
+    border: 2px dashed var(--primary);
+    background: rgba(74,108,247,.10);
+}
 
 @media (max-width: 900px) {
     .suivi-layout { grid-template-columns: 1fr; }
@@ -5699,6 +5807,15 @@ input[data-bulk-checkbox] {
     .calendar-cell { min-height: 64px; padding: 3px 4px; }
     .calendar-grid { gap: 3px; }
     .calendar-cell .cal-step-chip { font-size: .65rem; padding: 2px 4px; }
+    .calendar-dnd { flex-direction: column; }
+    .calendar-pipeline {
+        flex: none;
+        max-width: none;
+        width: 100%;
+        padding: 0 0 .75rem;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+    }
 }
 
 /* ── Pages Auth (connexion) ── */
