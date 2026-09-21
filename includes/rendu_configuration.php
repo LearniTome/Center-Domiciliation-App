@@ -26,6 +26,7 @@ $isTribunalTab = $tab === 'tribunaux';
 $isFormeJuridiqueTab = $tab === 'formes-juridiques';
 $isFonctionsTab = $tab === 'fonctions';
 $isAdresseTab = $tab === 'adresses';
+$canEdit = function_exists('has_permission') && has_permission('configuration.edit');
 
 $villesOptions = $isAdresseTab ? fetch_reference_options($pdo ?? null, 'ref_villes', 'ville') : [];
 $rows = [];
@@ -54,8 +55,34 @@ if (($pdo ?? null) instanceof PDO) {
     }
 }
 
+$query = search_term();
+$rowsTotalCount = count($rows);
+if ($query !== '') {
+    $needle = mb_strtolower($query);
+    $rows = array_values(array_filter($rows, static function (array $r) use ($needle, $column): bool {
+        $parts = [
+            (string) ($r[$column] ?? ''),
+            (string) ($r['ville'] ?? ''),
+            (string) ($r['code_postal'] ?? ''),
+            (string) ($r['code'] ?? ''),
+            (string) ($r['tribunal_type'] ?? ''),
+            (string) ($r['template_folder'] ?? ''),
+        ];
+        foreach ($parts as $part) {
+            if ($part !== '' && mb_stripos($part, $needle) !== false) {
+                return true;
+            }
+        }
+        return false;
+    }));
+}
+
 if (is_post()) {
     verify_csrf();
+    if (!$canEdit) {
+        set_flash('error', 'Droits insuffisants pour modifier la configuration.');
+        redirect_to($tab);
+    }
     $action = $_POST['action'] ?? '';
 
     if ($action === 'add' && ($pdo ?? null) instanceof PDO) {
@@ -196,8 +223,12 @@ if (is_post()) {
     <div class="section-header">
         <div>
             <p class="help-text">Gerer les <?= e(mb_strtolower($label)) ?>.</p>
+            <?php if ($rowsTotalCount > 0): ?>
+            <span class="page-count"><?= count($rows) ?> / <?= $rowsTotalCount ?> enregistrement(s)</span>
+            <?php endif; ?>
         </div>
         <div style="display:flex;gap:6px">
+            <?php if ($canEdit): ?>
             <form method="post" style="display:inline">
                 <?= csrf_input() ?>
                 <input type="hidden" name="action" value="sort-az">
@@ -206,11 +237,28 @@ if (is_post()) {
             <?php if ($isAdresseTab): ?>
                 <button type="button" class="btn btn-next" data-adresse-add-btn><span class="material-symbols-outlined">add</span> Ajouter une adresse</button>
             <?php endif; ?>
-            <a class="btn btn-back" href="<?= e(app_url('creation')) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
+            <?php endif; ?>
+            <a class="btn btn-back" href="<?= e(app_url('configuration')) ?>"><span class="material-symbols-outlined">settings</span> Configuration</a>
         </div>
     </div>
 
-    <?php if (!$isAdresseTab): ?>
+    <form method="get" class="stack search-bar">
+        <input type="hidden" name="page" value="<?= e($tab) ?>">
+        <div class="inline-form">
+            <input
+                type="search"
+                name="q"
+                placeholder="Rechercher dans <?= e(mb_strtolower($label)) ?>..."
+                value="<?= e($query) ?>"
+            >
+            <button type="submit"><span class="material-symbols-outlined">search</span> Rechercher</button>
+            <?php if ($query !== ''): ?>
+                <a class="btn btn-cancel" href="<?= e(app_url($tab)) ?>"><span class="material-symbols-outlined">close</span> Effacer</a>
+            <?php endif; ?>
+        </div>
+    </form>
+
+    <?php if ($canEdit && !$isAdresseTab): ?>
     <form method="post" class="inline-form" style="margin-bottom:0.75rem">
         <?= csrf_input() ?>
         <input type="hidden" name="action" value="add">
@@ -274,9 +322,10 @@ if (is_post()) {
                     $val = (string) $row[$column];
                     $typeVal = $isTribunalTab ? ((string) ($row['tribunal_type'] ?? '')) : '';
                     $tfVal = $isFormeJuridiqueTab ? ((string) ($row['template_folder'] ?? '')) : '';
+                    $editingRow = $canEdit && $editKey === $val;
                 ?>
-                    <tr <?= $editKey === $val ? '' : 'draggable="true"' ?> data-record-id="<?= $rid ?>">
-                        <?php if ($editKey === $val): ?>
+                    <tr <?= $editingRow ? '' : ($canEdit ? 'draggable="true"' : '') ?> data-record-id="<?= $rid ?>">
+                        <?php if ($editingRow): ?>
                             <td style="text-align:center;color:var(--text-secondary)"><span class="material-symbols-outlined">drag_indicator</span></td>
                             <td <?= $isAdresseTab ? 'colspan="3"' : ($isTribunalTab || $isFormeJuridiqueTab ? 'colspan="2"' : '') ?>>
                                 <form method="post" style="display:flex;gap:4px">
@@ -333,6 +382,7 @@ if (is_post()) {
                             <td style="font-size:0.75rem;color:var(--text-secondary)"><?= $row['created_at'] ? date('d/m/Y H:i', strtotime($row['created_at'])) : '-' ?></td>
                             <td style="font-size:0.75rem;color:var(--text-secondary)"><?= $row['updated_at'] ? date('d/m/Y H:i', strtotime($row['updated_at'])) : '-' ?></td>
                             <td>
+                                <?php if ($canEdit): ?>
                                 <div style="display:flex;gap:2px;align-items:center">
                                     <form method="post" style="display:inline">
                                         <?= csrf_input() ?>
@@ -357,6 +407,7 @@ if (is_post()) {
                                         <button type="submit" class="btn-icon danger" data-confirm="Supprimer <?= e($val) ?> ?" title="Supprimer"><span class="material-symbols-outlined">delete</span></button>
                                     </form>
                                 </div>
+                                <?php endif; ?>
                             </td>
                         <?php endif; ?>
                     </tr>
@@ -450,7 +501,12 @@ if (is_post()) {
     <?php else: ?>
         <div class="config-empty">
             <span class="material-symbols-outlined"><?= e($tabIcon) ?></span>
-            <p>Aucun(e) <?= e(mb_strtolower($label)) ?> pour le moment.</p>
+            <?php if ($query !== ''): ?>
+                <p>Aucun résultat pour « <?= e($query) ?> ».</p>
+                <a class="btn btn-info" href="<?= e(app_url($tab)) ?>"><span class="material-symbols-outlined">close</span> Effacer la recherche</a>
+            <?php else: ?>
+                <p>Aucun(e) <?= e(mb_strtolower($label)) ?> pour le moment.</p>
+            <?php endif; ?>
         </div>
     <?php endif; ?>
 </section>

@@ -114,10 +114,14 @@ $navSections = [
     'Configuration' => [
         'icon' => 'settings',
         'items' => [
+            ['divider' => 'Accès & audit'],
             ['page' => 'roles', 'label' => 'Gestion des roles', 'icon' => 'admin_panel_settings'],
             ['page' => 'activite', 'label' => 'Journal d\'activite', 'icon' => 'history'],
             ['page' => 'notifications-manage', 'label' => 'Gestion des notifications', 'icon' => 'notifications'],
+            ['divider' => 'Entreprise'],
             ['page' => 'centre', 'label' => 'Centre d\'affaires', 'icon' => 'apartment'],
+            ['page' => 'pv-templates', 'label' => 'Modèles de résolutions PV', 'icon' => 'playlist_add_check'],
+            ['divider' => 'Référentiels'],
             ['page' => 'formes-juridiques', 'label' => 'Formes juridiques', 'icon' => 'description'],
             ['page' => 'tribunaux', 'label' => 'Tribunaux', 'icon' => 'balance'],
             ['page' => 'villes', 'label' => 'Villes', 'icon' => 'location_city'],
@@ -128,7 +132,6 @@ $navSections = [
             ['page' => 'fonctions', 'label' => 'Fonctions', 'icon' => 'assignment'],
             ['page' => 'activites', 'label' => 'Activites', 'icon' => 'work'],
             ['page' => 'activites-ompic', 'label' => 'Activites Ompic', 'icon' => 'verified'],
-            ['page' => 'pv-templates', 'label' => 'Modèles de résolutions PV', 'icon' => 'playlist_add_check'],
         ],
     ],
 ];
@@ -161,6 +164,10 @@ $navSections = [
                     // Filter items by permission
                     $visibleItems = [];
                     foreach ($items as $navKey => $item) {
+                        if (isset($item['divider'])) {
+                            $visibleItems[$navKey] = $item;
+                            continue;
+                        }
                         if (is_array($item) && isset($item['page'])) {
                             $itemPage = $item['page'];
                         } else {
@@ -182,6 +189,9 @@ $navSections = [
                     <div class="nav-section-items">
                 <?php endif; ?>
                 <?php foreach ($visibleItems as $navKey => $item): ?>
+                    <?php if (isset($item['divider'])): ?>
+                    <div class="nav-divider" data-nav-label><?= e($item['divider']) ?></div>
+                    <?php continue; endif; ?>
                     <?php
                         if (is_array($item) && isset($item['page'])) {
                             $itemPage = $item['page'];
