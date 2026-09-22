@@ -4,13 +4,20 @@ declare(strict_types=1);
 
 /**
  * Navigation de la section Configuration à 2 niveaux :
- *   niveau 1 : les 3 sous-pages (Accès & audit, Entreprise, Référentiels)
+ *   niveau 1 : les 3 sous-pages (Centre d'affaires, Accès & audit, Référentiels)
  *   niveau 2 : les onglets de la sous-page active
  *
  * Dépendances : e(), app_url(), has_permission(), current_user(), $_GET['page'].
  */
 
 $configGroups = [
+    'entreprise' => [
+        'label' => "Centre d'affaires",
+        'icon' => 'apartment',
+        'pages' => [
+            'centre' => ["Centre d'affaires", 'apartment', 'configuration.view', false],
+        ],
+    ],
     'acces' => [
         'label' => "Accès & audit",
         'icon' => 'admin_panel_settings',
@@ -18,14 +25,6 @@ $configGroups = [
             'roles' => ['Gestion des rôles', 'admin_panel_settings', 'roles.manage', false],
             'activite' => ["Journal d'activité", 'history', 'roles.manage', false],
             'notifications-manage' => ['Gestion des notifications', 'notifications', 'roles.manage', true],
-        ],
-    ],
-    'entreprise' => [
-        'label' => 'Entreprise',
-        'icon' => 'apartment',
-        'pages' => [
-            'centre' => ["Centre d'affaires", 'apartment', 'configuration.view', false],
-            'pv-templates' => ['Modèles de résolutions PV', 'playlist_add_check', 'pv_resolutions.view', false],
         ],
     ],
     'referentiels' => [

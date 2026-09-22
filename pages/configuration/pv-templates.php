@@ -65,7 +65,6 @@ if (is_post()) {
 $editId = int_value($_GET, 'edit');
 $categories = ['cession' => 'Cession de parts', 'general' => 'Général'];
 ?>
-<?php require_once __DIR__ . '/../../includes/config_tabs.php'; render_config_tabs('pv-templates'); ?>
 <style>
 .pv-tpl-textarea { font-family:monospace;font-size:0.8rem; }
 .pv-tpl-content-preview { font-size:0.78rem;color:var(--text-secondary);max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
@@ -77,7 +76,7 @@ $categories = ['cession' => 'Cession de parts', 'general' => 'Général'];
             <p class="help-text" style="font-size:0.75rem;margin-top:4px">Utilisez <code>**[Variable]**</code> pour les données dynamiques (affichées en gras dans le rendu).</p>
         </div>
         <div>
-            <a class="btn btn-back" href="<?= e(app_url('configuration')) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
+            <a class="btn btn-back" href="<?= e(app_url('templates')) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>
         </div>
     </div>
 

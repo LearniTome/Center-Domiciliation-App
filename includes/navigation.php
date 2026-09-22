@@ -99,6 +99,7 @@ $navSections = [
             'templates' => ['Templates', 'edit_note'],
             'generation' => ['Generateur Documents', 'sync'],
             'documents' => ['Documents generes', 'article'],
+            'pv-templates' => ['Modèles de résolutions PV', 'playlist_add_check'],
         ],
     ],
     'Outils' => [
@@ -114,8 +115,8 @@ $navSections = [
     'Configuration' => [
         'icon' => 'settings',
         'items' => [
+            ['page' => 'centre', 'label' => "Centre d'affaires", 'icon' => 'apartment'],
             ['page' => 'roles', 'label' => 'Accès & audit', 'icon' => 'admin_panel_settings'],
-            ['page' => 'centre', 'label' => 'Entreprise', 'icon' => 'apartment'],
             ['page' => 'formes-juridiques', 'label' => 'Référentiels', 'icon' => 'database'],
         ],
     ],

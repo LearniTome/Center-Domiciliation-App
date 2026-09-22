@@ -668,7 +668,7 @@ function ensure_template_folder(string $folderName): bool
 
 /**
  * Libellé de section à afficher dans la barre supérieure pour les pages
- * de configuration (Accès & audit / Entreprise / Référentiels), au lieu
+ * de configuration (Centre d'affaires / Accès & audit / Référentiels), au lieu
  * du titre de l'onglet courant.
  */
 function config_section_title_for_page(string $page): ?string
@@ -677,8 +677,7 @@ function config_section_title_for_page(string $page): ?string
         'roles' => "Accès & audit",
         'activite' => "Accès & audit",
         'notifications-manage' => "Accès & audit",
-        'centre' => 'Entreprise',
-        'pv-templates' => 'Entreprise',
+        'centre' => "Centre d'affaires",
         'formes-juridiques' => 'Référentiels',
         'tribunaux' => 'Référentiels',
         'villes' => 'Référentiels',

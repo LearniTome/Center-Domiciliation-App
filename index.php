@@ -217,8 +217,8 @@ if ($page === 'templates') {
 
 $pageTitle = $pageTitleMap[$page] ?? 'Center Domiciliation App';
 
-// Barre supérieure : afficher la section de configuration (Accès & audit /
-// Entreprise / Référentiels) au lieu du titre de l'onglet courant
+// Barre supérieure : afficher la section de configuration (Centre d'affaires /
+// Accès & audit / Référentiels) au lieu du titre de l'onglet courant
 $topBarTitle = null;
 if (function_exists('config_section_title_for_page')) {
     $topBarTitle = config_section_title_for_page($page);
