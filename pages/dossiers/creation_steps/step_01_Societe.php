@@ -366,4 +366,27 @@ require __DIR__ . '/../../../includes/quick_create_modal.php';
         </form>
     </div>
 </div>
+
+<!-- Modal moderne : nouvelle activite (Statuts) -->
+<div class="modal-overlay" data-modal="add-activite-ref" role="dialog" aria-modal="true" aria-labelledby="add-activite-ref-title">
+    <div class="modal-panel" style="max-width:520px">
+        <div class="modal-header">
+            <h3 id="add-activite-ref-title"><span class="material-symbols-outlined" style="vertical-align:-4px;color:var(--info)">add_circle</span> Nouvelle activite (Statuts)</h3>
+            <button class="btn-icon" data-modal-close type="button" title="Fermer"><span class="material-symbols-outlined">close</span></button>
+        </div>
+        <form data-add-activite-ref-form>
+            <?= csrf_input() ?>
+            <div class="form-grid">
+                <label class="field full">
+                    <span>Nom de l'activite</span>
+                    <input type="text" name="new_activite" required placeholder="ex : Restaurant" autocomplete="off">
+                </label>
+            </div>
+            <div class="form-actions" style="margin-top:1rem;display:flex;gap:8px;justify-content:flex-end">
+                <button type="button" class="btn btn-cancel" data-modal-close><span class="material-symbols-outlined">close</span> Annuler</button>
+                <button type="submit" class="btn btn-next"><span class="material-symbols-outlined">add</span> Ajouter</button>
+            </div>
+        </form>
+    </div>
+</div>
 <?php endif; ?>

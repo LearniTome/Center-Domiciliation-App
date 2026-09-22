@@ -594,39 +594,76 @@ document.addEventListener('input', (e) => {
         }
 
         if (refBtn) {
-            refBtn.addEventListener('click', function () {
-                const name = window.prompt('Saisissez le nom de la nouvelle activite:');
-                if (!name || name.trim() === '') return;
-                const form = this.closest('form');
-                if (!form) return;
-                const csrf = form.querySelector('input[name="csrf_token"]');
-                if (!csrf) return;
-                fetch(window.location.href, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: new URLSearchParams({
-                        csrf_token: csrf.value,
-                        add_activite_ref: '1',
-                        new_activite: name.trim()
-                    })
-                })
-                .then(function (r) { return r.json(); })
-                .then(function (data) {
-                    if (data.success) {
-                        addOptionToSelects(data.value);
-                        var items = container.querySelectorAll('[data-activite-item]');
-                        if (items.length > 0) {
-                            var lastSelect = items[items.length - 1].querySelector('select');
-                            if (lastSelect) lastSelect.value = data.value;
-                        }
-                    } else {
-                        alert('Erreur lors de l\'ajout de l\'activite.');
-                    }
-                })
-                .catch(function () {
-                    alert('Erreur de communication avec le serveur.');
-                });
-            });
+            const refModal = document.querySelector('[data-modal="add-activite-ref"]');
+            if (refModal) {
+                const refForm = refModal.querySelector('[data-add-activite-ref-form]');
+                if (refForm) {
+                    const refInput = refForm.querySelector('[name="new_activite"]');
+                    const refOpen = function () { refModal.classList.add('open'); };
+                    const refClose = function () { refModal.classList.remove('open'); refForm.reset(); };
+
+                    refBtn.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        refOpen();
+                    });
+
+                    refModal.querySelectorAll('[data-modal-close]').forEach(function (el) {
+                        el.addEventListener('click', refClose);
+                    });
+                    refModal.addEventListener('click', function (e) {
+                        if (e.target === refModal) refClose();
+                    });
+                    document.addEventListener('keydown', function (e) {
+                        if (e.key === 'Escape' && refModal.classList.contains('open')) refClose();
+                    });
+
+                    refForm.addEventListener('submit', function (e) {
+                        e.preventDefault();
+                        const form = refBtn.closest('form');
+                        if (!form) return;
+                        const csrf = form.querySelector('input[name="csrf_token"]');
+                        if (!csrf) return;
+                        const name = refInput ? refInput.value.trim() : '';
+                        if (name === '') return;
+
+                        const submitBtn = refForm.querySelector('button[type="submit"]');
+                        const original = submitBtn.innerHTML;
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<span class="material-symbols-outlined">hourglass_top</span> Ajout...';
+
+                        fetch(window.location.href, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: new URLSearchParams({
+                                csrf_token: csrf.value,
+                                add_activite_ref: '1',
+                                new_activite: name
+                            })
+                        })
+                        .then(function (r) { return r.json(); })
+                        .then(function (data) {
+                            if (data.success) {
+                                addOptionToSelects(data.value);
+                                const items = container.querySelectorAll('[data-activite-item]');
+                                if (items.length > 0) {
+                                    const lastSelect = items[items.length - 1].querySelector('select');
+                                    if (lastSelect) lastSelect.value = data.value;
+                                }
+                                refClose();
+                            } else {
+                                alert('Erreur lors de l\'ajout de l\'activite.');
+                            }
+                        })
+                        .catch(function () {
+                            alert('Erreur de communication avec le serveur.');
+                        })
+                        .finally(function () {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = original;
+                        });
+                    });
+                }
+            }
         }
 
         if (multipleBtn) {
