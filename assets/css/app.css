@@ -3480,13 +3480,13 @@ section.stack > .section-title-row { margin-top: 0.25rem; }
     padding-bottom: 0.35rem; margin: 0 0 0.6rem;
 }
 .recap-a4 .recap-grid {
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 0.3rem 1.5rem;
+    width: 100%; border-collapse: collapse;
 }
-.recap-a4 .recap-grid .full { grid-column: 1 / -1; }
-.recap-a4 .recap-grid .item {
-    padding: 0.2rem 0; border-bottom: 1px dotted var(--border);
-    font-size: 0.8rem;
+.recap-a4 .recap-grid td.item { width: 50%; }
+.recap-a4 .recap-grid td.item.full { width: 100%; }
+.recap-a4 .recap-grid td.item {
+    padding: 0.2rem 1.5rem 0.2rem 0; border-bottom: 1px dotted var(--border);
+    font-size: 0.8rem; vertical-align: top;
 }
 .recap-a4 .recap-grid .item .label { color: var(--text-secondary); }
 .recap-a4 .recap-grid .item .label::after { content: " :\00a0"; }
@@ -3499,8 +3499,7 @@ section.stack > .section-title-row { margin-top: 0.25rem; }
     font-size: 0.7rem; color: var(--primary);
     font-weight: 600; margin-bottom: 0.3rem;
 }
-.recap-a4 .recap-associe .recap-grid { gap: 0.1rem 1rem; }
-.recap-a4 .recap-associe .recap-grid .item { padding: 0.1rem 0; font-size: 0.75rem; }
+.recap-a4 .recap-associe .recap-grid td.item { padding: 0.1rem 1rem 0.1rem 0; font-size: 0.75rem; }
 .recap-a4.recap-pdf-mode {
     background: #fff !important; box-shadow: none !important;
 }
@@ -3521,6 +3520,7 @@ section.stack > .section-title-row { margin-top: 0.25rem; }
     .section-header, .step-4-controls,
     nav, header, .shell > nav, .flash { display: none !important; }
     .card:not(.pv-ago-wizard) { display: none !important; }
+    .card:has(.recap-a4) { display: block !important; border: none !important; box-shadow: none !important; padding: 0 !important; background: transparent !important; }
     .pv-ago-wizard { display: block !important; border: none !important; box-shadow: none !important; padding: 0 !important; background: transparent !important; }
     .shell { display: block !important; }
     .shell-body { display: block !important; height: auto !important; overflow: visible !important; }
@@ -3541,8 +3541,7 @@ section.stack > .section-title-row { margin-top: 0.25rem; }
     .recap-a4 .recap-section ol { margin: 0.15rem 0 0.15rem 1.2rem !important; }
     .recap-a4 .recap-section ul { margin: 0.15rem 0 0.15rem 1.2rem !important; }
     .recap-a4 .recap-section li { margin-bottom: 0.1rem !important; }
-    .recap-a4 .recap-grid { gap: 0.1rem 1rem !important; }
-    .recap-a4 .recap-grid .item { padding: 0.05rem 0 !important; font-size: 9pt !important; }
+    .recap-a4 .recap-grid td.item { padding: 0.05rem 0.6rem 0.05rem 0 !important; font-size: 9pt !important; }
     .recap-a4 .recap-grid .item .value { color: #222 !important; }
     .recap-a4 .recap-grid .item .label { color: #555 !important; }
     .recap-a4 .recap-header { border-bottom-color: #222 !important; }
@@ -3601,6 +3600,7 @@ section.stack > .section-title-row { margin-top: 0.25rem; }
 }
 .recap-a4 .capital-card .label { color: var(--text-muted); }
 .recap-a4 .capital-card .value { font-size: 0.9rem; }
+.recap-a4 .recap-grid td.capital-card:nth-child(2) { padding-left: 1rem; }
 .recap-a4 .valeur-nominale {
     font-size: 0.7rem; margin: 0.5rem 0 0;
     color: var(--text-muted);

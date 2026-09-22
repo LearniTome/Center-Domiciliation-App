@@ -45,52 +45,74 @@ if ($step === 6):
 
         <div class="recap-section">
             <h3>Informations de la societe</h3>
-            <div class="recap-grid">
-                <div class="item"><span class="label">Raison sociale</span><span class="value"><?= $socName ?></span></div>
-                <div class="item"><span class="label">Forme juridique</span><span class="value"><?= e($socForCalc['societe_forme_juridique'] ?? '-') ?></span></div>
-                <div class="item"><span class="label">Capital social</span><span class="value"><?= $capital ?></span></div>
-                <div class="item"><span class="label">Nombre de parts</span><span class="value"><?= $calc['total_parts'] ?></span></div>
-                <div class="item"><span class="label">Parts presentes / representees</span><span class="value"><?= $calc['parts_presentes'] ?> (<?= $calc['pct_presence'] ?>%)</span></div>
-                <div class="item"><span class="label">President de seance</span><span class="value"><?= e($wizard['president_nom'] ?? '-') ?> (<?= e($wizard['president_qualite'] ?? '-') ?>)</span></div>
-            </div>
+            <table class="recap-grid">
+                <tr>
+                    <td class="item"><span class="label">Raison sociale</span><span class="value"><?= $socName ?></span></td>
+                    <td class="item"><span class="label">Forme juridique</span><span class="value"><?= e($socForCalc['societe_forme_juridique'] ?? '-') ?></span></td>
+                </tr>
+                <tr>
+                    <td class="item"><span class="label">Capital social</span><span class="value"><?= $capital ?></span></td>
+                    <td class="item"><span class="label">Nombre de parts</span><span class="value"><?= $calc['total_parts'] ?></span></td>
+                </tr>
+                <tr>
+                    <td class="item"><span class="label">Parts presentes / representees</span><span class="value"><?= $calc['parts_presentes'] ?> (<?= $calc['pct_presence'] ?>%)</span></td>
+                    <td class="item"><span class="label">President de seance</span><span class="value"><?= e($wizard['president_nom'] ?? '-') ?> (<?= e($wizard['president_qualite'] ?? '-') ?>)</span></td>
+                </tr>
+            </table>
         </div>
 
         <div class="recap-section">
             <h3>Resultat et affectation</h3>
-            <div class="recap-grid">
-                <div class="item">
-                    <span class="label">Resultat net</span>
-                    <span class="value <?= $calc['is_benefice'] ? 'badge-success' : 'badge-danger' ?>"><?= $resultat ?></span>
-                </div>
-                <div class="item"><span class="label">Affectation</span><span class="value"><?= $affectLabel ?></span></div>
+            <table class="recap-grid">
+                <tr>
+                    <td class="item">
+                        <span class="label">Resultat net</span>
+                        <span class="value <?= $calc['is_benefice'] ? 'badge-success' : 'badge-danger' ?>"><?= $resultat ?></span>
+                    </td>
+                    <td class="item"><span class="label">Affectation</span><span class="value"><?= $affectLabel ?></span></td>
+                </tr>
                 <?php if ($calc['report_debiteur'] > 0): ?>
-                <div class="item">
-                    <span class="label">Report a nouveau debiteur anterieur</span>
-                    <span class="value badge-danger">-<?= $rsFmt($calc['report_debiteur']) ?> DH</span>
-                </div>
+                <tr>
+                    <td class="item" colspan="2">
+                        <span class="label">Report a nouveau debiteur anterieur</span>
+                        <span class="value badge-danger">-<?= $rsFmt($calc['report_debiteur']) ?> DH</span>
+                    </td>
+                </tr>
                 <?php endif; ?>
                 <?php if ($calc['RL_dotation'] > 0): ?>
-                <div class="item"><span class="label">Dotation reserve legale (5%)</span><span class="value"><?= $rsFmt($calc['RL_dotation']) ?> DH</span></div>
-                <?php endif; ?>
+                <tr>
+                    <td class="item<?= $calc['reserve_statutaire'] > 0 ? '' : ' full' ?>"<?= $calc['reserve_statutaire'] > 0 ? '' : ' colspan="2"' ?>><span class="label">Dotation reserve legale (5%)</span><span class="value"><?= $rsFmt($calc['RL_dotation']) ?> DH</span></td>
                 <?php if ($calc['reserve_statutaire'] > 0): ?>
-                <div class="item"><span class="label">Dotation reserve statutaire</span><span class="value"><?= $rsFmt($calc['reserve_statutaire']) ?> DH</span></div>
+                    <td class="item"><span class="label">Dotation reserve statutaire</span><span class="value"><?= $rsFmt($calc['reserve_statutaire']) ?> DH</span></td>
+                <?php endif; ?>
+                </tr>
                 <?php endif; ?>
                 <?php if ($calc['reserve_facultative'] > 0): ?>
-                <div class="item"><span class="label">Dotation reserve facultative</span><span class="value"><?= $rsFmt($calc['reserve_facultative']) ?> DH</span></div>
+                <tr>
+                    <td class="item"><span class="label">Dotation reserve facultative</span><span class="value"><?= $rsFmt($calc['reserve_facultative']) ?> DH</span></td>
+                </tr>
                 <?php endif; ?>
                 <?php if ($calc['dividende_brut'] > 0): ?>
-                <div class="item"><span class="label">Dividende brut</span><span class="value"><?= $rsFmt($calc['dividende_brut']) ?> DH</span></div>
-                <div class="item"><span class="label">TPA (10%)</span><span class="value"><?= $rsFmt($calc['tpa']) ?> DH</span></div>
-                <div class="item"><span class="label">Dividende net</span><span class="value"><?= $rsFmt($calc['dividende_net']) ?> DH</span></div>
+                <tr>
+                    <td class="item"><span class="label">Dividende brut</span><span class="value"><?= $rsFmt($calc['dividende_brut']) ?> DH</span></td>
+                    <td class="item"><span class="label">TPA (10%)</span><span class="value"><?= $rsFmt($calc['tpa']) ?> DH</span></td>
+                </tr>
+                <tr>
+                    <td class="item"><span class="label">Dividende net</span><span class="value"><?= $rsFmt($calc['dividende_net']) ?> DH</span></td>
+                </tr>
                 <?php endif; ?>
                 <?php if ($calc['perte_prelevement'] > 0): ?>
-                <div class="item"><span class="label">Prelevement sur reserves</span><span class="value"><?= $rsFmt($calc['perte_prelevement']) ?> DH</span></div>
+                <tr>
+                    <td class="item"><span class="label">Prelevement sur reserves</span><span class="value"><?= $rsFmt($calc['perte_prelevement']) ?> DH</span></td>
+                </tr>
                 <?php endif; ?>
-                <div class="item">
-                    <span class="label">Report a nouveau final</span>
-                    <span class="value <?= $calc['report_nouveau'] >= 0 ? 'badge-success' : 'badge-danger' ?>"><?= $reportFinal ?></span>
-                </div>
-            </div>
+                <tr>
+                    <td class="item">
+                        <span class="label">Report a nouveau final</span>
+                        <span class="value <?= $calc['report_nouveau'] >= 0 ? 'badge-success' : 'badge-danger' ?>"><?= $reportFinal ?></span>
+                    </td>
+                </tr>
+            </table>
         </div>
 
         <div class="recap-section">

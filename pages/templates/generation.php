@@ -147,7 +147,7 @@ if (is_post() && !isset($_POST['delete_submit']) && !isset($_POST['validate_subm
         try {
             $renderer = new DocumentRenderer($path, $outputDir);
 
-            $base = $forme . '_' . $today . '_' . $docType . '_' . $clientName;
+            $base = $today . '_' . $docType . '_' . $clientName . '_' . $forme;
             $outName = $base . '_Brouillon.docx';
             $docxPath = $renderer->render($context, $outName);
 

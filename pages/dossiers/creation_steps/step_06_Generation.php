@@ -287,7 +287,7 @@ if (is_post() && $step === 6) {
                 } elseif (count($parts) === 3) {
                     $docType = preg_replace('/_?Template$/i', '', $parts[1]);
                 }
-                $base = $sanitizedForme . '_' . $today . '_' . $docType . '_' . $clientName;
+                $base = $today . '_' . $docType . '_' . $clientName . '_' . $sanitizedForme;
                 $outName = $base . '_Brouillon.docx';
                 $docxPath = $renderer->render($context, $outName);
 
@@ -311,7 +311,7 @@ if (is_post() && $step === 6) {
                 $insertDocStmt = $pdo->prepare('INSERT INTO documents_generes (societe_id, template_source, doc_type, fichier_docx, fichier_pdf, taille_ko) VALUES (:societe_id, :template_source, :doc_type, :fichier_docx, :fichier_pdf, :taille_ko)');
                 foreach ($generatedFiles as $gf) {
                     $parts = explode('_', basename((string) $gf['name']));
-                    $docType = $parts[2] ?? null;
+                    $docType = $parts[1] ?? null;
                     $insertDocStmt->execute([
                         'societe_id' => $societeId,
                         'template_source' => null,
@@ -371,7 +371,7 @@ if (is_post() && $step === 6) {
             } elseif (count($parts) === 3) {
                 $docType = preg_replace('/_?Template$/i', '', $parts[1]);
             }
-            $base = $forme . '_' . $today . '_' . $docType . '_' . $clientName;
+            $base = $today . '_' . $docType . '_' . $clientName . '_' . $forme;
             $outName = $base . '_Brouillon.docx';
             $docxPath = $renderer->render($context, $outName);
 
@@ -384,7 +384,7 @@ if (is_post() && $step === 6) {
             $societeId = $wizard['societe_id'] ?? null;
             if ($societeId && ($pdo ?? null) instanceof PDO) {
                 $p2 = explode('_', $outName);
-                $dt = $p2[2] ?? null;
+                $dt = $p2[1] ?? null;
                 $ins = $pdo->prepare('INSERT INTO documents_generes (societe_id, template_source, doc_type, fichier_docx, fichier_pdf, taille_ko) VALUES (:societe_id, :template_source, :doc_type, :fichier_docx, :fichier_pdf, :taille_ko)');
                 $ins->execute([
                     'societe_id' => $societeId,

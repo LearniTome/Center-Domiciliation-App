@@ -84,7 +84,7 @@ if (is_post() && isset($_POST['generate_pv_ago'])) {
             set_flash('error', 'Aucun template PV-AGO trouve dans templates/_PV_AGO/. Ajoutez un fichier *PV-AGO*_Template.docx.');
             redirect_to('pv_ago', ['id' => $genId]);
         }
-        $outName = $sanitizedForme . '_' . $today . '_PV-AGO_' . $clientName . '.docx';
+        $outName = $today . '_PV-AGO_' . $clientName . '_' . $sanitizedForme . '.docx';
         try {
             $renderer = new DocumentRenderer($matches[0], $outputDir);
             $docxPath = $renderer->render($context, $outName);

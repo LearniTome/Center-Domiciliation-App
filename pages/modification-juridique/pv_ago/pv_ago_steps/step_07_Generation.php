@@ -154,7 +154,7 @@ if (is_post() && $step === 7) {
             redirect_to('pv_ago_wizard', ['step' => 7]);
         }
 
-        $outName = $sanitizedForme . '_' . $today . '_PV-AGO_' . $clientName . '.docx';
+        $outName = $today . '_PV-AGO_' . $clientName . '_' . $sanitizedForme . '.docx';
         try {
             $renderer = new DocumentRenderer($matches[0], $outputDir);
             $docxPath = $renderer->render($context, $outName);

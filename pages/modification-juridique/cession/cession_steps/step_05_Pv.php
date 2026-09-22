@@ -262,22 +262,32 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
         </div>
 
         <div class="recap-section">
-            <div class="recap-grid">
-                <div class="item"><span class="label">Dénomination sociale</span><span class="value"><?= e($socData['societe_raison_sociale'] ?: '-') ?></span></div>
-                <div class="item"><span class="label">Forme juridique</span><span class="value"><?= e($socData['societe_forme_juridique'] ?: '-') ?></span></div>
-                <div class="item"><span class="label">Capital social</span><span class="value"><?= e(number_format($totalCapital, 2, ',', ' ')) ?> DH</span></div>
-                <div class="item"><span class="label">Siège social</span><span class="value"><?= e($socData['societe_adresse_siege'] ?: $socData['societe_ville'] ?: '-') ?></span></div>
-                <div class="item"><span class="label">RC</span><span class="value"><?= e($socData['societe_rc'] ?: '-') ?> — Tribunal de <?= e($socData['societe_ville'] ?: '-') ?></span></div>
-            </div>
+            <table class="recap-grid">
+                <tr>
+                    <td class="item"><span class="label">Dénomination sociale</span><span class="value"><?= e($socData['societe_raison_sociale'] ?: '-') ?></span></td>
+                    <td class="item"><span class="label">Forme juridique</span><span class="value"><?= e($socData['societe_forme_juridique'] ?: '-') ?></span></td>
+                </tr>
+                <tr>
+                    <td class="item"><span class="label">Capital social</span><span class="value"><?= e(number_format($totalCapital, 2, ',', ' ')) ?> DH</span></td>
+                    <td class="item"><span class="label">Siège social</span><span class="value"><?= e($socData['societe_adresse_siege'] ?: $socData['societe_ville'] ?: '-') ?></span></td>
+                </tr>
+                <tr>
+                    <td class="item"><span class="label">RC</span><span class="value"><?= e($socData['societe_rc'] ?: '-') ?> — Tribunal de <?= e($socData['societe_ville'] ?: '-') ?></span></td>
+                </tr>
+            </table>
         </div>
 
         <div class="recap-section">
             <h3><?= $pvTitleFull ?></h3>
-            <div class="recap-grid">
-                <div class="item"><span class="label">Date</span><span class="value"><?= e(format_date($wizard['cession_date'] ?: date('Y-m-d'))) ?></span></div>
-                <div class="item"><span class="label">Lieu</span><span class="value"><?= e($socData['societe_ville'] ?: $socData['societe_adresse_siege'] ?: '-') ?></span></div>
-                <div class="item"><span class="label">Président de séance</span><span class="value"><?= e($cedantNom ?: '-') ?></span></div>
-            </div>
+            <table class="recap-grid">
+                <tr>
+                    <td class="item"><span class="label">Date</span><span class="value"><?= e(format_date($wizard['cession_date'] ?: date('Y-m-d'))) ?></span></td>
+                    <td class="item"><span class="label">Lieu</span><span class="value"><?= e($socData['societe_ville'] ?: $socData['societe_adresse_siege'] ?: '-') ?></span></td>
+                </tr>
+                <tr>
+                    <td class="item"><span class="label">Président de séance</span><span class="value"><?= e($cedantNom ?: '-') ?></span></td>
+                </tr>
+            </table>
         </div>
 
         <div class="recap-section">
@@ -420,9 +430,11 @@ $viewMode = $_GET['pv_view'] ?? 'edit';
         <div class="recap-section">
             <h3>Clôture de la séance</h3>
             <p>Plus rien n'étant à l'ordre du jour, la séance est levée.</p>
-            <div class="recap-grid" style="margin-top:1rem">
-                <div class="item"><span class="label">Fait à</span><span class="value"><?= e($socData['societe_ville'] ?: '-') ?>, le <?= e(format_date($wizard['cession_date'] ?: date('Y-m-d'))) ?></span></div>
-            </div>
+            <table class="recap-grid" style="margin-top:1rem">
+                <tr>
+                    <td class="item"><span class="label">Fait à</span><span class="value"><?= e($socData['societe_ville'] ?: '-') ?>, le <?= e(format_date($wizard['cession_date'] ?: date('Y-m-d'))) ?></span></td>
+                </tr>
+            </table>
             <p style="margin-top:1.5rem"><strong><?= $isSarlAu ? "L'Associé Unique" : "Les Associés" ?></strong></p>
             <p><?= e($cedantNom) ?></p>
         </div>

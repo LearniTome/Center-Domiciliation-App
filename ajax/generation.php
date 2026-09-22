@@ -81,7 +81,7 @@ if ($action === 'generate_docx') {
                 exit;
             }
         }
-        $base = $forme . '_' . $today . '_' . $docType . '_' . $clientName;
+        $base = $today . '_' . $docType . '_' . $clientName . '_' . $forme;
         $outName = $base . '_Brouillon.docx';
         $docxPath = $renderer->render($context, $outName);
 

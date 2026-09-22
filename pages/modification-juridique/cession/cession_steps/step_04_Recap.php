@@ -40,17 +40,27 @@ if ($step === 3):
 
                 <div class="recap-section">
                     <h3>Societe</h3>
-                    <div class="recap-grid">
-                        <div class="item"><span class="label">Raison sociale</span><span class="value"><?= e($socData['societe_raison_sociale'] ?: '-') ?></span></div>
-                        <div class="item"><span class="label">Forme juridique</span><span class="value"><?= e($socData['societe_forme_juridique'] ?: '-') ?></span></div>
-                        <div class="item"><span class="label">ICE</span><span class="value"><?= e($socData['societe_ice'] ?: '-') ?></span></div>
-                        <div class="item"><span class="label">Capital</span><span class="value"><?= e($socData['societe_capital'] ? number_format((float) $socData['societe_capital'], 2, ',', ' ') : '-') ?> DH</span></div>
-                        <div class="item"><span class="label">Nombre de parts</span><span class="value"><?= e((string) ($socData['societe_part_social'] ?: '-')) ?></span></div>
-                        <div class="item"><span class="label">Ville</span><span class="value"><?= e($socData['societe_ville'] ?: '-') ?></span></div>
-                        <div class="item"><span class="label">Tribunal</span><span class="value"><?= e($socData['societe_tribunal'] ?: '-') ?></span></div>
-                        <div class="item"><span class="label">Email</span><span class="value"><?= e($socData['societe_email'] ?: '-') ?></span></div>
-                        <div class="item full"><span class="label">Adresse</span><span class="value"><?= e($socData['societe_adresse_siege'] ?: '-') ?></span></div>
-                    </div>
+                    <table class="recap-grid">
+                        <tr>
+                            <td class="item"><span class="label">Raison sociale</span><span class="value"><?= e($socData['societe_raison_sociale'] ?: '-') ?></span></td>
+                            <td class="item"><span class="label">Forme juridique</span><span class="value"><?= e($socData['societe_forme_juridique'] ?: '-') ?></span></td>
+                        </tr>
+                        <tr>
+                            <td class="item"><span class="label">ICE</span><span class="value"><?= e($socData['societe_ice'] ?: '-') ?></span></td>
+                            <td class="item"><span class="label">Capital</span><span class="value"><?= e($socData['societe_capital'] ? number_format((float) $socData['societe_capital'], 2, ',', ' ') : '-') ?> DH</span></td>
+                        </tr>
+                        <tr>
+                            <td class="item"><span class="label">Nombre de parts</span><span class="value"><?= e((string) ($socData['societe_part_social'] ?: '-')) ?></span></td>
+                            <td class="item"><span class="label">Ville</span><span class="value"><?= e($socData['societe_ville'] ?: '-') ?></span></td>
+                        </tr>
+                        <tr>
+                            <td class="item"><span class="label">Tribunal</span><span class="value"><?= e($socData['societe_tribunal'] ?: '-') ?></span></td>
+                            <td class="item"><span class="label">Email</span><span class="value"><?= e($socData['societe_email'] ?: '-') ?></span></td>
+                        </tr>
+                        <tr>
+                            <td class="item full" colspan="2"><span class="label">Adresse</span><span class="value"><?= e($socData['societe_adresse_siege'] ?: '-') ?></span></td>
+                        </tr>
+                    </table>
                 </div>
 
                 <div class="recap-section">
@@ -84,20 +94,32 @@ if ($step === 3):
                                 Associe n°<?= $i + 1 ?> — <?= e($assoc['associe_civilite'] ?? '') ?> <?= e($assoc['associe_nom_complet'] ?: '') ?>
                                 <?= !empty($roleBadges) ? ' ' . implode(' ', $roleBadges) : '' ?>
                             </div>
-                            <div class="recap-grid">
-                                <span class="item"><span class="label">CIN</span><span class="value" style="font-family:monospace"><?= e($assoc['associe_cin'] ?: '-') ?></span></span>
-                                <span class="item"><span class="label">Date naissance</span><span class="value"><?= !empty($assoc['associe_date_naissance']) ? e(date('d/m/Y', strtotime($assoc['associe_date_naissance']))) : '-' ?></span></span>
-                                <span class="item"><span class="label">Lieu naissance</span><span class="value"><?= e($assoc['associe_lieu_naissance'] ?? '-') ?></span></span>
-                                <span class="item"><span class="label">Nationalite</span><span class="value"><?= e($assoc['associe_nationalite'] ?? '-') ?></span></span>
-                                <span class="item"><span class="label">Telephone</span><span class="value"><?= e($assoc['associe_telephone'] ?? '-') ?></span></span>
-                                <span class="item"><span class="label">Email</span><span class="value"><?= e($assoc['associe_email'] ?? '-') ?></span></span>
-                                <span class="item"><span class="label">Adresse</span><span class="value"><?= e($assoc['associe_adresse'] ?? '-') ?></span></span>
-                                <span class="item"><span class="label">Qualite</span><span class="value"><?= e($assoc['associe_qualite'] ?: '-') ?></span></span>
-                                <span class="item"><span class="label">Parts</span><span class="value"><?= $parts ? number_format($parts, 0, ',', ' ') : '-' ?></span></span>
-                                <span class="item"><span class="label">Capital detenu</span><span class="value"><?= $capital ? number_format($capital, 2, ',', ' ') . ' DH' : '-' ?></span></span>
-                                <span class="item"><span class="label">% capital</span><span class="value"><?= $pct > 0 ? number_format($pct, 1, ',', ' ') . '%' : '-' ?></span></span>
-                                <span class="item"><span class="label">Gerant</span><span class="value"><?= ((string) ($assoc['associe_est_gerant'] ?? '0') === '1') ? 'Oui' : 'Non' ?></span></span>
-                            </div>
+                            <table class="recap-grid">
+                                <tr>
+                                    <td class="item"><span class="label">CIN</span><span class="value" style="font-family:monospace"><?= e($assoc['associe_cin'] ?: '-') ?></span></td>
+                                    <td class="item"><span class="label">Date naissance</span><span class="value"><?= !empty($assoc['associe_date_naissance']) ? e(date('d/m/Y', strtotime($assoc['associe_date_naissance']))) : '-' ?></span></td>
+                                </tr>
+                                <tr>
+                                    <td class="item"><span class="label">Lieu naissance</span><span class="value"><?= e($assoc['associe_lieu_naissance'] ?? '-') ?></span></td>
+                                    <td class="item"><span class="label">Nationalite</span><span class="value"><?= e($assoc['associe_nationalite'] ?? '-') ?></span></td>
+                                </tr>
+                                <tr>
+                                    <td class="item"><span class="label">Telephone</span><span class="value"><?= e($assoc['associe_telephone'] ?? '-') ?></span></td>
+                                    <td class="item"><span class="label">Email</span><span class="value"><?= e($assoc['associe_email'] ?? '-') ?></span></td>
+                                </tr>
+                                <tr>
+                                    <td class="item"><span class="label">Adresse</span><span class="value"><?= e($assoc['associe_adresse'] ?? '-') ?></span></td>
+                                    <td class="item"><span class="label">Qualite</span><span class="value"><?= e($assoc['associe_qualite'] ?: '-') ?></span></td>
+                                </tr>
+                                <tr>
+                                    <td class="item"><span class="label">Parts</span><span class="value"><?= $parts ? number_format($parts, 0, ',', ' ') : '-' ?></span></td>
+                                    <td class="item"><span class="label">Capital detenu</span><span class="value"><?= $capital ? number_format($capital, 2, ',', ' ') . ' DH' : '-' ?></span></td>
+                                </tr>
+                                <tr>
+                                    <td class="item"><span class="label">% capital</span><span class="value"><?= $pct > 0 ? number_format($pct, 1, ',', ' ') . '%' : '-' ?></span></td>
+                                    <td class="item"><span class="label">Gerant</span><span class="value"><?= ((string) ($assoc['associe_est_gerant'] ?? '0') === '1') ? 'Oui' : 'Non' ?></span></td>
+                                </tr>
+                            </table>
                         </div>
                         <?php endforeach; ?>
 
@@ -135,19 +157,31 @@ if ($step === 3):
                                 <?= e($cp['civilite']) ?> <?= e($cp['nom']) ?>
                                 <span class="badge" style="background:var(--success);color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:3px">Cessionnaire</span>
                             </div>
-                            <div class="recap-grid">
-                                <span class="item"><span class="label">CIN</span><span class="value" style="font-family:monospace"><?= e($cp['cin'] ?: '-') ?></span></span>
-                                <span class="item"><span class="label">Date naissance</span><span class="value"><?= !empty($cp['date_naissance']) ? e(date('d/m/Y', strtotime($cp['date_naissance']))) : '-' ?></span></span>
-                                <span class="item"><span class="label">Lieu naissance</span><span class="value"><?= e($cp['lieu_naissance'] ?: '-') ?></span></span>
-                                <span class="item"><span class="label">Nationalite</span><span class="value"><?= e($cp['nationalite'] ?: '-') ?></span></span>
-                                <span class="item"><span class="label">Telephone</span><span class="value"><?= e($cp['telephone'] ?: '-') ?></span></span>
-                                <span class="item"><span class="label">Email</span><span class="value"><?= e($cp['email'] ?: '-') ?></span></span>
-                                <span class="item"><span class="label">Adresse</span><span class="value"><?= e($cp['adresse'] ?: '-') ?></span></span>
-                                <span class="item"><span class="label">Qualite</span><span class="value"><?= e($cp['qualite'] ?: '-') ?></span></span>
-                                <span class="item"><span class="label">Parts</span><span class="value"><?= $cp['parts'] > 0 ? number_format((int) $cp['parts'], 0, ',', ' ') : '-' ?></span></span>
-                                <span class="item"><span class="label">Capital detenu</span><span class="value"><?= (float) $cp['capital_detenu'] > 0 ? number_format((float) $cp['capital_detenu'], 2, ',', ' ') . ' DH' : '-' ?></span></span>
-                                <span class="item"><span class="label">Gerant</span><span class="value"><?= !empty($cp['est_gerant']) ? 'Oui' : 'Non' ?></span></span>
-                            </div>
+                            <table class="recap-grid">
+                                <tr>
+                                    <td class="item"><span class="label">CIN</span><span class="value" style="font-family:monospace"><?= e($cp['cin'] ?: '-') ?></span></td>
+                                    <td class="item"><span class="label">Date naissance</span><span class="value"><?= !empty($cp['date_naissance']) ? e(date('d/m/Y', strtotime($cp['date_naissance']))) : '-' ?></span></td>
+                                </tr>
+                                <tr>
+                                    <td class="item"><span class="label">Lieu naissance</span><span class="value"><?= e($cp['lieu_naissance'] ?: '-') ?></span></td>
+                                    <td class="item"><span class="label">Nationalite</span><span class="value"><?= e($cp['nationalite'] ?: '-') ?></span></td>
+                                </tr>
+                                <tr>
+                                    <td class="item"><span class="label">Telephone</span><span class="value"><?= e($cp['telephone'] ?: '-') ?></span></td>
+                                    <td class="item"><span class="label">Email</span><span class="value"><?= e($cp['email'] ?: '-') ?></span></td>
+                                </tr>
+                                <tr>
+                                    <td class="item"><span class="label">Adresse</span><span class="value"><?= e($cp['adresse'] ?: '-') ?></span></td>
+                                    <td class="item"><span class="label">Qualite</span><span class="value"><?= e($cp['qualite'] ?: '-') ?></span></td>
+                                </tr>
+                                <tr>
+                                    <td class="item"><span class="label">Parts</span><span class="value"><?= $cp['parts'] > 0 ? number_format((int) $cp['parts'], 0, ',', ' ') : '-' ?></span></td>
+                                    <td class="item"><span class="label">Capital detenu</span><span class="value"><?= (float) $cp['capital_detenu'] > 0 ? number_format((float) $cp['capital_detenu'], 2, ',', ' ') . ' DH' : '-' ?></span></td>
+                                </tr>
+                                <tr>
+                                    <td class="item"><span class="label">Gerant</span><span class="value"><?= !empty($cp['est_gerant']) ? 'Oui' : 'Non' ?></span></td>
+                                </tr>
+                            </table>
                         </div>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -278,16 +312,18 @@ if ($step === 3):
                     </table>
                     </div>
 
-                    <div class="recap-grid" style="margin-top:0.75rem;grid-template-columns:1fr 1fr">
-                        <div class="capital-card">
-                            <span class="label">Avant cession</span>
-                            <span class="value"><strong>Capital :</strong> <?= e(number_format($totalCapital, 2, ',', ' ') . ' DH') ?> &mdash; <strong>Parts :</strong> <?= $totalParts ?></span>
-                        </div>
-                        <div class="capital-card">
-                            <span class="label">Apres cession</span>
-                            <span class="value"><strong>Capital :</strong> <?= e(number_format($totalCapital, 2, ',', ' ') . ' DH') ?> &mdash; <strong>Parts :</strong> <?= $totalParts ?></span>
-                        </div>
-                    </div>
+                    <table class="recap-grid">
+                        <tr>
+                            <td class="capital-card">
+                                <span class="label">Avant cession</span>
+                                <span class="value"><strong>Capital :</strong> <?= e(number_format($totalCapital, 2, ',', ' ') . ' DH') ?> &mdash; <strong>Parts :</strong> <?= $totalParts ?></span>
+                            </td>
+                            <td class="capital-card">
+                                <span class="label">Apres cession</span>
+                                <span class="value"><strong>Capital :</strong> <?= e(number_format($totalCapital, 2, ',', ' ') . ' DH') ?> &mdash; <strong>Parts :</strong> <?= $totalParts ?></span>
+                            </td>
+                        </tr>
+                    </table>
                 </div>
             </div>
 

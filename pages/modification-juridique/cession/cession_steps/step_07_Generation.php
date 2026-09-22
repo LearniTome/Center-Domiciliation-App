@@ -247,7 +247,7 @@ $stmt->execute([
 
                 $existingFiles = [];
                 foreach (['Acte-Cession-Parts', 'PV-AGE-Cession', 'Declaration-Modificative-RC', 'Annonce-Legale-Cession'] as $dt) {
-                    $f = $outputDir . '/' . $sanitizedForme . '_' . $today . '_' . $dt . '_' . $clientName . '.docx';
+                    $f = $outputDir . '/' . $today . '_' . $dt . '_' . $clientName . '_' . $sanitizedForme . '.docx';
                     if (file_exists($f)) {
                         $existingFiles[] = basename($f);
                     }
@@ -306,7 +306,7 @@ $stmt->execute([
             if (!is_dir($outputDir)) mkdir($outputDir, 0777, true);
 
             $sanitizedForme = str_replace(' ', '_', $forme);
-            $outName = $sanitizedForme . '_' . $today . '_' . $docType . '_' . $clientName . '.docx';
+            $outName = $today . '_' . $docType . '_' . $clientName . '_' . $sanitizedForme . '.docx';
 
             if (file_exists(__DIR__ . '/../../../../vendor/autoload.php')) {
                 require_once __DIR__ . '/../../../../vendor/autoload.php';
@@ -515,7 +515,7 @@ $stmt->execute([
         $existingFiles = [];
         foreach ($mapping as $docType) {
             if (!in_array($docType, $selectedDocs, true)) continue;
-            $outName = $sanitizedForme . '_' . $today . '_' . $docType . '_' . $clientName . '.docx';
+            $outName = $today . '_' . $docType . '_' . $clientName . '_' . $sanitizedForme . '.docx';
             $outPath = $outputDir . '/' . $outName;
             if (file_exists($outPath)) {
                 $existingFiles[] = basename($outPath);
@@ -538,7 +538,7 @@ $stmt->execute([
             if (empty($matches)) continue;
             try {
                 $renderer = new DocumentRenderer($matches[0], $outputDir);
-                $outName = $sanitizedForme . '_' . $today . '_' . $docType . '_' . $clientName . '.docx';
+                $outName = $today . '_' . $docType . '_' . $clientName . '_' . $sanitizedForme . '.docx';
                 $docxPath = $renderer->render($context, $outName);
                 $pdfPath = $renderer->tryConvertToPdf($docxPath);
 
