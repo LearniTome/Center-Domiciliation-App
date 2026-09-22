@@ -130,6 +130,7 @@ $actionIcons = [
     'ai_suggest' => 'smart_toy',
 ];
 ?>
+<?php require __DIR__ . '/../../includes/config_tabs.php'; render_config_tabs('activite'); ?>
 <section class="stats">
     <article class="stat">
         <span class="stat-value"><?= $totalToday ?? 0 ?></span>

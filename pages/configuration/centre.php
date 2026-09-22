@@ -142,6 +142,7 @@ if (is_post()) {
     redirect_to('centre');
 }
 ?>
+<?php require __DIR__ . '/../../includes/config_tabs.php'; render_config_tabs('centre'); ?>
 <section class="card stack">
     <div class="section-header">
         <div>

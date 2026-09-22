@@ -95,6 +95,7 @@ if ($pdo) {
     $totalCount = $pdo->query('SELECT COUNT(*) FROM notifications')->fetchColumn();
 }
 ?>
+<?php require __DIR__ . '/../../includes/config_tabs.php'; render_config_tabs('notifications-manage'); ?>
 <section>
     <div class="section-header" style="margin-bottom:1rem;">
         <div class="table-actions">

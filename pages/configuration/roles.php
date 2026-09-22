@@ -35,6 +35,7 @@ $internes = array_filter($roles, fn($r) => (int) ($r['is_internal'] ?? 0));
 $externes = array_filter($roles, fn($r) => !(int) ($r['is_internal'] ?? 0));
 $totalAvecCompte = array_reduce($roles, fn($c, $r) => $c + (int) ($r['nb_collaborateurs'] ?? 0), 0);
 ?>
+<?php require __DIR__ . '/../../includes/config_tabs.php'; render_config_tabs('roles'); ?>
 <section class="stack">
     <div class="section-header">
         <p class="help-text"><?= count($roles) ?> roles — <?= $totalAvecCompte ?> collaborateur(s) assigne(s)</p>

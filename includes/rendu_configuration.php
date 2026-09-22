@@ -219,6 +219,7 @@ if (is_post()) {
     }
 }
 ?>
+<?php require_once __DIR__ . '/config_tabs.php'; render_config_tabs($tabOfCurrentPage ?? $tab); ?>
 <section class="card stack">
     <div class="section-header">
         <div>

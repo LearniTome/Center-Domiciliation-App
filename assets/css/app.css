@@ -3402,6 +3402,55 @@ tr[data-coverage], .row-mapped {
 section.stack > .section-title-row { margin-top: 0.25rem; }
 
 /* ==========================================
+   Onglets configuration 2 niveaux (config_tabs.php)
+   ========================================== */
+.config-tabs {
+    display: flex;
+    flex-direction: column;
+    flex: 0 0 auto;
+    margin-bottom: 1rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--panel);
+    overflow: hidden;
+}
+.config-tabs-level {
+    display: flex;
+    gap: 2px;
+    padding: 5px;
+}
+.config-tabs-level-1 {
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+}
+.config-tabs-level-2 {
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+}
+.config-tabs-level-2:last-child { border-bottom: 0; }
+.config-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 7px 14px;
+    border-radius: calc(var(--radius-sm) + 1px);
+    color: var(--text-secondary);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background var(--transition), color var(--transition);
+    white-space: nowrap;
+}
+.config-tab:hover { background: rgba(74, 108, 247, 0.08); color: var(--text); }
+.config-tab.active {
+    background: var(--primary);
+    color: #fff;
+}
+.config-tab.active:hover { background: var(--primary); color: #fff; }
+.config-tabs-level-1 .config-tab { padding: 8px 16px; font-weight: 600; }
+
+
+/* ==========================================
    Recap A4 (creation.php step 4-5)
    ========================================== */
 .recap-a4 {

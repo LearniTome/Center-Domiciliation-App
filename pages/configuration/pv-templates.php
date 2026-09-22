@@ -65,6 +65,7 @@ if (is_post()) {
 $editId = int_value($_GET, 'edit');
 $categories = ['cession' => 'Cession de parts', 'general' => 'Général'];
 ?>
+<?php require_once __DIR__ . '/../../includes/config_tabs.php'; render_config_tabs('pv-templates'); ?>
 <style>
 .pv-tpl-textarea { font-family:monospace;font-size:0.8rem; }
 .pv-tpl-content-preview { font-size:0.78rem;color:var(--text-secondary);max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
