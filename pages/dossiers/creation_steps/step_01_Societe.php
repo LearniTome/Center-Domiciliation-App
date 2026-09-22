@@ -339,4 +339,31 @@ $quickCreateFields = [
 ];
 require __DIR__ . '/../../../includes/quick_create_modal.php';
 ?>
+
+<!-- Modal moderne : nouvelle activite OMPIC (certificat negatif) -->
+<div class="modal-overlay" data-modal="add-activite-cn" role="dialog" aria-modal="true" aria-labelledby="add-activite-cn-title">
+    <div class="modal-panel" style="max-width:520px">
+        <div class="modal-header">
+            <h3 id="add-activite-cn-title"><span class="material-symbols-outlined" style="vertical-align:-4px;color:var(--info)">add_circle</span> Nouvelle activite OMPIC</h3>
+            <button class="btn-icon" data-modal-close type="button" title="Fermer"><span class="material-symbols-outlined">close</span></button>
+        </div>
+        <form data-add-activite-cn-form>
+            <?= csrf_input() ?>
+            <div class="form-grid">
+                <label class="field">
+                    <span>Code OMPIC</span>
+                    <input type="text" name="ompic_code" required placeholder="ex : 4711B" autocomplete="off">
+                </label>
+                <label class="field full">
+                    <span>Libelle</span>
+                    <input type="text" name="nma_libelle" required placeholder="ex : Commerce de detail alimentaire" autocomplete="off">
+                </label>
+            </div>
+            <div class="form-actions" style="margin-top:1rem;display:flex;gap:8px;justify-content:flex-end">
+                <button type="button" class="btn btn-cancel" data-modal-close><span class="material-symbols-outlined">close</span> Annuler</button>
+                <button type="submit" class="btn btn-next"><span class="material-symbols-outlined">add</span> Ajouter</button>
+            </div>
+        </form>
+    </div>
+</div>
 <?php endif; ?>

@@ -653,48 +653,84 @@ document.addEventListener('input', (e) => {
 })();
 
 (function () {
-    document.querySelectorAll('[data-add-activite-cn]').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            const code = window.prompt('Code OMPIC (ex: 4711B):');
-            if (!code || code.trim() === '') return;
-            const label = window.prompt('Libelle (ex: Commerce de detail alimentaire):');
-            if (!label || label.trim() === '') return;
-            const form = this.closest('form');
-            if (!form) return;
-            const csrf = form.querySelector('input[name="csrf_token"]');
-            if (!csrf) return;
-            const select = form.querySelector('[data-ompic-select]');
-            fetch(window.location.href, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({
-                    csrf_token: csrf.value,
-                    add_activite_ref: '1',
-                    type: 'cert_neg',
-                    new_activite: label.trim(),
-                    ompic_code: code.trim(),
-                    nma_libelle: label.trim()
-                })
+    var modal = document.querySelector('[data-modal="add-activite-cn"]');
+    if (!modal) return;
+    var form = modal.querySelector('[data-add-activite-cn-form]');
+    if (!form) return;
+
+    var openBtn = document.querySelector('[data-add-activite-cn]');
+    var ompicSelect = document.querySelector('[data-ompic-select]');
+    if (!openBtn) return;
+
+    function open() { modal.classList.add('open'); }
+    function close() { modal.classList.remove('open'); form.reset(); }
+
+    openBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        open();
+    });
+
+    modal.querySelectorAll('[data-modal-close]').forEach(function (el) {
+        el.addEventListener('click', close);
+    });
+    modal.addEventListener('click', function (e) {
+        if (e.target === modal) close();
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && modal.classList.contains('open')) close();
+    });
+
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var rootForm = openBtn.closest('form');
+        if (!rootForm) return;
+        var csrf = rootForm.querySelector('input[name="csrf_token"]');
+        if (!csrf) return;
+
+        var submitBtn = form.querySelector('button[type="submit"]');
+        var original = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="material-symbols-outlined">hourglass_top</span> Ajout...';
+
+        var code = form.querySelector('[name="ompic_code"]').value.trim();
+        var label = form.querySelector('[name="nma_libelle"]').value.trim();
+
+        fetch(window.location.href, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                csrf_token: csrf.value,
+                add_activite_ref: '1',
+                type: 'cert_neg',
+                new_activite: label,
+                ompic_code: code,
+                nma_libelle: label
             })
-            .then(function (r) { return r.json(); })
-            .then(function (data) {
-                if (data.success && select) {
-                    var display = data.code + ' - ' + data.libelle;
-                    var exists = Array.from(select.options).some(function (o) { return o.value === data.code; });
-                    if (!exists) {
-                        var opt = document.createElement('option');
-                        opt.value = data.code;
-                        opt.textContent = display;
-                        select.appendChild(opt);
-                    }
-                    select.value = data.code;
-                } else {
-                    alert('Erreur lors de l\'ajout de l\'activite.');
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.success && ompicSelect) {
+                var display = data.code + ' - ' + data.libelle;
+                var exists = Array.from(ompicSelect.options).some(function (o) { return o.value === data.code; });
+                if (!exists) {
+                    var opt = document.createElement('option');
+                    opt.value = data.code;
+                    opt.textContent = display;
+                    ompicSelect.appendChild(opt);
                 }
-            })
-            .catch(function () {
-                alert('Erreur de communication avec le serveur.');
-            });
+                ompicSelect.value = data.code;
+                ompicSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                close();
+            } else {
+                alert('Erreur lors de l\'ajout de l\'activite.');
+            }
+        })
+        .catch(function () {
+            alert('Erreur de communication avec le serveur.');
+        })
+        .finally(function () {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = original;
         });
     });
 })();
