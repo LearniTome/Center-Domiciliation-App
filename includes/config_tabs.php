@@ -121,11 +121,10 @@ function render_config_tabs(string $currentPage, ?string $groupOverride = null):
     echo '<nav class="config-tabs" aria-label="Sections de configuration">';
     echo '<div class="config-tabs-level config-tabs-level-2">';
     foreach ($onglets as $page => $meta) {
-        [$label, $icon] = $meta;
+        [$label] = $meta;
         $active = $page === $currentPage ? ' active' : '';
         echo '<a class="config-tab config-tab-onglet' . $active . '" href="' . e(app_url($page)) . '">';
-        echo '<span class="material-symbols-outlined">' . e($icon) . '</span>';
-        echo '<span>' . e($label) . '</span>';
+        echo e($label);
         echo '</a>';
     }
     echo '</div>';

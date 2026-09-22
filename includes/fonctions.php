@@ -667,6 +667,34 @@ function ensure_template_folder(string $folderName): bool
 }
 
 /**
+ * Libellé de section à afficher dans la barre supérieure pour les pages
+ * de configuration (Accès & audit / Entreprise / Référentiels), au lieu
+ * du titre de l'onglet courant.
+ */
+function config_section_title_for_page(string $page): ?string
+{
+    $map = [
+        'roles' => "Accès & audit",
+        'activite' => "Accès & audit",
+        'notifications-manage' => "Accès & audit",
+        'centre' => 'Entreprise',
+        'pv-templates' => 'Entreprise',
+        'formes-juridiques' => 'Référentiels',
+        'tribunaux' => 'Référentiels',
+        'villes' => 'Référentiels',
+        'nationalites' => 'Référentiels',
+        'lieux-naissance' => 'Référentiels',
+        'adresses' => 'Référentiels',
+        'qualites-associe' => 'Référentiels',
+        'fonctions' => 'Référentiels',
+        'activites' => 'Référentiels',
+        'activites-ompic' => 'Référentiels',
+    ];
+
+    return $map[$page] ?? null;
+}
+
+/**
  * Fiche singleton du centre d'affaires (table centre_affaires, id = 1).
  * Retourne un tableau de valeurs par defaut si la table est absente ou vide.
  */

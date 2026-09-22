@@ -217,6 +217,13 @@ if ($page === 'templates') {
 
 $pageTitle = $pageTitleMap[$page] ?? 'Center Domiciliation App';
 
+// Barre supérieure : afficher la section de configuration (Accès & audit /
+// Entreprise / Référentiels) au lieu du titre de l'onglet courant
+$topBarTitle = null;
+if (function_exists('config_section_title_for_page')) {
+    $topBarTitle = config_section_title_for_page($page);
+}
+
 // Titre dynamique du wizard selon le type (Nouvelle creation / Nouvelle domiciliation)
 if ($page === 'creation') {
     $wizardType = $_GET['type'] ?? '';
