@@ -137,25 +137,46 @@ if ($step === 6):
     </form>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 (function(){
     'use strict';
     var btnPdf = document.getElementById('btn-pdf-recap');
     if (!btnPdf) return;
-    btnPdf.addEventListener('click', function(){
+    btnPdf.addEventListener('click', async function(){
         var el = document.getElementById('recap-a4');
         el.classList.add('recap-pdf-mode');
-        var opt = {
-            margin:        [10, 10, 10, 10],
-            filename:      'PV-AGO_<?= e(preg_replace('/[^a-zA-Z0-9]/', '_', strip_tags($socName))) ?>_<?= e(date('Y-m-d')) ?>.pdf',
-            image:         { type: 'jpeg', quality: 0.98 },
-            html2canvas:   { scale: 2, letterRendering: true },
-            jsPDF:         { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-        html2pdf().set(opt).from(el).save().then(function(){
+        try {
+            await document.fonts.ready;
+            var canvas = await window.html2canvas(el, { scale: 2, letterRendering: true, backgroundColor: '#ffffff' });
+            var jsPDF = window.jspdf.jsPDF;
+            var pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+            var margin = 10;
+            var pageW = 210 - margin * 2;
+            var pageH = 297 - margin * 2;
+            var scaleMm = canvas.width / pageW;
+            var fullH = canvas.height / scaleMm;
+            var imgW = canvas.width;
+            var srcY = 0;
+            var y = margin;
+            var first = true;
+            while (true) {
+                var chunkH = Math.min(fullH - (srcY / scaleMm), pageH);
+                var slice = document.createElement('canvas');
+                slice.width = imgW;
+                slice.height = Math.round(chunkH * scaleMm);
+                slice.getContext('2d').drawImage(canvas, 0, srcY, imgW, slice.height, 0, 0, imgW, slice.height);
+                if (!first) { pdf.addPage(); y = margin; }
+                pdf.addImage(slice.toDataURL('image/jpeg', 0.98), 'JPEG', margin, y, pageW, chunkH);
+                srcY += slice.height;
+                if (srcY >= canvas.height) break;
+                first = false;
+            }
+            pdf.save('PV-AGO_<?= e(preg_replace('/[^a-zA-Z0-9]/', '_', strip_tags($socName))) ?>_<?= e(date('Y-m-d')) ?>.pdf');
+        } finally {
             el.classList.remove('recap-pdf-mode');
-        });
+        }
     });
 })();
 </script>

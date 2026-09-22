@@ -55,9 +55,10 @@ if ($aiSuggestions !== null) {
     require __DIR__ . '/step_05_Upload.php';
     require __DIR__ . '/step_06_Generation.php';
     ?>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
-    document.getElementById('btn-pdf-recap')?.addEventListener('click', function () {
+    document.getElementById('btn-pdf-recap')?.addEventListener('click', async function () {
         var element = document.querySelector('.recap-a4');
         if (!element) return;
 
@@ -75,19 +76,38 @@ if ($aiSuggestions !== null) {
         this.innerHTML = '<span class="material-symbols-outlined spin">sync</span> Generation...';
 
         element.classList.add('recap-pdf-mode');
-
-        var opt = {
-            margin:       10,
-            filename:     filename,
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true },
-            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-        html2pdf().set(opt).from(element).save().then(function () {
+        try {
+            await document.fonts.ready;
+            var canvas = await window.html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+            var jsPDF = window.jspdf.jsPDF;
+            var pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+            var margin = 10;
+            var pageW = 210 - margin * 2;
+            var pageH = 297 - margin * 2;
+            var scaleMm = canvas.width / pageW;
+            var fullH = canvas.height / scaleMm;
+            var imgW = canvas.width;
+            var srcY = 0;
+            var y = margin;
+            var first = true;
+            while (true) {
+                var chunkH = Math.min(fullH - (srcY / scaleMm), pageH);
+                var slice = document.createElement('canvas');
+                slice.width = imgW;
+                slice.height = Math.round(chunkH * scaleMm);
+                slice.getContext('2d').drawImage(canvas, 0, srcY, imgW, slice.height, 0, 0, imgW, slice.height);
+                if (!first) { pdf.addPage(); y = margin; }
+                pdf.addImage(slice.toDataURL('image/jpeg', 0.98), 'JPEG', margin, y, pageW, chunkH);
+                srcY += slice.height;
+                if (srcY >= canvas.height) break;
+                first = false;
+            }
+            pdf.save(filename);
+        } finally {
             element.classList.remove('recap-pdf-mode');
             document.getElementById('btn-pdf-recap').disabled = false;
             document.getElementById('btn-pdf-recap').innerHTML = '<span class="material-symbols-outlined">picture_as_pdf</span> Sauvegarder PDF';
-        });
+        }
     });
     </script>
     <script>
