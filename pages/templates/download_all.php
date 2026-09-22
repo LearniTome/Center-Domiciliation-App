@@ -69,7 +69,7 @@ foreach ($docs as $doc) {
     if ($type === 'word' || $type === 'both') {
         $docx = $doc['fichier_docx'] ?? '';
         if ($docx !== '' && file_exists($docx)) {
-            $zip->addFile($docx, $rootFolder . 'Word/' . basename($docx));
+            $zip->addFile($docx, $rootFolder . basename($docx));
             $added++;
         }
     }
@@ -77,6 +77,20 @@ foreach ($docs as $doc) {
         $pdf = $doc['fichier_pdf'] ?? '';
         if ($pdf !== '' && file_exists($pdf)) {
             $zip->addFile($pdf, $rootFolder . 'PDF/' . basename($pdf));
+            $added++;
+        }
+    }
+}
+
+if ($type === 'both') {
+    $stmtUploads = $pdo->prepare('SELECT * FROM uploaded_docs WHERE societe_id = :sid ORDER BY uploaded_at');
+    $stmtUploads->execute(['sid' => $societeId]);
+    $docsUploades = $stmtUploads->fetchAll();
+
+    foreach ($docsUploades as $ud) {
+        $filepath = $ud['filepath'] ?? '';
+        if ($filepath !== '' && file_exists($filepath)) {
+            $zip->addFile($filepath, $rootFolder . 'Uploads/' . basename($filepath));
             $added++;
         }
     }
