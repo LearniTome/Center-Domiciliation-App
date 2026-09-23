@@ -58,7 +58,7 @@ if ($aiSuggestions !== null) {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
-    document.getElementById('btn-pdf-recap')?.addEventListener('click', async function () {
+    document.getElementById('btn-pdf-recap-disabled')?.addEventListener('click', async function () {
         var element = document.querySelector('.recap-a4');
         if (!element) return;
 

@@ -23,7 +23,7 @@ if ($step === 4):
 
     <div class="step-4-controls table-actions" style="margin-bottom:0.75rem">
         <button class="btn btn-info" onclick="window.print()"><span class="material-symbols-outlined">print</span> Imprimer</button>
-        <button class="btn btn-info" id="btn-pdf-recap" data-forme="<?= e($societeData['societe_forme_juridique'] ?? '') ?>" data-raison="<?= e($societeData['societe_raison_sociale'] ?? '') ?>"><span class="material-symbols-outlined">picture_as_pdf</span> Sauvegarder PDF</button>
+        <a class="btn btn-info" id="btn-pdf-recap" href="<?= e(app_url('recap_pdf')) ?>"><span class="material-symbols-outlined">picture_as_pdf</span> Sauvegarder PDF</a>
         <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => 1])) ?>"><span class="material-symbols-outlined">edit</span> Modifier societe</a>
         <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => 2])) ?>"><span class="material-symbols-outlined">edit</span> Modifier associes</a>
         <a class="btn btn-back" href="<?= e(app_url('creation', ['step' => 3])) ?>"><span class="material-symbols-outlined">edit</span> Modifier contrat</a>
@@ -31,7 +31,7 @@ if ($step === 4):
 
     <div class="recap-a4">
         <div class="recap-header">
-            <h2>Recapitulatif du dossier de domiciliation</h2>
+            <h2>Recapitulatif du dossier de <?= (($societeData['societe_type_generation'] ?? '') === 'creation') ? 'creation' : 'domiciliation' ?></h2>
             <p>Dossier n° <?= e($societeData['societe_dossier_domiciliation_number'] ?: '-') ?> — Genere le 18/05/2026</p>
             <?php if (($societeData['societe_type_generation'] ?? '') === 'creation'): ?>
                 <p>Dossier creation n° <?= e($societeData['societe_dossier_creation_number'] ?: '-') ?></p>
