@@ -268,7 +268,6 @@ function generateTestData() {
     return {
         _societe: {
             'societe_raison_sociale': 'SARL ' + randFrom(['ATLAS', 'MAGHREB', 'AL AMAL', 'ATLAS', 'SODIA', 'SOTRA', 'SOTEX', 'SOCIED', 'COTRA', 'INTRA']) + ' ' + randFrom(['TRADING', 'CONSULTING', 'SERVICES', 'GROUP', 'INVEST', 'TECH', 'SOLUTIONS', 'INDUSTRIE', 'DISTRIBUTION', 'INTERNATIONAL']),
-            'societe_type_generation': 'creation',
             'societe_procedure_creation': 'normal',
             'societe_mode_depot': 'depot_physique',
             'societe_date_ice': randDate(2024, 2025),
@@ -379,6 +378,9 @@ document.addEventListener('click', function(event) {
         source = Object.assign({}, data._societe, data._associe, data._contrat);
     }
 
+    var typeGenEl = form.querySelector('[name="societe_type_generation"]');
+    var currentType = typeGenEl ? typeGenEl.value : '';
+
     form.querySelectorAll('input, select, textarea').forEach(function(field) {
         var name = field.getAttribute('name');
         if (!name) return;
@@ -386,6 +388,15 @@ document.addEventListener('click', function(event) {
         var key = name.replace(/^associes\[\d+\]\[(\w+)\]$/, '$1')
                       .replace(/^associe_\w+\[\d+\]$/, '')
                       .replace(/^\w+\[\d+\]$/, '');
+
+        if (name === 'societe_type_generation') return;
+
+        var creationOnly = key === 'societe_procedure_creation'
+            || key === 'societe_mode_depot'
+            || key === 'societe_dossier_creation_number';
+        if (creationOnly && currentType !== 'creation') return;
+
+        if ((key === 'societe_procedure_creation' || key === 'societe_mode_depot') && String(field.value).trim() !== '') return;
 
         var value = source[key];
         if (value === undefined || value === '') return;
