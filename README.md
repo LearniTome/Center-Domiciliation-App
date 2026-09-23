@@ -213,19 +213,7 @@ Application PHP compatible XAMPP pour la gestion des dossiers de domiciliation :
 - **Round-trip DOCX ↔ HTML** — conversion bidirectionnelle preservant la mise en forme (styles inline, tableaux, listes)
 - **Protection CSRF** integree sur tous les formulaires POST
 
-## Deploiement automatique (GitHub Actions)
-
-Un **push sur la branche `main`** declenche automatiquement le workflow **Deploy Heberjahiz**
-(`.github/workflows/deploy-heberjahiz.yml`, ~2 min) :
-
-1. Le code est **zippe** (tout sauf `.git`, `node_modules`, `backups/`, `.env`)
-2. Le zip est envoye en **FTPS** vers l'hebergement (user `centirio`, hote vers `app.centirio.ma`)
-3. Un **extracteur auto-destructeur** dezippe les fichiers dans le document root
-4. Le workflow se termine : l'app est en ligne sur **https://app.centirio.ma**
-
-Aucune action manuelle n'est requise apres un `git push origin main` : le deploy se fait tout seul.
-
-**Pages PDF a verifier apres deploiement** (sortie brute, sans layout HTML) :
+**Pages PDF a sortie brute** (sans layout HTML) :
 
 | Endpoint | URL |
 |----------|-----|
