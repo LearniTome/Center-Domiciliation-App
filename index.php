@@ -139,6 +139,16 @@ if ($page === 'notif-ajax') {
     exit;
 }
 
+// Pages PDF (Dompdf stream) - output brut PDF uniquement, sans layout HTML (meme mecanisme que notif-ajax)
+if (in_array($page, ['suivi_pdf', 'recap_pdf'], true)) {
+    ob_clean();
+    $dir = $pageDir[$page] ?? '';
+    $file = $pageFile[$page] ?? $page;
+    require __DIR__ . '/pages/' . ($dir ? $dir . '/' : '') . $file . '.php';
+    ob_end_flush();
+    exit;
+}
+
 $pageTitleMap = [
     'creation' => 'Nouveau dossier',
     'configuration' => 'Configuration',
