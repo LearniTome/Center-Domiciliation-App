@@ -6,6 +6,7 @@ require_once __DIR__ . '/../includes/amorcage.php';
 require_once __DIR__ . '/../includes/fonctions.php';
 require_once __DIR__ . '/../src/analyseur_templates.php';
 require_once __DIR__ . '/../src/rendu_document.php';
+require_once __DIR__ . '/../src/naming_dossier.php';
 
 if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
     require_once __DIR__ . '/../vendor/autoload.php';
@@ -39,15 +40,38 @@ if ($action === 'generate_docx') {
         $context = DocumentRenderer::buildContextFromDb($pdo, $societeId);
         $forme = $soc['societe_forme_juridique'] ?? 'PP';
         $today = date('Y-m-d');
-        $clientName = trim(preg_replace('/[^a-zA-Z0-9-]/', '-', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $soc['societe_raison_sociale'] ?? 'Client')));
-        $clientName = preg_replace('/-+/', '-', $clientName);
-        $clientName = trim($clientName, '-');
+        $raisonSociale = (string) ($soc['societe_raison_sociale'] ?? '');
         $folderDate = $context['contrat_date'] ?? $today;
-        $folderName = $folderDate . '_' . $forme . '_' . $clientName;
-        $folderName = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', $folderName), '-');
-        // Emplacement selon le type de generation : creation -> dossiers_creation, sinon dossiers_domiciliation
-        $outputRoot = (($soc['societe_type_generation'] ?? '') === 'creation') ? 'dossiers_creation' : 'dossiers_domiciliation';
-        $outputDir = __DIR__ . '/../dossiers_generer/' . $outputRoot . '/' . $folderName;
+
+        // Nommage centralise : le dossier est fige a la premiere generation et
+        // ne bouge plus, meme si la date de contrat ou la raison sociale change.
+        $typeGen = (string) ($soc['societe_type_generation'] ?? '');
+        $racine = __DIR__ . '/..';
+        $dossierBase = DossierNaming::basePourType($typeGen);
+        $numeroDossier = $typeGen === 'creation'
+            ? (string) ($soc['societe_dossier_creation_number'] ?? '')
+            : (string) ($soc['societe_dossier_domiciliation_number'] ?? '');
+
+        $fige = DossierNaming::figerCheminDossier(
+            $pdo ?? null,
+            $societeId,
+            $numeroDossier,
+            DossierNaming::codeCollaborateurDossier($pdo ?? null, $societeId),
+            $raisonSociale,
+            $forme,
+            $dossierBase,
+            $racine
+        );
+
+        if ($fige['path'] === '') {
+            // Pas de base disponible : on calcule sans figer, comme avant.
+            $fige = ['path' => DossierNaming::cheminRelatif(
+                $dossierBase,
+                DossierNaming::nomDossier($numeroDossier, null, $raisonSociale, $forme)
+            )];
+        }
+
+        $outputDir = DossierNaming::cheminAbsolu($racine, $fige['path']);
         if (!is_dir($outputDir)) {
             mkdir($outputDir, 0777, true);
         }
@@ -81,8 +105,10 @@ if ($action === 'generate_docx') {
                 exit;
             }
         }
-        $base = $today . '_' . $docType . '_' . $clientName . '_' . $forme;
-        $outName = $base . '_Brouillon.docx';
+        // La date du document suit la date du dossier (date de contrat), et non
+        // la date du jour : une regeneration ulterieure conserve ainsi le meme
+        // nom de fichier au lieu d'empiler les doublons.
+        $outName = DossierNaming::nomDocument($folderDate, $docType, $raisonSociale, $forme, 'Brouillon');
         $docxPath = $renderer->render($context, $outName);
 
         if ($docxPath && file_exists($docxPath) && ($pdo ?? null) instanceof PDO) {
@@ -128,17 +154,39 @@ if ($action === 'generate_pdf') {
         if (!file_exists($docxPath)) {
             $soc = fetch_record($pdo ?? null, 'societes', $societeId);
             $today = date('Y-m-d');
-            $clientName = trim(preg_replace('/[^a-zA-Z0-9-]/', '-', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $soc['societe_raison_sociale'] ?? 'Client')));
-            $clientName = preg_replace('/-+/', '-', $clientName);
-            $clientName = trim($clientName, '-');
+            $raisonSociale = (string) ($soc['societe_raison_sociale'] ?? '');
             $forme = $soc['societe_forme_juridique'] ?? 'PP';
             $context = DocumentRenderer::buildContextFromDb($pdo, $societeId);
             $folderDate = $context['contrat_date'] ?? $today;
-            $folderName = $folderDate . '_' . $forme . '_' . $clientName;
-            $folderName = trim(preg_replace('/[^a-zA-Z0-9_-]/', '-', $folderName), '-');
-            // Emplacement selon le type de generation : creation -> dossiers_creation, sinon dossiers_domiciliation
-            $pdfRegenRoot = (($soc['societe_type_generation'] ?? '') === 'creation') ? 'dossiers_creation' : 'dossiers_domiciliation';
-            $docxDir = __DIR__ . '/../dossiers_generer/' . $pdfRegenRoot . '/' . $folderName;
+
+            // Le dossier est celui deja fige lors de la generation initiale :
+            // le regenerer ailleurs rendrait les fichiers existants invisibles.
+            $typeGen = (string) ($soc['societe_type_generation'] ?? '');
+            $racine = __DIR__ . '/..';
+            $dossierBase = DossierNaming::basePourType($typeGen);
+            $numeroDossier = $typeGen === 'creation'
+                ? (string) ($soc['societe_dossier_creation_number'] ?? '')
+                : (string) ($soc['societe_dossier_domiciliation_number'] ?? '');
+
+            $fige = DossierNaming::figerCheminDossier(
+                $pdo ?? null,
+                $societeId,
+                $numeroDossier,
+                DossierNaming::codeCollaborateurDossier($pdo ?? null, $societeId),
+                $raisonSociale,
+                $forme,
+                $dossierBase,
+                $racine
+            );
+
+            if ($fige['path'] === '') {
+                $fige = ['path' => DossierNaming::cheminRelatif(
+                    $dossierBase,
+                    DossierNaming::nomDossier($numeroDossier, null, $raisonSociale, $forme)
+                )];
+            }
+
+            $docxDir = DossierNaming::cheminAbsolu($racine, $fige['path']);
             if (!is_dir($docxDir)) {
                 mkdir($docxDir, 0777, true);
             }
