@@ -16,32 +16,19 @@ if (!$soc) {
 }
 
 $typeGen = (string) ($soc['societe_type_generation'] ?? '');
-$typeLabel = $typeGen === 'creation' ? 'Creation' : 'Domiciliation';
 
-$raisonSociale = trim((string) ($soc['societe_raison_sociale'] ?? 'Societe'));
-$formeJuridique = trim((string) ($soc['societe_forme_juridique'] ?? ''));
+// L'archive reproduit le dossier genere tel qu'il existe sur le disque : on
+// reprend le nom fige a la premiere generation plutot que de le recalculer,
+// sinon l'extraction creerait un second dossier au lieu du dossier d'origine.
+$numeroDossier = $typeGen === 'creation'
+    ? (string) ($soc['societe_dossier_creation_number'] ?? '')
+    : (string) ($soc['societe_dossier_domiciliation_number'] ?? '');
 
-function dossier_sanitize(string $str): string
-{
-    $str = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $str);
-    $str = preg_replace('/[^a-zA-Z0-9]+/', '_', $str);
-    $str = trim($str, '_');
-    return $str !== '' ? $str : 'Dossier';
-}
-
-$stmtContrat = $pdo->prepare('SELECT contrat_date FROM contrats WHERE societe_id = :sid ORDER BY id DESC LIMIT 1');
-$stmtContrat->execute(['sid' => $societeId]);
-$contratDate = $stmtContrat->fetchColumn();
-$folderDate = $contratDate ?: date('Y-m-d');
-
-$socSanitized = dossier_sanitize($raisonSociale);
-$formeSanitized = dossier_sanitize($formeJuridique);
-
-$socUpper = strtoupper($socSanitized);
-$formeUpper = strtoupper($formeSanitized);
-$folderName = $folderDate . '_' . $typeLabel . '_' . $socSanitized;
-if ($formeSanitized !== '' && !str_ends_with($socUpper, $formeUpper)) {
-    $folderName .= '_' . $formeSanitized;
+$folderName = DossierNaming::nomDossierArchive($pdo ?? null, $societeId, $soc, $numeroDossier);
+if ($folderName === '') {
+    // Donnees incompletes (raison sociale absente) : on ne bloque pas le
+    // telechargement pour autant, un nom generique unique suffit.
+    $folderName = 'Dossier-SOC-' . $societeId;
 }
 $zipName = $folderName . '.zip';
 
@@ -55,7 +42,6 @@ $docsUploades = $stmtUp->fetchAll();
 
 if (empty($docsGeneres) && empty($docsUploades)) {
     set_flash('error', 'Aucun document a telecharger pour ce dossier.');
-    $retourPage = $typeGen === 'creation' ? 'creations' : 'domiciliations';
     redirect_to('societe', ['id' => $societeId]);
 }
 
@@ -63,12 +49,11 @@ $zip = new ZipArchive();
 $tmpFile = tempnam(sys_get_temp_dir(), 'dossier_zip_');
 if ($zip->open($tmpFile, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
     set_flash('error', "Impossible de creer l'archive ZIP.");
-    $retourPage = $typeGen === 'creation' ? 'creations' : 'domiciliations';
     redirect_to('societe', ['id' => $societeId]);
 }
 
 $added = 0;
-$rootFolder = rtrim($zipName, '.zip') . '/';
+$rootFolder = $folderName . '/';
 
 foreach ($docsGeneres as $doc) {
     $docx = $doc['fichier_docx'] ?? '';
@@ -96,7 +81,6 @@ $zip->close();
 if ($added === 0) {
     @unlink($tmpFile);
     set_flash('error', 'Aucun fichier trouve a telecharger.');
-    $retourPage = $typeGen === 'creation' ? 'creations' : 'domiciliations';
     redirect_to('societe', ['id' => $societeId]);
 }
 

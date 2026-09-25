@@ -566,6 +566,64 @@ final class DossierNaming
     }
 
     /**
+     * Nom de dossier a utiliser pour une archive, SANS ecrire en base.
+     *
+     * Les pages de telechargement (dossier_download, download_all) doivent
+     * nommer leur ZIP comme le dossier reellement present sur le disque, sinon
+     * l'archive extraite cree un doublon du dossier genere au lieu de le
+     * reproduire. On lit donc le nom fige s'il existe, et on ne fige rien ici :
+     * un telechargement est un GET sans effet de bord, il ne doit pas figer un
+     * chemin pour une societe qui n'a jamais ete generee.
+     *
+     * @param array $soc Ligne societes deja chargee (raison sociale, forme, numeros).
+     */
+    public static function nomDossierArchive(
+        ?PDO $pdo,
+        int $societeId,
+        array $soc,
+        ?string $numeroDossier = null
+    ): string {
+        $fige = self::segmentSure((string) ($soc['dossier_output_nom'] ?? ''));
+        if ($fige !== '') {
+            return $fige;
+        }
+
+        $chemin = (string) ($soc['dossier_output_path'] ?? '');
+        if (trim($chemin) !== '') {
+            $fige = self::segmentSure(basename(str_replace('\\', '/', $chemin)));
+            if ($fige !== '') {
+                return $fige;
+            }
+        }
+
+        // Aucune generation a ce jour : on applique la convention, comme le
+        // ferait une premiere generation, sans rien inscrire en base.
+        return self::segmentSure(self::nomDossier(
+            $numeroDossier,
+            self::codeCollaborateurDossier($pdo, $societeId),
+            (string) ($soc['societe_raison_sociale'] ?? ''),
+            (string) ($soc['societe_forme_juridique'] ?? '')
+        ));
+    }
+
+    /**
+     * Neutralise un nom venant de la base avant de l'utiliser comme segment.
+     *
+     * Le nom fige alimente une entree d'archive ZIP et un en-tete
+     * Content-Disposition. Une valeur de base inattendue (ou alteree) ne doit
+     * pas pouvoir produire de '..', un separateur de chemin, un retour a la
+     * ligne ou un octet nul. '_' et '-' sont conserves : ce sont des
+     * separateurs legitimes de la convention, absents des bords.
+     */
+    private static function segmentSure(string $nom): string
+    {
+        $nom = str_replace(['\\', '/', "\r", "\n", "\0"], '-', $nom);
+        $nom = str_replace('..', '-', $nom);
+
+        return trim($nom, "-./ \t");
+    }
+
+    /**
      * Convertit un chemin relatif stocke en base en chemin absolu, en refusant
      * toute sortie de la racine du projet.
      */

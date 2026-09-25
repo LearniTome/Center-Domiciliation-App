@@ -503,6 +503,116 @@ final class DossierNamingTest extends TestCase
     }
 
     // ------------------------------------------------------------------
+    // Nom d'archive (telechargement)
+    // ------------------------------------------------------------------
+
+    public function testLeNomDArchiveReprendLeDossierFige(): void
+    {
+        $pdo = $this->pdo();
+        $societeId = $this->premierSocieteId($pdo);
+
+        $pdo->beginTransaction();
+
+        try {
+            // Un dossier au nom fige, incoherent avec la convention courante :
+            // c'est le cas reel d'une societe renommee apres sa generation.
+            $nomFige = '2026-01-15_SARL-AU_Tech-Solutions-Maroc';
+            $pdo->prepare(
+                'UPDATE societes
+                    SET dossier_output_path = :chemin, dossier_output_nom = :nom
+                  WHERE id = :id'
+            )->execute([
+                'chemin' => DossierNaming::DOSSIER_BASE_DOMICILIATION . '/' . $nomFige,
+                'nom' => $nomFige,
+                'id' => $societeId,
+            ]);
+
+            $soc = $this->ligneSociete($pdo, $societeId);
+
+            $this->assertSame(
+                $nomFige,
+                DossierNaming::nomDossierArchive($pdo, $societeId, $soc, 'DOM-2026-042'),
+                'Le nom fige prime : l archive doit reproduire le dossier sur disque'
+            );
+        } finally {
+            $pdo->rollBack();
+        }
+    }
+
+    public function testLeNomDArchiveRetombeSurLeCheminFigeQuandLeNomManque(): void
+    {
+        $pdo = $this->pdo();
+        $societeId = $this->premierSocieteId($pdo);
+
+        $pdo->beginTransaction();
+
+        try {
+            $pdo->prepare(
+                'UPDATE societes
+                    SET dossier_output_path = :chemin, dossier_output_nom = NULL
+                  WHERE id = :id'
+            )->execute([
+                'chemin' => DossierNaming::DOSSIER_BASE_CREATION . '/DOM-2026-042_TEST',
+                'id' => $societeId,
+            ]);
+
+            $this->assertSame(
+                'DOM-2026-042_TEST',
+                DossierNaming::nomDossierArchive(
+                    $pdo,
+                    $societeId,
+                    $this->ligneSociete($pdo, $societeId),
+                    'DOM-2026-042'
+                ),
+                'Un chemin fige sans nom doit suffire a retrouver le dossier'
+            );
+        } finally {
+            $pdo->rollBack();
+        }
+    }
+
+    public function testLeNomDArchiveAppliqueLaConventionSansFigerLaBase(): void
+    {
+        $pdo = $this->pdo();
+        $societeId = $this->premierSocieteId($pdo);
+
+        $pdo->beginTransaction();
+
+        try {
+            $pdo->prepare(
+                'UPDATE societes
+                    SET dossier_output_path = NULL, dossier_output_nom = NULL
+                  WHERE id = :id'
+            )->execute(['id' => $societeId]);
+
+            $soc = $this->ligneSociete($pdo, $societeId);
+            $nom = DossierNaming::nomDossierArchive($pdo, $societeId, $soc, 'DOM-2026-042');
+
+            $this->assertStringStartsWith('DOM-2026-042', $nom, 'La convention est appliquee a defaut');
+            $this->assertNull(
+                $pdo->query("SELECT dossier_output_path FROM societes WHERE id = {$societeId}")->fetchColumn(),
+                'Un telechargement est un GET : il ne doit jamais figer un chemin'
+            );
+        } finally {
+            $pdo->rollBack();
+        }
+    }
+
+    public function testLeNomDArchiveNeutraliseUneTentativeDeTraversee(): void
+    {
+        $pdo = $this->pdo();
+        $societeId = $this->premierSocieteId($pdo);
+
+        $soc = $this->ligneSociete($pdo, $societeId);
+        $soc['dossier_output_nom'] = '../../evil';
+
+        $nom = DossierNaming::nomDossierArchive($pdo, $societeId, $soc, 'DOM-2026-042');
+
+        $this->assertStringNotContainsString('..', $nom);
+        $this->assertStringNotContainsString('/', $nom);
+    }
+
+    // ------------------------------------------------------------------
     // Utilitaires
     // ------------------------------------------------------------------
 
@@ -549,6 +659,14 @@ final class DossierNamingTest extends TestCase
         }
 
         return (int) $id;
+    }
+
+    private function ligneSociete(PDO $pdo, int $societeId): array
+    {
+        $stmt = $pdo->prepare('SELECT * FROM societes WHERE id = :id');
+        $stmt->execute(['id' => $societeId]);
+
+        return (array) $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
     // ------------------------------------------------------------------

@@ -26,34 +26,19 @@ if (empty($docs)) {
 }
 
 $typeGen = (string) ($soc['societe_type_generation'] ?? '');
-$typeLabel = $typeGen === 'creation' ? 'Creation' : 'Domiciliation';
 
-function dossier_sanitize(string $str): string
-{
-    $str = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $str);
-    $str = preg_replace('/[^a-zA-Z0-9]+/', '_', $str);
-    $str = trim($str, '_');
-    return $str !== '' ? $str : 'Dossier';
+// Nom de l'archive aligne sur le dossier reellement genere (nom fige a la
+// premiere generation), comme pour le telechargement complet du dossier.
+$numeroDossier = $typeGen === 'creation'
+    ? (string) ($soc['societe_dossier_creation_number'] ?? '')
+    : (string) ($soc['societe_dossier_domiciliation_number'] ?? '');
+
+$folderName = DossierNaming::nomDossierArchive($pdo ?? null, $societeId, $soc, $numeroDossier);
+if ($folderName === '') {
+    // Donnees incompletes : on ne bloque pas le telechargement pour autant.
+    $folderName = 'Dossier-SOC-' . $societeId;
 }
-
-$raisonSociale = trim((string) ($soc['societe_raison_sociale'] ?? 'Societe'));
-$formeJuridique = trim((string) ($soc['societe_forme_juridique'] ?? ''));
-
-$socSanitized = dossier_sanitize($raisonSociale);
-$formeSanitized = dossier_sanitize($formeJuridique);
-
-$stmtContrat = $pdo->prepare('SELECT contrat_date FROM contrats WHERE societe_id = :sid ORDER BY id DESC LIMIT 1');
-$stmtContrat->execute(['sid' => $societeId]);
-$contratDate = $stmtContrat->fetchColumn();
-$folderDate = $contratDate ?: date('Y-m-d');
-
-$socUpper = strtoupper($socSanitized);
-$formeUpper = strtoupper($formeSanitized);
-$zipName = $folderDate . '_' . $typeLabel . '_' . $socSanitized;
-if ($formeSanitized !== '' && !str_ends_with($socUpper, $formeUpper)) {
-    $zipName .= '_' . $formeSanitized;
-}
-$zipName .= '.zip';
+$zipName = $folderName . '.zip';
 
 $zip = new ZipArchive();
 $tmpFile = tempnam(sys_get_temp_dir(), 'zip_');
@@ -62,7 +47,7 @@ if ($zip->open($tmpFile, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
     redirect_to('generation', ['societe_id' => $societeId]);
 }
 
-$rootFolder = rtrim($zipName, '.zip') . '/';
+$rootFolder = $folderName . '/';
 
 $added = 0;
 foreach ($docs as $doc) {
