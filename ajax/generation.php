@@ -108,7 +108,17 @@ if ($action === 'generate_docx') {
         // La date du document suit la date du dossier (date de contrat), et non
         // la date du jour : une regeneration ulterieure conserve ainsi le meme
         // nom de fichier au lieu d'empiler les doublons.
-        $outName = DossierNaming::nomDocument($folderDate, $docType, $raisonSociale, $forme, 'Brouillon');
+        // Le nom est en plus borne au budget de chemin du dossier de sortie,
+        // sinon ZipArchive echoue en ecrivant l'archive sur Windows.
+        $outName = DossierNaming::nomDocument(
+            $folderDate,
+            $docType,
+            $raisonSociale,
+            $forme,
+            'Brouillon',
+            'docx',
+            DossierNaming::budgetNomFichier($outputDir)
+        );
         $docxPath = $renderer->render($context, $outName);
 
         if ($docxPath && file_exists($docxPath) && ($pdo ?? null) instanceof PDO) {
@@ -121,8 +131,12 @@ if ($action === 'generate_docx') {
                 'fichier_pdf' => null,
                 'taille_ko' => round(filesize($docxPath) / 1024, 1),
             ]);
+            // lastInsertId() doit etre lu immediatement apres l'INSERT : tout
+            // autre INSERT sur la meme connexion (log_activity ci-dessous)
+            //-ecrase la valeur retournee par MySQL.
+            $docId = (int) $pdo->lastInsertId();
             log_activity($pdo, 'generate', 'document', $societeId, 'Generation AJAX — ' . basename($docxPath));
-            echo json_encode(['success' => true, 'docx_path' => $docxPath, 'name' => $outName, 'doc_id' => (int) $pdo->lastInsertId()], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); // nosemgrep: echoed-request -- JSON output with hex flags
+            echo json_encode(['success' => true, 'docx_path' => $docxPath, 'name' => $outName, 'doc_id' => $docId], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); // nosemgrep: echoed-request -- JSON output with hex flags
             exit;
         }
         echo json_encode(['success' => false, 'error' => 'Echec rendu DOCX']);

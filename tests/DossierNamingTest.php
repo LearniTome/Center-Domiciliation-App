@@ -209,6 +209,71 @@ final class DossierNamingTest extends TestCase
     }
 
     // ------------------------------------------------------------------
+    // Budget de chemin (regression : ZipArchive echoue au-dela de 260
+    // caracteres sous Windows, sans le moindre message exploitable)
+    // ------------------------------------------------------------------
+
+    public function testBudgetNomFichierTientCompteDuRepertoire(): void
+    {
+        $court = DossierNaming::budgetNomFichier('C:/dossiers_generer/dossiers_creation');
+        $long = DossierNaming::budgetNomFichier(str_repeat('dossier_tres_long_', 12) . '/');
+
+        $this->assertSame(
+            DossierNaming::LONGUEUR_CHEMIN_MAX - strlen('C:/dossiers_generer/dossiers_creation') - 1,
+            $court
+        );
+        $this->assertLessThan($court, $long);
+        $this->assertGreaterThanOrEqual(24, $long, 'Le budget ne descend jamais sous un minimum utile');
+    }
+
+    public function testNomDocumentRespecteLeBudgetDeChemin(): void
+    {
+        $repertoire = str_repeat('dossier_tres_long_', 12) . '/';
+        $nom = DossierNaming::nomDocument(
+            '2026-09-25',
+            'Attestation-Domiciliation_Template v2',
+            'Tech Solutions Maroc',
+            'SARL',
+            'Brouillon',
+            'docx',
+            DossierNaming::budgetNomFichier($repertoire)
+        );
+
+        $this->assertLessThanOrEqual(
+            DossierNaming::LONGUEUR_CHEMIN_MAX,
+            strlen($repertoire) + 1 + strlen($nom),
+            'Le chemin complet doit rester sous la limite Windows'
+        );
+    }
+
+    public function testNomDocumentConserveLExtensionMalgreLaTroncature(): void
+    {
+        $nom = DossierNaming::nomDocument(
+            '2026-09-25',
+            'Attestation-Domiciliation_Template v2',
+            'Tech Solutions Maroc',
+            'SARL',
+            'Brouillon',
+            'docx',
+            75
+        );
+
+        $this->assertStringEndsWith('.docx', $nom, 'La troncature ne doit jamais couper l extension');
+        $this->assertLessThanOrEqual(75, strlen($nom));
+    }
+
+    public function testNomDocumentResteDeterministeSousContrainteDeBudget(): void
+    {
+        $args = ['2026-09-25', 'Contrat-Domiciliation', 'Tech Solutions Maroc', 'SARL', 'Brouillon', 'docx', 60];
+
+        $this->assertSame(
+            DossierNaming::nomDocument(...$args),
+            DossierNaming::nomDocument(...$args),
+            'Meme entree, meme sortie, meme budget'
+        );
+    }
+
+    // ------------------------------------------------------------------
     // Code collaborateur ( necessite la base )
     // ------------------------------------------------------------------
 

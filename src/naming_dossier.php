@@ -26,6 +26,14 @@ final class DossierNaming
     /** Budget du nom complet du document, extension comprise. */
     public const MAX_DOCUMENT = 160;
 
+    /**
+     * Longueur maximale du chemin complet (repertoire + separateur + nom).
+     * Windows limite un chemin a 260 caracteres : au-dela, ZipArchive::close()
+     * echoue en ecrivant l'archive ("Failure to create temporary file"), donc
+     * le document n'est pas produit. On reste sous la limite avec une marge.
+     */
+    public const LONGUEUR_CHEMIN_MAX = 250;
+
     /** Racine de tous les dossiers generes, relative au projet. */
     public const DOSSIER_RACINE = 'dossiers_generer';
 
@@ -228,6 +236,10 @@ final class DossierNaming
     /**
      * Nom du fichier genere : "2026-09-25_Contrat-Domiciliation_Raison_Forme.docx".
      * Le statut (Brouillon, Signe, ...) est un segment optionnel en fin.
+     *
+     * $longueurMax borne le nom complet (extension comprise) selon le budget de
+     * chemin disponible (voir budgetNomFichier). La troncature porte sur la
+     * partie sans extension, pour que l'extension ne soit jamais coupee.
      */
     public static function nomDocument(
         string $date,
@@ -235,7 +247,8 @@ final class DossierNaming
         ?string $raisonSociale,
         ?string $formeJuridique = null,
         ?string $statut = null,
-        string $extension = 'docx'
+        string $extension = 'docx',
+        ?int $longueurMax = null
     ): string {
         $extension = ltrim(strtolower($extension), '.');
 
@@ -254,11 +267,27 @@ final class DossierNaming
         }
 
         $nom = implode('_', array_filter($segments, static fn (string $s): bool => $s !== ''));
+
+        $max = self::MAX_DOCUMENT;
+        if ($longueurMax !== null && $longueurMax > 0) {
+            $max = min($max, $longueurMax);
+        }
         if ($extension !== '') {
-            $nom .= '.' . $extension;
+            $max -= strlen($extension) + 1;
         }
 
-        return self::tronquer($nom, self::MAX_DOCUMENT);
+        $nom = self::tronquer($nom, max(12, $max));
+
+        return $extension !== '' ? $nom . '.' . $extension : $nom;
+    }
+
+    /**
+     * Nombre de caracteres disponibles pour un nom de fichier dans le
+     * repertoire donne, sans jamais depasser LONGUEUR_CHEMIN_MAX.
+     */
+    public static function budgetNomFichier(string $repertoire): int
+    {
+        return max(24, self::LONGUEUR_CHEMIN_MAX - strlen($repertoire) - 1);
     }
 
     /**
