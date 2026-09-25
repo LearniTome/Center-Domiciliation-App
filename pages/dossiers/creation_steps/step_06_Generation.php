@@ -61,6 +61,19 @@ if (is_post() && $step === 6) {
 
             $societeId = (int) $pdo->lastInsertId();
 
+            // Rattachement du collaborateur responsable saisi a l'etape 1.
+            // INSERT IGNORE : la liaison est unique (collaborateur, societe) et
+            // le wizard peut etre relance sans dupliquer le lien.
+            $collabId = (int) ($wizard['societe']['societe_collaborateur_id'] ?? 0);
+            if ($collabId > 0) {
+                $linkStmt = $pdo->prepare(
+                    'INSERT IGNORE INTO collaborateur_societes
+                        (collaborateur_id, societe_id, is_principal, date_debut)
+                     VALUES (:collaborateur_id, :societe_id, 1, CURDATE())'
+                );
+                $linkStmt->execute(['collaborateur_id' => $collabId, 'societe_id' => $societeId]);
+            }
+
             // Insert suivi etapes based on generation type
             $genType = $wizard['societe']['societe_type_generation'] ?? 'domiciliation';
             $suiviEtapes = ($genType === 'creation')

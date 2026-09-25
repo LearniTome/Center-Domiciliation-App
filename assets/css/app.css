@@ -1670,8 +1670,21 @@ td.col-pdf .pdf-pending {
 }
 
 .statut-badge.valide {
-    background: rgba(0, 210, 91, 0.12);
-    color: var(--success);
+  background: rgba(0, 210, 91, 0.12);
+  color: var(--success);
+}
+
+/* Contrat echu : distinct du contrat resilie, meme famille de tons que
+   "brouillon" mais en lecture seule (aucune action corrective attendue). */
+.statut-badge.expire {
+  background: rgba(255, 171, 0, 0.12);
+  color: var(--warning);
+}
+
+/* Echeance approchee dans la fenetre d'alerte, avant l'echeance critique. */
+.statut-badge.bientot {
+  background: rgba(255, 171, 0, 0.12);
+  color: var(--warning);
 }
 
 .badge {
@@ -2965,6 +2978,9 @@ td.col-pdf .pdf-pending {
 }
 .analyse-filter-bar .badge.bg-success {
     background: var(--success);
+}
+.analyse-filter-bar .badge.bg-warning {
+    background: var(--warning);
 }
 .analyse-filter-bar .badge.bg-danger {
     background: var(--danger);

@@ -51,6 +51,7 @@ if (is_post() && $step === 1) {
         'societe_procedure_creation' => field_value($_POST, 'societe_procedure_creation'),
         'societe_mode_depot' => field_value($_POST, 'societe_mode_depot'),
         'societe_tribunal_type' => field_value($_POST, 'tribunal_type'),
+        'societe_collaborateur_id' => (int) ($_POST['societe_collaborateur_id'] ?? 0) ?: '',
     ];
 
     $wizard['societe'] = $societe;
@@ -304,6 +305,18 @@ if ($step === 1):
         <label class="field">
             <span>Telephone</span>
             <input name="societe_telephone" value="<?= e((string) $societeData['societe_telephone']) ?>">
+        </label>
+
+        <h3 class="section-title">Collaborateur responsable</h3>
+        <label class="field full">
+            <span>Collaborateur en charge du dossier</span>
+            <select name="societe_collaborateur_id">
+                <option value="">Aucun (dossier non attribue)</option>
+                <?php foreach ($collaborateursOptions as $collabId => $collabLabel): ?>
+                    <option value="<?= (int) $collabId ?>"<?= $collaborateurId === (int) $collabId ? ' selected' : '' ?>><?= e($collabLabel) ?></option>
+                <?php endforeach; ?>
+            </select>
+            <small>Ce collaborateur porte le code dans le nom du dossier genere et apparait dans le suivi des dossiers du collaborateur.</small>
         </label>
     </div>
     <div class="table-actions">

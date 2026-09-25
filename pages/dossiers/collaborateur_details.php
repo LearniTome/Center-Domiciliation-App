@@ -23,6 +23,37 @@ if ($editingRecord) {
     $collabType = field_value($_GET, 'type', '');
 }
 
+// Dossiers dont ce collaborateur est le responsable (table de liaison
+// collaborateur_societes). Le contrat le plus recent est repris pour afficher
+// le statut et la fin de validite sans alourdir la requete d'un second aller-
+// retour par ligne.
+$collabSocietes = [];
+if (($pdo ?? null) instanceof PDO && $editingId > 0) {
+    $collabSocietesStmt = $pdo->prepare(
+        "SELECT s.id AS societe_id,
+                s.societe_raison_sociale,
+                s.societe_dossier_domiciliation_number,
+                s.societe_dossier_creation_number,
+                s.societe_type_generation,
+                s.societe_ville,
+                c.contrat_statut,
+                c.contrat_date_fin
+           FROM collaborateur_societes cs
+           JOIN societes s ON s.id = cs.societe_id
+           LEFT JOIN contrats c
+                  ON c.id = (
+                        SELECT id FROM contrats
+                         WHERE societe_id = s.id
+                         ORDER BY FIELD(contrat_statut, 'actif', 'brouillon', 'expire', 'resilie'), id DESC
+                         LIMIT 1
+                  )
+          WHERE cs.collaborateur_id = :cid
+       ORDER BY s.societe_raison_sociale ASC"
+    );
+    $collabSocietesStmt->execute(['cid' => $editingId]);
+    $collabSocietes = $collabSocietesStmt->fetchAll();
+}
+
 // Fetch roles from DB
 $roles = [];
 $rolesInterne = [];
@@ -963,6 +994,57 @@ $isNew = !$editingRecord;
             </div>
             <?php endif; ?>
         </div>
+
+        <div class="section-title-row">
+            <h2>Clients domicili&eacute;s</h2>
+            <span class="page-count"><?= count($collabSocietes) ?> dossier(s)</span>
+        </div>
+        <?php if ($collabSocietes === []): ?>
+            <p class="table-empty">Aucun dossier attribu&eacute; &agrave; ce collaborateur.</p>
+        <?php else: ?>
+            <div class="table-scroll">
+                <table data-sortable>
+                    <thead>
+                        <tr>
+                            <th data-col="raison">Raison sociale</th>
+                            <th data-col="dossier">N&deg; dossier</th>
+                            <th data-col="type">Type</th>
+                            <th data-col="ville">Ville</th>
+                            <th data-col="contrat_statut">Contrat</th>
+                            <th data-col="contrat_fin">Fin de contrat</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($collabSocietes as $cs): ?>
+                            <tr>
+                                <td><?= e((string) $cs['societe_raison_sociale']) ?></td>
+                                <td><?= e((string) ($cs['societe_dossier_domiciliation_number'] ?: $cs['societe_dossier_creation_number'] ?: '-')) ?></td>
+                                <td><?= e((string) ($cs['societe_type_generation'] ?: '-')) ?></td>
+                                <td><?= e((string) ($cs['societe_ville'] ?: '-')) ?></td>
+                                <td>
+                                    <?php if (!empty($cs['contrat_statut'])): ?>
+                                        <span class="statut-badge <?= e((string) $cs['contrat_statut']) ?>"><?= e(contrat_statut_libelle((string) $cs['contrat_statut'])) ?></span>
+                                    <?php else: ?>
+                                        <span class="text-muted">Aucun contrat</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if (!empty($cs['contrat_date_fin'])): ?>
+                                        <?= e(format_date((string) $cs['contrat_date_fin'])) ?>
+                                    <?php else: ?>
+                                        <span class="text-muted">-</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td data-cell-actions>
+                                    <a class="btn-icon primary" href="<?= e(app_url('societe', ['id' => (string) $cs['societe_id']])) ?>" title="Voir la societe"><span class="material-symbols-outlined">visibility</span></a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
 
         <div class="table-actions" style="justify-content:flex-end;padding-top:16px;margin-top:8px;border-top:1px solid var(--line);">
             <a class="btn btn-secondary" href="<?= e(app_url('collaborateurs')) ?>"><span class="material-symbols-outlined">arrow_back</span> Retour</a>

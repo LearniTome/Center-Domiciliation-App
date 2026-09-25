@@ -81,12 +81,25 @@ $modalAttr = $modalKey !== '' ? 'quick-create-' . $modalKey : 'quick-create';
                         <?php elseif (($field['type'] ?? 'text') === 'textarea'): ?>
                             <textarea name="<?= e($field['name'] ?? '') ?>" <?= !empty($field['required']) ? 'required' : '' ?> <?= !empty($field['rows']) ? 'rows="' . (int) $field['rows'] . '"' : '' ?>></textarea>
                         <?php else: ?>
+                            <?php
+                            $fdAttrs = '';
+                            if (!empty($field['data-derived'])) {
+                                $fdAttrs .= ' data-derived="' . e((string) $field['data-derived']) . '"';
+                            }
+                            if (!empty($field['data-code-part'])) {
+                                $fdAttrs .= ' data-code-part="' . e((string) $field['data-code-part']) . '"';
+                            }
+                            if (!empty($field['readonly'])) {
+                                $fdAttrs .= ' readonly tabindex="-1"';
+                            }
+                            ?>
                             <input
                                 type="<?= e($field['type'] ?? 'text') ?>"
                                 name="<?= e($field['name'] ?? '') ?>"
                                 placeholder="<?= e($field['placeholder'] ?? '') ?>"
                                 value="<?= e(($quickCreateDefaults ?? [])[$field['name']] ?? '') ?>"
                                 <?= !empty($field['required']) ? 'required' : '' ?>
+                                <?= $fdAttrs ?>
                             >
                         <?php endif; ?>
                     </label>

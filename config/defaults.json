@@ -33,5 +33,10 @@
     "collaborateur_type": "externe-pp",
     "collaborateur_code": "",
     "statut": "actif"
+  },
+  "seuils": {
+    "contrat_renouvellement_jours": 30,
+    "contrat_alerte_jours": 90,
+    "contrat_critique_jours": 15
   }
 }

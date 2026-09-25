@@ -550,4 +550,59 @@ final class DossierNamingTest extends TestCase
 
         return (int) $id;
     }
+
+    // ------------------------------------------------------------------
+    // Code dossier d'un intermediaire calcule cote serveur
+    // ------------------------------------------------------------------
+
+    public function testLeCodeIntermediaireEstRecalculeParLeServeur(): void
+    {
+        // La modale n'affiche le code qu'en lecture seule et le remplit en
+        // JavaScript : c'est un confort, pas une regle. Un POST direct ne
+        // doit pas pouvoir imposer un code arbitraire.
+        $pdo = $this->pdo();
+        $id = $this->inserer($pdo, 'CPT-INV-TEST');
+
+        try {
+            $data = [
+                'collaborateur_nom' => 'Fiducaire',
+                'collaborateur_prenom' => 'Basma',
+                'qualite_intermediaire_id' => $this->qualiteId($pdo, 'CPT-AGR'),
+                'collaborateur_code' => 'CODE-FAUSSE-ENVOYE',
+            ];
+            $this->assertSame('CPT-AGR-FIDBA', code_collaborateur_intermediaire($pdo, $data, $id));
+        } finally {
+            $pdo->prepare('DELETE FROM collaborateurs WHERE id = :id')->execute(['id' => $id]);
+        }
+    }
+
+    public function testUnCompteInterneConserveLeCodeFourni(): void
+    {
+        // Les comptes internes (can_login) et les gens morales ne sont pas
+        // des intermediaires nommes : les nommer par le code generique
+        // "COLLAB" serait une invention.
+        $this->assertSame('', code_collaborateur_intermediaire(null, [
+            'nom_complet' => 'Super Admin',
+            'collaborateur_type' => 'interne',
+            'collaborateur_code' => '',
+        ]));
+        $this->assertSame('EXP', code_collaborateur_intermediaire(null, [
+            'nom_complet' => 'Atlas Domiciliation',
+            'den_ste' => 'Atlas Domiciliation',
+            'collaborateur_code' => 'EXP',
+        ]));
+    }
+
+    private function qualiteId(PDO $pdo, string $code): int
+    {
+        $stmt = $pdo->prepare('SELECT id FROM ref_qualites_intermediaire WHERE code = :code');
+        $stmt->execute(['code' => $code]);
+        $id = $stmt->fetchColumn();
+
+        if (!$id) {
+            $this->markTestSkipped('Qualification ' . $code . ' absente de la base.');
+        }
+
+        return (int) $id;
+    }
 }

@@ -114,6 +114,46 @@
         });
     })();
 
+    // ── Derived fields in quick-create (collaborateur: nom_complet + code H2) ──
+    // Regle H2 du nom de dossier : 3 lettres du nom + 2 du prenom, en majuscules
+    // et sans diacritiques. Le champ code est readonly : la regle vit dans
+    // DossierNaming::codePersonne(), on ne la duplique pas cote client.
+    (function () {
+        function stripAccents(str) {
+            return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        }
+        function h2Part(value, take) {
+            var letters = stripAccents(String(value || '').toUpperCase()).replace(/[^A-Z]/g, '');
+            return letters.slice(0, take);
+        }
+
+        function bindDerived(form) {
+            var nom = form.querySelector('[data-code-part="nom"]');
+            var prenom = form.querySelector('[data-code-part="prenom"]');
+            var fNomComplet = form.querySelector('[data-derived="nom-complet"]');
+            var fCode = form.querySelector('[data-derived="code"]');
+            if (!nom || (!fNomComplet && !fCode)) return;
+
+            function refresh() {
+                var n = nom.value.trim();
+                var p = prenom ? prenom.value.trim() : '';
+                if (fNomComplet) {
+                    fNomComplet.value = [n, p].filter(Boolean).join(' ');
+                }
+                if (fCode) {
+                    var h2 = h2Part(n, 3) + h2Part(p, 2);
+                    fCode.value = h2;
+                }
+            }
+
+            nom.addEventListener('input', refresh);
+            if (prenom) prenom.addEventListener('input', refresh);
+            refresh();
+        }
+
+        document.querySelectorAll('[data-quick-create-form]').forEach(bindDerived);
+    })();
+
     // ── Build table row from API data ──
     function buildRow(data, table) {
         var template = table.querySelector('[data-row-template]');
@@ -166,6 +206,15 @@
                 var tokenInput = delForm.querySelector('input[name="_csrf_token"]');
                 if (tokenInput) tokenInput.value = getCsrfToken() || '';
             }
+            // Les liens "Voir" / "Modifier" du template sont ecrits avec un
+            // "id=" vide en attente de l'identifiant de la ligne creee. Sans ce
+            // remplissage, une ligne ajoutee en creation rapide avait un lien
+            // mort vers la page courante.
+            actionsCell.querySelectorAll('a[href]').forEach(function (a) {
+                var href = a.getAttribute('href') || '';
+                if (href.indexOf('id=') === -1) return;
+                a.setAttribute('href', href.replace(/([?&]id=)[^&]*/, '$1' + data.id));
+            });
         }
 
         var emptyState = document.querySelector('.table-empty');
@@ -214,11 +263,17 @@
                         blank.value = '';
                         blank.textContent = '—';
                         el.appendChild(blank);
-                        options.forEach(function (opt) {
+                        // data-editable-options accepte soit une liste de codes
+                        // (historique), soit une map {code: libelle} pour que le
+                        // select affiche les libelles francais et non les codes bruts.
+                        var entries = Array.isArray(options)
+                            ? options.map(function (opt) { return [opt, opt]; })
+                            : Object.keys(options).map(function (code) { return [code, options[code]]; });
+                        entries.forEach(function (entry) {
                             var o = document.createElement('option');
-                            o.value = opt;
-                            o.textContent = opt;
-                            if (opt === currentValue) o.selected = true;
+                            o.value = entry[0];
+                            o.textContent = entry[1];
+                            if (entry[0] === currentValue) o.selected = true;
                             el.appendChild(o);
                         });
                     } catch (e) {

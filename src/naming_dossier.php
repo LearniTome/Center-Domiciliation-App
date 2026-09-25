@@ -363,10 +363,18 @@ final class DossierNaming
     /**
      * Code collaborateur retenu pour nommer le dossier d'une societe.
      *
-     * Regle provisoire et deterministe : premier collaborateur EXTERNE de la
-     * societe qui possede un code, le plus ancien d'abord. A defaut de regle
-     * metier arbitraire, on prefere un code existant a un nom vide plutot que
-     * de d'omettre le segment.
+     * Regle metier : le collaborateur MARQUE PRINCIPAL dans la table de liaison
+     * collaborateur_societes. C'est lui qui est porte par le nom du dossier.
+     * L'unicite "un principal par societe" n'est pas garantie par un index
+     * (MySQL ne sait pas indexer "une seule ligne a 1"), donc le tri par id
+     * rend la lecture deterministe si une donnee se trouve en double.
+     *
+     * Repli historique : les societes creees avant la table de liaison n'ont
+     * aucun lien enregistre. On conserve alors l'ancienne regle provisoire
+     * (premier collaborateur externe avec code, le plus ancien d'abord) plutot
+     * que d'omettre le segment du nom : un code existant vaut mieux qu'un trou,
+     * et ces societes seront rattachees a un collaborateur au prochain passage
+     * en base.
      */
     public static function codeCollaborateurDossier(?PDO $pdo, int $societeId): string
     {
@@ -375,6 +383,23 @@ final class DossierNaming
         }
 
         $stmt = $pdo->prepare(
+            "SELECT c.collaborateur_code
+               FROM collaborateur_societes cs
+               JOIN collaborateurs c ON c.id = cs.collaborateur_id
+              WHERE cs.societe_id = :id
+                AND cs.is_principal = 1
+                AND c.collaborateur_code IS NOT NULL
+                AND TRIM(c.collaborateur_code) <> ''
+              ORDER BY cs.id
+              LIMIT 1"
+        );
+        $stmt->execute(['id' => $societeId]);
+        $principal = trim((string) ($stmt->fetchColumn() ?: ''));
+        if ($principal !== '') {
+            return $principal;
+        }
+
+        $legacy = $pdo->prepare(
             "SELECT collaborateur_code
                FROM collaborateurs
               WHERE societe_id = :id
@@ -384,9 +409,38 @@ final class DossierNaming
               ORDER BY id
               LIMIT 1"
         );
+        $legacy->execute(['id' => $societeId]);
+
+        return trim((string) ($legacy->fetchColumn() ?: ''));
+    }
+
+    /**
+     * Collaborateur responsable d'une societe, tel que renseigne dans le wizard.
+     * Retourne null quand aucun principal n'est enregistre.
+     */
+    public static function collaborateurPrincipal(?PDO $pdo, int $societeId): ?array
+    {
+        if (!$pdo || $societeId <= 0) {
+            return null;
+        }
+
+        $stmt = $pdo->prepare(
+            "SELECT c.id, c.nom_complet, c.collaborateur_code, c.collaborateur_type,
+                    q.code AS qualite_code, q.libelle AS qualite_libelle,
+                    cs.role_dossier, cs.date_debut
+               FROM collaborateur_societes cs
+               JOIN collaborateurs c ON c.id = cs.collaborateur_id
+               LEFT JOIN ref_qualites_intermediaire q ON q.id = c.qualite_intermediaire_id
+              WHERE cs.societe_id = :id
+                AND cs.is_principal = 1
+              ORDER BY cs.id
+              LIMIT 1"
+        );
         $stmt->execute(['id' => $societeId]);
 
-        return trim((string) ($stmt->fetchColumn() ?: ''));
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
     }
 
     /**

@@ -20,6 +20,13 @@ if (($pdo ?? null) instanceof PDO) {
 }
 $collabTypeOptions = ['interne', 'externe-pm', 'externe-pp'];
 $collabStatutOptions = ['actif', 'inactif', 'suspendu'];
+$qualiteOptions = [];
+if (($pdo ?? null) instanceof PDO) {
+    $qualStmt = $pdo->query('SELECT id, libelle FROM ref_qualites_intermediaire ORDER BY sort_order ASC, libelle ASC');
+    foreach ($qualStmt->fetchAll() as $qualRow) {
+        $qualiteOptions[(int) $qualRow['id']] = $qualRow['libelle'];
+    }
+}
 $collabTypeJson = e(json_encode($collabTypeOptions));
 $collabStatutJson = e(json_encode($collabStatutOptions));
 $accesJson = e(json_encode(['0', '1']));
@@ -248,8 +255,8 @@ if (($pdo ?? null) instanceof PDO) {
                     <td data-cell="created_at"></td>
                     <td data-cell="last_login"></td>
                     <td data-cell-actions>
-                        <a class="btn-icon primary" href="" title="Voir"><span class="material-symbols-outlined">visibility</span></a>
-                        <a class="btn-icon info" href="" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
+                        <a class="btn-icon primary" href="<?= e(app_url('collaborateur')) ?>&id=" title="Voir"><span class="material-symbols-outlined">visibility</span></a>
+                        <a class="btn-icon info" href="<?= e(app_url('collaborateur', ['edit' => 1])) ?>&id=" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
                         <form method="post" action="index.php?page=collaborateurs">
                             <input type="hidden" name="action" value="delete">
                             <input type="hidden" name="id" value="">
@@ -270,8 +277,10 @@ if (($pdo ?? null) instanceof PDO) {
     $quickCreateFields = [
         ['type' => 'title', 'label' => 'Identite & Role'],
         ['name' => 'collaborateur_type', 'label' => 'Type', 'type' => 'select', 'options' => $collabTypeOptions, 'required' => true],
+        ['name' => 'qualite_intermediaire_id', 'label' => 'Qualification', 'type' => 'select', 'options' => $qualiteOptions, 'placeholder' => 'Non qualifie'],
         ['name' => 'role_id', 'label' => 'Role', 'type' => 'select', 'options' => $rolesOptions],
-        ['name' => 'nom_complet', 'label' => 'Nom complet', 'type' => 'text', 'required' => true],
+        ['name' => 'collaborateur_nom', 'label' => 'Nom', 'type' => 'text', 'required' => true, 'data-code-part' => 'nom'],
+        ['name' => 'collaborateur_prenom', 'label' => 'Prenom', 'type' => 'text', 'data-code-part' => 'prenom'],
         ['name' => 'den_ste', 'label' => 'Cabinet', 'type' => 'text'],
         ['name' => 'fonction', 'label' => 'Fonction', 'type' => 'text'],
         ['type' => 'title', 'label' => 'Contact'],
@@ -285,7 +294,8 @@ if (($pdo ?? null) instanceof PDO) {
         ['name' => 'collaborateur_rc', 'label' => 'RC', 'type' => 'text'],
         ['name' => 'collaborateur_if', 'label' => 'IF', 'type' => 'text'],
         ['type' => 'title', 'label' => 'Informations'],
-        ['name' => 'collaborateur_code', 'label' => 'Code', 'type' => 'text'],
+        ['name' => 'nom_complet', 'label' => 'Nom complet (genere)', 'type' => 'text', 'data-derived' => 'nom-complet', 'readonly' => true],
+        ['name' => 'collaborateur_code', 'label' => 'Code (genere)', 'type' => 'text', 'data-derived' => 'code', 'readonly' => true],
         ['name' => 'statut', 'label' => 'Statut', 'type' => 'select', 'options' => $collabStatutOptions],
     ];
     require __DIR__ . '/../../includes/quick_create_modal.php';

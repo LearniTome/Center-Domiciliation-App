@@ -9,6 +9,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 }
 
 require __DIR__ . '/includes/fonctions.php';
+require __DIR__ . '/src/naming_dossier.php';
 
 $user = current_user();
 if (!$user) {
@@ -149,11 +150,13 @@ $allowedTables = [
         'contrat_renouv_tva_pourcent', 'contrat_renouv_loyer_ht',
         'contrat_renouv_loyer_ttc', 'contrat_renouv_total_ht',
         'contrat_statut', 'contrat_notes', 'contrat_caution', 'contrat_pack_montant_ttc',
+        'contrat_date_resiliation', 'contrat_motif_resiliation',
     ],
     'collaborateurs' => [
-        'role_id',
+        'role_id', 'qualite_intermediaire_id',
         'nom_complet', 'den_ste', 'fonction', 'collaborateur_type',
-        'collaborateur_code', 'collaborateur_ice', 'collaborateur_tp',
+        'collaborateur_code', 'collaborateur_nom', 'collaborateur_prenom',
+        'collaborateur_ice', 'collaborateur_tp',
         'collaborateur_rc', 'collaborateur_if',
         'collaborateur_tel_fixe', 'collaborateur_tel_mobile',
         'collaborateur_email', 'collaborateur_adresse', 'statut', 'can_login',
@@ -241,6 +244,9 @@ function handle_quick_create(PDO $pdo, array $allowedTables, array $user): array
     if ($hasCreatedBy) {
         $data['created_by'] = (int) $user['id'];
     }
+    if ($table === 'collaborateurs') {
+        $data['collaborateur_code'] = code_collaborateur_intermediaire($pdo, $data, null);
+    }
 
     if (empty($data)) {
         http_response_code(400);
@@ -279,6 +285,13 @@ function handle_inline_update(PDO $pdo, array $allowedTables): array
     if (!in_array($column, $allowedTables[$table], true)) {
         http_response_code(400);
         return ['success' => false, 'message' => 'Colonne non autorisee.'];
+    }
+
+    // Le code dossier est derive, jamais saisi : le revoquer de l'edition
+    // inline evite qu'un double-clic y ecrase un code deja attribue.
+    if ($table === 'collaborateurs' && $column === 'collaborateur_code') {
+        http_response_code(400);
+        return ['success' => false, 'message' => 'Le code est genere, il n\'est pas modifiable.'];
     }
 
     $stmt = $pdo->prepare("UPDATE {$table} SET {$column} = :val WHERE id = :id"); // nosemgrep: tainted-sql-string -- $table/$column validated via $allowedTables whitelist
@@ -536,6 +549,13 @@ function handle_import_confirm(PDO $pdo, array $user, array $config): array
                 if (is_string($val) && preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $val)) {
                     $data[$col] = \DateTime::createFromFormat('d/m/Y', $val)->format('Y-m-d');
                 }
+            }
+
+            // Le code dossier d'un intermediaire est recalcule a l'import :
+            // un fichier Excel ne doit pas pouvoir imposer un code en doublon
+            // avec l'index unique uk_collaborateur_code.
+            if ($table === 'collaborateurs') {
+                $data['collaborateur_code'] = code_collaborateur_intermediaire($pdo, $data, null);
             }
 
             $cols = implode(', ', array_keys($data));

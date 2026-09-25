@@ -219,6 +219,255 @@ function fetch_societes_options(?PDO $pdo, ?int $userId = null): array
     return $stmt->fetchAll();
 }
 
+/**
+ * Vocabulary unique du statut d'un contrat de domiciliation.
+ *
+ * Source de verite partagee par la liste, la page de suivi, le detail et le
+ * tableau de bord. Le tableau de bord comptait un 'resilie' qui n'etait
+ * saisissable nulle part, et les listes proposaient un 'expire' qu'aucun code
+ * ne produisait : les compteurs et les libelles divergeaient.
+ *
+ * 'expire' reste une valeur a part entière : un contrat echu qui n'a pas ete
+ * resilie est un cas metier reel, distinct du contrat resilie.
+ *
+ * @return array<string, string> code => libelle affiche
+ */
+function contrat_statuts(): array
+{
+    return [
+        'brouillon' => 'Brouillon',
+        'actif' => 'Actif',
+        'expire' => 'Echu',
+        'resilie' => 'Resilie',
+    ];
+}
+
+/**
+ * Seuils de suivi des contrats, lus depuis config/defaults.json (section
+ * "seuils"). Centralises pour que la page de suivi, la fiche contrat et le
+ * tableau de bord n'aient pas chacun leur constante en dur.
+ */
+function contrat_seuils(): array
+{
+    $seuils = load_defaults('seuils');
+
+    return [
+        'renouvellement' => (int) ($seuils['contrat_renouvellement_jours'] ?? 30),
+        'alerte' => (int) ($seuils['contrat_alerte_jours'] ?? 90),
+        'critique' => (int) ($seuils['contrat_critique_jours'] ?? 15),
+    ];
+}
+
+/** Les onglets du suivi des contrats, dans leur ordre d'affichage. */
+function contrat_vues(): array
+{
+    return [
+        'actifs' => 'Actifs',
+        'renouvellement' => 'À renouveler',
+        'echus' => 'Échus non résolus',
+        'resilies' => 'Résiliés',
+    ];
+}
+
+/**
+ * Appartenance d'un contrat a une vue de suivi.
+ *
+ * Utilisee par la page de suivi et par l'export de la liste, afin qu'un CSV
+ * produit depuis l'onglet "Résiliés" ne contienne pas les contrats actifs.
+ */
+function contrat_dans_vue(string $vue, ?string $statut, ?int $jours): bool
+{
+    $statut = trim((string) $statut);
+    $seuil = contrat_seuils()['renouvellement'];
+
+    return match ($vue) {
+        'renouvellement' => $statut === 'actif' && $jours !== null && $jours >= 0 && $jours <= $seuil,
+        'echus' => $statut === 'expire' || ($statut === 'actif' && $jours !== null && $jours < 0),
+        'resilies' => $statut === 'resilie',
+        default => $statut === 'actif' && ($jours === null || $jours >= 0),
+    };
+}
+
+/**
+ * Verifie qu'une chaine est une date ISO reelle (YYYY-MM-DD).
+ *
+ * Le seul test /^\d{4}-\d{2}-\d{2}$/ laisse passer "2026-13-45" : MySQL le
+ * stocke alors en 0000-00-00, ce qui casse ensuite tous les calculs d'ecart
+ * de la page de suivi.
+ */
+function date_iso_valide(?string $date): bool
+{
+    if ($date === null || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+        return false;
+    }
+
+    [$annee, $mois, $jour] = array_map('intval', explode('-', $date));
+
+    return checkdate($mois, $jour, $annee);
+}
+
+/**
+ * Filtre SQL restreignant les contrats aux societes creees par l'utilisateur
+ * connecte, sauf pour les administrateurs (roles 1 et 2).
+ *
+ * Les pages liste, suivi et fiche contrat doivent toutes l'appliquer : sinon
+ * un utilisateur non admin voit sur le suivi les contrats de societes qu'il
+ * n'a pas crees, alors que la liste des contrats les lui masque.
+ *
+ * @param  array|null $user current_user()
+ * @return array{sql: string, params: array<string, int>}
+ */
+function contrat_user_filter(?array $user): array
+{
+    $isAdmin = $user && in_array((int) ($user['role_id'] ?? 0), [1, 2], true);
+
+    if ($isAdmin) {
+        return ['sql' => '', 'params' => []];
+    }
+
+    return [
+        'sql' => ' AND societes.created_by = :user_id',
+        'params' => ['user_id' => (int) ($user['id'] ?? 0)],
+    ];
+}
+
+/**
+ * Convertit une valeur issue de la base (decimal MySQL renvoye en chaine)
+ * en float, ou null si la valeur est absente. Indispensable avec
+ * declare(strict_types=1) : format_money() attend un ?float et refuse une
+ * chaine numerique.
+ */
+function money_from(mixed $value): ?float
+{
+    if ($value === null || $value === '') {
+        return null;
+    }
+
+    return is_numeric((string) $value) ? (float) $value : null;
+}
+
+/** Libelle lisible d'un statut de contrat, avec repli sur le code brut. */
+function contrat_statut_libelle(?string $statut): string
+{
+    $statut = trim((string) $statut);
+    if ($statut === '') {
+        return 'Non renseigne';
+    }
+
+    return contrat_statuts()[$statut] ?? $statut;
+}
+
+/**
+ * Nombre de jours avant echeance d'un contrat.
+ * Negatif si l'echeance est depassee, null si aucune date n'est renseignee.
+ */
+function contrat_jours_avant_echeance(?string $dateFin): ?int
+{
+    if ($dateFin === null || trim($dateFin) === '') {
+        return null;
+    }
+
+    try {
+        // On compare deux dates normalisees a minuit : l'ecart doit tomber
+        // sur un nombre entier de jours, quelle que soit l'heure de
+        // consultation. Une soustraction d'entiers YYYYMMDD est fausse
+        // (20261005 - 20260925 vaut 80 au lieu de 10) car elle effectue un
+        // emprunt sur les mois. diff() donne l'ecart reel et gere en plus
+        // les changements d'heure.
+        $echeance = (new DateTimeImmutable($dateFin))->setTime(0, 0);
+        $aujourdhui = new DateTimeImmutable('today');
+    } catch (Exception) {
+        return null;
+    }
+
+    $ecart = $aujourdhui->diff($echeance);
+
+    return $ecart->invert ? -(int) $ecart->days : (int) $ecart->days;
+}
+
+/**
+ * Calcule le code dossier d'un intermediaire cote serveur.
+ *
+ * Le champ "Code (genere)" de la quick-create est readonly et alimente en
+ * JavaScript : ce n'est qu'un confort d'affichage. La valeur autoritative est
+ * recalculee ici, sinon un POST direct (ou deux creations simultanees)
+ * enregistrerait un code arbitraire — ou vide — alors qu'un index unique
+ * existe sur collaborateur_code.
+ *
+ * Les comptes internes (can_login) et les gens morales (den_ste) ne sont pas
+ * des intermediaires nommes : ils conservent le code fourni, souvent vide.
+ *
+ * @param array $data  Ligne en cours d'insertion ou de mise a jour.
+ * @param int|null $excludeId Collaborateur ignore (edition en cours).
+ */
+function code_collaborateur_intermediaire(?PDO $pdo, array $data, ?int $excludeId = null): string
+{
+    $estIntermediaire = trim((string) ($data['collaborateur_nom'] ?? '')) !== ''
+        || trim((string) ($data['collaborateur_prenom'] ?? '')) !== '';
+    if (!$estIntermediaire || !class_exists('DossierNaming')) {
+        return trim((string) ($data['collaborateur_code'] ?? ''));
+    }
+
+    $qualiteCode = '';
+    $qualiteId = (int) ($data['qualite_intermediaire_id'] ?? 0);
+    if ($qualiteId > 0 && $pdo) {
+        $stmt = $pdo->prepare('SELECT code FROM ref_qualites_intermediaire WHERE id = :id');
+        $stmt->execute(['id' => $qualiteId]);
+        $qualiteCode = (string) ($stmt->fetchColumn() ?: '');
+    }
+
+    $code = DossierNaming::codeCollaborateur(
+        $pdo,
+        $qualiteCode,
+        (string) ($data['collaborateur_nom'] ?? ''),
+        (string) ($data['collaborateur_prenom'] ?? ''),
+        $excludeId
+    );
+
+    // Aucun nom exploitable : on laisse la colonne vide plutot que d'ecraser
+    // une saisie manuelle par un code generique "COLLAB".
+    if ($code === 'COLLAB' && trim((string) ($data['collaborateur_code'] ?? '')) !== '') {
+        return trim((string) $data['collaborateur_code']);
+    }
+
+    return $code;
+}
+
+function fetch_collaborateurs_options(?PDO $pdo, bool $actifsSeulement = true): array
+{
+    if (!$pdo) {
+        return [];
+    }
+
+    $sql = "SELECT c.id, c.nom_complet, c.collaborateur_code, c.collaborateur_type,
+                   q.code AS qualite_code, q.libelle AS qualite_libelle
+              FROM collaborateurs c
+              LEFT JOIN ref_qualites_intermediaire q ON q.id = c.qualite_intermediaire_id";
+    if ($actifsSeulement) {
+        $sql .= " WHERE c.statut = 'actif'";
+    }
+    $sql .= " ORDER BY c.nom_complet ASC";
+
+    try {
+        $stmt = $pdo->query($sql);
+        $options = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $label = (string) $row['nom_complet'];
+            $detail = array_filter([
+                $row['qualite_libelle'] ?? null,
+                $row['collaborateur_code'] ?? null,
+            ], static fn($v) => $v !== null && $v !== '');
+            if ($detail !== []) {
+                $label .= ' — ' . implode(' / ', $detail);
+            }
+            $options[(int) $row['id']] = $label;
+        }
+        return $options;
+    } catch (PDOException) {
+        return [];
+    }
+}
+
 function fetch_tribunaux_types(?PDO $pdo): array
 {
     if (!$pdo) return [];

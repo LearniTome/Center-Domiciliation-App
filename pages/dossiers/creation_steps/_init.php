@@ -69,6 +69,8 @@ $qualitesAssocieOptions = fetch_reference_options($pdo ?? null, 'ref_qualites_as
 $formesJuridiquesOptions = fetch_reference_options($pdo ?? null, 'ref_formes_juridiques', 'forme_juridique');
 $activitesOptions = fetch_reference_options($pdo ?? null, 'ref_activites', 'activite');
 $ompicOptions = fetch_activites_ompic_options($pdo ?? null);
+$collaborateursOptions = fetch_collaborateurs_options($pdo ?? null);
+$collaborateurId = (int) ($wizard['societe']['societe_collaborateur_id'] ?? 0);
 
 if (is_post() && isset($_POST['add_activite_ref']) && ($pdo ?? null) instanceof PDO) {
     ob_clean();

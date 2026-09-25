@@ -22,7 +22,10 @@ if (($pdo ?? null) instanceof PDO) {
 // JSON option arrays for inline editable selects
 $contratTypeOptions = ['Domiciliation commerciale', 'Domiciliation professionnelle', 'Domiciliation simple', 'autre'];
 $contratTypeDomiOptions = ['Personne Morale', 'Personne Physique', 'Association', 'Fondation', 'Autres'];
-$contratStatutOptions = ['actif', 'expire', 'brouillon'];
+// Source unique : voir contrat_statuts() dans includes/fonctions.php. La liste
+// proposait auparavant {actif, expire, brouillon} sans "resilie", alors que le
+// tableau de bord comptait les contrats résiliés : ils étaient invisibles ici.
+$contratStatutOptions = contrat_statuts();
 $tvaOptions = ['7', '10', '14', '20'];
 $renouvellementOptions = ['Mensuel', 'Trimestriel', 'Annuel', '2 ans', '3 ans', '4 ans', '5 ans'];
 $contratTypeJson = e(json_encode($contratTypeOptions));
@@ -46,13 +49,9 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
     }
 }
 
-$isAdmin = $user && in_array((int) $user['role_id'], [1, 2], true);
-$userFilter = '';
-$userParams = [];
-if (!$isAdmin && $user) {
-    $userFilter = ' AND societes.created_by = :user_id';
-    $userParams['user_id'] = (int) $user['id'];
-}
+$filtreUser = contrat_user_filter($user);
+$userFilter = $filtreUser['sql'];
+$userParams = $filtreUser['params'];
 
 if (($pdo ?? null) instanceof PDO) {
     if ($query !== '') {
@@ -84,6 +83,21 @@ if (($pdo ?? null) instanceof PDO) {
 
     $exportType = $_GET['export'] ?? '';
     if ($exportType === 'csv' || $exportType === 'xlsx') {
+        // Un export demande depuis un onglet du suivi des contrats doit
+        // respecter cette vue : sans ce filtre, un CSV produit depuis
+        // l'onglet "Resilies" contiendrait tous les contrats actifs.
+        $exportVue = (string) ($_GET['vue'] ?? '');
+        if (isset(contrat_vues()[$exportVue])) {
+            $contrats = array_values(array_filter(
+                $contrats,
+                static fn(array $c): bool => contrat_dans_vue(
+                    $exportVue,
+                    $c['contrat_statut'] ?? null,
+                    contrat_jours_avant_echeance($c['contrat_date_fin'] ?? null)
+                )
+            ));
+        }
+
         $rows = array_map(static function (array $c): array {
             return [
                 $c['id'],
@@ -192,7 +206,7 @@ if (($pdo ?? null) instanceof PDO) {
                         <td<?= $canEdit ? ' data-editable="contrat_total_ht"' : '' ?>><?= $contrat['contrat_total_ht'] !== null ? e(number_format((float) $contrat['contrat_total_ht'], 2, ',', ' ') . ' DH') : '-' ?></td>
                         <td<?= $canEdit ? ' data-editable="contrat_pack_montant_ttc"' : '' ?>><?= $contrat['contrat_pack_montant_ttc'] !== null ? e(number_format((float) $contrat['contrat_pack_montant_ttc'], 2, ',', ' ') . ' DH') : '-' ?></td>
                         <td<?= $canEdit ? ' data-editable="contrat_type_renouvellement" data-editable-options="' . $renouvellementJson . '"' : '' ?>><?= e($contrat['contrat_type_renouvellement'] ?? '-') ?></td>
-                        <td<?= $canEdit ? ' data-editable="contrat_statut" data-editable-options="' . $contratStatutJson . '"' : '' ?>><?= e($contrat['contrat_statut']) ?></td>
+                        <td<?= $canEdit ? ' data-editable="contrat_statut" data-editable-options="' . $contratStatutJson . '"' : '' ?>><span class="statut-badge <?= e($contrat['contrat_statut']) ?>"><?= e(contrat_statut_libelle($contrat['contrat_statut'])) ?></span></td>
                         <td><?= e(date('d/m/Y', strtotime((string) $contrat['created_at']))) ?></td>
                         <td><?= e(date('d/m/Y', strtotime((string) $contrat['updated_at']))) ?></td>
                         <td class="table-actions">
@@ -230,8 +244,8 @@ if (($pdo ?? null) instanceof PDO) {
                     <td data-cell="created_at"></td>
                     <td data-cell="updated_at"></td>
                     <td data-cell-actions>
-                        <a class="btn-icon primary" href="" title="Voir"><span class="material-symbols-outlined">visibility</span></a>
-                        <a class="btn-icon info" href="" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
+                        <a class="btn-icon primary" href="<?= e(app_url('contrat')) ?>&id=" title="Voir"><span class="material-symbols-outlined">visibility</span></a>
+                        <a class="btn-icon info" href="<?= e(app_url('contrat', ['edit' => 1])) ?>&id=" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
                         <form method="post" action="index.php?page=contrats">
                             <input type="hidden" name="action" value="delete">
                             <input type="hidden" name="id" value="">

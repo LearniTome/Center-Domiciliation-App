@@ -15,6 +15,17 @@ if ($isConnected && empty($_SESSION['_auto_notif_run'])) {
 }
 
 // --- Stats ---
+// Seuil de renouvellement partage avec la page de suivi des contrats
+// (config/defaults.json). Il etait ecrit en dur ici et laissait les deux
+// compteurs diverger des que la valeur changeait.
+$seuils = load_defaults('seuils');
+$seuilRenouvellement = (int) ($seuils['contrat_renouvellement_jours'] ?? 30);
+$seuilAlerte = (int) ($seuils['contrat_alerte_jours'] ?? 90);
+// MySQL n'accepte pas de placeholders dans INTERVAL, la valeur est donc
+// interpolee : elle est filtree par un cast entier juste au-dessus.
+$seuilRenouvellementSql = (string) $seuilRenouvellement;
+$seuilAlerteSql = (string) $seuilAlerte;
+
 $totalSocietes = 0;
 $contratsActifs = 0;
 $contratsResilies = 0;
@@ -113,7 +124,7 @@ if ($isConnected) {
             SELECT COUNT(*) FROM contrats c
             INNER JOIN societes s ON s.id = c.societe_id
             WHERE c.contrat_statut = 'actif'
-              AND c.contrat_date_fin BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+              AND c.contrat_date_fin BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL $seuilRenouvellementSql DAY)
               AND s.created_by = :uid
         ");
         $stmt->execute(['uid' => $userId]);
@@ -149,7 +160,7 @@ if ($isConnected) {
         $renouvelerCount = (int) $pdo->query("
             SELECT COUNT(*) FROM contrats
             WHERE contrat_statut = 'actif'
-              AND contrat_date_fin BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+              AND contrat_date_fin BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL $seuilRenouvellementSql DAY)
         ")->fetchColumn();
         $resiliesMois = (int) $pdo->query("
             SELECT COUNT(*) FROM contrats
@@ -253,7 +264,7 @@ if ($isConnected) {
         WHERE c.contrat_statut = 'actif'
           AND c.contrat_date_fin IS NOT NULL
           AND c.contrat_date_fin >= CURDATE()
-          AND c.contrat_date_fin <= DATE_ADD(CURDATE(), INTERVAL 90 DAY)
+          AND c.contrat_date_fin <= DATE_ADD(CURDATE(), INTERVAL $seuilAlerteSql DAY)
           $sf
         ORDER BY c.contrat_date_fin
         LIMIT 8
@@ -296,8 +307,8 @@ if ($isConnected) {
         FROM contrats c
         INNER JOIN societes s ON s.id = c.societe_id
         WHERE c.contrat_statut = 'actif'
-          AND c.contrat_date_fin BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
-          $sf
+              AND c.contrat_date_fin BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL $seuilRenouvellementSql DAY)
+              $sf
         ORDER BY c.contrat_date_fin LIMIT 10
     ");
     $stmt->execute();

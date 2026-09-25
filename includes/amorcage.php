@@ -18,6 +18,9 @@ if (file_exists($autoloadPath)) {
     require $autoloadPath;
 }
 require_once __DIR__ . '/../src/service_claude.php';
+// DossierNaming : genere les codes dossier (collaborateur, societe) et sert
+// aussi de source unique a code_collaborateur_intermediaire() dans fonctions.php.
+require_once __DIR__ . '/../src/naming_dossier.php';
 
 $flash = pull_flash();
 $dbError = null;

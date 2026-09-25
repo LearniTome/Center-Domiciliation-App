@@ -70,6 +70,27 @@ function run_migrations(PDO $pdo): array
             continue;
         }
 
+        // Retire les commentaires de ligne "--" avant envoi.
+        //
+        // PDO_MySQL envoie le fichier d'un seul bloc et laisse le serveur le
+        // decouper en instructions. Le serveur n'accepte pas de commentaires
+        // "--" dans ce mode : selon la position de l'apostrophe la plus proche,
+        // il rejette le fichier entier (verifie sur MariaDB de XAMPP) ou pire,
+        // absorbe des instructions dans le commentaire. Le client mysql.exe,
+        // lui, nettoie les commentaires cote client et reussit — d'ou une
+        // migration qui passe a la main et echoue via le runner.
+        //
+        // On ne retire que les lignes dont les premiers caracteres non blancs
+        // sont "--", ce qui est la convention de tous les fichiers de ce
+        // dossier. Un "--" au milieu d'une ligne, donc a l'interieur d'une
+        // chaine SQL, n'est jamais touche.
+        $sql = preg_replace('/^\h*--.*$/m', '', $sql) ?? $sql;
+        $sql = trim($sql);
+        if ($sql === '') {
+            $results[$filename] = 'EMPTY';
+            continue;
+        }
+
         try {
             $pdo->exec($sql);
             $stmt = $pdo->prepare("INSERT IGNORE INTO {$tableName} (filename) VALUES (:f)");
