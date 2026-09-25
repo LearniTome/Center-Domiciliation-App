@@ -10,6 +10,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 
 require __DIR__ . '/includes/fonctions.php';
 require __DIR__ . '/src/naming_dossier.php';
+require __DIR__ . '/includes/api_valeurs.php';
 
 $user = current_user();
 if (!$user) {
@@ -215,25 +216,27 @@ function handle_quick_create(PDO $pdo, array $allowedTables, array $user): array
 
     $allowedCols = $allowedTables[$table];
     $data = [];
-    $emptyToNull = [];
     $colStmt = $pdo->prepare("SHOW COLUMNS FROM {$table}");
     $colStmt->execute();
     $hasCreatedBy = false;
+    $types = [];
     foreach ($colStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
-        if (preg_match('/^(date|datetime|timestamp|decimal|double|float|int|bigint|tinyint|smallint|mediumint)\b/i', $row['Type'])) {
-            $emptyToNull[$row['Field']] = true;
-        }
+        $types[(string) $row['Field']] = (string) $row['Type'];
         if ($row['Field'] === 'created_by') {
             $hasCreatedBy = true;
         }
     }
     foreach ($allowedCols as $col) {
         if (isset($_POST[$col])) {
-            $value = $_POST[$col];
-            if ($value === '' && isset($emptyToNull[$col])) {
-                $value = null;
+            // Conversion selon le type reel de la colonne : une chaine vide
+            // devient NULL, et un texte dans une colonne entiere echouerait
+            // sinon ici avec une exception SQL brute.
+            $norm = api_normaliser_valeur($_POST[$col], $types[$col] ?? '');
+            if (!$norm['ok']) {
+                http_response_code(400);
+                return ['success' => false, 'message' => 'Champ "' . $col . '" : ' . $norm['message']];
             }
-            $data[$col] = $value;
+            $data[$col] = $norm['value'];
         }
     }
     if ($table === 'societes') {
@@ -294,8 +297,15 @@ function handle_inline_update(PDO $pdo, array $allowedTables): array
         return ['success' => false, 'message' => 'Le code est genere, il n\'est pas modifiable.'];
     }
 
+    $types = api_types_colonnes($pdo, $table);
+    $norm = api_normaliser_valeur($value, $types[$column] ?? '');
+    if (!$norm['ok']) {
+        http_response_code(400);
+        return ['success' => false, 'message' => 'Champ "' . $column . '" : ' . $norm['message']];
+    }
+
     $stmt = $pdo->prepare("UPDATE {$table} SET {$column} = :val WHERE id = :id"); // nosemgrep: tainted-sql-string -- $table/$column validated via $allowedTables whitelist
-    $stmt->execute(['val' => $value, 'id' => $id]);
+    $stmt->execute(['val' => $norm['value'], 'id' => $id]);
 
     return ['success' => true, 'message' => 'Mis a jour avec succes.'];
 }
@@ -317,10 +327,16 @@ function handle_bulk_update(PDO $pdo, array $allowedTables): array
     }
 
     $allowedCols = $allowedTables[$table];
+    $types = api_types_colonnes($pdo, $table);
     $updates = [];
     foreach ($allowedCols as $col) {
         if (isset($_POST[$col]) && $_POST[$col] !== '') {
-            $updates[$col] = $_POST[$col];
+            $norm = api_normaliser_valeur($_POST[$col], $types[$col] ?? '');
+            if (!$norm['ok']) {
+                http_response_code(400);
+                return ['success' => false, 'message' => 'Champ "' . $col . '" : ' . $norm['message']];
+            }
+            $updates[$col] = $norm['value'];
         }
     }
 

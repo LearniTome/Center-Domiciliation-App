@@ -43,8 +43,9 @@ $modalAttr = $modalKey !== '' ? 'quick-create-' . $modalKey : 'quick-create';
                             <div data-dynamic-item style="display:flex;gap:6px;margin-bottom:4px">
                                 <select style="flex:1" data-dynamic-option>
                                     <option value="">Selectionner</option>
+                                    <?php $optList = array_is_list($field['options']); ?>
                                     <?php foreach ($field['options'] as $val => $label): ?>
-                                        <?php $optVal = is_int($val) ? $label : $val; ?>
+                                        <?php $optVal = $optList ? $label : $val; ?>
                                         <option value="<?= e((string) $optVal) ?>"><?= e($label) ?></option>
                                     <?php endforeach; ?>
                                 </select>
@@ -58,8 +59,9 @@ $modalAttr = $modalKey !== '' ? 'quick-create-' . $modalKey : 'quick-create';
                             <div data-dynamic-item style="display:flex;gap:6px;margin-bottom:4px">
                                 <select style="flex:1" data-dynamic-option>
                                     <option value="">Selectionner</option>
+                                    <?php $optList = array_is_list($field['options']); ?>
                                     <?php foreach ($field['options'] as $val => $label): ?>
-                                        <?php $optVal = is_int($val) ? $label : $val; ?>
+                                        <?php $optVal = $optList ? $label : $val; ?>
                                         <option value="<?= e((string) $optVal) ?>"><?= e($label) ?></option>
                                     <?php endforeach; ?>
                                 </select>
@@ -73,8 +75,9 @@ $modalAttr = $modalKey !== '' ? 'quick-create-' . $modalKey : 'quick-create';
                             <?php $fd = ($quickCreateDefaults ?? [])[$field['name']] ?? ''; ?>
                             <select name="<?= e($field['name'] ?? '') ?>" <?= !empty($field['required']) ? 'required' : '' ?>>
                                 <option value=""><?= e($field['placeholder'] ?? 'Selectionner') ?></option>
+                                <?php $optList = array_is_list($field['options']); ?>
                                 <?php foreach ($field['options'] as $val => $label): ?>
-                                    <?php $optVal = is_int($val) ? $label : $val; ?>
+                                    <?php $optVal = $optList ? $label : $val; ?>
                                     <option value="<?= e((string) $optVal) ?>"<?= ((string) $optVal) === $fd ? ' selected' : '' ?>><?= e($label) ?></option>
                                 <?php endforeach; ?>
                             </select>

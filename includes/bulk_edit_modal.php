@@ -31,8 +31,9 @@
                         <?php if (($field['type'] ?? 'text') === 'select' && isset($field['options'])): ?>
                             <select name="<?= e($field['name'] ?? '') ?>">
                                 <option value="">— Ne pas modifier —</option>
+                                <?php $optList = array_is_list($field['options']); ?>
                                 <?php foreach ($field['options'] as $val => $label): ?>
-                                    <?php $optVal = is_int($val) ? $label : $val; ?>
+                                    <?php $optVal = $optList ? $label : $val; ?>
                                     <option value="<?= e((string) $optVal) ?>"><?= e($label) ?></option>
                                 <?php endforeach; ?>
                             </select>
