@@ -85,16 +85,40 @@ jobs:
           done
           [ "$UP" = "1" ] || exit 1
 
+      - name: Attente de la stabilite du zip cote serveur
+        run: |
+          # Le curl FTPS retourne 0 avant que l'ecriture soit terminee
+          # physiquement cote hebergeur : une extraction lancee trop tot lit
+          # un zip tronque (EXTRACT_FAIL_OPEN) et fait echouer tout le run.
+          LOCAL_SIZE=$(stat -c%s dist_pkg/app.zip)
+          echo "Taille locale du zip : $LOCAL_SIZE octets"
+          REMOTE_SIZE=0
+          for i in $(seq 1 24); do
+            REMOTE_SIZE=$(curl -sk -I --max-time 60 https://app.centirio.ma/app.zip \
+              | grep -i '^content-length:' | tail -1 | tr -dc '0-9')
+            echo "  tentative $i : distant=${REMOTE_SIZE:-inconnu} octets"
+            if [ "$REMOTE_SIZE" = "$LOCAL_SIZE" ]; then
+              echo "Zip complet et stable cote serveur."
+              exit 0
+            fi
+            sleep 5
+          done
+          # Non bloquant : la boucle d'extraction ci-dessous reessaie 10 fois.
+          echo "::warning::zip distant=$REMOTE_SIZE octets contre $LOCAL_SIZE en local ; l'extraction tentera quand meme."
+
       - name: Extraction sur le serveur
         run: |
           TOKEN="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           OK=0
-          for i in 1 2 3 4 5; do
+          # Fenetre d'environ 200 s : le run 448b162 a echoue en 5 tentatives
+          # espacees de 10 s alors que la meme extraction reussissait 20 min
+          # plus tard, le zip n'etait pas encore stabilise.
+          for i in $(seq 1 10); do
             RESP=$(curl -sk --max-time 300 -X POST \
               -d "token=$TOKEN" \
               https://app.centirio.ma/_deploy_extract.php || true)
             echo "Tentative $i : $RESP"
             if [ "$RESP" = "EXTRACT_OK" ]; then OK=1; break; fi
-            sleep 10
+            sleep 20
           done
           [ "$OK" = "1" ] || exit 1
