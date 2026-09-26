@@ -67,40 +67,25 @@ $nationalitesOptions = fetch_reference_options($pdo ?? null, 'ref_nationalites',
 $lieuxNaissanceOptions = fetch_reference_options($pdo ?? null, 'ref_lieux_naissance', 'lieu_naissance');
 $qualitesAssocieOptions = fetch_reference_options($pdo ?? null, 'ref_qualites_associe', 'qualite_associe');
 $formesJuridiquesOptions = fetch_reference_options($pdo ?? null, 'ref_formes_juridiques', 'forme_juridique');
-$activitesOptions = fetch_reference_options($pdo ?? null, 'ref_activites', 'activite');
+$activitesOptions = fetch_reference_options($pdo ?? null, 'ref_activites_statuts', 'activite');
 $ompicOptions = fetch_activites_ompic_options($pdo ?? null);
 $collaborateursOptions = fetch_collaborateurs_options($pdo ?? null);
 $collaborateurId = (int) ($wizard['societe']['societe_collaborateur_id'] ?? 0);
 
+// Ajout d'une activite Statuts (liste libre : Creation / Cession / PV AGO).
+// Les activites OMPIC (NMA 2010, dossiers de domiciliation) ne sont pas modifiables ici.
 if (is_post() && isset($_POST['add_activite_ref']) && ($pdo ?? null) instanceof PDO) {
     ob_clean();
     header('Content-Type: application/json');
     verify_csrf();
     $newActivite = field_value($_POST, 'new_activite');
-    $type = field_value($_POST, 'type', 'statuts');
     if ($newActivite !== '') {
-        if ($type === 'cert_neg') {
-            $ompicCode = field_value($_POST, 'ompic_code');
-            if ($ompicCode === '') {
-                echo json_encode(['success' => false]);
-                exit;
-            }
-            $nmaLibelle = field_value($_POST, 'nma_libelle');
-            if ($nmaLibelle === '') {
-                $nmaLibelle = $newActivite;
-            }
-            $stmt = $pdo->prepare("INSERT IGNORE INTO ref_activites_ompic (code, libelle, sort_order) VALUES (:code, :libelle, :so)");
-            $max = $pdo->query("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM ref_activites_ompic")->fetchColumn();
-            $stmt->execute(['code' => $ompicCode, 'libelle' => $nmaLibelle, 'so' => $max]);
-            echo json_encode(['success' => true, 'code' => $ompicCode, 'libelle' => $nmaLibelle], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); // nosemgrep: echoed-request -- JSON output with hex flags
-        } else {
-            $table = 'ref_activites';
-            $column = 'activite';
-            $max = $pdo->query("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM {$table}")->fetchColumn();
-            $stmt = $pdo->prepare("INSERT IGNORE INTO {$table} ({$column}, sort_order) VALUES (:val, :so)");
-            $stmt->execute(['val' => $newActivite, 'so' => $max]);
-            echo json_encode(['success' => true, 'value' => $newActivite], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); // nosemgrep: echoed-request -- JSON output with hex flags
-        }
+        $table = 'ref_activites_statuts';
+        $column = 'activite';
+        $max = $pdo->query("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM {$table}")->fetchColumn();
+        $stmt = $pdo->prepare("INSERT IGNORE INTO {$table} ({$column}, sort_order) VALUES (:val, :so)");
+        $stmt->execute(['val' => $newActivite, 'so' => $max]);
+        echo json_encode(['success' => true, 'value' => $newActivite], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); // nosemgrep: echoed-request -- JSON output with hex flags
     } else {
         echo json_encode(['success' => false]);
     }

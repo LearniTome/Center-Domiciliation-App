@@ -2,42 +2,30 @@
 
 declare(strict_types=1);
 
-// AJAX handler for adding activite ref (statuts or cert_neg)
+// Ajout d'une activite Statuts (liste libre : Creation / Cession / PV AGO).
+// Les activites OMPIC (NMA 2010, dossiers de domiciliation) ne sont pas modifiables ici.
 if (!empty($_POST['add_activite_ref']) && ($pdo ?? null) instanceof PDO) {
+    verify_csrf();
     ob_clean();
     header('Content-Type: application/json');
     try {
         $name = trim((string) ($_POST['new_activite'] ?? ''));
         if ($name === '') {
-            echo json_encode(['success' => false, 'error' => 'Nom vide']);
+            echo json_encode(['success' => false, 'error' => 'Nom vide'], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
             exit;
         }
-        $type = field_value($_POST, 'type', 'statuts');
-        if ($type === 'cert_neg') {
-            $ompicCode = field_value($_POST, 'ompic_code');
-            if ($ompicCode === '') {
-                echo json_encode(['success' => false, 'error' => 'Code OMPIC requis']);
-                exit;
-            }
-            $nmaLibelle = field_value($_POST, 'nma_libelle', $name);
-            $stmt = $pdo->prepare("INSERT IGNORE INTO ref_activites_ompic (code, libelle, sort_order) VALUES (:code, :libelle, :so)");
-            $max = $pdo->query("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM ref_activites_ompic")->fetchColumn();
-            $stmt->execute(['code' => $ompicCode, 'libelle' => $nmaLibelle, 'so' => $max]);
-            echo json_encode(['success' => true, 'code' => $ompicCode, 'libelle' => $nmaLibelle], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); // nosemgrep: echoed-request -- JSON output with hex flags
-        } else {
-            $check = $pdo->prepare('SELECT COUNT(*) FROM ref_activites WHERE activite = :name');
-            $check->execute(['name' => $name]);
-            if ($check->fetchColumn() > 0) {
-                echo json_encode(['success' => false, 'error' => "L'activite \"$name\" existe deja"], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); // nosemgrep: echoed-request -- JSON output with hex flags
-                exit;
-            }
-            $max = $pdo->query("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM ref_activites")->fetchColumn();
-            $stmt = $pdo->prepare('INSERT INTO ref_activites (activite, sort_order) VALUES (:name, :so)');
-            $stmt->execute(['name' => $name, 'so' => $max]);
-            echo json_encode(['success' => true, 'value' => $name], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); // nosemgrep: echoed-request -- JSON output with hex flags
+        $check = $pdo->prepare('SELECT COUNT(*) FROM ref_activites_statuts WHERE activite = :name');
+        $check->execute(['name' => $name]);
+        if ($check->fetchColumn() > 0) {
+            echo json_encode(['success' => false, 'error' => "L'activite \"$name\" existe deja"], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); // nosemgrep: echoed-request -- JSON output with hex flags
+            exit;
         }
+        $max = $pdo->query("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM ref_activites_statuts")->fetchColumn();
+        $stmt = $pdo->prepare('INSERT INTO ref_activites_statuts (activite, sort_order) VALUES (:name, :so)');
+        $stmt->execute(['name' => $name, 'so' => $max]);
+        echo json_encode(['success' => true, 'value' => $name], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); // nosemgrep: echoed-request -- JSON output with hex flags
     } catch (Throwable $e) {
-        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        echo json_encode(['success' => false, 'error' => 'Ajout impossible'], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
     }
     exit;
 }
@@ -246,6 +234,7 @@ if ($step === 1):
                             foreach ($wizStatuts as $act):
                         ?>
                             <div data-activite-item style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+                                <input type="search" class="activite-search" data-ompic-filter placeholder="Rechercher" aria-label="Rechercher une activite">
                                 <select name="societe_activites_statuts[]" style="flex:1">
                                     <option value="">Selectionner</option>
                                     <?php foreach ($activitesOptions as $opt): ?>
@@ -262,6 +251,7 @@ if ($step === 1):
                         else:
                         ?>
                             <div data-activite-item style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+                                <input type="search" class="activite-search" data-ompic-filter placeholder="Rechercher" aria-label="Rechercher une activite">
                                 <select name="societe_activites_statuts[]" style="flex:1">
                                     <option value="">Selectionner</option>
                                     <?php foreach ($activitesOptions as $opt): ?>
@@ -278,6 +268,7 @@ if ($step === 1):
                     </div>
                     <template data-activite-template>
                         <div data-activite-item style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+                            <input type="search" class="activite-search" data-ompic-filter placeholder="Rechercher" aria-label="Rechercher une activite">
                             <select name="societe_activites_statuts[]" style="flex:1">
                                 <option value="">Selectionner</option>
                                 <?php foreach ($activitesOptions as $opt): ?>
@@ -376,6 +367,29 @@ if ($step === 1):
     </div>
 </form>
 <?php endif; ?>
+
+<!-- Modal : nouvelle activite Statuts (liste libre des dossiers Creation / Cession / PV AGO) -->
+<div class="modal-overlay" data-modal="add-activite-ref" role="dialog" aria-modal="true" aria-labelledby="add-activite-ref-title">
+    <div class="modal-panel" style="max-width:520px">
+        <div class="modal-header">
+            <h3 id="add-activite-ref-title"><span class="material-symbols-outlined" style="vertical-align:-4px;color:var(--info)">add_circle</span> Nouvelle activite (Statuts)</h3>
+            <button class="btn-icon" data-modal-close type="button" title="Fermer"><span class="material-symbols-outlined">close</span></button>
+        </div>
+        <form data-add-activite-ref-form>
+            <?= csrf_input() ?>
+            <div class="form-grid">
+                <label class="field full">
+                    <span>Nom de l'activite</span>
+                    <input type="text" name="new_activite" required placeholder="ex : Restaurant" autocomplete="off">
+                </label>
+            </div>
+            <div class="form-actions" style="margin-top:1rem;display:flex;gap:8px;justify-content:flex-end">
+                <button type="button" class="btn btn-cancel" data-modal-close><span class="material-symbols-outlined">close</span> Annuler</button>
+                <button type="submit" class="btn btn-next"><span class="material-symbols-outlined">add</span> Ajouter</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <script>
 (function(){

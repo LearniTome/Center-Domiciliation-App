@@ -39,7 +39,7 @@ $configGroups = [
             'adresses' => ['Adresses', 'home', 'configuration.view', false],
             'qualites-associe' => ['Qualités associé', 'badge', 'configuration.view', false],
             'fonctions' => ['Fonctions', 'assignment', 'configuration.view', false],
-            'activites' => ['Activités', 'work', 'configuration.view', false],
+            'activites_statuts' => ['Activités Statutsés', 'work', 'configuration.view', false],
             'activites-ompic' => ['Activités OMPIC', 'verified', 'configuration.view', false],
         ],
     ],

@@ -11,7 +11,7 @@ $tabs = [
     'adresses' => ['ref_ste_adresses', 'ste_adresse', 'Adresses', 'home'],
     'qualites-associe' => ['ref_qualites_associe', 'qualite_associe', 'Qualites associe', 'badge'],
     'fonctions' => ['ref_fonctions', 'fonction', 'Fonctions', 'assignment'],
-    'activites' => ['ref_activites', 'activite', 'Activites', 'work'],
+    'activites_statuts' => ['ref_activites_statuts', 'activite', 'Activites Statuts', 'work'],
     'activites-ompic' => ['ref_activites_ompic', 'libelle', 'Activites Ompic', 'verified'],
 ];
 

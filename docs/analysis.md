@@ -84,7 +84,7 @@
 
 ### Base de données
 
-11 tables : `societes`, `associes`, `contrats`, `collaborateurs`, `documents_generes` + 6 tables de référence (`ref_formes_juridiques`, `ref_villes`, `ref_tribunaux`, `ref_nationalites`, `ref_lieux_naissance`, `ref_ste_adresses`, `ref_qualites_associe`, `ref_activites`).
+11 tables : `societes`, `associes`, `contrats`, `collaborateurs`, `documents_generes` + 6 tables de référence (`ref_formes_juridiques`, `ref_villes`, `ref_tribunaux`, `ref_nationalites`, `ref_lieux_naissance`, `ref_ste_adresses`, `ref_qualites_associe`, `ref_activites_statuts`, `ref_activites_ompic`).
 
 ---
 

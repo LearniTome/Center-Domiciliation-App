@@ -23,7 +23,7 @@ if (($pdo ?? null) instanceof PDO) {
                     'adresses' => 'ref_ste_adresses',
                     'qualites-associe' => 'ref_qualites_associe',
                     'fonctions' => 'ref_fonctions',
-                    'activites' => 'ref_activites',
+                    'activites_statuts' => 'ref_activites_statuts',
                     'activites-ompic' => 'ref_activites_ompic',
                     default => null,
                 };
@@ -144,8 +144,8 @@ function config_hub_card(string $page, string $label, string $icon, string $sub,
                 'adresses' => 'Sièges sociaux et adresses types',
                 'qualites-associe' => 'Qualités (gérant, président...)',
                 'fonctions' => 'Fonctions des collaborateurs',
-                'activites' => "Activités économiques (objet social)",
-                'activites-ompic' => 'Activités normalisées OMPIC (code + libellé)',
+                'activites_statuts' => "Activités Statuts (libres) — dossiers Création / Cession / PV AGO",
+                'activites-ompic' => 'Activités normalisées OMPIC (NMA 2010) — domiciliation',
                 default => '',
             }; ?>
             <?php config_hub_card($page, $label, $icon, $sub, $counts[$page] ?? 0); ?>

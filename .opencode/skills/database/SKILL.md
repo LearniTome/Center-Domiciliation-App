@@ -32,7 +32,8 @@ Utilise cette skill pour toute opération sur la base MySQL du projet.
 - `ref_ste_adresses` — adresses possibles
 - `ref_nationalites` — nationalités
 - `ref_lieux_naissance` — lieux de naissance
-- `ref_activites` — activités
+- `ref_activites_statuts` — activités Statuts (liste libre : Création / Cession / PV AGO)
+- `ref_activites_ompic` — 649 activités NMA 2010 (dossiers de domiciliation uniquement)
 - `ref_qualites_associe` — qualités d'associé
 
 ## Migration (ajout colonne)

@@ -454,13 +454,13 @@ CREATE TABLE IF NOT EXISTS ref_tribunaux (
     UNIQUE KEY uq_ref_tribunaux (tribunal, tribunal_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS ref_activites (
+CREATE TABLE IF NOT EXISTS ref_activites_statuts (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     activite VARCHAR(190) NOT NULL,
     sort_order INT NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_ref_activites (activite)
+    UNIQUE KEY uq_ref_activites_statuts (activite)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS ref_activites_ompic (

@@ -164,19 +164,22 @@ if ($step === 1):
             <input name="societe_if" value="<?= e((string) $societeData['societe_if']) ?>">
         </label>
 
-        <h3 class="section-title">Activite (Certificat negatif)</h3>
-        <label class="field full">
-            <span>Activite pour le certificat negatif</span>
-            <div style="display:flex;gap:8px;align-items:center">
-                <select name="societe_activites_ompic" style="flex:1" data-ompic-select>
-                    <option value="">Selectionner</option>
-                    <?php foreach ($ompicOptions as $row): ?>
-                        <option value="<?= e($row['code']) ?>" <?= ((string) $societeData['societe_activites_ompic']) === $row['code'] ? 'selected' : '' ?>><?= e($row['code'] . ' - ' . $row['libelle']) ?></option>
-                    <?php endforeach; ?>
-                </select>
-                <button type="button" class="btn btn-info" data-add-activite-cn style="white-space:nowrap"><span class="material-symbols-outlined">add_circle</span> Nouvelle activite</button>
-            </div>
-        </label>
+                <h3 class="section-title">Activite (Certificat negatif)</h3>
+                <label class="field full">
+                    <span>Activite pour le certificat negatif</span>
+                    <div class="ompic-picker">
+                        <div class="flex-row">
+                            <input type="search" data-ompic-filter="societe_activites_ompic_wizard" placeholder="Rechercher (code ou libelle)" aria-label="Rechercher une activite OMPIC">
+                            <select id="societe_activites_ompic_wizard" name="societe_activites_ompic" class="select-flex" data-ompic-select>
+                                <option value="">Selectionner</option>
+                                <?php foreach ($ompicOptions as $row): ?>
+                                    <option value="<?= e($row['code']) ?>" <?= ((string) $societeData['societe_activites_ompic']) === $row['code'] ? 'selected' : '' ?>><?= e($row['code'] . ' - ' . $row['libelle']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <small class="ompic-picker__count" data-ompic-count></small>
+                    </div>
+                </label>
 
         <div data-statuts-section style="grid-column:1/-1">
         <h3 class="section-title">Activites (Statuts)</h3>
@@ -194,6 +197,7 @@ if ($step === 1):
                         foreach ($wizStatuts as $act):
                     ?>
                         <div data-activite-item style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+                            <input type="search" class="activite-search" data-ompic-filter placeholder="Rechercher" aria-label="Rechercher une activite">
                             <select name="societe_activites_statuts[]" style="flex:1">
                                 <option value="">Selectionner</option>
                                 <?php foreach ($activitesOptions as $opt): ?>
@@ -210,6 +214,7 @@ if ($step === 1):
                     else:
                     ?>
                         <div data-activite-item style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+                            <input type="search" class="activite-search" data-ompic-filter placeholder="Rechercher" aria-label="Rechercher une activite">
                             <select name="societe_activites_statuts[]" style="flex:1">
                                 <option value="">Selectionner</option>
                                 <?php foreach ($activitesOptions as $opt): ?>
@@ -227,6 +232,7 @@ if ($step === 1):
                 </div>
                 <template data-activite-template>
                     <div data-activite-item style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+                        <input type="search" class="activite-search" data-ompic-filter placeholder="Rechercher" aria-label="Rechercher une activite">
                         <select name="societe_activites_statuts[]" style="flex:1">
                             <option value="">Selectionner</option>
                             <?php foreach ($activitesOptions as $opt): ?>
@@ -353,34 +359,7 @@ $quickCreateFields = [
 require __DIR__ . '/../../../includes/quick_create_modal.php';
 ?>
 
-<!-- Modal moderne : nouvelle activite OMPIC (certificat negatif) -->
-<div class="modal-overlay" data-modal="add-activite-cn" role="dialog" aria-modal="true" aria-labelledby="add-activite-cn-title">
-    <div class="modal-panel" style="max-width:520px">
-        <div class="modal-header">
-            <h3 id="add-activite-cn-title"><span class="material-symbols-outlined" style="vertical-align:-4px;color:var(--info)">add_circle</span> Nouvelle activite OMPIC</h3>
-            <button class="btn-icon" data-modal-close type="button" title="Fermer"><span class="material-symbols-outlined">close</span></button>
-        </div>
-        <form data-add-activite-cn-form>
-            <?= csrf_input() ?>
-            <div class="form-grid">
-                <label class="field">
-                    <span>Code OMPIC</span>
-                    <input type="text" name="ompic_code" required placeholder="ex : 4711B" autocomplete="off">
-                </label>
-                <label class="field full">
-                    <span>Libelle</span>
-                    <input type="text" name="nma_libelle" required placeholder="ex : Commerce de detail alimentaire" autocomplete="off">
-                </label>
-            </div>
-            <div class="form-actions" style="margin-top:1rem;display:flex;gap:8px;justify-content:flex-end">
-                <button type="button" class="btn btn-cancel" data-modal-close><span class="material-symbols-outlined">close</span> Annuler</button>
-                <button type="submit" class="btn btn-next"><span class="material-symbols-outlined">add</span> Ajouter</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Modal moderne : nouvelle activite (Statuts) -->
+<!-- Modal : nouvelle activite Statuts (liste libre des dossiers Creation / Cession / PV AGO) -->
 <div class="modal-overlay" data-modal="add-activite-ref" role="dialog" aria-modal="true" aria-labelledby="add-activite-ref-title">
     <div class="modal-panel" style="max-width:520px">
         <div class="modal-header">

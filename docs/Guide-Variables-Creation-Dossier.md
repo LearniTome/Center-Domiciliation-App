@@ -39,7 +39,7 @@ Tous les champs du formulaire de creation de dossier (`pages/dossiers/creation_s
 | Champ name | Libellé | Type | Details | Variable template | Col DB |
 |---|---|---|---|---|---|
 | `societe_activites_ompic` | Activite certificat negatif | select | Liste OMPIC (code + libelle) | `ACTIVITES_OMPIC`, `OMPIC_INLINE`, `OMPIC_PUCES`, `NB_OMPIC` | `societe_activites_ompic` |
-| `societe_activites_statuts[]` | Activites statuts | select multiple | `ref_activites`, ajout dynamique | `ACTIVITES`, `ACTIVITES_INLINE`, `ACTIVITES_PLAIN`, `ACTIVITES_PUCES`, `ACTIVITES_SUITE_PUCES`, `NB_ACTIVITES`, `ACTIVITY1`-`ACTIVITY5` | `societe_activites_statuts` |
+| `societe_activites_statuts[]` | Activites statuts | select multiple | `ref_activites_statuts`, ajout dynamique | `ACTIVITES`, `ACTIVITES_INLINE`, `ACTIVITES_PLAIN`, `ACTIVITES_PUCES`, `ACTIVITES_SUITE_PUCES`, `NB_ACTIVITES`, `ACTIVITY1`-`ACTIVITY5` | `societe_activites_statuts` |
 
 ### Capital
 

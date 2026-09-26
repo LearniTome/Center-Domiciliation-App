@@ -40,7 +40,7 @@ $navPermissions = [
     'adresses' => 'configuration.view',
     'qualites-associe' => 'configuration.view',
     'fonctions' => 'configuration.view',
-    'activites' => 'configuration.view',
+    'activites_statuts' => 'configuration.view',
     'activites-ompic' => 'configuration.view',
     'pv-templates' => 'pv_resolutions.view',
 ];

@@ -701,89 +701,6 @@ document.addEventListener('input', (e) => {
 })();
 
 (function () {
-    var modal = document.querySelector('[data-modal="add-activite-cn"]');
-    if (!modal) return;
-    var form = modal.querySelector('[data-add-activite-cn-form]');
-    if (!form) return;
-
-    var openBtn = document.querySelector('[data-add-activite-cn]');
-    var ompicSelect = document.querySelector('[data-ompic-select]');
-    if (!openBtn) return;
-
-    function open() { modal.classList.add('open'); }
-    function close() { modal.classList.remove('open'); form.reset(); }
-
-    openBtn.addEventListener('click', function (e) {
-        e.preventDefault();
-        open();
-    });
-
-    modal.querySelectorAll('[data-modal-close]').forEach(function (el) {
-        el.addEventListener('click', close);
-    });
-    modal.addEventListener('click', function (e) {
-        if (e.target === modal) close();
-    });
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && modal.classList.contains('open')) close();
-    });
-
-    form.addEventListener('submit', function (e) {
-        e.preventDefault();
-        var rootForm = openBtn.closest('form');
-        if (!rootForm) return;
-        var csrf = rootForm.querySelector('input[name="csrf_token"]');
-        if (!csrf) return;
-
-        var submitBtn = form.querySelector('button[type="submit"]');
-        var original = submitBtn.innerHTML;
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="material-symbols-outlined">hourglass_top</span> Ajout...';
-
-        var code = form.querySelector('[name="ompic_code"]').value.trim();
-        var label = form.querySelector('[name="nma_libelle"]').value.trim();
-
-        fetch(window.location.href, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({
-                csrf_token: csrf.value,
-                add_activite_ref: '1',
-                type: 'cert_neg',
-                new_activite: label,
-                ompic_code: code,
-                nma_libelle: label
-            })
-        })
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-            if (data.success && ompicSelect) {
-                var display = data.code + ' - ' + data.libelle;
-                var exists = Array.from(ompicSelect.options).some(function (o) { return o.value === data.code; });
-                if (!exists) {
-                    var opt = document.createElement('option');
-                    opt.value = data.code;
-                    opt.textContent = display;
-                    ompicSelect.appendChild(opt);
-                }
-                ompicSelect.value = data.code;
-                ompicSelect.dispatchEvent(new Event('change', { bubbles: true }));
-                close();
-            } else {
-                alert('Erreur lors de l\'ajout de l\'activite.');
-            }
-        })
-        .catch(function () {
-            alert('Erreur de communication avec le serveur.');
-        })
-        .finally(function () {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = original;
-        });
-    });
-})();
-
-(function () {
     document.querySelectorAll('[data-tribunal-type]').forEach(function (typeSelect) {
         var tribSelect = typeSelect.closest('.form-grid, .card')?.querySelector('[name="societe_tribunal"], [name="tribunal"]');
         if (!tribSelect) return;
@@ -2218,5 +2135,103 @@ if (el.getAttribute('aria-label') || el.getAttribute('aria-labelledby')) {
             });
         });
     }).observe(document.documentElement, { childList: true, subtree: true });
+})();
+
+// Recherche sur les selects d'activites NMA 2010 (649 postes)
+// Utilise via delegation d'evenements pour couvrir les lignes ajoutees dynamiquement
+// (nouvelle ligne "Activites (Statuts)") et les options ajoutees par la modale.
+(function () {
+    const normalize = (value) => (value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    // Map (et non WeakMap) : laListe doit etre iterable pour reinitialiser
+    // tous les filtres lors d'un changement de select
+    const state = new Map();
+
+    // Le select est cherche dans le meme conteneur que l'input (ligne "Statuts" ou .ompic-picker)
+    // ; le repli sur l'id sert pour les selects historiques.
+    const init = (input) => {
+        if (state.has(input)) return state.get(input);
+
+        const scope = input.closest('.ompic-picker') || input.parentElement;
+        const select = (scope && scope.querySelector('select'))
+            || document.getElementById(input.getAttribute('data-ompic-filter') || '');
+        if (!select) return null;
+
+        const entry = {
+            select: select,
+            counter: scope ? scope.querySelector('[data-ompic-count]') : null,
+            options: []
+        };
+        state.set(input, entry);
+        return entry;
+    };
+
+    // Options ajoutees apres coup (modale "Nouvelle activite") : on reconstruit la liste
+    const collect = (entry) => {
+        if (entry.options.length === entry.select.options.length) return;
+        entry.options = Array.from(entry.select.options).map((option) => ({
+            option: option,
+            needle: normalize(option.textContent)
+        }));
+    };
+
+    const apply = (input) => {
+        const entry = state.get(input) || init(input);
+        if (!entry) return;
+        collect(entry);
+
+        const query = normalize(input.value);
+        let shown = 0;
+        entry.options.forEach((item) => {
+            const match = !query || item.needle.indexOf(query) !== -1;
+            if (match) shown++;
+            item.option.hidden = !match;
+            item.option.disabled = !match && item.option.value !== entry.select.value;
+        });
+
+        if (entry.counter) {
+            entry.counter.textContent = query
+                ? shown + (shown > 1 ? ' resultats' : ' resultat')
+                : (entry.options.length - 1) + ' activites';
+        }
+    };
+
+    // Selections restorees : on affiche toutes les options et on remet le compteur a zero filtre
+    const reset = (entry) => {
+        collect(entry);
+        entry.options.forEach((item) => {
+            item.option.hidden = false;
+            item.option.disabled = false;
+        });
+        if (entry.counter) {
+            entry.counter.textContent = (entry.options.length - 1) + ' activites';
+        }
+    };
+
+    document.addEventListener('input', (event) => {
+        if (event.target instanceof HTMLElement && event.target.matches('input[data-ompic-filter]')) {
+            apply(event.target);
+        }
+    }, true);
+
+    document.addEventListener('search', (event) => {
+        if (event.target instanceof HTMLElement && event.target.matches('input[data-ompic-filter]')) {
+            apply(event.target);
+        }
+    }, true);
+
+    document.addEventListener('change', (event) => {
+        if (!(event.target instanceof HTMLSelectElement)) return;
+        state.forEach((entry) => {
+            if (entry.select === event.target) reset(entry);
+        });
+    }, true);
+
+    document.querySelectorAll('input[data-ompic-filter]').forEach((input) => apply(input));
 })();
 

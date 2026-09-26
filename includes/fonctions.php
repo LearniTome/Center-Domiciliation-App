@@ -510,7 +510,7 @@ function fetch_reference_options(?PDO $pdo, string $table, string $column): arra
     $allowed = [
         'ref_ste_adresses' => 'ste_adresse',
         'ref_tribunaux' => 'tribunal',
-        'ref_activites' => 'activite',
+        'ref_activites_statuts' => 'activite',
         'ref_activites_ompic' => 'libelle',
         'ref_nationalites' => 'nationalite',
         'ref_lieux_naissance' => 'lieu_naissance',
@@ -935,7 +935,7 @@ function config_section_title_for_page(string $page): ?string
         'adresses' => 'Référentiels',
         'qualites-associe' => 'Référentiels',
         'fonctions' => 'Référentiels',
-        'activites' => 'Référentiels',
+        'activites_statuts' => 'Référentiels',
         'activites-ompic' => 'Référentiels',
     ];
 
@@ -1259,7 +1259,7 @@ function get_page_permission(string $page): ?string
         'adresses' => 'configuration.view',
         'qualites-associe' => 'configuration.view',
         'fonctions' => 'configuration.view',
-        'activites' => 'configuration.view',
+        'activites_statuts' => 'configuration.view',
         'activites-ompic' => 'configuration.view',
 
         'analyse-couverture' => 'analyse.view',

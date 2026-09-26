@@ -47,7 +47,7 @@ assets/js/app.js     — JS dynamique (capital, associés, etc.)
   - Mapper `$wizard['associes']` → liste associés avec nom, prénom, CIN, nationalité, parts, etc.
   - Mapper `$wizard['contrat']` → clés contrat : loyers, TVA, dates, renouvellement...
   - Générer `DATE`, `ANNEE`, `MOIS`, `JOUR` courants
-  - Charger `ref_activites` depuis PDO pour `ACTIVITIES_LIST` (ou fallback vide)
+  - Charger `ref_activites_statuts` depuis PDO pour `ACTIVITIES_LIST` (ou fallback vide)
 
 ### Todo 5.2 — Interface de génération (step 5)
 

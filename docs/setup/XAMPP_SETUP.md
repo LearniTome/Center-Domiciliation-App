@@ -37,5 +37,5 @@ Faire tourner l'application depuis `C:\xampp\htdocs\Center-Domiciliation-App` av
   - `associes`
   - `contrats`
   - `collaborateurs`
-  - tables de reference (`ref_ste_adresses`, `ref_tribunaux`, `ref_activites`, `ref_nationalites`, `ref_lieux_naissance`)
+  - tables de reference (`ref_ste_adresses`, `ref_tribunaux`, `ref_activites_statuts`, `ref_activites_ompic`, `ref_nationalites`, `ref_lieux_naissance`)
 - L'application PHP actuelle n'exploite pas encore tous les champs historiques disponibles dans le schema.

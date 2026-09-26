@@ -2755,6 +2755,34 @@ td.col-pdf .pdf-pending {
     flex: 1;
 }
 
+/* Selecteur d'activite OMPIC : recherche + select (nomenclature NMA 2010) */
+.ompic-picker {
+    display: grid;
+    gap: 6px;
+}
+.ompic-picker .flex-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.ompic-picker input[type="search"] {
+    flex: 1;
+    min-width: 0;
+}
+.ompic-picker select {
+    flex: 1;
+    min-width: 0;
+}
+.ompic-picker__count {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+/* Recherche d'activite dans une ligne "Activites (Statuts)" */
+.activite-search {
+    flex: 0 1 200px;
+    min-width: 130px;
+}
+
 /* Grid full width */
 .grid-full {
     grid-column: 1 / -1;

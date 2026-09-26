@@ -62,7 +62,7 @@ if (($pdo ?? null) instanceof PDO) {
     $nationalitesOptions = fetch_reference_options($pdo, 'ref_nationalites', 'nationalite');
     $lieuxNaissanceOptions = fetch_reference_options($pdo, 'ref_lieux_naissance', 'lieu_naissance');
     $qualitesAssocieOptions = fetch_reference_options($pdo, 'ref_qualites_associe', 'qualite_associe');
-    $activitesOptions = fetch_reference_options($pdo, 'ref_activites', 'activite');
+    $activitesOptions = fetch_reference_options($pdo, 'ref_activites_statuts', 'activite');
     $adressesOptions = fetch_reference_options($pdo, 'ref_ste_adresses', 'ste_adresse');
     $adressesAll = fetch_adresses_all($pdo);
     $ompicOptions = fetch_activites_ompic_options($pdo);
