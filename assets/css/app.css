@@ -6350,3 +6350,45 @@ button[type="submit"].auth-submit:active {
 @media (max-width: 480px) {
     .auth-card { padding: 1.5rem 1.25rem 1.1rem; }
 }
+
+/* ==========================================
+   Dialogue de confirmation (data-confirm)
+   ========================================== */
+.confirm-panel {
+    max-width: 480px;
+    width: 92%;
+}
+
+.confirm-panel .modal-header h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.confirm-dialog-icon {
+    vertical-align: -4px;
+    color: var(--warning);
+}
+
+.confirm-panel .modal-body p {
+    margin: 0;
+    line-height: 1.5;
+    color: var(--text);
+}
+
+.confirm-dialog-actions {
+    margin-top: 1.25rem;
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+.confirm-panel .btn-danger {
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+.confirm-panel .btn-danger:hover {
+    background: rgba(252, 66, 74, 0.12);
+}

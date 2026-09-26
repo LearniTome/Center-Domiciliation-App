@@ -2235,3 +2235,137 @@ if (el.getAttribute('aria-label') || el.getAttribute('aria-labelledby')) {
     document.querySelectorAll('input[data-ompic-filter]').forEach((input) => apply(input));
 })();
 
+
+/* ==========================================
+   Dialogue de confirmation — attribut data-confirm
+   Declenche sur <a>, <button> et <form> portant l'attribut.
+   Attributes optionnels : data-confirm-title, data-confirm-ok,
+   data-confirm-cancel, data-confirm-tone ("danger" par defaut, "primary").
+   ========================================== */
+(function () {
+    'use strict';
+
+    var dialog = document.querySelector('[data-confirm-dialog]');
+    if (!dialog) return;
+
+    var titleEl = dialog.querySelector('[data-confirm-dialog-title]');
+    var messageEl = dialog.querySelector('[data-confirm-dialog-message]');
+    var okBtn = dialog.querySelector('[data-confirm-dialog-ok]');
+    var okLabel = dialog.querySelector('[data-confirm-dialog-ok-label]');
+    var cancelLabel = dialog.querySelector('[data-confirm-dialog-cancel-label]');
+    var cancelButtons = dialog.querySelectorAll('[data-confirm-dialog-cancel]');
+
+    var pending = null;
+    // Evite la double interception (clic sur un bouton contenu dans un
+    // form[data-confirm] : le clic puis le submit du form).
+    var bypass = false;
+    var lastFocused = null;
+
+    function label(el, value, fallback) {
+        return el && typeof value === 'string' && value.trim() !== '' ? value : fallback;
+    }
+
+    function close() {
+        dialog.classList.remove('open');
+        dialog.setAttribute('aria-hidden', 'true');
+        pending = null;
+        if (lastFocused && typeof lastFocused.focus === 'function') {
+            lastFocused.focus();
+        }
+        lastFocused = null;
+    }
+
+    function ask(trigger, message) {
+        if (pending) return;
+        pending = { trigger: trigger, message: message };
+        lastFocused = document.activeElement;
+
+        var tone = trigger.getAttribute('data-confirm-tone') === 'primary' ? 'primary' : 'danger';
+        if (titleEl) titleEl.textContent = label(trigger, trigger.getAttribute('data-confirm-title'), 'Confirmation');
+        if (messageEl) messageEl.textContent = message;
+        if (okLabel) okLabel.textContent = label(trigger, trigger.getAttribute('data-confirm-ok'), 'Confirmer');
+        if (cancelLabel) cancelLabel.textContent = label(trigger, trigger.getAttribute('data-confirm-cancel'), 'Annuler');
+        if (okBtn) {
+            okBtn.classList.toggle('btn-danger', tone === 'danger');
+            okBtn.classList.toggle('btn-next', tone === 'primary');
+        }
+
+        dialog.classList.add('open');
+        dialog.setAttribute('aria-hidden', 'false');
+        if (okBtn) okBtn.focus();
+    }
+
+    // Rejoue l'action native : on retire l'attribut le temps du rejeu pour que
+    // le gestionnaire ne se declenche pas une seconde fois (le nom/value du
+    // bouton et la validation HTML du formulaire restent preserves).
+    function replay(trigger, message) {
+        bypass = true;
+        var hadAttribute = trigger.hasAttribute('data-confirm');
+        if (hadAttribute) trigger.removeAttribute('data-confirm');
+        try {
+            if (trigger instanceof HTMLFormElement && typeof trigger.requestSubmit === 'function') {
+                trigger.requestSubmit();
+            } else if (typeof trigger.click === 'function') {
+                trigger.click();
+            }
+        } finally {
+            if (hadAttribute) trigger.setAttribute('data-confirm', message);
+            bypass = false;
+        }
+    }
+
+
+    document.addEventListener('click', function (event) {
+        if (bypass) return;
+        if (!(event.target instanceof Element)) return;
+
+        if (event.target.closest('[data-confirm-dialog]')) {
+            // Clic dans la fenetre : fermer si le clic est sur l'overlay.
+            if (event.target === dialog) close();
+            return;
+        }
+
+        var trigger = event.target.closest('a[data-confirm], button[data-confirm]');
+        if (!trigger) return;
+
+        var message = trigger.getAttribute('data-confirm') || '';
+        if (message.trim() === '') return;
+
+        event.preventDefault();
+        ask(trigger, message);
+    });
+
+    document.addEventListener('submit', function (event) {
+        if (bypass) return;
+        var form = event.target;
+        if (!(form instanceof HTMLFormElement) || !form.hasAttribute('data-confirm')) return;
+
+        var message = form.getAttribute('data-confirm') || '';
+        if (message.trim() === '') return;
+
+        event.preventDefault();
+        ask(form, message);
+    }, true);
+
+    if (okBtn) {
+        okBtn.addEventListener('click', function () {
+            var trigger = pending ? pending.trigger : null;
+            var message = pending ? pending.message : '';
+            close();
+            if (!trigger) return;
+            replay(trigger, message);
+        });
+    }
+
+    cancelButtons.forEach(function (btn) {
+        btn.addEventListener('click', close);
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (!dialog.classList.contains('open')) return;
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            close();
+        }
+    });
+})();

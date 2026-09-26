@@ -113,10 +113,13 @@ if (isset($_GET['reset']) && $_GET['reset'] === '1') {
 }
 
 if (isset($_GET['cancel']) && $_GET['cancel'] === '1') {
+    // Type lu avant l'unset : $wizard est une reference sur la session.
+    $cancelType = (string) ($wizard['societe']['societe_type_generation'] ?? 'domiciliation');
+    $cancelLabel = $cancelType === 'creation' ? 'une société' : 'une domiciliation';
     _cleanup_tmp_uploads();
     unset($_SESSION['creation_wizard']);
     log_activity($pdo, 'cancel', 'wizard');
-    set_flash('success', 'Creation annulee.');
+    set_flash('info', 'Vous avez quitté l\'assistant de création d\'' . $cancelLabel . '.');
     redirect_to('creations');
 }
 

@@ -2,6 +2,14 @@
 declare(strict_types=1);
 
 require __DIR__ . '/_init.php';
+
+// L'annulation quitte l'assistant : le message d'avertissement depend du type
+// de dossier en cours (Creation d'une societe ou Domiciliation).
+$wizardTypeGen = (string) ($societeData['societe_type_generation'] ?? 'domiciliation');
+$wizardDossierLabel = $wizardTypeGen === 'creation' ? 'une société' : 'une domiciliation';
+$wizardConfirmCreation = 'Vous avez quitté l\'assistant de création d\'une société. Les données saisies seront perdues.';
+$wizardConfirmDomiciliation = 'Vous avez quitté l\'assistant de création d\'une domiciliation. Les données saisies seront perdues.';
+$wizardConfirmMessage = $wizardTypeGen === 'creation' ? $wizardConfirmCreation : $wizardConfirmDomiciliation;
 ?>
 <section class="card stack">
     <div class="section-header">
@@ -9,8 +17,15 @@ require __DIR__ . '/_init.php';
             <p class="help-text">Parcours guide: societe, associes, puis contrat, dans un seul flux.</p>
         </div>
         <div class="table-actions">
-            <a class="btn btn-cancel" href="<?= e(app_url('creation', ['cancel' => '1'])) ?>" data-confirm="Annuler la creation ?"><span class="material-symbols-outlined">cancel</span> Annuler</a>
-            <a class="btn btn-back" href="<?= e(app_url('creation', ['reset' => '1'])) ?>" data-confirm="Reinitialiser cet assistant ?"><span class="material-symbols-outlined">restart_alt</span> Reinitialiser</a>
+            <a class="btn btn-cancel" id="wizard-cancel-link"
+               href="<?= e(app_url('creation', ['cancel' => '1'])) ?>"
+               data-confirm="<?= e($wizardConfirmMessage) ?>"
+               data-confirm-title="Quitter l'assistant ?"
+               data-confirm-ok="Quitter"
+               data-confirm-cancel="Rester dans l'assistant"
+               data-confirm-creation="<?= e($wizardConfirmCreation) ?>"
+               data-confirm-domiciliation="<?= e($wizardConfirmDomiciliation) ?>"><span class="material-symbols-outlined">cancel</span> Annuler</a>
+            <a class="btn btn-back" href="<?= e(app_url('creation', ['reset' => '1'])) ?>" data-confirm="Reinitialiser cet assistant ? Les données saisies seront perdues." data-confirm-title="Reinitialiser l'assistant ?" data-confirm-ok="Reinitialiser"><span class="material-symbols-outlined">restart_alt</span> Reinitialiser</a>
         </div>
     </div>
 
@@ -121,6 +136,14 @@ if ($aiSuggestions !== null) {
             if (proc && !proc.value) proc.value = 'normal';
             var depot = document.querySelector('select[name="societe_mode_depot"]');
             if (depot && !depot.value) depot.value = 'depot_physique';
+        }
+        // Le message d'annulation suit le type de dossier choisi.
+        var cancelLink = document.getElementById('wizard-cancel-link');
+        if (cancelLink) {
+            var msg = show
+                ? cancelLink.getAttribute('data-confirm-creation')
+                : cancelLink.getAttribute('data-confirm-domiciliation');
+            if (msg) cancelLink.setAttribute('data-confirm', msg);
         }
     });
     </script>
