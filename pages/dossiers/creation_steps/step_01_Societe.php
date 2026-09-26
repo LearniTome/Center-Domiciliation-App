@@ -70,6 +70,22 @@ if (is_post() && $step === 1) {
         redirect_to('creation', ['step' => 1]);
     }
 
+    $collaborateurIdPost = (int) $societe['societe_collaborateur_id'];
+    if ($collaborateurIdPost <= 0) {
+        set_flash('error', 'Le collaborateur en charge du dossier est obligatoire.');
+        redirect_to('creation', ['step' => 1]);
+    }
+    // Un ID forge (ou supprime entre-temps) ne doit pas atteindre l'etape 6,
+    // ou il casserait le lien dans collaborateur_societes.
+    if (($pdo ?? null) instanceof PDO) {
+        $checkCollab = $pdo->prepare('SELECT id FROM collaborateurs WHERE id = :id');
+        $checkCollab->execute(['id' => $collaborateurIdPost]);
+        if ($checkCollab->fetchColumn() === false) {
+            set_flash('error', 'Le collaborateur selectionne est introuvable. Veuillez le selectionner a nouveau.');
+            redirect_to('creation', ['step' => 1]);
+        }
+    }
+
     redirect_to('creation', ['step' => 2]);
 }
 
@@ -315,13 +331,18 @@ if ($step === 1):
 
         <h3 class="section-title">Collaborateur responsable</h3>
         <label class="field full">
-            <span>Collaborateur en charge du dossier</span>
-            <select name="societe_collaborateur_id">
-                <option value="">Aucun (dossier non attribue)</option>
-                <?php foreach ($collaborateursOptions as $collabId => $collabLabel): ?>
-                    <option value="<?= (int) $collabId ?>"<?= $collaborateurId === (int) $collabId ? ' selected' : '' ?>><?= e($collabLabel) ?></option>
-                <?php endforeach; ?>
-            </select>
+            <span>Collaborateur en charge du dossier (obligatoire)</span>
+            <div style="display:flex;gap:8px;align-items:center">
+                <select name="societe_collaborateur_id" required style="flex:1">
+                    <option value="">Selectionner un collaborateur</option>
+                    <?php foreach ($collaborateursOptions as $collabId => $collabLabel): ?>
+                        <option value="<?= (int) $collabId ?>"<?= $collaborateurId === (int) $collabId ? ' selected' : '' ?>><?= e($collabLabel) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <?php if (has_permission('collaborateurs.create')): ?>
+                <button type="button" class="btn-icon" data-quick-create-btn="collaborateurs" title="Ajouter un collaborateur"><span class="material-symbols-outlined">add</span></button>
+                <?php endif; ?>
+            </div>
             <small>Ce collaborateur porte le code dans le nom du dossier genere et apparait dans le suivi des dossiers du collaborateur.</small>
         </label>
     </div>
@@ -357,6 +378,13 @@ $quickCreateFields = [
     ['name' => 'ville', 'label' => 'Ville', 'type' => 'text', 'required' => true],
 ];
 require __DIR__ . '/../../../includes/quick_create_modal.php';
+
+// Collaborateur en charge du dossier : creation rapide depuis le wizard.
+// Le select cible est alimente automatiquement (option ajoutee + selectionnee).
+$quickCreateModalKey = 'collaborateurs';
+$quickCreateTargetSelect = 'societe_collaborateur_id';
+$quickCreateTargetLabel = ['nom_complet', 'collaborateur_code'];
+require __DIR__ . '/../../../includes/collaborateur_quick_create_modal.php';
 ?>
 
 <!-- Modal : nouvelle activite Statuts (liste libre des dossiers Creation / Cession / PV AGO) -->

@@ -15,9 +15,17 @@
  *   $quickCreateTable = 'ref_formes_juridiques';
  *   $quickCreateFields = [...];
  *   require __DIR__ . '/../../includes/quick_create_modal.php';
+ *
+ *   Wizard page sans tableau de listing, alimentant un <select> de la page :
+ *   $quickCreateModalKey      = 'collaborateurs';
+ *   $quickCreateTargetSelect  = 'societe_collaborateur_id';
+ *   $quickCreateTargetLabel   = ['nom_complet', 'collaborateur_code'];
+ *   -> apres creation, l'option est ajoutee au select cible et selectionnee.
  */
 $modalKey = $quickCreateModalKey ?? '';
 $modalAttr = $modalKey !== '' ? 'quick-create-' . $modalKey : 'quick-create';
+$targetSelect = (string) ($quickCreateTargetSelect ?? '');
+$targetLabel = array_values(array_filter((array) ($quickCreateTargetLabel ?? []), static fn($k) => $k !== ''));
 ?>
 <div class="modal-overlay" data-modal="<?= e($modalAttr) ?>">
     <div class="modal-panel">
@@ -25,7 +33,7 @@ $modalAttr = $modalKey !== '' ? 'quick-create-' . $modalKey : 'quick-create';
             <h3 style="font-weight:700;color:var(--info)"><?= e($quickCreateTitle ?? 'Nouvel enregistrement') ?></h3>
             <button class="btn-icon" data-modal-close type="button" title="Fermer"><span class="material-symbols-outlined">close</span></button>
         </div>
-        <form data-quick-create-form>
+        <form data-quick-create-form<?= $targetSelect !== '' ? ' data-quick-create-target="' . e($targetSelect) . '" data-quick-create-label="' . e(implode(',', $targetLabel)) . '"' : '' ?>>
             <?= csrf_input() ?>
             <input type="hidden" name="action" value="quick_create">
             <input type="hidden" name="table" value="<?= e($quickCreateTable) ?>">

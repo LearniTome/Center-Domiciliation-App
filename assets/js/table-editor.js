@@ -47,6 +47,36 @@
                     .then(function (r) { return r.json(); })
                     .then(function (json) {
                         if (json.success && json.data) {
+                            // Select cible (wizard sans tableau) : on ajoute
+                            // l'option correspondant a l'enregistrement cree et
+                            // on la selectionne. Prioritaire sur l'insertion
+                            // dans un tableau de listing.
+                            var targetName = form.getAttribute('data-quick-create-target');
+                            if (targetName) {
+                                var sel = document.querySelector('select[name="' + targetName + '"]');
+                                if (sel) {
+                                    var keys = (form.getAttribute('data-quick-create-label') || '').split(',').filter(Boolean);
+                                    var label = keys.map(function (k) {
+                                        return json.data[k];
+                                    }).filter(function (v) {
+                                        return v !== undefined && v !== null && v !== '';
+                                    }).join(' — ');
+                                    if (!label) label = json.message || 'Enregistre.';
+                                    var newId = String(json.data.id);
+                                    var exists = Array.prototype.some.call(sel.options, function (o) { return o.value === newId; });
+                                    if (!exists) {
+                                        var opt = document.createElement('option');
+                                        opt.value = newId;
+                                        opt.textContent = label;
+                                        sel.appendChild(opt);
+                                    }
+                                    sel.value = newId;
+                                }
+                                form.reset();
+                                close();
+                                showToast('success', json.message || 'Enregistre.');
+                                return;
+                            }
                             var table = document.querySelector('[data-table]');
                             if (table) {
                                 var tbody = table.querySelector('tbody');
