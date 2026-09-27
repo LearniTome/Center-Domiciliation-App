@@ -273,7 +273,8 @@ if ($contrat !== null && !$estResilie) {
                         <?= csrf_input() ?>
                         <input type="hidden" name="action" value="retablir">
                         <div class="table-actions" style="justify-content:flex-end;">
-                            <button type="submit" class="btn btn-back" data-confirm="Rétablir ce contrat comme actif ? La date et le motif de résiliation seront effacés."><span class="material-symbols-outlined">undo</span> Rétablir le contrat</button>
+                            <button type="submit" class="btn btn-back" data-confirm="Rétablir ce contrat comme actif ? La date et le motif de résiliation seront effacés."
+                            data-confirm-title="Rétablir le contrat" data-confirm-ok="Rétablir" data-confirm-tone="primary"><span class="material-symbols-outlined">undo</span> Rétablir le contrat</button>
                         </div>
                     </form>
                 <?php endif; ?>

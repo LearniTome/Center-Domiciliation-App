@@ -44,6 +44,7 @@ if (!isset($qualiteOptions) || $qualiteOptions === []) {
 
 $quickCreateTitle = 'Nouveau collaborateur';
 $quickCreateTable = 'collaborateurs';
+$quickCreateSubmitLabel = 'Créer le collaborateur';
 $quickCreateDefaults = isset($collabDefaults) && is_array($collabDefaults) ? $collabDefaults : load_defaults('collaborateur');
 $quickCreateFields = [
     ['type' => 'title', 'label' => 'Identite & Role'],

@@ -3950,6 +3950,7 @@ section.stack > .section-title-row { margin-top: 0.25rem; }
 .dm-icon-ces { background:linear-gradient(135deg,#e17055,#d63031); }
 .dm-icon-pv { background:linear-gradient(135deg,#6c5ce7,#a29bfe); }
 .dm-icon-sui { background:linear-gradient(135deg,#00b894,#55efc4); }
+.dm-icon-sec { background:linear-gradient(135deg,#8e9aaf,#6b7688); }
 .dm-body { flex:1; min-width:0; }
 .dm-label { font-size:0.6rem; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.04em; }
 .dm-value { display:block; font-size:1.1rem; font-weight:600; color:var(--text); line-height:1.2; }
@@ -5446,6 +5447,113 @@ input[data-bulk-checkbox] {
 
 .modal-panel form[data-quick-create-form] .form-actions .btn .material-symbols-outlined {
     font-size: 14px;
+}
+
+/* En-tete de la modale quick-create : icone + titre */
+.modal-panel .qc-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.modal-panel .qc-head h3 {
+    font-weight: 700;
+}
+
+.modal-panel .qc-head-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, var(--primary), #5a7bf7);
+}
+
+.modal-panel .qc-head-icon .material-symbols-outlined {
+    font-size: 16px;
+    color: #fff;
+}
+
+/* Champ obligatoire */
+.modal-panel .qc-required {
+    color: var(--danger);
+    margin-left: 2px;
+    font-weight: 700;
+}
+
+/* Bandeau d'erreur inline : le message reste lisible a l'interieur de la
+   modale (le toast est peint sous l'overlay et devient illisible). */
+.modal-panel .qc-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 0 0 0.5rem;
+    padding: 7px 10px;
+    border: 1px solid var(--danger);
+    border-left-width: 3px;
+    border-radius: 6px;
+    background: rgba(252, 66, 74, 0.12);
+    color: var(--text);
+    font-size: 0.75rem;
+    line-height: 1.35;
+}
+
+.modal-panel .qc-alert[hidden] {
+    display: none;
+}
+
+.modal-panel .qc-alert > .material-symbols-outlined {
+    font-size: 16px;
+    color: var(--danger);
+    flex-shrink: 0;
+}
+
+.modal-panel .qc-alert > [data-qc-error-text] {
+    flex: 1;
+    min-width: 0;
+    word-break: break-word;
+}
+
+.modal-panel .qc-alert-close {
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    color: var(--text-secondary);
+    display: flex;
+    flex-shrink: 0;
+}
+
+.modal-panel .qc-alert-close:hover {
+    color: var(--text);
+}
+
+.modal-panel .qc-alert-close .material-symbols-outlined {
+    font-size: 14px;
+}
+
+/* En-tete et barre d'action fixes : le formulaire peut etre long (17 champs
+   pour un collaborateur), le titre et le bouton restent visibles. */
+.modal-panel:has(form[data-quick-create-form]) .modal-header {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: var(--surface);
+    margin: -0.75rem -1rem 0.25rem;
+    padding: 0.6rem 0.75rem 0.5rem 1rem;
+}
+
+.modal-panel form[data-quick-create-form] .form-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
+    background: var(--surface);
+    margin: 0.5rem -1rem -0.75rem !important;
+    padding: 0.55rem 1rem 0.65rem;
+    border-top: 1px solid var(--line);
 }
 
 /* Radio group (cession wizard step 3) */

@@ -26,17 +26,32 @@ $modalKey = $quickCreateModalKey ?? '';
 $modalAttr = $modalKey !== '' ? 'quick-create-' . $modalKey : 'quick-create';
 $targetSelect = (string) ($quickCreateTargetSelect ?? '');
 $targetLabel = array_values(array_filter((array) ($quickCreateTargetLabel ?? []), static fn($k) => $k !== ''));
+// Libelle du bouton de validation, surchargeable par l'appelant. On le
+// consomme puis on le retire : une page peut includer plusieurs modales et la
+// valeur ne doit pas fuiter sur la suivante.
+$qcSubmitLabel = (string) ($quickCreateSubmitLabel ?? 'Créer');
+unset($quickCreateSubmitLabel);
 ?>
 <div class="modal-overlay" data-modal="<?= e($modalAttr) ?>">
-    <div class="modal-panel">
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="qc-title-<?= e($modalAttr) ?>">
         <div class="modal-header">
-            <h3 style="font-weight:700;color:var(--info)"><?= e($quickCreateTitle ?? 'Nouvel enregistrement') ?></h3>
+            <div class="qc-head">
+                <span class="qc-head-icon"><span class="material-symbols-outlined">add</span></span>
+                <h3 id="qc-title-<?= e($modalAttr) ?>"><?= e($quickCreateTitle ?? 'Nouvel enregistrement') ?></h3>
+            </div>
             <button class="btn-icon" data-modal-close type="button" title="Fermer"><span class="material-symbols-outlined">close</span></button>
         </div>
         <form data-quick-create-form<?= $targetSelect !== '' ? ' data-quick-create-target="' . e($targetSelect) . '" data-quick-create-label="' . e(implode(',', $targetLabel)) . '"' : '' ?>>
             <?= csrf_input() ?>
             <input type="hidden" name="action" value="quick_create">
             <input type="hidden" name="table" value="<?= e($quickCreateTable) ?>">
+            <div class="qc-alert" data-qc-error role="alert" hidden>
+                <span class="material-symbols-outlined">error</span>
+                <span data-qc-error-text></span>
+                <button type="button" class="qc-alert-close" data-qc-error-close title="Masquer le message">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
             <div class="form-grid">
                 <?php foreach ((array) ($quickCreateFields ?? []) as $field): ?>
                     <?php if (($field['type'] ?? '') === 'title'): ?>
@@ -50,7 +65,7 @@ $targetLabel = array_values(array_filter((array) ($quickCreateTargetLabel ?? [])
                         <div data-dynamic-select="<?= e($field['name'] ?? '') ?>" style="grid-column:1/-1">
                             <div data-dynamic-item style="display:flex;gap:6px;margin-bottom:4px">
                                 <select style="flex:1" data-dynamic-option>
-                                    <option value="">Selectionner</option>
+                                    <option value="">Sélectionner</option>
                                     <?php $optList = array_is_list($field['options']); ?>
                                     <?php foreach ($field['options'] as $val => $label): ?>
                                         <?php $optVal = $optList ? $label : $val; ?>
@@ -66,7 +81,7 @@ $targetLabel = array_values(array_filter((array) ($quickCreateTargetLabel ?? [])
                         <template data-dynamic-template>
                             <div data-dynamic-item style="display:flex;gap:6px;margin-bottom:4px">
                                 <select style="flex:1" data-dynamic-option>
-                                    <option value="">Selectionner</option>
+                                    <option value="">Sélectionner</option>
                                     <?php $optList = array_is_list($field['options']); ?>
                                     <?php foreach ($field['options'] as $val => $label): ?>
                                         <?php $optVal = $optList ? $label : $val; ?>
@@ -78,11 +93,11 @@ $targetLabel = array_values(array_filter((array) ($quickCreateTargetLabel ?? [])
                         </template>
                     <?php else: ?>
                     <label class="field<?= !empty($field['full']) ? ' full' : '' ?>">
-                        <span><?= e($field['label'] ?? '') ?></span>
+                        <span><?= e($field['label'] ?? '') ?><?= !empty($field['required']) ? '<span class="qc-required" aria-hidden="true">*</span>' : '' ?></span>
                         <?php if (($field['type'] ?? 'text') === 'select' && isset($field['options'])): ?>
                             <?php $fd = ($quickCreateDefaults ?? [])[$field['name']] ?? ''; ?>
                             <select name="<?= e($field['name'] ?? '') ?>" <?= !empty($field['required']) ? 'required' : '' ?>>
-                                <option value=""><?= e($field['placeholder'] ?? 'Selectionner') ?></option>
+                                <option value=""><?= e($field['placeholder'] ?? 'Sélectionner') ?></option>
                                 <?php $optList = array_is_list($field['options']); ?>
                                 <?php foreach ($field['options'] as $val => $label): ?>
                                     <?php $optVal = $optList ? $label : $val; ?>
@@ -119,7 +134,7 @@ $targetLabel = array_values(array_filter((array) ($quickCreateTargetLabel ?? [])
             </div>
             <div class="form-actions" style="margin-top:1rem;display:flex;gap:8px;justify-content:flex-end">
                 <button type="button" class="btn btn-cancel" data-modal-close><span class="material-symbols-outlined">close</span> Annuler</button>
-                <button type="submit" class="btn btn-next"><span class="material-symbols-outlined">add</span> Creer</button>
+                <button type="submit" class="btn btn-next"><span class="material-symbols-outlined">add</span> <?= e($qcSubmitLabel) ?></button>
             </div>
         </form>
     </div>

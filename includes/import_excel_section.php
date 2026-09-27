@@ -154,7 +154,7 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
                     ... et <?= count($importPreview['rows']) - 15 ?> ligne(s) supplementaire(s)
                 </p>
             <?php endif; ?>
-            <form method="post" style="margin-top:1rem" data-confirm="Confirmer l'import de <?= count($importPreview['rows']) ?> ligne(s) ?">
+            <form method="post" style="margin-top:1rem" data-confirm="Confirmer l'import de <?= count($importPreview['rows']) ?> ligne(s) ?" data-confirm-title="Confirmer l'import" data-confirm-ok="Importer" data-confirm-tone="primary">
                 <?= csrf_input() ?>
                 <input type="hidden" name="action" value="confirm_import">
                 <button type="submit" class="btn btn-next">

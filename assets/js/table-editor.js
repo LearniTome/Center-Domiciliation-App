@@ -15,10 +15,56 @@
         function initQuickCreate(modal, form, openBtns) {
             if (!modal || !form || !openBtns || openBtns.length === 0) return;
 
-            function open() { modal.classList.add('open'); }
-            function close() { modal.classList.remove('open'); }
+            var alertBox = form.querySelector('[data-qc-error]');
+            var alertText = form.querySelector('[data-qc-error-text]');
+            var lastTrigger = null;
 
-            openBtns.forEach(function (btn) { btn.addEventListener('click', open); });
+            // Le message d'erreur vit dans la modale : le toast est peint sous
+            // l'overlay (z-index 2000 < 9999) et devient illisible.
+            function hideError() {
+                if (!alertBox) return;
+                alertBox.hidden = true;
+                if (alertText) alertText.textContent = '';
+            }
+
+            function showError(message) {
+                if (!alertBox || !alertText) return;
+                alertText.textContent = message;
+                alertBox.hidden = false;
+                if (typeof alertBox.scrollIntoView === 'function') {
+                    alertBox.scrollIntoView({ block: 'nearest' });
+                }
+            }
+
+            var alertClose = form.querySelector('[data-qc-error-close]');
+            if (alertClose) alertClose.addEventListener('click', hideError);
+            form.addEventListener('input', hideError);
+
+            function firstField() {
+                return form.querySelector('input:not([type="hidden"]):not([readonly]), select, textarea');
+            }
+
+            function open(trigger) {
+                lastTrigger = trigger || null;
+                hideError();
+                modal.classList.add('open');
+                var field = firstField();
+                if (field) {
+                    try { field.focus(); } catch (err) { /* le focus peut echouer */ }
+                }
+            }
+
+            function close() {
+                modal.classList.remove('open');
+                hideError();
+                if (lastTrigger && document.contains(lastTrigger)) {
+                    try { lastTrigger.focus(); } catch (err) { /* le focus peut echouer */ }
+                }
+            }
+
+            openBtns.forEach(function (btn) {
+                btn.addEventListener('click', function () { open(btn); });
+            });
 
             modal.querySelectorAll('[data-modal-close]').forEach(function (el) {
                 el.addEventListener('click', close);
@@ -41,7 +87,7 @@
                 var submitBtn = form.querySelector('button[type="submit"]');
                 var originalText = submitBtn.innerHTML;
                 submitBtn.disabled = true;
-                submitBtn.innerHTML = '<span class="material-symbols-outlined">hourglass_top</span> Creation...';
+                submitBtn.innerHTML = '<span class="material-symbols-outlined">hourglass_top</span> Création…';
 
                 fetch('api.php', { method: 'POST', body: fd })
                     .then(function (r) { return r.json(); })
@@ -77,18 +123,14 @@
                                 showToast('success', json.message || 'Enregistre.');
                                 return;
                             }
-                            var table = document.querySelector('[data-table]');
-                            if (table) {
-                                var tbody = table.querySelector('tbody');
-                                if (tbody) {
-                                    var newRow = buildRow(json.data, table);
-                                    if (newRow) {
-                                        tbody.insertBefore(newRow, tbody.firstChild);
-                                    }
-                                }
-                                form.reset();
-                                close();
-                                showToast('success', json.message);
+                            // Page liste : la ligne est rendue par le serveur
+                            // (badges, colonnes derivees, position de tri). On
+                            // recharge plutot que d'inserer une ligne cote
+                            // client : le <template data-row-template> etant un
+                            // frere de <table>, buildRow ne le trouvait jamais et
+                            // le toast annoncait une creation invisible.
+                            if (document.querySelector('[data-table]')) {
+                                window.location.reload();
                                 return;
                             }
                             var dataCols = Object.keys(json.data).filter(function (k) { return k !== 'id'; });
@@ -110,11 +152,11 @@
                             close();
                             showToast('success', json.message || 'Enregistre.');
                         } else {
-                            showToast('error', json.message || 'Erreur lors de la creation.');
+                            showError(json.message || 'Erreur lors de la création.');
                         }
                     })
                     .catch(function () {
-                        showToast('error', 'Erreur reseau. Veuillez reessayer.');
+                        showError('Erreur réseau. Veuillez réessayer.');
                     })
                     .finally(function () {
                         if (submitBtn) {
@@ -183,84 +225,6 @@
 
         document.querySelectorAll('[data-quick-create-form]').forEach(bindDerived);
     })();
-
-    // ── Build table row from API data ──
-    function buildRow(data, table) {
-        var template = table.querySelector('[data-row-template]');
-        if (!template) return null;
-        var tr = template.content.cloneNode(true).querySelector('tr');
-        if (!tr) return null;
-
-        tr.removeAttribute('data-row-template');
-        tr.setAttribute('data-id', data.id);
-
-        var cells = tr.querySelectorAll('[data-cell]');
-        cells.forEach(function (cell) {
-            var key = cell.getAttribute('data-cell');
-            var val = data[key] !== undefined && data[key] !== null ? data[key] : '';
-            if (key === 'societe_capital' && val) {
-                val = Number(val).toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' DH';
-            } else if (key === 'created_at' || key === 'updated_at') {
-                if (val) {
-                    var d = new Date(val);
-                    val = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth()+1)).slice(-2) + '/' + d.getFullYear();
-                }
-            } else if ((key === 'societe_date_ice' || key === 'societe_date_exp_cert_neg') && val) {
-                var d = new Date(val);
-                val = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth()+1)).slice(-2) + '/' + d.getFullYear();
-            }
-            cell.textContent = val || '-';
-        });
-
-        var linkCell = tr.querySelector('[data-cell-link]');
-        if (linkCell) {
-            var page = linkCell.getAttribute('data-cell-link');
-            var linkVal = data[linkCell.getAttribute('data-cell-value') || 'id'];
-            if (linkVal) {
-                var a = document.createElement('a');
-                a.href = 'index.php?page=' + page + '&id=' + linkVal;
-                a.style.cssText = 'color:var(--primary);text-decoration:none;font-weight:500';
-                var label = data[linkCell.getAttribute('data-cell-label') || 'societe_raison_sociale'] || '';
-                a.textContent = label || '#' + linkVal;
-                linkCell.textContent = '';
-                linkCell.appendChild(a);
-            }
-        }
-
-        var actionsCell = tr.querySelector('[data-cell-actions]');
-        if (actionsCell) {
-            var delForm = actionsCell.querySelector('form');
-            if (delForm) {
-                var idInput = delForm.querySelector('input[name="id"]');
-                if (idInput) idInput.value = data.id;
-                var tokenInput = delForm.querySelector('input[name="_csrf_token"]');
-                if (tokenInput) tokenInput.value = getCsrfToken() || '';
-            }
-            // Les liens "Voir" / "Modifier" du template sont ecrits avec un
-            // "id=" vide en attente de l'identifiant de la ligne creee. Sans ce
-            // remplissage, une ligne ajoutee en creation rapide avait un lien
-            // mort vers la page courante.
-            actionsCell.querySelectorAll('a[href]').forEach(function (a) {
-                var href = a.getAttribute('href') || '';
-                if (href.indexOf('id=') === -1) return;
-                a.setAttribute('href', href.replace(/([?&]id=)[^&]*/, '$1' + data.id));
-            });
-        }
-
-        var emptyState = document.querySelector('.table-empty');
-        if (emptyState) {
-            var wrapper = emptyState.closest('.table-scroll') || emptyState.parentElement;
-            if (wrapper) {
-                var tbl = wrapper.querySelector('table');
-                if (tbl) {
-                    emptyState.style.display = 'none';
-                    tbl.style.display = '';
-                }
-            }
-        }
-
-        return tr;
-    }
 
     // ── Inline Editing ──
     (function () {

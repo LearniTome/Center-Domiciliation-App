@@ -25,7 +25,7 @@ $wizardConfirmMessage = $wizardTypeGen === 'creation' ? $wizardConfirmCreation :
                data-confirm-cancel="Rester dans l'assistant"
                data-confirm-creation="<?= e($wizardConfirmCreation) ?>"
                data-confirm-domiciliation="<?= e($wizardConfirmDomiciliation) ?>"><span class="material-symbols-outlined">cancel</span> Annuler</a>
-            <a class="btn btn-back" href="<?= e(app_url('creation', ['reset' => '1'])) ?>" data-confirm="Reinitialiser cet assistant ? Les données saisies seront perdues." data-confirm-title="Reinitialiser l'assistant ?" data-confirm-ok="Reinitialiser"><span class="material-symbols-outlined">restart_alt</span> Reinitialiser</a>
+            <a class="btn btn-back" href="<?= e(app_url('creation', ['reset' => '1'])) ?>" data-confirm="Reinitialiser cet assistant ? Les données saisies seront perdues." data-confirm-title="Reinitialiser l'assistant ?" data-confirm-ok="Reinitialiser" data-confirm-tone="primary"><span class="material-symbols-outlined">restart_alt</span> Reinitialiser</a>
         </div>
     </div>
 

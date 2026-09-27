@@ -95,12 +95,6 @@ function echeance_classe(?int $jours, int $critique, int $alerte): string
     return '';
 }
 
-$compteurs = [
-    'actifs' => $stats['actifs'],
-    'renouvellement' => $stats['renouvellement'],
-    'echus' => $stats['echus'],
-    'resilies' => $stats['resilies'],
-];
 $classesCompteur = [
     'actifs' => 'bg-success',
     'renouvellement' => 'bg-warning',
@@ -109,23 +103,34 @@ $classesCompteur = [
 ];
 $filtreClasse = static fn(string $cle): string => 'btn btn-sm ' . ($vue === $cle ? 'btn-next' : 'btn-secondary');
 ?>
-<section class="stats">
-    <article class="stat">
-        <span>Contrats actifs</span>
-        <strong><?= (int) $stats['actifs'] ?></strong>
-    </article>
-    <article class="stat">
-        <span>À renouveler (<?= (int) $seuilRenouvellement ?> j)</span>
-        <strong class="text-danger"><?= (int) $stats['renouvellement'] ?></strong>
-    </article>
-    <article class="stat">
-        <span>Échus non résolus</span>
-        <strong class="text-danger"><?= (int) $stats['echus'] ?></strong>
-    </article>
-    <article class="stat">
-        <span>Résiliés</span>
-        <strong><?= (int) $stats['resilies'] ?></strong>
-    </article>
+<?php
+// Cartes de synthese : meme anatomie que les cartes du tableau de bord
+// (.dash-metric > .dm-icon + .dm-body > .dm-label / .dm-value / .dm-delta).
+// Chaque carte est un lien vers la vue correspondante.
+$libellesCompteur = [
+    'actifs' => 'Contrats actifs',
+    'renouvellement' => 'À renouveler (' . (int) $seuilRenouvellement . ' j)',
+    'echus' => 'Échus non résolus',
+    'resilies' => 'Résiliés',
+];
+$iconesCompteur = [
+    'actifs' => ['signature', 'dm-icon-ctr', 'En cours de validité'],
+    'renouvellement' => ['autorenew', 'dm-icon-rev', 'Échéance proche'],
+    'echus' => ['error', 'dm-icon-ces', 'Validité dépassée'],
+    'resilies' => ['block', 'dm-icon-sec', 'Contrats clos'],
+];
+?>
+<section class="dash-metrics">
+    <?php foreach ($iconesCompteur as $cle => [$icone, $ton, $detail]): ?>
+        <a class="dash-metric" href="<?= e(app_url('contrats_suivi', ['vue' => $cle])) ?>"<?= $vue === $cle ? ' aria-current="page"' : '' ?>>
+            <div class="dm-icon <?= e($ton) ?>"><span class="material-symbols-outlined"><?= e($icone) ?></span></div>
+            <div class="dm-body">
+                <span class="dm-label"><?= e($libellesCompteur[$cle]) ?></span>
+                <strong class="dm-value"><?= (int) $stats[$cle] ?></strong>
+                <span class="dm-delta"><?= e($detail) ?></span>
+            </div>
+        </a>
+    <?php endforeach; ?>
 </section>
 
 <section class="card">
@@ -134,7 +139,7 @@ $filtreClasse = static fn(string $cle): string => 'btn btn-sm ' . ($vue === $cle
             <span class="analyse-filter-label">Filtrer :</span>
             <?php foreach ($vues as $cle => $libelle): ?>
                 <a class="<?= e($filtreClasse($cle)) ?>" href="<?= e(app_url('contrats_suivi', ['vue' => $cle])) ?>">
-                    <?= e($libelle) ?> <span class="badge <?= e($classesCompteur[$cle]) ?>"><?= (int) $compteurs[$cle] ?></span>
+                    <?= e($libelle) ?> <span class="badge <?= e($classesCompteur[$cle]) ?>"><?= (int) $stats[$cle] ?></span>
                 </a>
             <?php endforeach; ?>
         </div>
