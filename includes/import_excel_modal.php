@@ -16,7 +16,7 @@
 ?>
 <!-- Modal 1 : Upload -->
 <div class="modal-overlay" data-modal="import-upload">
-    <div class="modal-panel" style="max-width:480px">
+    <div class="modal-panel import-modal">
         <div class="modal-header">
             <h3><span class="material-symbols-outlined" style="vertical-align:middle;margin-right:6px">upload_file</span> Importer depuis Excel</h3>
             <button class="btn-icon" data-modal-close type="button" title="Fermer"><span class="material-symbols-outlined">close</span></button>
@@ -26,15 +26,40 @@
                 <input type="hidden" name="action" value="import_preview">
                 <input type="hidden" name="table" value="">
                 <?= csrf_input() ?>
-                <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:1rem">
-                    Sélectionnez un fichier Excel (.xlsx ou .xls).<br>
-                    La première ligne doit contenir les en-têtes de colonnes.
-                </p>
-                <label class="field full">
-                    <span>Fichier Excel</span>
-                    <input type="file" name="import_file" accept=".xlsx,.xls" required>
-                </label>
-                <div class="form-actions" style="margin-top:1rem;display:flex;gap:8px;justify-content:flex-end">
+
+                <section class="import-step">
+                    <div class="import-step-head">
+                        <span class="import-step-num">1</span>
+                        <div class="import-step-headings">
+                            <h4 class="import-step-title">Étape 1 : Télécharger le modèle</h4>
+                            <p class="import-step-hint">Récupérez le fichier .xlsx qui contient les colonnes attendues par l'import.</p>
+                        </div>
+                    </div>
+                    <a
+                        class="btn btn-info import-model-btn"
+                        data-import-model-download
+                        href="<?= e(app_url('import-modele')) ?>"
+                        download
+                    >
+                        <span class="material-symbols-outlined">download</span> Télécharger le modèle Excel
+                    </a>
+                </section>
+
+                <section class="import-step">
+                    <div class="import-step-head">
+                        <span class="import-step-num">2</span>
+                        <div class="import-step-headings">
+                            <h4 class="import-step-title">Étape 2 : Sélectionner votre fichier Excel</h4>
+                            <p class="import-step-hint">Complétez le modèle, puis sélectionnez votre fichier. La première ligne doit contenir les en-têtes de colonnes.</p>
+                        </div>
+                    </div>
+                    <label class="field full">
+                        <span>Fichier Excel</span>
+                        <input type="file" name="import_file" accept=".xlsx,.xls" required>
+                    </label>
+                </section>
+
+                <div class="form-actions">
                     <button type="button" class="btn btn-cancel" data-modal-close><span class="material-symbols-outlined">close</span> Annuler</button>
                     <button type="submit" class="btn btn-info"><span class="material-symbols-outlined">preview</span> Prévisualiser</button>
                 </div>

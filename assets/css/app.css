@@ -5199,6 +5199,107 @@ section.stack > .section-title-row { margin-top: 0.25rem; }
     margin: 4px 0 0;
 }
 
+/* ── Modale « Importer depuis Excel » : guide en 2 etapes ──────────────────
+   Etape 1 telecharger le modele, etape 2 choisir le fichier. Le panneau de
+   la modale est en --surface (identique a --panel) : les cartes d'etape
+   utilisent --panel-strong pour rester visibles, bordees par --line. */
+/* Selecteur double : .modal-panel est declare plus bas dans le fichier et
+   l'emporterait a specificite egale (meme 0,1,0). Idem .modal-panel.qc-wide. */
+.modal-panel.import-modal {
+    max-width: 520px;
+}
+
+.import-step {
+    display: grid;
+    gap: 10px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    background: var(--panel-strong);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+.import-step:last-of-type {
+    margin-bottom: 0;
+}
+
+.import-step-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.import-step-num {
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.import-step-headings {
+    min-width: 0;
+}
+
+.import-step-title {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.import-step-hint {
+    margin: 3px 0 0;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: var(--text-secondary);
+}
+
+.import-model-btn {
+    width: 100%;
+    justify-content: center;
+}
+
+/* Input fichier : le bouton natif est clair sur fond dark, on le repeint. */
+.import-modal input[type="file"] {
+    padding: 6px 10px;
+    border: 1px dashed var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--panel);
+    color: var(--text);
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.import-modal input[type="file"]::file-selector-button {
+    margin-right: 10px;
+    padding: 5px 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--panel);
+    color: var(--text);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: border-color var(--transition);
+}
+
+.import-modal input[type="file"]::file-selector-button:hover {
+    border-color: var(--primary);
+}
+
+.import-modal .form-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 1rem;
+}
+
 button[data-toggle-import] {
     margin: 0;
 }

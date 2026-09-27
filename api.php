@@ -50,74 +50,9 @@ if ($csrfToken === '' || empty($_SESSION['csrf_token']) || !hash_equals($_SESSIO
 }
 
 // ── Import Excel configuration ──
-$importTableConfig = [
-    'societes' => [
-        'columnMap' => [
-            'Raison sociale' => 'societe_raison_sociale',
-            'Dossier domiciliation' => 'societe_dossier_domiciliation_number',
-            'Dossier creation' => 'societe_dossier_creation_number',
-            'Forme juridique' => 'societe_forme_juridique',
-            'ICE' => 'societe_ice',
-            'RC' => 'societe_rc',
-            'IF' => 'societe_if',
-            'Ville' => 'societe_ville',
-            'Email' => 'societe_email',
-            'Telephone' => 'societe_telephone',
-            'Capital' => 'societe_capital',
-        ],
-        'defaults' => ['societe_source' => 'import'],
-    ],
-    'associes' => [
-        'columnMap' => [
-            'Societe ID' => 'societe_id',
-            'Nom complet' => 'associe_nom_complet',
-            'CIN' => 'associe_cin',
-            'Date naissance' => 'associe_date_naissance',
-            'Lieu naissance' => 'associe_lieu_naissance',
-            'Nationalite' => 'associe_nationalite',
-            'Telephone' => 'associe_telephone',
-            'Email' => 'associe_email',
-            'Qualite' => 'associe_qualite',
-            'Parts' => 'associe_parts',
-        ],
-        'defaults' => [],
-    ],
-    'contrats' => [
-        'columnMap' => [
-            'Societe ID' => 'societe_id',
-            'Type contrat' => 'contrat_type',
-            'Date contrat' => 'contrat_date',
-            'Duree (mois)' => 'contrat_duree_mois',
-            'Date debut' => 'contrat_date_debut',
-            'Date fin' => 'contrat_date_fin',
-            'Loyer TTC/mois' => 'contrat_loyer_ttc',
-            'Statut' => 'contrat_statut',
-        ],
-        'defaults' => [],
-    ],
-    'collaborateurs' => [
-        'columnMap' => [
-            'Nom complet' => 'nom_complet',
-            'Fonction' => 'fonction',
-            'Type' => 'collaborateur_type',
-            'Code' => 'collaborateur_code',
-            'ICE' => 'collaborateur_ice',
-            'Telephone' => 'telephone',
-            'Email' => 'email',
-            'Statut' => 'statut',
-        ],
-        'defaults' => [],
-    ],
-    'cessions' => [
-        'columnMap' => [
-            'Dossier' => 'cession_dossier',
-            'Societe' => 'societe_id',
-            'Date' => 'cession_date',
-            'Statut' => 'cession_status',
-        ],
-        'defaults' => [],
-    ],
-];
+// Source unique partagee avec le generateur de modele (pages/outils/import-modele.php)
+require_once __DIR__ . '/includes/import_excel_config.php';
+$importTableConfig = import_excel_tables();
 
 $action = $_POST['action'] ?? '';
 $response = ['success' => false, 'message' => 'Action inconnue.'];

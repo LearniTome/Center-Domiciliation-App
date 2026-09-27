@@ -83,6 +83,25 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - `fetch_formes_juridiques_with_folders(?PDO): array` — toutes les formes avec leur dossier template
 - `ensure_template_folder(string folderName): bool` — crée `templates/<folder>/` si inexistant
 
+### Import Excel (config partagée + modèle downloadable)
+- **`includes/import_excel_config.php`** est la **source de vérité unique** de l'import, consommée par `api.php` (`import_preview` / `import_confirm`) ET par `pages/outils/import-modele.php`. Ne plus dupliquer `columnMap`/`defaults` ailleurs.
+  - `import_excel_tables(): array` — les 5 tables importables (`societes`, `associes`, `contrats`, `collaborateurs`, `cessions`) avec `columnMap` (en-tête Excel => colonne DB) + `defaults`
+  - `import_excel_table(string $table): ?array` — config d'une table, `null` si non importable
+  - `import_excel_table_label(string $table): string` — libellé français affiché dans le modèle
+  - `import_excel_column_notices(): array` — description + valeur d'exemple par colonne, pour l'onglet « Consignes »
+- **Les en-têtes Excel sont les clés de `columnMap`** : `import_excel_preview()` rejette toute colonne attendue manquante. Modifier `columnMap` casse les modèles déjà préparés par les utilisateurs.
+  - ExceptionTolérée : `'Dossier creation'` (societes) est **sans accent** — c'est un en-tête existant, à ne pas « corriger ».
+- **Modèle Excel** : `index.php?page=import-modele&table=<table>` (raw, sans layout, listed dans le bloc `ob_start`/`in_array` de `index.php`). Génère un `.xlsx` (`modele-import-<table>.xlsx`) avec :
+  - onglet **`Données`** (onglet **actif**) : ligne 1 = en-têtes, ligne 2 = **une ligne d'exemple** ;
+  - onglet **`Consignes`** : notice par colonne + colonne « Obligatoire » déduite de `information_schema` (`IS_NULLABLE = 'NO' AND COLUMN_DEFAULT IS NULL`).
+  - **La ligne d'exemple est obligatoire** : `import_excel_preview()`/`loadSpreadsheetData()` lisent `getActiveSheet()` et refusent moins de 2 lignes.
+  - Permission vérifiée via `require_permission('<table>.import')`, identique au bouton d'import des pages liste.
+- **Modale d'import** (`includes/import_excel_modal.php`, incluse par les pages liste) : parcours en 2 étapes — `Étape 1 : Télécharger le modèle` (lien `data-import-model-download` + attribut `download`) puis `Étape 2 : Sélectionner votre fichier Excel`.
+  - Le JS (`app.js`, module import) reconstruit le lien à chaque ouverture via `data-import-btn` : `new URL(modelLink.href).searchParams.set('table', currentTable)`.
+  - `uploadForm.reset()` est appelé **avant** de renseigner les champs cachés, sinon il efface `table`.
+  - CSS : `.modal-panel.import-modal` (double sélecteur, `.modal-panel` est déclaré plus bas et l'emporterait), `.import-step`, `.import-step-num`, `.import-step-title`, `.import-step-hint`, `.import-model-btn`. Cartes d'étape en `--panel-strong` (`--panel` === `--surface`, donc invisible en fond de panneau).
+- Bundles d'ajout d'une table : `import_excel_tables()` + `import_excel_column_notices()` + permission `<table>.import` + bouton `data-import-btn="<table>"`.
+
 ## URL Patterns
 - List pages sociétés: `page=creations` (dossiers création), `page=domiciliations` (dossiers domiciliation), `page=societes` (toutes, hors menu, conservée pour compatibilité)
 - Detail page: `index.php?page=societe&id=1`

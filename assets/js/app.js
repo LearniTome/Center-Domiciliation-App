@@ -1665,6 +1665,7 @@ document.addEventListener('click', function (event) {
         var previewError = previewModal.querySelector('[data-import-preview-error]');
         var importCount = previewModal.querySelector('[data-import-count]');
         var confirmBtn = previewModal.querySelector('[data-import-confirm]');
+        var modelLink = uploadModal.querySelector('[data-import-model-download]');
         var currentTable = '';
         var currentData = null;
 
@@ -1704,8 +1705,15 @@ document.addEventListener('click', function (event) {
         openBtns.forEach(function (btn) {
             btn.addEventListener('click', function () {
                 currentTable = btn.getAttribute('data-import-btn') || '';
-                uploadForm.querySelector('input[name="table"]').value = currentTable;
+                // reset() d'abord : il restaure la valeur par defaut du champ cache.
                 uploadForm.reset();
+                uploadForm.querySelector('input[name="table"]').value = currentTable;
+                // Le modele Excel depend de la table : on rebatit le lien a chaque ouverture.
+                if (modelLink) {
+                    var modelUrl = new URL(modelLink.href, window.location.href);
+                    modelUrl.searchParams.set('table', currentTable);
+                    modelLink.href = modelUrl.toString();
+                }
                 uploadError.style.display = 'none';
                 openModal(uploadModal);
             });

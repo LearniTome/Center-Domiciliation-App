@@ -18,7 +18,7 @@ $allowedPages = [
     'generation', 'templates',
     'documents', 'download_all', 'dossier_download', 'suivi_pdf', 'recap_pdf',
     'defaults', 'analyse-couverture', 'variables',
-    'convert-word-pdf', 'ai-assistant',
+    'convert-word-pdf', 'ai-assistant', 'import-modele',
     'setup', 'connexion', 'deconnexion',
     'roles', 'role', 'activite',
     'notifications', 'notifications-manage', 'notif-ajax',
@@ -72,6 +72,7 @@ $pageDir = [
     'variables' => 'outils',
     'convert-word-pdf' => 'outils',
     'ai-assistant' => 'outils',
+    'import-modele' => 'outils',
     // Configuration
     'configuration' => 'configuration',
     'centre' => 'configuration',
@@ -144,8 +145,8 @@ if ($page === 'notif-ajax') {
     exit;
 }
 
-// Pages PDF (Dompdf stream) - output brut PDF uniquement, sans layout HTML (meme mecanisme que notif-ajax)
-if (in_array($page, ['suivi_pdf', 'recap_pdf'], true)) {
+// Pages telechargeables (PDF Dompdf, modele XLSX) - sortie brute uniquement, sans layout HTML (meme mecanisme que notif-ajax)
+if (in_array($page, ['suivi_pdf', 'recap_pdf', 'import-modele'], true)) {
     ob_clean();
     $dir = $pageDir[$page] ?? '';
     $file = $pageFile[$page] ?? $page;
