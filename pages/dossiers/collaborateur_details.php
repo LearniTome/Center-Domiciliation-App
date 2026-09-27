@@ -216,6 +216,12 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
         }
     }
 
+    // Duplicate name check (unicite du nom complet, cf. collaborateur_nom_existe)
+    if (collaborateur_nom_existe($pdo, (string) ($payload['nom_complet'] ?? ''), $editingId)) {
+        set_flash('error', 'Un collaborateur avec ce nom existe deja.');
+        redirect_to('collaborateur', $editingId ? ['id' => $editingId] : ['type' => $savedType]);
+    }
+
     // Duplicate email check
     $checkEmail = $payload['collaborateur_email'] ?: $payload['email'];
     if ($checkEmail !== '') {

@@ -74,6 +74,7 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - `login_throttle_state(?PDO $pdo, string $email, string $ip): array` — rate-limiting connexion : `['blocked','count','retry_after']`, comptage email OU IP sur fenêtre glissante 20 min (purge 24 h), bloque à partir de 5 échecs avec backoff `60 s × 2^(count-5)` plafonné 1 h ; délai calculé côté SQL (`TIMESTAMPDIFF` vs `NOW()`) pour éviter les écarts de fuseaux PHP/MySQL
 - `login_throttle_register_failure(?PDO $pdo, string $email, string $ip): void` — enregistre un échec de connexion (table `login_attempts`, constante `LOGIN_MAX_ATTEMPTS = 5`)
 - `login_throttle_clear(?PDO $pdo, string $email, string $ip): void` — purge les échecs (email OU IP) après connexion réussie
+- `collaborateur_nom_existe(?PDO $pdo, string $nomComplet, ?int $excludeId = null): bool` — doublon de collaborateur sur `nom_complet`. Colonne en `utf8mb4_unicode_ci` : la comparaison est donc insensible à la casse et aux accents, et `$excludeId` laisse une fiche conserver son propre nom en édition. Nom vide → `false` (deux fiches sans nom ne se bloquent pas), `$pdo` null → `false` (base injoignable ne bloque pas la saisie).
 - `export_csv(string filename, array headers, array rows): never`
 - `export_excel(string filename, array headers, array rows): never` — génère .xlsx via PhpSpreadsheet, auto-column width
 - `import_excel_preview(string table, array columnMap, array defaults): array|string` — lit .xlsx uploadé, mappe colonnes, retourne preview ou message d'erreur
@@ -101,6 +102,7 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
   - `uploadForm.reset()` est appelé **avant** de renseigner les champs cachés, sinon il efface `table`.
   - CSS : `.modal-panel.import-modal` (double sélecteur, `.modal-panel` est déclaré plus bas et l'emporterait), `.import-step`, `.import-step-num`, `.import-step-title`, `.import-step-hint`, `.import-model-btn`. Cartes d'étape en `--panel-strong` (`--panel` === `--surface`, donc invisible en fond de panneau).
 - Bundles d'ajout d'une table : `import_excel_tables()` + `import_excel_column_notices()` + permission `<table>.import` + bouton `data-import-btn="<table>"`.
+- **Doublons à l'import (`collaborateurs`)** : `import_confirm` (`api.php`) ignore la ligne si `collaborateur_nom_existe()` la trouve déjà en base, et n'échoue donc pas l'import. Le contrôle porte sur la base, donc il couvre aussi les doublons **à l'intérieur du fichier** (les inserts précédents sont déjà faits). La réponse contient `skipped` + le nombre de lignes ignorées dans `message` ; le flash `import_msg` l'affiche après rechargement. Les autres tables ne sont pas concernées.
 
 ## URL Patterns
 - List pages sociétés: `page=creations` (dossiers création), `page=domiciliations` (dossiers domiciliation), `page=societes` (toutes, hors menu, conservée pour compatibilité)

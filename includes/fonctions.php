@@ -433,6 +433,39 @@ function code_collaborateur_intermediaire(?PDO $pdo, array $data, ?int $excludeI
     return $code;
 }
 
+/**
+ * Un collaborateur ne peut pas exister en double : la regle porte sur le nom
+ * complet. La colonne est en utf8mb4_unicode_ci, la comparaison est donc
+ * insensible a la casse et aux accents ("Amrani Salma" = "amrani salma").
+ *
+ * Le nom seul n'identifie pas une personne (deux homonymes sont legitimes),
+ * mais il est le seul identifiant saisi sur toutes les entrees (quick-create,
+ * import Excel, formulaire) : c'est donc le seul point de controle commun.
+ * collaborateur_code, lui, est genere et ne peut rien attraper.
+ *
+ * @param int|null $excludeId Collaborateur ignore (edition en cours).
+ */
+function collaborateur_nom_existe(?PDO $pdo, string $nomComplet, ?int $excludeId = null): bool
+{
+    $nomComplet = trim($nomComplet);
+    if ($pdo === null || $nomComplet === '') {
+        return false;
+    }
+
+    $sql = 'SELECT 1 FROM collaborateurs WHERE nom_complet = :nom';
+    $params = [':nom' => $nomComplet];
+    if ($excludeId !== null && $excludeId > 0) {
+        $sql .= ' AND id <> :id';
+        $params[':id'] = $excludeId;
+    }
+    $sql .= ' LIMIT 1';
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+
+    return $stmt->fetchColumn() !== false;
+}
+
 function fetch_collaborateurs_options(?PDO $pdo, bool $actifsSeulement = true): array
 {
     if (!$pdo) {

@@ -184,6 +184,12 @@ function handle_quick_create(PDO $pdo, array $allowedTables, array $user): array
     }
     if ($table === 'collaborateurs') {
         $data['collaborateur_code'] = code_collaborateur_intermediaire($pdo, $data, null);
+        // Un nom deja pris est refuse : le code genere est unique par
+        // construction, il ne peut pas servir de garde-fou.
+        if (collaborateur_nom_existe($pdo, (string) ($data['nom_complet'] ?? ''))) {
+            http_response_code(400);
+            return ['success' => false, 'message' => 'Un collaborateur nomme « ' . trim((string) ($data['nom_complet'])) . ' » existe deja.'];
+        }
     }
 
     if (empty($data)) {
@@ -485,6 +491,7 @@ function handle_import_confirm(PDO $pdo, array $user, array $config): array
     $defaults['updated_at'] = date('Y-m-d H:i:s');
 
     $imported = 0;
+    $skipped = [];
     $errors = [];
 
     foreach ($rows as $idx => $row) {
@@ -507,6 +514,15 @@ function handle_import_confirm(PDO $pdo, array $user, array $config): array
             // avec l'index unique uk_collaborateur_code.
             if ($table === 'collaborateurs') {
                 $data['collaborateur_code'] = code_collaborateur_intermediaire($pdo, $data, null);
+                // Reimporter le meme fichier ne doit pas creer de doublon :
+                // la ligne est ignoree, l'import continue sur les autres.
+                // Le controle porte sur la base, donc il couvre aussi les
+                // doublons a l'interieur du fichier (inserts deja faits).
+                $nom = trim((string) ($data['nom_complet'] ?? ''));
+                if (collaborateur_nom_existe($pdo, $nom)) {
+                    $skipped[] = 'Ligne ' . ($idx + 2) . ($nom !== '' ? ' (' . $nom . ')' : '');
+                    continue;
+                }
             }
 
             $cols = implode(', ', array_keys($data));
@@ -526,10 +542,20 @@ function handle_import_confirm(PDO $pdo, array $user, array $config): array
     }
     unset($_SESSION['_import_file']);
 
+    $message = $imported . ' ligne(s) importee(s) avec succes.';
+    if ($skipped !== []) {
+        $message .= ' ' . count($skipped) . ' ligne(s) ignoree(s) : nom deja existant. '
+            . implode(' | ', array_slice($skipped, 0, 10)) . (count($skipped) > 10 ? ' …' : '');
+    }
+    if ($errors !== []) {
+        $message .= ' Erreurs : ' . implode(' | ', array_slice($errors, 0, 10));
+    }
+
     return [
         'success' => true,
         'imported' => $imported,
+        'skipped' => $skipped,
         'errors' => $errors,
-        'message' => $imported . ' ligne(s) importee(s) avec succes.' . (!empty($errors) ? ' Erreurs : ' . implode(' | ', array_slice($errors, 0, 10)) : ''),
+        'message' => $message,
     ];
 }
