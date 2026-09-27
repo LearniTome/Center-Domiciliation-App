@@ -62,7 +62,10 @@ function Export-Database {
     $file = Join-Path $ExportDir "${DbName}_${date}.sql"
 
     Write-Host "[Export] Dump de $DbName..." -ForegroundColor Yellow
-    & $Mysqldump -u $env:DB_USERNAME $(if ($env:DB_PASSWORD) { "--password=$env:DB_PASSWORD" }) --no-create-info --complete-insert --skip-extended-insert $DbName 2>&1 | Out-File -FilePath $file -Encoding UTF8
+    # Redirection cmd : le dump reste binaire et sans BOM. Un pipe PowerShell
+    # ferait relire la sortie de mysqldump avec la page de code de la console
+    # (CP850), ce qui corromprait les accents du dump.
+    & cmd /c "`"$Mysqldump`" -u $env:DB_USERNAME $(if ($env:DB_PASSWORD) { "--password=$env:DB_PASSWORD" }) --no-create-info --complete-insert --skip-extended-insert $DbName > `"$file`""
 
     if ($LASTEXITCODE -ne 0) {
         Write-Host "[ERREUR] Echec du dump." -ForegroundColor Red
@@ -109,7 +112,9 @@ function Import-Database {
     Write-Host "[Import] Restauration depuis $FilePath..." -ForegroundColor Yellow
 
     & $Mysql -u $env:DB_USERNAME $(if ($env:DB_PASSWORD) { "--password=$env:DB_PASSWORD" }) -e "DROP DATABASE IF EXISTS ``$DbName``; CREATE DATABASE ``$DbName`` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>&1 | Out-Null
-    & $Mysql -u $env:DB_USERNAME $(if ($env:DB_PASSWORD) { "--password=$env:DB_PASSWORD" }) $DbName < $FilePath 2>&1 | Out-Null
+    # Redirection cmd : PowerShell ne gere pas "<" en redirection d'entree, et un
+    # pipe relirait le dump avec la page de code de la console (CP850).
+    & cmd /c "`"$Mysql`" -u $env:DB_USERNAME $(if ($env:DB_PASSWORD) { "--password=$env:DB_PASSWORD" }) $DbName < `"$FilePath`" 2>&1" | Out-Null
 
     if ($LASTEXITCODE -eq 0) {
         Write-Host "      Import reussi !" -ForegroundColor Green

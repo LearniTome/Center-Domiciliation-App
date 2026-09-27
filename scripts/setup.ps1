@@ -305,7 +305,11 @@ if (-not $linkExists) {
 
         function Import-SqlFile($file) {
             if (-not (Test-Path $file -PathType Leaf)) { return $false }
-            $output = Get-Content $file -Raw | & $MysqlCli -u root --default-character-set=utf8mb4 2>&1
+            # Redirection cmd : le flux reste binaire. Un "Get-Content | mysql"
+            # fait relire le fichier par PowerShell, qui le decode avec la page de
+            # code de la console (CP850) : les accents sont alors enregistres
+            # corrompus (é devient "├®", — devient "ÔÇö").
+            $output = & cmd /c "`"$MysqlCli`" -u root --default-character-set=utf8mb4 < `"$file`" 2>&1"
             if ($LASTEXITCODE -eq 0) { return $true }
             Write-Host "      Erreur SQL : $output" -ForegroundColor Red
             return $false

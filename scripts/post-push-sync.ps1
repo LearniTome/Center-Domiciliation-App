@@ -7,7 +7,10 @@ $Mysqldump = Join-Path $XamppPath "mysql\bin\mysqldump.exe"
 
 if (-not (Test-Path $Dir)) { New-Item -ItemType Directory -Path $Dir -Force | Out-Null }
 $f = Join-Path $Dir "${Db}_$(Get-Date -Format 'yyyy-MM-dd_HHmmss').sql"
-& $Mysqldump -u $env:DB_USERNAME $(if ($env:DB_PASSWORD) { "--password=$env:DB_PASSWORD" }) --no-create-info --complete-insert --skip-extended-insert $Db 2>&1 | Out-File $f -Encoding UTF8
+# Redirection cmd : le dump reste binaire et sans BOM. Un pipe PowerShell
+# ferait relire la sortie de mysqldump avec la page de code de la console
+# (CP850), ce qui corromprait les accents du dump.
+& cmd /c "`"$Mysqldump`" -u $env:DB_USERNAME $(if ($env:DB_PASSWORD) { "--password=$env:DB_PASSWORD" }) --no-create-info --complete-insert --skip-extended-insert $Db > `"$f`""
 
 if ($LASTEXITCODE -eq 0 -and (Test-Path $f)) {
     $size = [math]::Round((Get-Item $f).Length / 1KB, 1)
