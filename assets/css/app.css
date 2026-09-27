@@ -5407,6 +5407,9 @@ input[data-bulk-checkbox] {
 
 .modal-panel:has(form[data-quick-create-form]) {
     padding: 0.75rem 1rem;
+    /* 85vh laissait un petit reste a faire defiler en fenetre basse, avec la
+       barre de pied collee par-dessus le contenu. */
+    max-height: 92vh;
 }
 
 .modal-panel:has(form[data-quick-create-form]) .modal-header {
@@ -5422,6 +5425,61 @@ input[data-bulk-checkbox] {
     font-size: 0.7rem;
     padding: 4px 0 2px;
     margin: 2px 0;
+}
+
+/* Champs calcules : ils ne sont pas saisissables, on doit le montrer. */
+.modal-panel form[data-quick-create-form] input[readonly] {
+    background: var(--panel-strong);
+    color: var(--text-secondary);
+    border: 1px dashed var(--border);
+    cursor: not-allowed;
+}
+
+/* Modale quick-create large : occupe la largeur de la fenetre et reste centree
+   (l'overlay est deja en flex center). Reserve aux formulaires a beaucoup de
+   champs — une modale de 2 champs resterait ridiculement etiree. */
+.modal-panel.qc-wide {
+    /* Plein largeur de la fenetre, moins 12px de marge de chaque cote : le
+       modal ne peut pas depasser la fenetre, inutile de garder un plafond
+       (l'ancien max-width: 960px etait atteint a la taille habituelle). */
+    width: calc(100% - 24px);
+    max-width: none;
+}
+
+/* Colonnes adaptatives : la largeur gagnee sert a reduire le nombre de lignes
+   (et donc la hauteur), pas a etirer les champs. Le plancher de 260px evite
+   l'effet tableur sur tres grand ecran. */
+.modal-panel.qc-wide form[data-quick-create-form] .form-grid {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+/* Identifiants legaux : les champs calcules quittent la grille pour le pied
+   collant. Le bloc vit DANS le pied (et non juste au-dessus) : sinon la barre
+   sticky le masque des que la modale doit defiler. flex: 1 0 100% force une
+   ligne dediee, les boutons passent donc en dessous. */
+.qc-preview {
+    display: block;
+    flex: 1 0 100%;
+    min-width: 0;
+}
+
+/* Le libelle reapplique la classe .section-title : la typographie vient donc
+   des MEMES regles que les sections du formulaire (0.7rem dans la modale,
+   uppercase, --primary, filet inferieur) — aucune valeur a dupliquer ici. */
+.qc-preview-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.qc-preview-label .material-symbols-outlined {
+    font-size: 15px;
+}
+
+.qc-preview-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px 10px;
 }
 
 .modal-panel form[data-quick-create-form] input,
@@ -5459,12 +5517,15 @@ input[data-bulk-checkbox] {
 
 .modal-panel .qc-head h3 {
     font-weight: 700;
+    /* Titre plus discret : l'en-tete sticky se pose sur le premier titre de
+       section, un gros titre mangeait la place du formulaire. */
+    font-size: 0.95rem;
 }
 
 .modal-panel .qc-head-icon {
-    width: 26px;
-    height: 26px;
-    border-radius: 7px;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -5473,7 +5534,7 @@ input[data-bulk-checkbox] {
 }
 
 .modal-panel .qc-head-icon .material-symbols-outlined {
-    font-size: 16px;
+    font-size: 14px;
     color: #fff;
 }
 
@@ -5535,15 +5596,18 @@ input[data-bulk-checkbox] {
     font-size: 14px;
 }
 
-/* En-tete et barre d'action fixes : le formulaire peut etre long (17 champs
+/* En-tete et barre d'action fixes : le formulaire peut etre long (18 champs
    pour un collaborateur), le titre et le bouton restent visibles. */
 .modal-panel:has(form[data-quick-create-form]) .modal-header {
     position: sticky;
     top: 0;
     z-index: 3;
     background: var(--surface);
-    margin: -0.75rem -1rem 0.25rem;
-    padding: 0.6rem 0.75rem 0.5rem 1rem;
+    /* Plus de marge haute negative : les -0.75rem faisaient passer l'en-tete
+       collant PAR-DESSUS le premier titre de section (5 px de recouvrement,
+       l'en-tete etant opaque et en z-index 3). Le bleed lateral est conserve. */
+    margin: 0 -1rem 0.4rem;
+    padding: 0.35rem 0.75rem 0.35rem 1rem;
 }
 
 .modal-panel form[data-quick-create-form] .form-actions {
@@ -5551,9 +5615,17 @@ input[data-bulk-checkbox] {
     bottom: 0;
     z-index: 3;
     background: var(--surface);
-    margin: 0.5rem -1rem -0.75rem !important;
-    padding: 0.55rem 1rem 0.65rem;
-    border-top: 1px solid var(--line);
+    /* Le bleed lateral est conserve, la marge negative du bas est retiree :
+       elle faisait deborder la barre de 12px hors du panneau et rognerait le
+       dernier contenu. Le padding-bottom compense le padding du panneau. */
+    margin: 0.5rem -1rem 0 !important;
+    padding: 0.55rem 1rem 0.8rem;
+    /* Pas de border-top : le trait tombait juste au-dessus du libelle
+       « Apercu genere » et le coupait de son titre. La separation reste
+       assuree par le filet du .section-title, plus bas. */
+    flex-wrap: wrap;
+    align-items: center;
+    row-gap: 6px;
 }
 
 /* Radio group (cession wizard step 3) */

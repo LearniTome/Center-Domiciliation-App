@@ -23,6 +23,23 @@ if (!isset($collabTypeOptions)) {
 if (!isset($collabStatutOptions)) {
     $collabStatutOptions = ['actif', 'inactif', 'suspendu'];
 }
+/**
+ * Transforme une liste de valeurs brutes en couples valeur => libelle lisible
+ * ( premiere lettre en capitale ). La valeur envoyee a l'API reste la valeur
+ * brute stockee en base : on ne change que ce qui est affiche.
+ */
+$collaborateurHumanize = static function (array $options): array {
+    if ($options === [] || !array_is_list($options)) {
+        return $options;
+    }
+    $libelles = [];
+    foreach ($options as $value) {
+        $libelles[(string) $value] = ucfirst((string) $value);
+    }
+    return $libelles;
+};
+$collabTypeOptions = $collaborateurHumanize($collabTypeOptions);
+$collabStatutOptions = $collaborateurHumanize($collabStatutOptions);
 if (!isset($rolesOptions) || $rolesOptions === []) {
     $rolesOptions = [];
     if (($pdo ?? null) instanceof PDO) {
@@ -45,9 +62,18 @@ if (!isset($qualiteOptions) || $qualiteOptions === []) {
 $quickCreateTitle = 'Nouveau collaborateur';
 $quickCreateTable = 'collaborateurs';
 $quickCreateSubmitLabel = 'Créer le collaborateur';
+// Les deux champs generes ne sont pas saisissables : ils sont rendus dans
+// l'apercu du pied collant plutot que dans la grille (cf. $quickCreatePreview).
+$quickCreatePreview = ['nom_complet', 'collaborateur_code'];
+// 17 champs : la modale occupe la largeur de la fenetre au lieu d'etre cantonnee
+// a 960 px, et la grille s'adapte (voir .qc-wide dans app.css).
+$quickCreateWide = true;
+// Champ identifiant l'enregistrement dans le message de confirmation apres
+// rechargement de la page liste.
+$quickCreateLabelField = 'nom_complet';
 $quickCreateDefaults = isset($collabDefaults) && is_array($collabDefaults) ? $collabDefaults : load_defaults('collaborateur');
 $quickCreateFields = [
-    ['type' => 'title', 'label' => 'Identite & Role'],
+    ['type' => 'title', 'label' => 'Identité & Rôle'],
     ['name' => 'collaborateur_type', 'label' => 'Type', 'type' => 'select', 'options' => $collabTypeOptions, 'required' => true],
     ['name' => 'qualite_intermediaire_id', 'label' => 'Qualification', 'type' => 'select', 'options' => $qualiteOptions, 'placeholder' => 'Non qualifie'],
     ['name' => 'role_id', 'label' => 'Role', 'type' => 'select', 'options' => $rolesOptions],
@@ -55,6 +81,7 @@ $quickCreateFields = [
     ['name' => 'collaborateur_prenom', 'label' => 'Prenom', 'type' => 'text', 'data-code-part' => 'prenom'],
     ['name' => 'den_ste', 'label' => 'Cabinet', 'type' => 'text'],
     ['name' => 'fonction', 'label' => 'Fonction', 'type' => 'text'],
+    ['name' => 'statut', 'label' => 'Statut', 'type' => 'select', 'options' => $collabStatutOptions],
     ['type' => 'title', 'label' => 'Contact'],
     ['name' => 'collaborateur_email', 'label' => 'Email', 'type' => 'email'],
     ['name' => 'collaborateur_tel_mobile', 'label' => 'Telephone mobile', 'type' => 'text'],
@@ -65,10 +92,10 @@ $quickCreateFields = [
     ['name' => 'collaborateur_tp', 'label' => 'TP', 'type' => 'text'],
     ['name' => 'collaborateur_rc', 'label' => 'RC', 'type' => 'text'],
     ['name' => 'collaborateur_if', 'label' => 'IF', 'type' => 'text'],
-    ['type' => 'title', 'label' => 'Informations'],
-    ['name' => 'nom_complet', 'label' => 'Nom complet (genere)', 'type' => 'text', 'data-derived' => 'nom-complet', 'readonly' => true],
-    ['name' => 'collaborateur_code', 'label' => 'Code (genere)', 'type' => 'text', 'data-derived' => 'code', 'readonly' => true],
-    ['name' => 'statut', 'label' => 'Statut', 'type' => 'select', 'options' => $collabStatutOptions],
+    // Champs calcules : declares ici comme les autres, mais rendus dans
+    // l'apercu du pied collant via $quickCreatePreview.
+    ['name' => 'nom_complet', 'label' => 'Nom complet (généré)', 'type' => 'text', 'data-derived' => 'nom-complet', 'readonly' => true],
+    ['name' => 'collaborateur_code', 'label' => 'Code (généré)', 'type' => 'text', 'data-derived' => 'code', 'readonly' => true],
 ];
 
 require __DIR__ . '/quick_create_modal.php';

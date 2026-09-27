@@ -130,6 +130,21 @@
                             // frere de <table>, buildRow ne le trouvait jamais et
                             // le toast annoncait une creation invisible.
                             if (document.querySelector('[data-table]')) {
+                                // Le rechargement efface le toast : on le laisse
+                                // dans sessionStorage pour l'afficher au
+                                // chargement de la page rechargee. Le message
+                                // est compose ici ("Collaborateur « X » cree")
+                                // plutot que repris tel quel de l'API, qui
+                                // renvoie un libelle generique.
+                                var entity = form.getAttribute('data-quick-create-entity') || 'enregistrement';
+                                var labelField = form.getAttribute('data-quick-create-label-field');
+                                var record = json.data || {};
+                                var label = labelField ? record[labelField] : '';
+                                var msg = (label ? '« ' + String(label).trim() + ' »' : '') + ' créé avec succès.';
+                                msg = entity.charAt(0).toUpperCase() + entity.slice(1) + ' ' + msg;
+                                try {
+                                    sessionStorage.setItem('qc_created', msg);
+                                } catch (e) {}
                                 window.location.reload();
                                 return;
                             }
@@ -475,4 +490,16 @@
     var style = document.createElement('style');
     style.textContent = '@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}';
     document.head.appendChild(style);
+
+    // ── Retour de creation (page liste rechargee) ──
+    // table-editor.js recharge la page apres un quick_create cible sur un
+    // tableau : sans ce relais, le toast est perdu et la creation n'est
+    // signalee nulle part. Le message transite par sessionStorage.
+    try {
+        var pending = sessionStorage.getItem('qc_created');
+        if (pending) {
+            sessionStorage.removeItem('qc_created');
+            showToast('success', pending);
+        }
+    } catch (e) {}
 })();

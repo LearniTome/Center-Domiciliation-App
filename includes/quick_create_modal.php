@@ -21,19 +21,42 @@
  *   $quickCreateTargetSelect  = 'societe_collaborateur_id';
  *   $quickCreateTargetLabel   = ['nom_complet', 'collaborateur_code'];
  *   -> apres creation, l'option est ajoutee au select cible et selectionnee.
+ *
+ *   Champs calcules (readonly) affiches dans le pied collant plutot que dans
+ *   la grille — ils se remplissent seuls et ne sont pas saisissables :
+ *   $quickCreatePreview      = ['nom_complet', 'collaborateur_code'];
+ *
+ *   Message de confirmation apres creation (page liste rechargee) :
+ *   $quickCreateLabelField   = 'nom_complet';  // "Collaborateur « X » cree."
  */
 $modalKey = $quickCreateModalKey ?? '';
 $modalAttr = $modalKey !== '' ? 'quick-create-' . $modalKey : 'quick-create';
 $targetSelect = (string) ($quickCreateTargetSelect ?? '');
 $targetLabel = array_values(array_filter((array) ($quickCreateTargetLabel ?? []), static fn($k) => $k !== ''));
+// Champs sortis de la grille vers l'apercu du pied (opt-in par nom de champ).
+$previewNames = array_values(array_filter((array) ($quickCreatePreview ?? []), static fn($k) => $k !== ''));
 // Libelle du bouton de validation, surchargeable par l'appelant. On le
 // consomme puis on le retire : une page peut includer plusieurs modales et la
 // valeur ne doit pas fuiter sur la suivante.
 $qcSubmitLabel = (string) ($quickCreateSubmitLabel ?? 'Créer');
 unset($quickCreateSubmitLabel);
+// Entite et champ-identifiant pour le message de confirmation cote JS.
+// strtolower (et non mb_strtolower) volontairement : le projet n'utilise nulle
+// part mbstring, et l'hebergeur mutualise n'est pas garanti de l'avoir. En
+// locale C, strtolower ne touche que A-Z : les octets UTF-8 restent intacts.
+$qcEntity = (string) ($quickCreateEntity ?? '');
+if ($qcEntity === '') {
+    $qcEntity = strtolower(preg_replace('/^(nouveau|nouvelle)\s+/iu', '', (string) ($quickCreateTitle ?? '')));
+    $qcEntity = trim($qcEntity) !== '' ? trim($qcEntity) : 'enregistrement';
+}
+$qcLabelField = (string) ($quickCreateLabelField ?? '');
+// Modale large : occupe la largeur de la fenetre (beaucoup de champs) tout en
+// restant centree verticalement. Opt-in via $quickCreateWide.
+$qcPanelClass = 'modal-panel' . (!empty($quickCreateWide) ? ' qc-wide' : '');
+$previewFields = [];
 ?>
 <div class="modal-overlay" data-modal="<?= e($modalAttr) ?>">
-    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="qc-title-<?= e($modalAttr) ?>">
+    <div class="<?= e($qcPanelClass) ?>" role="dialog" aria-modal="true" aria-labelledby="qc-title-<?= e($modalAttr) ?>">
         <div class="modal-header">
             <div class="qc-head">
                 <span class="qc-head-icon"><span class="material-symbols-outlined">add</span></span>
@@ -41,7 +64,7 @@ unset($quickCreateSubmitLabel);
             </div>
             <button class="btn-icon" data-modal-close type="button" title="Fermer"><span class="material-symbols-outlined">close</span></button>
         </div>
-        <form data-quick-create-form<?= $targetSelect !== '' ? ' data-quick-create-target="' . e($targetSelect) . '" data-quick-create-label="' . e(implode(',', $targetLabel)) . '"' : '' ?>>
+        <form data-quick-create-form data-quick-create-entity="<?= e($qcEntity) ?>"<?= $qcLabelField !== '' ? ' data-quick-create-label-field="' . e($qcLabelField) . '"' : '' ?><?= $targetSelect !== '' ? ' data-quick-create-target="' . e($targetSelect) . '" data-quick-create-label="' . e(implode(',', $targetLabel)) . '"' : '' ?>>
             <?= csrf_input() ?>
             <input type="hidden" name="action" value="quick_create">
             <input type="hidden" name="table" value="<?= e($quickCreateTable) ?>">
@@ -54,6 +77,14 @@ unset($quickCreateSubmitLabel);
             </div>
             <div class="form-grid">
                 <?php foreach ((array) ($quickCreateFields ?? []) as $field): ?>
+                    <?php
+                    // Champ calcule : il sort de la grille et sera rendu dans
+                    // l'apercu du pied collant (meme attributs, meme JS).
+                    if ($previewNames !== [] && in_array((string) ($field['name'] ?? ''), $previewNames, true)) {
+                        $previewFields[] = $field;
+                        continue;
+                    }
+                    ?>
                     <?php if (($field['type'] ?? '') === 'title'): ?>
                         <h3 class="section-title"><?= e($field['label'] ?? '') ?></h3>
                     <?php elseif (($field['type'] ?? '') === 'title-secondary'): ?>
@@ -133,6 +164,26 @@ unset($quickCreateSubmitLabel);
                 <?php endforeach; ?>
             </div>
             <div class="form-actions" style="margin-top:1rem;display:flex;gap:8px;justify-content:flex-end">
+                <?php if ($previewFields !== []): ?>
+                <div class="qc-preview">
+                    <span class="qc-preview-label section-title"><span class="material-symbols-outlined">visibility</span> Aperçu généré</span>
+                    <div class="qc-preview-fields">
+                        <?php foreach ($previewFields as $pfield): ?>
+                            <label class="field">
+                                <span><?= e($pfield['label'] ?? '') ?></span>
+                                <input
+                                    type="text"
+                                    name="<?= e($pfield['name'] ?? '') ?>"
+                                    value="<?= e(($quickCreateDefaults ?? [])[$pfield['name']] ?? '') ?>"
+                                    <?php if (!empty($pfield['data-derived'])): ?> data-derived="<?= e((string) $pfield['data-derived']) ?>"<?php endif; ?>
+                                    <?php if (!empty($pfield['data-code-part'])): ?> data-code-part="<?= e((string) $pfield['data-code-part']) ?>"<?php endif; ?>
+                                    readonly tabindex="-1"
+                                >
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
                 <button type="button" class="btn btn-cancel" data-modal-close><span class="material-symbols-outlined">close</span> Annuler</button>
                 <button type="submit" class="btn btn-next"><span class="material-symbols-outlined">add</span> <?= e($qcSubmitLabel) ?></button>
             </div>
