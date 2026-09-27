@@ -5470,6 +5470,10 @@ input[data-bulk-checkbox] {
     display: flex;
     align-items: center;
     gap: 5px;
+    /* Violet : le bloc garde la typo du .section-title mais se distingue des
+       sections saisissables, qui restent en --primary. L'icone herite de la
+       couleur via currentColor. */
+    color: var(--info);
 }
 
 .qc-preview-label .material-symbols-outlined {
