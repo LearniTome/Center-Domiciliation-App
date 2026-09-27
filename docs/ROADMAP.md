@@ -19,15 +19,15 @@
 
 ### SaaS multi-tenancy — Architecture (2026-09-27)
 
-#### État actuel (audit)
+#### État actuel (audit post-commit df5199d)
 | Élément | Constat |
 |---|---|
-| RBAC | **Existe déjà** : `roles` (16), `permissions` (58), `role_permissions`, `collaborateur_permissions` (override par collaborateur) |
-| Comptes de connexion | **Aucun `users`** — le login porte sur `collaborateurs` (`can_login=1`, `role_id`, `password_hash`). 1 seul compte réel en base |
-| Multi-tenancy | **Aucun** : pas de `cabinets`, pas de `cabinet_id` sur les 12 tables métier |
-| Bypass super-admin | `has_permission()` teste `role_id === 1` en dur (`includes/fonctions.php:1241`) |
-| Isolation | **Aucune** — toutes les pages détail lisent par `?id=` sans contrôle de propriétaire |
-| Périmètre d'isolation | 87 couples (fichier, table) à couvrir : societes 22, collaborateurs 16, documents_generes 13, associes 10, contrats 9, cessions 8, pv_ago 5, uploaded_docs 4 |
+| RBAC | **Implémenté** : `users` (connexion), `user_roles` + `user_permissions`, `roles.scope` (centre/cabinet), `is_system` remplace le `role_id === 1` dur |
+| Comptes de connexion | **Table `users`** opérationnelle (cabinet + Centre), auto-login dev dans `amorcage.php` |
+| Multi-tenancy | `cabinet_id` sur 12 tables métier + vues cloisonnées (`v_dossiers_accessibles`, `v_cessions_accessibles`) |
+| Bypass super-admin | `has_permission()` utilise `roles.is_system` (plus de dur `role_id === 1`) |
+| Isolation | `assert_tenant_access()` + `tenant_scope()` sur fetch/listes/API/documents ; pages détail partiel (documents ✅, societe_details ❌) |
+| Périmètre d'isolation | 87 couples : documents_generes ✅, societes ✅ (liste), associes ✅ (liste), cessions ✅ (liste + vues), others en cours |
 
 #### Décisions retenues (KISS, sans question utilisateur)
 1. **`users` séparé de `collaborateurs`** — un cabinet n'a pas de « collaborateur de société ». `users.cabinet_id NULL` = interne Centre (non facturé).
@@ -38,24 +38,26 @@
 6. **Aucune Librairie ajoutée** — le besoin est de l'RBAC maison, pas d'un framework. Composer reste à 3 libs.
 
 #### Phase 1 — Fondation données
-- [ ] `20260927_100000_saas_cabinets.sql` — `cabinets`, `plans`
-- [ ] `20260927_100001_saas_facturation.sql` — `abonnements`, `paiements`, `factures`
-- [ ] `20260927_100002_saas_users.sql` — `users`, `user_roles`, `user_permissions` + backfill depuis `collaborateurs`
-- [ ] `20260927_100003_saas_roles_permissions.sql` — `roles.scope` / `is_billable`, 6 rôles canoniques, 18 permissions SaaS, matrices
-- [ ] `20260927_100004_saas_tenant_columns.sql` — `cabinet_id` + index sur les 12 tables métier
+- [x] `20260927_100000_saas_cabinets.sql` — `cabinets`, `plans`
+- [x] `20260927_100001_saas_facturation.sql` — `abonnements`, `paiements`, `factures`
+- [x] `20260927_100002_saas_users.sql` — `users`, `user_roles`, `user_permissions` + backfill depuis `collaborateurs`
+- [x] `20260927_100003_saas_roles_permissions.sql` — `roles.scope` / `is_billable`, 6 rôles canoniques, 18 permissions SaaS, matrices
+- [x] `20260927_100004_saas_tenant_columns.sql` — `cabinet_id` + index sur les 12 tables métier
 - [ ] `database/schema.sql` — refléter le nouveau schéma (source de vérité des fresh installs)
 
 #### Phase 2 — Couche authentification
-- [ ] `current_user()` → lit `users`, expose `cabinet_id`, `scope`, `role_nom`
-- [ ] `current_cabinet_id()`, `is_centre_user()`, `tenant_scope_sql()`, `assert_tenant_access()`
-- [ ] `get_user_permissions()` → `user_roles` + `user_permissions` (suppression du shortcut `role_id === 1` au profit de `roles.is_system`)
-- [ ] `pages/auth/connexion.php` + `includes/amorcage.php` (auto-login dev) → table `users`
-- [ ] `user_sessions` : purge à la déconnexion + colonne `cabinet_id`
+- [x] `current_user()` → lit `users`, expose `cabinet_id`, `scope`, `role_nom`
+- [x] `current_cabinet_id()`, `is_centre_user()`, `tenant_scope_sql()`, `assert_tenant_access()`
+- [x] `get_user_permissions()` → `user_roles` + `user_permissions` (suppression du shortcut `role_id === 1` au profit de `roles.is_system`)
+- [x] `pages/auth/connexion.php` + `includes/amorcage.php` (auto-login dev) → table `users`
+- [x] `user_sessions` : colonne `cabinet_id` + rattachement dans `update_user_session()`
+- [ ] `user_sessions` : purge à la déconnexion côté logout
 
 #### Phase 3 — Isolation des données
-- [ ] Garde IDOR sur toutes les pages détail (`societe`, `associe`, `contrat`, `collaborateur`, `cession_dossier`, `societe_suivi`)
-- [ ] Filtre tenant sur les listes (`creations`, `domiciliations`, `societes`, `associes`, `contrats`, `collaborateurs`, `cessions`, `pv_ago`, `documents`)
-- [ ] Filtre tenant sur `api.php` (quick_create, inline_update, bulk_update) + uploads
+- [x] Filtre tenant sur les listes (`fetch_all_documents`, `fetch_societes_options`, `associes_liste`, `cessions_liste`)
+- [x] Filtre tenant sur `api.php` (quick_create rattache `cabinet_id`, inline_update/bulk_update gate par `api_row_visible`)
+- [x] Garde IDOR sur `documents.php` (lecture + PDF + validation + suppression)
+- [ ] Garde IDOR sur les pages détail restantes (`societe`, `associe`, `contrat`, `collaborateur`, `cession_dossier`, `societe_suivi`)
 
 #### Phase 4 — Abonnements
 - [ ] `require_active_subscription()` — blocage des utilisateurs cabinet si `abonnement` expiré/suspendu
@@ -67,7 +69,7 @@
 - [ ] Bandeau d'état abonnement dans l'entête (J−30 / expiré / suspendu)
 
 #### Sécurité multi-tenancy
-- [ ] Toute requête métier passe par `tenant_scope_sql()` ou `assert_tenant_access()` — revue fichier par fichier
+- [ ] Toute requête métier passe par `tenant_scope_sql()` ou `assert_tenant_access()` — revue fichier par fichier (en cours)
 - [ ] Mot de passe obligatoire au premier login cabinet (`must_change_password`)
 - [ ] Rappel : `collaborateurs.password_hash` devient inutile, à purger en phase 5
 
@@ -96,7 +98,7 @@
 - [x] 2026-09-13 — Workflow domiciliation reél en 12 étapes (Récupération docs → Vérification → Remplir → Envoi contrats → Retour légalisés → Légalisation attestations → Appel/remise → Attestation d'enregistrement 48h → Dossier final 10-20j → Impression → Classement → Archivage cloud) : labels/icônes/suggestions docs, seeding wizard, reset des sociétés existantes (migration 20260913_000001), bandeau + puce rouge échéances expirées (CIN gérants, certificat négatif), PDF suivi 12 étapes + délais, fix collaborateur via collaborateurs.societe_id — déployé en prod (10467db), validé visuellement
 
 ### Qualité
-- [x] Suite de tests PHPUnit 11 sur `src/` : TemplateAnalyzer (extraction/rename/delete) + DocumentRenderer (rendu `_VAR_`, fusion split-runs, boucle cession_parts) — `vendor/bin/phpunit` (15 tests)
+- [x] Suite de tests PHPUnit 11 sur `src/` + integration tenant : TemplateAnalyzer / DocumentRenderer / TenantIsolation (121 tests, 285 assertions) — `vendor/bin/phpunit`
 - [x] 2026-09-27 — Vérification manuelle avant commit (skill manual-test) : `php -l` sur les 7 fichiers modifiés, 101 tests PHPUnit verts, parcours navigateur sur le serveur de dev
       (modale quick-create collaborateur, dialogues de confirmation, cartes KPI du suivi des contrats, wizard étape 1) — 0 erreur console. Défaut corrigé au passage : la création rapide
       n'insérait jamais de ligne dans les listes (`<template data-row-template>` est un frère de `<table>`, `buildRow` ne le trouvait pas → toast de succès sans ligne visible) ;
@@ -115,4 +117,5 @@
 - [x] 2026-08-21 — Dompdf 3.1.5 → 3.1.6 : corrige 6 CVE (lecture de fichier local via SVG data-URI, fuite filesystem, DoS images surdimensionnées, contournement chroot)
 - [x] 2026-08-21 — PhpSpreadsheet 5.8.0 → 5.9.0 (`composer audit` : 0 vulnérabilité restante)
 - [x] 2026-08-21 — Conversion des variables templates `{{ VAR }}` → `_VAR_` (29 .docx, 589 variables) + adaptation DocumentRenderer / TemplateAnalyzer / UI
+- [x] 2026-09-27 — SaaS multi-tenancy : 9 migrations (cabinets, facturation, users, RBAC, colonnes tenant, vues cloisonnées), RBAC complet (`users`/`user_roles`/`user_permissions`/`roles.scope`), `assert_tenant_access()` + `tenant_scope()`, cloisonnement fetch/listes/API/documents, 2 fichiers de tests integration (121 tests OK)
 - [x] 2026-08-21 — Protocole CTO : commandes `/plan` `/execute` `/modify` + skill `protocole-cto`
