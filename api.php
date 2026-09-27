@@ -180,7 +180,14 @@ function handle_quick_create(PDO $pdo, array $allowedTables, array $user): array
         }
     }
     if ($hasCreatedBy) {
-        $data['created_by'] = (int) $user['id'];
+        // `created_by` reference le collaborateur metier en charge, pas le
+        // compte de connexion : un adherent de cabinet n'a pas de fiche.
+        $data['created_by'] = current_collaborateur_id();
+    }
+    // Rattachement au tenant : une creation faite depuis le cabinet A ne peut
+    // pas produire une ligne visible du centre ou d'un autre cabinet.
+    if (in_array($table, tenant_scoped_tables(), true) && !array_key_exists('cabinet_id', $data)) {
+        $data['cabinet_id'] = current_cabinet_id();
     }
     if ($table === 'collaborateurs') {
         $data['collaborateur_code'] = code_collaborateur_intermediaire($pdo, $data, null);
@@ -245,10 +252,40 @@ function handle_inline_update(PDO $pdo, array $allowedTables): array
         return ['success' => false, 'message' => 'Champ "' . $column . '" : ' . $norm['message']];
     }
 
+    // Cloisonnement : sans ce controle, un adherent de cabinet modifierait le
+    // dossier d'un concurrent en forgeant `id`. Meme refus que sur une lecture,
+    // pour ne pas confirmer l'existence de la ligne.
+    if (!api_row_visible($pdo, $table, $id)) {
+        http_response_code($api_row_exists($pdo, $table, $id) ? 403 : 404);
+        return ['success' => false, 'message' => 'Acces refuse : cet enregistrement appartient a un autre cabinet.'];
+    }
+
     $stmt = $pdo->prepare("UPDATE {$table} SET {$column} = :val WHERE id = :id"); // nosemgrep: tainted-sql-string -- $table/$column validated via $allowedTables whitelist
     $stmt->execute(['val' => $norm['value'], 'id' => $id]);
 
     return ['success' => true, 'message' => 'Mis a jour avec succes.'];
+}
+
+/** La ligne existe-t-elle, Independamment du tenant ? (choix du code HTTP) */
+function api_row_exists(PDO $pdo, string $table, int $id): bool
+{
+    if (!preg_match('/^[a-z_]+$/', $table) || $id <= 0) {
+        return false;
+    }
+
+    try {
+        $stmt = $pdo->prepare("SELECT id FROM `{$table}` WHERE id = :id LIMIT 1");
+        $stmt->execute(['id' => $id]);
+        return $stmt->fetch() !== false;
+    } catch (PDOException) {
+        return false;
+    }
+}
+
+/** La ligne appartient-elle au tenant connecte ? */
+function api_row_visible(PDO $pdo, string $table, int $id): bool
+{
+    return assert_tenant_access($pdo, $table, $id);
 }
 
 function handle_bulk_update(PDO $pdo, array $allowedTables): array
@@ -265,6 +302,18 @@ function handle_bulk_update(PDO $pdo, array $allowedTables): array
     if ($ids === []) {
         http_response_code(400);
         return ['success' => false, 'message' => 'Aucun ID valide fourni.'];
+    }
+
+    // Cloisonnement de l'edition en masse : on retire de la lot les lignes
+    // qui ne sont pas visibles du tenant connecte, plutot que de tout
+    // refuser. L'utilisateur voit ainsi un echec partiel explicite plutot
+    // qu'un message opaque, et aucune ligne tierce n'est touchee.
+    $idsVisibles = array_values(array_filter($ids, fn(int $id) => api_row_visible($pdo, $table, $id)));
+    $ignores = count($ids) - count($idsVisibles);
+
+    if ($idsVisibles === []) {
+        http_response_code(403);
+        return ['success' => false, 'message' => 'Aucun des enregistrements selectionnes n\'est accessible.'];
     }
 
     $allowedCols = $allowedTables[$table];
@@ -287,7 +336,7 @@ function handle_bulk_update(PDO $pdo, array $allowedTables): array
     }
 
     $setParts = implode(', ', array_map(fn(string $c) => "{$c} = :{$c}", array_keys($updates)));
-    $in = build_in_params($ids);
+    $in = build_in_params($idsVisibles);
     $stmt = $pdo->prepare("UPDATE {$table} SET {$setParts} WHERE id IN ({$in['sql']})"); // nosemgrep: tainted-sql-string -- $table validated via $allowedTables whitelist
     $params = array_values($updates);
     foreach ($in['params'] as $k => $v) {
@@ -295,7 +344,13 @@ function handle_bulk_update(PDO $pdo, array $allowedTables): array
     }
     $stmt->execute($params);
 
-    return ['success' => true, 'message' => count($ids) . ' enregistrement(s) mis a jour avec succes.', 'updated' => $stmt->rowCount()];
+    $message = count($idsVisibles) . ' enregistrement(s) mis a jour avec succes.';
+
+    if ($ignores > 0) {
+        $message .= ' ' . $ignores . ' enregistrement(s) hors de votre cabinet ignores.';
+    }
+
+    return ['success' => true, 'message' => $message, 'updated' => $stmt->rowCount(), 'skipped' => $ignores];
 }
 
 function handle_import_preview(array $config): array

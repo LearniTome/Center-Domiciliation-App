@@ -6,8 +6,9 @@ $requestedType = $_GET['type'] ?? '';
 if (!in_array($requestedType, ['creation', 'domiciliation'], true)) {
     $requestedType = '';
 } elseif ($requestedType === 'creation') {
-    $wizardUser = current_user();
-    if ($wizardUser && $wizardUser['collaborateur_type'] !== 'interne' && ($wizardUser['role_id'] ?? 0) !== 1) {
+    // La creation d'une societe est reservee au Centre : un adherent de
+    // cabinet, quel que soit son role, retombe sur la domiciliation.
+    if (is_logged_in() && !is_centre_user()) {
         $requestedType = 'domiciliation';
     }
 }
@@ -148,8 +149,7 @@ $societeData = array_merge([
     'societe_mode_depot' => '',
 ], $wizard['societe']);
 
-$wizardUser = current_user();
-$isExterne = $wizardUser && $wizardUser['collaborateur_type'] !== 'interne' && ($wizardUser['role_id'] ?? 0) !== 1;
+$isExterne = is_logged_in() && !is_centre_user();
 if ($isExterne) {
     $societeData['societe_type_generation'] = 'domiciliation';
     $wizard['societe']['societe_type_generation'] = 'domiciliation';

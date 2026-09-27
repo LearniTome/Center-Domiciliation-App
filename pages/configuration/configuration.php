@@ -39,7 +39,7 @@ if (($pdo ?? null) instanceof PDO) {
 }
 
 $_userHub = current_user();
-$_isRoot = $_userHub && (int) ($_userHub['role_id'] ?? 0) === 1;
+$_isRoot = is_centre_admin();
 
 /** Renvoie les groupes dont au moins un onglet est visible. */
 function config_hub_visible_groups(): array

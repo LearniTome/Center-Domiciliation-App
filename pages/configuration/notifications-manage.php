@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 $user = current_user();
-if (!$user || (int) ($user['role_id'] ?? 0) !== 1) {
+if (!$user || !is_centre_admin()) {
     redirect_to('dashboard');
 }
 

@@ -26,7 +26,7 @@ if (is_post() && $step === 7) {
             // Create societe if new
             if ($wizard['mode'] === 'nouvelle' && $wizard['societe_id'] <= 0) {
                 $soc = $wizard['societe'];
-                $stmt = $pdo->prepare('INSERT INTO societes (societe_raison_sociale, societe_forme_juridique, societe_source, societe_ice, societe_rc, societe_if, societe_tp, societe_cnss, societe_capital, societe_part_social, societe_valeur_nominale, societe_adresse_siege, societe_ville, societe_tribunal, societe_tribunal_type, societe_email, societe_telephone, societe_activites_statuts, created_by) VALUES (:raison, :forme, :source, :ice, :rc, :ifis, :tp, :cnss, :capital, :parts, :vnom, :adr, :ville, :trib, :trib_type, :email, :tel, :activites, :created_by)');
+                $stmt = $pdo->prepare('INSERT INTO societes (societe_raison_sociale, societe_forme_juridique, societe_source, societe_ice, societe_rc, societe_if, societe_tp, societe_cnss, societe_capital, societe_part_social, societe_valeur_nominale, societe_adresse_siege, societe_ville, societe_tribunal, societe_tribunal_type, societe_email, societe_telephone, societe_activites_statuts, created_by, cabinet_id) VALUES (:raison, :forme, :source, :ice, :rc, :ifis, :tp, :cnss, :capital, :parts, :vnom, :adr, :ville, :trib, :trib_type, :email, :tel, :activites, :created_by, :cabinet_id)');
                 $stmt->execute([
                     'raison' => $soc['societe_raison_sociale'] ?? '',
                     'forme' => $soc['societe_forme_juridique'] ?? '',
@@ -46,7 +46,8 @@ if (is_post() && $step === 7) {
                     'email' => $soc['societe_email'] ?? '',
                     'tel' => $soc['societe_telephone'] ?? '',
                     'activites' => $soc['societe_activites_statuts'] ?? '',
-                    'created_by' => ($user = current_user()) ? (int) $user['id'] : null,
+                    'created_by' => current_collaborateur_id(),
+        'cabinet_id' => current_cabinet_id(),
                 ]);
                 $newSocId = (int) $pdo->lastInsertId();
                 $wizard['societe_id'] = $newSocId;
@@ -65,7 +66,7 @@ if (is_post() && $step === 7) {
 
             $capitalSocial = (float) ($selectedSociete['societe_capital'] ?? $wizard['societe']['societe_capital'] ?? 0);
 
-            $stmt = $pdo->prepare('INSERT INTO pv_ago (societe_id, dossier_numero, statut, date_ago, heure_ago, lieu_ago, president_nom, president_qualite, exercice_clos, total_parts, parts_presentes, resultat_net, resultat_type, report_a_nouveau_debiteur, reserve_legale_existante, reserve_statutaire_existante, reserve_facultative_existante, capital_social, affectation_option, dividende_total, reserve_statutaire_dotation, reserve_facultative_dotation, perte_reserve_prelevement, resolutions, created_by) VALUES (:sid, :dos, :stat, :date, :heure, :lieu, :pres, :presq, :exo, :tp, :pp, :rn, :rtype, :rnd, :rle, :rse, :rfe, :cs, :aff, :div, :rsd, :rfd, :prp, :res, :cb)');
+            $stmt = $pdo->prepare('INSERT INTO pv_ago (societe_id, dossier_numero, statut, date_ago, heure_ago, lieu_ago, president_nom, president_qualite, exercice_clos, total_parts, parts_presentes, resultat_net, resultat_type, report_a_nouveau_debiteur, reserve_legale_existante, reserve_statutaire_existante, reserve_facultative_existante, capital_social, affectation_option, dividende_total, reserve_statutaire_dotation, reserve_facultative_dotation, perte_reserve_prelevement, resolutions, created_by, cabinet_id) VALUES (:sid, :dos, :stat, :date, :heure, :lieu, :pres, :presq, :exo, :tp, :pp, :rn, :rtype, :rnd, :rle, :rse, :rfe, :cs, :aff, :div, :rsd, :rfd, :prp, :res, :cb, :cabinet_id)');
             $stmt->execute([
                 'sid' => $societeId,
                 'dos' => $dossier,
@@ -91,7 +92,8 @@ if (is_post() && $step === 7) {
                 'rfd' => parse_pv_ago_money((string) ($wizard['reserve_facultative_dotation'] ?? 0)),
                 'prp' => parse_pv_ago_money((string) ($wizard['perte_reserve_prelevement'] ?? 0)),
                 'res' => !empty($wizard['resolutions']) ? json_encode($wizard['resolutions'], JSON_UNESCAPED_UNICODE) : null,
-                'cb' => ($user = current_user()) ? (int) $user['id'] : null,
+                'cb' => current_collaborateur_id(),
+                'cabinet_id' => current_cabinet_id(),
             ]);
             $pvAgoId = (int) $pdo->lastInsertId();
 
@@ -160,7 +162,7 @@ if (is_post() && $step === 7) {
             $docxPath = $renderer->render($context, $outName);
             $pdfPath = $renderer->tryConvertToPdf($docxPath);
 
-            $stmtD = $pdo->prepare('INSERT INTO documents_generes (societe_id, pv_ago_id, template_source, doc_type, fichier_docx, fichier_pdf, taille_ko, valide) VALUES (:sid, :pid, :src, :type, :docx, :pdf, :taille, 1)');
+            $stmtD = $pdo->prepare('INSERT INTO documents_generes (societe_id, pv_ago_id, template_source, doc_type, fichier_docx, fichier_pdf, taille_ko, valide, cabinet_id) VALUES (:sid, :pid, :src, :type, :docx, :pdf, :taille, 1, :cabinet_id)');
             $stmtD->execute([
                 'sid' => $societeId,
                 'pid' => $pvAgoId,
@@ -169,6 +171,7 @@ if (is_post() && $step === 7) {
                 'docx' => $docxPath,
                 'pdf' => $pdfPath ?? '',
                 'taille' => round(filesize($docxPath) / 1024, 2),
+                'cabinet_id' => current_cabinet_id(),
             ]);
 
             $wizard['generated_files'] = [['name' => $outName, 'docx' => $docxPath, 'pdf' => $pdfPath ?? '']];

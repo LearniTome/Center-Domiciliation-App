@@ -3,8 +3,6 @@
 declare(strict_types=1);
 
 $query = search_term();
-$user = current_user();
-$isAdmin = $user && in_array((int) $user['role_id'], [1, 2], true);
 
 // Map modification types to display info
 $modTypes = [
@@ -22,9 +20,11 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
     $modType = $_POST['mod_type'] ?? 'cession';
 
     if ($action === 'delete' && $modType === 'cession') {
+        $targetId = (int) $_POST['id'];
+        require_tenant_row($pdo, 'cessions', $targetId);
         $stmt = $pdo->prepare('DELETE FROM cessions WHERE id = :id');
-        $stmt->execute(['id' => (int) $_POST['id']]);
-        log_activity($pdo, 'delete', 'cession', (int) $_POST['id']);
+        $stmt->execute(['id' => $targetId]);
+        log_activity($pdo, 'delete', 'cession', $targetId);
         set_flash('success', 'Cession supprimee avec succes.');
         redirect_to('modifications');
     }
@@ -33,12 +33,9 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
 $rows = [];
 if (($pdo ?? null) instanceof PDO) {
     if ($currentType === '' || $currentType === 'cession') {
-        $userFilter = '';
-        $userParams = [];
-        if (!$isAdmin && $user) {
-            $userFilter = ' AND c.created_by = :user_id';
-            $userParams['user_id'] = (int) $user['id'];
-        }
+        $scope = list_scope('c');
+        $userFilter = $scope['sql'];
+        $userParams = $scope['params'];
 
         $sql = '
             SELECT
@@ -64,7 +61,7 @@ if (($pdo ?? null) instanceof PDO) {
             $userParams['term3'] = $likeTerm;
         }
         if ($userFilter) {
-            $where[] = 'c.created_by = :user_id';
+            $where[] = $userFilter;
         }
         if ($where) {
             $sql .= ' WHERE ' . implode(' AND ', $where);

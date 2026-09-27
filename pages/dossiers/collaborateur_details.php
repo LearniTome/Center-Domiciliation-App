@@ -327,7 +327,7 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
             log_activity($pdo, 'update', 'permissions', $targetId, 'Permissions mises à jour — ' . $diffCount . ' override(s)');
         }
         // Clear session cache for the affected user
-        if ($targetId === (int) ($_SESSION['user_id'] ?? 0)) {
+        if ($targetId === current_collaborateur_id()) {
             unset($_SESSION['_permissions_cache']);
         }
         clear_user_cache();
@@ -398,7 +398,7 @@ foreach (array_keys($activeActions) as $k) {
     if (!in_array($k, $actionOrder)) $orderedActions[] = $k;
 }
 
-$isCurrentUser = is_logged_in() && $editingId > 0 && (int) ($_SESSION['user_id'] ?? 0) === $editingId;
+$isCurrentUser = is_logged_in() && $editingId > 0 && (int) $editingId === current_collaborateur_id();
 $isNew = !$editingRecord;
 ?>
 

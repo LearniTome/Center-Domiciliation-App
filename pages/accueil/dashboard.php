@@ -7,9 +7,8 @@ $isConnected = $pdo instanceof PDO;
 
 // Auto-generate system notifications on dashboard (once per session)
 if ($isConnected && empty($_SESSION['_auto_notif_run'])) {
-    $user = current_user();
-    if ($user && (int) ($user['role_id'] ?? 0) === 1) {
-        generate_auto_notifications($pdo, (int) $user['id']);
+    if (is_centre_admin()) {
+        generate_auto_notifications($pdo, current_collaborateur_id());
     }
     $_SESSION['_auto_notif_run'] = true;
 }
@@ -38,8 +37,11 @@ $pvAgoCount = 0;
 $suiviCount = 0;
 
 $user = current_user();
-$isAdmin = $user && in_array((int) $user['role_id'], [1, 2], true);
-$userId = (!$isAdmin && $user) ? (int) $user['id'] : null;
+$isAdmin = sees_all_dossiers();
+// `created_by` designe le collaborateur metier en charge du dossier, pas le
+// compte de connexion : un adherent de cabinet n'a pas de fiche collaborateur
+// et voit donc l'integralite de SON cabinet via le filtre cabinet_id.
+$userId = (!$isAdmin && $user) ? current_collaborateur_id() : null;
 
 if ($isConnected) {
     if ($userId !== null) {

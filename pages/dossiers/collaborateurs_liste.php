@@ -38,12 +38,14 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
     $action = $_POST['action'] ?? 'delete';
 
     if ($action === 'delete') {
+        $targetId = (int) $_POST['id'];
+        require_tenant_row($pdo, 'collaborateurs', $targetId);
         $delStmt = $pdo->prepare('SELECT nom_complet, collaborateur_email FROM collaborateurs WHERE id = :id');
-        $delStmt->execute(['id' => (int) $_POST['id']]);
+        $delStmt->execute(['id' => $targetId]);
         $delRecord = $delStmt->fetch();
         $stmt = $pdo->prepare('DELETE FROM collaborateurs WHERE id = :id');
-        $stmt->execute(['id' => (int) $_POST['id']]);
-        log_activity($pdo, 'delete', 'collaborateur', (int) $_POST['id'], $delRecord['nom_complet'] ?? '');
+        $stmt->execute(['id' => $targetId]);
+        log_activity($pdo, 'delete', 'collaborateur', $targetId, $delRecord['nom_complet'] ?? '');
         set_flash('success', 'Collaborateur supprime avec succes.');
         redirect_to('collaborateurs');
     }
@@ -51,28 +53,38 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
 
 $collaborateurs = [];
 if (($pdo ?? null) instanceof PDO) {
+    // `collaborateurs` est un annuaire : pas de notion de `created_by`. Le
+    // Centre voit l'annuaire complet, un adherent seulement son cabinet.
+    $collabScope = tenant_scope('c');
+    $collabFilter = $collabScope['sql'] !== '' ? ' AND ' . $collabScope['sql'] : '';
+    $collabParams = $collabScope['params'];
+
     if ($query !== '') {
         $likeTerm = like_term($query);
         $stmt = $pdo->prepare("
             SELECT c.*, r.nom AS role_nom, r.is_internal
             FROM collaborateurs c
             LEFT JOIN roles r ON r.id = c.role_id
-            WHERE c.nom_complet LIKE :term1
+            WHERE (c.nom_complet LIKE :term1
                OR c.den_ste LIKE :term2
                OR c.collaborateur_ice LIKE :term3
                OR c.fonction LIKE :term4
-               OR r.nom LIKE :term5
+               OR r.nom LIKE :term5)
+            " . $collabFilter . '
             ORDER BY c.id DESC
-        ");
-        $stmt->execute(['term1' => $likeTerm, 'term2' => $likeTerm, 'term3' => $likeTerm, 'term4' => $likeTerm, 'term5' => $likeTerm]);
+        ');
+        $stmt->execute(['term1' => $likeTerm, 'term2' => $likeTerm, 'term3' => $likeTerm, 'term4' => $likeTerm, 'term5' => $likeTerm] + $collabParams);
         $collaborateurs = $stmt->fetchAll();
     } else {
-        $stmt = $pdo->query('
+        $stmt = $pdo->prepare('
             SELECT c.*, r.nom AS role_nom, r.is_internal
             FROM collaborateurs c
             LEFT JOIN roles r ON r.id = c.role_id
+            WHERE 1=1
+            ' . $collabFilter . '
             ORDER BY c.id DESC
         ');
+        $stmt->execute($collabParams);
         $collaborateurs = $stmt->fetchAll();
     }
 

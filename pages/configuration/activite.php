@@ -13,7 +13,7 @@ if (($pdo ?? null) instanceof PDO) {
 
     // Non-admin users can only see their own activity
     $currentUser = current_user();
-    $isAdmin = $currentUser && in_array((int) $currentUser['role_id'], [1, 2], true);
+    $isAdmin = sees_all_dossiers();
     if (!$isAdmin && $currentUser) {
         $userFilter = (string) $currentUser['id'];
     }

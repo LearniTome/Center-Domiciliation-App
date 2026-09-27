@@ -68,8 +68,8 @@ function config_group_visible_pages(string $groupKey): array
     if (!isset($configGroups[$groupKey])) {
         return [];
     }
-    $user = current_user();
-    $isRoot = $user && (int) ($user['role_id'] ?? 0) === 1;
+$user = current_user();
+$isRoot = is_centre_admin();
     $out = [];
     foreach ($configGroups[$groupKey]['pages'] as $page => $meta) {
         [, , $perm, $adminOnly] = $meta;

@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 $query = search_term();
-$user = current_user();
 $canEdit = has_permission('associes.edit');
 
 if (isset($_GET['import_msg']) && $_GET['import_msg'] !== '') {
@@ -38,21 +37,21 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
     $action = $_POST['action'] ?? 'delete';
 
     if ($action === 'delete') {
+        $targetId = (int) $_POST['id'];
+        require_tenant_row($pdo, 'associes', $targetId);
         $stmt = $pdo->prepare('DELETE FROM associes WHERE id = :id');
-        $stmt->execute(['id' => (int) $_POST['id']]);
-        log_activity($pdo, 'delete', 'associe', (int) $_POST['id']);
+        $stmt->execute(['id' => $targetId]);
+        log_activity($pdo, 'delete', 'associe', $targetId);
         set_flash('success', 'Associe supprime avec succes.');
         redirect_to('associes');
     }
 }
 
-$isAdmin = $user && in_array((int) $user['role_id'], [1, 2], true);
-$userFilter = '';
-$userParams = [];
-if (!$isAdmin && $user) {
-    $userFilter = ' AND societes.created_by = :user_id';
-    $userParams['user_id'] = (int) $user['id'];
-}
+// La portee porte sur la societe mere : un associe appartient au tenant de son
+// dossier, et la colonne de suivi reste sur la table societes.
+$scope = list_scope('societes');
+$userFilter = $scope['sql'] !== '' ? ' AND ' . $scope['sql'] : '';
+$userParams = $scope['params'];
 
 if (($pdo ?? null) instanceof PDO) {
     if ($query !== '') {

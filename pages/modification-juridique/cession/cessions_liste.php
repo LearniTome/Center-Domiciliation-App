@@ -3,8 +3,6 @@
 declare(strict_types=1);
 
 $query = search_term();
-$user = current_user();
-$isAdmin = $user && in_array((int) $user['role_id'], [1, 2], true);
 $canEdit = has_permission('cessions.edit');
 
 if (isset($_GET['import_msg']) && $_GET['import_msg'] !== '') {
@@ -27,21 +25,20 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
     $action = $_POST['action'] ?? 'delete';
 
     if ($action === 'delete') {
+        $targetId = (int) $_POST['id'];
+        require_tenant_row($pdo, 'cessions', $targetId);
         $stmt = $pdo->prepare('DELETE FROM cessions WHERE id = :id');
-        $stmt->execute(['id' => (int) $_POST['id']]);
-        log_activity($pdo, 'delete', 'cession', (int) $_POST['id']);
+        $stmt->execute(['id' => $targetId]);
+        log_activity($pdo, 'delete', 'cession', $targetId);
         set_flash('success', 'Cession supprimee avec succes.');
         redirect_to('cessions');
     }
 }
 
 if (($pdo ?? null) instanceof PDO) {
-    $userFilter = '';
-    $userParams = [];
-    if (!$isAdmin && $user) {
-        $userFilter = ' AND c.created_by = :user_id';
-        $userParams['user_id'] = (int) $user['id'];
-    }
+    $scope = list_scope('c');
+    $userFilter = $scope['sql'] !== '' ? ' AND ' . $scope['sql'] : '';
+    $userParams = $scope['params'];
     if ($query !== '') {
         $likeTerm = like_term($query);
         $stmt = $pdo->prepare('
@@ -58,18 +55,16 @@ if (($pdo ?? null) instanceof PDO) {
         $stmt->execute($params);
         $cessions = $stmt->fetchAll();
     } else {
-        $sql = '
+        $stmt = $pdo->prepare('
             SELECT c.*, s.societe_raison_sociale, s.societe_dossier_domiciliation_number AS ste_dossier,
                    (SELECT COUNT(*) FROM cession_parts cp WHERE cp.cession_id = c.id) AS nb_lignes,
                    (SELECT COALESCE(SUM(cp.parts_cedees), 0) FROM cession_parts cp WHERE cp.cession_id = c.id) AS total_parts
             FROM cessions c
             LEFT JOIN societes s ON s.id = c.societe_id
-        ';
-        if ($userFilter) {
-            $sql .= ' WHERE c.created_by = :user_id';
-        }
-        $sql .= ' ORDER BY c.id DESC';
-        $stmt = $pdo->prepare($sql);
+            WHERE 1=1
+            ' . $userFilter . '
+            ORDER BY c.id DESC
+        ');
         $stmt->execute($userParams);
         $cessions = $stmt->fetchAll();
     }

@@ -17,6 +17,60 @@
 
 ## Tâches en attente
 
+### SaaS multi-tenancy — Architecture (2026-09-27)
+
+#### État actuel (audit)
+| Élément | Constat |
+|---|---|
+| RBAC | **Existe déjà** : `roles` (16), `permissions` (58), `role_permissions`, `collaborateur_permissions` (override par collaborateur) |
+| Comptes de connexion | **Aucun `users`** — le login porte sur `collaborateurs` (`can_login=1`, `role_id`, `password_hash`). 1 seul compte réel en base |
+| Multi-tenancy | **Aucun** : pas de `cabinets`, pas de `cabinet_id` sur les 12 tables métier |
+| Bypass super-admin | `has_permission()` teste `role_id === 1` en dur (`includes/fonctions.php:1241`) |
+| Isolation | **Aucune** — toutes les pages détail lisent par `?id=` sans contrôle de propriétaire |
+| Périmètre d'isolation | 87 couples (fichier, table) à couvrir : societes 22, collaborateurs 16, documents_generes 13, associes 10, contrats 9, cessions 8, pv_ago 5, uploaded_docs 4 |
+
+#### Décisions retenues (KISS, sans question utilisateur)
+1. **`users` séparé de `collaborateurs`** — un cabinet n'a pas de « collaborateur de société ». `users.cabinet_id NULL` = interne Centre (non facturé).
+2. **Base partagée, discriminant `cabinet_id` nullable** — les 10 467 lignes prod existantes restent à `NULL` (= Centre), aucune migration de données destructrice.
+3. **`roles` étendu, pas de table neuve** — ajout de `roles.scope` (`centre`/`cabinet`) + `is_billable`. Les 16 rôles existants sont conservés (aucune régression) ; `is_internal=0` (Expert-comptable, Avocat, Notaire…) devient `scope='cabinet'`.
+4. **`user_roles` canonique, `users.role_id` conservé** comme rôle primaire dénormalisé (compatibilité avec les ~16 lectures de `$user['role_id']`).
+5. **Garde IDOR centrale** (`assert_tenant_access()`) plutôt que 87 éditions mécaniques : bloque la lecture croisée `?id=` en un point.
+6. **Aucune Librairie ajoutée** — le besoin est de l'RBAC maison, pas d'un framework. Composer reste à 3 libs.
+
+#### Phase 1 — Fondation données
+- [ ] `20260927_100000_saas_cabinets.sql` — `cabinets`, `plans`
+- [ ] `20260927_100001_saas_facturation.sql` — `abonnements`, `paiements`, `factures`
+- [ ] `20260927_100002_saas_users.sql` — `users`, `user_roles`, `user_permissions` + backfill depuis `collaborateurs`
+- [ ] `20260927_100003_saas_roles_permissions.sql` — `roles.scope` / `is_billable`, 6 rôles canoniques, 18 permissions SaaS, matrices
+- [ ] `20260927_100004_saas_tenant_columns.sql` — `cabinet_id` + index sur les 12 tables métier
+- [ ] `database/schema.sql` — refléter le nouveau schéma (source de vérité des fresh installs)
+
+#### Phase 2 — Couche authentification
+- [ ] `current_user()` → lit `users`, expose `cabinet_id`, `scope`, `role_nom`
+- [ ] `current_cabinet_id()`, `is_centre_user()`, `tenant_scope_sql()`, `assert_tenant_access()`
+- [ ] `get_user_permissions()` → `user_roles` + `user_permissions` (suppression du shortcut `role_id === 1` au profit de `roles.is_system`)
+- [ ] `pages/auth/connexion.php` + `includes/amorcage.php` (auto-login dev) → table `users`
+- [ ] `user_sessions` : purge à la déconnexion + colonne `cabinet_id`
+
+#### Phase 3 — Isolation des données
+- [ ] Garde IDOR sur toutes les pages détail (`societe`, `associe`, `contrat`, `collaborateur`, `cession_dossier`, `societe_suivi`)
+- [ ] Filtre tenant sur les listes (`creations`, `domiciliations`, `societes`, `associes`, `contrats`, `collaborateurs`, `cessions`, `pv_ago`, `documents`)
+- [ ] Filtre tenant sur `api.php` (quick_create, inline_update, bulk_update) + uploads
+
+#### Phase 4 — Abonnements
+- [ ] `require_active_subscription()` — blocage des utilisateurs cabinet si `abonnement` expiré/suspendu
+- [ ] Contrôle des quotas plan (`max_utilisateurs`, `max_societes`, `max_dossiers`)
+
+#### Phase 5 — Écrans d'administration
+- [ ] Routes + pages : `cabinets`, `cabinet`, `plans`, `abonnements`, `abonnement`, `paiements`, `factures`, `users`, `user`, `parametres`
+- [ ] Menu : section « Administration » (Super Admin), section « Mon cabinet » (Administrateur Cabinet)
+- [ ] Bandeau d'état abonnement dans l'entête (J−30 / expiré / suspendu)
+
+#### Sécurité multi-tenancy
+- [ ] Toute requête métier passe par `tenant_scope_sql()` ou `assert_tenant_access()` — revue fichier par fichier
+- [ ] Mot de passe obligatoire au premier login cabinet (`must_change_password`)
+- [ ] Rappel : `collaborateurs.password_hash` devient inutile, à purger en phase 5
+
 ### Backend / Dépendances
 - [ ] Installer XAMPP PHP 8.3+ (action manuelle) puis valider avec
       `scripts/verifier_montree_php.ps1` — procédure : `docs/MONTAJEE_PHP_83.md`

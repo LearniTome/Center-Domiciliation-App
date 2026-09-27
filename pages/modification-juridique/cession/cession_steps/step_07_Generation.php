@@ -25,7 +25,7 @@ if (is_post() && $step === 6) {
             if ($wizard['mode'] === 'nouvelle') {
                 $wizard['societe_id'] = 0;
                 $soc = $wizard['societe'];
-$stmt = $pdo->prepare('INSERT INTO societes (societe_raison_sociale, societe_forme_juridique, societe_source, societe_ice, societe_date_ice, societe_date_exp_cert_neg, societe_rc, societe_if, societe_tp, societe_cnss, societe_capital, societe_part_social, societe_valeur_nominale, societe_adresse_siege, societe_ville, societe_tribunal, societe_tribunal_type, societe_email, societe_telephone, societe_dossier_domiciliation_number, societe_type_generation, societe_procedure_creation, societe_mode_depot, societe_activites_statuts, societe_activites_ompic, created_by) VALUES (:raison, :forme, :source, :ice, :date_ice, :date_exp_cert_neg, :rc, :ifis, :tp, :cnss, :capital, :parts, :vnom, :adr, :ville, :trib, :trib_type, :email, :tel, :dossier, :type_gen, :proc_creation, :mode_depot, :activites, :activites_ompic, :created_by)');
+$stmt = $pdo->prepare('INSERT INTO societes (societe_raison_sociale, societe_forme_juridique, societe_source, societe_ice, societe_date_ice, societe_date_exp_cert_neg, societe_rc, societe_if, societe_tp, societe_cnss, societe_capital, societe_part_social, societe_valeur_nominale, societe_adresse_siege, societe_ville, societe_tribunal, societe_tribunal_type, societe_email, societe_telephone, societe_dossier_domiciliation_number, societe_type_generation, societe_procedure_creation, societe_mode_depot, societe_activites_statuts, societe_activites_ompic, created_by, cabinet_id) VALUES (:raison, :forme, :source, :ice, :date_ice, :date_exp_cert_neg, :rc, :ifis, :tp, :cnss, :capital, :parts, :vnom, :adr, :ville, :trib, :trib_type, :email, :tel, :dossier, :type_gen, :proc_creation, :mode_depot, :activites, :activites_ompic, :created_by, :cabinet_id)');
 $stmt->execute([
     'raison' => $soc['societe_raison_sociale'] ?? '',
     'forme' => $soc['societe_forme_juridique'] ?? '',
@@ -52,7 +52,8 @@ $stmt->execute([
     'mode_depot' => $soc['societe_mode_depot'] ?? '',
     'activites' => $soc['societe_activites_statuts'] ?? '',
     'activites_ompic' => $soc['societe_activites_ompic'] ?? '',
-    'created_by' => ($user = current_user()) ? (int) $user['id'] : null,
+    'created_by' => current_collaborateur_id(),
+                'cabinet_id' => current_cabinet_id(),
 ]);
                 $newSocieteId = (int) $pdo->lastInsertId();
                 $wizard['societe_id'] = $newSocieteId;
@@ -106,7 +107,7 @@ $stmt->execute([
             $dossierNum = (int) $maxNum + 1;
             $dossier = sprintf('CES-%s-%03d', $currentYear, $dossierNum);
 
-            $stmt = $pdo->prepare('INSERT INTO cessions (societe_id, cession_dossier, cession_date, cession_motif, cession_status, capital_avant, parts_avant, created_by) VALUES (:sid, :dos, :dat, :motif, :status, :cap, :parts, :created_by)');
+            $stmt = $pdo->prepare('INSERT INTO cessions (societe_id, cession_dossier, cession_date, cession_motif, cession_status, capital_avant, parts_avant, created_by, cabinet_id) VALUES (:sid, :dos, :dat, :motif, :status, :cap, :parts, :created_by, :cabinet_id)');
             $stmt->execute([
                 'sid' => $societeId,
                 'dos' => $dossier,
@@ -115,7 +116,8 @@ $stmt->execute([
                 'status' => $wizard['cession_status'] ?? 'Valider',
                 'cap' => $capitalAvant,
                 'parts' => $partsAvant,
-                'created_by' => ($user = current_user()) ? (int) $user['id'] : null,
+                'created_by' => current_collaborateur_id(),
+                'cabinet_id' => current_cabinet_id(),
             ]);
             $cessionId = (int) $pdo->lastInsertId();
 
@@ -132,14 +134,14 @@ $stmt->execute([
                 ['publication_bo', 7], ['rc_modificatif', 8], ['reglement', 9],
                 ['remise', 10],
             ];
-            $suiviStmt = $pdo->prepare('INSERT INTO cession_suivi_etapes (cession_id, etape, ordre) VALUES (:cid, :etape, :ordre)');
+            $suiviStmt = $pdo->prepare('INSERT INTO cession_suivi_etapes (cession_id, cabinet_id, etape, ordre) VALUES (:cid, :cabinet_id, :etape, :ordre)');
             foreach ($suiviSteps as $s) {
-                $suiviStmt->execute(['cid' => $cessionId, 'etape' => $s[0], 'ordre' => $s[1]]);
+                $suiviStmt->execute(['cid' => $cessionId, 'cabinet_id' => current_cabinet_id(), 'etape' => $s[0], 'ordre' => $s[1]]);
             }
 
             // Insert cession_parts
             foreach ($wizard['parts'] as $p) {
-                $stmt = $pdo->prepare('INSERT INTO cession_parts (cession_id, cedant_associe_id, cedant_nom_complet, cedant_cin, cedant_type, cessionnaire_associe_id, cessionnaire_nom_complet, cessionnaire_cin, cessionnaire_type, cessionnaire_civilite, cessionnaire_date_naissance, cessionnaire_lieu_naissance, cessionnaire_nationalite, cessionnaire_adresse, cessionnaire_telephone, cessionnaire_email, cessionnaire_qualite, cessionnaire_parts, cessionnaire_capital_detenu, cessionnaire_est_gerant, parts_cedees, prix_unitaire, prix_total, pourcentage, nommer_gerant) VALUES (:cid, :caid, :cnom, :ccin, :ctype, :csaid, :csnom, :cscin, :cstype, :csciv, :csdn, :csln, :csnat, :csadr, :cstel, :cseml, :csql, :csparts, :cscap, :csger, :parts, :pu, :pt, :pct, :ger)');
+                $stmt = $pdo->prepare('INSERT INTO cession_parts (cession_id, cedant_associe_id, cedant_nom_complet, cedant_cin, cedant_type, cessionnaire_associe_id, cessionnaire_nom_complet, cessionnaire_cin, cessionnaire_type, cessionnaire_civilite, cessionnaire_date_naissance, cessionnaire_lieu_naissance, cessionnaire_nationalite, cessionnaire_adresse, cessionnaire_telephone, cessionnaire_email, cessionnaire_qualite, cessionnaire_parts, cessionnaire_capital_detenu, cessionnaire_est_gerant, cabinet_id, parts_cedees, prix_unitaire, prix_total, pourcentage, nommer_gerant) VALUES (:cid, :caid, :cnom, :ccin, :ctype, :csaid, :csnom, :cscin, :cstype, :csciv, :csdn, :csln, :csnat, :csadr, :cstel, :cseml, :csql, :csparts, :cscap, :csger, :cabinet_id, :parts, :pu, :pt, :pct, :ger)');
                 $stmt->execute([
                     'cid' => $cessionId,
                     'caid' => $p['cedant_associe_id'] ?: null,
@@ -161,6 +163,7 @@ $stmt->execute([
                     'csparts' => (int) ($p['cessionnaire_parts'] ?? 0),
                     'cscap' => $p['cessionnaire_capital_detenu'] ?? 0,
                     'csger' => $p['cessionnaire_est_gerant'] ?? 0,
+            'cabinet_id' => current_cabinet_id(),
                     'parts' => $p['parts_cedees'],
                     'pu' => $p['prix_unitaire'] ?? 0,
                     'pt' => $p['prix_total'] ?? 0,
@@ -356,7 +359,7 @@ $stmt->execute([
             $docxPath = $renderer->render($context, $outName);
             $pdfPath = $renderer->tryConvertToPdf($docxPath);
 
-            $stmtD = $pdo->prepare('INSERT INTO documents_generes (societe_id, cession_id, template_source, doc_type, fichier_docx, fichier_pdf, taille_ko, valide) VALUES (:sid, :cid, :src, :type, :docx, :pdf, :taille, 1)');
+            $stmtD = $pdo->prepare('INSERT INTO documents_generes (societe_id, cession_id, template_source, doc_type, fichier_docx, fichier_pdf, taille_ko, valide, cabinet_id) VALUES (:sid, :cid, :src, :type, :docx, :pdf, :taille, 1, :cabinet_id)');
             $stmtD->execute([
                 'sid' => $wizard['societe_id'],
                 'cid' => $cessionId,
@@ -365,6 +368,7 @@ $stmt->execute([
                 'docx' => $docxPath,
                 'pdf' => $pdfPath ?? '',
                 'taille' => round(filesize($docxPath) / 1024, 2),
+                'cabinet_id' => current_cabinet_id(),
             ]);
 
             $result = ['name' => $outName, 'docx' => $docxPath, 'pdf' => $pdfPath ?? ''];
@@ -542,7 +546,7 @@ $stmt->execute([
                 $docxPath = $renderer->render($context, $outName);
                 $pdfPath = $renderer->tryConvertToPdf($docxPath);
 
-                $stmtD = $pdo->prepare('INSERT INTO documents_generes (societe_id, cession_id, template_source, doc_type, fichier_docx, fichier_pdf, taille_ko, valide) VALUES (:sid, :cid, :src, :type, :docx, :pdf, :taille, 1)');
+                $stmtD = $pdo->prepare('INSERT INTO documents_generes (societe_id, cession_id, template_source, doc_type, fichier_docx, fichier_pdf, taille_ko, valide, cabinet_id) VALUES (:sid, :cid, :src, :type, :docx, :pdf, :taille, 1, :cabinet_id)');
                 $stmtD->execute([
                     'sid' => $wizard['societe_id'],
                     'cid' => $cessionId,
@@ -551,6 +555,7 @@ $stmt->execute([
                     'docx' => $docxPath,
                     'pdf' => $pdfPath ?? '',
                     'taille' => round(filesize($docxPath) / 1024, 2),
+                    'cabinet_id' => current_cabinet_id(),
                 ]);
                 $generated[] = ['name' => $outName, 'docx' => $docxPath, 'pdf' => $pdfPath ?? ''];
             } catch (Throwable $e) {}

@@ -34,15 +34,14 @@ if (is_post()) {
                 : 'Trop de tentatives de connexion. Réessayez dans quelques secondes.';
         } else {
             $stmt = $pdo->prepare('
-                SELECT c.*, r.nom AS role_nom
-                FROM collaborateurs c
-                LEFT JOIN roles r ON r.id = c.role_id
-                WHERE (c.email = :email1 OR c.collaborateur_email = :email2)
-                  AND c.can_login = 1
-                  AND c.statut = \'actif\'
+                SELECT u.*, r.nom AS role_nom
+                FROM users u
+                LEFT JOIN roles r ON r.id = u.role_id
+                WHERE u.email = :email
+                  AND u.statut = \'actif\'
                 LIMIT 1
             ');
-            $stmt->execute(['email1' => $email, 'email2' => $email]);
+            $stmt->execute(['email' => $email]);
             $user = $stmt->fetch();
 
             if (!$user || !password_verify($password, (string) ($user['password_hash'] ?? ''))) {
@@ -59,7 +58,7 @@ if (is_post()) {
                 log_activity($pdo, 'connexion', 'auth', (int) $user['id'], $user['nom_complet']);
 
                 // Update last_login
-                $pdo->prepare('UPDATE collaborateurs SET last_login = NOW() WHERE id = :id')
+                $pdo->prepare('UPDATE users SET last_login = NOW() WHERE id = :id')
                     ->execute(['id' => (int) $user['id']]);
 
                 // Remember me : conserver l'email dans un cookie (30 jours)

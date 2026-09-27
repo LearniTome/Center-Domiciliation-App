@@ -9,8 +9,6 @@ $listePage = $listePage ?? ($page ?? 'societes');
 $showCreationCol = ($listeType === null || $listeType === 'creation');
 
 $query = search_term();
-$user = current_user();
-$isAdmin = $user && in_array((int) $user['role_id'], [1, 2], true);
 $canEdit = has_permission('societes.edit');
 
 if (isset($_GET['import_msg']) && $_GET['import_msg'] !== '') {
@@ -39,21 +37,21 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
     $action = $_POST['action'] ?? 'delete';
 
     if ($action === 'delete') {
+        $targetId = (int) $_POST['id'];
+        require_tenant_row($pdo, 'societes', $targetId);
         $stmt = $pdo->prepare('DELETE FROM societes WHERE id = :id');
-        $stmt->execute(['id' => (int) $_POST['id']]);
-        log_activity($pdo, 'delete', 'societe', (int) $_POST['id']);
+        $stmt->execute(['id' => $targetId]);
+        log_activity($pdo, 'delete', 'societe', $targetId);
         set_flash('success', 'Societe supprimee avec succes.');
         redirect_to($listePage);
     }
 }
 
 if (($pdo ?? null) instanceof PDO) {
-    $userFilter = '';
-    $userParams = [];
-    if (!$isAdmin && $user) {
-        $userFilter = ' AND created_by = :user_id';
-        $userParams['user_id'] = (int) $user['id'];
-    }
+    // Cloisonnement par cabinet + portee individuelle (voir list_scope()).
+    $scope = list_scope();
+    $userFilter = $scope['sql'] !== '' ? ' AND ' . $scope['sql'] : '';
+    $userParams = $scope['params'];
     $typeFilter = '';
     $typeParams = [];
     if ($listeType === 'creation') {

@@ -24,12 +24,12 @@ if (is_post() && $step === 6) {
                     societe_dossier_domiciliation_number, societe_dossier_creation_number, societe_raison_sociale, societe_forme_juridique, societe_ice, societe_date_ice, societe_rc, societe_if,
                     societe_activites_statuts, societe_activites_ompic,
                     societe_capital, societe_part_social, societe_valeur_nominale, societe_date_exp_cert_neg, societe_adresse_siege, societe_ville, societe_tribunal, societe_email,
-                    societe_telephone, societe_type_generation, societe_procedure_creation, societe_mode_depot, societe_tribunal_type, created_by
+                    societe_telephone, societe_type_generation, societe_procedure_creation, societe_mode_depot, societe_tribunal_type, created_by, cabinet_id
                 ) VALUES (
                     :societe_dossier_domiciliation_number, :societe_dossier_creation_number, :societe_raison_sociale, :societe_forme_juridique, :societe_ice, :societe_date_ice, :societe_rc, :societe_if,
                     :societe_activites_statuts, :societe_activites_ompic,
                     :societe_capital, :societe_part_social, :societe_valeur_nominale, :societe_date_exp_cert_neg, :societe_adresse_siege, :societe_ville, :societe_tribunal, :societe_email,
-                    :societe_telephone, :societe_type_generation, :societe_procedure_creation, :societe_mode_depot, :societe_tribunal_type, :created_by
+                    :societe_telephone, :societe_type_generation, :societe_procedure_creation, :societe_mode_depot, :societe_tribunal_type, :created_by, :cabinet_id
                 )
             ');
             $societeStmt->execute([
@@ -56,7 +56,8 @@ if (is_post() && $step === 6) {
                 'societe_procedure_creation' => $wizard['societe']['societe_procedure_creation'] ?? '',
                 'societe_mode_depot' => $wizard['societe']['societe_mode_depot'] ?? '',
                 'societe_tribunal_type' => $wizard['societe']['societe_tribunal_type'] ?? '',
-                'created_by' => (int) ($_SESSION['user_id'] ?? 0) ?: null,
+                'created_by' => current_collaborateur_id(),
+                'cabinet_id' => current_cabinet_id(),
             ]);
 
             $societeId = (int) $pdo->lastInsertId();
@@ -94,8 +95,8 @@ if (is_post() && $step === 6) {
             }
 
             $associeStmt = $pdo->prepare('
-                INSERT INTO associes (societe_id, associe_civilite, associe_nom, associe_prenom, associe_nom_complet, associe_cin, associe_date_validite_cin, associe_date_naissance, associe_lieu_naissance, associe_nationalite, associe_adresse, associe_telephone, associe_email, associe_qualite, associe_parts, associe_capital_detenu, associe_part_percent, associe_est_gerant, associe_duree_gerance)
-                VALUES (:societe_id, :associe_civilite, :associe_nom, :associe_prenom, :associe_nom_complet, :associe_cin, :associe_date_validite_cin, :associe_date_naissance, :associe_lieu_naissance, :associe_nationalite, :associe_adresse, :associe_telephone, :associe_email, :associe_qualite, :associe_parts, :associe_capital_detenu, :associe_part_percent, :associe_est_gerant, :associe_duree_gerance)
+                INSERT INTO associes (societe_id, associe_civilite, associe_nom, associe_prenom, associe_nom_complet, associe_cin, associe_date_validite_cin, associe_date_naissance, associe_lieu_naissance, associe_nationalite, associe_adresse, associe_telephone, associe_email, associe_qualite, associe_parts, associe_capital_detenu, associe_part_percent, associe_est_gerant, associe_duree_gerance, cabinet_id)
+                VALUES (:societe_id, :associe_civilite, :associe_nom, :associe_prenom, :associe_nom_complet, :associe_cin, :associe_date_validite_cin, :associe_date_naissance, :associe_lieu_naissance, :associe_nationalite, :associe_adresse, :associe_telephone, :associe_email, :associe_qualite, :associe_parts, :associe_capital_detenu, :associe_part_percent, :associe_est_gerant, :associe_duree_gerance, :cabinet_id)
             ');
 
             foreach ($wizard['associes'] as $associe) {
@@ -119,6 +120,7 @@ if (is_post() && $step === 6) {
                     'associe_part_percent' => ($associe['associe_part_percent'] ?? '') !== '' ? parse_money((string) $associe['associe_part_percent']) : null,
                     'associe_est_gerant' => ((string) ($associe['associe_est_gerant'] ?? '0') === '1') ? 1 : 0,
                     'associe_duree_gerance' => $associe['associe_duree_gerance'] ?? '',
+                    'cabinet_id' => current_cabinet_id(),
                 ]);
             }
 
@@ -129,14 +131,14 @@ if (is_post() && $step === 6) {
                     contrat_tva_pourcent, contrat_loyer_ht, contrat_loyer_ttc, contrat_total_ht,
                     contrat_type_renouvellement, contrat_renouv_tva_pourcent, contrat_renouv_loyer_ht,
                     contrat_renouv_loyer_ttc, contrat_renouv_total_ht,
-                    contrat_statut, contrat_notes
+                    contrat_statut, contrat_notes, cabinet_id
                 ) VALUES (
                     :societe_id, :contrat_type, :contrat_date, :contrat_duree_mois, :contrat_type_domiciliation,
                     :contrat_type_domiciliation_autre, :contrat_date_debut, :contrat_date_fin,
                     :contrat_tva_pourcent, :contrat_loyer_ht, :contrat_loyer_ttc, :contrat_total_ht,
                     :contrat_type_renouvellement, :contrat_renouv_tva_pourcent, :contrat_renouv_loyer_ht,
                     :contrat_renouv_loyer_ttc, :contrat_renouv_total_ht,
-                    :contrat_statut, :contrat_notes
+                    :contrat_statut, :contrat_notes, :cabinet_id
                 )
             ');
             $contratStmt->execute([
@@ -159,6 +161,7 @@ if (is_post() && $step === 6) {
                 'contrat_renouv_total_ht' => ($wizard['contrat']['contrat_renouv_total_ht'] ?? '') !== '' ? parse_money((string) $wizard['contrat']['contrat_renouv_total_ht']) : null,
                 'contrat_statut' => $wizard['contrat']['contrat_statut'] ?? 'actif',
                 'contrat_notes' => $wizard['contrat']['contrat_notes'] ?? '',
+                'cabinet_id' => current_cabinet_id(),
             ]);
 
             $pdo->commit();

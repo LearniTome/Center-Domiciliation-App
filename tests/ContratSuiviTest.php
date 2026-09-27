@@ -191,36 +191,96 @@ final class ContratSuiviTest extends TestCase
         $this->assertFalse(date_iso_valide(''));
         $this->assertFalse(date_iso_valide(null));
     }
-
     // ------------------------------------------------------------------
-    // Isolation des donnees par utilisateur
+    // Cloisonnement des donnees
+    //
+    // Le test (int) $user['role_id'] contre [1, 2] a ete remplace par trois
+    // entrees explicites : le tenant du compte (cabinet_id), la permission
+    // `dossiers.view_all` et la fiche collaborateur. Ces tests verrouillent
+    // ce contrat, en particulier le cas de l'adherent de cabinet qui n'a pas
+    // de fiche collaborateur.
     // ------------------------------------------------------------------
 
-    public function testUnAdministrateurNEstPasFiltre(): void
+    /**
+     * Installe un compte connecte sans toucher la base : current_user() et
+     * get_user_permissions() lisent leurs caches de session, ce qui suffit a
+     * exercer toute la logique de portee.
+     *
+     * @param array<string, mixed> $user
+     * @param list<string>         $permissions
+     */
+    private function connecter(array $user, array $permissions = []): void
     {
-        // Rôles 1 et 2 : la liste des contrats montre déjà tout.
-        foreach ([1, 2] as $roleId) {
-            $filtre = contrat_user_filter(['id' => 7, 'role_id' => $roleId]);
-            $this->assertSame('', $filtre['sql']);
-            $this->assertSame([], $filtre['params']);
-        }
+        $_SESSION = [
+            'user_id'            => $user['id'],
+            '_user_cache'        => $user,
+            '_permissions_cache' => $permissions,
+        ];
     }
 
-    public function testUnUtilisateurStandardEstRestreintASesSocietes(): void
+    public function testLeCentreAvecVueTransverseNEstPasFiltre(): void
     {
-        $filtre = contrat_user_filter(['id' => 7, 'role_id' => 5]);
-        $this->assertStringContainsString('societes.created_by = :user_id', $filtre['sql']);
-        $this->assertSame(['user_id' => 7], $filtre['params']);
+        // Super Admin : role systeme, acces total, aucun fragment SQL.
+        $this->connecter(['id' => 7, 'cabinet_id' => null, 'collaborateur_id' => 3, 'role_is_system' => 1]);
+        $filtre = contrat_user_filter(null);
+        $this->assertSame('', $filtre['sql']);
+        $this->assertSame([], $filtre['params']);
+
+        // Responsable Centre : meme portee, obtenue par la permission et non
+        // par un identifiant de role fige.
+        $this->connecter(
+            ['id' => 8, 'cabinet_id' => null, 'collaborateur_id' => 3, 'role_is_system' => 0],
+            ['dossiers.view_all']
+        );
+        $filtre = contrat_user_filter(null);
+        $this->assertSame('', $filtre['sql']);
+        $this->assertSame([], $filtre['params']);
+    }
+
+    public function testUnEmployeInterneEstRestreintASesSocietes(): void
+    {
+        $this->connecter(['id' => 9, 'cabinet_id' => null, 'collaborateur_id' => 7, 'role_is_system' => 0]);
+        $filtre = contrat_user_filter(null);
+        $this->assertStringContainsString('societes.created_by = :scope_collaborateur', $filtre['sql']);
+        $this->assertSame(['scope_collaborateur' => 7], $filtre['params']);
+    }
+
+    public function testUnAdherentDeCabinetVoitToutSonCabinet(): void
+    {
+        // Point cle du multi-tenancy : l'adherent n'a pas de fiche
+        // collaborateur. Filtrer sur `created_by` le viderait de sa liste ;
+        // sa portee est son cabinet, pas ses creations.
+        $this->connecter(['id' => 10, 'cabinet_id' => 4, 'collaborateur_id' => null, 'role_is_system' => 0]);
+        $filtre = contrat_user_filter(null);
+        $this->assertStringContainsString('societes.cabinet_id = :scope_cabinet', $filtre['sql']);
+        $this->assertSame(['scope_cabinet' => 4], $filtre['params']);
+    }
+
+    public function testUnEmployeSansFicheCollaborateurVoitRien(): void
+    {
+        // Etat refuse : l'absence de portee ne doit pas se lire comme un
+        // acces total.
+        $this->connecter(['id' => 11, 'cabinet_id' => null, 'collaborateur_id' => null, 'role_is_system' => 0]);
+        $filtre = contrat_user_filter(null);
+        $this->assertSame('1 = 0', $filtre['sql']);
+        $this->assertSame([], $filtre['params']);
     }
 
     public function testUnUtilisateurNonConnecteNAucuneRestrictionSql(): void
     {
         // Sans utilisateur, has_permission() a deja refuse l'acces : le filtre
-        // ne doit surtout pas produire un ":user_id" sans parametre lie, ce
+        // ne doit surtout pas produire un ":scope_*" sans parametre lie, ce
         // qui ferait echouer la requete.
+        $_SESSION = [];
         $filtre = contrat_user_filter(null);
         $this->assertIsArray($filtre);
         $this->assertArrayHasKey('sql', $filtre);
         $this->assertArrayHasKey('params', $filtre);
+        $this->assertStringNotContainsString(':scope_', $filtre['sql']);
+    }
+
+    protected function tearDown(): void
+    {
+        $_SESSION = [];
     }
 }

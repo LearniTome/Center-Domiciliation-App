@@ -41,9 +41,11 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
     $action = $_POST['action'] ?? 'delete';
 
     if ($action === 'delete') {
+        $targetId = (int) $_POST['id'];
+        require_tenant_row($pdo, 'contrats', $targetId);
         $stmt = $pdo->prepare('DELETE FROM contrats WHERE id = :id');
-        $stmt->execute(['id' => (int) $_POST['id']]);
-        log_activity($pdo, 'delete', 'contrat', (int) $_POST['id']);
+        $stmt->execute(['id' => $targetId]);
+        log_activity($pdo, 'delete', 'contrat', $targetId);
         set_flash('success', 'Contrat supprime avec succes.');
         redirect_to('contrats');
     }

@@ -307,7 +307,7 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
                 'statut' => $newStatut,
                 'dd'     => $dateDebut,
                 'df'     => $dateFin,
-                'by'     => $_SESSION['user_id'] ?? null,
+                'by'     => current_collaborateur_id(),
             ]);
             log_activity($pdo, 'create', 'societe', $societeId, 'Suivi administratif', 'Etape ajoutee : ' . $nom);
             set_flash('success', 'Etape ajoutee.');
