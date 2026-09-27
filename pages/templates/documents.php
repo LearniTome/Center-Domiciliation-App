@@ -14,6 +14,16 @@ if (is_post() && isset($_POST['delete_submit'])) {
     verify_csrf();
     $selected = $_POST['selected_files'] ?? [];
     if (count($selected) > 0 && ($pdo ?? null) instanceof PDO) {
+        // `selected_files` vient du client : on ne supprime que ce que le
+        // cabinet connecte peut reellement atteindre.
+        $lot = filter_accessible_ids($pdo, 'documents_generes', $selected);
+        $selected = $lot['ids'];
+        if ($selected === []) {
+            set_flash('error', 'Aucun des documents selectionnes n\'est accessible.');
+            redirect_to('documents', array_filter([
+                'societe_id' => $filterSociete, 'doc_type' => $filterDocType, 'statut' => $filterStatut,
+            ], static fn($v) => $v !== null && $v !== ''));
+        }
         $in = build_in_params($selected);
         $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf FROM documents_generes WHERE id IN ({$in['sql']})"); // nosemgrep: tainted-sql-string -- values bound via named params
         $stmt->execute($in['params']);
@@ -26,6 +36,7 @@ if (is_post() && isset($_POST['delete_submit'])) {
         $stmt->execute($in['params']);
         set_flash('error', count($selected) . ' document(s) supprime(s).');
         log_activity($pdo, 'delete', 'document', null, count($selected) . ' doc(s)');
+        flash_partial_batch('la suppression', $lot['ignores']);
         $delParams = $filterSociete ? ['societe_id' => $filterSociete] : [];
         if ($filterDocType) $delParams['doc_type'] = $filterDocType;
         if ($filterStatut) $delParams['statut'] = $filterStatut;
@@ -43,6 +54,16 @@ if (is_post() && isset($_POST['validate_submit'])) {
         redirect_to('documents', $backParams);
     }
     $in = build_in_params($selected);
+    // Meme garde que pour la suppression : valider un document d'un autre
+    // cabinet renommerait et deplacerait ses fichiers sur le disque.
+    $lot = filter_accessible_ids($pdo, 'documents_generes', $selected);
+    if ($lot['ids'] === []) {
+        set_flash('error', 'Aucun des documents selectionnes n\'est accessible.');
+        redirect_to('documents', array_filter([
+            'societe_id' => $filterSociete, 'doc_type' => $filterDocType,
+        ], static fn($v) => $v !== null && $v !== ''));
+    }
+    $in = build_in_params($lot['ids']);
     $stmt = $pdo->prepare("SELECT id, societe_id, fichier_docx, fichier_pdf, doc_type FROM documents_generes WHERE valide = 0 AND id IN ({$in['sql']})"); // nosemgrep: tainted-sql-string -- values bound via named params
     $stmt->execute($in['params']);
     $docs = $stmt->fetchAll();
@@ -90,7 +111,8 @@ if (is_post() && isset($_POST['validate_submit'])) {
             $delStmt->execute(array_merge($in['params'], ['sid' => $sid], $typeIn['params']));
         }
     }
-    set_flash('success', count($selected) . ' document(s) valide(s).');
+    set_flash('success', count($docs) . ' document(s) valide(s).');
+    flash_partial_batch('la validation', $lot['ignores']);
     log_activity($pdo, 'validate', 'document', null, count($selected) . ' doc(s)');
     $valParams = $filterSociete ? ['societe_id' => $filterSociete] : [];
     if ($filterDocType) $valParams['doc_type'] = $filterDocType;
@@ -106,6 +128,15 @@ if (is_post() && isset($_POST['generate_pdf_submit'])) {
         $stmt = $pdo->prepare("SELECT * FROM documents_generes WHERE id = ?");
         $stmt->execute([$docId]);
         $doc = $stmt->fetch();
+        // Sans ce controle, un adherent declenche la conversion (et donc la
+        // lecture du fichier source) d'un document d'un autre cabinet.
+        if ($doc && !assert_tenant_access($pdo, 'documents_generes', $docId)) {
+            set_flash('error', 'Acces refuse : ce document appartient a un autre cabinet.');
+            $backParams = $filterSociete ? ['societe_id' => $filterSociete] : [];
+            if ($filterDocType) $backParams['doc_type'] = $filterDocType;
+            if ($filterStatut) $backParams['statut'] = $filterStatut;
+            redirect_to('documents', $backParams);
+        }
         if ($doc && file_exists($doc['fichier_docx'])) {
             $docxPath = $doc['fichier_docx'];
             $pdfName = pathinfo($docxPath, PATHINFO_FILENAME) . '.pdf';
@@ -139,8 +170,11 @@ if (is_post() && isset($_POST['generate_pdf_submit'])) {
 }
 
 $user = current_user();
-$isAdmin = $user && in_array((int) $user['role_id'], [1, 2], true);
-$userId = (!$isAdmin && $user) ? (int) $user['id'] : null;
+$isAdmin = sees_all_dossiers();
+// `created_by` ne restreint QUE l'employe interne du Centre, qui n'a pas de
+// cabinet. Un adherent de cabinet voit l'integralite de son cabinet : le
+// cloisonnement est assure par `tenant_scope()` dans le fetcher, pas ici.
+$userId = ($user && !$isAdmin && current_cabinet_id() === null) ? current_collaborateur_id() : null;
 
 $societesOptions = fetch_societes_options($pdo ?? null, $userId);
 $docTypes = fetch_all_doc_types($pdo ?? null);

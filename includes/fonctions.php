@@ -195,6 +195,14 @@ function fetch_record(?PDO $pdo, string $table, int $id): ?array
         return null;
     }
 
+    // Cloisonnement applique ici, au point d'entree unique de toute lecture
+    // par identifiant : aucune page detail ne peut contourner le filtre en
+    // changeant l'id dans l'URL. Une ligne d'un autre cabinet est traitee
+    // comme inexistante (on ne confirme pas son existence a l'appelant).
+    if (!assert_tenant_access($pdo, $table, $id)) {
+        return null;
+    }
+
     $stmt = $pdo->prepare("SELECT * FROM {$table} WHERE id = :id LIMIT 1");
     $stmt->execute(['id' => $id]);
     $record = $stmt->fetch();
@@ -207,11 +215,24 @@ function fetch_societes_options(?PDO $pdo, ?int $userId = null): array
         return [];
     }
 
+    // Cloisonnement par defaut : cet helper alimente les listes deroulantes de
+    // presque toutes les pages. Sans lui, un adherent de cabinet pouvait
+    // choisir une societe d'un autre tenant.
     $sql = 'SELECT id, societe_raison_sociale, societe_ice, societe_ville FROM societes';
     $params = [];
+
+    $where = [];
+    $tenant = tenant_scope();
+    if ($tenant['sql'] !== '') {
+        $where[] = $tenant['sql'];
+        $params += $tenant['params'];
+    }
     if ($userId !== null) {
-        $sql .= ' WHERE created_by = :user_id';
+        $where[] = 'created_by = :user_id';
         $params['user_id'] = $userId;
+    }
+    if ($where !== []) {
+        $sql .= ' WHERE ' . implode(' AND ', $where);
     }
     $sql .= ' ORDER BY societe_raison_sociale ASC';
     $stmt = $pdo->prepare($sql);
@@ -319,16 +340,13 @@ function date_iso_valide(?string $date): bool
  */
 function contrat_user_filter(?array $user): array
 {
-    $isAdmin = $user && in_array((int) ($user['role_id'] ?? 0), [1, 2], true);
+    // Delegue a list_scope() : le test (int) $user['role_id'] contre [1, 2]
+    // est remplace par la permission dossiers.view_all, et le cloisonnement
+    // par cabinet est ajoute. Le parametre $user est conserve pour la
+    // signature publique (3 appelants), mais n'est plus utilise.
+    unset($user);
 
-    if ($isAdmin) {
-        return ['sql' => '', 'params' => []];
-    }
-
-    return [
-        'sql' => ' AND societes.created_by = :user_id',
-        'params' => ['user_id' => (int) ($user['id'] ?? 0)],
-    ];
+    return list_scope('societes');
 }
 
 /**
@@ -600,6 +618,17 @@ function fetch_all_documents(?PDO $pdo, ?int $societe_id = null, ?string $q = nu
             JOIN societes s ON s.id = d.societe_id
             WHERE 1=1';
     $params = [];
+
+    // Cloisonnement applique ICI et non laisse au calcul de l appelant.
+    // `$userId` vaut null pour un adherent de cabinet : ne s en remettre
+    // qu'a lui revenait a afficher la production documentaire de tous les
+    // tenants. Le filtre sur `created_by` reste un complement, il restreint
+    // dans le perimetre du cabinet, il ne le definit pas.
+    $tenant = tenant_scope('d');
+    if ($tenant['sql'] !== '') {
+        $sql .= ' AND ' . $tenant['sql'];
+        $params += $tenant['params'];
+    }
 
     if ($userId !== null) {
         $sql .= ' AND s.created_by = :user_id';
@@ -1071,11 +1100,17 @@ function current_user(): ?array
         return null;
     }
 
+    // `users` est l'identite de connexion (interne Centre ou adherent d'un
+    // cabinet). `collaborateurs` reste la donnee metier : on la joint pour
+    // exposer collaborateur_type, utilise par le wizard pour distinguer un
+    // dossier interne d'un dossier externalise.
     $stmt = $pdo->prepare('
-        SELECT c.*, r.nom AS role_nom, r.id AS role_id
-        FROM collaborateurs c
-        LEFT JOIN roles r ON r.id = c.role_id
-        WHERE c.id = :id AND c.can_login = 1 AND c.statut = \'actif\'
+        SELECT u.*, r.nom AS role_nom, r.scope AS role_scope, r.is_system AS role_is_system,
+               c.collaborateur_type
+        FROM users u
+        LEFT JOIN roles r ON r.id = u.role_id
+        LEFT JOIN collaborateurs c ON c.id = u.collaborateur_id
+        WHERE u.id = :id AND u.statut = \'actif\'
         LIMIT 1
     ');
     $stmt->execute(['id' => (int) $_SESSION['user_id']]);
@@ -1088,6 +1123,38 @@ function current_user(): ?array
 
     $_SESSION['_user_cache'] = $user;
     return $user;
+}
+
+/**
+ * Identifiant du collaborateur metier associe au compte connecte.
+ *
+ * Les colonnes `created_by` des tables dossier (societes, cessions, pv_ago,
+ * societe_suivi_etapes) designent un COLLABORATEUR, pas un compte de
+ * connexion : un adherent de cabinet n'a pas de fiche collaborateur, il
+ * s'appuie sur le filtre `cabinet_id`. C'est pourquoi l'identite de
+ * connexion vit dans `users` et celle du dossier dans `collaborateurs`.
+ */
+function current_collaborateur_id(): ?int
+{
+    $user = current_user();
+    $cid = $user['collaborateur_id'] ?? null;
+
+    return $cid === null ? null : (int) $cid;
+}
+
+/** Tenant du compte connecte : null = employe interne du Centre (acces total). */
+function current_cabinet_id(): ?int
+{
+    $user = current_user();
+    $cid = $user['cabinet_id'] ?? null;
+
+    return $cid === null ? null : (int) $cid;
+}
+
+/** Vrai si le compte est un employe interne du Centre (porteur de la plateforme). */
+function is_centre_user(): bool
+{
+    return current_cabinet_id() === null;
 }
 
 function is_logged_in(): bool
@@ -1191,7 +1258,7 @@ function get_user_permissions(): array
     }
 
     $user = current_user();
-    if (!$user || empty($user['role_id'])) {
+    if (!$user) {
         $_SESSION['_permissions_cache'] = [];
         return [];
     }
@@ -1201,23 +1268,27 @@ function get_user_permissions(): array
         return [];
     }
 
+    // Union des permissions de TOUS les roles portes par le compte
+    // (user_roles). `users.role_id` reste le role primaire : il alimente le
+    // denormalise et les libelles de role, mais ne borne plus l'ensemble.
     $stmt = $pdo->prepare('
-        SELECT p.permission_key
-        FROM role_permissions rp
+        SELECT DISTINCT p.permission_key
+        FROM user_roles ur
+        JOIN role_permissions rp ON rp.role_id = ur.role_id
         JOIN permissions p ON p.id = rp.permission_id
-        WHERE rp.role_id = :role_id
+        WHERE ur.user_id = :uid
     ');
-    $stmt->execute(['role_id' => (int) $user['role_id']]);
+    $stmt->execute(['uid' => (int) $user['id']]);
     $perms = $stmt->fetchAll(\PDO::FETCH_COLUMN);
 
-    // Check collaborateur-specific overrides
+    // Surcharges individuelles (grant/refuse) : le refuse l'emporte.
     $stmt = $pdo->prepare('
-        SELECT p.permission_key, cp.granted
-        FROM collaborateur_permissions cp
-        JOIN permissions p ON p.id = cp.permission_id
-        WHERE cp.collaborateur_id = :cid
+        SELECT p.permission_key, up.granted
+        FROM user_permissions up
+        JOIN permissions p ON p.id = up.permission_id
+        WHERE up.user_id = :uid
     ');
-    $stmt->execute(['cid' => (int) $user['id']]);
+    $stmt->execute(['uid' => (int) $user['id']]);
     $overrides = $stmt->fetchAll();
 
     foreach ($overrides as $ov) {
@@ -1236,9 +1307,12 @@ function get_user_permissions(): array
 
 function has_permission(string $key): bool
 {
-    // Super Admin (role_id = 1) always has all permissions
     $user = current_user();
-    if ($user && (int) ($user['role_id'] ?? 0) === 1) {
+
+    // Role systeme (Super Admin) : acces total. On lit le drapeau
+    // `roles.is_system` plutot qu'un role_id fige, pour que le Super Admin ne
+    // soit plus identifie par un entier magique.
+    if ($user && (int) ($user['role_is_system'] ?? 0) === 1) {
         return true;
     }
 
@@ -1246,11 +1320,375 @@ function has_permission(string $key): bool
     return in_array($key, $permissions, true);
 }
 
+/** Raccourci : le compte connecte porte-t-il un role d administration du Centre ? */
+function is_centre_admin(): bool
+{
+    $user = current_user();
+
+    return $user !== null && (int) ($user['role_is_system'] ?? 0) === 1;
+}
+
+/**
+ * Le compte connecte voit-il les dossiers de tous les collaborateurs ?
+ *
+ * Remplace les anciens tests `(int) $user['role_id']` contre [1, 2] : la
+ * decision porte sur une permission nommee, donc elle survit a un
+ * renumerotation des roles. Un adherent de cabinet repond toujours non : sa
+ * portee est fixee par `cabinet_id`, pas par son role.
+ */
+function sees_all_dossiers(): bool
+{
+    return has_permission('dossiers.view_all');
+}
+
 function require_permission(string $key): void
 {
     if (!has_permission($key)) {
         set_flash('error', 'Vous n\'avez pas les droits nécessaires pour accéder a cette page.');
         redirect_to('dashboard');
+    }
+}
+
+// ─── Multi-tenancy : isolation des données par cabinet ───────────
+
+/**
+ * Fragment SQL restreignant une table metier au tenant du compte connecte.
+ *
+ * Base partagee, une seule ligne par tenant :
+ *   - employe interne du Centre (`cabinet_id` de session = null) : aucune
+ *     restriction, il porte la plateforme et voit tous les tenants ;
+ *   - adherent de cabinet : uniquement les lignes de SON cabinet.
+ *
+ * Le discriminant est un NULL, pas une valeur sentinelle : les ~10 000 lignes
+ * deja en base restent propriete du Centre, aucune migration de donnees.
+ *
+ * @return array{sql: string, params: array<string, int>}
+ */
+function tenant_scope(?string $alias = null): array
+{
+    $column = ($alias !== null && $alias !== '' ? $alias . '.' : '') . 'cabinet_id';
+    $cabinetId = current_cabinet_id();
+
+    if ($cabinetId === null) {
+        return ['sql' => '', 'params' => []];
+    }
+
+    return ['sql' => $column . ' = :tenant_id', 'params' => ['tenant_id' => $cabinetId]];
+}
+
+/**
+ * Meme chose mais en incluant les lignes du Centre, pour les listes ou le
+ * Centre doit voir ses propres dossiers a cote de ceux de ses clients.
+ */
+function tenant_scope_with_centre(?string $alias = null): array
+{
+    $column = ($alias !== null && $alias !== '' ? $alias . '.' : '') . 'cabinet_id';
+    $cabinetId = current_cabinet_id();
+
+    if ($cabinetId === null) {
+        return ['sql' => '', 'params' => []];
+    }
+
+    return [
+        'sql' => '(' . $column . ' = :tenant_id OR ' . $column . ' IS NULL)',
+        'params' => ['tenant_id' => $cabinetId],
+    ];
+}
+
+/**
+ * Garde anti-IDOR : verifie qu'une ligne appartient bien au tenant courant.
+ *
+ * A appeler sur TOUTE page detail qui lit par `?id=` (`societe`, `associe`,
+ * `contrat`, `collaborateur`, `cession_dossier`, `societe_suivi`...). Sans
+ * ce controle, un adherent de cabinet lit le dossier d'un autre cabinet en
+ * changeant l'identifiant dans l'URL.
+ *
+ * @return bool false si la ligne existe mais appartient a un autre tenant
+ *              (le appelant doit alors repondre 403)
+ */
+function assert_tenant_access(?PDO $pdo, string $table, int $id, string $column = 'id'): bool
+{
+    $cabinetId = current_cabinet_id();
+
+    // Le Centre n'est pas confine : acces total.
+    if ($cabinetId === null) {
+        return true;
+    }
+
+    if (!$pdo instanceof PDO || $id <= 0) {
+        return false;
+    }
+
+    if (!in_array($table, tenant_scoped_tables(), true)) {
+        // Table non cloisonnee : le confinement ne s'applique pas.
+        return true;
+    }
+
+    if (!preg_match('/^[a-z_]+$/', $table) || !preg_match('/^[a-z_]+$/', $column)) {
+        return false;
+    }
+
+    try {
+        $stmt = $pdo->prepare("SELECT cabinet_id FROM `{$table}` WHERE `{$column}` = :id LIMIT 1");
+        $stmt->execute(['id' => $id]);
+        $row = $stmt->fetch();
+    } catch (PDOException) {
+        return false;
+    }
+
+    if (!$row) {
+        return true; // ligne inexistante : le appelant gere le 404
+    }
+
+    $rowCabinet = $row['cabinet_id'] === null ? null : (int) $row['cabinet_id'];
+
+    return $rowCabinet === $cabinetId;
+}
+
+/** Tables cloisonnees : la liste est fermee, un oubli passerait inapercu. */
+function tenant_scoped_tables(): array
+{
+    return [
+        'societes', 'associes', 'contrats', 'collaborateurs', 'cessions', 'pv_ago',
+        'documents_generes', 'uploaded_docs', 'societe_suivi_etapes',
+        'societe_suivi_documents', 'cession_suivi_etapes', 'cession_suivi_documents',
+        'cession_parts', 'activity_logs', 'notifications',
+    ];
+}
+
+/** Gere l'echec du controle : 403 si la ligne existe, 404 sinon. */
+function deny_tenant_access(bool $rowExists = true): never
+{
+    if ($rowExists) {
+        http_response_code(403);
+        set_flash('error', 'Acces refuse : ce dossier appartient a un autre cabinet.');
+    } else {
+        http_response_code(404);
+        set_flash('error', 'Dossier introuvable.');
+    }
+
+    redirect_to('dashboard');
+}
+
+/**
+ * Ne conserver que les identifiants reellement accessibles au tenant connecte.
+ *
+ * Complementaire d'`assert_tenant_access()` pour les operations de LOT. Un
+ * formulaire de suppression ou de validation soumet `$_POST['selected_files']` :
+ * ce tableau est une donnee d'attaque, pas une preuve de droits. Sans ce
+ * filtrage, un adherent de cabinet supprime les fichiers d'un autre cabinet en
+ * forgeant des identifiants dans la requete.
+ *
+ * Le comportement retenu est l'echec PARTIEL et non le refus global : l'ecart
+ * entre le nombre demande et le nombre reellement traite doit etre annonce,
+ * sinon l'utilisateur croit a tort que son lot a ete pris en compte.
+ *
+ * @param  array<int|string> $ids
+ * @return array{ids: list<int>, ignores: int}
+ */
+function filter_accessible_ids(?PDO $pdo, string $table, array $ids, string $column = 'id'): array
+{
+    $ids = array_values(array_unique(array_filter(
+        array_map('intval', $ids),
+        static fn(int $id): bool => $id > 0
+    )));
+
+    if ($ids === [] || !$pdo instanceof PDO) {
+        return ['ids' => [], 'ignores' => count($ids)];
+    }
+
+    $visibles = array_values(array_filter(
+        $ids,
+        static fn(int $id): bool => assert_tenant_access($pdo, $table, $id, $column)
+    ));
+
+    return ['ids' => $visibles, 'ignores' => count($ids) - count($visibles)];
+}
+
+/**
+ * Message de flash decrivant un traitement de lot partiellement refuse.
+ *
+ * Un compte Centre n'a aucun element hors perimetre : on n'emet rien, le
+ * silence evite d'alourdir chaque operation de la page.
+ */
+function flash_partial_batch(?string $action, int $ignores): void
+{
+    if ($ignores <= 0) {
+        return;
+    }
+
+    set_flash(
+        'error',
+        $ignores . ' element(s) ignores : ' . $action . ' n\'a ete execute que sur '
+        . 'les elements accessibles a votre cabinet.'
+    );
+}
+
+/**
+ * Portee de lecture d'une liste metier, en un seul fragment SQL.
+ *
+ * Regroupe les deux filtres qui coexistaient sans ordre de priorite dans les
+ * pages liste :
+ *
+ *   1. cloisonnement par cabinet — un adherent voit l'integralite de SON
+ *      cabinet, et uniquement celle-la ;
+ *   2. portee individuelle — un employe interne qui n'est pas responsable
+ *      voit les dossiers dont il est `created_by`.
+ *
+ * Le cloisonnement l'emporte : un adherent de cabinet n'a pas de fiche
+ * collaborateur, filtrer sur `created_by` le viderait de toute liste.
+ *
+ * Si un employe interne n'a aucune fiche collaborateur, le filtre tombe a
+ * `1 = 0` (etat refuse) plutot que de disparaitre : l'absence de portee doit
+ * se lire comme un refus, jamais comme un acces total.
+ *
+ * @return array{sql: string, params: array<string, int>}
+ */
+function list_scope(string $alias = '', ?string $createdByColumn = 'created_by'): array
+{
+    $prefix = $alias !== '' ? $alias . '.' : '';
+
+    if (!is_centre_user()) {
+        $cabinetId = current_cabinet_id();
+
+        if ($cabinetId === null) {
+            return ['sql' => '1 = 0', 'params' => []];
+        }
+
+        return [
+            'sql' => $prefix . 'cabinet_id = :scope_cabinet',
+            'params' => ['scope_cabinet' => $cabinetId],
+        ];
+    }
+
+    if (!sees_all_dossiers() && $createdByColumn !== null) {
+        $collaborateurId = current_collaborateur_id();
+
+        if ($collaborateurId === null) {
+            return ['sql' => '1 = 0', 'params' => []];
+        }
+
+        return [
+            'sql' => $prefix . $createdByColumn . ' = :scope_collaborateur',
+            'params' => ['scope_collaborateur' => $collaborateurId],
+        ];
+    }
+
+    return ['sql' => '', 'params' => []];
+}
+
+/**
+ * Garde de suppression / mutation sur une ligne metier.
+ *
+ * A appeler avant tout DELETE ou UPDATE cible par un identifiant venu du
+ * formulaire : une requete `DELETE ... WHERE id = :id` sans controle laisse un
+ * adherent de cabinet supprimer le dossier d'un concurrent en forgeant l'id.
+ */
+function require_tenant_row(?PDO $pdo, string $table, int $id, string $column = 'id'): void
+{
+    $exists = false;
+
+    if ($pdo instanceof PDO && $id > 0 && preg_match('/^[a-z_]+$/', $table) && preg_match('/^[a-z_]+$/', $column)) {
+        try {
+            $stmt = $pdo->prepare("SELECT id FROM `{$table}` WHERE `{$column}` = :id LIMIT 1");
+            $stmt->execute(['id' => $id]);
+            $exists = $stmt->fetch() !== false;
+        } catch (PDOException) {
+            $exists = false;
+        }
+    }
+
+    // Ligne absente : 404. Ligne presente mais d'un autre tenant : 403.
+    if (!$exists) {
+        deny_tenant_access(false);
+    }
+
+    if (!assert_tenant_access($pdo, $table, $id, $column)) {
+        deny_tenant_access(true);
+    }
+}
+
+/**
+ * Etat d'abonnement du tenant, pour le bandeau d'entete et le blocage.
+ *
+ * @return array{statut: string, libelle: string, jours_restants: ?int, plan: ?string}
+ */
+function current_abonnement_state(?PDO $pdo = null): array
+{
+    $cabinetId = current_cabinet_id();
+    $state = ['statut' => 'centre', 'libelle' => 'Compte interne', 'jours_restants' => null, 'plan' => null];
+
+    if ($cabinetId === null) {
+        return $state;
+    }
+
+    global $pdo;
+    $db = $pdo instanceof PDO ? $pdo : null;
+
+    if (!$db instanceof PDO) {
+        return $state;
+    }
+
+    try {
+        $stmt = $db->prepare('
+            SELECT a.statut, a.date_fin, p.nom AS plan_nom, p.code AS plan_code
+            FROM abonnements a
+            LEFT JOIN plans p ON p.id = a.plan_id
+            WHERE a.cabinet_id = :cid
+              AND a.statut IN (\'essai\', \'actif\', \'suspendu\')
+            ORDER BY a.date_fin DESC
+            LIMIT 1
+        ');
+        $stmt->execute(['cid' => $cabinetId]);
+        $row = $stmt->fetch();
+    } catch (PDOException) {
+        return $state;
+    }
+
+    if (!$row) {
+        $state['statut'] = 'absent';
+        $state['libelle'] = 'Aucun abonnement actif';
+
+        return $state;
+    }
+
+    $dateFin = (string) $row['date_fin'];
+    $jours = (int) floor((strtotime($dateFin) - strtotime(date('Y-m-d'))) / 86400);
+
+    $state['statut'] = (string) $row['statut'];
+    $state['jours_restants'] = $jours;
+    $state['plan'] = $row['plan_nom'] ?? null;
+
+    $state['libelle'] = match ($row['statut']) {
+        'essai' => 'Essai' . ($row['plan_nom'] !== null ? ' - ' . $row['plan_nom'] : ''),
+        'suspendu' => 'Abonnement suspendu',
+        'actif' => $jours < 0
+            ? 'Abonnement expire'
+            : ($jours <= 30 ? 'Expire dans ' . $jours . ' jours' : 'Actif jusqu\'au ' . date('d/m/Y', strtotime($dateFin))),
+        default => (string) $row['statut'],
+    };
+
+    return $state;
+}
+
+/**
+ * Blocage des adherents dont l'abonnement n'est plus valide.
+ * Le Centre n'est jamais bloque, ni les roles internes.
+ */
+function require_active_subscription(): void
+{
+    if (is_centre_user()) {
+        return;
+    }
+
+    $state = current_abonnement_state();
+
+    $bloque = in_array($state['statut'], ['absent', 'suspendu'], true)
+        || ($state['statut'] === 'actif' && ($state['jours_restants'] ?? 1) < 0);
+
+    if ($bloque) {
+        set_flash('error', 'Votre abonnement n\'est pas actif : ' . $state['libelle'] . '. Contactez le Centre de Domiciliation.');
+        redirect_to('mon_abonnement');
     }
 }
 
@@ -1351,12 +1789,16 @@ function log_activity(
     if (!$pdo) return;
     $user = current_user();
     try {
+        // `cabinet_id` rattache la trace a son tenant : le Centre peut ainsi
+        // relire l'historique d'un cabinet precis, et un adherent ne voit que
+        // le sien.
         $stmt = $pdo->prepare(
-            'INSERT INTO activity_logs (user_id, user_nom, action, entity_type, entity_id, entity_label, details, ip_address, created_at)
-             VALUES (:uid, :unom, :act, :etype, :eid, :elabel, :det, :ip, NOW())'
+            'INSERT INTO activity_logs (user_id, cabinet_id, user_nom, action, entity_type, entity_id, entity_label, details, ip_address, created_at)
+             VALUES (:uid, :cid, :unom, :act, :etype, :eid, :elabel, :det, :ip, NOW())'
         );
         $stmt->execute([
             'uid'    => $user['id'] ?? null,
+            'cid'    => $user['cabinet_id'] ?? null,
             'unom'   => $user['nom_complet'] ?? null,
             'act'    => $action,
             'etype'  => $entity_type,
@@ -1705,13 +2147,40 @@ function count_unread_notifications(?PDO $pdo, int $userId, int $roleId, ?string
 
         $orParts[] = '(is_global = 1 AND target_user_id IS NULL AND target_role_id IS NULL AND target_type IS NULL)';
 
-        $where = '(is_read = 0) AND (' . implode(' OR ', $orParts) . ')';
+        // Cloisonnement par cabinet : une notification ciblee par role
+        // ("Administrateur Cabinet") est adressee a TOUS les utilisateurs de ce
+        // role, donc aussi a ceux des autres cabinets. Sans ce filtre, un
+        // adherent du cabinet B lirait les alertes du cabinet A. Les
+        // notifications emises par le Centre (cabinet_id NULL) restent
+        // visibles de tous.
+        $tenant = notification_tenant_clause($params);
+
+        $where = '(is_read = 0) AND (' . implode(' OR ', $orParts) . ')' . $tenant;
         $stmt = $pdo->prepare("SELECT COUNT(*) FROM notifications n WHERE $where");
         $stmt->execute($params);
         return (int) $stmt->fetchColumn();
     } catch (PDOException) {
         return 0;
     }
+}
+
+/**
+ * Clause de cloisonnement des notifications, commune au comptage et au
+ * "tout marquer comme lu".
+ *
+ * @param array<string, int|string|null> $params Complete par reference.
+ */
+function notification_tenant_clause(array &$params): string
+{
+    $cabinetId = current_cabinet_id();
+
+    if ($cabinetId === null) {
+        return '';
+    }
+
+    $params['notif_cid'] = $cabinetId;
+
+    return ' AND (n.cabinet_id = :notif_cid OR n.cabinet_id IS NULL)';
 }
 
 function mark_notification_read(?PDO $pdo, int $notifId, int $userId): bool
@@ -1743,8 +2212,10 @@ function mark_all_notifications_read(?PDO $pdo, int $userId, int $roleId, ?strin
 
         $orParts[] = '(is_global = 1 AND target_user_id IS NULL AND target_role_id IS NULL AND target_type IS NULL)';
 
-        $where = '(is_read = 0) AND (' . implode(' OR ', $orParts) . ')';
-        $stmt = $pdo->prepare("UPDATE notifications SET is_read = 1, read_at = NOW() WHERE $where");
+        $tenant = notification_tenant_clause($params);
+
+        $where = '(is_read = 0) AND (' . implode(' OR ', $orParts) . ')' . $tenant;
+        $stmt = $pdo->prepare("UPDATE notifications n SET is_read = 1, read_at = NOW() WHERE $where");
         $stmt->execute($params);
         return true;
     } catch (PDOException) {
@@ -1947,10 +2418,11 @@ function update_user_session(?PDO $pdo, string $currentPage): void
 
     try {
         $stmt = $pdo->prepare("
-            INSERT INTO user_sessions (user_id, last_active, current_page, ip_address, user_agent, session_id)
-            VALUES (:uid, NOW(), :page, :ip, :ua, :sid)
+            INSERT INTO user_sessions (user_id, cabinet_id, last_active, current_page, ip_address, user_agent, session_id)
+            VALUES (:uid, :cid, NOW(), :page, :ip, :ua, :sid)
             ON DUPLICATE KEY UPDATE
                 user_id = VALUES(user_id),
+                cabinet_id = VALUES(cabinet_id),
                 last_active = VALUES(last_active),
                 current_page = VALUES(current_page),
                 ip_address = VALUES(ip_address),
@@ -1958,6 +2430,7 @@ function update_user_session(?PDO $pdo, string $currentPage): void
         ");
         $stmt->execute([
             'uid'  => (int) $user['id'],
+            'cid'  => $user['cabinet_id'] ?? null,
             'page' => $currentPage,
             'ip'   => $ip,
             'ua'   => $ua,
@@ -1973,11 +2446,11 @@ function get_online_users(?PDO $pdo, int $minutes = 5): array
     if (!$pdo) return [];
     try {
         $stmt = $pdo->prepare("
-            SELECT us.user_id, c.nom_complet, c.role_id, r.nom AS role_nom,
+            SELECT us.user_id, u.nom_complet, u.role_id, u.cabinet_id, r.nom AS role_nom,
                    us.current_page, us.last_active, us.ip_address
             FROM user_sessions us
-            JOIN collaborateurs c ON c.id = us.user_id
-            LEFT JOIN roles r ON r.id = c.role_id
+            JOIN users u ON u.id = us.user_id
+            LEFT JOIN roles r ON r.id = u.role_id
             WHERE us.last_active >= DATE_SUB(NOW(), INTERVAL :min MINUTE)
             ORDER BY us.last_active DESC
         ");
