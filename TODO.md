@@ -55,7 +55,14 @@
        60 s×2^n plafonné 1 h ; comptage email OU IP (une IP partagée est verrouillée
        brièvement si 5 échecs — anti-bruteforce assumé) ; calcul du délai côté SQL
        pour éviter les écarts de fuseau PHP/MySQL ; succès → clear ; testé CLI + E2E en session neuve)
-- [ ] Tâche 11 — Montée PHP 8.2 → 8.3+ (local uniquement, tester zip/com_dotnet)
+- [x] Tâche 11 — Montée PHP 8.2 → 8.3+ — **planifiée, reste l'action XAMPP manuelle**
+      → audit de compatibilité fait (110 fichiers) : **0 blocage 8.3** ; le vrai palier est
+        8.4, bloqué par 26 paramètres implicitement nullable (liste dans le doc)
+      → canari CI non bloquant ajouté (job `compat` PHP 8.3 + 8.4, `continue-on-error`,
+        le deploy ne dépend toujours que du job `test` 8.2)
+      → script de validation post-upgrade : `scripts/verifier_montree_php.ps1`
+      → procédure complète (config php.ini à reporter, extensions critiques
+        `zip` + `com_dotnet`, retour arrière) : **`docs/MONTAJEE_PHP_83.md`**
 
 ---
 ## Ordre d'exécution recommandé
@@ -70,7 +77,8 @@
 9. ✅ Tâche 9 (CSS dedup) → stats, modal-overlay (.show réparé), perms-table
 10. ✅ Fix CI exit 126 → bit +x sur vendor/bin (phpunit, php-parse) ; run SUCCESS (test + deploy)
 11. ✅ Tâche 10 (rate-limiting) → table login_attempts + 3 helpers + branchement connexion (testé CLI + E2E)
-12. ⏳ Reste : Tâche 11 (PHP 8.3, action XAMPP manuelle) au fil des semaines
+12. ✅ Tâche 11 (montée PHP 8.3) → auditée + planifiée ; il reste l'installation
+    manuelle de XAMPP (procédure et script de validation prêts)
 
 ## ⚠️ Avant push/deploy prod
 - Re-vérifier les doublons sur les numéros de dossier **en prod** (la migration UNIQUE échouera proprement si doublons).

@@ -205,8 +205,9 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - **API** `api.php`: Point d'accès sécurisé (JSON). Actions : `quick_create`, `inline_update`, `bulk_update`. Vérifie auth + CSRF. Whitelist des tables/colonnes autorisées.
 - **JS** `assets/js/table-editor.js`: IIFE globale, 3 modules indépendants.
 - **Quick Create** (`[data-quick-create-btn]` + `[data-modal="quick-create"]`):
-  - Modal overlay avec formulaire → `fetch('api.php')` → insère la ligne via `<template data-row-template>`
-  - Attributs template : `data-cell="col"`, `data-cell-link="page"`, `data-cell-value="id"`, `data-cell-label="text_col"`, `data-cell-actions`
+  - Modal overlay avec formulaire → `fetch('api.php')` → **rechargement de la page** sur les pages liste (la ligne est rendue par le serveur : badges, colonnes dérivées, position de tri)
+  - En-tête `position: sticky` (un collaborateur = 17 champs), `role="dialog"` + `aria-modal` + `aria-labelledby`, focus sur le premier champ à l'ouverture, retour du focus à l'ouvreur (annulation, ✕, overlay, `Échap`)
+  - **Erreurs affichées dans la modale** (`.qc-alert` / `[data-qc-error]`) et non via `showToast` : le toast est peint sous l'overlay (z-index 2000 < 9999) donc illisible. Masquage à la frappe ou via `[data-qc-error-close]`
 - **Inline Edit** (`[data-editable="column"]` sur `<td>`):
   - Double-clic → input → blur/Enter → `api.php` → mise à jour cellule
   - Escape annule. Permission `*.edit` requise (attribut non rendu si pas de droit)
@@ -215,12 +216,13 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
   - "Tout sélectionner" via `[data-bulk-select-all]`
   - `[data-bulk-edit-btn]` ouvre `[data-modal="bulk-edit"]` → `api.php?action=bulk_update` → rechargement page
 - **Modales réutilisables**:
-  - `includes/quick_create_modal.php` : Définir `$quickCreateTitle`, `$quickCreateTable`, `$quickCreateFields`
+  - `includes/quick_create_modal.php` : Définir `$quickCreateTitle`, `$quickCreateTable`, `$quickCreateFields` (+ `$quickCreateSubmitLabel` / `$quickCreateSubmitIcon` pour le libellé et l'icône du bouton de validation)
   - `includes/collaborateur_quick_create_modal.php` : définition **partagée** de la modale collaborateur (page liste + wizard Création) — une seule source de vérité pour les champs
   - `includes/bulk_edit_modal.php` : Définir `$bulkEditTitle`, `$bulkEditTable`, `$bulkEditFields`
   - `includes/confirm_dialog.php` : dialogue de confirmation global, rendu une fois par `includes/pied_page.php`
   - Champs : `name`, `label`, `type` (text|select|number|email), `required`, `full`, `options` (indexed ou assoc), `placeholder`
 - **Quick Create vers un `<select>`** (wizard sans tableau de listing) : définir `$quickCreateTargetSelect` (nom du select) et `$quickCreateTargetLabel` (clés de la réponse concaténées pour le libellé). Le formulaire porte alors `data-quick-create-target` / `data-quick-create-label` ; au succès, l'option est **ajoutée au select et sélectionnée** (sans rechargement, sans doublon). Cette branche est prioritaire sur l'insertion dans `[data-table]`.
+  - `<template data-row-template>` (anciennement utilisé par `buildRow()`) est **mort** : il est frère de `<table>` dans les pages liste, donc `table.querySelector()` ne le trouvait jamais. Ne pas réintroduire de construction de ligne côté client — recharger la page.
 - **Perms check** : `has_permission('societes.create')` pour le bouton, `has_permission('societes.edit')` pour `data-editable`
 
 ## Confirmation dialogs (data-confirm)
@@ -336,6 +338,17 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - Arrêt : `Get-NetTCPConnection -LocalPort <port> -State Listen | % { Stop-Process -Id $_.OwningProcess -Force }`
 - MySQL reste démarré via `run.ps1` (XAMPP) ou manuellement.
 
+## Montée PHP 8.3+ (tâche 11)
+- **État** : planifiée et outillée, l'installation de XAMPP reste une action manuelle. Procédure complète : `docs/MONTAJEE_PHP_83.md`.
+- **Audit de compatibilité** : sur les 110 fichiers PHP, **0 blocage pour 8.3**. Le palier réellement risqué est **8.4** (26 paramètres implicitement nullable `Type $x = null` → à passer en `?Type $x = null` ; emplacements listés dans `docs/MONTAJEE_PHP_83.md` § 1).
+- **Ne jamais installer la nouvelle XAMPP par-dessus `C:\xampp`** : l'installer à côté (`C:\xampp83`) pour conserver un retour arrière immédiat.
+- **Extensions indispensables au projet** : `zip` (templates `.docx`, `TemplateAnalyzer`) et `php_com_dotnet` (conversion DOCX → PDF via Word). Les deux doivent être reportés dans le nouveau `php.ini`.
+- **Validation post-upgrade** : une seule commande, sortie 0/1, extensions critiques + aller-retour `ZipArchive` sur un vrai `.docx` + `composer check-platform-reqs` + PHPUnit + dépréciations des journaux.
+  ```powershell
+  powershell -ExecutionPolicy Bypass -File .\scripts\verifier_montree_php.ps1 -PhpBin "C:\xampp83\php\php.exe"
+  ```
+- **Canari CI** : le workflow `deploy-heberjahiz.yml` exécute la suite PHPUnit en PHP 8.3 **et** 8.4 (job `compat`, `continue-on-error`). Il ne bloque **jamais** le déploiement (`deploy` ne dépend que du job `test` en 8.2, version de production). Une régression 8.3 est visible dans l'onglet Actions avant toute installation locale.
+
 ## macOS Setup (Shell Scripts)
 - **`scripts/setup.sh`** : Installation complète via Homebrew (PHP, MySQL, Node.js, Composer, LibreOffice). Lance une seule fois.
 - **`scripts/run.sh`** : Démarre MySQL + serveur PHP intégré sur le port 8080.
@@ -419,8 +432,40 @@ node scripts/mysql-mcp.mjs
 ## Root Directory Cleanliness
 - **No `.txt` or `.png` files in root** — place documentation text files in `docs/`, screenshots in `docs/screenshots/`
 - Root should only contain: `index.php`, `run.ps1`, `router.php`, `api.php`, `.env.example`, `composer.json`, `composer.lock`, `composer.phar`, `opencode.json`, `AGENTS.md`, `README.md`, `.gitignore`, and directories
-- **Scripts d'outillage** (`.ps1`/`.sh`/`.cmd`) rangés dans `scripts/` : `run.sh`, `setup.ps1`, `setup.sh`, `dev-server.ps1`, `sync.ps1`, `post-push-sync.ps1`, `git-push.cmd`, `chrome-debug.ps1`, `_env.ps1` (chargeur `.env` pour PowerShell), `mysql-mcp.mjs` (wrapper MCP MySQL) — seul `run.ps1` (lanceur XAMPP) reste à la racine
+- **Scripts d'outillage** (`.ps1`/`.sh`/`.cmd`) rangés dans `scripts/` : `run.sh`, `setup.ps1`, `setup.sh`, `dev-server.ps1`, `sync.ps1`, `post-push-sync.ps1`, `git-push.cmd`, `chrome-debug.ps1`, `_env.ps1` (chargeur `.env` pour PowerShell), `mysql-mcp.mjs` (wrapper MCP MySQL), `opencode-cleanup.ps1` (nettoyage serveurs opencode orphelins), `verifier_montree_php.ps1` (validation post-upgrade PHP 8.3+) — seul `run.ps1` (lanceur XAMPP) reste à la racine
 - `.gitignore` already blocks `/*.txt` and `/*.png` from root to prevent accidental commits
+
+## Erreur `Cannot connect to API: The socket connection was closed unexpectedly`
+
+Erreur **Bun** (`fetch()`), affichée par l'UI opencode avec `[retrying in Ns attempt #M]`. Diagnostic posé le 27/09/2026 sur la session `ses_f2339246effesX13U7zdCBh5Xt` (« Git fetch and rebase »).
+
+- **Ce n'est PAS un problème réseau, ni VS Code, ni le fournisseur** — preuves vérifiées :
+  - DNS sain (`opencode.ai` → 172.65.90.20-23 via 1.1.1.1/8.8.8.8), aucun `HTTP_PROXY`/`HTTPS_PROXY`, `Invoke-WebRequest` vers `https://opencode.ai/zen/v1/models` renvoie **200** pendant les rafales, aucun événement réseau Windows.
+  - Les 11 erreurs du 27/09 (12:11→12:20 UTC) sont **toutes dans une seule session**, jamais dans les sessions concurrentes du même processus.
+  - Le **même modèle** `opencode/big-pickle` et la **même URL** (`https://opencode.ai/zen/v1/chat/completions`) streament sans erreur dans une autre session du même `opencode.exe`, aux mêmes timestamps.
+  - La taille du prompt est équivalente (0,152 Mo / ~38 k tokens en échec vs 0,161 Mo / ~40 k tokens en succès) → la taille de session n'est pas en cause.
+  - L'URL fautive est lisible dans le payload de l'erreur persistée : `error.metadata.url`.
+- **Cause réelle** : état serveur corrompu **au niveau de la session** (défaut OpenCode). Chaque tentative est coupée ~150 ms après le `stream`, puis réessayée ~66 s. La session est en erreur depuis le 26/09 ; les retries renvoient le même état, donc ils ne peuvent pas aboutir.
+- **Correctif** : `/compact` sur la session concernée ; si l'erreur persiste, **ouvrir une nouvelle session** (même dossier, même `cwd`). Ne pas insister sur les retries.
+- **À la fermeture de VS Code**, tout stream en cours est coupé → cette erreur-là est normale et bénigne. L'extension `sst-dev.opencode` lance `opencode --port <aléatoire>` dans un terminal intégré et son `deactivate()` est vide, donc le process survit à la fermeture.
+- **Hygiène des processus** : `scripts/opencode-cleanup.ps1`, lancé à l'ouverture du dossier par le task `opencode: nettoyer les serveurs orphelins` (`.vscode/tasks.json`, `runOn: folderOpen`). Ne cible **que** `opencode-ai\bin\opencode.exe` (jamais l'app desktop `OpenCode.exe`) et ne tue un serveur que si son port n'a **plus aucune connexion client établie** — le serveur de la fenêtre courante est donc toujours préservé. Ce script ne corrige pas l'erreur ci-dessus.
+  - `.\scripts\opencode-cleanup.ps1` — tue les orphelins
+  - `-DryRun` — affiche sans rien arrêter
+  - `-Force` — tue tous les serveurs CLI, même ceux qui ont un client connecté
+- **Logs** : `Get-Content "$env:USERPROFILE\.local\share\opencode\log\opencode.log" -Tail 60`
+
+## Base de données opencode (`opencode.db`) — 3,93 Go
+
+- **Emplacement** : `C:\Users\HAJA\.local\share\opencode\opencode.db` (SQLite, `journal_mode=wal`). 353 sessions, 45 611 messages, 185 905 parts, 315 270 events depuis le 19/06/2026.
+- **La table `event` occupe 3,03 Go sur 3,93 Go** (77 %) : `message.updated.1` = 2,67 Go pour 88 233 events (~30 Ko en moyenne, jusqu'à **1,27 Mo**). Chaque `message.updated` stocke l'**état complet du message**, y compris `summary.diffs` (patchs git intégraux), et le même event est parfois écrit 3 fois. Une seule session peut atteindre 158 Mo d'events.
+- **`VACUUM` est inutile** : `freelist_count = 0` (aucune page libre) → il ne racketterait rien. Seule la suppression des events de sessions anciennes reduce la taille.
+- **Diagnostic d'une session** (Node ≥ 22, module natif `node:sqlite`, ouvrir en `readOnly`) :
+  ```js
+  import { DatabaseSync } from "node:sqlite";
+  const db = new DatabaseSync("C:/Users/HAJA/.local/share/opencode/opencode.db", { readOnly: true });
+  db.prepare("SELECT COUNT(*) n, SUM(LENGTH(data)) o FROM event WHERE aggregate_id=?").get(sessionId);
+  ```
+  Ne pas purger `event` sans validation : c'est la source de vérité du rejouage de session.
 
 ## Knowledge Graph (graphify)
 
