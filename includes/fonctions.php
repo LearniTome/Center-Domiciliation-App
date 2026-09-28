@@ -1836,6 +1836,49 @@ function fetch_cabinets_options(?PDO $pdo, bool $actifsSeulement = false): array
     return $options;
 }
 
+/**
+ * Code d'un nouveau cabinet : CAB-NNN, sequence jamais reinitialisee.
+ *
+ * Contrairement a `next_facture_number()`, on retient le plus grand suffixe
+ * trouve et non le dernier code insere (`ORDER BY id DESC`). Une valeur saisie
+ * a la main peut casser l'alignement entre l'ordre des id et l'ordre des
+ * numeros (TST-004 insere avant TST-003) : la lecture « dernier insere »
+ * proposerait alors TST-004, deja employe, et `uq_cabinets_code` refuserait
+ * l'enregistrement. Le plus grand suffixe ne peut pas retomber sur un code
+ * existant.
+ *
+ * Seul le prefixe exacte est lu : un code libre comme `CAB-SUD` ou `A7K-3QP` est
+ * ignore, il ne doit ni faire boucler la sequence ni etre propose. La
+ * comparaison est insensible a la casse pour rester alignee sur la collation
+ * `utf8mb4_unicode_ci` : `uq_cabinets_code` et le `LIKE` ci-dessus refusent
+ * `cab-001` face a `CAB-001`, notre numerotation doit voir la meme chose.
+ */
+function next_cabinet_code(?PDO $pdo, string $prefix = 'CAB'): string
+{
+    if (!$pdo instanceof PDO) {
+        return $prefix . '-001';
+    }
+
+    try {
+        $stmt = $pdo->prepare('SELECT code FROM cabinets WHERE code LIKE :prefix');
+        $stmt->execute(['prefix' => $prefix . '-%']);
+        $codes = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    } catch (PDOException) {
+        return $prefix . '-001';
+    }
+
+    $max = 0;
+    $motif = '/^' . preg_quote($prefix, '/') . '-(\d+)$/i';
+    foreach ($codes as $code) {
+        if (is_string($code) && preg_match($motif, trim($code), $m) === 1) {
+            $max = max($max, (int) $m[1]);
+        }
+    }
+
+    // Au-dela de 999, le suffixe s'elargit plutot que de reboucler sur 000.
+    return sprintf('%s-%0' . max(3, strlen((string) ($max + 1))) . 'd', $prefix, $max + 1);
+}
+
 /** Plans tarifaires, pour les selects d'abonnement. */
 function fetch_plans_options(?PDO $pdo, bool $actifsSeulement = true): array
 {

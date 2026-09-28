@@ -38,6 +38,14 @@ if ($db && $editId > 0) {
     }
 }
 
+// Creation : on propose le prochain code de sequence, que l'utilisateur peut
+// remplacer. Place AVANT le handler POST pour qu'un code deja saisi, ou une
+// erreur de validation, ne soit jamais ecrase par une nouvelle proposition
+// (`$formData` est fusionne avec $_POST juste apres, en cas d'erreur).
+if ($formOpen && $editId === 0 && (string) $formData['code'] === '') {
+    $formData['code'] = next_cabinet_code($db);
+}
+
 if (is_post() && $db) {
     verify_csrf();
     $action = (string) ($_POST['action'] ?? '');
@@ -241,6 +249,9 @@ foreach (cabinet_statut_options() as $s) {
                 <label class="field">
                     <span>Code *</span>
                     <input type="text" name="code" required maxlength="40" value="<?= e((string) ($formData['code'] ?? '')) ?>" placeholder="CAB-001">
+                    <?php if ($editId === 0): ?>
+                        <span class="help-text">Code proposé automatiquement, modifiable.</span>
+                    <?php endif; ?>
                 </label>
                 <label class="field">
                     <span>Nom *</span>

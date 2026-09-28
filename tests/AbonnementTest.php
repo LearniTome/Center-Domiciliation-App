@@ -377,6 +377,144 @@ final class AbonnementTest extends TestCase
         }
     }
 
+    /* ================================================================
+     * 9. Numerotation des codes cabinet (CAB-NNN)
+     * ================================================================ */
+
+    /**
+     * Execute un scenario sur la table `cabinets` puis la restaure a l'identique.
+     *
+     * Le nettoyage compare la table avant et apres et ne supprime que les
+     * lignes apparues entre les deux. Compter sur une liste de codes declarée
+     * a la main ne suffit pas : une assertion qui verifie l'unicite du code
+     * propose insere elle-meme une ligne, et un prefixe oublie dans cette liste
+     * la laisserait behind, faussant la sequence des tests suivants. Aucun
+     * DELETE par motif `CAB-%` / `TST-%` n'est employe, il effacerait des
+     * cabinets reels sur une base de developpement.
+     *
+     * Le scenario recoit un second callable pour inserer ses cabinets. Ses
+     * codes restent hors du prefixe `CAB-` (les fixtures du lot utilisent
+     * ABTA / ABTB) afin de piloter une sequence isolee.
+     */
+    private function avecCabinets(callable $scenario): void
+    {
+        $pdo = self::$pdo;
+        $lire = static fn (PDO $d): array => $d->query('SELECT code FROM cabinets')->fetchAll(PDO::FETCH_COLUMN);
+
+        $avant = $lire($pdo);
+        $ins = $pdo->prepare("INSERT INTO cabinets (code, nom, statut) VALUES (:c, 'Test', 'actif')");
+        $creer = static function (string ...$codes) use ($ins): void {
+            foreach ($codes as $code) {
+                $ins->execute(['c' => $code]);
+            }
+        };
+
+        try {
+            $scenario($pdo, $creer);
+        } finally {
+            $nouveaux = array_values(array_diff($lire($pdo), $avant));
+            if ($nouveaux !== []) {
+                $in = "'" . implode("','", array_map(
+                    static fn (string $c): string => str_replace("'", "''", $c),
+                    $nouveaux
+                )) . "'";
+                $pdo->exec('DELETE FROM cabinets WHERE code IN (' . $in . ')');
+            }
+        }
+    }
+
+    public function testCodeCabinetSuitLeFormatAttendu(): void
+    {
+        $this->avecCabinets(function (PDO $pdo): void {
+            // Les fixtures ABTA / ABTB ne portent pas le prefixe, la sequence
+            // demarre donc a 001 sur une base sans cabinet CAB-.
+            self::assertSame('CAB-001', next_cabinet_code($pdo));
+            self::assertMatchesRegularExpression('/^CAB-\d{3,}$/', next_cabinet_code($pdo));
+        });
+    }
+
+    public function testCodeCabinetProposeToujoursUneValeurInsérable(): void
+    {
+        // uq_cabinets_code est UNIQUE : si la valeur proposee etait deja
+        // employee, la creation du cabinet echouerait a l'enregistrement.
+        $this->avecCabinets(function (PDO $pdo, callable $creer): void {
+            $creer('TST-001', 'TST-007');
+            $code = next_cabinet_code($pdo, 'TST');
+            self::assertSame('TST-008', $code, 'un trou dans la sequence ne doit pas etre propose');
+
+            $pdo->prepare("INSERT INTO cabinets (code, nom, statut) VALUES (?, 'Collision', 'actif')")
+                ->execute([$code]);
+            self::assertTrue(true, 'la valeur proposee a ete acceptee par uq_cabinets_code');
+        });
+    }
+
+    public function testCodeCabinetNeReproposePasUnCodeDejaEmploiParUnCodeManuel(): void
+    {
+        // `uq_cabinets_code` n'interdit que les doublons exacts : un code saisi a
+        // la main peut donc decliner la suite. Ici TST-004 (id 1) precede
+        // TST-003 (id 2), l'ordre des id ne suit plus l'ordre des numeros.
+        // Une lecture « dernier insere » proposerait TST-004, deja employe, et
+        // la creation du cabinet echouerait ; le plus grand suffixe propose
+        // TST-005, inserable.
+        $this->avecCabinets(function (PDO $pdo, callable $creer): void {
+            $creer('TST-004', 'TST-003');
+            $code = next_cabinet_code($pdo, 'TST');
+            self::assertSame('TST-005', $code);
+
+            self::assertFalse(
+                $pdo->query('SELECT 1 FROM cabinets WHERE code = ' . $pdo->quote($code))->fetchColumn() !== false,
+                'le code propose ne doit pas deja exister'
+            );
+            $pdo->prepare("INSERT INTO cabinets (code, nom, statut) VALUES (?, 'Manuel', 'actif')")
+                ->execute([$code]);
+            self::assertTrue(true, 'le code propose passe uq_cabinets_code');
+        });
+    }
+
+    public function testCodeCabinetIgnoreLesCodesLibresHorsPrefixe(): void
+    {
+        // `TST-SUD` ou `TST-1A` ne sont pas des membres de la sequence : ils
+        // ne doivent ni la faire boucler ni etre proposes.
+        $this->avecCabinets(function (PDO $pdo, callable $creer): void {
+            $creer('TST-001', 'TST-SUD', 'TST-1A');
+            self::assertSame('TST-002', next_cabinet_code($pdo, 'TST'));
+        });
+    }
+
+    public function testCodeCabinetVoitLesMinusculesCommeLaCollation(): void
+    {
+        // La colonne est en utf8mb4_unicode_ci : `uq_cabinets_code` refuse
+        // `cab-001` face a `CAB-001`. La numerotation doit voir la meme chose,
+        // sinon elle proposerait un code que MySQL rejette.
+        $this->avecCabinets(function (PDO $pdo, callable $creer): void {
+            $creer('cab-001', 'cab-002');
+            self::assertSame('CAB-003', next_cabinet_code($pdo, 'CAB'));
+        });
+    }
+
+    public function testCodeCabinetElargitLeSuffixeAuDelaDe999(): void
+    {
+        // Plutot que de reboucler sur CAB-000, la largeur du suffixe s'elargit.
+        $this->avecCabinets(function (PDO $pdo, callable $creer): void {
+            $creer('TST-001', 'TST-999');
+            self::assertSame('TST-1000', next_cabinet_code($pdo, 'TST'));
+        });
+    }
+
+    public function testCodeCabinetConserveLaLargeurDuSuffixeExistant(): void
+    {
+        $this->avecCabinets(function (PDO $pdo, callable $creer): void {
+            $creer('TST-12');
+            self::assertSame('TST-013', next_cabinet_code($pdo, 'TST'));
+        });
+    }
+
+    public function testCodeCabinetSansBaseRenvoieUneValeurDeRepli(): void
+    {
+        // Base injoignable : on ne doit pas bloquer la saisie du formulaire.
+        self::assertSame('CAB-001', next_cabinet_code(null));
+    }
+
     public function testFetchPlansOptionsFiltreLesPlansInactifsParDefaut(): void
     {
         $pdo = self::$pdo;
