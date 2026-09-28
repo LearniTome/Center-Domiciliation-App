@@ -12,7 +12,14 @@ if (isset($_GET['import_msg']) && $_GET['import_msg'] !== '') {
 // Reference data for quick create
 $societesOptions = [];
 if (($pdo ?? null) instanceof PDO) {
-    $stmt = $pdo->query('SELECT id, societe_raison_sociale FROM societes ORDER BY societe_raison_sociale ASC');
+    // Cloisonne : ce filtre alimente la creation rapide et le select de la
+    // liste. Sans lui, un adherent y voyait les raisons sociales de toutes les
+    // societes, y compris celles des autres cabinets.
+    $socScope = tenant_scope();
+    $stmt = $pdo->prepare('SELECT id, societe_raison_sociale FROM societes'
+        . ($socScope['sql'] !== '' ? ' WHERE ' . $socScope['sql'] : '')
+        . ' ORDER BY societe_raison_sociale ASC');
+    $stmt->execute($socScope['params']);
     while ($row = $stmt->fetch()) {
         $societesOptions[(int)$row['id']] = $row['societe_raison_sociale'];
     }

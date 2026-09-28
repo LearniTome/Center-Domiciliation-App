@@ -335,10 +335,11 @@ function date_iso_valide(?string $date): bool
  * un utilisateur non admin voit sur le suivi les contrats de societes qu'il
  * n'a pas crees, alors que la liste des contrats les lui masque.
  *
- * @param  array|null $user current_user()
+ * @param  array|null  $user  current_user()
+ * @param  string      $alias Alias de `societes` DANS la requete appelante.
  * @return array{sql: string, params: array<string, int>}
  */
-function contrat_user_filter(?array $user): array
+function contrat_user_filter(?array $user, string $alias = 'societes'): array
 {
     // Delegue a list_scope() : le test (int) $user['role_id'] contre [1, 2]
     // est remplace par la permission dossiers.view_all, et le cloisonnement
@@ -346,7 +347,13 @@ function contrat_user_filter(?array $user): array
     // signature publique (3 appelants), mais n'est plus utilise.
     unset($user);
 
-    return list_scope('societes');
+    // `$alias` est indispensable : `list_scope()` prefixe la colonne par
+    // l'alias, et une table aliasee s'appelle par son alias. Un appelant
+    // écrivant `INNER JOIN societes s` tout en passant le nom complet
+    // produisait `societes.cabinet_id`, que MySQL rejette
+    // (« Unknown column ») : la page levait une PDOException au lieu
+    // d'afficher une liste cloisonnee.
+    return list_scope($alias);
 }
 
 /**
@@ -1268,17 +1275,39 @@ function get_user_permissions(): array
         return [];
     }
 
-    // Union des permissions de TOUS les roles portes par le compte
-    // (user_roles). `users.role_id` reste le role primaire : il alimente le
-    // denormalise et les libelles de role, mais ne borne plus l'ensemble.
+    // Permissions de TOUS les roles portes par le compte, reunion de deux
+    // sources :
+    //  - `user_roles` : le pivot multi-roles, source de reference ;
+    //  - `users.role_id` : le role primaire denormalise.
+    //
+    // `role_id` est consulte meme quand le pivot existe deja : la migration
+    // d'installation (20260927_100003) l'a recopie une seule fois, a une
+    // epoque ou il n'y avait qu'un role par compte. Depuis, tout compte cree
+    // avec seulement `role_id` (creation d'utilisateur Phase 5, import,
+    // saisie directe) n'a AUCUNE ligne de pivot, donc ZERO permission.
+    //
+    // L'effet est un verrouillage total et silencieux : `require_permission()`
+    // renvoie l'utilisateur vers `dashboard`, qui exige `dashboard.view`,
+    // que l'utilisateur n'a pas non plus. Le garde refuse donc `dashboard` et
+    // y renvoie a nouveau : boucle de redirection (ERR_TOO_MANY_REDIRECTS) sur
+    // le dashboard, sans aucun message. Aucune page n'est plus accessible.
+    //
+    // L'union rend le provisionnement tolerant aux deux ecritures : un compte
+    // peut etre cree via `role_id`, via le pivot, ou par les deux.
     $stmt = $pdo->prepare('
         SELECT DISTINCT p.permission_key
-        FROM user_roles ur
-        JOIN role_permissions rp ON rp.role_id = ur.role_id
-        JOIN permissions p ON p.id = rp.permission_id
-        WHERE ur.user_id = :uid
+        FROM permissions p
+        JOIN role_permissions rp ON rp.permission_id = p.id
+        WHERE rp.role_id IN (
+            SELECT role_id FROM user_roles WHERE user_id = :uid_roles
+            UNION
+            SELECT role_id FROM users WHERE id = :uid_primary AND role_id IS NOT NULL
+        )
     ');
-    $stmt->execute(['uid' => (int) $user['id']]);
+    $stmt->execute([
+        'uid_roles' => (int) $user['id'],
+        'uid_primary' => (int) $user['id'],
+    ]);
     $perms = $stmt->fetchAll(\PDO::FETCH_COLUMN);
 
     // Surcharges individuelles (grant/refuse) : le refuse l'emporte.
@@ -1341,12 +1370,59 @@ function sees_all_dossiers(): bool
     return has_permission('dossiers.view_all');
 }
 
+/**
+ * Page en cours de service, telle que resolue par le front controller.
+ *
+ * `index.php` resout `$page` avant d'appeler `require_page_access()` : la
+ * globale est donc deja fiable a cet instant. `$_GET` sert de repli pour les
+ * appels qui n emmanent pas du routage.
+ */
+function current_page(): string
+{
+    $page = $GLOBALS['page'] ?? null;
+    if (!is_string($page) || $page === '') {
+        $page = $_GET['page'] ?? '';
+    }
+
+    return is_string($page) ? $page : '';
+}
+
 function require_permission(string $key): void
 {
-    if (!has_permission($key)) {
-        set_flash('error', 'Vous n\'avez pas les droits nécessaires pour accéder a cette page.');
-        redirect_to('dashboard');
+    if (has_permission($key)) {
+        return;
     }
+
+    set_flash('error', 'Vous n\'avez pas les droits nécessaires pour accéder à cette page.');
+
+    // La destination de repli est `dashboard`. Y renvoyer l'utilisateur
+    // alors qu'il demande deja `dashboard` produit une boucle de
+    // redirection : le navigateur abandonne sur ERR_TOO_MANY_REDIRECTS et
+    // l'utilisateur ne voit meme pas le message. Ce cas se produit quand le
+    // role ne porte pas `dashboard.view`.
+    //
+    // Aucun repli n'etant possible, on repond 403 et on arrete le rendu.
+    // C est un etat reel et atteignable : un role cree sans aucune
+    // permission, ou un compte dont le `role_id` est invalide, y conduit.
+    if (current_page() === 'dashboard') {
+        http_response_code(403);
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+        $deconnexion = e(app_url('deconnexion'));
+        echo '<!doctype html><html lang="fr"><head><meta charset="utf-8">'
+            . '<meta name="viewport" content="width=device-width, initial-scale=1">'
+            . '<title>Accès refusé</title></head><body>'
+            . '<h1>Accès refusé</h1>'
+            . '<p>Votre rôle ne donne pas accès au tableau de bord. '
+            . 'Contactez un administrateur pour qu\'il vous attribue les droits '
+            . 'correspondants.</p>'
+            . '<p><a href="' . $deconnexion . '">Se déconnecter</a></p>'
+            . '</body></html>';
+        exit;
+    }
+
+    redirect_to('dashboard');
 }
 
 // ─── Multi-tenancy : isolation des données par cabinet ───────────
@@ -1622,8 +1698,14 @@ function current_abonnement_state(?PDO $pdo = null): array
         return $state;
     }
 
-    global $pdo;
+    // On n'utilise surtout PAS `global $pdo` ici : le parametre etant
+    // nomme `pdo`, l'instruction `global` ecrase sa valeur et la fonction
+    // retomberait sur la connexion globale, ignorant le PDO de l'appelant.
     $db = $pdo instanceof PDO ? $pdo : null;
+    if (!$db instanceof PDO) {
+        $connexionGlobale = $GLOBALS['pdo'] ?? null;
+        $db = $connexionGlobale instanceof PDO ? $connexionGlobale : null;
+    }
 
     if (!$db instanceof PDO) {
         return $state;
@@ -1692,6 +1774,278 @@ function require_active_subscription(): void
     }
 }
 
+/* ---------------------------------------------------------------------------
+ * Facturation SaaS : referentiels partages par les ecrans Centre et adherent.
+ * ------------------------------------------------------------------------ */
+
+/**
+ * Numerotation de facture : FAC-YYYY-NNN, incrementee sur l'annee en cours.
+ * `factures.numero` porte un index UNIQUE : on repart du plus grand numero
+ * existant pour l'annee, jamais d'un simple COUNT (des numeros peuvent avoir
+ * ete supprimes entre-temps).
+ */
+function next_facture_number(?PDO $pdo, string $prefix = 'FAC'): string
+{
+    $year = date('Y');
+    $fallback = $prefix . '-' . $year . '-001';
+
+    if (!$pdo instanceof PDO) {
+        return $fallback;
+    }
+
+    try {
+        $stmt = $pdo->prepare('SELECT numero FROM factures WHERE numero LIKE :prefix ORDER BY id DESC LIMIT 1');
+        $stmt->execute(['prefix' => $prefix . '-' . $year . '-%']);
+        $last = $stmt->fetchColumn();
+    } catch (PDOException) {
+        return $fallback;
+    }
+
+    if (!is_string($last) || $last === '') {
+        return $fallback;
+    }
+
+    // On ne fait confiance qu'a un numero de la forme exacte attendue.
+    if (preg_match('/^' . preg_quote($prefix, '/') . '-' . $year . '-(\d+)$/', $last, $m) !== 1) {
+        return $fallback;
+    }
+
+    return sprintf('%s-%s-%03d', $prefix, $year, ((int) $m[1]) + 1);
+}
+
+/** Cabinets clients, pour les selects de l'administration Centre. */
+function fetch_cabinets_options(?PDO $pdo, bool $actifsSeulement = false): array
+{
+    if (!$pdo instanceof PDO) {
+        return [];
+    }
+
+    $where = $actifsSeulement ? " WHERE statut = 'actif'" : '';
+
+    try {
+        $stmt = $pdo->query('SELECT id, code, nom, statut FROM cabinets' . $where . ' ORDER BY nom ASC');
+    } catch (PDOException) {
+        return [];
+    }
+
+    $options = [];
+    foreach ($stmt->fetchAll() as $row) {
+        $options[(int) $row['id']] = (string) $row['nom'] . ' (' . (string) $row['code'] . ')';
+    }
+
+    return $options;
+}
+
+/** Plans tarifaires, pour les selects d'abonnement. */
+function fetch_plans_options(?PDO $pdo, bool $actifsSeulement = true): array
+{
+    if (!$pdo instanceof PDO) {
+        return [];
+    }
+
+    $where = $actifsSeulement ? ' WHERE actif = 1' : '';
+
+    try {
+        $stmt = $pdo->query('SELECT id, nom, prix_annuel, devise, trial_jours FROM plans' . $where . ' ORDER BY sort_order ASC, nom ASC');
+    } catch (PDOException) {
+        return [];
+    }
+
+    $options = [];
+    foreach ($stmt->fetchAll() as $row) {
+        $prix = number_format((float) $row['prix_annuel'], 2, ',', ' ');
+        $libelle = (string) $row['nom'] . ' - ' . $prix . ' ' . (string) $row['devise'] . '/an';
+
+        if ((int) $row['trial_jours'] > 0) {
+            $libelle .= ' (' . (int) $row['trial_jours'] . ' j essai)';
+        }
+
+        $options[(int) $row['id']] = $libelle;
+    }
+
+    return $options;
+}
+
+function abonnement_statut_options(): array
+{
+    return ['essai', 'actif', 'suspendu', 'resilie'];
+}
+
+function abonnement_statut_label(?string $statut): string
+{
+    return match ($statut) {
+        'essai' => 'Essai',
+        'actif' => 'Actif',
+        'suspendu' => 'Suspendu',
+        'resilie' => 'Resilie',
+        'expire' => 'Expire',
+        default => $statut !== null && $statut !== '' ? ucfirst($statut) : '—',
+    };
+}
+
+/**
+ * Statut affiche d'un abonnement : "expire" est derive, jamais stocke.
+ * Un abonnement actif dont la date de fin est passee reste 'actif' en base
+ * (l'historique ne doit pas se reecrire tout seul), mais doit etre signale
+ * comme expire a l'ecran.
+ */
+function abonnement_display_statut(array $row): string
+{
+    $statut = (string) ($row['statut'] ?? '');
+
+    if (in_array($statut, ['actif', 'essai'], true) && !empty($row['date_fin']) && (string) $row['date_fin'] < date('Y-m-d')) {
+        return 'expire';
+    }
+
+    return $statut;
+}
+
+function abonnement_jours_restants(array $row): ?int
+{
+    if (empty($row['date_fin'])) {
+        return null;
+    }
+
+    return (int) floor((strtotime((string) $row['date_fin']) - strtotime(date('Y-m-d'))) / 86400);
+}
+
+function cabinet_statut_options(): array
+{
+    return ['actif', 'suspendu', 'ferme'];
+}
+
+function cabinet_statut_label(?string $statut): string
+{
+    return match ($statut) {
+        'actif' => 'Actif',
+        'suspendu' => 'Suspendu',
+        'ferme' => 'Ferme',
+        default => $statut !== null && $statut !== '' ? ucfirst($statut) : '—',
+    };
+}
+
+function facture_statut_options(): array
+{
+    return ['brouillon', 'emise', 'payee', 'annulee'];
+}
+
+function facture_statut_label(?string $statut): string
+{
+    return match ($statut) {
+        'brouillon' => 'Brouillon',
+        'emise' => 'Emise',
+        'payee' => 'Payee',
+        'annulee' => 'Annulee',
+        default => $statut !== null && $statut !== '' ? ucfirst($statut) : '—',
+    };
+}
+
+function paiement_mode_options(): array
+{
+    return ['virement', 'cheque', 'especes', 'carte', 'prelevement'];
+}
+
+function paiement_statut_options(): array
+{
+    return ['encaisse', 'en_attente', 'rejete', 'rembourse'];
+}
+
+/**
+ * Statut affiche d'une facture : "en retard" est derive, jamais stocke.
+ * Une echeance depassee ne rend pas la facture "en retard" si elle a deja ete
+ * payee ou annulee, ni si le statut est encore brouillon.
+ */
+function facture_display_statut(array $facture): string
+{
+    $statut = (string) ($facture['statut'] ?? '');
+
+    if ($statut === 'emise' && !empty($facture['date_echeance']) && (string) $facture['date_echeance'] < date('Y-m-d')) {
+        return 'en_retard';
+    }
+
+    return $statut;
+}
+
+function facture_display_statut_label(array $facture): string
+{
+    $statut = facture_display_statut($facture);
+
+    return $statut === 'en_retard' ? 'En retard' : facture_statut_label($statut);
+}
+
+/** Classe de pastille associee au statut affiche d'une facture. */
+function facture_statut_tone(array $facture): string
+{
+    return match (facture_display_statut($facture)) {
+        'payee' => 'badge-success',
+        'en_retard' => 'badge-danger',
+        'emise' => 'badge-warning',
+        default => 'badge-secondary',
+    };
+}
+
+function abonnement_statut_tone(?string $statut): string
+{
+    return match ($statut) {
+        'actif' => 'badge-success',
+        'essai' => 'badge-info',
+        'suspendu' => 'badge-danger',
+        'expire' => 'badge-warning',
+        default => 'badge-secondary',
+    };
+}
+
+function cabinet_statut_tone(?string $statut): string
+{
+    return match ($statut) {
+        'actif' => 'badge-success',
+        'suspendu' => 'badge-warning',
+        'ferme' => 'badge-secondary',
+        default => 'badge-secondary',
+    };
+}
+
+/**
+ * Warning non bloquant d'abonnement, rendu dans l'entete pour les comptes
+ * adherents. Retourne null si aucun avertissement n'est necessaire : compte
+ * Centre (statut 'centre'), base injoignable, ou abonnement actif confortable.
+ */
+function abonnement_bandeau(): ?array
+{
+    $state = current_abonnement_state();
+
+    // 'centre' couvre aussi la base injoignable : on n'alerte jamais sur une panne.
+    $statut = (string) ($state['statut'] ?? 'centre');
+    if ($statut === 'centre') {
+        return null;
+    }
+
+    $jours = $state['jours_restants'] === null ? null : (int) $state['jours_restants'];
+
+    if ($statut === 'absent' || $statut === 'suspendu' || ($statut === 'actif' && $jours !== null && $jours < 0)) {
+        return [
+            'tone' => 'error',
+            'message' => (string) $state['libelle'] . ' - contactez le Centre de Domiciliation pour regulariser votre situation.',
+        ];
+    }
+
+    if ($statut === 'essai' && $jours !== null && $jours <= 15) {
+        return [
+            'tone' => 'warning',
+            'message' => 'Votre essai se termine dans ' . $jours . ' jour(s) - pensez a renouveler votre abonnement.',
+        ];
+    }
+
+    if ($statut === 'actif' && $jours !== null && $jours <= 30) {
+        return [
+            'tone' => 'warning',
+            'message' => 'Votre abonnement expire dans ' . $jours . ' jour(s) - renouveler avant cette date pour eviter toute interruption.',
+        ];
+    }
+
+    return null;
+}
+
 function get_page_permission(string $page): ?string
 {
     $map = [
@@ -1754,6 +2108,12 @@ function get_page_permission(string $page): ?string
         'cession_dossier' => 'cessions.view',
         'pv_ago' => 'pv_ago.view',
         'pv_ago' => 'pv_ago.view',
+
+        'cabinets' => 'cabinets.view',
+        'plans' => 'plans.view',
+        'abonnements' => 'abonnements.view',
+        'factures' => 'factures.view',
+        'mon_abonnement' => 'mon_abonnement.view',
     ];
 
     return $map[$page] ?? null;

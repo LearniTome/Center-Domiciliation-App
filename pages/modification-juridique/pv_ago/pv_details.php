@@ -11,12 +11,23 @@ $viewId = (int) ($_GET['id'] ?? 0);
 // CSV Export
 if (isset($_GET['export']) && $_GET['export'] === 'csv' && has_permission('pv_ago.export')) {
     $searchExp = trim($_GET['q'] ?? '');
-    $whereExp = '';
+    $conditionsExp = [];
     $paramsExp = [];
-    if ($searchExp !== '') {
-        $whereExp = 'WHERE p.dossier_numero LIKE :q OR s.societe_raison_sociale LIKE :q2 OR p.exercice_clos LIKE :q3';
-        $paramsExp = ['q' => "%$searchExp%", 'q2' => "%$searchExp%", 'q3' => "%$searchExp%"];
+    // Cloisonnement par cabinet AVANT tout export : cet export liste tous les
+    // PV AGO, pas seulement le dossier affiche. Sans filtre, un adherent
+    // teleportait chez lui les PV AGO de tous les cabinets.
+    $scopeExp = tenant_scope('p');
+    if ($scopeExp['sql'] !== '') {
+        $conditionsExp[] = $scopeExp['sql'];
+        $paramsExp += $scopeExp['params'];
     }
+    if ($searchExp !== '') {
+        $conditionsExp[] = '(p.dossier_numero LIKE :q OR s.societe_raison_sociale LIKE :q2 OR p.exercice_clos LIKE :q3)';
+        $paramsExp['q'] = "%$searchExp%";
+        $paramsExp['q2'] = "%$searchExp%";
+        $paramsExp['q3'] = "%$searchExp%";
+    }
+    $whereExp = $conditionsExp !== [] ? 'WHERE ' . implode(' AND ', $conditionsExp) : '';
     $stmtExp = $pdo->prepare("SELECT p.*, s.societe_raison_sociale FROM pv_ago p LEFT JOIN societes s ON p.societe_id = s.id $whereExp ORDER BY p.created_at DESC");
     $stmtExp->execute($paramsExp);
     $rowsExp = [];
@@ -46,6 +57,9 @@ if (is_post() && isset($_POST['delete_pv_ago'])) {
     verify_csrf();
     $delId = (int) ($_POST['delete_pv_ago'] ?? 0);
     if ($delId > 0 && has_permission('pv_ago.delete')) {
+        // `delete_pv_ago` vient du formulaire : sans ce garde, un adherent
+        // supprime le PV AGO d'un autre cabinet en forgeant l'identifiant.
+        require_tenant_row($pdo, 'pv_ago', $delId);
         $pdo->prepare('DELETE FROM pv_ago WHERE id = :id')->execute(['id' => $delId]);
         set_flash('success', 'PV AGO supprime.');
         log_activity($pdo, 'delete', 'pv_ago', $delId);
@@ -58,6 +72,10 @@ if (is_post() && isset($_POST['generate_pv_ago'])) {
     verify_csrf();
     $genId = (int) ($_POST['generate_pv_ago'] ?? 0);
     if ($genId > 0 && has_permission('pv_ago.create')) {
+        // La generation lit le dossier et ecrit un document : sans ce garde,
+        // un adherent force la generation (et donc la lecture des donnees)
+        // d'un PV AGO d'un autre cabinet.
+        require_tenant_row($pdo, 'pv_ago', $genId);
         require_once __DIR__ . '/../../../src/analyseur_templates.php';
         require_once __DIR__ . '/../../../src/rendu_document.php';
         if (file_exists(__DIR__ . '/../../../vendor/autoload.php')) {
@@ -113,24 +131,41 @@ if (is_post() && isset($_POST['delete_docs'])) {
     verify_csrf();
     $selected = $_POST['selected_docs'] ?? [];
     if (!empty($selected) && has_permission('pv_ago.delete')) {
-        $in = build_in_params($selected);
+        // `selected_docs` est une donnee d'attaque : le lot est filtre sur
+        // l'etendue reelle du tenant avant tout unlink. Le filtre porte a la
+        // fois sur le rattachement au dossier (`pv_ago_id = :viewId`) et sur
+        // le cloisonnement des documents.
+        $lot = filter_accessible_ids($pdo, 'documents_generes', $selected);
+        if ($lot['ids'] === []) {
+            set_flash('error', 'Aucun document selectionne n\'est accessible a votre cabinet.');
+            redirect_to('pv_ago', ['id' => $viewId]);
+        }
+        $in = build_in_params($lot['ids']);
         $params = array_merge($in['params'], ['pid' => $viewId]);
         $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf FROM documents_generes WHERE id IN ({$in['sql']}) AND pv_ago_id = :pid"); // nosemgrep: tainted-sql-string -- values bound via named params
         $stmt->execute($params);
-        foreach ($stmt->fetchAll() as $doc) {
+        // Compte reel des lignes supprimees : `count($selected)` annoncait un
+        // succes pour des documents ignores par le cloisonnement.
+        $cibles = $stmt->fetchAll();
+        $supprimes = count($cibles);
+        foreach ($cibles as $doc) {
             if (!empty($doc['fichier_docx']) && file_exists($doc['fichier_docx'])) unlink($doc['fichier_docx']);
             if (!empty($doc['fichier_pdf']) && file_exists($doc['fichier_pdf'])) unlink($doc['fichier_pdf']);
         }
         $pdo->prepare("DELETE FROM documents_generes WHERE id IN ({$in['sql']}) AND pv_ago_id = :pid")->execute($params); // nosemgrep: tainted-sql-string -- values bound via named params
-        set_flash('success', count($selected) . ' document(s) supprime(s).');
+        set_flash('success', $supprimes . ' document(s) supprime(s).');
+        flash_partial_batch('la suppression', $lot['ignores']);
     }
     redirect_to('pv_ago', ['id' => $viewId]);
 }
 
 // ============ DETAIL VIEW ============
 if ($viewId > 0):
-    $stmt = $pdo->prepare('SELECT * FROM pv_ago WHERE id = :id');
-    $stmt->execute(['id' => $viewId]);
+    // Cloisonnement par cabinet sur le PV AGO lui-meme. `tenant_scope()`
+    // renvoie un fragment vide pour un compte Centre (acces total).
+    $scopePv = tenant_scope();
+    $stmt = $pdo->prepare('SELECT * FROM pv_ago WHERE id = :id' . ($scopePv['sql'] !== '' ? ' AND ' . $scopePv['sql'] : ''));
+    $stmt->execute(['id' => $viewId] + $scopePv['params']);
     $pv = $stmt->fetch();
     if (!$pv) {
         echo '<p class="table-empty">PV AGO introuvable.</p>';
@@ -143,8 +178,10 @@ if ($viewId > 0):
         $parsed = json_decode($pv['resolutions'], true);
         if (is_array($parsed)) $resolutions = $parsed;
     }
-    $stmtDocs = $pdo->prepare('SELECT * FROM documents_generes WHERE pv_ago_id = :pid ORDER BY id');
-    $stmtDocs->execute(['pid' => $viewId]);
+    $stmtDocs = $pdo->prepare('SELECT * FROM documents_generes WHERE pv_ago_id = :pid' . ($scopePv['sql'] !== '' ? ' AND ' . $scopePv['sql'] : '') . ' ORDER BY id');
+    // Seuls `:pid` et `:tenant_id` figurent dans la requete : PDO refuse les
+    // parametres surnuméraires, le tableau doit donc correspondre exactement.
+    $stmtDocs->execute(['pid' => $viewId] + $scopePv['params']);
     $docs = $stmtDocs->fetchAll();
 
     $hasDividende = !empty($pv['dividende_total']) && (float) $pv['dividende_total'] > 0;

@@ -55,6 +55,11 @@ if (!$societe) {
 
 $editing = isset($_GET['edit']) && $_GET['edit'] === '1';
 
+// Le `return` ci-dessus suffit deja : plus aucun gestionnaire POST n'est
+// atteignable pour une societe d'un autre cabinet. Cette assertion rend la
+// garantie explicite et survit a une evolution de l'ordre des blocs.
+require_tenant_row($pdo ?? null, 'societes', $societeId);
+
 $typeGen = (string) ($societe['societe_type_generation'] ?? '');
 $isCreation = $typeGen === 'creation';
 $retourPage = $isCreation ? 'creations' : 'domiciliations';
@@ -71,7 +76,16 @@ if (is_post() && isset($_POST['validate_submit']) && ($pdo ?? null) instanceof P
         set_flash('error', 'Selectionnez au moins un document.');
         redirect_to('societe', ['id' => $societeId]);
     }
-    $in = build_in_params($selected);
+    // `selected_files` est une donnee d'attaque, pas une preuve de droits :
+    // ce lot cible `documents_generes` par identifiant, sans contrainte de
+    // dossier. Sans filtre, un adherent valide les brouillons d'un autre
+    // cabinet en forgeant les ids.
+    $lot = filter_accessible_ids($pdo, 'documents_generes', $selected);
+    if ($lot['ids'] === []) {
+        set_flash('error', 'Aucun document selectionne n\'est accessible a votre cabinet.');
+        redirect_to('societe', ['id' => $societeId]);
+    }
+    $in = build_in_params($lot['ids']);
     $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf, doc_type FROM documents_generes WHERE valide = 0 AND id IN ({$in['sql']})"); // nosemgrep: tainted-sql-string -- values bound via named params
     $stmt->execute($in['params']);
     $docs = $stmt->fetchAll();
@@ -104,8 +118,9 @@ if (is_post() && isset($_POST['validate_submit']) && ($pdo ?? null) instanceof P
         $delParams = array_merge($in['params'], ['sid' => $societeId], $typeIn['params']);
         $delStmt->execute($delParams);
     }
-    set_flash('success', count($selected) . ' document(s) valide(s).');
-    log_activity($pdo, 'validate', 'document', $societeId, ($societe['societe_raison_sociale'] ?? '') . ' — ' . count($selected) . ' doc(s)');
+    set_flash('success', count($docs) . ' document(s) valide(s).');
+    flash_partial_batch('la validation', $lot['ignores']);
+    log_activity($pdo, 'validate', 'document', $societeId, ($societe['societe_raison_sociale'] ?? '') . ' — ' . count($docs) . ' doc(s)');
     redirect_to('societe', ['id' => $societeId]);
 }
 
@@ -113,7 +128,15 @@ if (is_post() && isset($_POST['delete_submit']) && ($pdo ?? null) instanceof PDO
     verify_csrf();
     $selected = $_POST['selected_files'] ?? [];
     if (count($selected) > 0) {
-        $in = build_in_params($selected);
+        // Garde avant tout `unlink()` : ce lot supprime des FICHIERS sur le
+        // disque, pas seulement des lignes. Un adherent pouvait detruire les
+        // documents generes d'un autre cabinet en forgeant les ids.
+        $lot = filter_accessible_ids($pdo, 'documents_generes', $selected);
+        if ($lot['ids'] === []) {
+            set_flash('error', 'Aucun document selectionne n\'est accessible a votre cabinet.');
+            redirect_to('societe', ['id' => $societeId]);
+        }
+        $in = build_in_params($lot['ids']);
         $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf FROM documents_generes WHERE id IN ({$in['sql']})"); // nosemgrep: tainted-sql-string -- values bound via named params
         $stmt->execute($in['params']);
         $docs = $stmt->fetchAll();
@@ -123,8 +146,9 @@ if (is_post() && isset($_POST['delete_submit']) && ($pdo ?? null) instanceof PDO
         }
         $stmt = $pdo->prepare("DELETE FROM documents_generes WHERE id IN ({$in['sql']})"); // nosemgrep: tainted-sql-string -- values bound via named params
         $stmt->execute($in['params']);
-        set_flash('error', count($selected) . ' document(s) supprime(s).');
-        log_activity($pdo, 'delete', 'document', $societeId, ($societe['societe_raison_sociale'] ?? '') . ' — ' . count($selected) . ' doc(s)');
+        set_flash('error', count($docs) . ' document(s) supprime(s).');
+        flash_partial_batch('la suppression', $lot['ignores']);
+        log_activity($pdo, 'delete', 'document', $societeId, ($societe['societe_raison_sociale'] ?? '') . ' — ' . count($docs) . ' doc(s)');
         redirect_to('societe', ['id' => $societeId]);
     }
 }
@@ -136,7 +160,14 @@ if (is_post() && isset($_POST['restore_submit']) && ($pdo ?? null) instanceof PD
         set_flash('error', 'Selectionnez au moins un document.');
         redirect_to('societe', ['id' => $societeId]);
     }
-    $in = build_in_params($selected);
+    // Meme garde que la validation et la suppression : le lot cible des
+    // documents par identifiant, hors de tout contrainte de dossier.
+    $lot = filter_accessible_ids($pdo, 'documents_generes', $selected);
+    if ($lot['ids'] === []) {
+        set_flash('error', 'Aucun document selectionne n\'est accessible a votre cabinet.');
+        redirect_to('societe', ['id' => $societeId]);
+    }
+    $in = build_in_params($lot['ids']);
     $stmt = $pdo->prepare("SELECT id, fichier_docx, fichier_pdf FROM documents_generes WHERE valide = 1 AND id IN ({$in['sql']})"); // nosemgrep: tainted-sql-string -- values bound via named params
     $stmt->execute($in['params']);
     $docs = $stmt->fetchAll();
@@ -161,8 +192,9 @@ if (is_post() && isset($_POST['restore_submit']) && ($pdo ?? null) instanceof PD
             'id' => $doc['id'],
         ]);
     }
-    set_flash('success', count($selected) . ' document(s) restaure(s) en brouillon.');
-        log_activity($pdo, 'restore', 'document', $societeId, ($societe['societe_raison_sociale'] ?? '') . ' — ' . count($selected) . ' doc(s)');
+    set_flash('success', count($docs) . ' document(s) restaure(s) en brouillon.');
+    flash_partial_batch('la restauration', $lot['ignores']);
+        log_activity($pdo, 'restore', 'document', $societeId, ($societe['societe_raison_sociale'] ?? '') . ' — ' . count($docs) . ' doc(s)');
     redirect_to('societe', ['id' => $societeId]);
 }
 

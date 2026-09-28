@@ -31,8 +31,14 @@ $contrats = [];
 
 if ($canView && ($pdo ?? null) instanceof PDO) {
     // Meme restriction que la liste des contrats : un utilisateur non admin
-    // ne voit que les contrats des societes qu'il a creees.
-    $filtreUser = contrat_user_filter(current_user());
+    // ne voit que les contrats des societes qu'il a creees. L'alias `s` est
+    // passe a contrat_user_filter() : le fragment SQL doit nommer la table
+    // par son alias, sinon MySQL rejette le cloisonnement.
+    $filtreUser = contrat_user_filter(current_user(), 's');
+    // `list_scope()` renvoie un predicat NU : le `AND` est a la charge de
+    // l'appelant, comme dans `associes_liste.php` et `societes_liste.php`.
+    // Sans lui, `WHERE 1 = 1 s.cabinet_id = :x` est un refus de syntaxe.
+    $userFilter = $filtreUser['sql'] !== '' ? ' AND ' . $filtreUser['sql'] : '';
     $stmt = $pdo->prepare('
         SELECT c.*, s.societe_raison_sociale,
                s.societe_dossier_domiciliation_number,
@@ -40,7 +46,7 @@ if ($canView && ($pdo ?? null) instanceof PDO) {
           FROM contrats c
           INNER JOIN societes s ON s.id = c.societe_id
          WHERE 1 = 1
-        ' . $filtreUser['sql'] . '
+        ' . $userFilter . '
          ORDER BY c.id DESC
     ');
     $stmt->execute($filtreUser['params']);

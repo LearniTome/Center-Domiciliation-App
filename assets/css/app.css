@@ -640,6 +640,78 @@ article.card + article.card {
     border: 1px solid rgba(74, 108, 247, 0.2);
 }
 
+.flash-warning {
+    background: rgba(255, 107, 53, 0.12);
+    color: var(--warning);
+    border: 1px solid rgba(255, 107, 53, 0.2);
+}
+
+/* Bandeau d'abonnement : alerte non bloquante, toujours accompanied d'un lien
+   vers l'ecran "Mon abonnement" pour que l'adherent puisse agir. */
+.sub-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 16px;
+    font-size: 0.9rem;
+    animation: slideDown 300ms ease;
+}
+.sub-banner .material-symbols-outlined {
+    font-size: 1.15rem;
+    flex: 0 0 auto;
+}
+.sub-banner-text {
+    flex: 1;
+}
+.sub-banner-error {
+    background: rgba(252, 66, 74, 0.12);
+    color: var(--danger);
+    border: 1px solid rgba(252, 66, 74, 0.2);
+}
+.sub-banner-warning {
+    background: rgba(255, 107, 53, 0.12);
+    color: var(--warning);
+    border: 1px solid rgba(255, 107, 53, 0.2);
+}
+
+/* Formulaires de facturation : on reutilise .form-grid / .field du projet, on
+   ajoute seulement le repli responsive (le .form-grid global est fige a 4
+   colonnes) et la barre d'actions. */
+.sub-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 12px 16px;
+}
+.sub-form-grid .field.full,
+.sub-form-grid .section-title {
+    grid-column: 1 / -1;
+}
+.sub-form-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+}
+/* Les cases a cocher heritent du `width: 100%` des champs texte : on les
+   remett a leur taille, comme le fait .role-inline-check pour les roles. */
+.sub-form-check {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.sub-form-check input[type="checkbox"] {
+    accent-color: var(--primary);
+    width: 14px;
+    height: 14px;
+    flex: 0 0 auto;
+}
+
 .section-header {
     display: flex;
     align-items: center;

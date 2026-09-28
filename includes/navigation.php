@@ -43,6 +43,11 @@ $navPermissions = [
     'activites_statuts' => 'configuration.view',
     'activites-ompic' => 'configuration.view',
     'pv-templates' => 'pv_resolutions.view',
+    'cabinets' => 'cabinets.view',
+    'plans' => 'plans.view',
+    'abonnements' => 'abonnements.view',
+    'factures' => 'factures.view',
+    'mon_abonnement' => 'mon_abonnement.view',
 ];
 
 function nav_item_visible(string $page, array $permMap): bool
@@ -60,6 +65,7 @@ $navSections = [
         'items' => [
             'dashboard' => ['Tableau de bord', 'dashboard'],
             'notifications' => ['Notifications', 'notifications'],
+            'mon_abonnement' => ['Mon abonnement', 'credit_card'],
         ],
     ],
     'Créations' => [
@@ -120,6 +126,15 @@ $navSections = [
             ['page' => 'centre', 'label' => "Centre d'affaires", 'icon' => 'apartment'],
             ['page' => 'roles', 'label' => 'Accès & audit', 'icon' => 'admin_panel_settings'],
             ['page' => 'formes-juridiques', 'label' => 'Référentiels', 'icon' => 'database'],
+        ],
+    ],
+    'Abonnements' => [
+        'icon' => 'payments',
+        'items' => [
+            'cabinets' => ['Cabinets clients', 'apartment'],
+            'abonnements' => ['Abonnements', 'credit_card'],
+            'factures' => ['Factures', 'receipt_long'],
+            'plans' => ['Plans tarifaires', 'sell'],
         ],
     ],
 ];

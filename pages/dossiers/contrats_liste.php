@@ -52,7 +52,13 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
 }
 
 $filtreUser = contrat_user_filter($user);
-$userFilter = $filtreUser['sql'];
+// `list_scope()` renvoie un PREDICAT NU, sans `AND` : c'est le contrat de la
+// fonction, respecté par `associes_liste.php`, `societes_liste.php` et
+// `modifications_juridiques.php`. Concatener le fragment directement apres un
+// `WHERE 1=1` produisait `WHERE 1=1 societes.cabinet_id = :scope_cabinet`,
+// que MySQL refuse (erreur 1064) : la page entiere levait une PDOException,
+// donc la liste des contrats etait inaccessible a tout adherent de cabinet.
+$userFilter = $filtreUser['sql'] !== '' ? ' AND ' . $filtreUser['sql'] : '';
 $userParams = $filtreUser['params'];
 
 if (($pdo ?? null) instanceof PDO) {

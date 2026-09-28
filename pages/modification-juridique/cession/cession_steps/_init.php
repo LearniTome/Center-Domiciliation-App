@@ -52,7 +52,14 @@ $tribunalTypes = [];
 $allTribunaux = [];
 
 if (($pdo ?? null) instanceof PDO) {
-    $stmt = $pdo->query('SELECT id, societe_raison_sociale, societe_dossier_domiciliation_number, societe_forme_juridique, societe_capital, societe_part_social, societe_ville FROM societes ORDER BY societe_raison_sociale');
+    // Cloisonne comme `fetch_societes_options()` : la liste deroulante de
+    // societes du wizard ne doit proposer que les societes du tenant, sinon
+    // un adherent y decouvre les raisons sociales des autres cabinets.
+    $socScope = tenant_scope();
+    $stmt = $pdo->prepare('SELECT id, societe_raison_sociale, societe_dossier_domiciliation_number, societe_forme_juridique, societe_capital, societe_part_social, societe_ville FROM societes'
+        . ($socScope['sql'] !== '' ? ' WHERE ' . $socScope['sql'] : '')
+        . ' ORDER BY societe_raison_sociale');
+    $stmt->execute($socScope['params']);
     $societesList = $stmt->fetchAll();
     $stmt = $pdo->query('SELECT * FROM ref_formes_juridiques ORDER BY forme_juridique');
     $formesJuridiques = $stmt->fetchAll();
@@ -129,6 +136,10 @@ if ($wizard['societe_id'] > 0 && ($pdo ?? null) instanceof PDO) {
 // Load editing from DB
 if ($editingId > 0 && !isset($_SESSION['_cession_loaded'])) {
     if (($pdo ?? null) instanceof PDO) {
+        // `?id=` + `?edit=1` recharge la cession dans le wizard. Sans ce
+        // garde, un adherent prechargeait dans sa session une cession d'un
+        // autre cabinet, puis la genrait etait ecraseait chez lui.
+        require_tenant_row($pdo, 'cessions', $editingId);
         $stmt = $pdo->prepare('SELECT * FROM cessions WHERE id = :id');
         $stmt->execute(['id' => $editingId]);
         $dbCession = $stmt->fetch();

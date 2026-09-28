@@ -167,10 +167,11 @@ $noSidebar = in_array($page ?? '', ['connexion', 'deconnexion'], true);
             </header>
             <?php endif; ?>
 
+            <?php require __DIR__ . '/bandeau_abonnement.php'; ?>
+
         <?php if ($flash): ?>
             <div class="flash flash-<?= e($flash['type']) ?>"><?= e($flash['message']) ?></div>
         <?php endif; ?>
-
         <?php if ($dbError !== null): ?>
             <div class="flash flash-error">
                 Connexion MySQL impossible. Verifiez XAMPP, phpMyAdmin et `config/database.php`.

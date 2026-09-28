@@ -99,4 +99,70 @@ final class TenantScopeTest extends TestCase
             );
         }
     }
+
+    /**
+     * `list_scope()` renvoie un PREDICAT NU : ni `AND` en tete, ni `WHERE`.
+     *
+     * Chaque appelant doit donc fournir lui-meme la conjonction. C est le
+     * contrat observe par `associes_liste.php`, `societes_liste.php` et
+     * `modifications_juridiques.php`.
+     *
+     * Trois pages le violaient : `contrats_liste.php`, `contrat.php` et
+     * `contrats_suivi.php` concatenaient le fragment brut apres un `WHERE`,
+     * produisant `WHERE 1=1 societes.cabinet_id = :x`. MySQL levait une erreur
+     * 1064 et la page entiere etait hors service — le cloisonnement n'etait
+     * donc jamais exerce, ni en production ni dans les tests, qui n'examinaient
+     * que la chaine du fragment sans jamais l'executer.
+     */
+    public function testLeFragmentEstUnPredicatNuSansConjonction(): void
+    {
+        $_SESSION = ['user_id' => 0, '_user_cache' => [
+            'id' => 0, 'cabinet_id' => 4, 'collaborateur_id' => null, 'role_is_system' => 0,
+        ]];
+
+        $fragment = list_scope('s')['sql'];
+
+        $this->assertNotSame('', $fragment, 'Le fragment est vide : le test ne prouve rien.');
+        $this->assertStringStartsNotWith(
+            'AND',
+            $fragment,
+            'list_scope() a gagne un AND en tete : les trois appelants qui ajoutent '
+            . 'le leur produiraient « AND AND ... ».'
+        );
+        $this->assertStringStartsNotWith(
+            'WHERE',
+            $fragment,
+            'Le fragment ne doit pas contenir WHERE : l\'appelant en fournit deja un.'
+        );
+    }
+
+    /**
+     * Chaque page qui consomme le fragment doit l'assembler correctement.
+     *
+     * Liste en dur, comme `TABLES_METIER_ATTENDUES` : c est un second regard
+     * independant, sinon le test reproduirait l'oubli qu'il traque.
+     */
+    public function testChaqueAppelantAjouteLeAnd(): void
+    {
+        $pages = [
+            'pages/dossiers/contrats_liste.php',
+            'pages/dossiers/contrat.php',
+            'pages/dossiers/contrats_suivi.php',
+            'pages/dossiers/associes_liste.php',
+            'pages/dossiers/societes_liste.php',
+        ];
+
+        foreach ($pages as $page) {
+            $chemin = dirname(__DIR__) . '/' . $page;
+            $this->assertFileExists($chemin, "Page attendue absente : $page");
+
+            $source = (string) file_get_contents($chemin);
+            $this->assertMatchesRegularExpression(
+                "/' AND '\s*\.\s*\\\$(?:filtreUser|userFilter|scope)\[/",
+                $source,
+                "$page concatene le fragment de list_scope() sans ajouter le AND : "
+                . 'MySQL refuse la requete (erreur 1064) et la page est hors service.'
+            );
+        }
+    }
 }

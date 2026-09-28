@@ -6,6 +6,23 @@ $editingId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 $editingRecord = $editingId > 0 ? fetch_record($pdo ?? null, 'collaborateurs', $editingId) : null;
 $showEdit = $editingRecord && isset($_GET['edit']);
 
+// Un `?id=` qui ne resout pas — ligne inexistante OU collaborateur d'un autre
+// cabinet — doit se lire comme un 404, pas comme une creation. Sans ce retour,
+// le gestionnaire POST tombait dans la branche INSERT : un adherent forgeant
+// l'identifiant d'un collaborateur etranger creait un doublon au lieu d'etre
+// refuse, et les lectures derivees ci-dessous fuitaient ses dossiers.
+if ($editingId > 0 && $editingRecord === null) {
+    http_response_code(404);
+    ?>
+    <section class="card stack">
+        <h2>Collaborateur introuvable</h2>
+        <p>La fiche demandee n'existe pas ou n'est plus disponible.</p>
+        <a class="btn" href="<?= e(app_url('collaborateurs')) ?>">Retour aux collaborateurs</a>
+    </section>
+    <?php
+    return;
+}
+
 // Determine type
 $collabType = '';
 $overrideType = field_value($_GET, 'type', '');
@@ -27,8 +44,12 @@ if ($editingRecord) {
 // collaborateur_societes). Le contrat le plus recent est repris pour afficher
 // le statut et la fin de validite sans alourdir la requete d'un second aller-
 // retour par ligne.
+//
+// La lecture est conditionnee par `$editingRecord` : interroger la liaison sur
+// `$editingId` seul exposait les dossiers d'un collaborateur d'un autre
+// cabinet, dont la fiche principale venait pourtant d'etre rejetee.
 $collabSocietes = [];
-if (($pdo ?? null) instanceof PDO && $editingId > 0) {
+if (($pdo ?? null) instanceof PDO && $editingId > 0 && $editingRecord) {
     $collabSocietesStmt = $pdo->prepare(
         "SELECT s.id AS societe_id,
                 s.societe_raison_sociale,

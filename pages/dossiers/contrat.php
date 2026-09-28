@@ -25,8 +25,14 @@ $alertes = [];
 if ($contratId > 0 && ($pdo ?? null) instanceof PDO) {
     // Meme restriction que la liste et le suivi : un utilisateur non admin
     // ne peut pas ouvrir en direct l'URL d'un contrat d'une societe qu'il
-    // n'a pas creee.
-    $filtreUser = contrat_user_filter(current_user());
+    // n'a pas creee. L'alias `s` est passe a contrat_user_filter() : le
+    // fragment SQL doit nommer la table par son alias, sinon MySQL rejette
+    // le cloisonnement et la page leve une PDOException.
+    $filtreUser = contrat_user_filter(current_user(), 's');
+    // `list_scope()` renvoie un predicat NU : le `AND` est a la charge de
+    // l'appelant, comme dans `associes_liste.php` et `societes_liste.php`.
+    // Sans lui, `WHERE c.id = :id s.cabinet_id = :x` est un refus de syntaxe.
+    $userFilter = $filtreUser['sql'] !== '' ? ' AND ' . $filtreUser['sql'] : '';
     $stmt = $pdo->prepare('
         SELECT c.*, s.societe_raison_sociale, s.societe_ville,
                s.societe_dossier_domiciliation_number,
@@ -34,7 +40,7 @@ if ($contratId > 0 && ($pdo ?? null) instanceof PDO) {
           FROM contrats c
           INNER JOIN societes s ON s.id = c.societe_id
          WHERE c.id = :id
-        ' . $filtreUser['sql'] . '
+        ' . $userFilter . '
     ');
     $stmt->execute(['id' => $contratId] + $filtreUser['params']);
     $contrat = $stmt->fetch() ?: null;
@@ -58,6 +64,12 @@ if ($contratId > 0 && ($pdo ?? null) instanceof PDO) {
 if (is_post() && $canEdit && ($pdo ?? null) instanceof PDO) {
     verify_csrf();
     $action = (string) ($_POST['action'] ?? '');
+
+    // Garde explicite avant toute ecriture. Les trois branches exigent deja
+    // `$contrat !== null`, donc le SELECT cloisonne suffirait ; ce controle
+    // rend la garantie independante du filtre de lecture et interdit
+    // l'UPDATE d'une ligne d'un autre cabinet si la lecture evolue.
+    require_tenant_row($pdo, 'contrats', $contratId);
 
     if ($action === 'renouveler' && $contrat !== null) {
         $dateDebut = field_value($_POST, 'contrat_date_debut');

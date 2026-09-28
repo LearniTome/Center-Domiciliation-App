@@ -57,16 +57,143 @@
 - [x] Filtre tenant sur les listes (`fetch_all_documents`, `fetch_societes_options`, `associes_liste`, `cessions_liste`)
 - [x] Filtre tenant sur `api.php` (quick_create rattache `cabinet_id`, inline_update/bulk_update gate par `api_row_visible`)
 - [x] Garde IDOR sur `documents.php` (lecture + PDF + validation + suppression)
-- [ ] Garde IDOR sur les pages détail restantes (`societe`, `associe`, `contrat`, `collaborateur`, `cession_dossier`, `societe_suivi`)
+- [x] Garde IDOR sur les pages détail restantes (`societe`, `associe`, `contrat`, `collaborateur`, `cession_dossier`, `societe_suivi`)
+- [x] Extensions Phase 3 : `pv_details` (export, suppression, generation, detail), `cession_suivi`, `cession_details_dossier`, wizards `cession` / `pv_ago` (listes deroulantes + rechargement en edition)
+- [x] Lots d'IDs forges : `filter_accessible_ids()` sur validation / suppression / restauration de documents (`societe_details`, `cession_details_dossier`, `pv_details`)
+- [x] Contrats : alias SQL `s` + predicat qualifie dans `contrat.php`, `contrats_suivi.php`, `contrats_liste.php` (voir « Contrat de list_scope() » ci-dessous)
+- [x] Dashboard : suppression de la branche fail-open `if ($userId !== null) … else …` au profit de `list_scope()` (voir « Fuite inter-cabinet du dashboard » ci-dessous)
+
+##### Contrat de `list_scope()` / `tenant_scope()` (piege recurrant)
+
+Ces deux fonctions renvoient un **predicat nu** : ni `AND` en tete, ni `WHERE`.
+C'est le contrat, respecte par `associes_liste.php`, `societes_liste.php` et
+`modifications_juridiques.php` (qui joint via un tableau `$where[]`).
+
+L'appelant **doit** fournir la conjonction. Trois pages le violaient et
+l'ignoraisent, car MySQL leve une erreur de syntaxe qui masquait le
+cloisonnement au lieu de le signaler comme un defaut de securite :
+
+- `contrats_liste.php`, `contrat.php`, `contrats_suivi.php` concatenaient le
+  fragment brut apres un `WHERE` → erreur 1064, page hors service pour tout
+  adherent. Corrige par `' AND ' . $scope['sql']`.
+- `contrat_user_filter()` delegue a `list_scope($alias)` et nomme la colonne
+  par l'alias. Passer le nom complet alors que la requete ecrit
+  `INNER JOIN societes s` produisait `societes.cabinet_id` → erreur 1054.
+- `cession_suivi.php` joignait `cession_suivi_documents d` et
+  `cession_suivi_etapes e`, qui ont **toutes deux** `cabinet_id` : un predicat
+  non qualifie est ambigu (erreur 1052). Il faut `tenant_scope('d')`.
+
+Ces trois familles de defauts sont couvertes par
+`TenantScopeTest::testLeFragmentEstUnPredicatNuSansConjonction`,
+`::testChaqueAppelantAjouteLeAnd` et
+`TenantIsolationTest::testLeSuiviDeCessionQualifieLaColonneCabinet`.
+
+##### Fuite inter-cabinet du dashboard
+
+`pages/accueil/dashboard.php` separait ses requetes en
+`if ($userId !== null) { … } else { … }`, avec `created_by = :uid` dans la
+premiere branche et **aucun filtre** dans la seconde. Or un adherent de cabinet
+n'a pas de fiche collaborateur par conception : `current_collaborateur_id()`
+valait `null`, la page tombait donc dans la branche non filtree et le tableau de
+bord exposait societes, contrats, revenus, documents, alertes et activite de
+**tous** les cabinets. C'etait la fuite la plus grave du lot : aucun forged ID
+n'est necessaire, un simple affichage suffit.
+
+Le correctif ne cree pas une deuxieme regle de portee, il branche la page sur
+`list_scope()`, qui portait deja la regle correcte :
+
+| Cas | Predicat |
+|---|---|
+| Adherent de cabinet | `cabinet_id = :scope_cabinet` |
+| Employe du Centre sans `dossiers.view_all` | `created_by = :scope_collaborateur` |
+| Centre habilite a tout voir | aucun filtre |
+
+Deux pieges lors de la reecriture :
+
+- **Ne pas simplifier a `cabinet_id` partout.** Le Centre garde la vue globale,
+  mais un employe du Centre *sans* `dossiers.view_all` doit conserver la vue
+  « mes dossiers » : le remplacer par `cabinet_id` lui aurait elargi ses droits
+  a l'integralite de la plateforme. C'est la raison d'etre du troisieme cas.
+- **Le fragment `activity_logs`** porte sur une table de journal, pas sur
+  `societes` : il se cloisonne via `list_scope('al', null)` pour ne pas
+  produire un predicat `created_by` sur une colonne inexistante.
+
+Le dashboard passe maintenant par une closure `$runScoped()` qui remplace un
+jeton `{{SCOPE}}` **avec** son `AND`, et le retire quand le perimetre est vide :
+`WHERE 1=1 {{SCOPE}}` reste donc valide pour le Centre comme pour un adherent.
+
+Deux bugs de cle corriges au passage :
+
+- `collabActivity` comparait `activity_logs.user_id` a un `collaborateur_id`.
+  Deux identifiants sans rapport : ce fil revenait presque toujours vide pour
+  un employe du Centre. Il porte desormais sur l'ID DE COMPTE.
+- `contrats` **n'a pas** de colonne `created_by`. Tous les compteurs de contrats
+  passent par une jointure `societes` plutot que par un predicat direct.
+
+Couvert par `TenantIsolationTest::testLeDashboardFiltreUnAdherentSansFicheCollaborateur`,
+`::testLeRevenuDuDashboardIgnoreLesContratsDUnAutreCabinet`,
+`::testLesDocumentsDuDashboardSontCloisonnes`,
+`::testLeCentreVoitLesDossiersDesDeuxCabinetsSurLeDashboard` et
+`::testLeDashboardNestPlusOrganiseAutourDUneBrancheNonFiltrees` (garde de forme
+sur le code, commentaires retires via `token_get_all()`, pour que le defaut
+puisse rester documente dans la page). Le test de revenu verifie le **montant**
+et non l'absence d'une chaine : un libelle masque peut cacher un agregat global.
+
+##### Bug de schema corrige au passage
+
+`contrats_suivi.php` selectionnait `s.societe_dossier_domicilation_number`
+(il manque un `i` : la colonne reelle est `societe_dossier_domiciliation_number`).
+MySQL levait « Unknown column » (1054) et la page du suivi des contrats etait
+integralement hors service. Aucune autre occurrence de la typo dans le depot.
 
 #### Phase 4 — Abonnements
-- [ ] `require_active_subscription()` — blocage des utilisateurs cabinet si `abonnement` expiré/suspendu
-- [ ] Contrôle des quotas plan (`max_utilisateurs`, `max_societes`, `max_dossiers`)
+
+**Écart assumé avec l'estimation d'origine** : `require_active_subscription()` n'est
+**pas** implémenté. Bloquer un utilisateur dont l'abonnement est expiré lui
+couperait l'accès à l'application — donc à l'écran qui permet de **régler** la
+facture — sans issue. L'état est affiché de façon non bloquante (Phase 5). Le
+verrouillage reste ouvert si l'exploitation le souhaite.
+
+- [ ] `require_active_subscription()` — blocage des utilisateurs cabinet si `abonnement` expiré/suspendu *(écarté, voir ci-dessus)*
+- [ ] Contrôle des quotas plan (`max_utilisateurs`, `max_societes`, `max_dossiers`) — les quotas sont **affichés** dans `mon_abonnement`, pas encore appliqués
+- [x] Statuts dérivés `expire` / `en_retard` calculés à l'affichage, jamais stockés (`abonnement_display_statut()`, `facture_display_statut()`)
+- [x] Numérotation de facture `FAC-YYYY-NNN` avec reprise sur collision (`next_facture_number()`)
 
 #### Phase 5 — Écrans d'administration
-- [ ] Routes + pages : `cabinets`, `cabinet`, `plans`, `abonnements`, `abonnement`, `paiements`, `factures`, `users`, `user`, `parametres`
-- [ ] Menu : section « Administration » (Super Admin), section « Mon cabinet » (Administrateur Cabinet)
-- [ ] Bandeau d'état abonnement dans l'entête (J−30 / expiré / suspendu)
+
+- [x] Routes + pages : `cabinets`, `plans`, `abonnements`, `factures`, `mon_abonnement`
+- [x] Menu : section « Administration » (Super Admin), entrée « Mon abonnement » (adhérent)
+- [x] Bandeau d'état abonnement dans l'entête (essai J−5 / actif J−30 / expiré / suspendu / absent), **non bloquant**
+- [x] `mon_abonnement` en lecture seule, cloisonné par `current_cabinet_id()` — aucun paramètre d'URL n'élargit le périmètre
+- [ ] Pages `users` / `user` / `parametres` (non traitées : la gestion des comptes passe encore par la configuration)
+
+Encaissements : intégrés à `factures.php` plutôt qu'une page `paiements` séparée —
+un paiement n'existe que pour solder une facture, et une facture payée est
+verrouillée (ni suppression, ni second encaissement).
+
+##### Deux bugs corrigés en fin de phase
+
+`current_abonnement_state(?PDO $pdo = null)` **ignorait son paramètre**. Le
+paramètre et la directive `global` portant le même nom, `global $pdo;` écrasait
+la valeur reçue et la fonction retombait sur la connexion globale. Invisible en
+production, où la seule utilisation passe par la connexion globale — le test
+restant « correct » par hasard. Toute connexion passée explicitement (test,
+script de rapprochement, futur job CLI) aurait lu la mauvaise base, en silence,
+la `PDOException` étant absorbée en `statut = 'centre'`. Corrigé en lisant
+`$GLOBALS['pdo']` sans déclarer de `global`. Couvrir par
+`AbonnementTest::testLePdoPasseEnArgumentPrimeSurLaConnexionGlobale`, qui monte un
+schéma miroir contenant le même plan marqué `suspendu` : sans le correctif, la
+fonction renvoie l'état de la base du projet.
+
+`pages/abonnement/abonnements.php` ne proposait que les plans **actifs** dans le
+`<select>`, y compris en édition. Un abonnement rattaché à un plan désactivé
+voyait « Sur mesure (sans plan) » et la sauvegarde **écrasait `plan_id` par NULL**,
+perdant la formule et le prix négocié sans la moindre erreur. Le select charge
+donc les plans inactifs en édition, et seulement là : en création un plan inactif
+ne doit pas être vendable. Une garde en base (plan obligatoire, ou
+`ON DELETE RESTRICT` sur `abonnements.plan_id`) éviterait la même perte par un
+autre chemin.
+
 
 #### Sécurité multi-tenancy
 - [ ] Toute requête métier passe par `tenant_scope_sql()` ou `assert_tenant_access()` — revue fichier par fichier (en cours)
@@ -98,8 +225,14 @@
 - [x] 2026-09-13 — Workflow domiciliation reél en 12 étapes (Récupération docs → Vérification → Remplir → Envoi contrats → Retour légalisés → Légalisation attestations → Appel/remise → Attestation d'enregistrement 48h → Dossier final 10-20j → Impression → Classement → Archivage cloud) : labels/icônes/suggestions docs, seeding wizard, reset des sociétés existantes (migration 20260913_000001), bandeau + puce rouge échéances expirées (CIN gérants, certificat négatif), PDF suivi 12 étapes + délais, fix collaborateur via collaborateurs.societe_id — déployé en prod (10467db), validé visuellement
 
 ### Qualité
-- [x] Suite de tests PHPUnit 11 sur `src/` + integration tenant : TemplateAnalyzer / DocumentRenderer / TenantIsolation (121 tests, 285 assertions) — `vendor/bin/phpunit`
+- [x] Suite de tests PHPUnit 11 sur `src/` + integration tenant : TemplateAnalyzer / DocumentRenderer / TenantIsolation (132 tests, 319 assertions) — `vendor/bin/phpunit`
 - [x] 2026-09-27 — Vérification manuelle avant commit (skill manual-test) : `php -l` sur les 7 fichiers modifiés, 101 tests PHPUnit verts, parcours navigateur sur le serveur de dev
+- [x] 2026-09-28 — Phase 3 terminée. `php -l` sur 191 fichiers, 132 tests PHPUnit verts (0 skip), parcours HTTP des 14 pages affectées sans erreur PHP.
+  Trois bugs **préexistants** trouvés en route, tous invisibles aux tests unitaires (qui n'examinaient que la chaîne du fragment, jamais son exécution) :
+  (1) `list_scope()` renvoie un prédicat nu mais 3 pages le concatenaient sans `AND` → erreur 1064, liste des contrats inaccessible à tout adhérent ;
+  (2) `contrat_user_filter()` sans alias sur `INNER JOIN societes s` → erreur 1054 sur 2 fiches ;
+  (3) `contrats_suivi.php` : colonne `societe_dossier_domicilation_number` mal orthographiée → erreur 1054, page du suivi des contrats hors service.
+  Les 27 tests dépendants de MySQL étaient **skippés** en CI locale (base arrêtée) : ils s'exécutent désormais et couvrent cessions, étapes de suivi et documents.
       (modale quick-create collaborateur, dialogues de confirmation, cartes KPI du suivi des contrats, wizard étape 1) — 0 erreur console. Défaut corrigé au passage : la création rapide
       n'insérait jamais de ligne dans les listes (`<template data-row-template>` est un frère de `<table>`, `buildRow` ne le trouvait pas → toast de succès sans ligne visible) ;
       la branche liste recharge désormais la page, la branche `<select>` du wizard reste sans rechargement

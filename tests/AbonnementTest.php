@@ -1,0 +1,396 @@
+<?php
+
+declare(strict_types=1);
+
+use PHPUnit\Framework\TestCase;
+
+/**
+ * Phase 4/5 - Regles metier de la facturation SaaS.
+ *
+ * Trois familles :
+ *
+ * 1. Les statuts DERIVES. `expire` (abonnement) et `en_retard` (facture)
+ *    n'existent pas en base : ils sont calcules a l'affichage. C'est
+ *    volontaire, l'historique ne doit pas se reecrire tout seul quand le
+ *    temps passe, mais cela impose que l'ecran et les exports passent par
+ *    les memes fonctions.
+ *
+ * 2. Le choix de l'abonnement de reference. Un cabinet peut avoir un
+ *    historique ; c'est celui dont la date de fin est la plus eloignee parmi
+ *    essai/actif/suspendu qui fait foi pour le bandeau.
+ *
+ * 3. Regression : `current_abonnement_state(?PDO)` IGNORAIT son parametre.
+ *    Le nom du parametre etant `pdo`, l'instruction `global $pdo` qui suit
+ *    ecrasait la valeur recue par l'appelant et la fonction retombait sur la
+ *    connexion globale. Sans argument (le seul cas reellement utilise par le
+ *    bandeau) le defaut etait invisible ; des qu'un appelant passait une
+ *    connexion - un test, un script de rapprochement, un futur job CLI - il
+ *    lisait la mauvaise base, en silence.
+ */
+final class AbonnementTest extends TestCase
+{
+    private const CAB_A = 90021;
+    private const CAB_B = 90022;
+    private const USER_A = 90021;
+
+    private static ?PDO $pdo = null;
+
+    public static function setUpBeforeClass(): void
+    {
+        try {
+            self::$pdo = new PDO(
+                'mysql:host=127.0.0.1;dbname=center_domiciliation;charset=utf8mb4',
+                'root',
+                '',
+                [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+            );
+        } catch (PDOException $e) {
+            self::markTestSkipped('Base de developpement injoignable : ' . $e->getMessage());
+        }
+
+        $pdo = self::$pdo;
+        self::purge();
+
+        $pdo->exec("INSERT INTO cabinets (id, nom, code, statut) VALUES
+            (" . self::CAB_A . ", 'Cabinet A test', 'ABTA', 'actif'),
+            (" . self::CAB_B . ", 'Cabinet B test', 'ABTB', 'actif')");
+
+        $pdo->exec("INSERT INTO users (id, nom_complet, email, password_hash, cabinet_id, role_id, statut)
+            VALUES (" . self::USER_A . ", 'Adherent A test', 'abo-tst-a@example.test', '!', "
+            . self::CAB_A . ", NULL, 'actif')");
+
+        $GLOBALS['pdo'] = $pdo;
+    }
+
+    public static function tearDownAfterClass(): void
+    {
+        self::purge();
+        unset($GLOBALS['pdo']);
+        $_SESSION = [];
+    }
+
+    private static function purge(): void
+    {
+        if (!self::$pdo instanceof PDO) {
+            return;
+        }
+        $pdo = self::$pdo;
+        $ids = self::CAB_A . ',' . self::CAB_B;
+        $pdo->exec("DELETE FROM paiements WHERE cabinet_id IN ($ids)");
+        $pdo->exec("DELETE FROM factures WHERE cabinet_id IN ($ids)");
+        $pdo->exec("DELETE FROM abonnements WHERE cabinet_id IN ($ids)");
+        $pdo->exec("DELETE FROM user_roles WHERE user_id = " . self::USER_A);
+        $pdo->exec("DELETE FROM user_permissions WHERE user_id = " . self::USER_A);
+        $pdo->exec("DELETE FROM users WHERE id = " . self::USER_A);
+        $pdo->exec("DELETE FROM cabinets WHERE id IN ($ids)");
+    }
+
+    protected function setUp(): void
+    {
+        if (!self::$pdo instanceof PDO) {
+            self::markTestSkipped('Base indisponible.');
+        }
+        $pdo = self::$pdo;
+        $ids = self::CAB_A . ',' . self::CAB_B;
+        $pdo->exec("DELETE FROM paiements WHERE cabinet_id IN ($ids)");
+        $pdo->exec("DELETE FROM factures WHERE cabinet_id IN ($ids)");
+        $pdo->exec("DELETE FROM abonnements WHERE cabinet_id IN ($ids)");
+
+        $_SESSION = ['user_id' => self::USER_A];
+        unset($_SESSION['_user_cache'], $_SESSION['_permissions_cache']);
+    }
+
+    private function abo(int $cabinetId, string $statut, string $dateFin, string $debut = '2026-01-01'): void
+    {
+        self::$pdo->exec("INSERT INTO abonnements
+            (cabinet_id, date_debut, date_fin, statut, prix_annuel_negocie, devise, auto_renew)
+            VALUES ($cabinetId, '$debut', '$dateFin', '$statut', 1000, 'MAD', 0)");
+    }
+
+    /* ================================================================
+     * 1. Statuts derives
+     * ================================================================ */
+
+    public function testAbonnementExpireEstDeriveEtJamaisStocke(): void
+    {
+        $row = ['statut' => 'actif', 'date_fin' => '2020-01-01'];
+
+        self::assertSame('expire', abonnement_display_statut($row));
+        // La base reste intacte : c'est l'affichage qui expire.
+        self::assertSame('actif', $row['statut']);
+    }
+
+    public function testEssaiEcheanceEstEgalementExpire(): void
+    {
+        self::assertSame('expire', abonnement_display_statut(['statut' => 'essai', 'date_fin' => '2020-01-01']));
+    }
+
+    public function testAbonnementNonEchuGardeSonStatut(): void
+    {
+        $futur = date('Y-m-d', strtotime('+30 days'));
+        self::assertSame('actif', abonnement_display_statut(['statut' => 'actif', 'date_fin' => $futur]));
+        self::assertSame('essai', abonnement_display_statut(['statut' => 'essai', 'date_fin' => $futur]));
+    }
+
+    public function testResilieEtSuspenduNeDeriventPas(): void
+    {
+        $passe = '2020-01-01';
+        // Un abonnement resilie n'est pas "expire" : c'est une sortie, pas une
+        // echeance. Le libelle ne doit pas mentir sur la sortie du client.
+        self::assertSame('resilie', abonnement_display_statut(['statut' => 'resilie', 'date_fin' => $passe]));
+        self::assertSame('suspendu', abonnement_display_statut(['statut' => 'suspendu', 'date_fin' => $passe]));
+    }
+
+    public function testLibelleExpireExiste(): void
+    {
+        self::assertSame('Expire', abonnement_statut_label('expire'));
+    }
+
+    public function testJoursRestantsNegatifQuandEcheancePassee(): void
+    {
+        self::assertSame(-3, abonnement_jours_restants(['date_fin' => date('Y-m-d', strtotime('-3 days'))]));
+        self::assertSame(3, abonnement_jours_restants(['date_fin' => date('Y-m-d', strtotime('+3 days'))]));
+        self::assertNull(abonnement_jours_restants(['date_fin' => null]));
+    }
+
+    public function testFactureEnRetardEstDerivee(): void
+    {
+        $passe = date('Y-m-d', strtotime('-5 days'));
+        $futur = date('Y-m-d', strtotime('+5 days'));
+
+        self::assertSame('en_retard', facture_display_statut([
+            'statut' => 'emise', 'date_echeance' => $passe, 'montant_ttc' => '100.00',
+        ]));
+        self::assertSame('emise', facture_display_statut([
+            'statut' => 'emise', 'date_echeance' => $futur, 'montant_ttc' => '100.00',
+        ]));
+    }
+
+    public function testFacturePayeeOuAnnuleeNeDevientJamaisEnRetard(): void
+    {
+        $passe = date('Y-m-d', strtotime('-5 days'));
+        self::assertSame('payee', facture_display_statut([
+            'statut' => 'payee', 'date_echeance' => $passe, 'montant_ttc' => '100.00',
+        ]));
+        self::assertSame('annulee', facture_display_statut([
+            'statut' => 'annulee', 'date_echeance' => $passe, 'montant_ttc' => '100.00',
+        ]));
+    }
+
+    public function testFactureSansEcheanceNeTombeJamaisEnRetard(): void
+    {
+        // Pas d'echeance = pas d'etable de comparaison, la facture ne peut
+        // pas etre en retard.
+        self::assertSame('emise', facture_display_statut([
+            'statut' => 'emise', 'date_echeance' => null, 'montant_ttc' => '100.00',
+        ]));
+    }
+
+    /* ================================================================
+     * 2. Abonnement de reference
+     * ================================================================ */
+
+    public function testAbonnementDeReferenceEstLePlusEloigne(): void
+    {
+        $this->abo(self::CAB_A, 'actif', date('Y-m-d', strtotime('+20 days')));
+        $this->abo(self::CAB_A, 'essai', date('Y-m-d', strtotime('+5 days')));
+
+        $state = current_abonnement_state(self::$pdo);
+        self::assertSame('actif', $state['statut']);
+        self::assertSame(20, $state['jours_restants']);
+    }
+
+    public function testResilieNEntrePasDansLeChoixDeReference(): void
+    {
+        $this->abo(self::CAB_A, 'resilie', date('Y-m-d', strtotime('+900 days')));
+        $this->abo(self::CAB_A, 'actif', date('Y-m-d', strtotime('+10 days')));
+
+        $state = current_abonnement_state(self::$pdo);
+        self::assertSame('actif', $state['statut']);
+    }
+
+    public function testCabinetSansAbonnementEstAbsent(): void
+    {
+        $state = current_abonnement_state(self::$pdo);
+        self::assertSame('absent', $state['statut']);
+    }
+
+    public function testLeCabinetDeLAdherentEstSeulConsidere(): void
+    {
+        // Le cabinet B a un abonnement confortable, le cabinet A rien du tout.
+        // L'adherent A ne doit surtout pas heriter de l'etat de B.
+        $this->abo(self::CAB_B, 'actif', date('Y-m-d', strtotime('+300 days')));
+
+        self::assertSame('absent', current_abonnement_state(self::$pdo)['statut']);
+    }
+
+    public function testCompteCentreEstNeutre(): void
+    {
+        $_SESSION = ['user_id' => 99999999];
+        unset($_SESSION['_user_cache']);
+        $this->abo(self::CAB_B, 'actif', date('Y-m-d', strtotime('+300 days')));
+
+        self::assertSame('centre', current_abonnement_state(self::$pdo)['statut']);
+    }
+
+    /* ================================================================
+     * 3. Regression : le PDO passe en argument est respecte
+     * ================================================================ */
+
+    public function testLePdoPasseEnArgumentPrimeSurLaConnexionGlobale(): void
+    {
+        // On construit un schema miroir qui contient les MEMES tables mais un
+        // abonnement marque. Si la fonction lisait la connexion globale au lieu
+        // du parametre, elle renverrait le statut de l'abonnement du projet et
+        // non celui du miroir.
+        $miroir = 'test_abo_miroir';
+        $avant = $GLOBALS['pdo'];
+        $pdo = self::$pdo;
+
+        try {
+            $pdo->exec("DROP DATABASE IF EXISTS $miroir");
+            $pdo->exec("CREATE DATABASE $miroir");
+            $ombre = new PDO(
+                "mysql:host=127.0.0.1;dbname=$miroir;charset=utf8mb4",
+                'root',
+                '',
+                [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+            );
+            $ombre->exec('CREATE TABLE plans (id INT PRIMARY KEY, nom VARCHAR(120) NULL, code VARCHAR(40) NULL)');
+            $ombre->exec('CREATE TABLE abonnements (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                cabinet_id INT NOT NULL,
+                plan_id INT NULL,
+                date_fin DATE NOT NULL,
+                statut VARCHAR(20) NOT NULL
+            )');
+            $ombre->exec("INSERT INTO abonnements (cabinet_id, plan_id, date_fin, statut)
+                          VALUES (" . self::CAB_A . ", NULL, '" . date('Y-m-d', strtotime('+7 days')) . "', 'suspendu')");
+        } catch (PDOException $e) {
+            self::markTestSkipped('Impossible de creer le schema miroir : ' . $e->getMessage());
+        }
+
+        // Le compte de session appartient au cabinet A et l'identite est lue
+        // sur la connexion globale (current_user() n'accepte pas de PDO).
+        $GLOBALS['pdo'] = $pdo;
+        $this->abo(self::CAB_A, 'actif', date('Y-m-d', strtotime('+300 days')));
+
+        $state = current_abonnement_state($ombre);
+
+        // Le miroir ne contient QUE le 'suspendu' du cabinet A : s'il est lu,
+        // c'est que le parametre a bien ete utilise.
+        self::assertSame('suspendu', $state['statut'], 'le PDO passe en argument a ete ignore');
+        self::assertSame(7, $state['jours_restants']);
+
+        $GLOBALS['pdo'] = $avant;
+        $pdo->exec("DROP DATABASE IF EXISTS $miroir");
+    }
+
+    public function testConnexionGlobaleUtiliseeSiAucunPdoNestPasse(): void
+    {
+        $this->abo(self::CAB_A, 'actif', date('Y-m-d', strtotime('+60 days')));
+
+        $state = current_abonnement_state();
+        self::assertSame('actif', $state['statut']);
+        self::assertSame(60, $state['jours_restants']);
+    }
+
+    /* ================================================================
+     * 4. Bandeau : severites et non-bloquance
+     * ================================================================ */
+
+    public function testBandeauSilencieuxPourUnAbonnementSain(): void
+    {
+        $this->abo(self::CAB_A, 'actif', date('Y-m-d', strtotime('+120 days')));
+        self::assertNull(abonnement_bandeau());
+    }
+
+    public function testBandeauAvertitAvantExpiration(): void
+    {
+        $this->abo(self::CAB_A, 'actif', date('Y-m-d', strtotime('+10 days')));
+        $bandeau = abonnement_bandeau();
+        self::assertNotNull($bandeau);
+        self::assertSame('warning', $bandeau['tone']);
+    }
+
+    public function testBandeauAvertitEnFinDEssai(): void
+    {
+        $this->abo(self::CAB_A, 'essai', date('Y-m-d', strtotime('+5 days')));
+        $bandeau = abonnement_bandeau();
+        self::assertNotNull($bandeau);
+        self::assertSame('warning', $bandeau['tone']);
+        self::assertStringContainsString('essai', $bandeau['message']);
+    }
+
+    public function testBandeauErreurSiExpireSuspenduOuAbsent(): void
+    {
+        foreach ([['actif', '-2 days'], ['suspendu', '+30 days']] as [$statut, $ecart]) {
+            $this->setUp();
+            $this->abo(self::CAB_A, $statut, date('Y-m-d', strtotime($ecart)));
+            $bandeau = abonnement_bandeau();
+            self::assertNotNull($bandeau, $statut . ' ' . $ecart);
+            self::assertSame('error', $bandeau['tone'], $statut . ' ' . $ecart);
+        }
+
+        // Aucun abonnement du tout.
+        $this->setUp();
+        $bandeau = abonnement_bandeau();
+        self::assertNotNull($bandeau);
+        self::assertSame('error', $bandeau['tone']);
+    }
+
+    public function testBandeauJamaisPourUnCompteCentre(): void
+    {
+        $_SESSION = ['user_id' => 99999999];
+        unset($_SESSION['_user_cache']);
+        self::assertNull(abonnement_bandeau());
+    }
+
+    /* ================================================================
+     * 5. Numerotation et options
+     * ================================================================ */
+
+    public function testNumeroDeFactureSuitLeFormatAttendu(): void
+    {
+        $numero = next_facture_number(self::$pdo);
+        self::assertMatchesRegularExpression('/^FAC-' . date('Y') . '-\d{3}$/', $numero);
+    }
+
+    public function testNumeroDeFactureRepartApresCollision(): void
+    {
+        // Une facture portant le numero attendu doit faire avancer la
+        // sequence, sinon la contrainte UNIQUE uq_factures_numero rejette
+        // l'insertion en production.
+        $premier = next_facture_number(self::$pdo);
+        $suffixe = substr($premier, -3);
+
+        $pdo = self::$pdo;
+        $pdo->exec("INSERT INTO factures (numero, cabinet_id, date_emission, montant_ht, tva_pct, montant_ttc, statut)
+                    VALUES ('$premier', " . self::CAB_A . ", CURDATE(), 100, 20, 120, 'brouillon')");
+
+        try {
+            $suivant = next_facture_number(self::$pdo);
+            self::assertNotSame($premier, $suivant);
+            self::assertSame(sprintf('%03d', ((int) $suffixe + 1) % 1000), substr($suivant, -3));
+        } finally {
+            $pdo->exec("DELETE FROM factures WHERE numero = '$premier'");
+        }
+    }
+
+    public function testFetchPlansOptionsFiltreLesPlansInactifsParDefaut(): void
+    {
+        $pdo = self::$pdo;
+        $pdo->exec("DELETE FROM plans WHERE code = 'TSTOPT'");
+        $pdo->exec("INSERT INTO plans (code, nom, prix_annuel, devise, actif, trial_jours, sort_order)
+                    VALUES ('TSTOPT', 'Plan inactif test', 100, 'MAD', 0, 0, 999)");
+        $planId = (int) $pdo->lastInsertId();
+
+        try {
+            // Les options sont indexees par id de plan, pas par code.
+            self::assertArrayNotHasKey($planId, fetch_plans_options($pdo), 'un plan inactif ne doit pas etre proposé a la creation');
+            self::assertArrayHasKey($planId, fetch_plans_options($pdo, false), 'l\'edition doit pouvoir relire un plan devenu inactif');
+        } finally {
+            $pdo->exec("DELETE FROM plans WHERE id = " . $planId);
+        }
+    }
+}

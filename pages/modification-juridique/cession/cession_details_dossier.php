@@ -10,14 +10,20 @@ $cessionParts = [];
 $documents = [];
 
 if ($cessionId > 0 && ($pdo ?? null) instanceof PDO) {
+    // Cloisonnement par cabinet sur la cession elle-meme. `tenant_scope()`
+    // renvoie un fragment vide pour un compte Centre (acces total) et
+    // `c.cabinet_id = :tenant_id` pour un adherent : sans lui, changer l'id
+    // dans l'URL ouvre le dossier de cession d'un cabinet concurrent.
+    $scope = tenant_scope('c');
+
     $stmt = $pdo->prepare('
         SELECT c.*, s.societe_raison_sociale, s.societe_dossier_domiciliation_number AS ste_dossier,
                s.societe_forme_juridique, s.societe_ville, s.societe_capital, s.societe_part_social
         FROM cessions c
         LEFT JOIN societes s ON s.id = c.societe_id
-        WHERE c.id = :id
+        WHERE c.id = :id' . ($scope['sql'] !== '' ? ' AND ' . $scope['sql'] : '') . '
     ');
-    $stmt->execute(['id' => $cessionId]);
+    $stmt->execute(['id' => $cessionId] + $scope['params']);
     $cession = $stmt->fetch();
 
     if ($cession) {
@@ -26,8 +32,12 @@ if ($cessionId > 0 && ($pdo ?? null) instanceof PDO) {
         $cessionParts = $stmt->fetchAll();
 
         $societeId = (int) ($cession['societe_id'] ?? 0);
-        $stmt = $pdo->prepare("SELECT id, doc_type, fichier_docx, fichier_pdf, taille_ko, valide, created_at, template_source FROM documents_generes WHERE societe_id = :sid ORDER BY created_at DESC");
-        $stmt->execute(['sid' => $societeId]);
+        // Les documents sont cloisonnes pour eux-memes : une cession accessible
+        // peut pointer vers une society partagee dont les documents ont ete
+        // rattaches a un autre cabinet.
+        $docScope = tenant_scope();
+        $stmt = $pdo->prepare("SELECT id, doc_type, fichier_docx, fichier_pdf, taille_ko, valide, created_at, template_source FROM documents_generes WHERE societe_id = :sid" . ($docScope['sql'] !== '' ? ' AND ' . $docScope['sql'] : '') . " ORDER BY created_at DESC");
+        $stmt->execute(['sid' => $societeId] + $docScope['params']);
         $documents = $stmt->fetchAll();
     }
 }
@@ -51,10 +61,19 @@ if (is_post() && isset($_POST['validate_submit']) && ($pdo ?? null) instanceof P
         set_flash('error', 'Selectionnez au moins un document.');
         redirect_to('cession_dossier', ['id' => $cessionId]);
     }
-    $in = build_in_params($selected);
+    // `selected_files` est une donnee d'attaque, pas une preuve de droits :
+    // sans ce filtre, un adherent valide les documents d'un autre cabinet en
+    // forgeant des identifiants. L'echec est PARTIEL et annonce.
+    $lot = filter_accessible_ids($pdo, 'documents_generes', $selected);
+    if ($lot['ids'] === []) {
+        set_flash('error', 'Selectionnez au moins un document.');
+        redirect_to('cession_dossier', ['id' => $cessionId]);
+    }
+    $in = build_in_params($lot['ids']);
     $stmt = $pdo->prepare("UPDATE documents_generes SET valide = 1 WHERE societe_id = :sid AND id IN ({$in['sql']})"); // nosemgrep: tainted-sql-string -- values bound via named params
     $stmt->execute(array_merge(['sid' => $societeId], $in['params']));
-    set_flash('success', count($selected) . ' document(s) valide(s).');
+    set_flash('success', count($lot['ids']) . ' document(s) valide(s).');
+    flash_partial_batch('la validation', $lot['ignores']);
     redirect_to('cession_dossier', ['id' => $cessionId]);
 }
 

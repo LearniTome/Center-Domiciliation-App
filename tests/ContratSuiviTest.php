@@ -279,6 +279,48 @@ final class ContratSuiviTest extends TestCase
         $this->assertStringNotContainsString(':scope_', $filtre['sql']);
     }
 
+    /**
+     * Regression : le fragment SQL doit nommer la table par l'alias de la
+     * requete appelante.
+     *
+     * `contrat_user_filter()` delegue a `list_scope($alias)`, qui prefixe la
+     * colonne. Les pages `contrat.php` et `contrats_suivi.php` ecrivent
+     * `INNER JOIN societes s` tout en passant le nom complet : MySQL levait
+     * alors « Unknown column 'societes.cabinet_id' in 'where clause' » et la
+     * page entiere remontait une PDOException — donc le cloisonnement n'était
+     * jamais applique, ni rendu, ni constate.
+     */
+    public function testLeFiltreSuitLAliasDeLaRequeteAppelante(): void
+    {
+        $this->connecter(['id' => 12, 'cabinet_id' => 4, 'collaborateur_id' => null, 'role_is_system' => 0]);
+
+        $defaut = contrat_user_filter(null);
+        $this->assertStringContainsString('societes.cabinet_id = :scope_cabinet', $defaut['sql']);
+
+        $aliase = contrat_user_filter(null, 's');
+        $this->assertStringContainsString(
+            's.cabinet_id = :scope_cabinet',
+            $aliase['sql'],
+            'L\'alias passe n\'est pas repris dans le fragment SQL.'
+        );
+        $this->assertStringNotContainsString(
+            'societes.cabinet_id',
+            $aliase['sql'],
+            'Le fragment nomme la table complete alors que la requete l\'a aliasee : MySQL rejette.'
+        );
+        $this->assertSame(['scope_cabinet' => 4], $aliase['params']);
+    }
+
+    /** Meme garantie pour la portee individuelle (`created_by`). */
+    public function testLaPorteeIndividuelleSuitEgagementLAlias(): void
+    {
+        $this->connecter(['id' => 13, 'cabinet_id' => null, 'collaborateur_id' => 7, 'role_is_system' => 0]);
+
+        $filtre = contrat_user_filter(null, 's');
+        $this->assertStringContainsString('s.created_by = :scope_collaborateur', $filtre['sql']);
+        $this->assertSame(['scope_collaborateur' => 7], $filtre['params']);
+    }
+
     protected function tearDown(): void
     {
         $_SESSION = [];

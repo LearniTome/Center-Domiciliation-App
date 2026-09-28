@@ -25,6 +25,7 @@ $allowedPages = [
     'modifications', 'cessions', 'cession', 'cession_dossier', 'cession_suivi',
     'pv_ago', 'pv_ago_wizard',
     'pv-templates',
+    'cabinets', 'plans', 'abonnements', 'factures', 'mon_abonnement',
 ];
 
 $pageDir = [
@@ -48,6 +49,12 @@ $pageDir = [
     'contrats_suivi' => 'dossiers',
     'collaborateurs' => 'dossiers',
     'collaborateur' => 'dossiers',
+    // Abonnements SaaS (Centre + adherent)
+    'cabinets' => 'abonnement',
+    'plans' => 'abonnement',
+    'abonnements' => 'abonnement',
+    'factures' => 'abonnement',
+    'mon_abonnement' => 'abonnement',
     // Modification juridique
     // Auth
     'connexion' => 'auth',
@@ -209,6 +216,11 @@ $pageTitleMap = [
     'pv_ago' => 'PV Assemblee Generale Ordinaire',
     'pv_ago_wizard' => 'PV Assemblee Generale Ordinaire',
     'pv-templates' => 'Modèles de résolutions PV',
+    'cabinets' => 'Cabinets clients',
+    'plans' => 'Plans tarifaires',
+    'abonnements' => 'Abonnements',
+    'factures' => 'Factures',
+    'mon_abonnement' => 'Mon abonnement',
 ];
 
 // Public pages without sidebar layout
@@ -267,6 +279,20 @@ if (function_exists('has_permission')) {
     }
     if ($page === 'roles' && has_permission('roles.create')) {
         $pageActions = '<a class="btn btn-next" href="' . e(app_url('role')) . '"><span class="material-symbols-outlined">add</span> Nouveau role</a>';
+    }
+    if ($page === 'cabinets' && has_permission('cabinets.create')) {
+        $pageActions = '<a class="btn btn-next" href="' . e(app_url('cabinets', ['action' => 'new'])) . '"><span class="material-symbols-outlined">add</span> Nouveau cabinet</a>';
+    }
+    // Les plans n'ont pas de droit `plans.create` : toutes les ecritures
+    // passent par `plans.edit`.
+    if ($page === 'plans' && has_permission('plans.edit')) {
+        $pageActions = '<a class="btn btn-next" href="' . e(app_url('plans', ['action' => 'new'])) . '"><span class="material-symbols-outlined">add</span> Nouveau plan</a>';
+    }
+    if ($page === 'abonnements' && has_permission('abonnements.create')) {
+        $pageActions = '<a class="btn btn-next" href="' . e(app_url('abonnements', ['action' => 'new'])) . '"><span class="material-symbols-outlined">add</span> Nouvel abonnement</a>';
+    }
+    if ($page === 'factures' && has_permission('factures.create')) {
+        $pageActions = '<a class="btn btn-next" href="' . e(app_url('factures', ['action' => 'new'])) . '"><span class="material-symbols-outlined">add</span> Nouvelle facture</a>';
     }
     if ($page === 'cession') {
         $pageActions = '<a class="btn btn-cancel" href="' . e(app_url('cessions')) . '"><span class="material-symbols-outlined">close</span> Annuler</a>';

@@ -151,6 +151,10 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
     if (isset($_POST['quick_advance'])) {
         $etapeId = (int) ($_POST['etape_id'] ?? 0);
         if ($etapeId > 0) {
+            // L'UPDATE ci-dessous cible `WHERE id = :id` seul : sans ce garde,
+            // un adherent de cabinet avancait le statut d'une etape d'un
+            // AUTRE dossier en forgeant `etape_id` depuis la vue liste.
+            require_tenant_row($pdo, 'societe_suivi_etapes', $etapeId);
             $stmt = $pdo->prepare('SELECT statut, societe_id FROM societe_suivi_etapes WHERE id = :id');
             $stmt->execute(['id' => $etapeId]);
             $etape = $stmt->fetch();
@@ -242,6 +246,10 @@ if (is_post() && ($pdo ?? null) instanceof PDO) {
         $allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
         $extension = strtolower(pathinfo($_FILES['doc_file']['name'], PATHINFO_EXTENSION));
         if ($etapeId > 0 && in_array($_FILES['doc_file']['type'], $allowedTypes, true)) {
+            // `etape_id` vient du formulaire : sans ce garde, le fichier
+            // etait rattache a une etape d'un dossier d'un autre cabinet,
+            // visible par son proprietaire dans son suivi.
+            require_tenant_row($pdo, 'societe_suivi_etapes', $etapeId);
             $uploadDir = __DIR__ . '/../../uploads/suivi/' . $societeId . '/';
             if (!is_dir($uploadDir)) {
                 mkdir($uploadDir, 0777, true);

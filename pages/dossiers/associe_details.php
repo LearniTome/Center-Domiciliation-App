@@ -43,6 +43,11 @@ if (!$associe) {
 
 $editing = isset($_GET['edit']) && $_GET['edit'] === '1';
 
+// Le `return` ci-dessus suffit deja : les gestionnaires POST (edition,
+// suppression) ne sont atteignables que pour un associe visible du tenant.
+// Cette assertion rend la garantie explicite et independante de l'ordre.
+require_tenant_row($pdo ?? null, 'associes', $associeId);
+
 $qualitesOptions = [];
 if ($editing && ($pdo ?? null) instanceof PDO) {
     $qualitesOptions = fetch_reference_options($pdo, 'ref_qualites_associe', 'qualite_associe');

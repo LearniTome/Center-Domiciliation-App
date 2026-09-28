@@ -61,28 +61,41 @@ $etapes = [];
 $documents = [];
 
 if ($cessionId > 0 && ($pdo ?? null) instanceof PDO) {
+    // Cloisonnement par cabinet : sans lui, un adherent ouvre le suivi d'une
+    // cession d'un autre cabinet en changeant l'id dans l'URL. `tenant_scope()`
+    // renvoie un fragment vide pour un compte Centre (acces total).
+    $scope = tenant_scope('c');
+
     $stmt = $pdo->prepare('
         SELECT c.*, s.societe_raison_sociale, s.societe_forme_juridique
         FROM cessions c
         LEFT JOIN societes s ON s.id = c.societe_id
-        WHERE c.id = :id
+        WHERE c.id = :id' . ($scope['sql'] !== '' ? ' AND ' . $scope['sql'] : '') . '
     ');
-    $stmt->execute(['id' => $cessionId]);
+    $stmt->execute(['id' => $cessionId] + $scope['params']);
     $cession = $stmt->fetch();
 
     if ($cession) {
-        $stmt = $pdo->prepare('SELECT * FROM cession_suivi_etapes WHERE cession_id = :id ORDER BY ordre');
-        $stmt->execute(['id' => $cessionId]);
+        // Les etapes et documents sont cloisonnes pour eux-memes.
+        $etapeScope = tenant_scope();
+        $stmt = $pdo->prepare('SELECT * FROM cession_suivi_etapes WHERE cession_id = :id' . ($etapeScope['sql'] !== '' ? ' AND ' . $etapeScope['sql'] : '') . ' ORDER BY ordre');
+        $stmt->execute(['id' => $cessionId] + $etapeScope['params']);
         $etapes = $stmt->fetchAll();
 
+        // Alias obligatoire : la requete joint `cession_suivi_documents d` et
+        // `cession_suivi_etapes e`, qui portent TOUTES DEUX `cabinet_id`. Un
+        // predicat non qualifie (`cabinet_id = :tenant_id`) est ambigu et MySQL
+        // le refuse (erreur 1052) : la page du suivi de cession etait hors
+        // service. La contrainte porte sur le document (`d`).
+        $docScope = tenant_scope('d');
         $stmt = $pdo->prepare('
             SELECT d.*, e.etape
             FROM cession_suivi_documents d
             JOIN cession_suivi_etapes e ON e.id = d.etape_id
-            WHERE e.cession_id = :id
+            WHERE e.cession_id = :id' . ($docScope['sql'] !== '' ? ' AND ' . $docScope['sql'] : '') . '
             ORDER BY d.uploaded_at DESC
         ');
-        $stmt->execute(['id' => $cessionId]);
+        $stmt->execute(['id' => $cessionId] + $docScope['params']);
         $documents = $stmt->fetchAll();
         $docsByEtape = [];
         foreach ($documents as $d) {
@@ -107,6 +120,14 @@ if (!$cession) {
                 LEFT JOIN societes s ON s.id = c.societe_id';
         $conditions = [];
         $params = [];
+        // Cloisonnement de la liste : un adherent ne voit que les suivis des
+        // cessions de SON cabinet. Le filtre est pose en premiere condition
+        // pour rester valable meme sans recherche.
+        $scope = tenant_scope('c');
+        if ($scope['sql'] !== '') {
+            $conditions[] = $scope['sql'];
+            $params += $scope['params'];
+        }
         if ($q !== '') {
             $like = '%' . $q . '%';
             $conditions[] = '(s.societe_raison_sociale LIKE :q1 OR c.cession_dossier LIKE :q2)';
