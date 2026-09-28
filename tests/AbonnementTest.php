@@ -535,9 +535,9 @@ final class AbonnementTest extends TestCase
     public function testTypesDeCabinetCouvrentLesCinqNaturesExigees(): void
     {
         $expected = [
-            'comptable_agree' => 'Cabinet comptable (Comptable agree)',
+            'comptable_agree' => 'Cabinet comptable (Comptable agréé)',
             'expertise_comptable' => "Cabinet d'expertise comptable",
-            'comptable_independant' => 'Comptable independant',
+            'comptable_independant' => 'Comptable indépendant',
             'juridique_avocat' => 'Cabinet juridique - Avocat',
             'juridique_notaire' => 'Cabinet juridique - Notaire',
         ];
@@ -553,8 +553,8 @@ final class AbonnementTest extends TestCase
     {
         // Valeur absente : les cabinets anterieurs a la migration n'ont pas de
         // type. L'ecran doit rester renderisable, pas lever un match() Error.
-        self::assertSame('Non renseigne', cabinet_type_label(null));
-        self::assertSame('Non renseigne', cabinet_type_label(''));
+        self::assertSame('Non renseigné', cabinet_type_label(null));
+        self::assertSame('Non renseigné', cabinet_type_label(''));
         self::assertSame('badge-secondary', cabinet_type_tone(null), 'un cabinet sans type ne doit pas porter la couleur d un type metier');
         self::assertSame('Legal', cabinet_type_label('legal'), 'un slug inconnu est repris brut');
     }
@@ -578,7 +578,7 @@ final class AbonnementTest extends TestCase
         // pas etre rapproche de son interlocuteur sur les memes identifiants.
         $attendus = [
             'type_cabinet', 'telephone_fixe', 'telephone_mobile',
-            'qualification', 'fonction', 'identifiant_fiscal', 'taxe_professionnelle',
+            'identifiant_fiscal', 'taxe_professionnelle',
         ];
 
         $presentes = self::$pdo->query('SHOW COLUMNS FROM cabinets')->fetchAll(PDO::FETCH_COLUMN);
@@ -590,6 +590,29 @@ final class AbonnementTest extends TestCase
         foreach (['code', 'nom', 'raison_sociale', 'email', 'telephone', 'adresse', 'ville', 'ice', 'rc', 'statut', 'notes'] as $colonne) {
             self::assertContains($colonne, $presentes, 'colonne historique perdue : ' . $colonne);
         }
+    }
+
+    public function testLesChampsRedondantsDuFormulaireCabinetOntEteRetires(): void
+    {
+        // `qualification` et `fonction` doublonnaient le type de cabinet, qui
+        // les exprime deja, et aucun autre module ne les relisait. Les retirer
+        // impose de les sortir aussi de la recherche : une clause LIKE sur une
+        // colonne absente fait echouer toute la requete de listing.
+        $presentes = self::$pdo->query('SHOW COLUMNS FROM cabinets')->fetchAll(PDO::FETCH_COLUMN);
+
+        foreach (['qualification', 'fonction'] as $colonne) {
+            self::assertNotContains($colonne, $presentes, 'colonne a retirer encore presente : ' . $colonne);
+        }
+
+        // `raison_sociale` n'est en revanche pas supprimee : la migration a
+        // reporte sa valeur dans `nom`, et conserver la colonne evite de
+        // detruire l'historique des cabinets anterieurs a la fusion. Elle ne
+        // recoit plus d'ecriture, l'ecran et les exports lisent `nom`.
+        self::assertContains(
+            'raison_sociale',
+            $presentes,
+            'raison_sociale doit rester en base, la fusion se fait sur le nom unique'
+        );
     }
 
     public function testTypeDeCabinetResteNullablePourLesDossiersExistants(): void

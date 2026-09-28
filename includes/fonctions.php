@@ -2055,7 +2055,8 @@ function cabinet_statut_tone(?string $statut): string
  * cette table n'a ni Avocat ni Notaire, et son axe est la qualite d'un
  * intermediaire, pas la nature du cabinet. Le vocabulaire est fixe, donc
  * figer les slugs evite un referentiel de plus a maintenir pour une liste que
- * le Centre ne fait pas varier. `qualification` reste un texte libre.
+ * le Centre ne fait pas varier. Une ancienne colonne texte `qualification`,
+ * supprimee, faisait doublon avec cette liste.
  */
 function cabinet_type_options(): array
 {
@@ -2071,12 +2072,12 @@ function cabinet_type_options(): array
 function cabinet_type_label(?string $type): string
 {
     return match ($type) {
-        'comptable_agree' => 'Cabinet comptable (Comptable agree)',
+        'comptable_agree' => 'Cabinet comptable (Comptable agréé)',
         'expertise_comptable' => "Cabinet d'expertise comptable",
-        'comptable_independant' => 'Comptable independant',
+        'comptable_independant' => 'Comptable indépendant',
         'juridique_avocat' => 'Cabinet juridique - Avocat',
         'juridique_notaire' => 'Cabinet juridique - Notaire',
-        default => $type !== null && $type !== '' ? ucfirst($type) : 'Non renseigne',
+        default => $type !== null && $type !== '' ? ucfirst($type) : 'Non renseigné',
     };
 }
 

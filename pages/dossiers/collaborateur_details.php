@@ -424,17 +424,8 @@ $isNew = !$editingRecord;
 ?>
 
 <style>
-.collab-edit-form .card { padding: 8px 10px; height: 100%; }
-.collab-edit-form .card > .form-grid:last-child { min-height: 0; flex: 1; }
-.collab-edit-form .section-header { margin-bottom: 0; padding: 0 0 4px; }
-.collab-edit-form .section-header h2 { font-size: 0.75rem; }
-.collab-edit-form .form-grid { display: flex; flex-wrap: wrap; gap: 4px 8px; }
-.collab-edit-form .field { flex-direction: row; align-items: center; gap: 3px; flex: 1 1 120px; min-width: 0; }
-.collab-edit-form .field > span { font-size: 0.58rem; white-space: nowrap; flex-shrink: 0; }
-.collab-edit-form .field input,
-.collab-edit-form .field select,
-.collab-edit-form .field textarea { font-size: 0.7rem; padding: 2px 4px; flex: 1; min-width: 50px; }
-.collab-edit-form .field.full { flex: 1 1 100%; }
+/* Mise en page, champs compacts et apercu : voir `.form-compact` (app.css),
+   partage avec le formulaire Cabinet. */
 .collab-edit-form .perms-table { font-size: 0.65rem; }
 .collab-edit-form .perms-table tbody td { padding: 2px 4px; }
 .collab-edit-form .perms-table tbody td.cat-label-cell { font-size: 0.65rem; min-width: 140px; }
@@ -500,7 +491,7 @@ $isNew = !$editingRecord;
             </div>
         </div>
 
-        <form method="post" class="collab-edit-form" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+        <form method="post" class="collab-edit-form form-compact">
         <?= csrf_input() ?>
         <input type="hidden" name="id" value="<?= e((string) $formData['id']) ?>">
         <input type="hidden" name="collaborateur_type" value="<?= e($collabType) ?>">

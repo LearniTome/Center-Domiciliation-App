@@ -20,14 +20,13 @@ $editId = isset($_GET['edit']) ? (int) $_GET['edit'] : 0;
 $formOpen = isset($_GET['action']) && $_GET['action'] === 'new';
 
 $formData = [
-    'code' => '', 'type_cabinet' => '', 'nom' => '', 'raison_sociale' => '', 'email' => '',
+    'code' => '', 'type_cabinet' => '', 'nom' => '', 'email' => '',
     'telephone' => '', 'telephone_fixe' => '', 'telephone_mobile' => '',
-    'qualification' => '', 'fonction' => '',
     'adresse' => '', 'ville' => '', 'ice' => '', 'rc' => '',
     'identifiant_fiscal' => '', 'taxe_professionnelle' => '',
-    'statut' => 'actif', 'notes' => '',
+    'statut' => 'actif',
 ];
-$formError = null;
+$fieldErrors = [];
 
 if ($db && $editId > 0) {
     $stmt = $db->prepare('SELECT * FROM cabinets WHERE id = :id');
@@ -107,63 +106,65 @@ if (is_post() && $db) {
             $statut = 'actif';
         }
 
-        $errors = [];
+        // Les erreurs sont indexees par champ : le formulaire les rend sous la
+        // saisie concernee. Une seule message par champ, le premier compte
+        // (`??=`), pour qu'une regle de longueur ne soit pas recouverte par une
+        // regle de format plus tard dans le meme POST.
+        $marquer = static function (string $champ, string $message) use (&$fieldErrors): void {
+            $fieldErrors[$champ] ??= $message;
+        };
 
         // La colonne reste nullable pour les cabinets deja enregistres, dont on
         // ignore le type, mais tout enregistrement passe par cette porte.
         if (!in_array($typeCabinet, cabinet_type_options(), true)) {
-            $errors[] = $typeCabinet === ''
+            $marquer('type_cabinet', $typeCabinet === ''
                 ? 'Le type de cabinet est obligatoire.'
-                : 'Ce type de cabinet est inconnu.';
+                : 'Ce type de cabinet est inconnu.');
         }
 
         // `maxlength` n'est respectable que par le navigateur : un POST direct
         // tronquerait silencieusement en base. On refuse plutot que d'ecrire
-        // une valeur amputee. Le libelle francais accompagne l'erreur, sinon le
-        // message expose le nom de la colonne.
+        // une valeur amputee. Le libelle n'est pas repris dans le message, il
+        // est deja porte par l'intitule du champ, au-dessus de la saisie.
         $lengths = [
-            'code' => [40, 'Code'],
-            'nom' => [150, 'Nom'],
-            'raison_sociale' => [190, 'Raison sociale'],
-            'email' => [190, 'Email'],
-            'telephone' => [40, 'Telephone'],
-            'telephone_fixe' => [60, 'Telephone fixe'],
-            'telephone_mobile' => [60, 'Telephone mobile'],
-            'qualification' => [150, 'Qualification'],
-            'fonction' => [150, 'Fonction'],
-            'adresse' => [255, 'Adresse'],
-            'ville' => [120, 'Ville'],
-            'ice' => [40, 'ICE'],
-            'rc' => [60, 'RC'],
-            'identifiant_fiscal' => [100, 'Identifiant fiscal (IF)'],
-            'taxe_professionnelle' => [100, 'Taxe professionnelle (TP)'],
+            'code' => 40,
+            'nom' => 150,
+            'email' => 190,
+            'telephone' => 40,
+            'telephone_fixe' => 60,
+            'telephone_mobile' => 60,
+            'adresse' => 255,
+            'ville' => 120,
+            'ice' => 40,
+            'rc' => 60,
+            'identifiant_fiscal' => 100,
+            'taxe_professionnelle' => 100,
         ];
-        foreach ($lengths as $field => [$max, $label]) {
+        foreach ($lengths as $field => $max) {
             if (mb_strlen(field_value($_POST, $field)) > $max) {
-                $errors[] = 'Le champ « ' . $label . ' » depasse ' . $max . ' caracteres.';
+                $marquer($field, 'Maximum ' . $max . ' caractères.');
             }
         }
 
         if ($code === '') {
-            $errors[] = 'Le code du cabinet est obligatoire.';
+            $marquer('code', 'Le code du cabinet est obligatoire.');
         }
         if ($nom === '') {
-            $errors[] = 'Le nom du cabinet est obligatoire.';
+            $marquer('nom', 'Le nom du cabinet est obligatoire.');
         }
         if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
-            $errors[] = 'L\'adresse email est invalide.';
+            $marquer('email', 'Adresse email invalide.');
         }
 
-        if ($code !== '') {
+        if ($code !== '' && !isset($fieldErrors['code'])) {
             $dup = $db->prepare('SELECT id FROM cabinets WHERE code = :code AND id <> :id');
             $dup->execute(['code' => $code, 'id' => $targetId]);
             if ($dup->fetch()) {
-                $errors[] = 'Ce code de cabinet est deja utilise.';
+                $marquer('code', 'Ce code de cabinet est déjà utilisé.');
             }
         }
 
-        if ($errors !== []) {
-            $formError = implode(' ', $errors);
+        if ($fieldErrors !== []) {
             $formOpen = true;
             $formData = array_merge($formData, $_POST);
         } else {
@@ -171,25 +172,26 @@ if (is_post() && $db) {
             // les exports affichent alors '-' via `?? '-'` au lieu d'un trou.
             $opt = static fn (string $value): ?string => $value === '' ? null : $value;
 
+            // `raison_sociale` et `notes` sont volontairement absents du
+            // payload : le formulaire ne les propose plus. Les laisser hors
+            // ecriture les preserve telles quelles en mise a jour (elles
+            // sortent de l'ecran, elles ne sont pas effacees) et les laissent a
+            // NULL sur creation, ou le nom unique porte la denomination.
             $payload = [
                 'code' => $code,
                 'type_cabinet' => $typeCabinet,
                 'nom' => $nom,
-                'raison_sociale' => field_value($_POST, 'raison_sociale'),
-                'email' => $email,
-                'telephone' => field_value($_POST, 'telephone'),
+                'email' => $opt($email),
+                'telephone' => $opt(field_value($_POST, 'telephone')),
                 'telephone_fixe' => $opt(field_value($_POST, 'telephone_fixe')),
                 'telephone_mobile' => $opt(field_value($_POST, 'telephone_mobile')),
-                'qualification' => $opt(field_value($_POST, 'qualification')),
-                'fonction' => $opt(field_value($_POST, 'fonction')),
-                'adresse' => field_value($_POST, 'adresse'),
-                'ville' => field_value($_POST, 'ville'),
-                'ice' => field_value($_POST, 'ice'),
-                'rc' => field_value($_POST, 'rc'),
+                'adresse' => $opt(field_value($_POST, 'adresse')),
+                'ville' => $opt(field_value($_POST, 'ville')),
+                'ice' => $opt(field_value($_POST, 'ice')),
+                'rc' => $opt(field_value($_POST, 'rc')),
                 'identifiant_fiscal' => $opt(field_value($_POST, 'identifiant_fiscal')),
                 'taxe_professionnelle' => $opt(field_value($_POST, 'taxe_professionnelle')),
                 'statut' => $statut,
-                'notes' => field_value($_POST, 'notes'),
             ];
 
             if ($targetId > 0) {
@@ -229,10 +231,15 @@ if (!in_array($typeFilter, cabinet_type_options(), true)) {
 // La recherche couvre le `telephone` historique comme les deux lignes dediees :
 // la colonne Contact les affiche les trois, une recherche qui ignorerait le
 // numero principal serait incoherent avec l'ecran.
+//
+// `raison_sociale` n'y figure plus : la migration a reporte sa valeur dans
+// `nom`, qui est donc cherche a sa place. `qualification` et `fonction` ont ete
+// supprimees, et les lister ici ferait echouer la requete sur une colonne
+// inconnue.
 $searchedColumns = [
-    'code', 'nom', 'raison_sociale', 'email', 'ville', 'ice', 'rc',
+    'code', 'nom', 'email', 'ville', 'ice', 'rc',
     'telephone', 'telephone_fixe', 'telephone_mobile',
-    'qualification', 'fonction', 'identifiant_fiscal', 'taxe_professionnelle',
+    'identifiant_fiscal', 'taxe_professionnelle',
 ];
 
 $cabinets = [];
@@ -278,13 +285,11 @@ if ($db) {
             $r['code'],
             cabinet_type_label((string) ($r['type_cabinet'] ?? '')),
             $r['nom'],
-            $r['raison_sociale'] ?? '-',
-            $r['qualification'] ?? '-',
-            $r['fonction'] ?? '-',
             $r['email'] ?? '-',
             $r['telephone'] ?? '-',
             $r['telephone_fixe'] ?? '-',
             $r['telephone_mobile'] ?? '-',
+            $r['adresse'] ?? '-',
             $r['ville'] ?? '-',
             $r['ice'] ?? '-',
             $r['rc'] ?? '-',
@@ -296,8 +301,8 @@ if ($db) {
         ], $cabinets);
 
         $headers = [
-            'Code', 'Type de cabinet', 'Nom', 'Raison sociale', 'Qualification', 'Fonction',
-            'Email', 'Telephone', 'Telephone fixe', 'Telephone mobile', 'Ville',
+            'Code', 'Type de cabinet', 'Nom du cabinet', 'Email',
+            'Téléphone', 'Téléphone fixe', 'Téléphone mobile', 'Adresse', 'Ville',
             'ICE', 'RC', 'Identifiant fiscal (IF)', 'Taxe professionnelle (TP)',
             'Statut', 'Utilisateurs', 'Abonnements',
         ];
@@ -319,118 +324,166 @@ $typeOptions = [];
 foreach (cabinet_type_options() as $t) {
     $typeOptions[$t] = cabinet_type_label($t);
 }
+
+// Rendus d'erreur par champ, reutilises sur les seize saisies : sans eux le
+// gabarit du formulaire triple la condition d'erreur a chaque fois, et le
+// message finit systematiquement par ne plus etre pose sur la bonne ligne.
+$err = static function (string $champ) use ($fieldErrors): string {
+    return isset($fieldErrors[$champ]) ? ' class="input-error" aria-invalid="true"' : '';
+};
+
+$msg = static function (string $champ) use ($fieldErrors): string {
+    $texte = $fieldErrors[$champ] ?? '';
+    return $texte === '' ? '' : '<small class="field-error">' . e($texte) . '</small>';
+};
 ?>
 <section class="stack">
     <?php if ($formOpen && ($canCreate || $canEdit)): ?>
-        <article class="card">
-            <div class="section-header">
-                <h2 class="section-title" style="border:none;padding:0;margin:0"><?= $editId > 0 ? 'Modifier le cabinet' : 'Nouveau cabinet' ?></h2>
+        <div class="section-header" style="margin-bottom:4px;">
+            <h2><?= $editId > 0 ? 'Modifier le cabinet' : 'Nouveau cabinet' ?></h2>
+            <div class="table-actions">
                 <a class="btn btn-cancel" href="<?= e(app_url('cabinets')) ?>"><span class="material-symbols-outlined">close</span> Fermer</a>
             </div>
+        </div>
 
-            <?php if ($formError !== null): ?>
-                <div class="flash flash-error" style="margin-bottom:12px"><?= e($formError) ?></div>
+        <form method="post" class="form-compact">
+            <?= csrf_input() ?>
+            <input type="hidden" name="action" value="save">
+            <?php if ($editId > 0): ?>
+                <input type="hidden" name="id" value="<?= e((string) $editId) ?>">
             <?php endif; ?>
 
-            <form method="post" class="sub-form-grid">
-                <?= csrf_input() ?>
-                <input type="hidden" name="action" value="save">
-                <?php if ($editId > 0): ?>
-                    <input type="hidden" name="id" value="<?= e((string) $editId) ?>">
-                <?php endif; ?>
-
-                <label class="field">
-                    <span>Code *</span>
-                    <input type="text" name="code" required maxlength="40" value="<?= e((string) ($formData['code'] ?? '')) ?>" placeholder="CAB-001">
-                    <?php if ($editId === 0): ?>
-                        <span class="help-text">Code proposé automatiquement, modifiable.</span>
-                    <?php endif; ?>
-                </label>
-                <label class="field">
-                    <span>Type de cabinet *</span>
-                    <select name="type_cabinet" required>
-                        <option value="" disabled<?= (string) ($formData['type_cabinet'] ?? '') === '' ? ' selected' : '' ?>>— Choisir un type —</option>
-                        <?php foreach ($typeOptions as $val => $lbl): ?>
-                            <option value="<?= e($val) ?>"<?= (string) ($formData['type_cabinet'] ?? '') === $val ? ' selected' : '' ?>><?= e($lbl) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </label>
-                <label class="field">
-                    <span>Nom *</span>
-                    <input type="text" name="nom" required maxlength="150" value="<?= e((string) ($formData['nom'] ?? '')) ?>">
-                </label>
-                <label class="field">
-                    <span>Raison sociale</span>
-                    <input type="text" name="raison_sociale" maxlength="190" value="<?= e((string) ($formData['raison_sociale'] ?? '')) ?>">
-                </label>
-                <label class="field">
-                    <span>Qualification</span>
-                    <input type="text" name="qualification" maxlength="150" value="<?= e((string) ($formData['qualification'] ?? '')) ?>" placeholder="Expert-comptable, Avocat...">
-                    <span class="help-text">Qualification professionnelle du cabinet.</span>
-                </label>
-                <label class="field">
-                    <span>Fonction</span>
-                    <input type="text" name="fonction" maxlength="150" value="<?= e((string) ($formData['fonction'] ?? '')) ?>" placeholder="Gerant, Directeur...">
-                </label>
-                <label class="field">
-                    <span>Statut</span>
-                    <select name="statut">
-                        <?php foreach ($statutOptions as $val => $lbl): ?>
-                            <option value="<?= e($val) ?>"<?= (string) ($formData['statut'] ?? 'actif') === $val ? ' selected' : '' ?>><?= e($lbl) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </label>
-                <label class="field">
-                    <span>Email</span>
-                    <input type="email" name="email" maxlength="190" value="<?= e((string) ($formData['email'] ?? '')) ?>">
-                </label>
-                <label class="field">
-                    <span>Telephone</span>
-                    <input type="text" name="telephone" maxlength="40" value="<?= e((string) ($formData['telephone'] ?? '')) ?>">
-                </label>
-                <label class="field">
-                    <span>Telephone fixe</span>
-                    <input type="text" name="telephone_fixe" maxlength="60" value="<?= e((string) ($formData['telephone_fixe'] ?? '')) ?>">
-                </label>
-                <label class="field">
-                    <span>Telephone mobile</span>
-                    <input type="text" name="telephone_mobile" maxlength="60" value="<?= e((string) ($formData['telephone_mobile'] ?? '')) ?>">
-                </label>
-                <label class="field">
-                    <span>ICE</span>
-                    <input type="text" name="ice" maxlength="40" value="<?= e((string) ($formData['ice'] ?? '')) ?>">
-                </label>
-                <label class="field">
-                    <span>RC</span>
-                    <input type="text" name="rc" maxlength="60" value="<?= e((string) ($formData['rc'] ?? '')) ?>">
-                </label>
-                <label class="field">
-                    <span>Identifiant fiscal (IF)</span>
-                    <input type="text" name="identifiant_fiscal" maxlength="100" value="<?= e((string) ($formData['identifiant_fiscal'] ?? '')) ?>">
-                </label>
-                <label class="field">
-                    <span>Taxe professionnelle (TP)</span>
-                    <input type="text" name="taxe_professionnelle" maxlength="100" value="<?= e((string) ($formData['taxe_professionnelle'] ?? '')) ?>">
-                </label>
-                <label class="field full">
-                    <span>Adresse</span>
-                    <input type="text" name="adresse" maxlength="255" value="<?= e((string) ($formData['adresse'] ?? '')) ?>">
-                </label>
-                <label class="field">
-                    <span>Ville</span>
-                    <input type="text" name="ville" maxlength="120" value="<?= e((string) ($formData['ville'] ?? '')) ?>">
-                </label>
-                <label class="field full">
-                    <span>Notes</span>
-                    <textarea name="notes" rows="2"><?= e((string) ($formData['notes'] ?? '')) ?></textarea>
-                </label>
-
-                <div class="sub-form-actions field full">
-                    <button class="btn btn-next" type="submit"><span class="material-symbols-outlined">save</span> Enregistrer</button>
-                    <a class="btn btn-cancel" href="<?= e(app_url('cabinets')) ?>"><span class="material-symbols-outlined">close</span> Annuler</a>
+            <article class="card">
+                <div class="section-header">
+                    <span class="material-symbols-outlined">business</span>
+                    <h2>Identité du cabinet</h2>
                 </div>
-            </form>
-        </article>
+                <div class="form-grid">
+                    <label class="field<?= isset($fieldErrors['code']) ? ' field-error' : '' ?>">
+                        <span>Code <em class="req-mark">*</em></span>
+                        <input type="text" name="code" required maxlength="40" value="<?= e((string) ($formData['code'] ?? '')) ?>" placeholder="CAB-001"<?= $err('code') ?>>
+                        <?= $msg('code') ?>
+                    </label>
+                    <label class="field<?= isset($fieldErrors['type_cabinet']) ? ' field-error' : '' ?>">
+                        <span>Type <em class="req-mark">*</em></span>
+                        <select name="type_cabinet" required<?= $err('type_cabinet') ?>>
+                            <option value="" disabled<?= (string) ($formData['type_cabinet'] ?? '') === '' ? ' selected' : '' ?>>Choisir un type</option>
+                            <?php foreach ($typeOptions as $val => $lbl): ?>
+                                <option value="<?= e($val) ?>"<?= (string) ($formData['type_cabinet'] ?? '') === $val ? ' selected' : '' ?>><?= e($lbl) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <?= $msg('type_cabinet') ?>
+                    </label>
+                    <label class="field<?= isset($fieldErrors['nom']) ? ' field-error' : '' ?>">
+                        <span>Nom du cabinet / Raison sociale <em class="req-mark">*</em></span>
+                        <input type="text" name="nom" required maxlength="150" value="<?= e((string) ($formData['nom'] ?? '')) ?>" placeholder="Cabinet Exemple"<?= $err('nom') ?>>
+                        <?= $msg('nom') ?>
+                    </label>
+                    <label class="field">
+                        <span>Statut</span>
+                        <select name="statut">
+                            <?php foreach ($statutOptions as $val => $lbl): ?>
+                                <option value="<?= e($val) ?>"<?= (string) ($formData['statut'] ?? 'actif') === $val ? ' selected' : '' ?>><?= e($lbl) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
+                </div>
+            </article>
+
+            <article class="card">
+                <div class="section-header">
+                    <span class="material-symbols-outlined">contact_mail</span>
+                    <h2>Contact</h2>
+                </div>
+                <div class="form-grid">
+                    <label class="field<?= isset($fieldErrors['email']) ? ' field-error' : '' ?>">
+                        <span>Email</span>
+                        <input type="email" name="email" maxlength="190" value="<?= e((string) ($formData['email'] ?? '')) ?>" placeholder="contact@cabinet.ma"<?= $err('email') ?>>
+                        <?= $msg('email') ?>
+                    </label>
+                    <label class="field<?= isset($fieldErrors['telephone']) ? ' field-error' : '' ?>">
+                        <span>Téléphone</span>
+                        <input type="text" name="telephone" maxlength="40" value="<?= e((string) ($formData['telephone'] ?? '')) ?>" placeholder="0522 00 00 00"<?= $err('telephone') ?>>
+                        <?= $msg('telephone') ?>
+                    </label>
+                    <label class="field<?= isset($fieldErrors['telephone_fixe']) ? ' field-error' : '' ?>">
+                        <span>Téléphone fixe</span>
+                        <input type="text" name="telephone_fixe" maxlength="60" value="<?= e((string) ($formData['telephone_fixe'] ?? '')) ?>" placeholder="0522 00 00 00"<?= $err('telephone_fixe') ?>>
+                        <?= $msg('telephone_fixe') ?>
+                    </label>
+                    <label class="field<?= isset($fieldErrors['telephone_mobile']) ? ' field-error' : '' ?>">
+                        <span>Téléphone mobile</span>
+                        <input type="text" name="telephone_mobile" maxlength="60" value="<?= e((string) ($formData['telephone_mobile'] ?? '')) ?>" placeholder="0661 00 00 00"<?= $err('telephone_mobile') ?>>
+                        <?= $msg('telephone_mobile') ?>
+                    </label>
+                    <label class="field full<?= isset($fieldErrors['adresse']) ? ' field-error' : '' ?>">
+                        <span>Adresse</span>
+                        <input type="text" name="adresse" maxlength="255" value="<?= e((string) ($formData['adresse'] ?? '')) ?>" placeholder="Rue, numéro, quartier"<?= $err('adresse') ?>>
+                        <?= $msg('adresse') ?>
+                    </label>
+                    <label class="field<?= isset($fieldErrors['ville']) ? ' field-error' : '' ?>">
+                        <span>Ville</span>
+                        <input type="text" name="ville" maxlength="120" value="<?= e((string) ($formData['ville'] ?? '')) ?>" placeholder="Casablanca"<?= $err('ville') ?>>
+                        <?= $msg('ville') ?>
+                    </label>
+                </div>
+            </article>
+
+            <article class="card">
+                <div class="section-header">
+                    <span class="material-symbols-outlined">verified</span>
+                    <h2>Identifiants légaux</h2>
+                </div>
+                <div class="form-grid">
+                    <label class="field<?= isset($fieldErrors['ice']) ? ' field-error' : '' ?>">
+                        <span>ICE</span>
+                        <input type="text" name="ice" maxlength="40" value="<?= e((string) ($formData['ice'] ?? '')) ?>" placeholder="001234567890123"<?= $err('ice') ?>>
+                        <?= $msg('ice') ?>
+                    </label>
+                    <label class="field<?= isset($fieldErrors['rc']) ? ' field-error' : '' ?>">
+                        <span>RC</span>
+                        <input type="text" name="rc" maxlength="60" value="<?= e((string) ($formData['rc'] ?? '')) ?>" placeholder="123456"<?= $err('rc') ?>>
+                        <?= $msg('rc') ?>
+                    </label>
+                    <label class="field<?= isset($fieldErrors['identifiant_fiscal']) ? ' field-error' : '' ?>">
+                        <span>IF</span>
+                        <input type="text" name="identifiant_fiscal" maxlength="100" value="<?= e((string) ($formData['identifiant_fiscal'] ?? '')) ?>" placeholder="40312785"<?= $err('identifiant_fiscal') ?>>
+                        <?= $msg('identifiant_fiscal') ?>
+                    </label>
+                    <label class="field<?= isset($fieldErrors['taxe_professionnelle']) ? ' field-error' : '' ?>">
+                        <span>TP</span>
+                        <input type="text" name="taxe_professionnelle" maxlength="100" value="<?= e((string) ($formData['taxe_professionnelle'] ?? '')) ?>" placeholder="27185403"<?= $err('taxe_professionnelle') ?>>
+                        <?= $msg('taxe_professionnelle') ?>
+                    </label>
+                </div>
+            </article>
+
+            <article class="card">
+                <div class="section-header">
+                    <span class="material-symbols-outlined">visibility</span>
+                    <h2>Aperçu généré</h2>
+                </div>
+                <div class="form-grid">
+                    <label class="field">
+                        <span>Nom complet généré</span>
+                        <input type="text" value="<?= e((string) ($formData['nom'] ?? '')) ?>" placeholder="Remplissez le nom du cabinet" readonly data-apercu="nom">
+                    </label>
+                    <label class="field">
+                        <span>Code généré</span>
+                        <input type="text" value="<?= e((string) ($formData['code'] ?? '')) ?>" placeholder="CAB-001" readonly data-apercu="code">
+                    </label>
+                </div>
+            </article>
+
+            <div class="form-actions">
+                <a class="btn btn-cancel" href="<?= e(app_url('cabinets')) ?>"><span class="material-symbols-outlined">close</span> Annuler</a>
+                <?php if ($editId > 0): ?>
+                    <button class="btn btn-next" type="submit"><span class="material-symbols-outlined">save</span> Mettre à jour</button>
+                <?php else: ?>
+                    <button class="btn btn-next" type="submit"><span class="material-symbols-outlined">add</span> Créer le cabinet</button>
+                <?php endif; ?>
+            </div>
+        </form>
     <?php endif; ?>
 
     <article class="card">
@@ -445,7 +498,7 @@ foreach (cabinet_type_options() as $t) {
         <form method="get" class="stack search-bar">
             <input type="hidden" name="page" value="cabinets">
             <div class="inline-form">
-                <input type="search" name="q" placeholder="Rechercher par code, nom, ville, qualification, ICE, RC, IF ou TP" value="<?= e($query) ?>">
+                <input type="search" name="q" placeholder="Rechercher par code, nom, ville, email, ICE, RC, IF ou TP" value="<?= e($query) ?>">
                 <select name="type" aria-label="Filtrer par type de cabinet">
                     <option value="">Tous les types</option>
                     <?php foreach ($typeOptions as $val => $lbl): ?>
@@ -462,9 +515,9 @@ foreach (cabinet_type_options() as $t) {
         <?php if (!$cabinets): ?>
             <p class="table-empty">
                 <?php if ($query !== '' || $typeFilter !== ''): ?>
-                    Aucun cabinet ne correspond a cette recherche.
+                    Aucun cabinet ne correspond à cette recherche.
                 <?php else: ?>
-                    Aucun cabinet enregistre. Les abonnements se rattachent a un cabinet : creez d\'abord votre premier client.
+                    Aucun cabinet enregistré. Les abonnements se rattachent à un cabinet : créez d'abord votre premier client.
                 <?php endif; ?>
             </p>
         <?php else: ?>
@@ -475,7 +528,6 @@ foreach (cabinet_type_options() as $t) {
                             <th data-col="code">Code</th>
                             <th data-col="type">Type</th>
                             <th data-col="nom">Nom</th>
-                            <th data-col="raison">Raison sociale</th>
                             <th data-col="identifiants">Identifiants</th>
                             <th data-col="contact">Contact</th>
                             <th data-col="ville">Ville</th>
@@ -501,16 +553,7 @@ foreach (cabinet_type_options() as $t) {
                         <tr>
                             <td><strong><?= e((string) $cab['code']) ?></strong></td>
                             <td><span class="badge <?= e(cabinet_type_tone((string) ($cab['type_cabinet'] ?? ''))) ?>"><?= e(cabinet_type_label((string) ($cab['type_cabinet'] ?? ''))) ?></span></td>
-                            <td>
-                                <?= e((string) $cab['nom']) ?>
-                                <?php if (!empty($cab['qualification'])): ?>
-                                    <br><small><?= e((string) $cab['qualification']) ?></small>
-                                <?php endif; ?>
-                                <?php if (!empty($cab['fonction'])): ?>
-                                    <br><small><?= e((string) $cab['fonction']) ?></small>
-                                <?php endif; ?>
-                            </td>
-                            <td><?= e((string) ($cab['raison_sociale'] ?? '-')) ?></td>
+                            <td><?= e((string) $cab['nom']) ?></td>
                             <td>
                                 <?php if ($identifiants === []): ?>
                                     <?= '-' ?>
@@ -553,3 +596,29 @@ foreach (cabinet_type_options() as $t) {
         <?php endif; ?>
     </article>
 </section>
+
+<script>
+// Apercu genere : les deux lectures seules recopient en direct les saisies
+// dont elles sont derivees. Elles n'ont pas de `name`, donc l'apercu ne peut
+// pas etre poste ni ecrit en base : seul le script les alimente.
+(function () {
+    var form = document.querySelector('form.form-compact');
+    if (!form) {
+        return;
+    }
+
+    var sources = {
+        nom: form.querySelector('[name="nom"]'),
+        code: form.querySelector('[name="code"]')
+    };
+
+    form.addEventListener('input', function () {
+        form.querySelectorAll('[data-apercu]').forEach(function (apercu) {
+            var source = sources[apercu.getAttribute('data-apercu')];
+            if (source) {
+                apercu.value = source.value;
+            }
+        });
+    });
+})();
+</script>

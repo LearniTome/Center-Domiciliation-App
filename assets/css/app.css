@@ -1085,6 +1085,117 @@ textarea.input-error {
     color: var(--danger);
 }
 
+.field-error {
+    flex: 1 1 100%;
+    font-size: 0.6rem;
+    line-height: 1.2;
+    color: var(--danger);
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.req-mark {
+    color: var(--danger);
+    font-style: normal;
+}
+
+/* Formulaire compact : sections en cartes sur 2 colonnes, champs alignes sur
+   une ligne horizontale (libelle a gauche, saisie a droite). Source unique
+   partagee par le formulaire Collaborateur et le formulaire Cabinet, pour que
+   les deux modules restent visuellement identiques. */
+.form-compact {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+}
+
+.form-compact .card {
+    padding: 8px 10px;
+    height: 100%;
+}
+
+.form-compact .card > .form-grid:last-child {
+    min-height: 0;
+    flex: 1;
+}
+
+.form-compact .section-header {
+    margin-bottom: 0;
+    padding: 0 0 4px;
+}
+
+.form-compact .section-header h2 {
+    font-size: 0.75rem;
+}
+
+.form-compact .form-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+}
+
+.form-compact .field {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 3px;
+    flex: 1 1 120px;
+    min-width: 0;
+}
+
+.form-compact .field > span {
+    font-size: 0.58rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.form-compact .field input,
+.form-compact .field select,
+.form-compact .field textarea {
+    font-size: 0.7rem;
+    padding: 2px 4px;
+    flex: 1;
+    min-width: 50px;
+}
+
+.form-compact .field input,
+.form-compact .field select {
+    height: 24px;
+}
+
+.form-compact .field textarea {
+    min-height: 40px;
+    height: auto;
+    line-height: 1.35;
+}
+
+.form-compact .field.full {
+    flex: 1 1 100%;
+}
+
+.form-compact .form-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding-top: 4px;
+}
+
+/* Apercu genere : valeurs calculees, non editables. */
+.form-compact .field input[readonly] {
+    background: var(--panel-strong);
+    border-style: dashed;
+    font-weight: 500;
+    color: var(--text);
+    cursor: default;
+}
+
+@media (max-width: 1024px) {
+    .form-compact {
+        grid-template-columns: 1fr;
+    }
+}
+
 input::placeholder,
 textarea::placeholder {
     color: var(--text-secondary);

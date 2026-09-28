@@ -186,10 +186,6 @@ $resteDu = $totalDu - $totalRegle;
                         <strong><?= e((string) $cabinet['nom']) ?></strong>
                     </div>
                     <div class="info-cell">
-                        <span>Raison sociale</span>
-                        <strong><?= e((string) ($cabinet['raison_sociale'] ?? '-')) ?></strong>
-                    </div>
-                    <div class="info-cell">
                         <span>Statut</span>
                         <strong><span class="badge <?= e(cabinet_statut_tone($cabinet['statut'] ?? null)) ?>"><?= e(cabinet_statut_label($cabinet['statut'] ?? null)) ?></span></strong>
                     </div>
