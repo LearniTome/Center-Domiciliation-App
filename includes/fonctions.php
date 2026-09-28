@@ -2049,6 +2049,57 @@ function cabinet_statut_tone(?string $statut): string
 }
 
 /**
+ * Nature du cabinet, choisie dans une liste figee de cinq valeurs.
+ *
+ * Volontairement statique et non adosse a `ref_qualites_intermediaire` :
+ * cette table n'a ni Avocat ni Notaire, et son axe est la qualite d'un
+ * intermediaire, pas la nature du cabinet. Le vocabulaire est fixe, donc
+ * figer les slugs evite un referentiel de plus a maintenir pour une liste que
+ * le Centre ne fait pas varier. `qualification` reste un texte libre.
+ */
+function cabinet_type_options(): array
+{
+    return [
+        'comptable_agree',
+        'expertise_comptable',
+        'comptable_independant',
+        'juridique_avocat',
+        'juridique_notaire',
+    ];
+}
+
+function cabinet_type_label(?string $type): string
+{
+    return match ($type) {
+        'comptable_agree' => 'Cabinet comptable (Comptable agree)',
+        'expertise_comptable' => "Cabinet d'expertise comptable",
+        'comptable_independant' => 'Comptable independant',
+        'juridique_avocat' => 'Cabinet juridique - Avocat',
+        'juridique_notaire' => 'Cabinet juridique - Notaire',
+        default => $type !== null && $type !== '' ? ucfirst($type) : 'Non renseigne',
+    };
+}
+
+/**
+ * Une teinte par type, pour un balayage vertical immediate. Le projet ne
+ * declare que cinq teintes de badge (bleu, vert, violet, ambre, rouge) et
+ * elles sont ici consommees une par une : c'est le seul moyen de garder les
+ * cinq lignes distinguables, la couleur portant l'information et le libelle
+ * le sens.
+ */
+function cabinet_type_tone(?string $type): string
+{
+    return match ($type) {
+        'comptable_agree' => 'badge-info',
+        'expertise_comptable' => 'badge-success',
+        'comptable_independant' => 'badge-secondary',
+        'juridique_avocat' => 'badge-warning',
+        'juridique_notaire' => 'badge-danger',
+        default => 'badge-secondary',
+    };
+}
+
+/**
  * Warning non bloquant d'abonnement, rendu dans l'entete pour les comptes
  * adherents. Retourne null si aucun avertissement n'est necessaire : compte
  * Centre (statut 'centre'), base injoignable, ou abonnement actif confortable.

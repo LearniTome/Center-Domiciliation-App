@@ -531,4 +531,78 @@ final class AbonnementTest extends TestCase
             $pdo->exec("DELETE FROM plans WHERE id = " . $planId);
         }
     }
+
+    public function testTypesDeCabinetCouvrentLesCinqNaturesExigees(): void
+    {
+        $expected = [
+            'comptable_agree' => 'Cabinet comptable (Comptable agree)',
+            'expertise_comptable' => "Cabinet d'expertise comptable",
+            'comptable_independant' => 'Comptable independant',
+            'juridique_avocat' => 'Cabinet juridique - Avocat',
+            'juridique_notaire' => 'Cabinet juridique - Notaire',
+        ];
+
+        self::assertSame(array_keys($expected), cabinet_type_options());
+
+        foreach ($expected as $slug => $label) {
+            self::assertSame($label, cabinet_type_label($slug));
+        }
+    }
+
+    public function testTypeDeCabinetInconnuRetombeSansInvokerUneErreur(): void
+    {
+        // Valeur absente : les cabinets anterieurs a la migration n'ont pas de
+        // type. L'ecran doit rester renderisable, pas lever un match() Error.
+        self::assertSame('Non renseigne', cabinet_type_label(null));
+        self::assertSame('Non renseigne', cabinet_type_label(''));
+        self::assertSame('badge-secondary', cabinet_type_tone(null), 'un cabinet sans type ne doit pas porter la couleur d un type metier');
+        self::assertSame('Legal', cabinet_type_label('legal'), 'un slug inconnu est repris brut');
+    }
+
+    public function testChaqueTypeDeCabinetADistinctementSaTeinte(): void
+    {
+        // La couleur porte l'information de facon horizontale : deux types
+        // partageant une teinte les rendrait indistinguables au balayage.
+        $tones = array_map('cabinet_type_tone', cabinet_type_options());
+
+        self::assertSame(
+            count($tones),
+            count(array_unique($tones)),
+            'les cinq types doivent avoir cinq teintes distinctes'
+        );
+    }
+
+    public function testColonnesCabinetAjouteesParLaMigrationSontPresentes(): void
+    {
+        // Parite avec `collaborateurs` : sans IF ni TP, un cabinet ne pouvait
+        // pas etre rapproche de son interlocuteur sur les memes identifiants.
+        $attendus = [
+            'type_cabinet', 'telephone_fixe', 'telephone_mobile',
+            'qualification', 'fonction', 'identifiant_fiscal', 'taxe_professionnelle',
+        ];
+
+        $presentes = self::$pdo->query('SHOW COLUMNS FROM cabinets')->fetchAll(PDO::FETCH_COLUMN);
+        foreach ($attendus as $colonne) {
+            self::assertContains($colonne, $presentes, 'colonne manquante : ' . $colonne);
+        }
+
+        // Aucun champ historique ne doit avoir disparu.
+        foreach (['code', 'nom', 'raison_sociale', 'email', 'telephone', 'adresse', 'ville', 'ice', 'rc', 'statut', 'notes'] as $colonne) {
+            self::assertContains($colonne, $presentes, 'colonne historique perdue : ' . $colonne);
+        }
+    }
+
+    public function testTypeDeCabinetResteNullablePourLesDossiersExistants(): void
+    {
+        // La migration n'invente pas de type pour les cabinets deja en base :
+        // la colonne est donc NULLable, meme si le formulaire l'exige.
+        $null = false;
+        foreach (self::$pdo->query('SHOW COLUMNS FROM cabinets')->fetchAll(PDO::FETCH_ASSOC) as $col) {
+            if ($col['Field'] === 'type_cabinet') {
+                $null = $col['Null'] === 'YES';
+            }
+        }
+
+        self::assertTrue($null, 'type_cabinet doit rester NULLable pour les cabinets anterieurs');
+    }
 }

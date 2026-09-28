@@ -20,8 +20,12 @@ $editId = isset($_GET['edit']) ? (int) $_GET['edit'] : 0;
 $formOpen = isset($_GET['action']) && $_GET['action'] === 'new';
 
 $formData = [
-    'code' => '', 'nom' => '', 'raison_sociale' => '', 'email' => '', 'telephone' => '',
-    'adresse' => '', 'ville' => '', 'ice' => '', 'rc' => '', 'statut' => 'actif', 'notes' => '',
+    'code' => '', 'type_cabinet' => '', 'nom' => '', 'raison_sociale' => '', 'email' => '',
+    'telephone' => '', 'telephone_fixe' => '', 'telephone_mobile' => '',
+    'qualification' => '', 'fonction' => '',
+    'adresse' => '', 'ville' => '', 'ice' => '', 'rc' => '',
+    'identifiant_fiscal' => '', 'taxe_professionnelle' => '',
+    'statut' => 'actif', 'notes' => '',
 ];
 $formError = null;
 
@@ -94,6 +98,7 @@ if (is_post() && $db) {
         }
 
         $code = strtoupper(field_value($_POST, 'code'));
+        $typeCabinet = field_value($_POST, 'type_cabinet');
         $nom = field_value($_POST, 'nom');
         $email = field_value($_POST, 'email');
         $statut = field_value($_POST, 'statut', 'actif');
@@ -103,6 +108,42 @@ if (is_post() && $db) {
         }
 
         $errors = [];
+
+        // La colonne reste nullable pour les cabinets deja enregistres, dont on
+        // ignore le type, mais tout enregistrement passe par cette porte.
+        if (!in_array($typeCabinet, cabinet_type_options(), true)) {
+            $errors[] = $typeCabinet === ''
+                ? 'Le type de cabinet est obligatoire.'
+                : 'Ce type de cabinet est inconnu.';
+        }
+
+        // `maxlength` n'est respectable que par le navigateur : un POST direct
+        // tronquerait silencieusement en base. On refuse plutot que d'ecrire
+        // une valeur amputee. Le libelle francais accompagne l'erreur, sinon le
+        // message expose le nom de la colonne.
+        $lengths = [
+            'code' => [40, 'Code'],
+            'nom' => [150, 'Nom'],
+            'raison_sociale' => [190, 'Raison sociale'],
+            'email' => [190, 'Email'],
+            'telephone' => [40, 'Telephone'],
+            'telephone_fixe' => [60, 'Telephone fixe'],
+            'telephone_mobile' => [60, 'Telephone mobile'],
+            'qualification' => [150, 'Qualification'],
+            'fonction' => [150, 'Fonction'],
+            'adresse' => [255, 'Adresse'],
+            'ville' => [120, 'Ville'],
+            'ice' => [40, 'ICE'],
+            'rc' => [60, 'RC'],
+            'identifiant_fiscal' => [100, 'Identifiant fiscal (IF)'],
+            'taxe_professionnelle' => [100, 'Taxe professionnelle (TP)'],
+        ];
+        foreach ($lengths as $field => [$max, $label]) {
+            if (mb_strlen(field_value($_POST, $field)) > $max) {
+                $errors[] = 'Le champ « ' . $label . ' » depasse ' . $max . ' caracteres.';
+            }
+        }
+
         if ($code === '') {
             $errors[] = 'Le code du cabinet est obligatoire.';
         }
@@ -126,16 +167,27 @@ if (is_post() && $db) {
             $formOpen = true;
             $formData = array_merge($formData, $_POST);
         } else {
+            // NULL plutot que '' pour les colonnes optionnelles : les listes et
+            // les exports affichent alors '-' via `?? '-'` au lieu d'un trou.
+            $opt = static fn (string $value): ?string => $value === '' ? null : $value;
+
             $payload = [
                 'code' => $code,
+                'type_cabinet' => $typeCabinet,
                 'nom' => $nom,
                 'raison_sociale' => field_value($_POST, 'raison_sociale'),
                 'email' => $email,
                 'telephone' => field_value($_POST, 'telephone'),
+                'telephone_fixe' => $opt(field_value($_POST, 'telephone_fixe')),
+                'telephone_mobile' => $opt(field_value($_POST, 'telephone_mobile')),
+                'qualification' => $opt(field_value($_POST, 'qualification')),
+                'fonction' => $opt(field_value($_POST, 'fonction')),
                 'adresse' => field_value($_POST, 'adresse'),
                 'ville' => field_value($_POST, 'ville'),
                 'ice' => field_value($_POST, 'ice'),
                 'rc' => field_value($_POST, 'rc'),
+                'identifiant_fiscal' => $opt(field_value($_POST, 'identifiant_fiscal')),
+                'taxe_professionnelle' => $opt(field_value($_POST, 'taxe_professionnelle')),
                 'statut' => $statut,
                 'notes' => field_value($_POST, 'notes'),
             ];
@@ -167,52 +219,88 @@ if (is_post() && $db) {
     }
 }
 
+// Filtre par type, valide contre la liste figee : une valeur bricolee dans
+// l'URL ne doit pas non plus devenir une colonne du SQL.
+$typeFilter = (string) ($_GET['type'] ?? '');
+if (!in_array($typeFilter, cabinet_type_options(), true)) {
+    $typeFilter = '';
+}
+
+// La recherche couvre le `telephone` historique comme les deux lignes dediees :
+// la colonne Contact les affiche les trois, une recherche qui ignorerait le
+// numero principal serait incoherent avec l'ecran.
+$searchedColumns = [
+    'code', 'nom', 'raison_sociale', 'email', 'ville', 'ice', 'rc',
+    'telephone', 'telephone_fixe', 'telephone_mobile',
+    'qualification', 'fonction', 'identifiant_fiscal', 'taxe_professionnelle',
+];
+
 $cabinets = [];
 if ($db) {
+    // Les conditions sont assemblees puis IMPLIQUEES entre elles. Un AND ecrit
+    // a la suite d'une serie de OR ne porterait que sur le dernier OR :
+    // AND lie plus fort que OR, le filtre type disparaitrait de fait.
+    $where = [];
+    $params = [];
+
     if ($query !== '') {
         $like = like_term($query);
-        $stmt = $db->prepare('
-            SELECT c.*,
-                   (SELECT COUNT(*) FROM abonnements a WHERE a.cabinet_id = c.id) AS nb_abonnements,
-                   (SELECT COUNT(*) FROM users u WHERE u.cabinet_id = c.id) AS nb_utilisateurs
-            FROM cabinets c
-            WHERE c.code LIKE :t1 OR c.nom LIKE :t2 OR c.raison_sociale LIKE :t3
-               OR c.email LIKE :t4 OR c.ville LIKE :t5 OR c.ice LIKE :t6 OR c.rc LIKE :t7
-            ORDER BY c.nom ASC
-        ');
-        $stmt->execute([
-            't1' => $like, 't2' => $like, 't3' => $like,
-            't4' => $like, 't5' => $like, 't6' => $like, 't7' => $like,
-        ]);
-        $cabinets = $stmt->fetchAll();
-    } else {
-        $stmt = $db->query('
-            SELECT c.*,
-                   (SELECT COUNT(*) FROM abonnements a WHERE a.cabinet_id = c.id) AS nb_abonnements,
-                   (SELECT COUNT(*) FROM users u WHERE u.cabinet_id = c.id) AS nb_utilisateurs
-            FROM cabinets c
-            ORDER BY c.nom ASC
-        ');
-        $cabinets = $stmt->fetchAll();
+        $ors = [];
+        foreach ($searchedColumns as $i => $column) {
+            $param = 'like' . $i;
+            $ors[] = "c.$column LIKE :$param";
+            $params[$param] = $like;
+        }
+        $where[] = '(' . implode(' OR ', $ors) . ')';
     }
+
+    if ($typeFilter !== '') {
+        $where[] = 'c.type_cabinet = :filtre_type';
+        $params['filtre_type'] = $typeFilter;
+    }
+
+    $whereSql = $where === [] ? '' : ' WHERE ' . implode(' AND ', $where);
+
+    $stmt = $db->prepare('
+        SELECT c.*,
+               (SELECT COUNT(*) FROM abonnements a WHERE a.cabinet_id = c.id) AS nb_abonnements,
+               (SELECT COUNT(*) FROM users u WHERE u.cabinet_id = c.id) AS nb_utilisateurs
+        FROM cabinets c
+        ' . $whereSql . '
+        ORDER BY c.nom ASC
+    ');
+    $stmt->execute($params);
+    $cabinets = $stmt->fetchAll();
 
     $exportType = $_GET['export'] ?? '';
     if ($exportType === 'csv' || $exportType === 'xlsx') {
         $rows = array_map(static fn (array $r): array => [
             $r['code'],
+            cabinet_type_label((string) ($r['type_cabinet'] ?? '')),
             $r['nom'],
             $r['raison_sociale'] ?? '-',
+            $r['qualification'] ?? '-',
+            $r['fonction'] ?? '-',
             $r['email'] ?? '-',
             $r['telephone'] ?? '-',
+            $r['telephone_fixe'] ?? '-',
+            $r['telephone_mobile'] ?? '-',
             $r['ville'] ?? '-',
             $r['ice'] ?? '-',
             $r['rc'] ?? '-',
+            $r['identifiant_fiscal'] ?? '-',
+            $r['taxe_professionnelle'] ?? '-',
             cabinet_statut_label((string) $r['statut']),
             $r['nb_utilisateurs'] ?? 0,
             $r['nb_abonnements'] ?? 0,
         ], $cabinets);
 
-        $headers = ['Code', 'Nom', 'Raison sociale', 'Email', 'Telephone', 'Ville', 'ICE', 'RC', 'Statut', 'Utilisateurs', 'Abonnements'];
+        $headers = [
+            'Code', 'Type de cabinet', 'Nom', 'Raison sociale', 'Qualification', 'Fonction',
+            'Email', 'Telephone', 'Telephone fixe', 'Telephone mobile', 'Ville',
+            'ICE', 'RC', 'Identifiant fiscal (IF)', 'Taxe professionnelle (TP)',
+            'Statut', 'Utilisateurs', 'Abonnements',
+        ];
 
         if ($exportType === 'csv') {
             export_csv('cabinets.csv', $headers, $rows);
@@ -225,6 +313,11 @@ if ($db) {
 $statutOptions = [];
 foreach (cabinet_statut_options() as $s) {
     $statutOptions[$s] = cabinet_statut_label($s);
+}
+
+$typeOptions = [];
+foreach (cabinet_type_options() as $t) {
+    $typeOptions[$t] = cabinet_type_label($t);
 }
 ?>
 <section class="stack">
@@ -254,12 +347,30 @@ foreach (cabinet_statut_options() as $s) {
                     <?php endif; ?>
                 </label>
                 <label class="field">
+                    <span>Type de cabinet *</span>
+                    <select name="type_cabinet" required>
+                        <option value="" disabled<?= (string) ($formData['type_cabinet'] ?? '') === '' ? ' selected' : '' ?>>— Choisir un type —</option>
+                        <?php foreach ($typeOptions as $val => $lbl): ?>
+                            <option value="<?= e($val) ?>"<?= (string) ($formData['type_cabinet'] ?? '') === $val ? ' selected' : '' ?>><?= e($lbl) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
+                <label class="field">
                     <span>Nom *</span>
                     <input type="text" name="nom" required maxlength="150" value="<?= e((string) ($formData['nom'] ?? '')) ?>">
                 </label>
                 <label class="field">
                     <span>Raison sociale</span>
                     <input type="text" name="raison_sociale" maxlength="190" value="<?= e((string) ($formData['raison_sociale'] ?? '')) ?>">
+                </label>
+                <label class="field">
+                    <span>Qualification</span>
+                    <input type="text" name="qualification" maxlength="150" value="<?= e((string) ($formData['qualification'] ?? '')) ?>" placeholder="Expert-comptable, Avocat...">
+                    <span class="help-text">Qualification professionnelle du cabinet.</span>
+                </label>
+                <label class="field">
+                    <span>Fonction</span>
+                    <input type="text" name="fonction" maxlength="150" value="<?= e((string) ($formData['fonction'] ?? '')) ?>" placeholder="Gerant, Directeur...">
                 </label>
                 <label class="field">
                     <span>Statut</span>
@@ -278,12 +389,28 @@ foreach (cabinet_statut_options() as $s) {
                     <input type="text" name="telephone" maxlength="40" value="<?= e((string) ($formData['telephone'] ?? '')) ?>">
                 </label>
                 <label class="field">
+                    <span>Telephone fixe</span>
+                    <input type="text" name="telephone_fixe" maxlength="60" value="<?= e((string) ($formData['telephone_fixe'] ?? '')) ?>">
+                </label>
+                <label class="field">
+                    <span>Telephone mobile</span>
+                    <input type="text" name="telephone_mobile" maxlength="60" value="<?= e((string) ($formData['telephone_mobile'] ?? '')) ?>">
+                </label>
+                <label class="field">
                     <span>ICE</span>
                     <input type="text" name="ice" maxlength="40" value="<?= e((string) ($formData['ice'] ?? '')) ?>">
                 </label>
                 <label class="field">
                     <span>RC</span>
                     <input type="text" name="rc" maxlength="60" value="<?= e((string) ($formData['rc'] ?? '')) ?>">
+                </label>
+                <label class="field">
+                    <span>Identifiant fiscal (IF)</span>
+                    <input type="text" name="identifiant_fiscal" maxlength="100" value="<?= e((string) ($formData['identifiant_fiscal'] ?? '')) ?>">
+                </label>
+                <label class="field">
+                    <span>Taxe professionnelle (TP)</span>
+                    <input type="text" name="taxe_professionnelle" maxlength="100" value="<?= e((string) ($formData['taxe_professionnelle'] ?? '')) ?>">
                 </label>
                 <label class="field full">
                     <span>Adresse</span>
@@ -310,17 +437,23 @@ foreach (cabinet_statut_options() as $s) {
         <div class="section-header">
             <span class="page-count"><?= count($cabinets) ?> cabinet(s)</span>
             <div class="table-actions">
-                <a class="btn btn-info" href="<?= e(app_url('cabinets', ['export' => 'csv', 'q' => $query])) ?>"><span class="material-symbols-outlined">download</span> CSV</a>
-                <a class="btn btn-info" href="<?= e(app_url('cabinets', ['export' => 'xlsx', 'q' => $query])) ?>"><span class="material-symbols-outlined">table_chart</span> Excel</a>
+                <a class="btn btn-info" href="<?= e(app_url('cabinets', ['export' => 'csv', 'q' => $query, 'type' => $typeFilter])) ?>"><span class="material-symbols-outlined">download</span> CSV</a>
+                <a class="btn btn-info" href="<?= e(app_url('cabinets', ['export' => 'xlsx', 'q' => $query, 'type' => $typeFilter])) ?>"><span class="material-symbols-outlined">table_chart</span> Excel</a>
             </div>
         </div>
 
         <form method="get" class="stack search-bar">
             <input type="hidden" name="page" value="cabinets">
             <div class="inline-form">
-                <input type="search" name="q" placeholder="Rechercher par code, nom, ville, ICE ou RC" value="<?= e($query) ?>">
+                <input type="search" name="q" placeholder="Rechercher par code, nom, ville, qualification, ICE, RC, IF ou TP" value="<?= e($query) ?>">
+                <select name="type" aria-label="Filtrer par type de cabinet">
+                    <option value="">Tous les types</option>
+                    <?php foreach ($typeOptions as $val => $lbl): ?>
+                        <option value="<?= e($val) ?>"<?= $typeFilter === $val ? ' selected' : '' ?>><?= e($lbl) ?></option>
+                    <?php endforeach; ?>
+                </select>
                 <button type="submit"><span class="material-symbols-outlined">search</span> Rechercher</button>
-                <?php if ($query !== ''): ?>
+                <?php if ($query !== '' || $typeFilter !== ''): ?>
                     <a class="btn btn-cancel" href="<?= e(app_url('cabinets')) ?>"><span class="material-symbols-outlined">close</span> Effacer</a>
                 <?php endif; ?>
             </div>
@@ -328,7 +461,11 @@ foreach (cabinet_statut_options() as $s) {
 
         <?php if (!$cabinets): ?>
             <p class="table-empty">
-                <?= $query !== '' ? 'Aucun cabinet ne correspond a cette recherche.' : 'Aucun cabinet enregistre. Les abonnements se rattachent a un cabinet : creez d\'abord votre premier client.' ?>
+                <?php if ($query !== '' || $typeFilter !== ''): ?>
+                    Aucun cabinet ne correspond a cette recherche.
+                <?php else: ?>
+                    Aucun cabinet enregistre. Les abonnements se rattachent a un cabinet : creez d\'abord votre premier client.
+                <?php endif; ?>
             </p>
         <?php else: ?>
             <div class="table-scroll">
@@ -336,8 +473,10 @@ foreach (cabinet_statut_options() as $s) {
                     <thead>
                         <tr>
                             <th data-col="code">Code</th>
+                            <th data-col="type">Type</th>
                             <th data-col="nom">Nom</th>
                             <th data-col="raison">Raison sociale</th>
+                            <th data-col="identifiants">Identifiants</th>
                             <th data-col="contact">Contact</th>
                             <th data-col="ville">Ville</th>
                             <th data-col="statut">Statut</th>
@@ -348,15 +487,46 @@ foreach (cabinet_statut_options() as $s) {
                     </thead>
                     <tbody>
                     <?php foreach ($cabinets as $cab): ?>
+                        <?php
+                        // Les identifiants sont empiles en petits caracteres : sur
+                        // une ligne horizontale, quatre colonnes distinctes
+                        // repoussaient les compteurs hors de l'ecran.
+                        $identifiants = array_filter([
+                            'ICE' => $cab['ice'] ?? '',
+                            'RC' => $cab['rc'] ?? '',
+                            'IF' => $cab['identifiant_fiscal'] ?? '',
+                            'TP' => $cab['taxe_professionnelle'] ?? '',
+                        ], static fn ($v): bool => $v !== null && $v !== '');
+                        ?>
                         <tr>
                             <td><strong><?= e((string) $cab['code']) ?></strong></td>
-                            <td><?= e((string) $cab['nom']) ?></td>
+                            <td><span class="badge <?= e(cabinet_type_tone((string) ($cab['type_cabinet'] ?? ''))) ?>"><?= e(cabinet_type_label((string) ($cab['type_cabinet'] ?? ''))) ?></span></td>
+                            <td>
+                                <?= e((string) $cab['nom']) ?>
+                                <?php if (!empty($cab['qualification'])): ?>
+                                    <br><small><?= e((string) $cab['qualification']) ?></small>
+                                <?php endif; ?>
+                                <?php if (!empty($cab['fonction'])): ?>
+                                    <br><small><?= e((string) $cab['fonction']) ?></small>
+                                <?php endif; ?>
+                            </td>
                             <td><?= e((string) ($cab['raison_sociale'] ?? '-')) ?></td>
                             <td>
-                                <?= e((string) ($cab['email'] ?? '-')) ?>
-                                <?php if (!empty($cab['telephone'])): ?>
-                                    <br><small><?= e((string) $cab['telephone']) ?></small>
+                                <?php if ($identifiants === []): ?>
+                                    <?= '-' ?>
+                                <?php else: ?>
+                                    <?php foreach ($identifiants as $sigle => $value): ?>
+                                        <small><?= e($sigle) ?> : <?= e((string) $value) ?></small><br>
+                                    <?php endforeach; ?>
                                 <?php endif; ?>
+                            </td>
+                            <td>
+                                <?= e((string) ($cab['email'] ?? '-')) ?>
+                                <?php foreach (['telephone', 'telephone_fixe', 'telephone_mobile'] as $phoneField): ?>
+                                    <?php if (!empty($cab[$phoneField])): ?>
+                                        <br><small><?= e((string) $cab[$phoneField]) ?></small>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
                             </td>
                             <td><?= e((string) ($cab['ville'] ?? '-')) ?></td>
                             <td><span class="badge <?= e(cabinet_statut_tone((string) $cab['statut'])) ?>"><?= e(cabinet_statut_label((string) $cab['statut'])) ?></span></td>
