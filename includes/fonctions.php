@@ -1164,6 +1164,29 @@ function is_centre_user(): bool
     return current_cabinet_id() === null;
 }
 
+/**
+ * Mot de passe provisoire : le Centre (ou le cabinet) a cree le compte avec un
+ * mot de passe genere, l'utilisateur doit le remplacer avant d'utiliser
+ * l'application. `must_change_password` est pose a la creation du compte et
+ * remis a 0 par `pages/auth/mot_de_passe.php`.
+ */
+function must_change_password(?array $user = null): bool
+{
+    $user ??= current_user();
+
+    return !empty($user['must_change_password']);
+}
+
+/**
+ * Pages accessibles malgre un mot de passe provisoire. Sans cette liste, la
+ * porte de l'index redirigerait vers l'ecran de changement de mot de passe
+ * qui redirigerait a son tour vers lui-meme : boucle de redirection.
+ */
+function password_change_exempt_pages(): array
+{
+    return ['mot_de_passe', 'deconnexion', 'connexion', 'setup', 'not-found'];
+}
+
 function is_logged_in(): bool
 {
     if (empty($_SESSION['user_id'])) {
@@ -1409,16 +1432,17 @@ function require_permission(string $key): void
         while (ob_get_level() > 0) {
             ob_end_clean();
         }
-        $deconnexion = e(app_url('deconnexion'));
-        echo '<!doctype html><html lang="fr"><head><meta charset="utf-8">'
-            . '<meta name="viewport" content="width=device-width, initial-scale=1">'
-            . '<title>Accès refusé</title></head><body>'
-            . '<h1>Accès refusé</h1>'
-            . '<p>Votre rôle ne donne pas accès au tableau de bord. '
-            . 'Contactez un administrateur pour qu\'il vous attribue les droits '
-            . 'correspondants.</p>'
-            . '<p><a href="' . $deconnexion . '">Se déconnecter</a></p>'
-            . '</body></html>';
+
+        // La page est rendue hors layout : le menu lateral est lui-meme protege,
+        // et un compte sans droit ne doit pas y voir la navigation de l'application.
+        $user = current_user();
+        $deniedUserName = (string) ($user['nom_complet'] ?? '');
+        $deniedRole = (string) ($user['role_nom'] ?? '');
+        $deniedPermission = $key;
+        $deniedFallback = first_allowed_page();
+        $deniedHasAnyPermission = get_user_permissions() !== [];
+
+        require __DIR__ . '/acces_refuse.php';
         exit;
     }
 
@@ -1772,6 +1796,150 @@ function require_active_subscription(): void
         set_flash('error', 'Votre abonnement n\'est pas actif : ' . $state['libelle'] . '. Contactez le Centre de Domiciliation.');
         redirect_to('mon_abonnement');
     }
+}
+
+/* ---------------------------------------------------------------------------
+ * Quotas de plan : consommation d'un cabinet contre les plafonds de sa formule.
+ * ------------------------------------------------------------------------ */
+
+/**
+ * Compteur associe a chaque quota. `societes` est la table des dossiers dans
+ * cette application : une creation, une domiciliation, une cession et un PV AGO
+ **y creent tous une ligne. `max_dossiers` et `max_societes` sont donc deux
+ * plafonds sur le MEME compteur, ce que confirme le catalogue de plans
+ * (valeurs identiques sur les cinq formules).
+ */
+function quota_counters(): array
+{
+    return [
+        'utilisateurs' => ['table' => 'users', 'columns' => ['max_utilisateurs'], 'libelle' => 'utilisateurs'],
+        'dossiers'    => ['table' => 'societes', 'columns' => ['max_societes', 'max_dossiers'], 'libelle' => 'dossiers'],
+    ];
+}
+
+/**
+ * Plan de reference du cabinet : celui dont la date de fin est la plus eloignee
+ * parmi essai/actif/suspendu. Meme regle que `current_abonnement_state()`, pour
+ * que le quota annonce et l'etat de l'abonnement ne divergent jamais.
+ *
+ * Sans $cabinetId, on interroge le cabinet du compte connecte. Les ecrans du
+ * Centre passent ainsi l'identifiant du cabinet qu'ils consultent, au lieu de
+ * lire une variable globale pour contourner la signature.
+ */
+function cabinet_plan_reference(?PDO $pdo = null, ?int $cabinetId = null): ?array
+{
+    $cabinetId ??= current_cabinet_id();
+    if ($cabinetId === null) {
+        return null;
+    }
+
+    // Pas de `global $pdo` : le parametre porte le meme nom (cf.
+    // current_abonnement_state).
+    $db = $pdo instanceof PDO ? $pdo : ($GLOBALS['pdo'] ?? null);
+    if (!$db instanceof PDO) {
+        return null;
+    }
+
+    try {
+        $stmt = $db->prepare('
+            SELECT p.id, p.code, p.nom, p.max_utilisateurs, p.max_societes, p.max_dossiers
+            FROM abonnements a
+            LEFT JOIN plans p ON p.id = a.plan_id
+            WHERE a.cabinet_id = :cid
+              AND a.statut IN (\'essai\', \'actif\', \'suspendu\')
+            ORDER BY a.date_fin DESC
+            LIMIT 1
+        ');
+        $stmt->execute(['cid' => $cabinetId]);
+        $row = $stmt->fetch();
+    } catch (PDOException) {
+        return null;
+    }
+
+    return $row ?: null;
+}
+
+/**
+ * Consommation et plafonds d'un cabinet.
+ *
+ * `limite` a null = formule illimitee : rien a bloquer. `atteint` compare au
+ * plafond le plus bas des colonnes concernees, pour que `max_societes` ne
+ * puisse pas relever un `max_dossiers` plus strict.
+ *
+ * @return array<string, array{limite: ?int, utilise: int, atteint: bool, libelle: string}>
+ */
+function quota_state(string $type, ?PDO $pdo = null, ?int $cabinetId = null): array
+{
+    $counters = quota_counters();
+    $key = $counters[$type] ?? null;
+    $state = ['limite' => null, 'utilise' => 0, 'atteint' => false, 'libelle' => $type];
+
+    if ($key === null) {
+        return $state;
+    }
+    $state['libelle'] = $key['libelle'];
+
+    $plan = cabinet_plan_reference($pdo, $cabinetId);
+
+    $limites = [];
+    foreach ($key['columns'] as $column) {
+        $raw = $plan[$column] ?? null;
+        if ($raw !== null && $raw !== '') {
+            $limites[] = (int) $raw;
+        }
+    }
+    $state['limite'] = $limites === [] ? null : min($limites);
+
+    $db = $pdo instanceof PDO ? $pdo : ($GLOBALS['pdo'] ?? null);
+    $cible = $cabinetId ?? current_cabinet_id();
+    if (!$db instanceof PDO || $cible === null) {
+        return $state;
+    }
+
+    try {
+        $table = $key['table'];
+        $sql = "SELECT COUNT(*) FROM {$table} WHERE cabinet_id = :cid"; // nosemgrep: tainted-sql-string -- table issue de quota_counters()
+        $stmt = $db->prepare($sql);
+        $stmt->execute(['cid' => $cible]);
+        $state['utilise'] = (int) $stmt->fetchColumn();
+    } catch (PDOException) {
+        // Base indisponible : on ne bloque personne sur un comptage.
+        return $state;
+    }
+
+    $state['atteint'] = $state['limite'] !== null && $state['utilise'] >= $state['limite'];
+
+    return $state;
+}
+
+/** Vrai si le cabinet connecte a atteint le plafond de ce quota. */
+function quota_depasse(string $type): bool
+{
+    if (is_centre_user()) {
+        return false;
+    }
+
+    return quota_state($type)['atteint'];
+}
+
+/**
+ * Refuse une creation qui depasse le quota : flash + retour a l'ecran des
+ * dossiers plutot qu'une erreur SQL. Le Centre n'est jamais bloque.
+ */
+function require_quota_disponible(string $type, string $retourPage = 'societes'): void
+{
+    $state = quota_state($type);
+
+    if (!$state['atteint']) {
+        return;
+    }
+
+    set_flash(
+        'error',
+        'Quota ' . $state['libelle'] . ' atteint (' . $state['utilise'] . '/' . (int) $state['limite']
+        . '). Contactez le Centre pour modifier votre formule.'
+    );
+    redirect_to($retourPage);
 }
 
 /* ---------------------------------------------------------------------------
@@ -2220,6 +2388,44 @@ function require_page_access(string $page): void
     if ($perm !== null) {
         require_permission($perm);
     }
+}
+
+/**
+ * Premiere page que le compte courant a le droit d'atteindre.
+ *
+ * Sert de sortie a la page 403 : un utilisateur sans `dashboard.view` se
+ * retrouve sinon bloque sur une page qui ne propose que la deconnexion, alors
+ * qu'il peut tres bien avoir d'autres droits.
+ *
+ * La liste est ordonnee du plus au moins utile, et chaque page est revalidee
+ * par `has_permission()` : le repli ne peut donc pas aboutir a une nouvelle
+ * page refusee, ni a une boucle de redirection.
+ *
+ * @return string|null Page de l'allowlist, ou null si le compte n'a aucun droit.
+ */
+function first_allowed_page(): ?string
+{
+    $candidats = [
+        'societes',
+        'collaborateurs',
+        'contrats',
+        'associes',
+        'modifications',
+        'cessions',
+        'pv_ago',
+        'documents',
+        'mon_abonnement',
+        'configuration',
+    ];
+
+    foreach ($candidats as $page) {
+        $perm = get_page_permission($page);
+        if ($perm !== null && has_permission($perm)) {
+            return $page;
+        }
+    }
+
+    return null;
 }
 
 function get_role_name(): string
@@ -2893,6 +3099,26 @@ function update_user_session(?PDO $pdo, string $currentPage): void
         ]);
     } catch (PDOException) {
         // silent
+    }
+}
+
+/**
+ * Supprime la ligne user_sessions correspondant a une session PHP.
+ * Sans $sessionId, purge la session courante. Renvoie le nombre de lignes purgees.
+ */
+function purge_user_session(?PDO $pdo, ?string $sessionId = null): int
+{
+    if (!$pdo) return 0;
+
+    $sessionId ??= session_id();
+    if (!$sessionId) return 0;
+
+    try {
+        $stmt = $pdo->prepare("DELETE FROM user_sessions WHERE session_id = :sid");
+        $stmt->execute(['sid' => $sessionId]);
+        return $stmt->rowCount();
+    } catch (PDOException) {
+        return 0;
     }
 }
 

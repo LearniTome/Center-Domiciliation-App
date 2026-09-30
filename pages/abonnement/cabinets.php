@@ -24,9 +24,18 @@ $formData = [
     'telephone' => '', 'telephone_fixe' => '', 'telephone_mobile' => '',
     'adresse' => '', 'ville' => '', 'ice' => '', 'rc' => '',
     'identifiant_fiscal' => '', 'taxe_professionnelle' => '',
+    'responsable_nom' => '', 'responsable_fonction' => '',
+    'responsable_email' => '', 'responsable_telephone' => '',
     'statut' => 'actif',
 ];
 $fieldErrors = [];
+// Etats de validation affiches sous la saisie : erreur (bloquant), avertissement
+// (format douteux, enregistrement accepte) et confirmation (saisie valide et
+// sans doublon). Les deux derniers ne declenchent pas le retour du formulaire,
+// ils n'existent que pour le rendu d'un POST refuse — sans eux, l'utilisateur qui
+// corrige un champ ne voit pas que les autres sont deja bons.
+$fieldWarnings = [];
+$fieldOk = [];
 
 if ($db && $editId > 0) {
     $stmt = $db->prepare('SELECT * FROM cabinets WHERE id = :id');
@@ -100,6 +109,8 @@ if (is_post() && $db) {
         $typeCabinet = field_value($_POST, 'type_cabinet');
         $nom = field_value($_POST, 'nom');
         $email = field_value($_POST, 'email');
+        $responsableNom = field_value($_POST, 'responsable_nom');
+        $responsableEmail = field_value($_POST, 'responsable_email');
         $statut = field_value($_POST, 'statut', 'actif');
 
         if (!in_array($statut, cabinet_statut_options(), true)) {
@@ -114,12 +125,25 @@ if (is_post() && $db) {
             $fieldErrors[$champ] ??= $message;
         };
 
-        // La colonne reste nullable pour les cabinets deja enregistres, dont on
-        // ignore le type, mais tout enregistrement passe par cette porte.
+        // Avertissements : le champ est douteux mais recevable. Un ICE a 14
+        // chiffres est presque toujours une faute de frappe, pas un cabinet
+        // valide ; bloquer l'enregistrement pour cela serait pire que de le
+        // signaler, l'utilisateur voit l'ecart et decide.
+        $avertir = static function (string $champ, string $message) use (&$fieldWarnings): void {
+            $fieldWarnings[$champ] ??= $message;
+        };
+
+        // Le champ est vide pour les cabinets deja enregistres, dont le type
+        // est ignore ; la colonne reste donc nullable, mais tout enregistrement
+        // passe par cette porte.
         if (!in_array($typeCabinet, cabinet_type_options(), true)) {
             $marquer('type_cabinet', $typeCabinet === ''
                 ? 'Le type de cabinet est obligatoire.'
                 : 'Ce type de cabinet est inconnu.');
+        }
+
+        if ($responsableNom === '') {
+            $marquer('responsable_nom', 'Le responsable principal est obligatoire.');
         }
 
         // `maxlength` n'est respectable que par le navigateur : un POST direct
@@ -139,6 +163,10 @@ if (is_post() && $db) {
             'rc' => 60,
             'identifiant_fiscal' => 100,
             'taxe_professionnelle' => 100,
+            'responsable_nom' => 150,
+            'responsable_fonction' => 120,
+            'responsable_email' => 190,
+            'responsable_telephone' => 40,
         ];
         foreach ($lengths as $field => $max) {
             if (mb_strlen(field_value($_POST, $field)) > $max) {
@@ -155,13 +183,81 @@ if (is_post() && $db) {
         if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
             $marquer('email', 'Adresse email invalide.');
         }
+        if ($responsableEmail !== '' && filter_var($responsableEmail, FILTER_VALIDATE_EMAIL) === false) {
+            $marquer('responsable_email', 'Adresse email invalide.');
+        }
 
-        if ($code !== '' && !isset($fieldErrors['code'])) {
-            $dup = $db->prepare('SELECT id FROM cabinets WHERE code = :code AND id <> :id');
-            $dup->execute(['code' => $code, 'id' => $targetId]);
-            if ($dup->fetch()) {
-                $marquer('code', 'Ce code de cabinet est déjà utilisé.');
+        // Doublons.
+        //
+        // Un cabinet est identifie legalement par son ICE, son RC, son IF et sa
+        // TP : deux cabinets qui partagent la meme valeur designent le meme
+        // client, et le second eclaterait la facturation entre deux rows. L'email
+        // et le code sont uniques de la meme facon, et le code est deja verifie
+        // depuis toujours.
+        //
+        // La colonne est en `utf8mb4_unicode_ci` : la comparaison ignore la
+        // casse et les accents, donc `Contact@Cabinet.ma` est refuse contre
+        // `contact@cabinet.ma` sans traitement particulier.
+        //
+        // Le message est_unique porte le nom du cabinet deja enregistre : c'est
+        // l'information qui manque pour trancher, et elle est deja affichee
+        // dans la colonne Code de la liste situee juste sous le formulaire.
+        $doubles = [
+            'code' => ['colonne' => 'code', 'message' => 'Ce code de cabinet est déjà utilisé.'],
+            'email' => ['colonne' => 'email', 'message' => 'Cet email est déjà utilisé par un autre cabinet.'],
+            'ice' => ['colonne' => 'ice', 'message' => 'Cet ICE est déjà attribué à un autre cabinet.'],
+            'rc' => ['colonne' => 'rc', 'message' => 'Ce RC est déjà attribué à un autre cabinet.'],
+            'identifiant_fiscal' => ['colonne' => 'identifiant_fiscal', 'message' => 'Cet IF est déjà attribué à un autre cabinet.'],
+            'taxe_professionnelle' => ['colonne' => 'taxe_professionnelle', 'message' => 'Cette TP est déjà attribuée à un autre cabinet.'],
+        ];
+
+        foreach ($doubles as $field => $regle) {
+            $valeur = field_value($_POST, $field);
+            if ($valeur === '' || isset($fieldErrors[$field])) {
+                continue;
             }
+
+            $dup = $db->prepare(
+                'SELECT id FROM cabinets WHERE ' . $regle['colonne'] . ' = :valeur AND id <> :id LIMIT 1'
+            );
+            $dup->execute(['valeur' => $valeur, 'id' => $targetId]);
+
+            if ($dup->fetch()) {
+                $marquer($field, $regle['message']);
+            }
+        }
+
+        // Formats des identifiants legaux.
+        //
+        // Les longueurs sont celles de l'administration fiscale marocaine : ICE
+        // a 15 chiffres, IF a 8. Un ecart n'est pas une erreur — certains
+        // cabinets saisisissent une reference interne, et le registre de commerce
+        // peut porter un suffixe — mais il doit etre visible, sinon la facture
+        // part avec un identifiant faux sans que personne ne le voie.
+        $formats = [
+            'ice' => ['/^\d{15}$/', 'Un ICE comporte 15 chiffres.'],
+            'rc' => ['/^\d+$/', 'Un RC est normalement composé de chiffres uniquement.'],
+            'identifiant_fiscal' => ['/^\d{8}$/', 'Un IF comporte 8 chiffres.'],
+            'taxe_professionnelle' => ['/^\d+$/', 'Une TP est normalement composee uniquement de chiffres.'],
+        ];
+
+        foreach ($formats as $field => [$motif, $message]) {
+            $valeur = field_value($_POST, $field);
+            if ($valeur === '' || isset($fieldErrors[$field])) {
+                continue;
+            }
+
+            if (preg_match($motif, $valeur) === 1) {
+                $fieldOk[$field] = true;
+            } else {
+                $avertir($field, $message . ' Saisi : « ' . $valeur . ' ».');
+            }
+        }
+
+        // Un email valide et non duplique est confirme de meme facon, pour que
+        // la section Coordonnees affiche le meme code retour que les identifiants.
+        if ($email !== '' && !isset($fieldErrors['email']) && !isset($fieldWarnings['email'])) {
+            $fieldOk['email'] = true;
         }
 
         if ($fieldErrors !== []) {
@@ -191,6 +287,10 @@ if (is_post() && $db) {
                 'rc' => $opt(field_value($_POST, 'rc')),
                 'identifiant_fiscal' => $opt(field_value($_POST, 'identifiant_fiscal')),
                 'taxe_professionnelle' => $opt(field_value($_POST, 'taxe_professionnelle')),
+                'responsable_nom' => $opt($responsableNom),
+                'responsable_fonction' => $opt(field_value($_POST, 'responsable_fonction')),
+                'responsable_email' => $opt($responsableEmail),
+                'responsable_telephone' => $opt(field_value($_POST, 'responsable_telephone')),
                 'statut' => $statut,
             ];
 
@@ -240,6 +340,7 @@ $searchedColumns = [
     'code', 'nom', 'email', 'ville', 'ice', 'rc',
     'telephone', 'telephone_fixe', 'telephone_mobile',
     'identifiant_fiscal', 'taxe_professionnelle',
+    'responsable_nom', 'responsable_email',
 ];
 
 $cabinets = [];
@@ -279,12 +380,25 @@ if ($db) {
     $stmt->execute($params);
     $cabinets = $stmt->fetchAll();
 
+    // Total non filtre : il alimente le sous-titre de la liste, qui doit
+    // distinguer « 3 cabinets sur 12 » de « 12 cabinets ». La requete
+    // supplementaire n'est lancee que si un filtre est pose — sans filtre, la
+    // liste filtrée fait deja foi.
+    $filtreActif = $whereSql !== '';
+    $totalCabinets = $filtreActif
+        ? (int) $db->query('SELECT COUNT(*) FROM cabinets')->fetchColumn()
+        : count($cabinets);
+
     $exportType = $_GET['export'] ?? '';
     if ($exportType === 'csv' || $exportType === 'xlsx') {
         $rows = array_map(static fn (array $r): array => [
             $r['code'],
             cabinet_type_label((string) ($r['type_cabinet'] ?? '')),
             $r['nom'],
+            $r['responsable_nom'] ?? '-',
+            $r['responsable_fonction'] ?? '-',
+            $r['responsable_email'] ?? '-',
+            $r['responsable_telephone'] ?? '-',
             $r['email'] ?? '-',
             $r['telephone'] ?? '-',
             $r['telephone_fixe'] ?? '-',
@@ -301,8 +415,9 @@ if ($db) {
         ], $cabinets);
 
         $headers = [
-            'Code', 'Type de cabinet', 'Nom du cabinet', 'Email',
-            'Téléphone', 'Téléphone fixe', 'Téléphone mobile', 'Adresse', 'Ville',
+            'Code', 'Type de cabinet', 'Nom du cabinet',
+            'Responsable', 'Fonction', 'Email responsable', 'Téléphone responsable',
+            'Email', 'Téléphone', 'Téléphone fixe', 'Téléphone mobile', 'Adresse', 'Ville',
             'ICE', 'RC', 'Identifiant fiscal (IF)', 'Taxe professionnelle (TP)',
             'Statut', 'Utilisateurs', 'Abonnements',
         ];
@@ -325,300 +440,626 @@ foreach (cabinet_type_options() as $t) {
     $typeOptions[$t] = cabinet_type_label($t);
 }
 
-// Rendus d'erreur par champ, reutilises sur les seize saisies : sans eux le
-// gabarit du formulaire triple la condition d'erreur a chaque fois, et le
-// message finit systematiquement par ne plus etre pose sur la bonne ligne.
-$err = static function (string $champ) use ($fieldErrors): string {
-    return isset($fieldErrors[$champ]) ? ' class="input-error" aria-invalid="true"' : '';
+// Rendus d'etat par champ, reutilises sur les vingt saisies : sans eux le
+// gabarit du formulaire triple la condition a chaque fois, et le message finit
+// systematiquement par ne plus etre pose sur la bonne ligne.
+//
+// L'ordre de priorite est fixe — erreur, puis avertissement, puis confirmation :
+// un champ en erreur ne peut pas afficher la coche verte a cote de son message.
+$etat = static function (string $champ) use ($fieldErrors, $fieldWarnings, $fieldOk): string {
+    if (isset($fieldErrors[$champ])) {
+        return ' is-error';
+    }
+    if (isset($fieldWarnings[$champ])) {
+        return ' is-warning';
+    }
+    if (isset($fieldOk[$champ])) {
+        return ' is-ok';
+    }
+    return '';
 };
 
-$msg = static function (string $champ) use ($fieldErrors): string {
-    $texte = $fieldErrors[$champ] ?? '';
-    return $texte === '' ? '' : '<small class="field-error">' . e($texte) . '</small>';
+// Les classes sont prefixees `cab-msg` et non `field-error` : `.field-error`
+// existe deja dans la feuille globale, stylisee pour la grille horizontale du
+// formulaire collaborateur (`flex: 1 1 100%`). La reutiliser ici lui ferait
+// heriter une base flex qui n'a pas de sens dans une etiquette empilee, et le
+// message gagnerait une hauteur fantome.
+$msg = static function (string $champ) use ($fieldErrors, $fieldWarnings): string {
+    $texte = $fieldErrors[$champ] ?? $fieldWarnings[$champ] ?? '';
+    if ($texte === '') {
+        return '';
+    }
+
+    $erreur = isset($fieldErrors[$champ]);
+
+    return '<small class="cab-msg ' . ($erreur ? 'cab-msg--error' : 'cab-msg--warning') . '">'
+        . '<span class="material-symbols-outlined">' . ($erreur ? 'error' : 'warning') . '</span>'
+        . e($texte)
+        . '</small>';
 };
+
+$ok = static function (string $champ) use ($fieldErrors, $fieldWarnings, $fieldOk): string {
+    if (!isset($fieldOk[$champ]) || isset($fieldErrors[$champ]) || isset($fieldWarnings[$champ])) {
+        return '';
+    }
+
+    return '<small class="cab-msg cab-msg--ok">'
+        . '<span class="material-symbols-outlined">check_circle</span>'
+        . 'Format valide, aucun doublon'
+        . '</small>';
+};
+
+// `aria-invalid` est porte par la saisie, l'etat visuel par l'enveloppe
+// `.cab-field` : les deux doivent calendrier ensemble, sinon le lecteur d'ecran
+// annonce un champ invalide que la couleur ne signale pas.
+$invalide = static function (string $champ) use ($fieldErrors): string {
+    return isset($fieldErrors[$champ]) ? ' aria-invalid="true"' : '';
+};
+
+// Le statut est choisi dans le formulaire : prevenir avant l'enregistrement
+// vaut mieux qu'un cabinet suspendu decouvert a la facturation. On lit
+// `$formData` et non `$statut`, qui n'existe qu'apres le handler POST — sans
+// cela l'avertissement ne s'afficherait que sur un retour de formulaire, et
+// le premier affichage de la page emettait un avertissement PHP.
+$alerteStatut = match ((string) ($formData['statut'] ?? 'actif')) {
+    'suspendu' => ['is-warning', 'Ce cabinet sera enregistré en suspendu : il ne pourra pas soutenir un abonnement actif.'],
+    'ferme' => ['is-error', 'Ce cabinet sera enregistré comme fermé : ses utilisateurs perdront l\'accès à leurs dossiers.'],
+    default => null,
+};
+
+$recherchePlaceholder = 'Rechercher par code, nom, ville, email, ICE, RC, IF, TP ou responsable';
 ?>
-<section class="stack">
-    <?php if ($formOpen && ($canCreate || $canEdit)): ?>
-        <div class="section-header" style="margin-bottom:4px;">
-            <h2><?= $editId > 0 ? 'Modifier le cabinet' : 'Nouveau cabinet' ?></h2>
-            <div class="table-actions">
-                <a class="btn btn-cancel" href="<?= e(app_url('cabinets')) ?>"><span class="material-symbols-outlined">close</span> Fermer</a>
-            </div>
-        </div>
+<div class="cab-canvas">
+    <div class="cab-page">
 
-        <form method="post" class="form-compact">
-            <?= csrf_input() ?>
-            <input type="hidden" name="action" value="save">
-            <?php if ($editId > 0): ?>
-                <input type="hidden" name="id" value="<?= e((string) $editId) ?>">
-            <?php endif; ?>
-
-            <article class="card">
-                <div class="section-header">
-                    <span class="material-symbols-outlined">business</span>
-                    <h2>Identité du cabinet</h2>
-                </div>
-                <div class="form-grid">
-                    <label class="field<?= isset($fieldErrors['code']) ? ' field-error' : '' ?>">
-                        <span>Code <em class="req-mark">*</em></span>
-                        <input type="text" name="code" required maxlength="40" value="<?= e((string) ($formData['code'] ?? '')) ?>" placeholder="CAB-001"<?= $err('code') ?>>
-                        <?= $msg('code') ?>
-                    </label>
-                    <label class="field<?= isset($fieldErrors['type_cabinet']) ? ' field-error' : '' ?>">
-                        <span>Type <em class="req-mark">*</em></span>
-                        <select name="type_cabinet" required<?= $err('type_cabinet') ?>>
-                            <option value="" disabled<?= (string) ($formData['type_cabinet'] ?? '') === '' ? ' selected' : '' ?>>Choisir un type</option>
-                            <?php foreach ($typeOptions as $val => $lbl): ?>
-                                <option value="<?= e($val) ?>"<?= (string) ($formData['type_cabinet'] ?? '') === $val ? ' selected' : '' ?>><?= e($lbl) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                        <?= $msg('type_cabinet') ?>
-                    </label>
-                    <label class="field<?= isset($fieldErrors['nom']) ? ' field-error' : '' ?>">
-                        <span>Nom du cabinet / Raison sociale <em class="req-mark">*</em></span>
-                        <input type="text" name="nom" required maxlength="150" value="<?= e((string) ($formData['nom'] ?? '')) ?>" placeholder="Cabinet Exemple"<?= $err('nom') ?>>
-                        <?= $msg('nom') ?>
-                    </label>
-                    <label class="field">
-                        <span>Statut</span>
-                        <select name="statut">
-                            <?php foreach ($statutOptions as $val => $lbl): ?>
-                                <option value="<?= e($val) ?>"<?= (string) ($formData['statut'] ?? 'actif') === $val ? ' selected' : '' ?>><?= e($lbl) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </label>
-                </div>
-            </article>
-
-            <article class="card">
-                <div class="section-header">
-                    <span class="material-symbols-outlined">contact_mail</span>
-                    <h2>Contact</h2>
-                </div>
-                <div class="form-grid">
-                    <label class="field<?= isset($fieldErrors['email']) ? ' field-error' : '' ?>">
-                        <span>Email</span>
-                        <input type="email" name="email" maxlength="190" value="<?= e((string) ($formData['email'] ?? '')) ?>" placeholder="contact@cabinet.ma"<?= $err('email') ?>>
-                        <?= $msg('email') ?>
-                    </label>
-                    <label class="field<?= isset($fieldErrors['telephone']) ? ' field-error' : '' ?>">
-                        <span>Téléphone</span>
-                        <input type="text" name="telephone" maxlength="40" value="<?= e((string) ($formData['telephone'] ?? '')) ?>" placeholder="0522 00 00 00"<?= $err('telephone') ?>>
-                        <?= $msg('telephone') ?>
-                    </label>
-                    <label class="field<?= isset($fieldErrors['telephone_fixe']) ? ' field-error' : '' ?>">
-                        <span>Téléphone fixe</span>
-                        <input type="text" name="telephone_fixe" maxlength="60" value="<?= e((string) ($formData['telephone_fixe'] ?? '')) ?>" placeholder="0522 00 00 00"<?= $err('telephone_fixe') ?>>
-                        <?= $msg('telephone_fixe') ?>
-                    </label>
-                    <label class="field<?= isset($fieldErrors['telephone_mobile']) ? ' field-error' : '' ?>">
-                        <span>Téléphone mobile</span>
-                        <input type="text" name="telephone_mobile" maxlength="60" value="<?= e((string) ($formData['telephone_mobile'] ?? '')) ?>" placeholder="0661 00 00 00"<?= $err('telephone_mobile') ?>>
-                        <?= $msg('telephone_mobile') ?>
-                    </label>
-                    <label class="field full<?= isset($fieldErrors['adresse']) ? ' field-error' : '' ?>">
-                        <span>Adresse</span>
-                        <input type="text" name="adresse" maxlength="255" value="<?= e((string) ($formData['adresse'] ?? '')) ?>" placeholder="Rue, numéro, quartier"<?= $err('adresse') ?>>
-                        <?= $msg('adresse') ?>
-                    </label>
-                    <label class="field<?= isset($fieldErrors['ville']) ? ' field-error' : '' ?>">
-                        <span>Ville</span>
-                        <input type="text" name="ville" maxlength="120" value="<?= e((string) ($formData['ville'] ?? '')) ?>" placeholder="Casablanca"<?= $err('ville') ?>>
-                        <?= $msg('ville') ?>
-                    </label>
-                </div>
-            </article>
-
-            <article class="card">
-                <div class="section-header">
-                    <span class="material-symbols-outlined">verified</span>
-                    <h2>Identifiants légaux</h2>
-                </div>
-                <div class="form-grid">
-                    <label class="field<?= isset($fieldErrors['ice']) ? ' field-error' : '' ?>">
-                        <span>ICE</span>
-                        <input type="text" name="ice" maxlength="40" value="<?= e((string) ($formData['ice'] ?? '')) ?>" placeholder="001234567890123"<?= $err('ice') ?>>
-                        <?= $msg('ice') ?>
-                    </label>
-                    <label class="field<?= isset($fieldErrors['rc']) ? ' field-error' : '' ?>">
-                        <span>RC</span>
-                        <input type="text" name="rc" maxlength="60" value="<?= e((string) ($formData['rc'] ?? '')) ?>" placeholder="123456"<?= $err('rc') ?>>
-                        <?= $msg('rc') ?>
-                    </label>
-                    <label class="field<?= isset($fieldErrors['identifiant_fiscal']) ? ' field-error' : '' ?>">
-                        <span>IF</span>
-                        <input type="text" name="identifiant_fiscal" maxlength="100" value="<?= e((string) ($formData['identifiant_fiscal'] ?? '')) ?>" placeholder="40312785"<?= $err('identifiant_fiscal') ?>>
-                        <?= $msg('identifiant_fiscal') ?>
-                    </label>
-                    <label class="field<?= isset($fieldErrors['taxe_professionnelle']) ? ' field-error' : '' ?>">
-                        <span>TP</span>
-                        <input type="text" name="taxe_professionnelle" maxlength="100" value="<?= e((string) ($formData['taxe_professionnelle'] ?? '')) ?>" placeholder="27185403"<?= $err('taxe_professionnelle') ?>>
-                        <?= $msg('taxe_professionnelle') ?>
-                    </label>
-                </div>
-            </article>
-
-            <article class="card">
-                <div class="section-header">
-                    <span class="material-symbols-outlined">visibility</span>
-                    <h2>Aperçu généré</h2>
-                </div>
-                <div class="form-grid">
-                    <label class="field">
-                        <span>Nom complet généré</span>
-                        <input type="text" value="<?= e((string) ($formData['nom'] ?? '')) ?>" placeholder="Remplissez le nom du cabinet" readonly data-apercu="nom">
-                    </label>
-                    <label class="field">
-                        <span>Code généré</span>
-                        <input type="text" value="<?= e((string) ($formData['code'] ?? '')) ?>" placeholder="CAB-001" readonly data-apercu="code">
-                    </label>
-                </div>
-            </article>
-
-            <div class="form-actions">
-                <a class="btn btn-cancel" href="<?= e(app_url('cabinets')) ?>"><span class="material-symbols-outlined">close</span> Annuler</a>
+        <?php if ($formOpen && ($canCreate || $canEdit)): ?>
+            <form method="post" class="cab-form">
+                <?= csrf_input() ?>
+                <input type="hidden" name="action" value="save">
                 <?php if ($editId > 0): ?>
-                    <button class="btn btn-next" type="submit"><span class="material-symbols-outlined">save</span> Mettre à jour</button>
-                <?php else: ?>
-                    <button class="btn btn-next" type="submit"><span class="material-symbols-outlined">add</span> Créer le cabinet</button>
+                    <input type="hidden" name="id" value="<?= e((string) $editId) ?>">
                 <?php endif; ?>
-            </div>
-        </form>
-    <?php endif; ?>
 
-    <article class="card">
-        <div class="section-header">
-            <span class="page-count"><?= count($cabinets) ?> cabinet(s)</span>
+                <div class="cab-form__head">
+                    <div>
+                        <h2 class="cab-form__title">
+                            <span class="material-symbols-outlined"><?= $editId > 0 ? 'edit' : 'add_business' ?></span>
+                            <?= $editId > 0 ? 'Modifier le cabinet' : 'Nouveau cabinet client' ?>
+                        </h2>
+                        <p class="cab-form__sub">
+                            <?= $editId > 0
+                                ? 'Mettez à jour les informations de ce cabinet.'
+                                : 'Renseignez la dénomination, les coordonnées et les identifiants légaux du cabinet.' ?>
+                        </p>
+                    </div>
+                    <a class="btn btn-cancel" href="<?= e(app_url('cabinets')) ?>">
+                        <span class="material-symbols-outlined">close</span> Fermer
+                    </a>
+                </div>
+
+                <?php if ($fieldErrors !== []): ?>
+                    <div class="cab-alert is-error" role="alert">
+                        <span class="material-symbols-outlined">error</span>
+                        <div>
+                            <strong><?= count($fieldErrors) ?> champ(s) à corriger</strong>
+                            <p>Les champs en rouge ci-dessous empêchent l'enregistrement. Les autres sont acceptés tels quels.</p>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
+                <?php if ($alerteStatut !== null): ?>
+                    <div class="cab-alert <?= e($alerteStatut[0]) ?>">
+                        <span class="material-symbols-outlined">warning</span>
+                        <div><?= e($alerteStatut[1]) ?></div>
+                    </div>
+                <?php endif; ?>
+
+                <div class="cab-form__grid">
+
+                    <!-- 1 — Informations generales -->
+                    <section class="cab-card" data-cab-card>
+                        <header class="cab-card__head">
+                            <span class="cab-card__icon material-symbols-outlined">business</span>
+                            <h3>Informations générales</h3>
+                            <button type="button" class="cab-card__toggle" data-cab-toggle
+                                    aria-expanded="true" aria-controls="cab-corps-infos">
+                                <span class="material-symbols-outlined">expand_more</span>
+                                <span class="cab-card__sr">Replier la section Informations générales</span>
+                            </button>
+                        </header>
+
+                        <div class="cab-card__body" id="cab-corps-infos">
+                            <label class="cab-field<?= $etat('code') ?> cab-field--auto">
+                                <span class="cab-field__label">Code cabinet <span class="cab-field__req">auto</span></span>
+                                <input type="text" name="code" maxlength="40" readonly
+                                       value="<?= e((string) ($formData['code'] ?? '')) ?>"
+                                       aria-describedby="hint-code"<?= $invalide('code') ?>>
+                                <small class="cab-field__hint" id="hint-code">Généré automatiquement, non modifiable</small>
+                                <?= $msg('code') ?>
+                            </label>
+
+                            <label class="cab-field<?= $etat('type_cabinet') ?>">
+                                <span class="cab-field__label">Type de cabinet <em class="req-mark">*</em></span>
+                                <select name="type_cabinet" required<?= $invalide('type_cabinet') ?>>
+                                    <option value="" disabled<?= (string) ($formData['type_cabinet'] ?? '') === '' ? ' selected' : '' ?>>Choisir un type</option>
+                                    <?php foreach ($typeOptions as $val => $lbl): ?>
+                                        <option value="<?= e($val) ?>"<?= (string) ($formData['type_cabinet'] ?? '') === $val ? ' selected' : '' ?>><?= e($lbl) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <?= $msg('type_cabinet') ?>
+                            </label>
+
+                            <label class="cab-field cab-field--wide<?= $etat('nom') ?>">
+                                <span class="cab-field__label">Nom du cabinet / Raison sociale <em class="req-mark">*</em></span>
+                                <input type="text" name="nom" required maxlength="150"
+                                       value="<?= e((string) ($formData['nom'] ?? '')) ?>"
+                                       placeholder="Cabinet Exemple"<?= $invalide('nom') ?>>
+                                <?= $msg('nom') ?>
+                            </label>
+
+                            <label class="cab-field">
+                                <span class="cab-field__label">Statut</span>
+                                <select name="statut">
+                                    <?php foreach ($statutOptions as $val => $lbl): ?>
+                                        <option value="<?= e($val) ?>"<?= (string) ($formData['statut'] ?? 'actif') === $val ? ' selected' : '' ?>><?= e($lbl) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </label>
+                        </div>
+                    </section>
+
+                    <!-- 2 — Coordonnees -->
+                    <section class="cab-card" data-cab-card>
+                        <header class="cab-card__head">
+                            <span class="cab-card__icon material-symbols-outlined">contact_mail</span>
+                            <h3>Coordonnées</h3>
+                            <button type="button" class="cab-card__toggle" data-cab-toggle
+                                    aria-expanded="true" aria-controls="cab-corps-coordonnees">
+                                <span class="material-symbols-outlined">expand_more</span>
+                                <span class="cab-card__sr">Replier la section Coordonnées</span>
+                            </button>
+                        </header>
+
+                        <div class="cab-card__body" id="cab-corps-coordonnees">
+                            <label class="cab-field<?= $etat('email') ?>">
+                                <span class="cab-field__label">Email du cabinet</span>
+                                <input type="email" name="email" maxlength="190"
+                                       value="<?= e((string) ($formData['email'] ?? '')) ?>"
+                                       placeholder="contact@cabinet.ma"<?= $invalide('email') ?>>
+                                <?= $msg('email') ?>
+                                <?= $ok('email') ?>
+                            </label>
+
+                            <label class="cab-field<?= $etat('telephone') ?>">
+                                <span class="cab-field__label">Téléphone principal</span>
+                                <input type="text" name="telephone" maxlength="40" inputmode="tel"
+                                       value="<?= e((string) ($formData['telephone'] ?? '')) ?>"
+                                       placeholder="0522 00 00 00"<?= $invalide('telephone') ?>>
+                                <?= $msg('telephone') ?>
+                            </label>
+
+                            <label class="cab-field">
+                                <span class="cab-field__label">Téléphone fixe</span>
+                                <input type="text" name="telephone_fixe" maxlength="60" inputmode="tel"
+                                       value="<?= e((string) ($formData['telephone_fixe'] ?? '')) ?>"
+                                       placeholder="0522 00 00 00">
+                            </label>
+
+                            <label class="cab-field">
+                                <span class="cab-field__label">Téléphone mobile</span>
+                                <input type="text" name="telephone_mobile" maxlength="60" inputmode="tel"
+                                       value="<?= e((string) ($formData['telephone_mobile'] ?? '')) ?>"
+                                       placeholder="0661 00 00 00">
+                            </label>
+
+                            <label class="cab-field cab-field--wide">
+                                <span class="cab-field__label">Adresse</span>
+                                <input type="text" name="adresse" maxlength="255"
+                                       value="<?= e((string) ($formData['adresse'] ?? '')) ?>"
+                                       placeholder="Rue, numéro, quartier">
+                            </label>
+
+                            <label class="cab-field">
+                                <span class="cab-field__label">Ville</span>
+                                <input type="text" name="ville" maxlength="120"
+                                       value="<?= e((string) ($formData['ville'] ?? '')) ?>"
+                                       placeholder="Casablanca">
+                            </label>
+                        </div>
+                    </section>
+
+                    <!-- 3 — Identifiants legaux : carte accentuee, elle porte l'identite
+                         fiscale du cabinet qui apparait sur les factures. -->
+                    <section class="cab-card cab-card--legal" data-cab-card>
+                        <header class="cab-card__head">
+                            <span class="cab-card__icon material-symbols-outlined">verified</span>
+                            <h3>Identifiants légaux</h3>
+                            <span class="cab-card__tag">Facturation</span>
+                            <button type="button" class="cab-card__toggle" data-cab-toggle
+                                    aria-expanded="true" aria-controls="cab-corps-legaux">
+                                <span class="material-symbols-outlined">expand_more</span>
+                                <span class="cab-card__sr">Replier la section Identifiants légaux</span>
+                            </button>
+                        </header>
+
+                        <div class="cab-card__body cab-card__body--legal" id="cab-corps-legaux">
+                            <p class="cab-card__note">
+                                Ces quatre identifiants figurent sur les factures et les déclarations.
+                                Un doublon est refusé : chaque valeur doit désigner un seul cabinet.
+                            </p>
+                            <label class="cab-field cab-field--mono<?= $etat('ice') ?>">
+                                <span class="cab-field__label">ICE <small>Identifiant Commun de l'Entreprise</small></span>
+                                <input type="text" name="ice" maxlength="40" inputmode="numeric" data-numeric
+                                       value="<?= e((string) ($formData['ice'] ?? '')) ?>"
+                                       placeholder="001234567890123"<?= $invalide('ice') ?>>
+                                <?= $msg('ice') ?>
+                                <?= $ok('ice') ?>
+                            </label>
+
+                            <label class="cab-field cab-field--mono<?= $etat('rc') ?>">
+                                <span class="cab-field__label">RC <small>Registre de Commerce</small></span>
+                                <input type="text" name="rc" maxlength="60" inputmode="numeric" data-numeric
+                                       value="<?= e((string) ($formData['rc'] ?? '')) ?>"
+                                       placeholder="123456"<?= $invalide('rc') ?>>
+                                <?= $msg('rc') ?>
+                                <?= $ok('rc') ?>
+                            </label>
+
+                            <label class="cab-field cab-field--mono<?= $etat('identifiant_fiscal') ?>">
+                                <span class="cab-field__label">IF <small>Identifiant Fiscal</small></span>
+                                <input type="text" name="identifiant_fiscal" maxlength="100" inputmode="numeric" data-numeric
+                                       value="<?= e((string) ($formData['identifiant_fiscal'] ?? '')) ?>"
+                                       placeholder="40312785"<?= $invalide('identifiant_fiscal') ?>>
+                                <?= $msg('identifiant_fiscal') ?>
+                                <?= $ok('identifiant_fiscal') ?>
+                            </label>
+
+                            <label class="cab-field cab-field--mono<?= $etat('taxe_professionnelle') ?>">
+                                <span class="cab-field__label">TP <small>Taxe Professionnelle</small></span>
+                                <input type="text" name="taxe_professionnelle" maxlength="100" inputmode="numeric" data-numeric
+                                       value="<?= e((string) ($formData['taxe_professionnelle'] ?? '')) ?>"
+                                       placeholder="27185403"<?= $invalide('taxe_professionnelle') ?>>
+                                <?= $msg('taxe_professionnelle') ?>
+                                <?= $ok('taxe_professionnelle') ?>
+                            </label>
+                        </div>
+                    </section>
+
+                    <!-- 4 — Responsable principal -->
+                    <section class="cab-card" data-cab-card>
+                        <header class="cab-card__head">
+                            <span class="cab-card__icon material-symbols-outlined">person</span>
+                            <h3>Responsable principal</h3>
+                            <button type="button" class="cab-card__toggle" data-cab-toggle
+                                    aria-expanded="true" aria-controls="cab-corps-responsable">
+                                <span class="material-symbols-outlined">expand_more</span>
+                                <span class="cab-card__sr">Replier la section Responsable principal</span>
+                            </button>
+                        </header>
+
+                        <div class="cab-card__body" id="cab-corps-responsable">
+                            <p class="cab-card__note">
+                                Interlocuteur du cabinet pour la facturation et les relances.
+                            </p>
+                            <label class="cab-field cab-field--wide<?= $etat('responsable_nom') ?>">
+                                <span class="cab-field__label">Nom et prénom <em class="req-mark">*</em></span>
+                                <input type="text" name="responsable_nom" required maxlength="150"
+                                       value="<?= e((string) ($formData['responsable_nom'] ?? '')) ?>"
+                                       placeholder="Karim Bennani"<?= $invalide('responsable_nom') ?>>
+                                <?= $msg('responsable_nom') ?>
+                            </label>
+
+                            <label class="cab-field<?= $etat('responsable_fonction') ?>">
+                                <span class="cab-field__label">Fonction</span>
+                                <input type="text" name="responsable_fonction" maxlength="120"
+                                       value="<?= e((string) ($formData['responsable_fonction'] ?? '')) ?>"
+                                       placeholder="Associé gérant">
+                                <?= $msg('responsable_fonction') ?>
+                            </label>
+
+                            <label class="cab-field<?= $etat('responsable_email') ?>">
+                                <span class="cab-field__label">Email</span>
+                                <input type="email" name="responsable_email" maxlength="190"
+                                       value="<?= e((string) ($formData['responsable_email'] ?? '')) ?>"
+                                       placeholder="k.bennani@cabinet.ma"<?= $invalide('responsable_email') ?>>
+                                <?= $msg('responsable_email') ?>
+                            </label>
+
+                            <label class="cab-field<?= $etat('responsable_telephone') ?>">
+                                <span class="cab-field__label">Téléphone</span>
+                                <input type="text" name="responsable_telephone" maxlength="40" inputmode="tel"
+                                       value="<?= e((string) ($formData['responsable_telephone'] ?? '')) ?>"
+                                       placeholder="0661 00 00 00"<?= $invalide('responsable_telephone') ?>>
+                                <?= $msg('responsable_telephone') ?>
+                            </label>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="cab-form__footer">
+                    <span class="cab-form__legend">
+                        <em class="req-mark">*</em> Champs obligatoires
+                    </span>
+                    <div class="cab-form__buttons">
+                        <a class="btn btn-cancel" href="<?= e(app_url('cabinets')) ?>">
+                            <span class="material-symbols-outlined">close</span> Annuler
+                        </a>
+                        <?php if ($editId > 0): ?>
+                            <button class="btn btn-next" type="submit">
+                                <span class="material-symbols-outlined">save</span> Mettre à jour
+                            </button>
+                        <?php else: ?>
+                            <button class="btn btn-next" type="submit">
+                                <span class="material-symbols-outlined">add</span> Créer le cabinet
+                            </button>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </form>
+        <?php endif; ?>
+
+        <!-- Titre de la liste. On reutilise volontairement les classes de
+             l'en-tete du formulaire (icone + titre + sous-titre + actions a
+             droite) : meme niveau de hierarchie, meme rhythmme, et la seule
+             difference avec le bloc du dessus est la taille du contenu. -->
+        <div class="cab-form__head">
+            <div>
+                <h2 class="cab-form__title">
+                    <span class="material-symbols-outlined">list_alt</span>
+                    Liste des cabinets clients
+                </h2>
+                <p class="cab-form__sub">
+                    <strong><?= $totalCabinets ?></strong> cabinet<?= $totalCabinets > 1 ? 's' : '' ?> au total
+                    <?php if ($filtreActif): ?>
+                        &middot; <strong><?= count($cabinets) ?></strong> affich&eacute;<?= count($cabinets) > 1 ? 's' : '' ?> par le filtre
+                    <?php endif; ?>
+                    &middot; filtres disponibles : recherche libre et type de cabinet
+                </p>
+            </div>
             <div class="table-actions">
                 <a class="btn btn-info" href="<?= e(app_url('cabinets', ['export' => 'csv', 'q' => $query, 'type' => $typeFilter])) ?>"><span class="material-symbols-outlined">download</span> CSV</a>
                 <a class="btn btn-info" href="<?= e(app_url('cabinets', ['export' => 'xlsx', 'q' => $query, 'type' => $typeFilter])) ?>"><span class="material-symbols-outlined">table_chart</span> Excel</a>
             </div>
         </div>
 
-        <form method="get" class="stack search-bar">
-            <input type="hidden" name="page" value="cabinets">
-            <div class="inline-form">
-                <input type="search" name="q" placeholder="Rechercher par code, nom, ville, email, ICE, RC, IF ou TP" value="<?= e($query) ?>">
-                <select name="type" aria-label="Filtrer par type de cabinet">
-                    <option value="">Tous les types</option>
-                    <?php foreach ($typeOptions as $val => $lbl): ?>
-                        <option value="<?= e($val) ?>"<?= $typeFilter === $val ? ' selected' : '' ?>><?= e($lbl) ?></option>
-                    <?php endforeach; ?>
-                </select>
-                <button type="submit"><span class="material-symbols-outlined">search</span> Rechercher</button>
-                <?php if ($query !== '' || $typeFilter !== ''): ?>
-                    <a class="btn btn-cancel" href="<?= e(app_url('cabinets')) ?>"><span class="material-symbols-outlined">close</span> Effacer</a>
-                <?php endif; ?>
-            </div>
-        </form>
+        <article class="card cab-table">
+            <form method="get" class="search-bar">
+                <input type="hidden" name="page" value="cabinets">
+                <div class="inline-form">
+                    <input type="search" name="q" placeholder="<?= e($recherchePlaceholder) ?>" value="<?= e($query) ?>">
+                    <select name="type" aria-label="Filtrer par type de cabinet">
+                        <option value="">Tous les types</option>
+                        <?php foreach ($typeOptions as $val => $lbl): ?>
+                            <option value="<?= e($val) ?>"<?= $typeFilter === $val ? ' selected' : '' ?>><?= e($lbl) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <button type="submit"><span class="material-symbols-outlined">search</span> Rechercher</button>
+                    <?php if ($query !== '' || $typeFilter !== ''): ?>
+                        <a class="btn btn-cancel" href="<?= e(app_url('cabinets')) ?>"><span class="material-symbols-outlined">close</span> Effacer</a>
+                    <?php endif; ?>
+                </div>
+            </form>
 
-        <?php if (!$cabinets): ?>
-            <p class="table-empty">
-                <?php if ($query !== '' || $typeFilter !== ''): ?>
-                    Aucun cabinet ne correspond à cette recherche.
-                <?php else: ?>
-                    Aucun cabinet enregistré. Les abonnements se rattachent à un cabinet : créez d'abord votre premier client.
-                <?php endif; ?>
-            </p>
-        <?php else: ?>
-            <div class="table-scroll">
-                <table data-sortable data-table="cabinets">
-                    <thead>
-                        <tr>
-                            <th data-col="code">Code</th>
-                            <th data-col="type">Type</th>
-                            <th data-col="nom">Nom</th>
-                            <th data-col="identifiants">Identifiants</th>
-                            <th data-col="contact">Contact</th>
-                            <th data-col="ville">Ville</th>
-                            <th data-col="statut">Statut</th>
-                            <th data-col="users">Utilisateurs</th>
-                            <th data-col="abos">Abonnements</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    <?php foreach ($cabinets as $cab): ?>
-                        <?php
-                        // Les identifiants sont empiles en petits caracteres : sur
-                        // une ligne horizontale, quatre colonnes distinctes
-                        // repoussaient les compteurs hors de l'ecran.
-                        $identifiants = array_filter([
-                            'ICE' => $cab['ice'] ?? '',
-                            'RC' => $cab['rc'] ?? '',
-                            'IF' => $cab['identifiant_fiscal'] ?? '',
-                            'TP' => $cab['taxe_professionnelle'] ?? '',
-                        ], static fn ($v): bool => $v !== null && $v !== '');
-                        ?>
-                        <tr>
-                            <td><strong><?= e((string) $cab['code']) ?></strong></td>
-                            <td><span class="badge <?= e(cabinet_type_tone((string) ($cab['type_cabinet'] ?? ''))) ?>"><?= e(cabinet_type_label((string) ($cab['type_cabinet'] ?? ''))) ?></span></td>
-                            <td><?= e((string) $cab['nom']) ?></td>
-                            <td>
-                                <?php if ($identifiants === []): ?>
-                                    <?= '-' ?>
-                                <?php else: ?>
-                                    <?php foreach ($identifiants as $sigle => $value): ?>
-                                        <small><?= e($sigle) ?> : <?= e((string) $value) ?></small><br>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <?= e((string) ($cab['email'] ?? '-')) ?>
-                                <?php foreach (['telephone', 'telephone_fixe', 'telephone_mobile'] as $phoneField): ?>
-                                    <?php if (!empty($cab[$phoneField])): ?>
-                                        <br><small><?= e((string) $cab[$phoneField]) ?></small>
+            <?php if (!$cabinets): ?>
+                <p class="table-empty">
+                    <?php if ($query !== '' || $typeFilter !== ''): ?>
+                        Aucun cabinet ne correspond à cette recherche.
+                    <?php else: ?>
+                        Aucun cabinet enregistré. Les abonnements se rattachent à un cabinet : créez d'abord votre premier client.
+                    <?php endif; ?>
+                </p>
+            <?php else: ?>
+                <div class="table-scroll">
+                    <table data-sortable data-table="cabinets">
+                        <thead>
+                            <tr>
+                                <th data-col="code">Code</th>
+                                <th data-col="type">Type</th>
+                                <th data-col="nom">Nom</th>
+                                <th data-col="responsable">Responsable</th>
+                                <th data-col="identifiants">Identifiants</th>
+                                <th data-col="contact">Contact</th>
+                                <th data-col="ville">Ville</th>
+                                <th data-col="statut">Statut</th>
+                                <th data-col="users">Utilisateurs</th>
+                                <th data-col="abos">Abonnements</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($cabinets as $cab): ?>
+                            <?php
+                            // Les identifiants sont empiles en petits caracteres : sur
+                            // une ligne horizontale, quatre colonnes distinctes
+                            // repoussaient les compteurs hors de l'ecran.
+                            $identifiants = array_filter([
+                                'ICE' => $cab['ice'] ?? '',
+                                'RC' => $cab['rc'] ?? '',
+                                'IF' => $cab['identifiant_fiscal'] ?? '',
+                                'TP' => $cab['taxe_professionnelle'] ?? '',
+                            ], static fn ($v): bool => $v !== null && $v !== '');
+                            ?>
+                            <tr>
+                                <td><strong><?= e((string) $cab['code']) ?></strong></td>
+                                <td><span class="badge <?= e(cabinet_type_tone((string) ($cab['type_cabinet'] ?? ''))) ?>"><?= e(cabinet_type_label((string) ($cab['type_cabinet'] ?? ''))) ?></span></td>
+                                <td><?= e((string) $cab['nom']) ?></td>
+                                <td>
+                                    <?php if (empty($cab['responsable_nom'])): ?>
+                                        <span class="text-muted">—</span>
+                                    <?php else: ?>
+                                        <?= e((string) $cab['responsable_nom']) ?>
+                                        <?php if (!empty($cab['responsable_fonction'])): ?>
+                                            <br><small><?= e((string) $cab['responsable_fonction']) ?></small>
+                                        <?php endif; ?>
                                     <?php endif; ?>
-                                <?php endforeach; ?>
-                            </td>
-                            <td><?= e((string) ($cab['ville'] ?? '-')) ?></td>
-                            <td><span class="badge <?= e(cabinet_statut_tone((string) $cab['statut'])) ?>"><?= e(cabinet_statut_label((string) $cab['statut'])) ?></span></td>
-                            <td><?= (int) ($cab['nb_utilisateurs'] ?? 0) ?></td>
-                            <td><?= (int) ($cab['nb_abonnements'] ?? 0) ?></td>
-                            <td class="table-actions">
-                                <?php if ($canEdit): ?>
-                                    <a class="btn-icon info" href="<?= e(app_url('cabinets', ['edit' => (int) $cab['id']])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
-                                <?php endif; ?>
-                                <?php if ($canDelete): ?>
-                                    <form method="post">
-                                        <?= csrf_input() ?>
-                                        <input type="hidden" name="action" value="delete">
-                                        <input type="hidden" name="id" value="<?= e((string) $cab['id']) ?>">
-                                        <button class="btn-icon danger" type="submit" data-confirm="Supprimer le cabinet « <?= e((string) $cab['nom']) ?> » ?" data-confirm-title="Supprimer le cabinet" data-confirm-ok="Supprimer" title="Supprimer"><span class="material-symbols-outlined">delete</span></button>
-                                    </form>
-                                <?php endif; ?>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        <?php endif; ?>
-    </article>
-</section>
+                                </td>
+                                <td>
+                                    <?php if ($identifiants === []): ?>
+                                        <?= '-' ?>
+                                    <?php else: ?>
+                                        <?php foreach ($identifiants as $sigle => $value): ?>
+                                            <small><?= e($sigle) ?> : <?= e((string) $value) ?></small><br>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?= e((string) ($cab['email'] ?? '-')) ?>
+                                    <?php foreach (['telephone', 'telephone_fixe', 'telephone_mobile'] as $phoneField): ?>
+                                        <?php if (!empty($cab[$phoneField])): ?>
+                                            <br><small><?= e((string) $cab[$phoneField]) ?></small>
+                                        <?php endif; ?>
+                                    <?php endforeach; ?>
+                                </td>
+                                <td><?= e((string) ($cab['ville'] ?? '-')) ?></td>
+                                <td><span class="badge <?= e(cabinet_statut_tone((string) $cab['statut'])) ?>"><?= e(cabinet_statut_label((string) $cab['statut'])) ?></span></td>
+                                <td><?= (int) ($cab['nb_utilisateurs'] ?? 0) ?></td>
+                                <td><?= (int) ($cab['nb_abonnements'] ?? 0) ?></td>
+                                <td class="table-actions">
+                                    <?php if ($canEdit): ?>
+                                        <a class="btn-icon info" href="<?= e(app_url('cabinets', ['edit' => (int) $cab['id']])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
+                                    <?php endif; ?>
+                                    <?php if ($canDelete): ?>
+                                        <form method="post">
+                                            <?= csrf_input() ?>
+                                            <input type="hidden" name="action" value="delete">
+                                            <input type="hidden" name="id" value="<?= e((string) $cab['id']) ?>">
+                                            <button class="btn-icon danger" type="submit" data-confirm="Supprimer le cabinet « <?= e((string) $cab['nom']) ?> » ?" data-confirm-title="Supprimer le cabinet" data-confirm-ok="Supprimer" title="Supprimer"><span class="material-symbols-outlined">delete</span></button>
+                                        </form>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </article>
+    </div>
+</div>
 
 <script>
-// Apercu genere : les deux lectures seules recopient en direct les saisies
-// dont elles sont derivees. Elles n'ont pas de `name`, donc l'apercu ne peut
-// pas etre poste ni ecrit en base : seul le script les alimente.
+// Normalisation des identifiants legaux au focus perdu.
+//
+// L'ICE se recopie depuis une fiche, un mail ou un.tableau : il arrive avec des
+// espaces, des tirets ou des points ("0012 3456 7890 123"). Le serveur stocke
+// la valeur telle quelle et la comparaison de doublon se fait sur la chaine
+// entiere, donc "0012 3456 7890 123" et "001234567890123" passeraient pour deux
+// cabinets differents. On retire donc les separateurs au blur — pas pendant la
+// frappe, ou le curseur sauterait sous les doigts de l'utilisateur.
 (function () {
-    var form = document.querySelector('form.form-compact');
-    if (!form) {
+    document.querySelectorAll('.cab-form [data-numeric]').forEach(function (champ) {
+        champ.addEventListener('blur', function () {
+            champ.value = champ.value.replace(/[\s.\-_]/g, '');
+        });
+    });
+})();
+
+// Accordéon des sections sur mobile.
+//
+// Sur un telephone, les quatre sections empilees donnaient six hauteurs
+// d'ecran de defilement avant d'atteindre le bouton de validation. Sous
+// 900px — le meme palier que la colonne unique — une seule section reste
+// ouverte a la fois.
+//
+// L'etat est memorise par carte et reapplique a chaque bascule de largeur :
+// passer en paysage puis revenir en portrait ne referme pas la section que
+// l'utilisateur venait d'ouvrir, et le mode grand ecran reste hors du
+// comportement (tout ouvert, aucun bouton).
+(function () {
+    var cartes = Array.prototype.slice.call(document.querySelectorAll('[data-cab-card]'));
+    if (!cartes.length) {
         return;
     }
 
-    var sources = {
-        nom: form.querySelector('[name="nom"]'),
-        code: form.querySelector('[name="code"]')
-    };
+    // 768px, meme palier que la colonne unique en CSS : sous cette largeur
+    // l'accordion s'active, au-dessus les quatre sections restent ouvertes et
+    // le bouton de repli disparait. Un `matchMedia` par cascade CSS eviterait
+    // de dupliquer la valeur, mais le hors-parallele de l'ancien Chrome
+    // (Android WebView) ne connait pas `addEventListener` sur la requete.
+    var query = window.matchMedia('(max-width: 768px)');
+    var choix = new Map();
 
-    form.addEventListener('input', function () {
-        form.querySelectorAll('[data-apercu]').forEach(function (apercu) {
-            var source = sources[apercu.getAttribute('data-apercu')];
-            if (source) {
-                apercu.value = source.value;
+    function sectionAReplier(carte) {
+        return carte.querySelector('.cab-card__note, .cab-card__body');
+    }
+
+    function appliquer(carte, ouvert) {
+        carte.dataset.collapsed = ouvert ? 'false' : 'true';
+        var contenu = sectionAReplier(carte);
+        if (contenu) {
+            contenu.hidden = !ouvert;
+        }
+
+        var bouton = carte.querySelector('[data-cab-toggle]');
+        if (bouton) {
+            bouton.setAttribute('aria-expanded', ouvert ? 'true' : 'false');
+        }
+    }
+
+    function rendre() {
+        var mobile = query.matches;
+        cartes.forEach(function (carte, index) {
+            if (!mobile) {
+                // Grand ecran : tout ouvert, l'accordion n'existe pas.
+                delete carte.dataset.collapsed;
+                var contenu = sectionAReplier(carte);
+                if (contenu) {
+                    contenu.hidden = false;
+                }
+                var bouton = carte.querySelector('[data-cab-toggle]');
+                if (bouton) {
+                    bouton.setAttribute('aria-expanded', 'true');
+                }
+                return;
             }
+
+            // Première visite sur mobile : la première section ouverte, les
+            // autres repliées — l'utilisateur voit l'ordre de saisie d'un coup
+            // d'œil au lieu de découvrir quatre blocs d'affilée.
+            if (!choix.has(carte)) {
+                choix.set(carte, index === 0);
+            }
+            appliquer(carte, choix.get(carte));
+        });
+    }
+
+    cartes.forEach(function (carte) {
+        var bouton = carte.querySelector('[data-cab-toggle]');
+        if (!bouton) {
+            return;
+        }
+
+        bouton.addEventListener('click', function () {
+            if (!query.matches) {
+                return;
+            }
+
+            var ouvert = carte.dataset.collapsed !== 'true';
+
+            // Accordéon exclusif : ouvrir une section referme les autres. Sur un
+            // ecran de 844px, deux sections ouvertes suffisent a faire
+            // disparaitre la barre d'action, et c'est elle qu'on cherche au
+            // moment de valider.
+            if (ouvert) {
+                cartes.forEach(function (autre) {
+                    if (autre !== carte) {
+                        choix.set(autre, false);
+                        appliquer(autre, false);
+                    }
+                });
+            }
+
+            choix.set(carte, !ouvert);
+            appliquer(carte, !ouvert);
         });
     });
+
+    if (typeof query.addEventListener === 'function') {
+        query.addEventListener('change', rendre);
+    } else if (typeof query.addListener === 'function') {
+        query.addListener(rendre);
+    }
+
+    rendre();
 })();
 </script>

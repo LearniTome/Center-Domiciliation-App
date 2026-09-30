@@ -80,6 +80,12 @@ if (is_post()) {
 
                 set_flash('success', 'Bienvenue, ' . $user['nom_complet'] . ' !');
 
+                // Mot de passe provisoire : on va directement a l'ecran de
+                // changement plutot que de laisser l'index rediriger.
+                if (!empty($user['must_change_password'])) {
+                    redirect_to('mot_de_passe');
+                }
+
                 if ($redirect !== '' && !str_starts_with($redirect, 'http://') && !str_starts_with($redirect, 'https://')) {
                     header('Location: ' . $redirect);
                     exit;

@@ -8,6 +8,31 @@
 > ⚠️ Migration index/UNIQUE appliquée en LOCAL — avant déploiement prod, re-vérifier les doublons sur la base prod.
 > Vérif prod bloquée : accès MySQL prod refusé (Access denied pour `centiaxh_dom_user` depuis cette IP — à whitelister dans cPanel « MySQL distant »).
 
+## UX/UI
+
+- [x] Page « Accès refusé » (`require_permission()` → 403 sur `dashboard`) — **améliorer l'UX/UI**
+      Constat initial : HTML nu, sans CSS ni charte (`<h1>`, `<p>`, `<a>`), pas d'icône,
+      aucune information sur la cause réelle. Message générique et unique lien
+      « Se déconnecter » : l'utilisateur sans droit était bloqué sans issue.
+      Livré :
+      - page autonome `includes/acces_refuse.php`, rendue hors layout (le menu
+        latéral est lui-même protégé) mais dans la charte : `assets/css/app.css`,
+        thème sombre, Material Symbols, carte centrée, `role="alert"` ;
+      - information actionnable : compte, rôle, droit manquant libellé **+**
+        clé technique (`dashboard.view`) pour l'administrateur ;
+      - badge « Erreur 403 », message dédié quand le compte n'a **aucun** droit ;
+      - action de sortie : « Retour à l'application » pointant sur la 1re page
+        réellement accessible au compte (nouveau helper `first_allowed_page()`,
+        chaque candidat revalidé par `has_permission()` → aucune boucle possible) ;
+        bouton masqué si le compte n'a aucun droit, seule la déconnexion reste ;
+      - « Se déconnecter » inchangé.
+      ⚠️ Piège écarté : un « Retour » par `history.back()` **rejouait le POST de
+      connexion**, qui redirigeait vers le dashboard → retour immédiat sur la
+      page 403. Remplacé par un vrai lien calculé côté serveur.
+      Vérifié : statut HTTP 403, `app.css` 200, rendu centré (1023 px et 390 px,
+      media query ≤ 480 px), repli `contrats` accessible avec son layout.
+      Suite complète : **200 tests, 481 assertions** OK.
+
 ## P0 — Corrections critiques DB
 
 - [x] Tâche 1 — Corriger la migration cassée `20260612_000004_societe_source.sql`

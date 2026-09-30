@@ -19,7 +19,7 @@ $allowedPages = [
     'documents', 'download_all', 'dossier_download', 'suivi_pdf', 'recap_pdf',
     'defaults', 'analyse-couverture', 'variables',
     'convert-word-pdf', 'ai-assistant', 'import-modele',
-    'setup', 'connexion', 'deconnexion',
+    'setup', 'connexion', 'deconnexion', 'mot_de_passe',
     'roles', 'role', 'activite',
     'notifications', 'notifications-manage', 'notif-ajax',
     'modifications', 'cessions', 'cession', 'cession_dossier', 'cession_suivi',
@@ -59,6 +59,7 @@ $pageDir = [
     // Auth
     'connexion' => 'auth',
     'deconnexion' => 'auth',
+    'mot_de_passe' => 'auth',
     'not-found' => 'auth',
     // Modification juridique
     'modifications' => 'modification-juridique',
@@ -142,6 +143,18 @@ if (!in_array($page, $allowedPages, true)) {
     $page = 'not-found';
 }
 
+// Porte du mot de passe provisoire : tant que `must_change_password` est pose,
+// l'utilisateur ne peut pas utiliser l'application, seulement la changer ou
+// se deconnecter. Sans cette porte, un compte cree par le Centre avec un mot
+// passe genere garderait ce mot de passe indefiniment.
+if (
+    is_logged_in()
+    && must_change_password()
+    && !in_array($page, password_change_exempt_pages(), true)
+) {
+    redirect_to('mot_de_passe');
+}
+
 // JSON API endpoint — no HTML output at all
 if ($page === 'notif-ajax') {
     ob_clean();
@@ -203,6 +216,7 @@ $pageTitleMap = [
     'not-found' => 'Page introuvable',
     'connexion' => 'Connexion',
     'deconnexion' => 'Deconnexion',
+    'mot_de_passe' => 'Mot de passe',
     'roles' => 'Gestion des roles',
     'role' => 'Fiche role',
     'activite' => 'Journal d\'activite',
@@ -224,7 +238,7 @@ $pageTitleMap = [
 ];
 
 // Public pages without sidebar layout
-$noLayoutPages = ['connexion', 'deconnexion'];
+$noLayoutPages = ['connexion', 'deconnexion', 'mot_de_passe'];
 
 if (in_array($page, $noLayoutPages, true)) {
 $pageTitle = $pageTitleMap[$page] ?? 'Center Domiciliation App';

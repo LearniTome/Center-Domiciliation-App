@@ -6466,6 +6466,11 @@ input[data-bulk-checkbox] {
     min-height: 0;
 }
 
+/* Page seule (changement de mot de passe) : pas de colonne image. */
+.auth-split-solo {
+    grid-template-columns: 1fr;
+}
+
 .auth-side {
     min-height: 100%;
     box-sizing: border-box;
@@ -6859,4 +6864,717 @@ button[type="submit"].auth-submit:active {
 
 .confirm-panel .btn-danger:hover {
     background: rgba(252, 66, 74, 0.12);
+}
+/* ==========================================
+   Page "Acces refuse" (403) - includes/acces_refuse.php
+   ========================================== */
+.denied-body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    background:
+        radial-gradient(900px 420px at 50% 0%, rgba(252, 66, 74, 0.07), transparent 65%),
+        var(--bg);
+}
+
+.denied-main {
+    width: 100%;
+    max-width: 520px;
+}
+
+.denied-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.35rem;
+    padding: 2.25rem 1.75rem 1.75rem;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+}
+
+.denied-icon {
+    display: grid;
+    place-items: center;
+    width: 60px;
+    height: 60px;
+    margin-bottom: 0.75rem;
+    border-radius: 50%;
+    font-size: 1.9rem;
+    color: var(--danger);
+    background: rgba(252, 66, 74, 0.12);
+    border: 1px solid rgba(252, 66, 74, 0.35);
+}
+
+.denied-head {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.denied-title {
+    margin: 0;
+    font-size: 1.45rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+}
+
+.denied-code {
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--danger);
+    background: rgba(252, 66, 74, 0.12);
+    border: 1px solid rgba(252, 66, 74, 0.3);
+}
+
+.denied-lead {
+    margin: 0.6rem 0 0;
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+}
+
+.denied-details {
+    width: 100%;
+    margin: 1.25rem 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.denied-detail {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.6rem 0.85rem;
+    text-align: left;
+    background: var(--panel-strong);
+}
+
+.denied-detail dt {
+    font-size: 0.76rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+}
+
+.denied-detail dd {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    font-size: 0.86rem;
+    text-align: right;
+}
+
+.denied-detail-label {
+    color: var(--text);
+}
+
+.denied-key {
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.76rem;
+    color: var(--info);
+    background: rgba(143, 95, 232, 0.12);
+    border: 1px solid rgba(143, 95, 232, 0.3);
+}
+
+.denied-help {
+    margin: 1rem 0 0;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+
+.denied-warn {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-weight: 500;
+    color: var(--warning);
+}
+
+.denied-actions {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    width: 100%;
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--line);
+}
+
+@media (max-width: 480px) {
+    .denied-card { padding: 1.75rem 1.25rem 1.35rem; }
+    .denied-detail { flex-direction: column; gap: 0.15rem; }
+    .denied-detail dd { justify-content: flex-start; text-align: left; }
+}
+
+/* ==========================================
+   Cabinets clients (pages/abonnement/cabinets.php)
+   Gabarit compact inspired de Microsoft Admin Center et Stripe : le fond
+   global est le noir pur (#000), trop lourd derriere un formulaire long. On
+   repose la page sur un gris-bleu (#0b0d12) avec deux halos tres discrets, et
+   on serre chaque marge pour que les quatre sections tiennent dans un ecran
+   sans defilement.
+   Tout est prefixe `cab-` : la page ne touche ni aux variables du theme ni
+   aux gabarits partages (`.form-compact` reste intact pour le formulaire
+   collaborateur).
+   ========================================== */
+
+/* --- Fond et conteneur ---------------------------------------------------
+   Les marges negatives annulent le padding de `.main` pour que la teinte
+   couvre toute la zone de defilement, sans traiter le reste de l'application.
+   Le contenu, lui, garde une gouttiere : c'est ce qui donne l'effet « carte
+   posee sur un fond », et non « texte colle a la bordure ». */
+.cab-canvas {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    margin: -1.5rem -1.5rem -2rem;
+    padding: 0.9rem 1rem 1.25rem;
+    background:
+        radial-gradient(1100px 460px at 12% -12%, rgba(0, 144, 231, 0.07), transparent 60%),
+        radial-gradient(900px 400px at 100% 0%, rgba(143, 95, 232, 0.05), transparent 55%),
+        #0b0d12;
+}
+
+.cab-page {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+/* --- En-tete du formulaire ---------------------------------------------- */
+.cab-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 0.8rem 0.9rem 0;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+}
+
+.cab-form__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.cab-form__title {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.cab-form__title .material-symbols-outlined {
+    font-size: 1.15rem;
+    color: var(--primary);
+}
+
+.cab-form__sub {
+    margin: 0.15rem 0 0;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+/* --- Alertes (erreur globale, avertissement de statut) -------------------
+   Padding serré et texte court : une alerte est un signal, pas un paragraphe. */
+.cab-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.5rem 0.65rem;
+    border-radius: var(--radius);
+    font-size: 0.78rem;
+    border: 1px solid transparent;
+}
+
+.cab-alert .material-symbols-outlined {
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.cab-alert strong {
+    font-weight: 600;
+}
+
+.cab-alert p {
+    display: inline;
+    margin: 0;
+    color: var(--text-secondary);
+}
+
+.cab-alert.is-error {
+    background: rgba(252, 66, 74, 0.1);
+    border-color: rgba(252, 66, 74, 0.35);
+}
+
+.cab-alert.is-error .material-symbols-outlined {
+    color: var(--danger);
+}
+
+.cab-alert.is-warning {
+    background: rgba(255, 171, 0, 0.1);
+    border-color: rgba(255, 171, 0, 0.32);
+}
+
+.cab-alert.is-warning .material-symbols-outlined {
+    color: var(--warning);
+}
+
+/* --- Grille des sections : 2 colonnes, 1 colonne sous 768px --------------
+   `minmax(0, 1fr)` et non `1fr` : sans le `0`, une colonne ne peut pas
+   descendre sous la largeur de son contenu le plus large et la grille
+   deborde plutot que de se resserrer. `stretch` (et non `start`) aligne les
+   bas de cartes d'une meme rangee. */
+.cab-form__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+    align-items: stretch;
+}
+
+/* --- Carte de section ----------------------------------------------------
+   `margin: 0` annule la regle globale `section + section { margin-top: 1.5rem }`
+   (app.css) : sans elle, les cards 2 a 4 heritage de 24px de marge
+   superieure, la deuxieme carte demarrait 24px plus bas que la premiere et
+   chaque section empilee laissait un vide en haut. */
+.cab-card {
+    min-width: 0;
+    margin: 0;
+    padding: 0.55rem 0.6rem 0.65rem;
+    background: var(--panel-strong);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+.cab-card__head {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 26px;
+    margin-bottom: 0.45rem;
+}
+
+.cab-card__icon {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    font-size: 0.95rem;
+    color: var(--primary);
+    background: rgba(0, 144, 231, 0.12);
+    border: 1px solid rgba(0, 144, 231, 0.25);
+    border-radius: 7px;
+}
+
+.cab-card__head h3 {
+    margin: 0;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text);
+}
+
+.cab-card__tag {
+    margin-left: auto;
+    padding: 2px 7px;
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: var(--info);
+    background: rgba(143, 95, 232, 0.14);
+    border: 1px solid rgba(143, 95, 232, 0.3);
+    border-radius: 999px;
+}
+
+.cab-card__note {
+    grid-column: 1 / -1;
+    margin: 0 0 0.1rem;
+    font-size: 0.7rem;
+    line-height: 1.4;
+    color: var(--text-secondary);
+}
+
+.cab-card__body {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem 0.55rem;
+}
+
+/* La carte des identifiants legaux porte seule les quatre sigles qui
+   determinent la facturation : teinte et filet dedies, pour qu'elle ne se
+   confonde pas avec les sections declaratives. */
+.cab-card--legal {
+    background: linear-gradient(180deg, rgba(0, 144, 231, 0.09), rgba(0, 144, 231, 0.02));
+    border-color: rgba(0, 144, 231, 0.3);
+}
+
+.cab-card--legal .cab-card__icon {
+    background: rgba(0, 144, 231, 0.18);
+}
+
+/* --- Accordéon mobile ----------------------------------------------------
+   Le bouton couvre toute la largeur de l'en-tete (d'ou `position: relative`
+   plus haut) : on n'impose pas de viser un chevron de 20 px au doigt. Il est
+   un vrai `button` — focus clavier et `aria-expanded` — plutot qu'un `div`
+   cliquable, et il disparait en grand ecran ou l'accordion n'a pas lieu.
+   Le libelle dedie reste dans le DOM pour les lecteurs d'ecran ; l'icone de
+   Material Symbols est donc masquee ici plutot que dupliquee. */
+.cab-card__toggle {
+    display: none;
+    position: absolute;
+    inset: 0 -0.6rem;
+    padding: 0;
+    background: none;
+    border: 0;
+    border-radius: var(--radius);
+    cursor: pointer;
+}
+
+.cab-card__toggle .material-symbols-outlined {
+    position: absolute;
+    right: 0.1rem;
+    top: 50%;
+    translate: 0 -50%;
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    transition: rotate 0.18s ease;
+}
+
+.cab-card__sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.cab-card[data-collapsed="true"] .cab-card__toggle .material-symbols-outlined {
+    rotate: -90deg;
+}
+
+.cab-card[data-collapsed="true"] .cab-card__note,
+.cab-card[data-collapsed="true"] .cab-card__body {
+    display: none;
+}
+
+/* Un titre de section repliee doit advertise qu'il reste des valeurs a
+   saisir : sans cela l'utilisateur replie par megarde et ne voit plus rien. */
+.cab-card[data-collapsed="true"] .cab-card__head h3::after {
+    content: " ·";
+    color: var(--warning);
+}
+
+/* --- Champ ---------------------------------------------------------------
+   Hauteur 34px : assez pour un curseur comfortable, 15% de moins que les
+   40px habituels — sur vingt champs c'est 120px gagnes d'un coup. */
+.cab-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.18rem;
+    min-width: 0;
+}
+
+.cab-field--wide {
+    grid-column: 1 / -1;
+}
+
+.cab-field__label {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    font-size: 0.73rem;
+    font-weight: 500;
+    color: var(--text);
+}
+
+.cab-field__label small {
+    font-size: 0.62rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+}
+
+.cab-field__label .req-mark {
+    font-weight: 700;
+}
+
+/* Badge « auto » du code : dit pourquoi le champ n'est pas saisissable. */
+.cab-field__req {
+    padding: 0 5px;
+    font-size: 0.58rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+}
+
+.cab-field input,
+.cab-field select {
+    height: 34px;
+    padding: 0 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text);
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.cab-field input::placeholder {
+    color: #5b6178;
+}
+
+.cab-field input:focus,
+.cab-field select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(0, 144, 231, 0.18);
+}
+
+.cab-field--auto input {
+    border-style: dashed;
+    color: var(--text-secondary);
+    cursor: not-allowed;
+}
+
+/* Identifiants : chasse fixe et chasse legerement aeree — ce sont des
+   references a recopier, pas des nombres a calculer. */
+.cab-field--mono input {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    letter-spacing: 0.06em;
+}
+
+/* --- Etats de validation -------------------------------------------------
+   L'enveloppe porte l'etat (`is-error` / `is-warning` / `is-ok`), la saisie
+   recoit la bordure : impossible d'avoir la coche verte a cote d'un message
+   d'erreur, les deux etant exclusifs cote serveur. */
+.cab-field.is-error input,
+.cab-field.is-error select {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 2px rgba(252, 66, 74, 0.14);
+}
+
+.cab-field.is-warning input {
+    border-color: var(--warning);
+}
+
+.cab-field.is-ok input {
+    border-color: var(--success);
+}
+
+.cab-msg {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.25rem;
+    font-size: 0.66rem;
+    line-height: 1.3;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.cab-msg .material-symbols-outlined {
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+
+.cab-msg--error {
+    color: var(--danger);
+}
+
+.cab-msg--warning {
+    color: var(--warning);
+}
+
+.cab-msg--ok {
+    color: var(--success);
+}
+
+.cab-field__hint {
+    font-size: 0.64rem;
+    color: var(--text-secondary);
+}
+
+/* --- Barre d'action collee en bas du formulaire --------------------------
+   L'action primaire reste atteignable sans faire defiler toute la carte ; les
+   marges negatives annulent le padding du formulaire pour que la barre aille
+   d'un bord a l'autre, et son fond floute empeche le texte de defiler
+   dessous. */
+.cab-form__footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin: 0 -0.9rem;
+    padding: 0.5rem 0.9rem;
+    background: rgba(15, 17, 23, 0.92);
+    backdrop-filter: blur(8px);
+    border-top: 1px solid var(--line);
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.cab-form__legend {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+}
+
+.cab-form__buttons {
+    display: flex;
+    gap: 0.4rem;
+    margin-left: auto;
+}
+
+/* --- Tableau -------------------------------------------------------------
+   Lignes resserrees et police reduite : le tableauliste quatre cabinets sur
+   un demi-ecran au lieu de deborder sur deux.
+
+   Les cellules sont toutes en `white-space: nowrap` dans la feuille globale,
+   ce qui etire un tableau a onze colonnes bien au-dela de la fenetre. On
+   rend la ligne aux seules colonnes courtes (code, ville, statut, compteurs,
+   actions) et on laisse les colonnes textuelles se replier : le tableau
+   rentre alors dans la largeur disponible, sans barre de defilement
+   horizontale ni colonne a tronquer. */
+.cab-table {
+    padding: 0.6rem 0.7rem 0.7rem;
+}
+
+.cab-table th,
+.cab-table td {
+    padding-top: 0.3rem;
+    padding-bottom: 0.3rem;
+    font-size: 0.75rem;
+}
+
+.cab-table td {
+    white-space: normal;
+}
+
+.cab-table td:nth-child(1),
+.cab-table td:nth-child(7),
+.cab-table td:nth-child(8),
+.cab-table td:nth-child(9),
+.cab-table td:nth-child(10),
+.cab-table td:nth-child(11) {
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .cab-form__grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* L'accordion n'apparait qu'ici, en meme temps que la colonne unique :
+       sur un telephone les quatre sections empilees demandaient six hauteurs
+       d'ecran de defilement. */
+    .cab-card__toggle {
+        display: block;
+    }
+
+    /* La zone cliquable se mesure sur la hauteur de l'en-tete : sans ce
+       minimum, un en-tete replie fait 20px de haut et le pouce rate la
+       section une fois sur deux. */
+    .cab-card__head {
+        min-height: 36px;
+        padding: 0.4rem 0;
+        margin-bottom: 0.35rem;
+    }
+
+    /* Le chevron est pose par-dessus l'en-tete, on lui reserve sa place. */
+    .cab-card__tag {
+        margin-right: 1.5rem;
+    }
+
+    /* Saisie en pleine largeur : une colonne, la place disponible. */
+    .cab-card__body,
+    .cab-card__body--legal {
+        grid-template-columns: 1fr;
+    }
+
+    .cab-field {
+        gap: 0.2rem;
+    }
+
+    .cab-field input,
+    .cab-field select {
+        height: 40px;
+        font-size: 0.85rem;
+    }
+
+    .cab-field__label {
+        font-size: 0.75rem;
+    }
+
+    .cab-card__head h3 {
+        font-size: 0.75rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .cab-canvas {
+        margin: -1.5rem -1.5rem -2rem;
+        padding: 0.7rem 0.6rem 1rem;
+    }
+
+    .cab-form {
+        padding: 0.7rem 0.7rem 0;
+    }
+
+    .cab-form__footer {
+        flex-direction: column-reverse;
+        align-items: stretch;
+        margin: 0 -0.7rem;
+        padding: 0.6rem 0.7rem;
+    }
+
+    .cab-form__buttons {
+        width: 100%;
+    }
+
+    .cab-form__buttons .btn {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .cab-form__legend {
+        text-align: center;
+    }
 }

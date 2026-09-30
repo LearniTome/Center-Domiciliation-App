@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 ob_start();
 
-$noSidebar = in_array($page ?? '', ['connexion', 'deconnexion'], true);
+$noSidebar = in_array($page ?? '', ['connexion', 'deconnexion', 'mot_de_passe'], true);
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -118,6 +118,9 @@ $noSidebar = in_array($page ?? '', ['connexion', 'deconnexion'], true);
                         <?php endif; ?>
                     </div>
                     <div class="usermenu-footer">
+                        <a href="<?= e(app_url('mot_de_passe')) ?>" class="usermenu-logout">
+                            <span class="material-symbols-outlined">lock_reset</span> Mot de passe
+                        </a>
                         <a href="<?= e(app_url('deconnexion')) ?>" class="usermenu-logout">
                             <span class="material-symbols-outlined">logout</span> Deconnexion
                         </a>

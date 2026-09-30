@@ -8,6 +8,11 @@ if ($user && $pdo) {
     log_activity($pdo, 'deconnexion', 'auth', (int) $user['id'], $user['nom_complet']);
 }
 
+// Retire la session de la table user_sessions (sinon l'utilisateur reste
+// "en ligne" jusqu'au purge automatique de 1 heure)
+$sessionId = session_id();
+purge_user_session($pdo, $sessionId ?: null);
+
 // Clear session
 $_SESSION = [];
 session_destroy();
