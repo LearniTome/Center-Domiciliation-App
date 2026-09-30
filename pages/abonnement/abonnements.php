@@ -474,6 +474,10 @@ $invalide = static function (string $champ) use ($fieldErrors): string {
                     </header>
 
                     <div class="saas-card__body" id="abo-corps-periode">
+                        <p class="saas-card__note">
+                            La période sert au calcul des jours restants et au renouvellement.
+                        </p>
+
                         <label class="saas-field<?= $etat('date_debut') ?>">
                             <span class="saas-field__label">Date de début <em class="req-mark">*</em></span>
                             <input type="date" name="date_debut" required
@@ -502,8 +506,11 @@ $invalide = static function (string $champ) use ($fieldErrors): string {
                         </label>
 
                         <label class="saas-field saas-field--check">
-                            <input type="checkbox" name="auto_renew" value="1"<?= (int) ($formData['auto_renew'] ?? 1) === 1 ? ' checked' : '' ?>>
                             <span class="saas-field__label">Renouvellement automatique</span>
+                            <span class="saas-field__box">
+                                <input type="checkbox" name="auto_renew" value="1"<?= (int) ($formData['auto_renew'] ?? 1) === 1 ? ' checked' : '' ?>>
+                                <span class="saas-field__hint">Prolonge de 12 mois à l'échéance</span>
+                            </span>
                         </label>
                     </div>
                 </section>
@@ -555,6 +562,10 @@ $invalide = static function (string $champ) use ($fieldErrors): string {
                     </header>
 
                     <div class="saas-card__body" id="abo-corps-notes">
+                        <p class="saas-card__note">
+                            Conditions négociées, référence de contrat, points d'attention.
+                        </p>
+
                         <label class="saas-field saas-field--wide">
                             <span class="saas-field__label">Notes internes</span>
                             <textarea name="notes" rows="3" placeholder="Conditions négociées, référence de contrat, points d'attention…"><?= e((string) ($formData['notes'] ?? '')) ?></textarea>

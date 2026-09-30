@@ -7224,9 +7224,15 @@ button[type="submit"].auth-submit:active {
     border-radius: 999px;
 }
 
+/* La note occupe une rangee pleine au-dessus des champs. Sa hauteur est
+   reservee sur une ligne : c'est ce qui garantit que le premier champ de
+   chaque carte tombe a la meme hauteur, quelle que soit la carte. Sans cela,
+   une carte avec une note et sa voisine sans decalent leurs premiers champs
+   de 24px, et les deux colonnes de la page cessent d'etre symetriques. */
 .saas-card__note {
     grid-column: 1 / -1;
-    margin: 0 0 0.1rem;
+    margin: 0;
+    min-height: 1.4em;
     font-size: 0.7rem;
     line-height: 1.4;
     color: var(--text-secondary);
@@ -7235,6 +7241,7 @@ button[type="submit"].auth-submit:active {
 .saas-card__body {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
     gap: 0.45rem 0.55rem;
 }
 
@@ -7351,9 +7358,19 @@ button[type="submit"].auth-submit:active {
     border-radius: 999px;
 }
 
+/* Une seule source pour la hauteur de controle. Les saisies, les listes et la
+   ligne de la case a cocher lisaient toutes une valeur en dur, ce qui laissait
+   la case a 34px pendant que les listes passaient a 40px sur telephone : la
+   ligne de controle du champ n'etait plus la meme que celle de ses voisins.
+   Passer par une variable rend l'egalite structurelle — il n'y a plus qu'un
+   endroit ou la hauteur peut changer. */
+.saas-form {
+    --saas-control-h: 34px;
+}
+
 .saas-field input,
 .saas-field select {
-    height: 34px;
+    height: var(--saas-control-h, 34px);
     padding: 0 0.5rem;
     font-size: 0.8rem;
     color: var(--text);
@@ -7411,12 +7428,18 @@ button[type="submit"].auth-submit:active {
    ce qui casserait la boite : on isole donc la case dans un champ qui reprend
    exactement la meme hauteur et la meme bordure que ses voisins, pour que la
    ligne s'aligne sur la grille sans traitement special. */
-.saas-field--check {
+/* La case a cocher recoit la meme anatomie que tous les autres champs :
+   libelle au-dessus, ligne de controle de 34px en dessous. La version
+   precedente posait la case sur une seule rangee de 34px, ce qui la rendait
+   20px plus courte que ses voisins et decalait de fait la rangee suivante --
+   le libelle de 18px se retrouvait au niveau du milieu de la saisie
+   voisine. Ici le champ mesure exactement la hauteur d'un champ texte, et la
+   case s'aligne sur la ligne de base des saisies voisines. */
+.saas-field__box {
     display: flex;
-    flex-direction: row;
     align-items: center;
     gap: 0.5rem;
-    height: 34px;
+    height: var(--saas-control-h, 34px);
     padding: 0 0.6rem;
     background: var(--panel);
     border: 1px solid var(--border);
@@ -7424,7 +7447,11 @@ button[type="submit"].auth-submit:active {
     cursor: pointer;
 }
 
-.saas-field--check input[type="checkbox"] {
+.saas-field--check {
+    cursor: pointer;
+}
+
+.saas-field__box input[type="checkbox"] {
     flex: 0 0 auto;
     width: 15px;
     height: 15px;
@@ -7434,10 +7461,13 @@ button[type="submit"].auth-submit:active {
     cursor: pointer;
 }
 
-.saas-field--check .saas-field__label {
+/* L'aide tient sur une ligne : un retour a la ligne ferait grossir la ligne de
+   controle, donc desynchroniser le champ de ses voisins. */
+.saas-field__box .saas-field__hint {
     margin: 0;
-    color: var(--text);
-    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .saas-field--auto input {
@@ -7605,9 +7635,14 @@ button[type="submit"].auth-submit:active {
         gap: 0.2rem;
     }
 
+    /* Cible tactile : la hauteur remonte pour le pouce, et la ligne de la case
+       a cocher suit la meme valeur que les saisies voisines. */
+    .saas-form {
+        --saas-control-h: 40px;
+    }
+
     .saas-field input,
     .saas-field select {
-        height: 40px;
         font-size: 0.85rem;
     }
 
