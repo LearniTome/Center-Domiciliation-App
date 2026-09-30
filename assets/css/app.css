@@ -7156,6 +7156,80 @@ button[type="submit"].auth-submit:active {
     color: var(--warning);
 }
 
+/* Succes : uniquement porte par le mot de passe provisoire affiche une fois
+   apres la creation d'un acces. `is-info` sert a la consigne de saisie
+   (rappel des consequences d'un choix), pas a un succes. */
+.saas-alert.is-success {
+    background: rgba(0, 184, 148, 0.1);
+    border-color: rgba(0, 184, 148, 0.35);
+}
+
+.saas-alert.is-success .material-symbols-outlined {
+    color: var(--success);
+}
+
+/* Le mot de passe provisoire tient sur plusieurs lignes (adresse, secret,
+   consigne de conservation). `.saas-alert p` est en `inline` pour les
+   alertes courtes : ici il faut un vrai paragraphe, sinon les phrases se
+   collent et le secret se retrouve au milieu d'un paragraphe. */
+.saas-alert.is-success p {
+    display: block;
+    margin: 0.35rem 0;
+}
+
+.saas-alert.is-info {
+    background: var(--panel-strong);
+    border-color: var(--line);
+}
+
+.saas-alert.is-info .material-symbols-outlined {
+    color: var(--primary);
+}
+
+/* Mot de passe provisoire : doit pouvoir etre recopie lettre par lettre. Le
+   texte est isole, la police alignee, et le fond distinct du texte adjacent
+   pour qu'un "O" ne se confonde pas avec un "0". */
+.saas-alert code {
+    display: inline-block;
+    padding: 0.1rem 0.4rem;
+    border-radius: var(--radius);
+    background: var(--panel-strong);
+    border: 1px solid var(--line);
+    font-family: Consolas, 'Courier New', monospace;
+    font-size: 0.9rem;
+    letter-spacing: 0.06em;
+    user-select: all;
+}
+
+/* Liste de comptes d'un cabinet : nom en gras, details en secondaire. */
+.saas-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    font-size: 0.78rem;
+}
+
+.saas-list li {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid var(--line);
+}
+
+.saas-list li:last-child {
+    padding-bottom: 0;
+    border-bottom: 0;
+}
+
+.saas-list small {
+    color: var(--text-secondary);
+}
+
 /* --- Grille des sections : 2 colonnes, 1 colonne sous 768px --------------
    `minmax(0, 1fr)` et non `1fr` : sans le `0`, une colonne ne peut pas
    descendre sous la largeur de son contenu le plus large et la grille

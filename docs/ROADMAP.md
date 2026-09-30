@@ -148,14 +148,27 @@ integralement hors service. Aucune autre occurrence de la typo dans le depot.
 
 #### Phase 4 — Abonnements
 
-**Écart assumé avec l'estimation d'origine** : `require_active_subscription()` n'est
-**pas** implémenté. Bloquer un utilisateur dont l'abonnement est expiré lui
-couperait l'accès à l'application — donc à l'écran qui permet de **régler** la
-facture — sans issue. L'état est affiché de façon non bloquante (Phase 5). Le
-verrouillage reste ouvert si l'exploitation le souhaite.
+**Blocage à la connexion** : un compte de cabinet dont l'abonnement n'autorise
+plus l'accès (`absent`, `suspendu`, `resilie`, ou `actif` échu) n'ouvre pas de
+session. Le blocage est porté par la **porte de connexion**
+(`pages/auth/connexion.php`), pas par un garde de page : l'écran qui permet de
+régler la facture n'est ainsi jamais inatteignable, car on ne peut pas y entrer
+sans être abonné — le chemin reste ouvert à l'administration Centre, qui
+suspend, relance ou résilie.
 
-- [ ] `require_active_subscription()` — blocage des utilisateurs cabinet si `abonnement` expiré/suspendu *(écarté, voir ci-dessus)*
-- [ ] Contrôle des quotas plan (`max_utilisateurs`, `max_societes`, `max_dossiers`) — les quotas sont **affichés** dans `mon_abonnement`, pas encore appliqués
+- [x] Porte de connexion — refus des comptes cabinet dont l'abonnement
+  n'autorise pas l'accès (`abonnement_autorise_acces()`, règle unique partagée
+  avec `require_active_subscription()` et avec l'écran « Créer un accès »)
+- [x] Absence de blocage **de page** : `require_active_subscription()` reste
+  inutilisé. Le bandeau d'en-tête reste informatif, il ne couvre que ce qui peut
+  se dégrader *pendant* une session (échéance franchie, suspension)
+- [x] Action « Créer un accès » : depuis un abonnement actif ou un essai non
+  échu, ouverture du compte administrateur du cabinet (`creer_acces_cabinet()`).
+  Le cabinet découle de l'abonnement et n'est jamais choisi dans le formulaire ;
+  le rôle proposé est filtré sur `roles.scope = 'cabinet'` ; le mot de passe
+  provisoire est affiché une seule fois, hashé en base, et
+  `must_change_password` force son remplacement à la première connexion
+- [ ] Contrôle des quotas plan (`max_utilisateurs`, `max_societes`, `max_dossiers`) — les quotas sont **affichés** dans `mon_abonnement`, seul `max_utilisateurs` est appliqué à l'ouverture d'un accès
 - [x] Statuts dérivés `expire` / `en_retard` calculés à l'affichage, jamais stockés (`abonnement_display_statut()`, `facture_display_statut()`)
 - [x] Numérotation de facture `FAC-YYYY-NNN` avec reprise sur collision (`next_facture_number()`)
 
@@ -163,7 +176,7 @@ verrouillage reste ouvert si l'exploitation le souhaite.
 
 - [x] Routes + pages : `cabinets`, `plans`, `abonnements`, `factures`, `mon_abonnement`
 - [x] Menu : section « Administration » (Super Admin), entrée « Mon abonnement » (adhérent)
-- [x] Bandeau d'état abonnement dans l'entête (essai J−5 / actif J−30 / expiré / suspendu / absent), **non bloquant**
+- [x] Bandeau d'état abonnement dans l'entête (essai J−5 / actif J−30 / expiré / suspendu / absent), **informatif**
 - [x] `mon_abonnement` en lecture seule, cloisonné par `current_cabinet_id()` — aucun paramètre d'URL n'élargit le périmètre
 - [ ] Pages `users` / `user` / `parametres` (non traitées : la gestion des comptes passe encore par la configuration)
 

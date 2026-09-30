@@ -165,4 +165,152 @@ final class TenantScopeTest extends TestCase
             );
         }
     }
+
+    /**
+     * `build_scoped_sql()` doit donner a chaque `{{SCOPE}}` ses propres noms de
+     * parametres.
+     *
+     * L'application tourne en prepares natifs
+     * (`PDO::ATTR_EMULATE_PREPARES => false`), or PDO refuse qu'un parametre
+     * nomme apparaisse deux fois dans une requete : `HY093 Invalid parameter
+     * number`. Or le fil d'activite du tableau de bord est un `UNION ALL` de
+     * trois branches portant chacune son `{{SCOPE}}`.
+     *
+     * Injecter le meme `:scope_cabinet` aux trois endroits faisait echouer le
+     * tableau de bord en FATAL pour tout utilisateur cloisonne : adherent de
+     * cabinet, ou employe du Centre sans `dossiers.view_all`. Le defaut ne se
+     * voyait pas en developpement sur un compte Centre "Seeing All", dont le
+     * perimetre est vide : aucun predicat, donc aucun parametre a repeter.
+     *
+     * Le test execute donc la requete pour de vrai, en prepares natifs, et
+     * exige le nombre exact de valeurs attendues -- un parametre surnumeraire
+     * passe inapercu, un parametre manquant ne passe pas.
+     */
+    public function testChaqueOccurrenceDuScopeReoitSonPropreParametre(): void
+    {
+        $_SESSION = ['user_id' => 5, '_user_cache' => [
+            'id' => 5, 'cabinet_id' => 4, 'collaborateur_id' => null, 'role_is_system' => 0,
+        ]];
+
+        $scope = list_scope('s');
+        $this->assertNotEmpty($scope['params'], 'perimetre vide : le test ne prouve rien');
+
+        // Le fil d'activite du tableau de bord, a l'identique.
+        $requete = build_scoped_sql(
+            "
+                (SELECT 'societe' AS type, id, societe_raison_sociale AS libelle, id AS ref_id, created_at
+                 FROM societes s WHERE 1=1 {{SCOPE}})
+                UNION ALL
+                (SELECT 'contrat', c.id, s.societe_raison_sociale, c.societe_id, c.created_at
+                 FROM contrats c JOIN societes s ON s.id = c.societe_id WHERE 1=1 {{SCOPE}})
+                UNION ALL
+                (SELECT 'associe', a.id, s.societe_raison_sociale, a.societe_id, a.created_at
+                 FROM associes a JOIN societes s ON s.id = a.societe_id WHERE 1=1 {{SCOPE}})
+                ORDER BY created_at DESC LIMIT 3
+            ",
+            $scope
+        );
+
+        // Un seul nom pour les trois occurrences : c'est precisement ce que
+        // PDO refuse en prepares natifs.
+        $noms = [];
+        preg_match_all('/:([A-Za-z_][A-Za-z0-9_]*)/', $requete['sql'], $noms);
+        $this->assertCount(
+            3,
+            $noms[1],
+            'les trois branches du UNION doivent recevoir trois parametres distincts, pas un partage'
+        );
+        $this->assertCount(3, array_unique($noms[1]), 'deux branches portent le meme nom de parametre');
+        $this->assertCount(3, $requete['params'], 'chaque parametre du scope doit etre fourni');
+        $this->assertSame([4, 4, 4], array_values($requete['params']));
+
+        // Verdict de MySQL, pas seulement du-phpunit : c'est lui qui leve HY093.
+        $pdo = $this->connexionNative();
+        if ($pdo === null) {
+            $this->markTestSkipped('Base de developpement injoignable.');
+        }
+
+        $stmt = $pdo->prepare($requete['sql']);
+        $stmt->execute($requete['params']);
+        $this->assertIsArray($stmt->fetchAll());
+    }
+
+    /**
+     * Un perimetre vide doit retirer le marqueur, pas laisser `{{SCOPE}}` dans
+     * la requete : le SQL deviendrait invalide.
+     */
+    public function testPerimetreVideRetireLeMarqueur(): void
+    {
+        $requete = build_scoped_sql(
+            'SELECT COUNT(*) FROM societes s WHERE 1=1 {{SCOPE}}',
+            ['sql' => '', 'params' => []]
+        );
+
+        $this->assertStringNotContainsString('{{SCOPE}}', $requete['sql']);
+        $this->assertSame('SELECT COUNT(*) FROM societes s WHERE 1=1 ', $requete['sql']);
+        $this->assertSame([], $requete['params']);
+    }
+
+    /** Un `1 = 0` (employe interne sans fiche collaborateur) ne prend pas de parametre. */
+    public function testRefusExpliciteSInjecteSansParametre(): void
+    {
+        $requete = build_scoped_sql(
+            'SELECT COUNT(*) FROM societes s WHERE 1=1 {{SCOPE}}',
+            ['sql' => '1 = 0', 'params' => []]
+        );
+
+        $this->assertStringContainsString(' AND 1 = 0', $requete['sql']);
+        $this->assertSame([], $requete['params']);
+    }
+
+    /**
+     * Les parametres propres a la requete sont preserves, et le perimetre
+     * n'est pas surchargeable.
+     *
+     * Le second point est une frontiere de securite : `list_scope()` est
+     * l'unique source du cloisonnement. Si une page pouvait passer
+     * `scope_cabinet` dans ses propres parametres, le perimetre
+     * parfaitement cloisonne deviendrait negociable depuis le formulaire.
+     */
+    public function testParametresDeLaRequeteSontPreservesEtPerimetreNonSurchargeable(): void
+    {
+        $requete = build_scoped_sql(
+            'SELECT * FROM societes s WHERE s.id = :id AND 1=1 {{SCOPE}}',
+            ['sql' => 's.cabinet_id = :scope_cabinet', 'params' => ['scope_cabinet' => 7]],
+            ['id' => 42, 'scope_cabinet' => 99]
+        );
+
+        $this->assertStringContainsString(':id', $requete['sql']);
+        $this->assertStringContainsString(':scope_cabinet_s0', $requete['sql']);
+        $this->assertDoesNotMatchRegularExpression(
+            '/:scope_cabinet(?!_s\d)/',
+            $requete['sql'],
+            'le nom d origine doit avoir ete renomme, sinon PDO refuse de le repetitionner'
+        );
+        $this->assertSame(42, $requete['params']['id'], 'un parametre propre a la requete doit survivre');
+        $this->assertSame(7, $requete['params']['scope_cabinet_s0'], 'la valeur du perimetre vient de list_scope()');
+    }
+
+    /** Une requete sans marqueur est rendue telle quelle, parametres compris. */
+    public function testRequeteSansMarqueurResteIntacte(): void
+    {
+        $requete = build_scoped_sql('SELECT 1', ['sql' => '1 = 0', 'params' => []], ['a' => 1]);
+
+        $this->assertSame('SELECT 1', $requete['sql']);
+        $this->assertSame(['a' => 1], $requete['params']);
+    }
+
+    private function connexionNative(): ?PDO
+    {
+        try {
+            return new PDO(
+                'mysql:host=127.0.0.1;dbname=center_domiciliation;charset=utf8mb4',
+                'root',
+                '',
+                [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES => false]
+            );
+        } catch (PDOException) {
+            return null;
+        }
+    }
 }

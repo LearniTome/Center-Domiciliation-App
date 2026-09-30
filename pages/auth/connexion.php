@@ -52,45 +52,67 @@ if (is_post()) {
                     $error .= " ($attemptsLeft tentative(s) restante(s))";
                 }
             } else {
-                login_throttle_clear($pdo, $email, $ip);
-                $_SESSION['user_id'] = (int) $user['id'];
-                clear_user_cache();
-                log_activity($pdo, 'connexion', 'auth', (int) $user['id'], $user['nom_complet']);
+                // Porte d'abonnement. Elle se joue sur `users.cabinet_id` et non
+                // sur current_cabinet_id() : le compte n'est pas encore en
+                // session, et lire la session ici reviendrait a creer la session
+                // avant d'avoir decide de l'autoriser.
+                //
+                // Regle unique, partagee avec require_active_subscription() :
+                // voir abonnement_autorise_acces(). Un compte interne du Centre
+                // (cabinet_id NULL) n'a pas d'abonnement et n'en a pas besoin.
+                $etatAbo = abonnement_state_for_cabinet(
+                    $pdo,
+                    $user['cabinet_id'] === null ? null : (int) $user['cabinet_id']
+                );
 
-                // Update last_login
-                $pdo->prepare('UPDATE users SET last_login = NOW() WHERE id = :id')
-                    ->execute(['id' => (int) $user['id']]);
-
-                // Remember me : conserver l'email dans un cookie (30 jours)
-                if ($rememberMe) {
-                    setcookie('auth_email', $email, [
-                        'expires' => time() + 30 * 24 * 3600,
-                        'path' => '/',
-                        'httponly' => true,
-                        'samesite' => 'Lax',
-                    ]);
+                if (!abonnement_autorise_acces($etatAbo)) {
+                    // Identifiants corrects, abonnement non actif. Aucun echec
+                    // n'est enregistre : le mot de passe etait bon, et remplir
+                    // le compteur verrouillerait un adherent dont la situation
+                    // se regularise aupres du Centre.
+                    $error = abonnement_refus_message($etatAbo);
+                    log_activity($pdo, 'connexion_refusee', 'auth', (int) $user['id'], $user['nom_complet'], 'Abonnement inactif : ' . $etatAbo['libelle']);
                 } else {
-                    setcookie('auth_email', '', [
-                        'expires' => time() - 3600,
-                        'path' => '/',
-                        'httponly' => true,
-                        'samesite' => 'Lax',
-                    ]);
-                }
+                    login_throttle_clear($pdo, $email, $ip);
+                    $_SESSION['user_id'] = (int) $user['id'];
+                    clear_user_cache();
+                    log_activity($pdo, 'connexion', 'auth', (int) $user['id'], $user['nom_complet']);
 
-                set_flash('success', 'Bienvenue, ' . $user['nom_complet'] . ' !');
+                    // Update last_login
+                    $pdo->prepare('UPDATE users SET last_login = NOW() WHERE id = :id')
+                        ->execute(['id' => (int) $user['id']]);
 
-                // Mot de passe provisoire : on va directement a l'ecran de
-                // changement plutot que de laisser l'index rediriger.
-                if (!empty($user['must_change_password'])) {
-                    redirect_to('mot_de_passe');
-                }
+                    // Remember me : conserver l'email dans un cookie (30 jours)
+                    if ($rememberMe) {
+                        setcookie('auth_email', $email, [
+                            'expires' => time() + 30 * 24 * 3600,
+                            'path' => '/',
+                            'httponly' => true,
+                            'samesite' => 'Lax',
+                        ]);
+                    } else {
+                        setcookie('auth_email', '', [
+                            'expires' => time() - 3600,
+                            'path' => '/',
+                            'httponly' => true,
+                            'samesite' => 'Lax',
+                        ]);
+                    }
 
-                if ($redirect !== '' && !str_starts_with($redirect, 'http://') && !str_starts_with($redirect, 'https://')) {
-                    header('Location: ' . $redirect);
-                    exit;
+                    set_flash('success', 'Bienvenue, ' . $user['nom_complet'] . ' !');
+
+                    // Mot de passe provisoire : on va directement a l'ecran de
+                    // changement plutot que de laisser l'index rediriger.
+                    if (!empty($user['must_change_password'])) {
+                        redirect_to('mot_de_passe');
+                    }
+
+                    if ($redirect !== '' && !str_starts_with($redirect, 'http://') && !str_starts_with($redirect, 'https://')) {
+                        header('Location: ' . $redirect);
+                        exit;
+                    }
+                    redirect_to('dashboard');
                 }
-                redirect_to('dashboard');
             }
         }
     }

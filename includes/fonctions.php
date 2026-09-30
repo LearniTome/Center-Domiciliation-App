@@ -1678,6 +1678,92 @@ function list_scope(string $alias = '', ?string $createdByColumn = 'created_by')
 }
 
 /**
+ * Injecte le predicat de perimetre dans une requete et rend le couple
+ * SQL / parametres pret a etre execute.
+ *
+ * Les pages n'ecrivent pas `list_scope()['sql']` en dur : elles placent un
+ * marqueur `{{SCOPE}}` la ou le predicat doit s'appliquer, et appellent ce
+ * helper. Deux raisons a cette ecriture :
+ *
+ *   - le predicat est nu (`list_scope()` ne met ni `AND` ni `WHERE`), la
+ *     conjonction est donc ajoutee ici, une fois pour toutes ;
+ *   - `WHERE 1=1 {{SCOPE}}` reste valide meme sans perimetre : le marqueur
+ *     disparait et la requete n'est pas filtree.
+ *
+ * LE MARQUEUR PEUT APPARAITRE PLUSIEURS FOIS dans une meme requete : le fil
+ * d'activite du tableau de bord est un `UNION ALL` de trois branches, chacune
+ * avec son propre `FROM`, donc chacune avec son `{{SCOPE}}`. Chaque occurrence
+ * doit alors recevoir ses PROPRES noms de parametres.
+ *
+ * En effet PDO, en prepares natifs (`PDO::ATTR_EMULATE_PREPARES => false`, le
+ * reglage de `includes/base_donnees.php`), refuse qu'un meme parametre nomme
+ * apparaisse plusieurs fois dans une requete : l'erreur est
+ * `SQLSTATE[HY093] Invalid parameter number`. Injecter le meme `:scope_cabinet`
+ * trois fois faisait donc echouer le tableau de bord pour TOUT utilisateur
+ * cloisonne (adherent de cabinet, ou employe du Centre sans `dossiers.view_all`)
+ * -- un plantage fatal, pas un simple resultat vide. C'est invisible pour un
+ * compte Centre Seeing All : son perimetre est vide, le predicat n'est jamais
+ * injecte, et il n'y a donc aucun parametre a reutiliser.
+ *
+ * Les noms sont donc suffixes par rang d'occurrence (`:scope_cabinet_s0`,
+ * `:scope_cabinet_s1`, ...), chacun recevant la meme valeur. Le suffixe ne
+ * peut pas entrer en collision avec un parametre de la requete, qui ne contient
+ * que des noms simples.
+ *
+ * La valeur du perimetre provient TOUJOURS de `list_scope()` : un appelant ne
+ * peut pas la surcharger en passant `scope_cabinet` dans ses propres
+ * parametres (ce nom n'est plus lie au SQL, il devient sans effet). Le
+ * cloisonnement est une frontiere de securite, il ne se negocie pas depuis une
+ * page. Aucun appelant ne le fait de toute facon -- ils passent `[]` ou des
+ * parametres sans rapport (`:id`, `:seuil`).
+ *
+ * @param  array{params?: array<string, mixed>} $scope  Fragment renvoye par list_scope().
+ * @param  array<string, mixed>                $params Parametres propres a la requete.
+ * @return array{sql: string, params: array<string, mixed>}
+ */
+function build_scoped_sql(string $sql, array $scope, array $params = []): array
+{
+    if (!str_contains($sql, '{{SCOPE}}')) {
+        return ['sql' => $sql, 'params' => $params];
+    }
+
+    $predicat = (string) ($scope['sql'] ?? '');
+    $valeurs = (array) ($scope['params'] ?? []);
+    $generes = [];
+    $rang = 0;
+
+    $requete = (string) preg_replace_callback(
+        '/\{\{SCOPE\}\}/',
+        static function () use ($predicat, $valeurs, &$generes, &$rang): string {
+            // Perimetre vide : le marqueur s'efface, la requete reste globale.
+            if ($predicat === '') {
+                return '';
+            }
+
+            $occurrence = $rang;
+            $renomme = (string) preg_replace_callback(
+                '/:([A-Za-z_][A-Za-z0-9_]*)/',
+                static function (array $trouve) use ($valeurs, &$generes, $occurrence): string {
+                    $cle = $trouve[1];
+                    $generes[$cle . '_s' . $occurrence] = $valeurs[$cle] ?? null;
+
+                    return ':' . $cle . '_s' . $occurrence;
+                },
+                $predicat
+            );
+            ++$rang;
+
+            return ' AND ' . $renomme;
+        },
+        $sql
+    );
+
+    // Les parametres propres a la requete l'emportent, comme le faisait
+    // `$params + $scope['params']` avant que le premier soit vide.
+    return ['sql' => $requete, 'params' => $generes + $params];
+}
+
+/**
  * Garde de suppression / mutation sur une ligne metier.
  *
  * A appeler avant tout DELETE ou UPDATE cible par un identifiant venu du
@@ -1709,13 +1795,21 @@ function require_tenant_row(?PDO $pdo, string $table, int $id, string $column = 
 }
 
 /**
- * Etat d'abonnement du tenant, pour le bandeau d'entete et le blocage.
+ * Etat d'abonnement d'un cabinet DONNE.
+ *
+ * Variante de current_abonnement_state() qui ne lit pas la session : c'est la
+ * forme utilisee a la connexion, ou le compte vient d'etre authentifie mais
+ * n'est pas encore en session. Sans elle, le seul moyen de savoir si un
+ * abonnement donne le droit d'entrer serait de creer d'abord la session -- ce
+ * qui rendrait le controle de connexion circulaire.
+ *
+ * current_abonnement_state() n'en est qu'un appel specialise sur le cabinet
+ * du compte connecte, et les deux lectures restent identiques par construction.
  *
  * @return array{statut: string, libelle: string, jours_restants: ?int, plan: ?string}
  */
-function current_abonnement_state(?PDO $pdo = null): array
+function abonnement_state_for_cabinet(?PDO $pdo = null, ?int $cabinetId = null): array
 {
-    $cabinetId = current_cabinet_id();
     $state = ['statut' => 'centre', 'libelle' => 'Compte interne', 'jours_restants' => null, 'plan' => null];
 
     if ($cabinetId === null) {
@@ -1778,6 +1872,62 @@ function current_abonnement_state(?PDO $pdo = null): array
 }
 
 /**
+ * Etat d'abonnement du tenant connecte, pour le bandeau d'entete et le blocage.
+ *
+ * @return array{statut: string, libelle: string, jours_restants: ?int, plan: ?string}
+ */
+function current_abonnement_state(?PDO $pdo = null): array
+{
+    return abonnement_state_for_cabinet($pdo, current_cabinet_id());
+}
+
+/**
+ * L'etat donne-t-il droit a ouvrir une session ?
+ *
+ * Regle UNIQUE, partagee par la connexion (pages/auth/connexion.php) et par
+ * require_active_subscription(). Elle doit rester unique : si la connexion
+ * admettait un etat que la porte de page refuse (ou l'inverse), un adherent
+ * pourrait entrer dans l'application sans jamais atteindre l'ecran
+ * mon_abonnement -- celui ou il voit ses factures et son echeance.
+ *
+ * - 'centre'    : compte interne du Centre, jamais facture, jamais bloque.
+ * - 'essai'     : periode d'essai en cours, acces accorde.
+ * - 'actif'     : acces accorde tant que la date de fin n'est pas passee.
+ * - 'absent'    : aucun abonnement, 'suspendu' : arrete par le Centre.
+ * - 'expire'    : n'est jamais stocke (cf. abonnement_display_statut) ; un
+ *                 abonnement 'actif' echu se revele par ses jours_restants
+ *                 negatifs, d'ou le test plus bas.
+ * - 'resilie'   : hors de portee de la requete de reference (filtre sur
+ *                 essai/actif/suspendu), traite comme un refus par defaut.
+ */
+function abonnement_autorise_acces(array $state): bool
+{
+    $statut = (string) ($state['statut'] ?? 'centre');
+
+    if (in_array($statut, ['centre', 'essai'], true)) {
+        return true;
+    }
+
+    if ($statut === 'actif') {
+        return ($state['jours_restants'] ?? 0) >= 0;
+    }
+
+    return false;
+}
+
+/** Message d'explication associe a un refus d'acces, pour l'ecran de connexion. */
+function abonnement_refus_message(array $state): string
+{
+    $libelle = (string) ($state['libelle'] ?? 'Abonnement inactif');
+
+    return match ((string) ($state['statut'] ?? '')) {
+        'absent' => 'Votre cabinet n\'a pas d\'abonnement actif. Contactez le Centre de Domiciliation pour en creer un.',
+        'suspendu' => 'Votre abonnement est suspendu. Contactez le Centre de Domiciliation pour le reactiver.',
+        default => 'Votre abonnement n\'est pas actif (' . $libelle . '). Contactez le Centre de Domiciliation pour le renouveler.',
+    };
+}
+
+/**
  * Blocage des adherents dont l'abonnement n'est plus valide.
  * Le Centre n'est jamais bloque, ni les roles internes.
  */
@@ -1789,11 +1939,8 @@ function require_active_subscription(): void
 
     $state = current_abonnement_state();
 
-    $bloque = in_array($state['statut'], ['absent', 'suspendu'], true)
-        || ($state['statut'] === 'actif' && ($state['jours_restants'] ?? 1) < 0);
-
-    if ($bloque) {
-        set_flash('error', 'Votre abonnement n\'est pas actif : ' . $state['libelle'] . '. Contactez le Centre de Domiciliation.');
+    if (!abonnement_autorise_acces($state)) {
+        set_flash('error', abonnement_refus_message($state));
         redirect_to('mon_abonnement');
     }
 }
@@ -2002,6 +2149,250 @@ function fetch_cabinets_options(?PDO $pdo, bool $actifsSeulement = false): array
     }
 
     return $options;
+}
+
+/* ---------------------------------------------------------------------------
+ * Creation d'un acces cabinet : le compte administrateur ouvert apres
+ * souscription d'un abonnement actif.
+ * ------------------------------------------------------------------------ */
+
+/**
+ * Mot de passe provisoire genere pour un acces cabinet.
+ *
+ * Alphabet sans caractere ambigu (0/O, 1/l/I) : il est transmis par mail ou
+ * recopie a la main, et un "0" lu "O" fait echouer la premiere connexion.
+ * 14 caracteres de ce jeu valent environ 80 bits d'entropie, tres au-dela de ce
+ * que la politique de mots de passe du projet accepte (8 caracteres minimum).
+ */
+function generer_mot_de_passe_provisoire(int $longueur = 14): string
+{
+    $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+    $taille = strlen($alphabet) - 1;
+    $motDePasse = '';
+
+    for ($i = 0; $i < $longueur; $i++) {
+        $motDePasse .= $alphabet[random_int(0, $taille)];
+    }
+
+    // Au moins un chiffre et une minuscule : un secret 100 % majuscules ou
+    // 100 % chiffres passe certains validateurs de mot de passe qui, eux,
+    // exigent les trois classes.
+    if (!preg_match('/[a-z]/', $motDePasse)) {
+        $motDePasse[0] = 'a';
+    }
+    if (!preg_match('/[A-Z]/', $motDePasse)) {
+        $motDePasse[1] = 'Z';
+    }
+    if (!preg_match('/[0-9]/', $motDePasse)) {
+        $motDePasse[2] = '7';
+    }
+
+    return $motDePasse;
+}
+
+/**
+ * Roles proposables pour un compte de cabinet : uniquement ceux de scope
+ * 'cabinet'. Proposer 'Super Admin' (scope 'centre') donnerait au cabinet un
+ * acces transverse a tous les tenants -- l'inverse exact du cloisonnement.
+ */
+function fetch_roles_cabinet_options(?PDO $pdo): array
+{
+    if (!$pdo instanceof PDO) {
+        return [];
+    }
+
+    try {
+        $stmt = $pdo->query("SELECT id, nom FROM roles WHERE scope = 'cabinet' ORDER BY sort_order ASC, nom ASC");
+    } catch (PDOException) {
+        return [];
+    }
+
+    $options = [];
+    foreach ($stmt->fetchAll() as $row) {
+        $options[(int) $row['id']] = (string) $row['nom'];
+    }
+
+    return $options;
+}
+
+/**
+ * Un email est-il deja porte par un compte, quel que soit son cabinet ?
+ *
+ * `users.email` est UNIQUE (uq_users_email) : la verif porte sur toute la
+ * table, pas sur le cabinet cible. Un email deja pris ailleurs est un conflit
+ * de TRUNCATE SQL, pas un simple doublon a signaler.
+ */
+function user_email_existe(?PDO $pdo, string $email, ?int $excludeUserId = null): bool
+{
+    if (!$pdo instanceof PDO || trim($email) === '') {
+        return false;
+    }
+
+    try {
+        $sql = 'SELECT id FROM users WHERE email = :email';
+        $params = ['email' => trim($email)];
+        if ($excludeUserId !== null) {
+            $sql .= ' AND id <> :uid';
+            $params['uid'] = $excludeUserId;
+        }
+        $stmt = $pdo->prepare($sql . ' LIMIT 1');
+        $stmt->execute($params);
+
+        return $stmt->fetch() !== false;
+    } catch (PDOException) {
+        // Base illisible : on laisse passer, l'INSERT de toute facon echouera
+        // proprement plutot que de bloquer la saisie sur un faux positif.
+        return false;
+    }
+}
+
+/**
+ * Le cabinet a-t-il deja beneficie de l'ouverture d'acces ?
+ *
+ * "Creer un acces" est l'etape d'entree en mattere d'un abonnement : elle
+ * ouvre LE compte administrateur du cabinet, et le bouton disparait des que
+ * cette fiche existe. Ce n'est PAS une regle "un compte par cabinet" -- un
+ * cabinet peut parfaitement avoir plusieurs utilisateurs, dans la limite de
+ * son quota `max_utilisateurs` (cf. quota_state()), et c'est alors la page
+ * Utilisateurs qui les gere.
+ *
+ * La question sert donc a savoir si l'etape d'accueil a deja ete faite, pas a
+ * interdire un deuxieme utilisateur. Elle est lue a l'affichage ET reverifiee
+ * dans le handler POST : un `?acces=` tape en dur ou un double envoi ne doit
+ * pas transformer l'ecran d'accueil en formulaire de masse.
+ */
+function cabinet_a_un_compte(?PDO $pdo, int $cabinetId): bool
+{
+    if (!$pdo instanceof PDO || $cabinetId <= 0) {
+        return false;
+    }
+
+    try {
+        $stmt = $pdo->prepare('SELECT id FROM users WHERE cabinet_id = :cid LIMIT 1');
+        $stmt->execute(['cid' => $cabinetId]);
+
+        return $stmt->fetch() !== false;
+    } catch (PDOException) {
+        return false;
+    }
+}
+
+/** Comptes d'un cabinet, pour l'affichage sous le formulaire de creation. */
+function fetch_comptes_cabinet(?PDO $pdo, int $cabinetId): array
+{
+    if (!$pdo instanceof PDO || $cabinetId <= 0) {
+        return [];
+    }
+
+    try {
+        $stmt = $pdo->prepare('
+            SELECT u.id, u.nom_complet, u.email, u.statut, u.must_change_password, u.last_login,
+                   r.nom AS role_nom
+            FROM users u
+            LEFT JOIN roles r ON r.id = u.role_id
+            WHERE u.cabinet_id = :cid
+            ORDER BY u.id ASC
+        ');
+        $stmt->execute(['cid' => $cabinetId]);
+
+        return $stmt->fetchAll();
+    } catch (PDOException) {
+        return [];
+    }
+}
+
+/**
+ * Cree le compte administrateur d'un cabinet abonne.
+ *
+ * Le compte est rattache au cabinet de l'abonnement (jamais choisi par le
+ * formulaire : c'est la regle "un acces = un tenant"), le role est valide
+ * comme etant de scope 'cabinet', et le mot de passe provisoire est pose avec
+ * `must_change_password` a 1 -- la porte d'index.php force alors son
+ * remplacement avant tout acces a l'application.
+ *
+ * Le mot de passe en clair n'est JAMAIS stocke : il est retourne a l'appelant
+ * pour un affichage unique immediat, puis perdu.
+ *
+ * @return array{id: int, email: string, mot_de_passe: string}|null Null si refus.
+ */
+function creer_acces_cabinet(
+    ?PDO $pdo,
+    int $cabinetId,
+    string $nomComplet,
+    string $email,
+    int $roleId,
+    ?string $motDePasse = null,
+): ?array {
+    if (!$pdo instanceof PDO || $cabinetId <= 0) {
+        return null;
+    }
+
+    $nomComplet = trim($nomComplet);
+    $email = trim($email);
+
+    if ($nomComplet === '' || $email === '' || $roleId <= 0) {
+        return null;
+    }
+
+    // Le role doit exister ET etre un role de cabinet : c'est ce controle, et
+    // non le seul <select>, qui empeche l'attribution d'un role 'centre'.
+    try {
+        $roleStmt = $pdo->prepare("SELECT id FROM roles WHERE id = :id AND scope = 'cabinet'");
+        $roleStmt->execute(['id' => $roleId]);
+        if ($roleStmt->fetch() === false) {
+            return null;
+        }
+
+        if (user_email_existe($pdo, $email)) {
+            return null;
+        }
+
+        $motDePasse = ($motDePasse !== null && $motDePasse !== '') ? $motDePasse : generer_mot_de_passe_provisoire();
+
+        // Les deux INSERT forment une seule unite : sans transaction, un echec
+        // du pivot laisserait la ligne `users` commitee. Le cabinet serait alors
+        // considere comme disposant d'un compte, incomplet, et l'onboarding
+        // refuserait desormais toute nouvelle tentative (cabinet_a_un_compte)
+        // sans qu'aucun ecran ne permette de reparer la donnee. On n'ouvre que
+        // si l'appelant n'est pas deja en transaction : imbriquer un
+        // beginTransaction() echouerait, et le rollback ne doit pas annuler un
+        // travail qui n'est pas le notre.
+        $transactionOuverte = !$pdo->inTransaction();
+        if ($transactionOuverte) {
+            $pdo->beginTransaction();
+        }
+
+        $stmt = $pdo->prepare('
+            INSERT INTO users (nom_complet, email, password_hash, cabinet_id, role_id, statut, must_change_password)
+            VALUES (:nom, :email, :hash, :cid, :rid, \'actif\', 1)
+        ');
+        $stmt->execute([
+            'nom' => $nomComplet,
+            'email' => $email,
+            'hash' => password_hash($motDePasse, PASSWORD_DEFAULT),
+            'cid' => $cabinetId,
+            'rid' => $roleId,
+        ]);
+        $userId = (int) $pdo->lastInsertId();
+
+        // Pivot multi-roles : `users.role_id` est denormalise, cette table
+        // porte la liste reelle. Sans elle, un role ajoute ulterieurement
+        // partirait d'une base vide.
+        $pdo->prepare('INSERT INTO user_roles (user_id, role_id, is_primary) VALUES (:uid, :rid, 1)')
+            ->execute(['uid' => $userId, 'rid' => $roleId]);
+
+        if ($transactionOuverte) {
+            $pdo->commit();
+        }
+    } catch (PDOException) {
+        if (isset($transactionOuverte) && $transactionOuverte && $pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+
+        return null;
+    }
+
+    return ['id' => $userId, 'email' => $email, 'mot_de_passe' => $motDePasse];
 }
 
 /**
@@ -2884,7 +3275,25 @@ function mark_all_notifications_read(?PDO $pdo, int $userId, int $roleId, ?strin
     }
 }
 
-function generate_auto_notifications(?PDO $pdo, int $createdBy): array
+/**
+ * Genere les notifications automatiques du jour.
+ *
+ * `$createdBy` est un identifiant de COLLABORATEUR, comme `collaborateurs.created_by`
+ * auquel la regle 6 le compare. Il est nullable : un compte du Centre n'a pas
+ * de fiche collaborateur par construction (`users.collaborateur_id` peut valoir
+ * NULL), et le tableau de bord appelait deja cette fonction avec cette valeur.
+ * La signature exigeait `int` : le dashboard levait un fatal
+ * `must be of type int, null given` pour tout administrateur Centre cree sans
+ * fiche collaborateur, et le tableau de bord -- page d'accueil de
+ * l'application -- etait hors service.
+ *
+ * Un `$createdBy` nul ne doit pas non plus etre passe tel quel a la regle 6 :
+ * `c.created_by != NULL` vaut toujours NULL, donc aucune ligne, et la regle
+ * disparaitrait en silence. Le filtre d'auteur est donc omis, ce qui restitue
+ * l'intention d'origine (signaler les nouveaux collaborateurs externes) au
+ * lieu de la neutraliser.
+ */
+function generate_auto_notifications(?PDO $pdo, ?int $createdBy = null): array
 {
     if (!$pdo) return [];
     $generated = [];
@@ -3030,10 +3439,10 @@ function generate_auto_notifications(?PDO $pdo, int $createdBy): array
             FROM collaborateurs c
             WHERE c.collaborateur_type IN ('externe-pm', 'externe-pp')
               AND c.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-              AND c.created_by != :cby
+              " . ($createdBy !== null ? 'AND c.created_by != :cby' : '') . "
             ORDER BY c.created_at DESC
         ");
-        $stmt->execute(['cby' => $createdBy]);
+        $stmt->execute($createdBy !== null ? ['cby' => $createdBy] : []);
         while ($row = $stmt->fetch()) {
             $existing = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE entity_type = 'collaborateur' AND entity_id = :eid AND created_at >= CURDATE()");
             $existing->execute(['eid' => $row['id']]);

@@ -9,12 +9,23 @@ declare(strict_types=1);
  * ici, volontairement -- c'est la seule page ou le cloisonnement cabinet_id
  * ne doit pas s'appliquer. Les ecrans adherents cloisonnes sont dans
  * mon_abonnement.php.
+ *
+ * Troisieme etape de la souscription : une fois l'abonnement enregistre et
+ * actif, l'action "Creer un acces" ouvre le compte administrateur du cabinet
+ * (voir creer_acces_cabinet()). Le rattachement au cabinet n'est jamais choisi
+ * dans le formulaire : il decoule de l'abonnement, donc un acces ne peut pas
+ * atterrir chez un tenant qui n'a pas souscrit.
  */
 
 $query = search_term();
 $canCreate = has_permission('abonnements.create');
 $canEdit = has_permission('abonnements.edit');
 $canDelete = has_permission('abonnements.delete');
+// Ouvrir un compte pour un cabinet est une gestion d'utilisateur, pas une
+// ecriture d'abonnement : le droit se prend donc sur `users.create`. Un
+// administrateur de cabinet possede ce droit mais pas `abonnements.view`, il
+// n'atteint donc jamais cette page par le routage.
+$canCreateAccess = has_permission('users.create');
 $db = ($pdo ?? null) instanceof PDO ? $pdo : null;
 
 $cabinetOptions = fetch_cabinets_options($db);
@@ -29,6 +40,92 @@ $formOpen = (isset($_GET['action']) && $_GET['action'] === 'new') || $editId > 0
 // "Sur mesure (sans plan)" dans le select et perdrait sa formule et son prix
 // negocie a la premiere sauvegarde, sans lever la moindre erreur.
 $planOptions = fetch_plans_options($db, $editId === 0);
+
+// Panneau "Creer un acces" : ouvert par `?acces=<id abonnement>` sur un
+// abonnement actif, et automatiquement propose juste apres la creation d'un
+// abonnement actif. Il est exclusif du formulaire d'abonnement -- deux
+// formulaires ouverts simultanement se concurrencerait l'ecran.
+$accesId = isset($_GET['acces']) ? (int) $_GET['acces'] : 0;
+$accesOuvert = $accesId > 0;
+if ($accesOuvert) {
+    // `?acces=<id>` est un point d'entree comme un autre : sans le droit
+    // `users.create`, le panneau ne serait pas rendu et l'admin comprendrait
+    // qu'un bouton a disparu. require_permission() repond explicitement.
+    if (!$canCreateAccess) {
+        require_permission('users.create');
+    }
+
+    $formOpen = false;
+}
+
+// Valeurs du formulaire d'acces, et ses erreurs : deux jeux distincts de
+// `$fieldErrors`, l'un pour l'abonnement, l'autre pour le compte.
+$accesData = ['nom_complet' => '', 'email' => '', 'role_id' => ''];
+$accesErrors = [];
+
+// Role par defaut : "Administrateur Cabinet" si present, sinon le premier role
+// de cabinet. Un cabinet sans administrateur ne pourrait rien piloter.
+$rolesCabinet = $canCreateAccess ? fetch_roles_cabinet_options($db) : [];
+$roleDefautId = 0;
+foreach ($rolesCabinet as $rid => $rnom) {
+    if ($rnom === 'Administrateur Cabinet') {
+        $roleDefautId = (int) $rid;
+        break;
+    }
+}
+if ($roleDefautId === 0 && $rolesCabinet !== []) {
+    $roleDefautId = (int) array_key_first($rolesCabinet);
+}
+if ($accesData['role_id'] === '') {
+    $accesData['role_id'] = (string) $roleDefautId;
+}
+
+// Abonnement cible du panneau d'acces + ses comptes. Le panneau ne s'ouvre
+// que sur un abonnement VIVANT (actif ou essai non echu) : creer un compte
+// pour un abonnement resilie ou expire produirait un adherent que la porte de
+// connexion refuserait aussitot, donc un acces mort-nais.
+// La regle est celle de la connexion (abonnement_autorise_acces) : l'ecran et
+// la porte ne peuvent pas diverger sur ce qui autorise un acces.
+$accesAbo = null;
+$accesComptes = [];
+
+if ($accesOuvert && $db) {
+    $stmt = $db->prepare('
+        SELECT a.*, c.nom AS cabinet_nom, c.code AS cabinet_code, p.nom AS plan_nom
+        FROM abonnements a
+        LEFT JOIN cabinets c ON c.id = a.cabinet_id
+        LEFT JOIN plans p ON p.id = a.plan_id
+        WHERE a.id = :id
+    ');
+    $stmt->execute(['id' => $accesId]);
+    $accesAbo = $stmt->fetch() ?: null;
+
+    if ($accesAbo === null) {
+        set_flash('error', 'Abonnement introuvable.');
+        redirect_to('abonnements');
+    }
+
+    $etatAbo = [
+        'statut' => (string) $accesAbo['statut'],
+        'jours_restants' => abonnement_jours_restants($accesAbo),
+        'libelle' => abonnement_statut_label(abonnement_display_statut($accesAbo)),
+    ];
+
+    if (!abonnement_autorise_acces($etatAbo)) {
+        set_flash('error', 'Impossible de creer un acces : cet abonnement est ' . strtolower(abonnement_statut_label(abonnement_display_statut($accesAbo))) . '. Renouvelez-le d\'abord.');
+        redirect_to('abonnements');
+    }
+
+    $accesComptes = fetch_comptes_cabinet($db, (int) $accesAbo['cabinet_id']);
+}
+
+// Mot de passe provisoire affiche UNE seule fois : il transite par la session
+// puis il est detruit. Il n'est jamais journalise ni stocke en clair.
+$accesCree = null;
+if (isset($_SESSION['_acces_cree'])) {
+    $accesCree = $_SESSION['_acces_cree'];
+    unset($_SESSION['_acces_cree']);
+}
 
 $formData = [
     'cabinet_id' => '', 'plan_id' => '', 'date_debut' => date('Y-m-d'), 'date_fin' => '',
@@ -224,17 +321,190 @@ if (is_post() && $db) {
 
             // Avertissement non bloquant : plusieurs abonnements en cours sur le
             // meme cabinet rendent current_abonnement_state() ambigu.
+            $chevauchement = false;
             if ($targetId === 0 && $statut !== 'resilie') {
                 $check = $db->prepare("SELECT COUNT(*) FROM abonnements WHERE cabinet_id = :cid AND statut <> 'resilie' AND id <> :id");
                 $check->execute(['cid' => $cabinetId, 'id' => $insertedId]);
                 $others = (int) $check->fetchColumn();
                 if ($others > 0) {
+                    $chevauchement = true;
                     set_flash('error', 'Ce cabinet a déjà ' . $others . ' autre(s) abonnement(s) non résilié(s). Le bandeau adhérents retiendra celui dont la date de fin est la plus éloignée.');
                 }
             }
 
+            // Abonnement neuf ET vivant : la porte de connexion acceptera les
+            // comptes de ce cabinet. On enchaîne donc sur la creation de l'acces
+            // plutot que de renvoyer l'admin dans une liste ou il doit
+            // retrouver la ligne qu'il vient de creer. Un abonnement
+            // chevauchant un autre reste renvoye vers la liste : le bandeau
+            // adherents retiendra l'autre, et l'acces cree ici pourrait etre
+            // refuse a la connexion.
+            // La decision passe par abonnement_autorise_acces() : c'est la meme
+            // regle que la porte de connexion, donc l'ecran ne peut pas proposer
+            // d'ouvrir un compte que la connexion refuserait aussitot.
+            $nouvelAboVivant = $targetId === 0
+                && !$chevauchement
+                && abonnement_autorise_acces([
+                    'statut' => $statut,
+                    'jours_restants' => abonnement_jours_restants(['date_fin' => $dateFin]),
+                ]);
+
+            if ($nouvelAboVivant && $canCreateAccess) {
+                redirect_to('abonnements', ['acces' => $insertedId]);
+            }
+
             redirect_to('abonnements');
         }
+    }
+
+    /* ------------------------------------------------------------------
+     * Creation du compte administrateur du cabinet
+     * ------------------------------------------------------------------
+     *
+     * L'identifiant de l'abonnement (donc le cabinet) transite par POST mais
+     * n'est JAMAIS lu comme une cible libre : on recharge la ligne en base et
+     * on en deduit le cabinet. Un `abonnement_id` forge ne permet donc pas
+     * d'ouvrir un compte chez un tenant sans abonnement actif.
+     */
+    if ($action === 'create_access') {
+        if (!$canCreateAccess) {
+            require_permission('users.create');
+        }
+
+        $targetAboId = int_value($_POST, 'abonnement_id') ?? 0;
+        $accesOuvert = true;
+        $accesId = $targetAboId;
+
+        if ($targetAboId <= 0 || !$db) {
+            set_flash('error', 'Abonnement introuvable.');
+            redirect_to('abonnements');
+        }
+
+        $stmt = $db->prepare('SELECT * FROM abonnements WHERE id = :id');
+        $stmt->execute(['id' => $targetAboId]);
+        $cible = $stmt->fetch();
+
+        if (!$cible) {
+            set_flash('error', 'Abonnement introuvable.');
+            redirect_to('abonnements');
+        }
+
+        $statutAbo = (string) $cible['statut'];
+        $etat = [
+            'statut' => $statutAbo,
+            'jours_restants' => abonnement_jours_restants($cible),
+            'libelle' => abonnement_statut_label(abonnement_display_statut($cible)),
+        ];
+
+        if (!abonnement_autorise_acces($etat)) {
+            set_flash('error', 'Impossible de creer un acces : cet abonnement est ' . strtolower(abonnement_statut_label(abonnement_display_statut($cible))) . '. Renouvelez-le d\'abord.');
+            redirect_to('abonnements');
+        }
+
+        $cabinetCibleId = (int) $cible['cabinet_id'];
+
+        // L'ecran ne propose le formulaire que si le cabinet n'a pas encore de
+        // compte. On reverifie ici : `?acces=` se tape en dur et un formulaire
+        // peut etre rejoue. Le message renvoie vers Utilisateurs, ou les
+        // comptes supplementaires se gerent dans la limite du quota du plan.
+        if (cabinet_a_un_compte($db, $cabinetCibleId)) {
+            set_flash('error', 'Ce cabinet possède déjà un compte. Ajoutez d\'autres utilisateurs depuis la page Utilisateurs.');
+            redirect_to('abonnements', ['acces' => $targetAboId]);
+        }
+
+        // Meme plafond que la creation d'un utilisateur ordinaire : un plan
+        // qui n'autorise aucun utilisateur ne doit pas pouvoir se voir ouvrir
+        // un acces par cette porte de côté.
+        $quotaUsers = quota_state('utilisateurs', $db, $cabinetCibleId);
+        if ($quotaUsers['atteint']) {
+            set_flash('error', 'Quota utilisateurs atteint (' . $quotaUsers['utilise'] . '/' . (int) $quotaUsers['limite'] . '). Modifiez la formule du cabinet avant d\'ouvrir un accès.');
+            redirect_to('abonnements');
+        }
+
+        $nomComplet = field_value($_POST, 'nom_complet');
+        $email = field_value($_POST, 'email');
+        $roleId = int_value($_POST, 'role_id') ?? 0;
+        $motDePasseSaisi = field_value($_POST, 'mot_de_passe');
+
+        $accesErrors = [];
+
+        if ($nomComplet === '') {
+            $accesErrors['nom_complet'] = 'Le nom complet est obligatoire.';
+        }
+
+        if ($email === '') {
+            $accesErrors['email'] = 'L\'adresse email est obligatoire.';
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $accesErrors['email'] = 'Cette adresse email n\'est pas valide.';
+        } elseif (user_email_existe($db, $email)) {
+            // uq_users_email est UNIQUE sur toute la table : le dire sous le
+            // champ evite une erreur SQL qui, elle, ne dirait pas quel compte
+            // est en conflit.
+            $accesErrors['email'] = 'Un compte utilise deja cette adresse email.';
+        }
+
+        if ($roleId <= 0 || !isset($rolesCabinet[$roleId])) {
+            // Le select n'est pas une securite : le role doit exister ET etre
+            // de scope 'cabinet' (cf. creer_acces_cabinet()).
+            $accesErrors['role_id'] = 'Selectionnez un role de cabinet.';
+        }
+
+        if ($motDePasseSaisi !== '' && strlen($motDePasseSaisi) < 8) {
+            $accesErrors['mot_de_passe'] = 'Le mot de passe doit contenir au moins 8 caracteres.';
+        }
+
+        if ($accesErrors === []) {
+            $cree = creer_acces_cabinet(
+                $db,
+                $cabinetCibleId,
+                $nomComplet,
+                $email,
+                $roleId,
+                $motDePasseSaisi !== '' ? $motDePasseSaisi : null
+            );
+
+            if ($cree !== null) {
+                // Le mot de passe transite une seule fois par la session : il
+                // est affiche sur l'ecran suivant puis detruit. Jamais stocke
+                // en clair, jamais dans le journal d'activite.
+                $_SESSION['_acces_cree'] = [
+                    'nom_complet' => $nomComplet,
+                    'email' => $cree['email'],
+                    'mot_de_passe' => $cree['mot_de_passe'],
+                ];
+
+                log_activity($db, 'create', 'utilisateur', $cree['id'], $nomComplet, 'Acces cabinet cree pour l\'abonnement #' . $targetAboId);
+                redirect_to('abonnements', ['acces' => $targetAboId]);
+            }
+
+            // L'ecran est rejoue, pas une page d'erreur : l'email peut avoir
+            // ete pris entre la validation et l'INSERT, et le role avoir ete
+            // desactive dans la foulure.
+            $accesErrors['email'] = user_email_existe($db, $email)
+                ? 'Un compte utilise deja cette adresse email.'
+                : 'Ce role n\'est pas un role de cabinet.';
+        }
+
+        // Rehydratation du panneau apres un echec : on repart de la ligne
+        // d'abonnement et du cabinet relus en base, pas de ce que le POST
+        // transportait.
+        $accesData = [
+            'nom_complet' => $nomComplet,
+            'email' => $email,
+            'role_id' => (string) $roleId,
+        ];
+
+        $stmtC = $db->prepare('SELECT nom, code FROM cabinets WHERE id = :id');
+        $stmtC->execute(['id' => $cabinetCibleId]);
+        $cab = $stmtC->fetch() ?: [];
+
+        $accesAbo = array_merge($cible, [
+            'cabinet_nom' => (string) ($cab['nom'] ?? '-'),
+            'cabinet_code' => (string) ($cab['code'] ?? ''),
+            'plan_nom' => null,
+        ]);
+
+        $accesComptes = fetch_comptes_cabinet($db, $cabinetCibleId);
     }
 }
 
@@ -335,6 +605,55 @@ $msg = static function (string $champ) use ($fieldErrors): string {
 $invalide = static function (string $champ) use ($fieldErrors): string {
     return isset($fieldErrors[$champ]) ? ' aria-invalid="true"' : '';
 };
+
+// Mêmes aides pour le formulaire d'accès, sur son propre jeu d'erreurs
+// (`$accesErrors`) : les deux formulaires ne doivent pas se contaminer.
+$accesEtat = static function (string $champ) use ($accesErrors): string {
+    return isset($accesErrors[$champ]) ? ' is-error' : '';
+};
+
+$accesMsg = static function (string $champ) use ($accesErrors): string {
+    if (!isset($accesErrors[$champ])) {
+        return '';
+    }
+
+    return '<small class="saas-msg saas-msg--error">'
+        . '<span class="material-symbols-outlined">error</span>'
+        . e($accesErrors[$champ])
+        . '</small>';
+};
+
+$accesInvalide = static function (string $champ) use ($accesErrors): string {
+    return isset($accesErrors[$champ]) ? ' aria-invalid="true"' : '';
+};
+
+// Cabinets de la liste qui possedent deja au moins un compte. Une seule
+// requete pour toute la page : l'action « Créer un accès » n'a de sens que
+// pour un cabinet sans compte, et une requete par ligne alourdit des que la
+// liste depasse quelques dizaines d'abonnements.
+$cabinetsAvecCompte = [];
+if ($db && $abonnements !== []) {
+    $ids = [];
+    foreach ($abonnements as $row) {
+        $cid = (int) ($row['cabinet_id'] ?? 0);
+        if ($cid > 0) {
+            $ids[$cid] = $cid;
+        }
+    }
+
+    if ($ids !== []) {
+        $marks = implode(',', array_fill(0, count($ids), '?'));
+        try {
+            $stmtComptes = $db->prepare("SELECT DISTINCT cabinet_id FROM users WHERE cabinet_id IN ($marks)");
+            $stmtComptes->execute(array_values($ids));
+            foreach ($stmtComptes->fetchAll(PDO::FETCH_COLUMN) as $cid) {
+                $cabinetsAvecCompte[(int) $cid] = true;
+            }
+        } catch (PDOException) {
+            $cabinetsAvecCompte = [];
+        }
+    }
+}
 ?>
 <div class="saas-canvas">
     <div class="saas-page">
@@ -342,7 +661,7 @@ $invalide = static function (string $champ) use ($fieldErrors): string {
     <?php /* Le bandeau resume la liste : il s'efface pendant la saisie pour
             que le formulaire occupe le haut de l'ecran, exactement comme sur
             la page cabinets. Le compteur reste visible sur la liste elle-meme. */ ?>
-    <?php if (!$formOpen): ?>
+    <?php if (!$formOpen && !$accesOuvert): ?>
         <section class="stats">
             <article class="stat">
                 <span>Abonnements actifs</span>
@@ -365,6 +684,222 @@ $invalide = static function (string $champ) use ($fieldErrors): string {
                 <strong><?= e(number_format($stats['revenu'], 2, ',', ' ')) ?> <small style="font-size:1rem">MAD</small></strong>
             </article>
         </section>
+    <?php endif; ?>
+
+    <?php /* Troisième étape de la souscription : le compte du cabinet.
+            L'identifiant de l'abonnement voyage en champ caché, mais le cabinet
+            n'est jamais choisi ici — il découle de l'abonnement, donc un accès
+            ne peut pas atterrir chez un tenant qui n'a pas souscrit. */ ?>
+    <?php if ($accesOuvert && $accesAbo !== null && $canCreateAccess): ?>
+        <form method="post" class="saas-form">
+            <?= csrf_input() ?>
+            <input type="hidden" name="action" value="create_access">
+            <input type="hidden" name="abonnement_id" value="<?= e((string) $accesAbo['id']) ?>">
+
+            <div class="saas-form__head">
+                <div>
+                    <h2 class="saas-form__title">
+                        <span class="material-symbols-outlined">person_add</span>
+                        Créer un accès
+                    </h2>
+                    <p class="saas-form__sub">
+                        <?= e((string) ($accesAbo['cabinet_nom'] ?? '-')) ?>
+                        <?php if (!empty($accesAbo['cabinet_code'])): ?>
+                            <small>(<?= e((string) $accesAbo['cabinet_code']) ?>)</small>
+                        <?php endif; ?>
+                        &middot; <?= e(abonnement_statut_label(abonnement_display_statut($accesAbo))) ?>
+                        <?php if (!empty($accesAbo['plan_nom'])): ?>
+                            &middot; <?= e((string) $accesAbo['plan_nom']) ?>
+                        <?php endif; ?>
+                        &middot; jusqu'au <?= e(format_date($accesAbo['date_fin'] ?? null)) ?>
+                    </p>
+                </div>
+                <a class="btn btn-cancel" href="<?= e(app_url('abonnements')) ?>">
+                    <span class="material-symbols-outlined">close</span> Fermer
+                </a>
+            </div>
+
+            <?php /* Affichage unique du mot de passe provisoire. Il n'est stocke
+                    ni en base ni ailleurs : la session le porte le temps d'un
+                    aller-retour, puis il est detruit. Le renvoyer dans le
+                    journal d'activite le rendrait lisible a tout auditeur. */ ?>
+            <?php if (is_array($accesCree) && !empty($accesCree['email'])): ?>
+                <div class="saas-alert is-success" role="status">
+                    <span class="material-symbols-outlined">check_circle</span>
+                    <div>
+                        <strong>Accès créé pour <?= e((string) $accesCree['email']) ?></strong>
+                        <p>Communiquez ces identifiants au cabinet, puis cliquez sur « J'ai noté » pour les faire disparaître de cet écran.</p>
+                        <p class="saas-card__note">
+                            Adresse : <strong><?= e((string) $accesCree['email']) ?></strong><br>
+                            Mot de passe provisoire : <code><?= e((string) ($accesCree['mot_de_passe'] ?? '')) ?></code>
+                        </p>
+                        <p class="saas-card__note">
+                            Le mot de passe provisoire n'est plus affiché après ce message. Le titulaire devra le changer
+                            à sa première connexion.
+                        </p>
+                        <a class="btn btn-info" href="<?= e(app_url('abonnements')) ?>">
+                            <span class="material-symbols-outlined">visibility_off</span> J'ai noté
+                        </a>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($accesErrors !== []): ?>
+                <div class="saas-alert is-error" role="alert">
+                    <span class="material-symbols-outlined">error</span>
+                    <div>
+                        <strong><?= count($accesErrors) ?> champ(s) à corriger</strong>
+                        <p>L'accès n'a pas été créé. Corrigez les champs en rouge ci-dessous.</p>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($rolesCabinet === []): ?>
+                <div class="saas-alert is-error" role="alert">
+                    <span class="material-symbols-outlined">error</span>
+                    <div>
+                        Aucun rôle de cabinet n'existe en base. Créez d'abord un rôle
+                        <strong>de type cabinet</strong> dans
+                        <a href="<?= e(app_url('roles')) ?>">Configuration &rsaquo; Rôles</a> :
+                        un rôle du Centre donnerait au cabinet un accès transverse à tous les tenants.
+                    </div>
+                </div>
+            <?php elseif ($accesComptes !== []): ?>
+                <?php /* Garde-fou du `?acces=` tapé en dur : le bouton n'est pas
+                        proposé une fois le compte ouvert, mais on ne peut pas
+                        empêcher l'URL. */ ?>
+                <div class="saas-alert is-warning">
+                    <span class="material-symbols-outlined">warning</span>
+                    <div>
+                        <strong>Ce cabinet possède déjà un compte</strong>
+                        <p>Un seul accès administrateur est ouvert par cabinet. Pour en créer un autre, utilisez
+                            <a href="<?= e(app_url('utilisateurs', ['q' => (string) ($accesAbo['cabinet_code'] ?? '')])) ?>">Utilisateurs</a>.</p>
+                    </div>
+                </div>
+
+                <div class="saas-form__grid">
+                    <section class="saas-card" data-saas-card>
+                        <header class="saas-card__head">
+                            <span class="saas-card__icon material-symbols-outlined">group</span>
+                            <h3>Comptes du cabinet</h3>
+                        </header>
+                        <div class="saas-card__body">
+                            <ul class="saas-list">
+                                <?php foreach ($accesComptes as $compte): ?>
+                                    <li>
+                                        <strong><?= e((string) ($compte['nom_complet'] ?? '-')) ?></strong>
+                                        <small><?= e((string) ($compte['email'] ?? '')) ?></small>
+                                        &middot; <?= e((string) ($compte['role_nom'] ?? '-')) ?>
+                                        &middot; <span class="badge badge-<?= (string) ($compte['statut'] ?? '') === 'actif' ? 'success' : 'secondary' ?>"><?= e(cabinet_statut_label((string) ($compte['statut'] ?? ''))) ?></span>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                    </section>
+                </div>
+            <?php else: ?>
+                <div class="saas-alert is-info">
+                    <span class="material-symbols-outlined">info</span>
+                    <div>
+                        Cet abonnement autorise l'accès. Créez le compte de l'adhérent : il sera rattaché à
+                        <strong><?= e((string) ($accesAbo['cabinet_nom'] ?? '-')) ?></strong> et son mot de passe devra être
+                        changé à la première connexion.
+                    </div>
+                </div>
+
+                <div class="saas-form__grid">
+                    <section class="saas-card" data-saas-card>
+                        <header class="saas-card__head">
+                            <span class="saas-card__icon material-symbols-outlined">badge</span>
+                            <h3>Identité de l'adhérent</h3>
+                            <button type="button" class="saas-card__toggle" data-saas-toggle
+                                    aria-expanded="true" aria-controls="acces-corps-identite">
+                                <span class="material-symbols-outlined">expand_more</span>
+                                <span class="saas-card__sr">Replier la section Identité de l'adhérent</span>
+                            </button>
+                        </header>
+
+                        <div class="saas-card__body" id="acces-corps-identite">
+                            <p class="saas-card__note">
+                                Le compte est créé actif, rattaché à ce cabinet, avec un mot de passe provisoire.
+                            </p>
+
+                            <label class="saas-field<?= $accesEtat('nom_complet') ?>">
+                                <span class="saas-field__label">Nom complet <em class="req-mark">*</em></span>
+                                <input type="text" name="nom_complet" required
+                                       value="<?= e((string) ($accesData['nom_complet'] ?? '')) ?>"
+                                       placeholder="Ex. Amrani Salma"<?= $accesInvalide('nom_complet') ?>>
+                                <?= $accesMsg('nom_complet') ?>
+                            </label>
+
+                            <label class="saas-field<?= $accesEtat('email') ?>">
+                                <span class="saas-field__label">Adresse email <em class="req-mark">*</em></span>
+                                <input type="email" name="email" required
+                                       value="<?= e((string) ($accesData['email'] ?? '')) ?>"
+                                       placeholder="contact@cabinet.ma"<?= $accesInvalide('email') ?>>
+                                <small class="saas-field__hint">Identifiant de connexion, unique dans toute la plateforme</small>
+                                <?= $accesMsg('email') ?>
+                            </label>
+
+                            <label class="saas-field<?= $accesEtat('mot_de_passe') ?>">
+                                <span class="saas-field__label">Mot de passe <small>facultatif</small></span>
+                                <input type="text" name="mot_de_passe" autocomplete="off"
+                                       value="" placeholder="Généré automatiquement"
+                                       aria-describedby="hint-mdp-acces"<?= $accesInvalide('mot_de_passe') ?>>
+                                <small class="saas-field__hint" id="hint-mdp-acces">
+                                    Laissez vide pour obtenir un mot de passe à 14 caractères. S'il est saisi, 8 caractères minimum.
+                                </small>
+                                <?= $accesMsg('mot_de_passe') ?>
+                            </label>
+                        </div>
+                    </section>
+
+                    <section class="saas-card" data-saas-card>
+                        <header class="saas-card__head">
+                            <span class="saas-card__icon material-symbols-outlined">admin_panel_settings</span>
+                            <h3>Rôle et périmètre</h3>
+                            <button type="button" class="saas-card__toggle" data-saas-toggle
+                                    aria-expanded="true" aria-controls="acces-corps-role">
+                                <span class="material-symbols-outlined">expand_more</span>
+                                <span class="saas-card__sr">Replier la section Rôle et périmètre</span>
+                            </button>
+                        </header>
+
+                        <div class="saas-card__body" id="acces-corps-role">
+                            <label class="saas-field<?= $accesEtat('role_id') ?>">
+                                <span class="saas-field__label">Rôle <em class="req-mark">*</em></span>
+                                <select name="role_id" required<?= $accesInvalide('role_id') ?>>
+                                    <?php foreach ($rolesCabinet as $rid => $rnom): ?>
+                                        <option value="<?= e((string) $rid) ?>"<?= (int) ($accesData['role_id'] ?? 0) === (int) $rid ? ' selected' : '' ?>><?= e($rnom) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <small class="saas-field__hint">Seuls les rôles de type <em>cabinet</em> sont proposés</small>
+                                <?= $accesMsg('role_id') ?>
+                            </label>
+
+                            <p class="saas-card__note">
+                                Le compte est rattaché à
+                                <strong><?= e((string) ($accesAbo['cabinet_nom'] ?? '-')) ?></strong> et ne verra que ses propres dossiers.
+                            </p>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="saas-form__footer">
+                    <span class="saas-form__legend">
+                        <em class="req-mark">*</em> Champs obligatoires
+                    </span>
+                    <div class="saas-form__buttons">
+                        <a class="btn btn-cancel" href="<?= e(app_url('abonnements')) ?>">
+                            <span class="material-symbols-outlined">close</span> Annuler
+                        </a>
+                        <button class="btn btn-next" type="submit">
+                            <span class="material-symbols-outlined">person_add</span> Créer l'accès
+                        </button>
+                    </div>
+                </div>
+            <?php endif; ?>
+        </form>
     <?php endif; ?>
 
     <?php if ($formOpen && ($canCreate || $canEdit)): ?>
@@ -681,6 +1216,24 @@ $invalide = static function (string $champ) use ($fieldErrors): string {
                             <td><?= e(number_format((float) ($abo['prix_annuel_negocie'] ?? 0), 2, ',', ' ')) ?> <?= e((string) $abo['devise']) ?></td>
                             <td><?= (int) $abo['auto_renew'] === 1 ? 'Auto' : 'Manuel' ?></td>
                             <td class="table-actions">
+                                <?php /* L'action n'apparait que sur un abonnement
+                                        qui autorise l'accès ET pour un cabinet sans
+                                        compte : c'est la troisième et dernière étape
+                                        de la souscription, elle n'a plus d'objet une
+                                        fois le compte ouvert. */ ?>
+                                <?php if ($canCreateAccess && !$accesOuvert): ?>
+                                    <?php
+                                    $accesAutorise = abonnement_autorise_acces([
+                                        'statut' => $display === 'expire' ? 'actif' : (string) $abo['statut'],
+                                        'jours_restants' => $jours,
+                                    ]);
+                                    $peutCreerAcces = $accesAutorise
+                                        && !isset($cabinetsAvecCompte[(int) $abo['cabinet_id']]);
+                                    ?>
+                                    <?php if ($peutCreerAcces): ?>
+                                        <a class="btn-icon primary" href="<?= e(app_url('abonnements', ['acces' => (int) $abo['id']])) ?>" title="Créer le compte de ce cabinet"><span class="material-symbols-outlined">person_add</span></a>
+                                    <?php endif; ?>
+                                <?php endif; ?>
                                 <?php if ($canEdit): ?>
                                     <form method="post">
                                         <?= csrf_input() ?>

@@ -8,6 +8,8 @@ $isConnected = $pdo instanceof PDO;
 // Auto-generate system notifications on dashboard (once per session)
 if ($isConnected && empty($_SESSION['_auto_notif_run'])) {
     if (is_centre_admin()) {
+        // `current_collaborateur_id()` est null pour un compte Centre sans
+        // fiche collaborateur : c'est normal, la fonction l'accepte.
         generate_auto_notifications($pdo, current_collaborateur_id());
     }
     $_SESSION['_auto_notif_run'] = true;
@@ -54,9 +56,14 @@ $isAdmin = sees_all_dossiers();
 //   - Centre autorise a tout voir -> aucun filtre
 // On s'y conforme plutot que de maintenir une deuxieme regle censee diverger.
 //
-// Chaque requete ecrit `{{SCOPE}}` la ou doit s'appliquer le predicat. Le
-// remplacement y ajoute le `AND` lui-meme et le retire si le perimetre est
-// vide, ce qui laisse `WHERE 1=1 {{SCOPE}}` valide dans les deux cas.
+// Chaque requete ecrit `{{SCOPE}}` la ou doit s'appliquer le predicat ; c'est
+// `build_scoped_sql()` qui l'injecte, conjonction comprise, et qui donne a
+// chaque occurrence ses propres noms de parametres -- le fil d'activite de la
+// ligne 404 en compte trois dans une seule requete (une branche du UNION, une
+// par table), et PDO refuse en prepares natifs qu'un parametre nomme soit
+// repete. Le remplacement y ajoute le `AND` lui-meme et le retire si le
+// perimetre est vide, ce qui laisse `WHERE 1=1 {{SCOPE}}` valide dans les deux
+// cas.
 $scopeS = list_scope('s');
 $scopeCollaborateurs = list_scope('col');
 $scopeCessions = list_scope('ce');
@@ -64,9 +71,9 @@ $scopePv = list_scope('p');
 
 /** Requete cloisonnee. Utilisable seulement si `$isConnected`. */
 $runScoped = static function (string $sql, array $params, array $scope) use ($pdo): PDOStatement {
-    $and = $scope['sql'] === '' ? '' : ' AND ' . $scope['sql'];
-    $stmt = $pdo->prepare(str_replace('{{SCOPE}}', $and, $sql));
-    $stmt->execute($params + $scope['params']);
+    $requete = build_scoped_sql($sql, $scope, $params);
+    $stmt = $pdo->prepare($requete['sql']);
+    $stmt->execute($requete['params']);
 
     return $stmt;
 };
@@ -400,7 +407,10 @@ if ($isConnected) {
 // --- Fil d'activite ---
 $activiteRecente = [];
 if ($isConnected) {
-    // Un `{{SCOPE}}` par branche du UNION : chacune a son propre FROM.
+    // Un `{{SCOPE}}` par branche du UNION : chacune a son propre FROM, donc
+    // son propre predicat. Les trois ne peuvent pas partager `:scope_cabinet`,
+    // que PDO refuse de repeter en prepares natifs (HY093) -- c'est
+    // build_scoped_sql() qui les renomme.
     $activiteRecente = $runScoped(
         "
             (SELECT 'societe' AS type, id, societe_raison_sociale AS libelle, id AS ref_id, created_at FROM societes s WHERE 1=1 {{SCOPE}})
