@@ -2368,3 +2368,138 @@ if (el.getAttribute('aria-label') || el.getAttribute('aria-labelledby')) {
         }
     });
 })();
+
+// ---------------------------------------------------------------------------
+// Formulaires SaaS (prefixe `saas-`) : accordeon de sections et
+// normalisation des champs numeriques. Partages par les ecrans cabinets et
+// abonnements, dont la structure doit rester identique. Tout passe par
+// delegation d'evenements : aucune re-lecture du DOM apres un ajout, et le
+// module ne fait rien sur une page qui n'a pas de carte.
+// ---------------------------------------------------------------------------
+(function () {
+    // 768px, meme palier que la colonne unique en CSS : sous cette largeur
+    // l'accordéon s'active, au-dessus toutes les sections restent ouvertes et
+    // le bouton de repli disparait. La valeur est reecrite ici parce que le
+    // hors-parallele de l'ancien Chrome (Android WebView) ne connait pas
+    // `addEventListener` sur une MediaQueryList.
+    var query = window.matchMedia('(max-width: 768px)');
+    // Etat par carte : passer en paysage puis revenir en portrait ne referme
+    // pas la section que l'utilisateur venait d'ouvrir.
+    var choix = new WeakMap();
+
+    function cartes() {
+        return Array.prototype.slice.call(document.querySelectorAll('[data-saas-card]'));
+    }
+
+    function sectionAReplier(carte) {
+        return carte.querySelector('.saas-card__note, .saas-card__body');
+    }
+
+    function appliquer(carte, ouvert) {
+        carte.dataset.collapsed = ouvert ? 'false' : 'true';
+        var contenu = sectionAReplier(carte);
+        if (contenu) {
+            contenu.hidden = !ouvert;
+        }
+        var bouton = carte.querySelector('[data-saas-toggle]');
+        if (bouton) {
+            bouton.setAttribute('aria-expanded', ouvert ? 'true' : 'false');
+        }
+    }
+
+    function rendre() {
+        var mobile = query.matches;
+        cartes().forEach(function (carte, index) {
+            if (!mobile) {
+                // Grand ecran : tout ouvert, l'accordéon n'existe pas.
+                delete carte.dataset.collapsed;
+                var contenu = sectionAReplier(carte);
+                if (contenu) {
+                    contenu.hidden = false;
+                }
+                var bouton = carte.querySelector('[data-saas-toggle]');
+                if (bouton) {
+                    bouton.setAttribute('aria-expanded', 'true');
+                }
+                return;
+            }
+
+            // Premiere visite sur mobile : la premiere section ouverte, les
+            // autres repliees - l'utilisateur voit l'ordre de saisie d'un coup
+            // d'oeil au lieu de decouvrir quatre blocs d'affilee.
+            if (!choix.has(carte)) {
+                choix.set(carte, index === 0);
+            }
+            appliquer(carte, choix.get(carte));
+        });
+    }
+
+    // Accordeon exclusif : ouvrir une section replie les autres. Sur un ecran
+    // de 844px, deux sections ouvertes suffisent a faire disparaitre la barre
+    // d'action, et c'est elle qu'on cherche au moment de valider.
+    document.addEventListener('click', function (event) {
+        if (!query.matches || !(event.target instanceof Element)) {
+            return;
+        }
+        var bouton = event.target.closest('[data-saas-toggle]');
+        if (!bouton) {
+            return;
+        }
+        var carte = bouton.closest('[data-saas-card]');
+        if (!carte) {
+            return;
+        }
+        // `collapsed === 'true'` : la section est repliee, le clic va donc
+        // l'ouvrir, et c'est ce cas qui replie les autres. Inverser ce test
+        // rend l'accordéon cumulatif, et deux sections ouvertes suffisent a
+        // faire disparaitre la barre d'action.
+        if (carte.dataset.collapsed === 'true') {
+            cartes().forEach(function (autre) {
+                if (autre !== carte) {
+                    choix.set(autre, false);
+                    appliquer(autre, false);
+                }
+            });
+            choix.set(carte, true);
+            appliquer(carte, true);
+            return;
+        }
+
+        choix.set(carte, false);
+        appliquer(carte, false);
+    });
+
+    if (typeof query.addEventListener === 'function') {
+        query.addEventListener('change', rendre);
+    } else if (typeof query.addListener === 'function') {
+        query.addListener(rendre);
+    }
+
+    rendre();
+
+    // Normalisation au focus perdu, jamais pendant la frappe : le curseur
+    // sauterait sous les doigts de l'utilisateur.
+    //
+    // `data-numeric` : identifiants entiers (ICE, RC, IF, telephone). Ils se
+    // recopient d'une fiche ou d'un mail avec des separateurs, et le serveur
+    // compare la chaine entiere -- sans nettoyage, "0012 3456 7890 123" et
+    // "001234567890123" passeraient pour deux enregistrements differents, donc
+    // le controle de doublon ne verrait rien.
+    document.addEventListener('focusout', function (event) {
+        if (!(event.target instanceof Element)) {
+            return;
+        }
+        var entier = event.target.closest('.saas-form [data-numeric]');
+        if (entier && typeof entier.value === 'string') {
+            entier.value = entier.value.replace(/[\s.\-_]/g, '');
+            return;
+        }
+        // `data-decimal` : montants. La virgule est la separator francaise,
+        // MySQL attend un point -- "12 500,00" deviendrait sinon 1250000.
+        // Les separateurs de milliers partent, le point decimal est conserve.
+        var montant = event.target.closest('.saas-form [data-decimal]');
+        if (montant && typeof montant.value === 'string') {
+            montant.value = montant.value.replace(/\s/g, '').replace(',', '.');
+        }
+    });
+})();

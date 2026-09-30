@@ -20,7 +20,10 @@ $db = ($pdo ?? null) instanceof PDO ? $pdo : null;
 $cabinetOptions = fetch_cabinets_options($db);
 
 $editId = isset($_GET['edit']) ? (int) $_GET['edit'] : 0;
-$formOpen = isset($_GET['action']) && $_GET['action'] === 'new';
+// Le formulaire s'ouvre sur `?action=new` ET sur `?edit=<id>` : le bouton
+// "Modifier" de la liste renvoie la seconde forme, qui resterait invisible si
+// l'ouverture ne dependait que du parametre `action`.
+$formOpen = (isset($_GET['action']) && $_GET['action'] === 'new') || $editId > 0;
 // En creation on ne propose que les plans actifs ; en edition on charge aussi
 // les plans inactifs, sinon un abonnement rattache a un plan desactive verrait
 // "Sur mesure (sans plan)" dans le select et perdrait sa formule et son prix
@@ -32,7 +35,9 @@ $formData = [
     'statut' => 'actif', 'prix_annuel_negocie' => '', 'devise' => 'MAD',
     'auto_renew' => '1', 'notes' => '',
 ];
-$formError = null;
+// Erreurs de validation indexees par nom de champ, alimentees par le handler
+// POST puis rendues sous chaque saisie (`.saas-msg`).
+$fieldErrors = [];
 
 if ($db && $editId > 0) {
     $stmt = $db->prepare('SELECT * FROM abonnements WHERE id = :id');
@@ -65,7 +70,7 @@ if (is_post() && $db) {
         $linked = (int) $check->fetchColumn();
 
         if ($linked > 0) {
-            set_flash('error', 'Suppression impossible : ' . $linked . ' facture(s) sont rattachees a cet abonnement. Marquez-le resilie plutot.');
+            set_flash('error', 'Suppression impossible : ' . $linked . ' facture(s) sont rattachées à cet abonnement. Marquez-le résilié plutôt.');
         } else {
             $stmt = $db->prepare('DELETE FROM abonnements WHERE id = :id');
             $stmt->execute(['id' => $targetId]);
@@ -125,33 +130,37 @@ if (is_post() && $db) {
             $statut = 'actif';
         }
 
-        $errors = [];
+        // Les erreurs sont indexees par champ : le formulaire SaaS affiche le
+        // message sous la saisie concernee, comme sur la fiche cabinet. Une
+        // seule chaine concatenee dans une alerte en haut de page obligeait a
+        // relire la liste pour retrouver le champ fautif.
+        $fieldErrors = [];
 
         if ($cabinetId <= 0) {
-            $errors[] = 'Selectionnez un cabinet.';
+            $fieldErrors['cabinet_id'] = 'Sélectionnez un cabinet.';
         } else {
             $exists = $db->prepare('SELECT id FROM cabinets WHERE id = :id');
             $exists->execute(['id' => $cabinetId]);
             if (!$exists->fetch()) {
-                // Un cabinet forgee ne doit jamais atteindre la table.
-                $errors[] = 'Ce cabinet est introuvable.';
+                // Un cabinet forge ne doit jamais atteindre la table.
+                $fieldErrors['cabinet_id'] = 'Ce cabinet est introuvable.';
             }
         }
 
         $plan = null;
-            if ($planId !== null && $planId > 0) {
-                $pstmt = $db->prepare('SELECT id, prix_annuel, devise, trial_jours, actif FROM plans WHERE id = :id');
-                $pstmt->execute(['id' => $planId]);
-                $plan = $pstmt->fetch();
-                if (!$plan) {
-                    $errors[] = 'Ce plan tarifaire est introuvable.';
-                }
-                // On permet d'editer un abonnement dont le plan est devenu inactif
-                // (retrocompatibilite historique), mais on exige qu'il existe.
+        if ($planId !== null && $planId > 0) {
+            $pstmt = $db->prepare('SELECT id, prix_annuel, devise, trial_jours, actif FROM plans WHERE id = :id');
+            $pstmt->execute(['id' => $planId]);
+            $plan = $pstmt->fetch();
+            if (!$plan) {
+                $fieldErrors['plan_id'] = 'Ce plan tarifaire est introuvable.';
             }
+            // On permet d'editer un abonnement dont le plan est devenu inactif
+            // (retrocompatibilite historique), mais on exige qu'il existe.
+        }
 
         if ($dateDebut === '' || strtotime($dateDebut) === false) {
-            $errors[] = 'La date de debut est obligatoire.';
+            $fieldErrors['date_debut'] = 'La date de début est obligatoire.';
         }
         if ($dateFin === '' || strtotime($dateFin) === false) {
             // Essai : si la fin n'est pas saisie, on la derive de la duree du plan.
@@ -159,12 +168,11 @@ if (is_post() && $db) {
                 $dateFin = date('Y-m-d', strtotime($dateDebut . ' +' . (int) $plan['trial_jours'] . ' days'));
             }
             if ($dateFin === '' || strtotime($dateFin) === false) {
-                $errors[] = 'La date de fin est obligatoire.';
+                $fieldErrors['date_fin'] = 'La date de fin est obligatoire.';
             }
         }
 
-        if ($errors !== []) {
-            $formError = implode(' ', $errors);
+        if ($fieldErrors !== []) {
             $formOpen = true;
             $formData = array_merge($formData, $_POST);
         } else {
@@ -202,7 +210,7 @@ if (is_post() && $db) {
                 $stmt = $db->prepare('UPDATE abonnements SET ' . implode(', ', $sets) . ' WHERE id = :id');
                 $stmt->execute($params);
                 log_activity($db, 'update', 'abonnement', $targetId);
-                set_flash('success', 'Abonnement mis a jour.');
+                set_flash('success', 'Abonnement mis à jour.');
             } else {
                 $cols = array_keys($payload);
                 $stmt = $db->prepare(
@@ -211,7 +219,7 @@ if (is_post() && $db) {
                 $stmt->execute($payload);
                 $insertedId = (int) $db->lastInsertId();
                 log_activity($db, 'create', 'abonnement', $insertedId);
-                set_flash('success', 'Abonnement enregistre.');
+                set_flash('success', 'Abonnement enregistré.');
             }
 
             // Avertissement non bloquant : plusieurs abonnements en cours sur le
@@ -221,7 +229,7 @@ if (is_post() && $db) {
                 $check->execute(['cid' => $cabinetId, 'id' => $insertedId]);
                 $others = (int) $check->fetchColumn();
                 if ($others > 0) {
-                    set_flash('error', 'Ce cabinet a deja ' . $others . ' autre(s) abonnement(s) non resilie(s). Le bandeau adherents retiendra celui dont la date de fin est la plus eloignee.');
+                    set_flash('error', 'Ce cabinet a déjà ' . $others . ' autre(s) abonnement(s) non résilié(s). Le bandeau adhérents retiendra celui dont la date de fin est la plus éloignée.');
                 }
             }
 
@@ -266,7 +274,7 @@ if ($db) {
             ];
         }, $abonnements);
 
-        $headers = ['ID', 'Cabinet', 'Plan', 'Debut', 'Fin', 'Statut', 'Prix annuel', 'Renouvellement auto'];
+        $headers = ['ID', 'Cabinet', 'Plan', 'Début', 'Fin', 'Statut', 'Prix annuel', 'Renouvellement auto'];
 
         if ($exportType === 'csv') {
             export_csv('abonnements.csv', $headers, $rows);
@@ -296,133 +304,316 @@ $statutOptions = [];
 foreach (abonnement_statut_options() as $s) {
     $statutOptions[$s] = abonnement_statut_label($s);
 }
+
+// Total hors recherche : le sous-titre de la liste annonce l'effectif de la
+// table, comme sur la page cabinets. Cette vue est volontairement transverse
+// (aucun cloisonnement cabinet), le compte porte donc sur toute la table.
+$totalAbonnements = 0;
+if ($db) {
+    $totalAbonnements = (int) $db->query('SELECT COUNT(*) FROM abonnements')->fetchColumn();
+}
+$filtreActif = $query !== '';
+
+// Aides de rendu du formulaire SaaS, memes conventions que la fiche cabinet :
+// l'etat visuel est porte par l'enveloppe `.saas-field`, l announcing lecteur
+// d'ecran par `aria-invalid`, et le message par `.saas-msg` sous la saisie.
+$etat = static function (string $champ) use ($fieldErrors): string {
+    return isset($fieldErrors[$champ]) ? ' is-error' : '';
+};
+
+$msg = static function (string $champ) use ($fieldErrors): string {
+    if (!isset($fieldErrors[$champ])) {
+        return '';
+    }
+
+    return '<small class="saas-msg saas-msg--error">'
+        . '<span class="material-symbols-outlined">error</span>'
+        . e($fieldErrors[$champ])
+        . '</small>';
+};
+
+$invalide = static function (string $champ) use ($fieldErrors): string {
+    return isset($fieldErrors[$champ]) ? ' aria-invalid="true"' : '';
+};
 ?>
-<section class="stack">
-    <section class="stats">
-        <article class="stat">
-            <span>Abonnements actifs</span>
-            <strong><?= $stats['actifs'] ?></strong>
-        </article>
-        <article class="stat">
-            <span>Essais en cours</span>
-            <strong><?= $stats['essais'] ?></strong>
-        </article>
-        <article class="stat">
-            <span>Expires</span>
-            <strong><?= $stats['expires'] ?></strong>
-        </article>
-        <article class="stat">
-            <span>Suspendus</span>
-            <strong><?= $stats['suspendus'] ?></strong>
-        </article>
-        <article class="stat">
-            <span>Revenu annuel actif</span>
-            <strong><?= e(number_format($stats['revenu'], 2, ',', ' ')) ?> <small style="font-size:1rem">MAD</small></strong>
-        </article>
-    </section>
+<div class="saas-canvas">
+    <div class="saas-page">
+
+    <?php /* Le bandeau resume la liste : il s'efface pendant la saisie pour
+            que le formulaire occupe le haut de l'ecran, exactement comme sur
+            la page cabinets. Le compteur reste visible sur la liste elle-meme. */ ?>
+    <?php if (!$formOpen): ?>
+        <section class="stats">
+            <article class="stat">
+                <span>Abonnements actifs</span>
+                <strong><?= $stats['actifs'] ?></strong>
+            </article>
+            <article class="stat">
+                <span>Essais en cours</span>
+                <strong><?= $stats['essais'] ?></strong>
+            </article>
+            <article class="stat">
+                <span>Expirés</span>
+                <strong><?= $stats['expires'] ?></strong>
+            </article>
+            <article class="stat">
+                <span>Suspendus</span>
+                <strong><?= $stats['suspendus'] ?></strong>
+            </article>
+            <article class="stat">
+                <span>Revenu annuel actif</span>
+                <strong><?= e(number_format($stats['revenu'], 2, ',', ' ')) ?> <small style="font-size:1rem">MAD</small></strong>
+            </article>
+        </section>
+    <?php endif; ?>
 
     <?php if ($formOpen && ($canCreate || $canEdit)): ?>
-        <article class="card">
-            <div class="section-header">
-                <h2 class="section-title" style="border:none;padding:0;margin:0"><?= $editId > 0 ? 'Modifier l\'abonnement' : 'Nouvel abonnement' ?></h2>
-                <a class="btn btn-cancel" href="<?= e(app_url('abonnements')) ?>"><span class="material-symbols-outlined">close</span> Fermer</a>
+        <form method="post" class="saas-form">
+            <?= csrf_input() ?>
+            <input type="hidden" name="action" value="save">
+            <?php if ($editId > 0): ?>
+                <input type="hidden" name="id" value="<?= e((string) $editId) ?>">
+            <?php endif; ?>
+
+            <div class="saas-form__head">
+                <div>
+                    <h2 class="saas-form__title">
+                        <span class="material-symbols-outlined"><?= $editId > 0 ? 'edit' : 'add_card' ?></span>
+                        <?= $editId > 0 ? 'Modifier l\'abonnement' : 'Nouvel abonnement' ?>
+                    </h2>
+                    <p class="saas-form__sub">
+                        <?= $editId > 0
+                            ? 'Mettez à jour la période, le statut et la tarification de cet abonnement.'
+                            : 'Rattachez un plan tarifaire à un cabinet client pour la période concernée.' ?>
+                    </p>
+                </div>
+                <a class="btn btn-cancel" href="<?= e(app_url('abonnements')) ?>">
+                    <span class="material-symbols-outlined">close</span> Fermer
+                </a>
             </div>
 
-            <?php if ($formError !== null): ?>
-                <div class="flash flash-error" style="margin-bottom:12px"><?= e($formError) ?></div>
+            <?php if ($fieldErrors !== []): ?>
+                <div class="saas-alert is-error" role="alert">
+                    <span class="material-symbols-outlined">error</span>
+                    <div>
+                        <strong><?= count($fieldErrors) ?> champ(s) à corriger</strong>
+                        <p>Les champs en rouge ci-dessous empêchent l'enregistrement. Les autres sont acceptés tels quels.</p>
+                    </div>
+                </div>
             <?php endif; ?>
 
             <?php if ($cabinetOptions === []): ?>
-                <div class="flash flash-warning" style="margin-bottom:12px">
-                    Aucun cabinet n'est enregistre. <a href="<?= e(app_url('cabinets', ['action' => 'new'])) ?>">Creez d'abord un cabinet</a> pour pouvoir)y rattacher un abonnement.
+                <div class="saas-alert is-warning">
+                    <span class="material-symbols-outlined">warning</span>
+                    <div>
+                        Aucun cabinet n'est enregistré. <a href="<?= e(app_url('cabinets', ['action' => 'new'])) ?>">Créez d'abord un cabinet</a> pour pouvoir y rattacher un abonnement.
+                    </div>
                 </div>
             <?php elseif ($planOptions === []): ?>
-                <div class="flash flash-warning" style="margin-bottom:12px">
-                    Aucun plan tarifaire actif. <a href="<?= e(app_url('plans', ['action' => 'new'])) ?>">Creez d'abord un plan</a>.
+                <div class="saas-alert is-warning">
+                    <span class="material-symbols-outlined">warning</span>
+                    <div>
+                        Aucun plan tarifaire actif. <a href="<?= e(app_url('plans', ['action' => 'new'])) ?>">Créez d'abord un plan</a>, ou enregistrez cet abonnement sur mesure en laissant le plan vide.
+                    </div>
                 </div>
             <?php endif; ?>
 
-            <form method="post" class="sub-form-grid">
-                <?= csrf_input() ?>
-                <input type="hidden" name="action" value="save">
-                <?php if ($editId > 0): ?>
-                    <input type="hidden" name="id" value="<?= e((string) $editId) ?>">
-                <?php endif; ?>
+            <div class="saas-form__grid">
 
-                <label class="field">
-                    <span>Cabinet *</span>
-                    <select name="cabinet_id" required<?= $cabinetOptions === [] ? ' disabled' : '' ?>>
-                        <option value="">— Selectionner —</option>
-                        <?php foreach ($cabinetOptions as $id => $lbl): ?>
-                            <option value="<?= e((string) $id) ?>"<?= (int) ($formData['cabinet_id'] ?? 0) === (int) $id ? ' selected' : '' ?>><?= e($lbl) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </label>
-                <label class="field">
-                    <span>Plan</span>
-                    <select name="plan_id">
-                        <option value="">Sur mesure (sans plan)</option>
-                        <?php foreach ($planOptions as $id => $lbl): ?>
-                            <option value="<?= e((string) $id) ?>"<?= (int) ($formData['plan_id'] ?? 0) === (int) $id ? ' selected' : '' ?>><?= e($lbl) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </label>
-                <label class="field">
-                    <span>Date de debut *</span>
-                    <input type="date" name="date_debut" required value="<?= e((string) ($formData['date_debut'] ?? date('Y-m-d'))) ?>">
-                </label>
-                <label class="field">
-                    <span>Date de fin *</span>
-                    <input type="date" name="date_fin" value="<?= e((string) ($formData['date_fin'] ?? '')) ?>">
-                </label>
-                <label class="field">
-                    <span>Statut</span>
-                    <select name="statut">
-                        <?php foreach ($statutOptions as $val => $lbl): ?>
-                            <option value="<?= e($val) ?>"<?= (string) ($formData['statut'] ?? 'actif') === $val ? ' selected' : '' ?>><?= e($lbl) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </label>
-                <label class="field">
-                    <span>Prix annuel negocie</span>
-                    <input type="text" name="prix_annuel_negocie" inputmode="decimal" placeholder="herit du plan" value="<?= e((string) ($formData['prix_annuel_negocie'] ?? '')) ?>">
-                </label>
-                <label class="field">
-                    <span>Devise</span>
-                    <input type="text" name="devise" maxlength="3" placeholder="MAD" value="<?= e((string) ($formData['devise'] ?? 'MAD')) ?>">
-                </label>
-                <div class="field">
-                    <span>Options</span>
-                    <div style="display:flex;gap:16px;flex-wrap:wrap;padding-top:6px">
-                        <label class="sub-form-check"><input type="checkbox" name="auto_renew" value="1"<?= (int) ($formData['auto_renew'] ?? 1) === 1 ? ' checked' : '' ?>> Renouvellement automatique</label>
+                <!-- 1 — Cabinet et plan -->
+                <section class="saas-card" data-saas-card>
+                    <header class="saas-card__head">
+                        <span class="saas-card__icon material-symbols-outlined">link</span>
+                        <h3>Cabinet et plan</h3>
+                        <button type="button" class="saas-card__toggle" data-saas-toggle
+                                aria-expanded="true" aria-controls="abo-corps-rattachement">
+                            <span class="material-symbols-outlined">expand_more</span>
+                            <span class="saas-card__sr">Replier la section Cabinet et plan</span>
+                        </button>
+                    </header>
+
+                    <div class="saas-card__body" id="abo-corps-rattachement">
+                        <p class="saas-card__note">
+                            Le plan porte le prix annuel et la durée d'essai. Laissez-le vide pour un abonnement sur mesure.
+                        </p>
+
+                        <label class="saas-field<?= $etat('cabinet_id') ?>">
+                            <span class="saas-field__label">Cabinet <em class="req-mark">*</em></span>
+                            <select name="cabinet_id" required<?= $cabinetOptions === [] ? ' disabled' : '' ?><?= $invalide('cabinet_id') ?>>
+                                <option value="">— Sélectionner —</option>
+                                <?php foreach ($cabinetOptions as $id => $lbl): ?>
+                                    <option value="<?= e((string) $id) ?>"<?= (int) ($formData['cabinet_id'] ?? 0) === (int) $id ? ' selected' : '' ?>><?= e($lbl) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <?= $msg('cabinet_id') ?>
+                        </label>
+
+                        <label class="saas-field<?= $etat('plan_id') ?>">
+                            <span class="saas-field__label">Plan <small>facultatif</small></span>
+                            <select name="plan_id"<?= $invalide('plan_id') ?>>
+                                <option value="">Sur mesure (sans plan)</option>
+                                <?php foreach ($planOptions as $id => $lbl): ?>
+                                    <option value="<?= e((string) $id) ?>"<?= (int) ($formData['plan_id'] ?? 0) === (int) $id ? ' selected' : '' ?>><?= e($lbl) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <?= $msg('plan_id') ?>
+                        </label>
                     </div>
-                </div>
-                <label class="field full">
-                    <span>Notes</span>
-                    <textarea name="notes" rows="2"><?= e((string) ($formData['notes'] ?? '')) ?></textarea>
-                </label>
+                </section>
 
-                <div class="sub-form-actions field full">
-                    <button class="btn btn-next" type="submit"><span class="material-symbols-outlined">save</span> Enregistrer</button>
-                    <a class="btn btn-cancel" href="<?= e(app_url('abonnements')) ?>"><span class="material-symbols-outlined">close</span> Annuler</a>
+                <!-- 2 — Periode de validite -->
+                <section class="saas-card" data-saas-card>
+                    <header class="saas-card__head">
+                        <span class="saas-card__icon material-symbols-outlined">date_range</span>
+                        <h3>Période de validité</h3>
+                        <button type="button" class="saas-card__toggle" data-saas-toggle
+                                aria-expanded="true" aria-controls="abo-corps-periode">
+                            <span class="material-symbols-outlined">expand_more</span>
+                            <span class="saas-card__sr">Replier la section Période de validité</span>
+                        </button>
+                    </header>
+
+                    <div class="saas-card__body" id="abo-corps-periode">
+                        <label class="saas-field<?= $etat('date_debut') ?>">
+                            <span class="saas-field__label">Date de début <em class="req-mark">*</em></span>
+                            <input type="date" name="date_debut" required
+                                   value="<?= e((string) ($formData['date_debut'] ?? date('Y-m-d'))) ?>"
+                                   aria-describedby="hint-date-debut"<?= $invalide('date_debut') ?>>
+                            <small class="saas-field__hint" id="hint-date-debut">Point de départ de la période facturée</small>
+                            <?= $msg('date_debut') ?>
+                        </label>
+
+                        <label class="saas-field<?= $etat('date_fin') ?>">
+                            <span class="saas-field__label">Date de fin</span>
+                            <input type="date" name="date_fin"
+                                   value="<?= e((string) ($formData['date_fin'] ?? '')) ?>"
+                                   aria-describedby="hint-date-fin"<?= $invalide('date_fin') ?>>
+                            <small class="saas-field__hint" id="hint-date-fin">Obligatoire, sauf essai : déduite du plan</small>
+                            <?= $msg('date_fin') ?>
+                        </label>
+
+                        <label class="saas-field">
+                            <span class="saas-field__label">Statut</span>
+                            <select name="statut">
+                                <?php foreach ($statutOptions as $val => $lbl): ?>
+                                    <option value="<?= e($val) ?>"<?= (string) ($formData['statut'] ?? 'actif') === $val ? ' selected' : '' ?>><?= e($lbl) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </label>
+
+                        <label class="saas-field saas-field--check">
+                            <input type="checkbox" name="auto_renew" value="1"<?= (int) ($formData['auto_renew'] ?? 1) === 1 ? ' checked' : '' ?>>
+                            <span class="saas-field__label">Renouvellement automatique</span>
+                        </label>
+                    </div>
+                </section>
+
+                <!-- 3 — Tarification -->
+                <section class="saas-card" data-saas-card>
+                    <header class="saas-card__head">
+                        <span class="saas-card__icon material-symbols-outlined">payments</span>
+                        <h3>Tarification</h3>
+                        <button type="button" class="saas-card__toggle" data-saas-toggle
+                                aria-expanded="true" aria-controls="abo-corps-tarification">
+                            <span class="material-symbols-outlined">expand_more</span>
+                            <span class="saas-card__sr">Replier la section Tarification</span>
+                        </button>
+                    </header>
+
+                    <div class="saas-card__body" id="abo-corps-tarification">
+                        <p class="saas-card__note">
+                            Prix négocié hors taxes. Vide : le tarif du plan est repris à l'enregistrement.
+                        </p>
+
+                        <label class="saas-field saas-field--mono<?= $etat('prix_annuel_negocie') ?>">
+                            <span class="saas-field__label">Prix annuel négocié</span>
+                            <input type="text" name="prix_annuel_negocie" inputmode="decimal" data-decimal
+                                   value="<?= e((string) ($formData['prix_annuel_negocie'] ?? '')) ?>"
+                                   placeholder="Hérité du plan"<?= $invalide('prix_annuel_negocie') ?>>
+                            <?= $msg('prix_annuel_negocie') ?>
+                        </label>
+
+                        <label class="saas-field saas-field--mono">
+                            <span class="saas-field__label">Devise</span>
+                            <input type="text" name="devise" maxlength="3"
+                                   value="<?= e((string) ($formData['devise'] ?? 'MAD')) ?>"
+                                   placeholder="MAD">
+                        </label>
+                    </div>
+                </section>
+
+                <!-- 4 — Notes -->
+                <section class="saas-card" data-saas-card>
+                    <header class="saas-card__head">
+                        <span class="saas-card__icon material-symbols-outlined">notes</span>
+                        <h3>Notes</h3>
+                        <button type="button" class="saas-card__toggle" data-saas-toggle
+                                aria-expanded="true" aria-controls="abo-corps-notes">
+                            <span class="material-symbols-outlined">expand_more</span>
+                            <span class="saas-card__sr">Replier la section Notes</span>
+                        </button>
+                    </header>
+
+                    <div class="saas-card__body" id="abo-corps-notes">
+                        <label class="saas-field saas-field--wide">
+                            <span class="saas-field__label">Notes internes</span>
+                            <textarea name="notes" rows="3" placeholder="Conditions négociées, référence de contrat, points d'attention…"><?= e((string) ($formData['notes'] ?? '')) ?></textarea>
+                        </label>
+                    </div>
+                </section>
+            </div>
+
+            <div class="saas-form__footer">
+                <span class="saas-form__legend">
+                    <em class="req-mark">*</em> Champs obligatoires
+                </span>
+                <div class="saas-form__buttons">
+                    <a class="btn btn-cancel" href="<?= e(app_url('abonnements')) ?>">
+                        <span class="material-symbols-outlined">close</span> Annuler
+                    </a>
+                    <?php if ($editId > 0): ?>
+                        <button class="btn btn-next" type="submit">
+                            <span class="material-symbols-outlined">save</span> Mettre à jour
+                        </button>
+                    <?php else: ?>
+                        <button class="btn btn-next" type="submit">
+                            <span class="material-symbols-outlined">add</span> Créer l'abonnement
+                        </button>
+                    <?php endif; ?>
                 </div>
-            </form>
-        </article>
+            </div>
+        </form>
     <?php endif; ?>
 
-    <article class="card">
-        <div class="section-header">
-            <span class="page-count"><?= count($abonnements) ?> abonnement(s)</span>
-            <div class="table-actions">
-                <a class="btn btn-info" href="<?= e(app_url('abonnements', ['export' => 'csv', 'q' => $query])) ?>"><span class="material-symbols-outlined">download</span> CSV</a>
-                <a class="btn btn-info" href="<?= e(app_url('abonnements', ['export' => 'xlsx', 'q' => $query])) ?>"><span class="material-symbols-outlined">table_chart</span> Excel</a>
-            </div>
+    <!-- Titre de la liste. Meme construction que l'en-tete du formulaire et
+         que la page cabinets : icone + titre + sous-titre a gauche, exports a
+         droite. Le total vient de la table entiere, le filtre ne porte que sur
+         le chiffre affiche. -->
+    <div class="saas-form__head">
+        <div>
+            <h2 class="saas-form__title">
+                <span class="material-symbols-outlined">list_alt</span>
+                Liste des abonnements
+            </h2>
+            <p class="saas-form__sub">
+                <strong><?= $totalAbonnements ?></strong> abonnement<?= $totalAbonnements > 1 ? 's' : '' ?> au total
+                <?php if ($filtreActif): ?>
+                    &middot; <strong><?= count($abonnements) ?></strong> affich&eacute;<?= count($abonnements) > 1 ? 's' : '' ?> par le filtre
+                <?php endif; ?>
+                &middot; filtre disponible : recherche libre
+            </p>
         </div>
+        <div class="table-actions">
+            <a class="btn btn-info" href="<?= e(app_url('abonnements', ['export' => 'csv', 'q' => $query])) ?>"><span class="material-symbols-outlined">download</span> CSV</a>
+            <a class="btn btn-info" href="<?= e(app_url('abonnements', ['export' => 'xlsx', 'q' => $query])) ?>"><span class="material-symbols-outlined">table_chart</span> Excel</a>
+        </div>
+    </div>
 
-        <form method="get" class="stack search-bar">
+    <article class="card saas-table">
+        <form method="get" class="search-bar">
             <input type="hidden" name="page" value="abonnements">
             <div class="inline-form">
-                <input type="search" name="q" placeholder="Rechercher par cabinet, plan ou statut" value="<?= e($query) ?>">
+                <input type="search" name="q" placeholder="Rechercher par cabinet, code, plan ou statut" value="<?= e($query) ?>">
                 <button type="submit"><span class="material-symbols-outlined">search</span> Rechercher</button>
                 <?php if ($query !== ''): ?>
                     <a class="btn btn-cancel" href="<?= e(app_url('abonnements')) ?>"><span class="material-symbols-outlined">close</span> Effacer</a>
@@ -432,7 +623,9 @@ foreach (abonnement_statut_options() as $s) {
 
         <?php if (!$abonnements): ?>
             <p class="table-empty">
-                <?= $query !== '' ? 'Aucun abonnement ne correspond a cette recherche.' : 'Aucun abonnement enregistre. Creez un cabinet puis souscrivez son premier abonnement.' ?>
+                <?= $query !== ''
+                    ? 'Aucun abonnement ne correspond à cette recherche.'
+                    : 'Aucun abonnement enregistré. Créez un cabinet puis souscrivez son premier abonnement.' ?>
             </p>
         <?php else: ?>
             <div class="table-scroll">
@@ -441,7 +634,7 @@ foreach (abonnement_statut_options() as $s) {
                         <tr>
                             <th data-col="cabinet">Cabinet</th>
                             <th data-col="plan">Plan</th>
-                            <th data-col="debut">Debut</th>
+                            <th data-col="debut">Début</th>
                             <th data-col="fin">Fin</th>
                             <th data-col="restants">Jours restants</th>
                             <th data-col="statut">Statut</th>
@@ -502,4 +695,5 @@ foreach (abonnement_statut_options() as $s) {
             </div>
         <?php endif; ?>
     </article>
-</section>
+    </div>
+</div>

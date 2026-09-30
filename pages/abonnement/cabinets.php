@@ -459,7 +459,7 @@ $etat = static function (string $champ) use ($fieldErrors, $fieldWarnings, $fiel
     return '';
 };
 
-// Les classes sont prefixees `cab-msg` et non `field-error` : `.field-error`
+// Les classes sont prefixees `saas-msg` et non `field-error` : `.field-error`
 // existe deja dans la feuille globale, stylisee pour la grille horizontale du
 // formulaire collaborateur (`flex: 1 1 100%`). La reutiliser ici lui ferait
 // heriter une base flex qui n'a pas de sens dans une etiquette empilee, et le
@@ -472,7 +472,7 @@ $msg = static function (string $champ) use ($fieldErrors, $fieldWarnings): strin
 
     $erreur = isset($fieldErrors[$champ]);
 
-    return '<small class="cab-msg ' . ($erreur ? 'cab-msg--error' : 'cab-msg--warning') . '">'
+    return '<small class="saas-msg ' . ($erreur ? 'saas-msg--error' : 'saas-msg--warning') . '">'
         . '<span class="material-symbols-outlined">' . ($erreur ? 'error' : 'warning') . '</span>'
         . e($texte)
         . '</small>';
@@ -483,14 +483,14 @@ $ok = static function (string $champ) use ($fieldErrors, $fieldWarnings, $fieldO
         return '';
     }
 
-    return '<small class="cab-msg cab-msg--ok">'
+    return '<small class="saas-msg saas-msg--ok">'
         . '<span class="material-symbols-outlined">check_circle</span>'
         . 'Format valide, aucun doublon'
         . '</small>';
 };
 
 // `aria-invalid` est porte par la saisie, l'etat visuel par l'enveloppe
-// `.cab-field` : les deux doivent calendrier ensemble, sinon le lecteur d'ecran
+// `.saas-field` : les deux doivent calendrier ensemble, sinon le lecteur d'ecran
 // annonce un champ invalide que la couleur ne signale pas.
 $invalide = static function (string $champ) use ($fieldErrors): string {
     return isset($fieldErrors[$champ]) ? ' aria-invalid="true"' : '';
@@ -509,24 +509,24 @@ $alerteStatut = match ((string) ($formData['statut'] ?? 'actif')) {
 
 $recherchePlaceholder = 'Rechercher par code, nom, ville, email, ICE, RC, IF, TP ou responsable';
 ?>
-<div class="cab-canvas">
-    <div class="cab-page">
+<div class="saas-canvas">
+    <div class="saas-page">
 
         <?php if ($formOpen && ($canCreate || $canEdit)): ?>
-            <form method="post" class="cab-form">
+            <form method="post" class="saas-form">
                 <?= csrf_input() ?>
                 <input type="hidden" name="action" value="save">
                 <?php if ($editId > 0): ?>
                     <input type="hidden" name="id" value="<?= e((string) $editId) ?>">
                 <?php endif; ?>
 
-                <div class="cab-form__head">
+                <div class="saas-form__head">
                     <div>
-                        <h2 class="cab-form__title">
+                        <h2 class="saas-form__title">
                             <span class="material-symbols-outlined"><?= $editId > 0 ? 'edit' : 'add_business' ?></span>
                             <?= $editId > 0 ? 'Modifier le cabinet' : 'Nouveau cabinet client' ?>
                         </h2>
-                        <p class="cab-form__sub">
+                        <p class="saas-form__sub">
                             <?= $editId > 0
                                 ? 'Mettez à jour les informations de ce cabinet.'
                                 : 'Renseignez la dénomination, les coordonnées et les identifiants légaux du cabinet.' ?>
@@ -538,7 +538,7 @@ $recherchePlaceholder = 'Rechercher par code, nom, ville, email, ICE, RC, IF, TP
                 </div>
 
                 <?php if ($fieldErrors !== []): ?>
-                    <div class="cab-alert is-error" role="alert">
+                    <div class="saas-alert is-error" role="alert">
                         <span class="material-symbols-outlined">error</span>
                         <div>
                             <strong><?= count($fieldErrors) ?> champ(s) à corriger</strong>
@@ -548,38 +548,38 @@ $recherchePlaceholder = 'Rechercher par code, nom, ville, email, ICE, RC, IF, TP
                 <?php endif; ?>
 
                 <?php if ($alerteStatut !== null): ?>
-                    <div class="cab-alert <?= e($alerteStatut[0]) ?>">
+                    <div class="saas-alert <?= e($alerteStatut[0]) ?>">
                         <span class="material-symbols-outlined">warning</span>
                         <div><?= e($alerteStatut[1]) ?></div>
                     </div>
                 <?php endif; ?>
 
-                <div class="cab-form__grid">
+                <div class="saas-form__grid">
 
                     <!-- 1 — Informations generales -->
-                    <section class="cab-card" data-cab-card>
-                        <header class="cab-card__head">
-                            <span class="cab-card__icon material-symbols-outlined">business</span>
+                    <section class="saas-card" data-saas-card>
+                        <header class="saas-card__head">
+                            <span class="saas-card__icon material-symbols-outlined">business</span>
                             <h3>Informations générales</h3>
-                            <button type="button" class="cab-card__toggle" data-cab-toggle
+                            <button type="button" class="saas-card__toggle" data-saas-toggle
                                     aria-expanded="true" aria-controls="cab-corps-infos">
                                 <span class="material-symbols-outlined">expand_more</span>
-                                <span class="cab-card__sr">Replier la section Informations générales</span>
+                                <span class="saas-card__sr">Replier la section Informations générales</span>
                             </button>
                         </header>
 
-                        <div class="cab-card__body" id="cab-corps-infos">
-                            <label class="cab-field<?= $etat('code') ?> cab-field--auto">
-                                <span class="cab-field__label">Code cabinet <span class="cab-field__req">auto</span></span>
+                        <div class="saas-card__body" id="cab-corps-infos">
+                            <label class="saas-field<?= $etat('code') ?> saas-field--auto">
+                                <span class="saas-field__label">Code cabinet <span class="saas-field__req">auto</span></span>
                                 <input type="text" name="code" maxlength="40" readonly
                                        value="<?= e((string) ($formData['code'] ?? '')) ?>"
                                        aria-describedby="hint-code"<?= $invalide('code') ?>>
-                                <small class="cab-field__hint" id="hint-code">Généré automatiquement, non modifiable</small>
+                                <small class="saas-field__hint" id="hint-code">Généré automatiquement, non modifiable</small>
                                 <?= $msg('code') ?>
                             </label>
 
-                            <label class="cab-field<?= $etat('type_cabinet') ?>">
-                                <span class="cab-field__label">Type de cabinet <em class="req-mark">*</em></span>
+                            <label class="saas-field<?= $etat('type_cabinet') ?>">
+                                <span class="saas-field__label">Type de cabinet <em class="req-mark">*</em></span>
                                 <select name="type_cabinet" required<?= $invalide('type_cabinet') ?>>
                                     <option value="" disabled<?= (string) ($formData['type_cabinet'] ?? '') === '' ? ' selected' : '' ?>>Choisir un type</option>
                                     <?php foreach ($typeOptions as $val => $lbl): ?>
@@ -589,16 +589,16 @@ $recherchePlaceholder = 'Rechercher par code, nom, ville, email, ICE, RC, IF, TP
                                 <?= $msg('type_cabinet') ?>
                             </label>
 
-                            <label class="cab-field cab-field--wide<?= $etat('nom') ?>">
-                                <span class="cab-field__label">Nom du cabinet / Raison sociale <em class="req-mark">*</em></span>
+                            <label class="saas-field saas-field--wide<?= $etat('nom') ?>">
+                                <span class="saas-field__label">Nom du cabinet / Raison sociale <em class="req-mark">*</em></span>
                                 <input type="text" name="nom" required maxlength="150"
                                        value="<?= e((string) ($formData['nom'] ?? '')) ?>"
                                        placeholder="Cabinet Exemple"<?= $invalide('nom') ?>>
                                 <?= $msg('nom') ?>
                             </label>
 
-                            <label class="cab-field">
-                                <span class="cab-field__label">Statut</span>
+                            <label class="saas-field">
+                                <span class="saas-field__label">Statut</span>
                                 <select name="statut">
                                     <?php foreach ($statutOptions as $val => $lbl): ?>
                                         <option value="<?= e($val) ?>"<?= (string) ($formData['statut'] ?? 'actif') === $val ? ' selected' : '' ?>><?= e($lbl) ?></option>
@@ -609,20 +609,20 @@ $recherchePlaceholder = 'Rechercher par code, nom, ville, email, ICE, RC, IF, TP
                     </section>
 
                     <!-- 2 — Coordonnees -->
-                    <section class="cab-card" data-cab-card>
-                        <header class="cab-card__head">
-                            <span class="cab-card__icon material-symbols-outlined">contact_mail</span>
+                    <section class="saas-card" data-saas-card>
+                        <header class="saas-card__head">
+                            <span class="saas-card__icon material-symbols-outlined">contact_mail</span>
                             <h3>Coordonnées</h3>
-                            <button type="button" class="cab-card__toggle" data-cab-toggle
+                            <button type="button" class="saas-card__toggle" data-saas-toggle
                                     aria-expanded="true" aria-controls="cab-corps-coordonnees">
                                 <span class="material-symbols-outlined">expand_more</span>
-                                <span class="cab-card__sr">Replier la section Coordonnées</span>
+                                <span class="saas-card__sr">Replier la section Coordonnées</span>
                             </button>
                         </header>
 
-                        <div class="cab-card__body" id="cab-corps-coordonnees">
-                            <label class="cab-field<?= $etat('email') ?>">
-                                <span class="cab-field__label">Email du cabinet</span>
+                        <div class="saas-card__body" id="cab-corps-coordonnees">
+                            <label class="saas-field<?= $etat('email') ?>">
+                                <span class="saas-field__label">Email du cabinet</span>
                                 <input type="email" name="email" maxlength="190"
                                        value="<?= e((string) ($formData['email'] ?? '')) ?>"
                                        placeholder="contact@cabinet.ma"<?= $invalide('email') ?>>
@@ -630,37 +630,37 @@ $recherchePlaceholder = 'Rechercher par code, nom, ville, email, ICE, RC, IF, TP
                                 <?= $ok('email') ?>
                             </label>
 
-                            <label class="cab-field<?= $etat('telephone') ?>">
-                                <span class="cab-field__label">Téléphone principal</span>
+                            <label class="saas-field<?= $etat('telephone') ?>">
+                                <span class="saas-field__label">Téléphone principal</span>
                                 <input type="text" name="telephone" maxlength="40" inputmode="tel"
                                        value="<?= e((string) ($formData['telephone'] ?? '')) ?>"
                                        placeholder="0522 00 00 00"<?= $invalide('telephone') ?>>
                                 <?= $msg('telephone') ?>
                             </label>
 
-                            <label class="cab-field">
-                                <span class="cab-field__label">Téléphone fixe</span>
+                            <label class="saas-field">
+                                <span class="saas-field__label">Téléphone fixe</span>
                                 <input type="text" name="telephone_fixe" maxlength="60" inputmode="tel"
                                        value="<?= e((string) ($formData['telephone_fixe'] ?? '')) ?>"
                                        placeholder="0522 00 00 00">
                             </label>
 
-                            <label class="cab-field">
-                                <span class="cab-field__label">Téléphone mobile</span>
+                            <label class="saas-field">
+                                <span class="saas-field__label">Téléphone mobile</span>
                                 <input type="text" name="telephone_mobile" maxlength="60" inputmode="tel"
                                        value="<?= e((string) ($formData['telephone_mobile'] ?? '')) ?>"
                                        placeholder="0661 00 00 00">
                             </label>
 
-                            <label class="cab-field cab-field--wide">
-                                <span class="cab-field__label">Adresse</span>
+                            <label class="saas-field saas-field--wide">
+                                <span class="saas-field__label">Adresse</span>
                                 <input type="text" name="adresse" maxlength="255"
                                        value="<?= e((string) ($formData['adresse'] ?? '')) ?>"
                                        placeholder="Rue, numéro, quartier">
                             </label>
 
-                            <label class="cab-field">
-                                <span class="cab-field__label">Ville</span>
+                            <label class="saas-field">
+                                <span class="saas-field__label">Ville</span>
                                 <input type="text" name="ville" maxlength="120"
                                        value="<?= e((string) ($formData['ville'] ?? '')) ?>"
                                        placeholder="Casablanca">
@@ -670,25 +670,25 @@ $recherchePlaceholder = 'Rechercher par code, nom, ville, email, ICE, RC, IF, TP
 
                     <!-- 3 — Identifiants legaux : carte accentuee, elle porte l'identite
                          fiscale du cabinet qui apparait sur les factures. -->
-                    <section class="cab-card cab-card--legal" data-cab-card>
-                        <header class="cab-card__head">
-                            <span class="cab-card__icon material-symbols-outlined">verified</span>
+                    <section class="saas-card saas-card--legal" data-saas-card>
+                        <header class="saas-card__head">
+                            <span class="saas-card__icon material-symbols-outlined">verified</span>
                             <h3>Identifiants légaux</h3>
-                            <span class="cab-card__tag">Facturation</span>
-                            <button type="button" class="cab-card__toggle" data-cab-toggle
+                            <span class="saas-card__tag">Facturation</span>
+                            <button type="button" class="saas-card__toggle" data-saas-toggle
                                     aria-expanded="true" aria-controls="cab-corps-legaux">
                                 <span class="material-symbols-outlined">expand_more</span>
-                                <span class="cab-card__sr">Replier la section Identifiants légaux</span>
+                                <span class="saas-card__sr">Replier la section Identifiants légaux</span>
                             </button>
                         </header>
 
-                        <div class="cab-card__body cab-card__body--legal" id="cab-corps-legaux">
-                            <p class="cab-card__note">
+                        <div class="saas-card__body saas-card__body--legal" id="cab-corps-legaux">
+                            <p class="saas-card__note">
                                 Ces quatre identifiants figurent sur les factures et les déclarations.
                                 Un doublon est refusé : chaque valeur doit désigner un seul cabinet.
                             </p>
-                            <label class="cab-field cab-field--mono<?= $etat('ice') ?>">
-                                <span class="cab-field__label">ICE <small>Identifiant Commun de l'Entreprise</small></span>
+                            <label class="saas-field saas-field--mono<?= $etat('ice') ?>">
+                                <span class="saas-field__label">ICE <small>Identifiant Commun de l'Entreprise</small></span>
                                 <input type="text" name="ice" maxlength="40" inputmode="numeric" data-numeric
                                        value="<?= e((string) ($formData['ice'] ?? '')) ?>"
                                        placeholder="001234567890123"<?= $invalide('ice') ?>>
@@ -696,8 +696,8 @@ $recherchePlaceholder = 'Rechercher par code, nom, ville, email, ICE, RC, IF, TP
                                 <?= $ok('ice') ?>
                             </label>
 
-                            <label class="cab-field cab-field--mono<?= $etat('rc') ?>">
-                                <span class="cab-field__label">RC <small>Registre de Commerce</small></span>
+                            <label class="saas-field saas-field--mono<?= $etat('rc') ?>">
+                                <span class="saas-field__label">RC <small>Registre de Commerce</small></span>
                                 <input type="text" name="rc" maxlength="60" inputmode="numeric" data-numeric
                                        value="<?= e((string) ($formData['rc'] ?? '')) ?>"
                                        placeholder="123456"<?= $invalide('rc') ?>>
@@ -705,8 +705,8 @@ $recherchePlaceholder = 'Rechercher par code, nom, ville, email, ICE, RC, IF, TP
                                 <?= $ok('rc') ?>
                             </label>
 
-                            <label class="cab-field cab-field--mono<?= $etat('identifiant_fiscal') ?>">
-                                <span class="cab-field__label">IF <small>Identifiant Fiscal</small></span>
+                            <label class="saas-field saas-field--mono<?= $etat('identifiant_fiscal') ?>">
+                                <span class="saas-field__label">IF <small>Identifiant Fiscal</small></span>
                                 <input type="text" name="identifiant_fiscal" maxlength="100" inputmode="numeric" data-numeric
                                        value="<?= e((string) ($formData['identifiant_fiscal'] ?? '')) ?>"
                                        placeholder="40312785"<?= $invalide('identifiant_fiscal') ?>>
@@ -714,8 +714,8 @@ $recherchePlaceholder = 'Rechercher par code, nom, ville, email, ICE, RC, IF, TP
                                 <?= $ok('identifiant_fiscal') ?>
                             </label>
 
-                            <label class="cab-field cab-field--mono<?= $etat('taxe_professionnelle') ?>">
-                                <span class="cab-field__label">TP <small>Taxe Professionnelle</small></span>
+                            <label class="saas-field saas-field--mono<?= $etat('taxe_professionnelle') ?>">
+                                <span class="saas-field__label">TP <small>Taxe Professionnelle</small></span>
                                 <input type="text" name="taxe_professionnelle" maxlength="100" inputmode="numeric" data-numeric
                                        value="<?= e((string) ($formData['taxe_professionnelle'] ?? '')) ?>"
                                        placeholder="27185403"<?= $invalide('taxe_professionnelle') ?>>
@@ -726,47 +726,47 @@ $recherchePlaceholder = 'Rechercher par code, nom, ville, email, ICE, RC, IF, TP
                     </section>
 
                     <!-- 4 — Responsable principal -->
-                    <section class="cab-card" data-cab-card>
-                        <header class="cab-card__head">
-                            <span class="cab-card__icon material-symbols-outlined">person</span>
+                    <section class="saas-card" data-saas-card>
+                        <header class="saas-card__head">
+                            <span class="saas-card__icon material-symbols-outlined">person</span>
                             <h3>Responsable principal</h3>
-                            <button type="button" class="cab-card__toggle" data-cab-toggle
+                            <button type="button" class="saas-card__toggle" data-saas-toggle
                                     aria-expanded="true" aria-controls="cab-corps-responsable">
                                 <span class="material-symbols-outlined">expand_more</span>
-                                <span class="cab-card__sr">Replier la section Responsable principal</span>
+                                <span class="saas-card__sr">Replier la section Responsable principal</span>
                             </button>
                         </header>
 
-                        <div class="cab-card__body" id="cab-corps-responsable">
-                            <p class="cab-card__note">
+                        <div class="saas-card__body" id="cab-corps-responsable">
+                            <p class="saas-card__note">
                                 Interlocuteur du cabinet pour la facturation et les relances.
                             </p>
-                            <label class="cab-field cab-field--wide<?= $etat('responsable_nom') ?>">
-                                <span class="cab-field__label">Nom et prénom <em class="req-mark">*</em></span>
+                            <label class="saas-field saas-field--wide<?= $etat('responsable_nom') ?>">
+                                <span class="saas-field__label">Nom et prénom <em class="req-mark">*</em></span>
                                 <input type="text" name="responsable_nom" required maxlength="150"
                                        value="<?= e((string) ($formData['responsable_nom'] ?? '')) ?>"
                                        placeholder="Karim Bennani"<?= $invalide('responsable_nom') ?>>
                                 <?= $msg('responsable_nom') ?>
                             </label>
 
-                            <label class="cab-field<?= $etat('responsable_fonction') ?>">
-                                <span class="cab-field__label">Fonction</span>
+                            <label class="saas-field<?= $etat('responsable_fonction') ?>">
+                                <span class="saas-field__label">Fonction</span>
                                 <input type="text" name="responsable_fonction" maxlength="120"
                                        value="<?= e((string) ($formData['responsable_fonction'] ?? '')) ?>"
                                        placeholder="Associé gérant">
                                 <?= $msg('responsable_fonction') ?>
                             </label>
 
-                            <label class="cab-field<?= $etat('responsable_email') ?>">
-                                <span class="cab-field__label">Email</span>
+                            <label class="saas-field<?= $etat('responsable_email') ?>">
+                                <span class="saas-field__label">Email</span>
                                 <input type="email" name="responsable_email" maxlength="190"
                                        value="<?= e((string) ($formData['responsable_email'] ?? '')) ?>"
                                        placeholder="k.bennani@cabinet.ma"<?= $invalide('responsable_email') ?>>
                                 <?= $msg('responsable_email') ?>
                             </label>
 
-                            <label class="cab-field<?= $etat('responsable_telephone') ?>">
-                                <span class="cab-field__label">Téléphone</span>
+                            <label class="saas-field<?= $etat('responsable_telephone') ?>">
+                                <span class="saas-field__label">Téléphone</span>
                                 <input type="text" name="responsable_telephone" maxlength="40" inputmode="tel"
                                        value="<?= e((string) ($formData['responsable_telephone'] ?? '')) ?>"
                                        placeholder="0661 00 00 00"<?= $invalide('responsable_telephone') ?>>
@@ -776,11 +776,11 @@ $recherchePlaceholder = 'Rechercher par code, nom, ville, email, ICE, RC, IF, TP
                     </section>
                 </div>
 
-                <div class="cab-form__footer">
-                    <span class="cab-form__legend">
+                <div class="saas-form__footer">
+                    <span class="saas-form__legend">
                         <em class="req-mark">*</em> Champs obligatoires
                     </span>
-                    <div class="cab-form__buttons">
+                    <div class="saas-form__buttons">
                         <a class="btn btn-cancel" href="<?= e(app_url('cabinets')) ?>">
                             <span class="material-symbols-outlined">close</span> Annuler
                         </a>
@@ -802,13 +802,13 @@ $recherchePlaceholder = 'Rechercher par code, nom, ville, email, ICE, RC, IF, TP
              l'en-tete du formulaire (icone + titre + sous-titre + actions a
              droite) : meme niveau de hierarchie, meme rhythmme, et la seule
              difference avec le bloc du dessus est la taille du contenu. -->
-        <div class="cab-form__head">
+        <div class="saas-form__head">
             <div>
-                <h2 class="cab-form__title">
+                <h2 class="saas-form__title">
                     <span class="material-symbols-outlined">list_alt</span>
                     Liste des cabinets clients
                 </h2>
-                <p class="cab-form__sub">
+                <p class="saas-form__sub">
                     <strong><?= $totalCabinets ?></strong> cabinet<?= $totalCabinets > 1 ? 's' : '' ?> au total
                     <?php if ($filtreActif): ?>
                         &middot; <strong><?= count($cabinets) ?></strong> affich&eacute;<?= count($cabinets) > 1 ? 's' : '' ?> par le filtre
@@ -822,7 +822,7 @@ $recherchePlaceholder = 'Rechercher par code, nom, ville, email, ICE, RC, IF, TP
             </div>
         </div>
 
-        <article class="card cab-table">
+        <article class="card saas-table">
             <form method="get" class="search-bar">
                 <input type="hidden" name="page" value="cabinets">
                 <div class="inline-form">
@@ -935,131 +935,3 @@ $recherchePlaceholder = 'Rechercher par code, nom, ville, email, ICE, RC, IF, TP
             <?php endif; ?>
         </article>
     </div>
-</div>
-
-<script>
-// Normalisation des identifiants legaux au focus perdu.
-//
-// L'ICE se recopie depuis une fiche, un mail ou un.tableau : il arrive avec des
-// espaces, des tirets ou des points ("0012 3456 7890 123"). Le serveur stocke
-// la valeur telle quelle et la comparaison de doublon se fait sur la chaine
-// entiere, donc "0012 3456 7890 123" et "001234567890123" passeraient pour deux
-// cabinets differents. On retire donc les separateurs au blur — pas pendant la
-// frappe, ou le curseur sauterait sous les doigts de l'utilisateur.
-(function () {
-    document.querySelectorAll('.cab-form [data-numeric]').forEach(function (champ) {
-        champ.addEventListener('blur', function () {
-            champ.value = champ.value.replace(/[\s.\-_]/g, '');
-        });
-    });
-})();
-
-// Accordéon des sections sur mobile.
-//
-// Sur un telephone, les quatre sections empilees donnaient six hauteurs
-// d'ecran de defilement avant d'atteindre le bouton de validation. Sous
-// 900px — le meme palier que la colonne unique — une seule section reste
-// ouverte a la fois.
-//
-// L'etat est memorise par carte et reapplique a chaque bascule de largeur :
-// passer en paysage puis revenir en portrait ne referme pas la section que
-// l'utilisateur venait d'ouvrir, et le mode grand ecran reste hors du
-// comportement (tout ouvert, aucun bouton).
-(function () {
-    var cartes = Array.prototype.slice.call(document.querySelectorAll('[data-cab-card]'));
-    if (!cartes.length) {
-        return;
-    }
-
-    // 768px, meme palier que la colonne unique en CSS : sous cette largeur
-    // l'accordion s'active, au-dessus les quatre sections restent ouvertes et
-    // le bouton de repli disparait. Un `matchMedia` par cascade CSS eviterait
-    // de dupliquer la valeur, mais le hors-parallele de l'ancien Chrome
-    // (Android WebView) ne connait pas `addEventListener` sur la requete.
-    var query = window.matchMedia('(max-width: 768px)');
-    var choix = new Map();
-
-    function sectionAReplier(carte) {
-        return carte.querySelector('.cab-card__note, .cab-card__body');
-    }
-
-    function appliquer(carte, ouvert) {
-        carte.dataset.collapsed = ouvert ? 'false' : 'true';
-        var contenu = sectionAReplier(carte);
-        if (contenu) {
-            contenu.hidden = !ouvert;
-        }
-
-        var bouton = carte.querySelector('[data-cab-toggle]');
-        if (bouton) {
-            bouton.setAttribute('aria-expanded', ouvert ? 'true' : 'false');
-        }
-    }
-
-    function rendre() {
-        var mobile = query.matches;
-        cartes.forEach(function (carte, index) {
-            if (!mobile) {
-                // Grand ecran : tout ouvert, l'accordion n'existe pas.
-                delete carte.dataset.collapsed;
-                var contenu = sectionAReplier(carte);
-                if (contenu) {
-                    contenu.hidden = false;
-                }
-                var bouton = carte.querySelector('[data-cab-toggle]');
-                if (bouton) {
-                    bouton.setAttribute('aria-expanded', 'true');
-                }
-                return;
-            }
-
-            // Première visite sur mobile : la première section ouverte, les
-            // autres repliées — l'utilisateur voit l'ordre de saisie d'un coup
-            // d'œil au lieu de découvrir quatre blocs d'affilée.
-            if (!choix.has(carte)) {
-                choix.set(carte, index === 0);
-            }
-            appliquer(carte, choix.get(carte));
-        });
-    }
-
-    cartes.forEach(function (carte) {
-        var bouton = carte.querySelector('[data-cab-toggle]');
-        if (!bouton) {
-            return;
-        }
-
-        bouton.addEventListener('click', function () {
-            if (!query.matches) {
-                return;
-            }
-
-            var ouvert = carte.dataset.collapsed !== 'true';
-
-            // Accordéon exclusif : ouvrir une section referme les autres. Sur un
-            // ecran de 844px, deux sections ouvertes suffisent a faire
-            // disparaitre la barre d'action, et c'est elle qu'on cherche au
-            // moment de valider.
-            if (ouvert) {
-                cartes.forEach(function (autre) {
-                    if (autre !== carte) {
-                        choix.set(autre, false);
-                        appliquer(autre, false);
-                    }
-                });
-            }
-
-            choix.set(carte, !ouvert);
-            appliquer(carte, !ouvert);
-        });
-    });
-
-    if (typeof query.addEventListener === 'function') {
-        query.addEventListener('change', rendre);
-    } else if (typeof query.addListener === 'function') {
-        query.addListener(rendre);
-    }
-
-    rendre();
-})();
-</script>

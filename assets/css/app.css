@@ -7029,15 +7029,21 @@ button[type="submit"].auth-submit:active {
 }
 
 /* ==========================================
-   Cabinets clients (pages/abonnement/cabinets.php)
-   Gabarit compact inspired de Microsoft Admin Center et Stripe : le fond
-   global est le noir pur (#000), trop lourd derriere un formulaire long. On
-   repose la page sur un gris-bleu (#0b0d12) avec deux halos tres discrets, et
-   on serre chaque marge pour que les quatre sections tiennent dans un ecran
-   sans defilement.
-   Tout est prefixe `cab-` : la page ne touche ni aux variables du theme ni
-   aux gabarits partages (`.form-compact` reste intact pour le formulaire
-   collaborateur).
+   Formulaires SaaS (prefixe `saas-`)
+   Gabarit compact inspire de Microsoft Admin Center et Stripe, partage par
+   les ecrans d'administration SaaS : creation et edition d'un cabinet client
+   (pages/abonnement/cabinets.php) et d'un abonnement
+   (pages/abonnement/abonnements.php). Les deux pages doivent rester
+   identiques section par section, carte par carte.
+   Le fond global est le noir pur (#000), trop lourd derriere un formulaire
+   long. On repose la page sur un gris-bleu (#0b0d12) avec deux halos tres
+   discrets, et on serre chaque marge pour que les quatre sections tiennent
+   dans un ecran sans defilement.
+   Tout est prefixe `saas-` : ces regles ne touchent ni aux variables du
+   theme ni aux gabarits historiques (`.form-compact` reste intact pour le
+   formulaire collaborateur, `.card` / `.section-header` pour les autres
+   pages). Ne pas redeclarer ces cartes a la main dans une page : soit on
+   reprend la structure ci-dessous, soit on laisse la page en place.
    ========================================== */
 
 /* --- Fond et conteneur ---------------------------------------------------
@@ -7045,7 +7051,7 @@ button[type="submit"].auth-submit:active {
    couvre toute la zone de defilement, sans traiter le reste de l'application.
    Le contenu, lui, garde une gouttiere : c'est ce qui donne l'effet « carte
    posee sur un fond », et non « texte colle a la bordure ». */
-.cab-canvas {
+.saas-canvas {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -7057,7 +7063,7 @@ button[type="submit"].auth-submit:active {
         #0b0d12;
 }
 
-.cab-page {
+.saas-page {
     width: 100%;
     max-width: 1400px;
     margin: 0 auto;
@@ -7067,7 +7073,7 @@ button[type="submit"].auth-submit:active {
 }
 
 /* --- En-tete du formulaire ---------------------------------------------- */
-.cab-form {
+.saas-form {
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
@@ -7077,14 +7083,14 @@ button[type="submit"].auth-submit:active {
     border-radius: var(--radius-lg);
 }
 
-.cab-form__head {
+.saas-form__head {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
 }
 
-.cab-form__title {
+.saas-form__title {
     display: flex;
     align-items: center;
     gap: 0.45rem;
@@ -7094,12 +7100,12 @@ button[type="submit"].auth-submit:active {
     letter-spacing: -0.01em;
 }
 
-.cab-form__title .material-symbols-outlined {
+.saas-form__title .material-symbols-outlined {
     font-size: 1.15rem;
     color: var(--primary);
 }
 
-.cab-form__sub {
+.saas-form__sub {
     margin: 0.15rem 0 0;
     font-size: 0.75rem;
     color: var(--text-secondary);
@@ -7107,7 +7113,7 @@ button[type="submit"].auth-submit:active {
 
 /* --- Alertes (erreur globale, avertissement de statut) -------------------
    Padding serré et texte court : une alerte est un signal, pas un paragraphe. */
-.cab-alert {
+.saas-alert {
     display: flex;
     align-items: flex-start;
     gap: 0.5rem;
@@ -7117,36 +7123,36 @@ button[type="submit"].auth-submit:active {
     border: 1px solid transparent;
 }
 
-.cab-alert .material-symbols-outlined {
+.saas-alert .material-symbols-outlined {
     font-size: 1rem;
     flex-shrink: 0;
 }
 
-.cab-alert strong {
+.saas-alert strong {
     font-weight: 600;
 }
 
-.cab-alert p {
+.saas-alert p {
     display: inline;
     margin: 0;
     color: var(--text-secondary);
 }
 
-.cab-alert.is-error {
+.saas-alert.is-error {
     background: rgba(252, 66, 74, 0.1);
     border-color: rgba(252, 66, 74, 0.35);
 }
 
-.cab-alert.is-error .material-symbols-outlined {
+.saas-alert.is-error .material-symbols-outlined {
     color: var(--danger);
 }
 
-.cab-alert.is-warning {
+.saas-alert.is-warning {
     background: rgba(255, 171, 0, 0.1);
     border-color: rgba(255, 171, 0, 0.32);
 }
 
-.cab-alert.is-warning .material-symbols-outlined {
+.saas-alert.is-warning .material-symbols-outlined {
     color: var(--warning);
 }
 
@@ -7155,7 +7161,7 @@ button[type="submit"].auth-submit:active {
    descendre sous la largeur de son contenu le plus large et la grille
    deborde plutot que de se resserrer. `stretch` (et non `start`) aligne les
    bas de cartes d'une meme rangee. */
-.cab-form__grid {
+.saas-form__grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.6rem;
@@ -7167,7 +7173,7 @@ button[type="submit"].auth-submit:active {
    (app.css) : sans elle, les cards 2 a 4 heritage de 24px de marge
    superieure, la deuxieme carte demarrait 24px plus bas que la premiere et
    chaque section empilee laissait un vide en haut. */
-.cab-card {
+.saas-card {
     min-width: 0;
     margin: 0;
     padding: 0.55rem 0.6rem 0.65rem;
@@ -7176,7 +7182,7 @@ button[type="submit"].auth-submit:active {
     border-radius: var(--radius);
 }
 
-.cab-card__head {
+.saas-card__head {
     position: relative;
     display: flex;
     align-items: center;
@@ -7185,7 +7191,7 @@ button[type="submit"].auth-submit:active {
     margin-bottom: 0.45rem;
 }
 
-.cab-card__icon {
+.saas-card__icon {
     display: grid;
     place-items: center;
     width: 24px;
@@ -7198,7 +7204,7 @@ button[type="submit"].auth-submit:active {
     border-radius: 7px;
 }
 
-.cab-card__head h3 {
+.saas-card__head h3 {
     margin: 0;
     font-size: 0.72rem;
     font-weight: 600;
@@ -7207,7 +7213,7 @@ button[type="submit"].auth-submit:active {
     color: var(--text);
 }
 
-.cab-card__tag {
+.saas-card__tag {
     margin-left: auto;
     padding: 2px 7px;
     font-size: 0.6rem;
@@ -7218,7 +7224,7 @@ button[type="submit"].auth-submit:active {
     border-radius: 999px;
 }
 
-.cab-card__note {
+.saas-card__note {
     grid-column: 1 / -1;
     margin: 0 0 0.1rem;
     font-size: 0.7rem;
@@ -7226,7 +7232,7 @@ button[type="submit"].auth-submit:active {
     color: var(--text-secondary);
 }
 
-.cab-card__body {
+.saas-card__body {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.45rem 0.55rem;
@@ -7235,12 +7241,12 @@ button[type="submit"].auth-submit:active {
 /* La carte des identifiants legaux porte seule les quatre sigles qui
    determinent la facturation : teinte et filet dedies, pour qu'elle ne se
    confonde pas avec les sections declaratives. */
-.cab-card--legal {
+.saas-card--legal {
     background: linear-gradient(180deg, rgba(0, 144, 231, 0.09), rgba(0, 144, 231, 0.02));
     border-color: rgba(0, 144, 231, 0.3);
 }
 
-.cab-card--legal .cab-card__icon {
+.saas-card--legal .saas-card__icon {
     background: rgba(0, 144, 231, 0.18);
 }
 
@@ -7251,7 +7257,7 @@ button[type="submit"].auth-submit:active {
    cliquable, et il disparait en grand ecran ou l'accordion n'a pas lieu.
    Le libelle dedie reste dans le DOM pour les lecteurs d'ecran ; l'icone de
    Material Symbols est donc masquee ici plutot que dupliquee. */
-.cab-card__toggle {
+.saas-card__toggle {
     display: none;
     position: absolute;
     inset: 0 -0.6rem;
@@ -7262,7 +7268,7 @@ button[type="submit"].auth-submit:active {
     cursor: pointer;
 }
 
-.cab-card__toggle .material-symbols-outlined {
+.saas-card__toggle .material-symbols-outlined {
     position: absolute;
     right: 0.1rem;
     top: 50%;
@@ -7272,7 +7278,7 @@ button[type="submit"].auth-submit:active {
     transition: rotate 0.18s ease;
 }
 
-.cab-card__sr {
+.saas-card__sr {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -7283,18 +7289,18 @@ button[type="submit"].auth-submit:active {
     white-space: nowrap;
 }
 
-.cab-card[data-collapsed="true"] .cab-card__toggle .material-symbols-outlined {
+.saas-card[data-collapsed="true"] .saas-card__toggle .material-symbols-outlined {
     rotate: -90deg;
 }
 
-.cab-card[data-collapsed="true"] .cab-card__note,
-.cab-card[data-collapsed="true"] .cab-card__body {
+.saas-card[data-collapsed="true"] .saas-card__note,
+.saas-card[data-collapsed="true"] .saas-card__body {
     display: none;
 }
 
 /* Un titre de section repliee doit advertise qu'il reste des valeurs a
    saisir : sans cela l'utilisateur replie par megarde et ne voit plus rien. */
-.cab-card[data-collapsed="true"] .cab-card__head h3::after {
+.saas-card[data-collapsed="true"] .saas-card__head h3::after {
     content: " ·";
     color: var(--warning);
 }
@@ -7302,18 +7308,18 @@ button[type="submit"].auth-submit:active {
 /* --- Champ ---------------------------------------------------------------
    Hauteur 34px : assez pour un curseur comfortable, 15% de moins que les
    40px habituels — sur vingt champs c'est 120px gagnes d'un coup. */
-.cab-field {
+.saas-field {
     display: flex;
     flex-direction: column;
     gap: 0.18rem;
     min-width: 0;
 }
 
-.cab-field--wide {
+.saas-field--wide {
     grid-column: 1 / -1;
 }
 
-.cab-field__label {
+.saas-field__label {
     display: flex;
     align-items: baseline;
     gap: 0.35rem;
@@ -7322,18 +7328,18 @@ button[type="submit"].auth-submit:active {
     color: var(--text);
 }
 
-.cab-field__label small {
+.saas-field__label small {
     font-size: 0.62rem;
     font-weight: 400;
     color: var(--text-secondary);
 }
 
-.cab-field__label .req-mark {
+.saas-field__label .req-mark {
     font-weight: 700;
 }
 
 /* Badge « auto » du code : dit pourquoi le champ n'est pas saisissable. */
-.cab-field__req {
+.saas-field__req {
     padding: 0 5px;
     font-size: 0.58rem;
     font-weight: 600;
@@ -7345,8 +7351,8 @@ button[type="submit"].auth-submit:active {
     border-radius: 999px;
 }
 
-.cab-field input,
-.cab-field select {
+.saas-field input,
+.saas-field select {
     height: 34px;
     padding: 0 0.5rem;
     font-size: 0.8rem;
@@ -7357,18 +7363,84 @@ button[type="submit"].auth-submit:active {
     transition: border-color var(--transition), box-shadow var(--transition);
 }
 
-.cab-field input::placeholder {
+.saas-field input::placeholder {
     color: #5b6178;
 }
 
-.cab-field input:focus,
-.cab-field select:focus {
+.saas-field input:focus,
+.saas-field select:focus {
     outline: none;
     border-color: var(--primary);
     box-shadow: 0 0 0 2px rgba(0, 144, 231, 0.18);
 }
 
-.cab-field--auto input {
+/* La zone de texte est la seule saisie qui ne peut pas tenir dans les 34px
+   des autres : meme fond, meme bordure, meme anneau de focus, mais une hauteur
+   propre a elle et un redimensionnement vertical. */
+.saas-field textarea {
+    min-height: 62px;
+    padding: 0.4rem 0.5rem;
+    font-size: 0.8rem;
+    font-family: inherit;
+    line-height: 1.45;
+    color: var(--text);
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    resize: vertical;
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.saas-field textarea::placeholder {
+    color: #5b6178;
+}
+
+.saas-field textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(0, 144, 231, 0.18);
+}
+
+.saas-field.is-error textarea,
+.saas-field.is-warning textarea,
+.saas-field.is-ok textarea {
+    border-color: var(--danger);
+}
+
+/* Case a cocher. La regle generale fixe 34px de hauteur a toutes les saisies,
+   ce qui casserait la boite : on isole donc la case dans un champ qui reprend
+   exactement la meme hauteur et la meme bordure que ses voisins, pour que la
+   ligne s'aligne sur la grille sans traitement special. */
+.saas-field--check {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+    height: 34px;
+    padding: 0 0.6rem;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+
+.saas-field--check input[type="checkbox"] {
+    flex: 0 0 auto;
+    width: 15px;
+    height: 15px;
+    margin: 0;
+    padding: 0;
+    accent-color: var(--primary);
+    cursor: pointer;
+}
+
+.saas-field--check .saas-field__label {
+    margin: 0;
+    color: var(--text);
+    cursor: pointer;
+}
+
+.saas-field--auto input {
     border-style: dashed;
     color: var(--text-secondary);
     cursor: not-allowed;
@@ -7376,7 +7448,7 @@ button[type="submit"].auth-submit:active {
 
 /* Identifiants : chasse fixe et chasse legerement aeree — ce sont des
    references a recopier, pas des nombres a calculer. */
-.cab-field--mono input {
+.saas-field--mono input {
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     letter-spacing: 0.06em;
 }
@@ -7385,21 +7457,21 @@ button[type="submit"].auth-submit:active {
    L'enveloppe porte l'etat (`is-error` / `is-warning` / `is-ok`), la saisie
    recoit la bordure : impossible d'avoir la coche verte a cote d'un message
    d'erreur, les deux etant exclusifs cote serveur. */
-.cab-field.is-error input,
-.cab-field.is-error select {
+.saas-field.is-error input,
+.saas-field.is-error select {
     border-color: var(--danger);
     box-shadow: 0 0 0 2px rgba(252, 66, 74, 0.14);
 }
 
-.cab-field.is-warning input {
+.saas-field.is-warning input {
     border-color: var(--warning);
 }
 
-.cab-field.is-ok input {
+.saas-field.is-ok input {
     border-color: var(--success);
 }
 
-.cab-msg {
+.saas-msg {
     display: flex;
     align-items: flex-start;
     gap: 0.25rem;
@@ -7409,24 +7481,24 @@ button[type="submit"].auth-submit:active {
     letter-spacing: 0;
 }
 
-.cab-msg .material-symbols-outlined {
+.saas-msg .material-symbols-outlined {
     font-size: 0.8rem;
     flex-shrink: 0;
 }
 
-.cab-msg--error {
+.saas-msg--error {
     color: var(--danger);
 }
 
-.cab-msg--warning {
+.saas-msg--warning {
     color: var(--warning);
 }
 
-.cab-msg--ok {
+.saas-msg--ok {
     color: var(--success);
 }
 
-.cab-field__hint {
+.saas-field__hint {
     font-size: 0.64rem;
     color: var(--text-secondary);
 }
@@ -7436,7 +7508,7 @@ button[type="submit"].auth-submit:active {
    marges negatives annulent le padding du formulaire pour que la barre aille
    d'un bord a l'autre, et son fond floute empeche le texte de defiler
    dessous. */
-.cab-form__footer {
+.saas-form__footer {
     position: sticky;
     bottom: 0;
     z-index: 5;
@@ -7452,12 +7524,12 @@ button[type="submit"].auth-submit:active {
     border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 
-.cab-form__legend {
+.saas-form__legend {
     font-size: 0.7rem;
     color: var(--text-secondary);
 }
 
-.cab-form__buttons {
+.saas-form__buttons {
     display: flex;
     gap: 0.4rem;
     margin-left: auto;
@@ -7473,108 +7545,108 @@ button[type="submit"].auth-submit:active {
    actions) et on laisse les colonnes textuelles se replier : le tableau
    rentre alors dans la largeur disponible, sans barre de defilement
    horizontale ni colonne a tronquer. */
-.cab-table {
+.saas-table {
     padding: 0.6rem 0.7rem 0.7rem;
 }
 
-.cab-table th,
-.cab-table td {
+.saas-table th,
+.saas-table td {
     padding-top: 0.3rem;
     padding-bottom: 0.3rem;
     font-size: 0.75rem;
 }
 
-.cab-table td {
+.saas-table td {
     white-space: normal;
 }
 
-.cab-table td:nth-child(1),
-.cab-table td:nth-child(7),
-.cab-table td:nth-child(8),
-.cab-table td:nth-child(9),
-.cab-table td:nth-child(10),
-.cab-table td:nth-child(11) {
+.saas-table td:nth-child(1),
+.saas-table td:nth-child(7),
+.saas-table td:nth-child(8),
+.saas-table td:nth-child(9),
+.saas-table td:nth-child(10),
+.saas-table td:nth-child(11) {
     white-space: nowrap;
 }
 
 @media (max-width: 768px) {
-    .cab-form__grid {
+    .saas-form__grid {
         grid-template-columns: 1fr;
     }
 
     /* L'accordion n'apparait qu'ici, en meme temps que la colonne unique :
        sur un telephone les quatre sections empilees demandaient six hauteurs
        d'ecran de defilement. */
-    .cab-card__toggle {
+    .saas-card__toggle {
         display: block;
     }
 
     /* La zone cliquable se mesure sur la hauteur de l'en-tete : sans ce
        minimum, un en-tete replie fait 20px de haut et le pouce rate la
        section une fois sur deux. */
-    .cab-card__head {
+    .saas-card__head {
         min-height: 36px;
         padding: 0.4rem 0;
         margin-bottom: 0.35rem;
     }
 
     /* Le chevron est pose par-dessus l'en-tete, on lui reserve sa place. */
-    .cab-card__tag {
+    .saas-card__tag {
         margin-right: 1.5rem;
     }
 
     /* Saisie en pleine largeur : une colonne, la place disponible. */
-    .cab-card__body,
-    .cab-card__body--legal {
+    .saas-card__body,
+    .saas-card__body--legal {
         grid-template-columns: 1fr;
     }
 
-    .cab-field {
+    .saas-field {
         gap: 0.2rem;
     }
 
-    .cab-field input,
-    .cab-field select {
+    .saas-field input,
+    .saas-field select {
         height: 40px;
         font-size: 0.85rem;
     }
 
-    .cab-field__label {
+    .saas-field__label {
         font-size: 0.75rem;
     }
 
-    .cab-card__head h3 {
+    .saas-card__head h3 {
         font-size: 0.75rem;
     }
 }
 
 @media (max-width: 640px) {
-    .cab-canvas {
+    .saas-canvas {
         margin: -1.5rem -1.5rem -2rem;
         padding: 0.7rem 0.6rem 1rem;
     }
 
-    .cab-form {
+    .saas-form {
         padding: 0.7rem 0.7rem 0;
     }
 
-    .cab-form__footer {
+    .saas-form__footer {
         flex-direction: column-reverse;
         align-items: stretch;
         margin: 0 -0.7rem;
         padding: 0.6rem 0.7rem;
     }
 
-    .cab-form__buttons {
+    .saas-form__buttons {
         width: 100%;
     }
 
-    .cab-form__buttons .btn {
+    .saas-form__buttons .btn {
         flex: 1;
         justify-content: center;
     }
 
-    .cab-form__legend {
+    .saas-form__legend {
         text-align: center;
     }
 }
