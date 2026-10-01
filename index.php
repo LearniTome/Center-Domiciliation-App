@@ -359,10 +359,26 @@ if (function_exists('has_permission')) {
     }
 }
 
-require __DIR__ . '/includes/entete.php';
+// Le corps de la page est rendu DANS UN BUFFER, puis renvoye apres
+// `entete.php`. Sans cela la page s'executait apres l'entete, et une
+// variable qu'elle definit pour l'entete — `$pageSubtitle`, `$pageTitle` —
+// etait deja trop tard : le sous-titre de « Journal d'activite » et
+// d'« Analyse de couverture » ne s'affichait donc jamais. L'ordre des
+// `require` ne change pas l'ordre de sortie : le tampon est renvoye
+// dans le flux, apres la balise `</header>`.
+//
+// Les pages qui repondent autrement (JSON, telechargement) ferment
+// elles-memes tous les tampons avant leur `exit` — voir
+// `societe_suivi.php`, `import-modele.php`, `download_all.php` — donc
+// ce niveau supplementaire ne les affecte pas.
+ob_start();
 $dir = $pageDir[$page] ?? '';
 $file = $pageFile[$page] ?? $page;
 require __DIR__ . '/pages/' . ($dir ? $dir . '/' : '') . $file . '.php';
+$pageBody = ob_get_clean();
+
+require __DIR__ . '/includes/entete.php';
+echo $pageBody;
 require __DIR__ . '/includes/pied_page.php';
 
 ob_end_flush();

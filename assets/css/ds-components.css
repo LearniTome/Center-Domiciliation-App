@@ -1,0 +1,573 @@
+/* =========================================================
+   Composants du design system
+   Port fidele de la page de reference « Nouveau cabinet client »
+   (ancien namespace `saas-`, conserve tel quel pour ne rien casser).
+   Toute nouvelle page doit utiliser ces classes : pas de CSS local.
+   ========================================================= */
+
+/* --- En-tete de page / de formulaire ------------------------------------- */
+.ds-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-gap-md);
+  margin: 0;
+  padding: 0.8rem 0.9rem 0;
+  background: var(--ds-bg-panel);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-lg);
+}
+
+.ds-form__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.ds-form__title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.ds-form__title .material-symbols-outlined {
+  font-size: 1.15rem;
+  color: var(--ds-primary);
+}
+
+.ds-form__sub {
+  margin: 0.15rem 0 0;
+  font-size: 0.75rem;
+  color: var(--ds-text-secondary);
+}
+
+.ds-form__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ds-gap-md);
+  align-items: stretch;
+}
+
+.ds-form__footer {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0 -0.9rem;
+  padding: 0.5rem 0.9rem;
+  background: rgba(15, 17, 23, 0.92);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid var(--ds-border);
+  border-radius: 0 0 var(--ds-radius-lg) var(--ds-radius-lg);
+}
+
+.ds-form__legend {
+  font-size: 0.7rem;
+  color: var(--ds-text-secondary);
+}
+
+.ds-form__buttons {
+  display: flex;
+  gap: 0.4rem;
+  margin-left: auto;
+}
+
+.ds-form__buttons .btn {
+  margin: 0;
+}
+
+/* --- Tableau dense -------------------------------------------------------
+   Les cellules sont toutes en `white-space: nowrap` dans la feuille globale,
+   ce qui etire un tableau a onze colonnes bien au-dela de la fenetre. On rend
+   la ligne aux seules colonnes courtes (code, ville, statut, compteurs,
+   actions) et on laisse les colonnes textuelles se replier : le tableau
+   rentre alors dans la largeur disponible, sans defilement horizontal. */
+.ds-table {
+  padding: 0.6rem 0.7rem 0.7rem;
+}
+
+.ds-table th,
+.ds-table td {
+  padding-top: 0.3rem;
+  padding-bottom: 0.3rem;
+  font-size: 0.75rem;
+}
+
+.ds-table td {
+  white-space: normal;
+}
+
+.ds-table td:nth-child(1),
+.ds-table td:nth-child(7),
+.ds-table td:nth-child(8),
+.ds-table td:nth-child(9),
+.ds-table td:nth-child(10),
+.ds-table td:nth-child(11) {
+  white-space: nowrap;
+}
+
+/* --- Alerte --------------------------------------------------------------
+   Une alerte est un signal, pas un paragraphe. */
+.ds-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: var(--ds-radius);
+  font-size: 0.78rem;
+  border: 1px solid transparent;
+}
+
+.ds-alert .material-symbols-outlined {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.ds-alert strong {
+  font-weight: 600;
+}
+
+.ds-alert p {
+  display: inline;
+  margin: 0;
+  color: var(--ds-text-secondary);
+}
+
+.ds-alert.is-error {
+  background: rgba(252, 66, 74, 0.1);
+  border-color: rgba(252, 66, 74, 0.35);
+}
+.ds-alert.is-error .material-symbols-outlined { color: var(--ds-danger); }
+
+.ds-alert.is-warning {
+  background: rgba(255, 171, 0, 0.1);
+  border-color: rgba(255, 171, 0, 0.32);
+}
+.ds-alert.is-warning .material-symbols-outlined { color: var(--ds-warning); }
+
+.ds-alert.is-success {
+  background: rgba(0, 184, 148, 0.1);
+  border-color: rgba(0, 184, 148, 0.35);
+}
+.ds-alert.is-success .material-symbols-outlined { color: var(--ds-success); }
+
+/* Succes long (mot de passe provisoire) : il faut un vrai paragraphe,
+   sinon les phrases se collent et le secret se retrouve au milieu du texte. */
+.ds-alert.is-success p {
+  display: block;
+  margin: 0.35rem 0;
+}
+
+.ds-alert.is-info {
+  background: var(--ds-bg-strong);
+  border-color: var(--ds-border);
+}
+.ds-alert.is-info .material-symbols-outlined { color: var(--ds-primary); }
+
+/* Un secret doit pouvoir etre recopie lettre par lettre : police alignee,
+   fond distinct du texte adjacent pour qu'un « O » ne se confonde pas
+   avec un « 0 ». */
+.ds-alert code {
+  display: inline-block;
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--ds-radius);
+  background: var(--ds-bg-strong);
+  border: 1px solid var(--ds-border);
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
+  user-select: all;
+}
+
+/* --- Carte de section ----------------------------------------------------
+   `margin: 0` annule la regle globale `section + section`. */
+.ds-card {
+  min-width: 0;
+  margin: 0;
+  padding: 0.55rem 0.6rem 0.65rem;
+  background: var(--ds-bg-strong);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius);
+}
+
+.ds-card__head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 26px;
+  margin-bottom: 0.45rem;
+}
+
+.ds-card__icon {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  font-size: 0.95rem;
+  color: var(--ds-primary);
+  background: rgba(0, 144, 231, 0.12);
+  border: 1px solid rgba(0, 144, 231, 0.25);
+  border-radius: 7px;
+}
+
+.ds-card__head h3 {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ds-text);
+}
+
+.ds-card__tag {
+  margin-left: auto;
+  padding: 2px 7px;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--ds-info);
+  background: rgba(143, 95, 232, 0.14);
+  border: 1px solid rgba(143, 95, 232, 0.3);
+  border-radius: 999px;
+}
+
+/* La note occupe une rangee pleine : sa hauteur est reservee pour que le
+   premier champ de chaque carte tombe a la meme hauteur, quelle que soit la
+   carte — sans quoi les deux colonnes cessent d'etre symetriques. */
+.ds-card__note {
+  grid-column: 1 / -1;
+  margin: 0;
+  min-height: 1.4em;
+  font-size: 0.7rem;
+  line-height: 1.4;
+  color: var(--ds-text-secondary);
+}
+
+.ds-card__body {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: 0.45rem 0.55rem;
+}
+
+/* Variante accentuee : porte seule l'information qui determine un effet
+   externe (facturation, identite fiscale). */
+.ds-card--accent {
+  background: linear-gradient(180deg, rgba(0, 144, 231, 0.09), rgba(0, 144, 231, 0.02));
+  border-color: rgba(0, 144, 231, 0.3);
+}
+
+.ds-card--accent .ds-card__icon {
+  background: rgba(0, 144, 231, 0.18);
+}
+
+/* --- Accordéon (mobile) --------------------------------------------------
+   Le bouton couvre toute la largeur de l'en-tete : on n'impose pas de viser
+   un chevron de 20px au doigt. Vrai `button` (focus + `aria-expanded`),
+   masque en grand ecran ou l'accordion n'a pas lieu. */
+.ds-card__toggle {
+  display: none;
+  position: absolute;
+  inset: 0 -0.6rem;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: var(--ds-radius);
+  cursor: pointer;
+}
+
+.ds-card__toggle .material-symbols-outlined {
+  position: absolute;
+  right: 0.1rem;
+  top: 50%;
+  translate: 0 -50%;
+  font-size: 1.1rem;
+  color: var(--ds-text-secondary);
+  transition: rotate 0.18s ease;
+}
+
+.ds-card[data-collapsed="true"] .ds-card__toggle .material-symbols-outlined {
+  rotate: -90deg;
+}
+
+.ds-card[data-collapsed="true"] .ds-card__note,
+.ds-card[data-collapsed="true"] .ds-card__body {
+  display: none;
+}
+
+/* Un titre replie doit advertise qu'il reste des valeurs a saisir. */
+.ds-card[data-collapsed="true"] .ds-card__head h3::after {
+  content: " ·";
+  color: var(--ds-warning);
+}
+
+/* --- Champ ---------------------------------------------------------------
+   Hauteur unique via variable : une seule source pour tous les controles,
+   donc plus d'ecart entre un champ et son voisin. */
+.ds-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  min-width: 0;
+}
+
+.ds-field--wide { grid-column: 1 / -1; }
+
+.ds-field__label {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  font-size: 0.73rem;
+  font-weight: 500;
+  color: var(--ds-text);
+}
+
+.ds-field__label small {
+  font-size: 0.62rem;
+  font-weight: 400;
+  color: var(--ds-text-secondary);
+}
+
+.ds-field__label .req-mark { font-weight: 700; }
+
+.ds-field__req {
+  padding: 0 5px;
+  font-size: 0.58rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ds-text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--ds-border);
+  border-radius: 999px;
+}
+
+.ds-field__hint {
+  font-size: 0.65rem;
+  line-height: 1.35;
+  color: var(--ds-text-secondary);
+}
+
+.ds-field input,
+.ds-field select,
+.ds-field textarea {
+  width: 100%;
+  padding: 0 0.5rem;
+  height: var(--ds-control-h);
+  font-size: 0.8rem;
+  font-family: inherit;
+  color: var(--ds-text);
+  background: var(--ds-bg-panel);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-sm);
+  transition: border-color var(--ds-transition), box-shadow var(--ds-transition);
+}
+
+.ds-field textarea {
+  min-height: 62px;
+  height: auto;
+  padding: 0.4rem 0.5rem;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.ds-field input::placeholder,
+.ds-field textarea::placeholder { color: #5b6178; }
+
+.ds-field input:focus,
+.ds-field select:focus,
+.ds-field textarea:focus {
+  outline: none;
+  border-color: var(--ds-primary);
+  box-shadow: 0 0 0 2px rgba(0, 144, 231, 0.18);
+}
+
+.ds-field input[readonly] {
+  color: var(--ds-text-secondary);
+  background: rgba(255, 255, 255, 0.02);
+  cursor: not-allowed;
+}
+
+/* Chasse fixe : identifiants et montants se recopient, ils ne se calculent pas. */
+.ds-field--mono input,
+.ds-field--mono textarea {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.06em;
+}
+
+/* Champ non saisissable (code genere) : la bordure en pointille dit pourquoi
+   on ne peut pas ecrire dedans, mieux qu'un simple gris. */
+.ds-field--auto input {
+  border-style: dashed;
+  color: var(--ds-text-secondary);
+  cursor: not-allowed;
+}
+
+/* Case a cocher. Elle recoit exactement la meme hauteur et la meme bordure que
+   les saisies voisines : sans cela la rangee se decale de 20px. */
+.ds-field--check {
+  cursor: pointer;
+}
+
+.ds-field__box {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: var(--ds-control-h);
+  padding: 0 0.6rem;
+  background: var(--ds-bg-panel);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-sm);
+  cursor: pointer;
+}
+
+.ds-field__box input[type="checkbox"] {
+  flex: 0 0 auto;
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--ds-primary);
+  cursor: pointer;
+}
+
+/* L'aide tient sur une ligne : un retour a la ligne ferait grossir la ligne de
+   controle, donc desynchroniser le champ de ses voisins. */
+.ds-field__box .ds-field__hint {
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- Etats de validation -------------------------------------------------
+   L'enveloppe porte l'etat, la saisie recoit la bordure : impossible d'avoir
+   la coche verte a cote d'un message d'erreur, les deux etant exclusifs. */
+.ds-field.is-error input,
+.ds-field.is-error select,
+.ds-field.is-error textarea {
+  border-color: var(--ds-danger);
+  box-shadow: 0 0 0 2px rgba(252, 66, 74, 0.14);
+}
+
+.ds-field.is-warning input,
+.ds-field.is-warning select,
+.ds-field.is-warning textarea {
+  border-color: var(--ds-warning);
+}
+
+.ds-field.is-ok input,
+.ds-field.is-ok select,
+.ds-field.is-ok textarea {
+  border-color: var(--ds-success);
+}
+
+.ds-msg {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.25rem;
+  font-size: 0.66rem;
+  line-height: 1.3;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.ds-msg:empty { display: none; }
+
+.ds-msg .material-symbols-outlined {
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+.ds-msg--error { color: var(--ds-danger); }
+.ds-msg--warning { color: var(--ds-warning); }
+.ds-msg--ok { color: var(--ds-success); }
+
+/* --- Liste de paires (nom en gras, details en secondaire) ---------------- */
+.ds-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+}
+
+.ds-list li {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--ds-border);
+}
+
+.ds-list li:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.ds-list small { color: var(--ds-text-secondary); }
+
+/* --- Etat vide -----------------------------------------------------------
+   Un etat vide dit ce qui manque et propose l'action qui le comble. */
+.ds-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2rem 1rem;
+  text-align: center;
+}
+
+.ds-empty .material-symbols-outlined {
+  font-size: 2rem;
+  color: var(--ds-text-secondary);
+  opacity: 0.6;
+}
+
+.ds-empty p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--ds-text-secondary);
+}
+
+/* --- Responsive ----------------------------------------------------------
+   L'accordion n'apparait qu'ici, en meme temps que la colonne unique. */
+@media (max-width: 768px) {
+  .ds-form__grid { grid-template-columns: 1fr; }
+  .ds-card__toggle { display: block; }
+
+  /* Sans ce minimum, un en-tete replie fait 20px de haut et le pouce rate la
+     section une fois sur deux. */
+  .ds-card__head {
+    min-height: 36px;
+    padding: 0.4rem 0;
+    margin-bottom: 0.35rem;
+  }
+
+  /* Le chevron est pose par-dessus l'en-tete : on lui reserve sa place. */
+  .ds-card__tag { margin-right: 1.5rem; }
+
+  .ds-card__body { grid-template-columns: 1fr; }
+  .ds-field { gap: var(--ds-gap-xs); }
+
+  /* Cible tactile : la hauteur remonte pour le pouce, et la ligne de la case
+     a cocher suit la meme valeur que ses voisines. */
+  .ds-form { --ds-control-h: 40px; }
+
+  .ds-field input,
+  .ds-field select,
+  .ds-field textarea { font-size: 0.85rem; }
+
+  .ds-field__label,
+  .ds-card__head h3 { font-size: 0.75rem; }
+}

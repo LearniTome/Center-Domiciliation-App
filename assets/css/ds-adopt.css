@@ -1,0 +1,458 @@
+/* =========================================================
+   Couche d'adoption — refend des classes historiques
+   ---------------------------------------------------------
+   Objectif : faire adopter l'apparence du design system par
+   les pages existantes, SANS les reecrire. On redonc la mise en
+   forme d'une famille de classes historiques (ici : les boutons)
+   sur la base des composants `.ds-*`.
+
+   Regle de maintenance : cette feuille est un LOT. Chaque famille
+   adoptee est un bloc autonome, commentee, reversible. Quand une
+   page est migree vers les partials `.ds-*`, la famille correspondante
+   peut etre retiree d'ici, famille par famille. Ne pas tout garder
+   indefiniment : c'est une passerelle, pas un second design system.
+
+   Chargee apres `app.css`, `ds-core.css` et `ds-components.css`.
+   ========================================================= */
+
+/* =========================================================
+   FAMILLE 1 — BOUTONS  (`.btn`, `button[type=submit]`, `.btn-icon`)
+   ---------------------------------------------------------
+   Ce que la reference impose :
+     - une seule hauteur de controle dans toute l'application
+       (`--ds-control-h`), donc un bouton de la meme hauteur que
+       le champ voisin ;
+     - une bordure de 1px comme les champs et les cartes, et non
+       2px : a 2px le bouton devient le seul element plus lourd
+       de la page alors qu'il n'est qu'une action secondaire ;
+     - la meme chasse que les saisies (0.8rem).
+
+   Correction au passage : `.btn:hover` dans `app.css` survivait
+   `rgba(74, 108, 247, .12)`, un bleu (#4a6cf7) qui n'est plus la
+   couleur du projet (`--primary: #0090e7`). Chaque bouton survivait donc
+   d'une couleur differente de sa propre bordure. Les survols sont
+   desormais declares variante par variante, sur la couleur reelle du
+   bouton (voir plus bas).
+   ========================================================= */
+
+.btn,
+button[type="submit"] {
+    height: var(--ds-btn-h, var(--ds-control-h, 34px));
+    padding: 0 0.65rem;
+    border-width: 1px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+/* Le survol n'est plus un bleu code en dur : chaque variante derive de sa
+   propre couleur, donc le survol ne peut plus diverger de la bordure.
+   `color-mix()` serait plus elegant mais n'est pas supporte par les
+   navigateurs anciens vises ici (cf. `app.js`, MediaQueryList) : en cas
+   d'echec la declaration est simplement ignoree et le bouton retomberait
+   sur le bleu perime. On garde donc des rgba explicites, comme le fait
+   deja le bloc de reference. */
+.btn:hover,
+button[type="submit"]:hover {
+    background: rgba(0, 144, 231, 0.12);
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.btn-danger:hover {
+    background: rgba(252, 66, 74, 0.12);
+}
+
+.btn.btn-next:hover {
+    background: rgba(0, 184, 148, 0.12);
+}
+
+.btn.btn-back:hover {
+    background: rgba(255, 107, 53, 0.12);
+}
+
+.btn.btn-cancel:hover {
+    background: rgba(108, 117, 125, 0.12);
+}
+
+.btn.btn-info:hover {
+    background: rgba(143, 95, 232, 0.12);
+}
+
+.btn:focus-visible,
+button[type="submit"]:focus-visible {
+    outline: none;
+    border-color: currentColor;
+    box-shadow: 0 0 0 2px rgba(0, 144, 231, 0.22);
+}
+
+.btn.btn-next:focus-visible,
+button.btn-next:focus-visible { box-shadow: 0 0 0 2px rgba(0, 184, 148, 0.22); }
+.btn.btn-back:focus-visible { box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.22); }
+.btn.btn-cancel:focus-visible { box-shadow: 0 0 0 2px rgba(108, 117, 125, 0.22); }
+.btn.btn-info:focus-visible { box-shadow: 0 0 0 2px rgba(143, 95, 232, 0.22); }
+.btn.btn-danger:focus-visible { box-shadow: 0 0 0 2px rgba(252, 66, 74, 0.22); }
+
+/* Les variantes gardent leur couleur de role (verte « creer », orange
+   « retour », violette « explorer », ambre « annuler », rouge
+   « supprimer ») : seule la thickness et la hauteur changent, donc
+   le code couleur d'`app.css` reste valable. */
+.btn-secondary {
+    border-width: 1px;
+}
+
+.btn-danger,
+.btn.btn-next,
+.btn.btn-back,
+.btn.btn-cancel,
+.btn.btn-info,
+.btn.btn-primary {
+    border-width: 1px;
+}
+
+/* Un bouton icone garde son glyphe, pas de boite : on neutralise
+   explicitement la hauteur du bloc, sinon `.btn-icon` herite des 34px
+   et se transforme en carre vide de 34px au lieu d'un glyphe. */
+a.btn-icon,
+button.btn-icon {
+    width: auto;
+    height: auto;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    font-size: 0.9rem;
+}
+
+/* Zone tactile : la cible remonte a 40px, la meme valeur que les saisies
+   sous 768px. `min-width` evite qu'une etiquette de deux mots soit
+   comprimee jusqu'a l'illisible. */
+.btn,
+button[type="submit"] {
+    min-width: 2.25rem;
+}
+
+@media (max-width: 768px) {
+    .btn,
+    button[type="submit"] {
+        --ds-btn-h: 40px;
+        padding: 0 0.75rem;
+        font-size: 0.85rem;
+    }
+
+    /* Dans un tableau a defilement horizontal, un bouton qui s'elargit
+       mange la largeur des colonnes : on garde la taille de bureau. */
+    .table-scroll .btn,
+    .table-scroll button[type="submit"] {
+        --ds-btn-h: 34px;
+        font-size: 0.8rem;
+    }
+}
+
+/* =========================================================
+   FAMILLE 2 — EN-TETES
+   ---------------------------------------------------------
+   Deux niveaux, et deux equivalences dans la reference :
+
+     1. `.page-header`  ≡  `.saas-form__head` + `.saas-form__sub`
+        Le titre, son sous-titre et le bloc d'actions partagent
+        une rangee. Le sous-titre se lit SOUS le titre.
+
+     2. `.section-header` / `.section-title-row`
+        ≡  `.ds-card__head`
+        Un libelle de panneau, pas un titre de page. Meme typo
+        que le `h3` d'une `.ds-card`, donc meme valeur.
+
+   Ce que la reference impose, et ce qu'elle corrige :
+
+     - A 1rem/500 le titre de section paraissait plus important
+       que les donnees qu'il decrit. La reference le traite en
+       libelle : 0.72rem, capitales, graisse 600. Un panneau ne
+       domine jamais son propre contenu.
+
+     - L'icone d'en-tete devient une PASTILLE 24x24 (fond
+       `rgba(0,144,231,.12)`, bordure a 25 %, rayon 7px), et non
+       un glyphe de 22px pose dans le flux du texte. Meme
+       traitement que `.ds-card__icon`.
+
+     - `gap` et `margin-bottom` valent `--ds-gap-sm` (0.45rem),
+       la distance de la reference, et non les 6px historiques.
+
+   Deux pieges traites ici :
+
+     - `.section-header` emporte des `color` en style inline
+       (`.dash-acard`, `societe_details`, PV AGO). Un `color`
+       declare ici ne peut pas les ecraser : le style inline
+       reste plus specific, c'est wanted.
+
+     - `.form-compact .section-header h2` vaut 0.75rem en
+       `app.css`, soit deja la densite de la reference. Sa
+       specificite (0,2,1) depasse la presente (0,1,1) : les
+       en-tetes de formulaire gardent donc leur taille. Ce sont
+       des separateurs de groupe de champs, pas des panneaux ;
+       ils relevent de la famille « formulaires ».
+
+   Hors perimetre, volontairement : `.section-title` (filet +
+   couleur primaire, a l'interieur des grilles de formulaire) et
+   `.section-header-info` (picker de `template_edit`) gardent
+   leur mise en forme. `.section-title` est un separateur de
+   groupe de champs, pas un en-tete de panneau.
+   ========================================================= */
+
+/* --- 1. En-tete de page -------------------------------------------------- */
+.page-header {
+    gap: 1rem;
+    margin-bottom: var(--ds-gap-lg);
+}
+
+/* Le bloc de gauche devient une colonne : le sous-titre descend
+   sous le titre au lieu de s'aligner sur sa ligne de base, et le
+   compteur de dossiers aussi. `align-items: flex-start` evite que
+   la barre de compteurs ne s'etire sur toute la largeur. */
+.page-header > div:first-child {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+}
+
+.page-header h1 {
+    /* Meme graisse et meme interlettrage que `.saas-form__title`.
+       La taille (1.5rem) reste celle d'un titre de page : la
+       reference ne definit pas de H1, elle ne peut donc pas le
+       contredire — mais elle fixe la maniere de le setter. */
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.page-subtitle {
+    margin: 0.15rem 0 0;
+    font-size: 0.75rem;
+    color: var(--ds-text-secondary);
+}
+
+.page-count-bar {
+    margin-top: 0.2rem;
+    font-size: 0.75rem;
+}
+
+/* --- 2. En-tete de section : le libelle de panneau ------------------------ */
+.section-header,
+.section-title-row {
+    gap: var(--ds-gap-sm);
+    margin-bottom: var(--ds-gap-sm);
+}
+
+.section-header h2,
+.section-header h3,
+.section-title-row h2,
+.section-title-row h3 {
+    /* `app.css` ne declarait la flexbox que pour `.section-header` ;
+       sur `.section-title-row` le titre restait un bloc, donc la
+       pastille ci-dessous se serait posee sur sa propre ligne. */
+    display: flex;
+    align-items: center;
+    gap: var(--ds-gap-sm);
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Pastille d'icone, identique a `.ds-card__icon`. Ciblee sur les
+   titres uniquement : une icone posee dans le bloc d'actions ou a
+   cote du libelle n'est pas une icone d'en-tete. */
+.section-header h2 > .material-symbols-outlined,
+.section-header h3 > .material-symbols-outlined,
+.section-title-row h2 > .material-symbols-outlined,
+.section-title-row h3 > .material-symbols-outlined {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    margin: 0;
+    font-size: 0.95rem;
+    vertical-align: baseline;
+    color: var(--ds-primary);
+    background: rgba(0, 144, 231, 0.12);
+    border: 1px solid rgba(0, 144, 231, 0.25);
+    border-radius: 7px;
+}
+
+/* `app.css` alignait les icones a 22px avec un `vertical-align`
+   de -4px, prevu pour un glyphe pose dans une ligne de texte.
+   La pastille est une boite : son alignement vertical se joue
+   dans la flexbox du titre, pas sur la ligne de base. On ne
+   touche ici que les icones qui ne sont PAS dans un titre (pastille
+   de badge, icone d'action) : celles-la suivent la typo du panneau. */
+.section-title-row .material-symbols-outlined {
+    font-size: inherit;
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-wrap: wrap;
+        row-gap: var(--ds-gap-sm);
+    }
+
+    .page-header h1 {
+        font-size: 1.25rem;
+    }
+}
+
+/* =========================================================
+   FAMILLE 3 — CARTES  (`.card`, `.info-grid`)
+   ---------------------------------------------------------
+   Reference : `.ds-card` ≡ `.saas-card` de `cabinets.php?action=new`,
+   valeurs relevees sur la page (mesurees, pas supposees) :
+
+     padding     0.55rem 0.6rem 0.65rem
+     background  --panel-strong  (#1f2430)
+     border      1px solid --line
+     radius      8px
+     gap interne 0.45rem
+
+   Ce que la reference impose, et ce qu'elle corrige :
+
+     - Le FOND. `app.css` posait `.card` sur `--panel` (#191c24).
+       Or `--panel` est aussi la couleur des panneaux eux-memes :
+       sur le fond de page `--ds-bg-base` (#0b0d12), une carte a #191c24
+       n'est plus une carte, c'est le fond. La reference Monte d'un cran
+       a `--panel-strong` (#1f2430) : la carte se detache enfin du
+       panneau qui la contient. C'est la meme correction que celle
+       deja appliquee aux cartes d'etape de la modale d'import.
+
+     - La DENSITE. 0.7rem partout contre 0.55/0.6/0.65rem dans la
+       reference : sur une page de dix cartes, l'ecart se paie en
+       hauteur de defilement, pas en elegance.
+
+     - `.info-grid`, la grille cle/valeur des fiches en lecture. Sa
+       structure (libelle au-dessus, valeur en dessous) est bonne et
+       propre a ce mode ; c'est son ECHELLE qui deriveait. On lui donne
+       l'echelle de la reference : le libelle reprend a l'identique la
+       typo du titre de panneau (0.72rem / 600 / capitales / 0.05em),
+       et la valeur descend a 0.8rem, la taille de saisie de la
+       reference. Le detail se lit donc a la meme densite que la
+       creation, sans perdre la distinction libelle/valeur.
+
+   Hors perimetre, volontairement : `.card-link` (une carte cliquable
+   qui se translate au survol — un effet de survol, pas une carte).
+
+   PROTECTION DE LA REFERENCE. La page de reference reutilise parfois une
+   classe historique pour un de ses propres blocs — `<article class="card
+   saas-table">` sur la liste des cabinets. Sans garde-fou, chaque famille
+   adoptee ici deformerait ces blocs et la reference deriveria de ce
+   qu'elle doit definir. Toute famille qui recolore un selecteur historique
+   exclut donc les elements porteurs d'une classe `saas-` : la reference
+   garde ainsi sa propre mise en forme, quelle que soit l'evolution de la
+   couche d'adoption. On s'appuie sur `:not([class*=...])` et non sur
+   `:has()`, qui n'est pas supporte par les navigateurs vises ici.
+   ========================================================= */
+
+/* --- 1. La carte ---------------------------------------------------------- */
+.card:not([class*="saas-"]) {
+    padding: 0.55rem 0.6rem 0.65rem;
+    background: var(--ds-bg-strong);
+    border-color: var(--ds-border);
+    border-radius: var(--ds-radius);
+}
+
+/* `article.card + article.card` (0.75rem) garde son espacement : la
+   reference espace ses sections par le gap de la grille, pas par un
+   filet entre cartes. On ne touche donc pas au `margin-top`. */
+
+/* --- 2. La grille cle/valeur des fiches ----------------------------------- */
+.info-grid {
+    gap: var(--ds-gap-md);
+}
+
+.info-grid > div {
+    gap: var(--ds-gap-xs);
+    padding: 0.15rem 0;
+}
+
+/* Le libelle EST le titre de panneau de la reference, au meme corps. */
+.info-grid strong {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ds-text-secondary);
+}
+
+.info-grid span {
+    font-size: 0.8rem;
+    color: var(--ds-text);
+}
+
+/* --- 2b. La variante `.info-card` : les roles sont INVERSES ---------------
+   Piege majeur de cette famille. Sur la fiche societe, `.info-grid` est
+   encapsule dans `.info-card`, et les deux elements changent de role :
+
+       `.info-grid strong` = le LIBELLE   (petit, capitales, attenue)
+       `.info-grid span`   = la VALEUR    (grand, blanc)
+
+   alors que sur le `.info-grid` nu c'est l'inverse :
+
+       `.info-grid strong` = la VALEUR
+       `.info-grid span`   = le LIBELLE
+
+   `app.css` traite ces deux variantes avec des selecteurs a trois classes
+   (`.info-card .info-grid > div > span`), donc de specificite (0,2,2) :
+   plus elevee que les (0,1,1) ci-dessus. Sans bloc ci-dessous, la fiche
+   societe garderait sa typo d'origine — c'est-a-dire que la page la plus
+   consultee de l'application n'aurait pas adopte le design system, alors
+   que la page elle serait la plus presente. Meme specificite qu'`app.css`,
+   mais chargee apres : la declaration ci-dessous l'emporte.
+
+   Le resultat aligne la fiche sur l'echelle de la reference : libelle a
+   l'identique du titre de panneau (0.72rem / 600 / capitales / 0.05em),
+   valeur a la taille de saisie (0.8rem). */
+
+.info-card .info-grid {
+    gap: var(--ds-gap-md);
+}
+
+.info-card .info-grid > div {
+    gap: var(--ds-gap-xs);
+    padding: 0.15rem 0;
+}
+
+/* Libelle de la variante : exactiquement la typo du titre de panneau. */
+.info-card .info-grid > div > span {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ds-text-secondary);
+}
+
+/* Valeur de la variante : la valeur de la reference.
+
+   `text-transform: none` est necessaire et non cosmetique. La regle
+   generique `.info-grid strong` porte `text-transform: uppercase`, ecrite
+   pour le cas ou `strong` EST le libelle. Dans la variante `.info-card`,
+   ou `strong` est la VALEUR, cette regle fuyait et affichait la donnee
+   en capitales — donc exactement comme le libelle situe juste au-dessus,
+   annulant la distinction que la page est censee etablir. On la neutralise
+   ici, ou `strong` ne porte plus le role de libelle. */
+.info-card .info-grid > div > strong {
+    font-size: 0.8rem;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: normal;
+    color: var(--ds-text);
+}
+
+/* Le code de la variante porte deja une couleur semantique
+   (`.text-warning`, `.text-danger`) : on ne l'ecrase pas. */
+
+@media (max-width: 768px) {
+    .info-grid,
+    .info-card .info-grid {
+        grid-template-columns: 1fr;
+    }
+}

@@ -10,6 +10,7 @@ $config = require __DIR__ . '/../config/app.php';
 $dbConfig = require __DIR__ . '/../config/database.php';
 
 require __DIR__ . '/fonctions.php';
+require __DIR__ . '/ds.php';
 require __DIR__ . '/base_donnees.php';
 
 // Composer autoload (PhpSpreadsheet, PHPWord, Dompdf)

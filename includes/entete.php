@@ -21,6 +21,9 @@ $noSidebar = in_array($page ?? '', ['connexion', 'deconnexion', 'mot_de_passe'],
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap">
     <link rel="stylesheet" href="assets/css/app.css?v=<?= filemtime(__DIR__ . '/../assets/css/app.css') ?>">
+    <link rel="stylesheet" href="assets/css/ds-core.css?v=<?= filemtime(__DIR__ . '/../assets/css/ds-core.css') ?>">
+    <link rel="stylesheet" href="assets/css/ds-components.css?v=<?= filemtime(__DIR__ . '/../assets/css/ds-components.css') ?>">
+    <link rel="stylesheet" href="assets/css/ds-adopt.css?v=<?= filemtime(__DIR__ . '/../assets/css/ds-adopt.css') ?>">
     <style>
         <?php if ($noSidebar): ?>
         .shell, .shell.collapsed { grid-template-columns: 1fr; }

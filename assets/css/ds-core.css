@@ -1,0 +1,62 @@
+:root {
+  --ds-bg-base: #0b0d12;
+  --ds-bg-panel: var(--panel, #191c24);
+  --ds-bg-strong: var(--panel-strong, #1f2430);
+  --ds-border: var(--line, #2c2e33);
+  --ds-primary: var(--primary, #0090e7);
+  --ds-success: var(--success, #00d25b);
+  --ds-danger: var(--danger, #fc424a);
+  --ds-warning: var(--warning, #ffab00);
+  --ds-info: var(--info, #8f5fe8);
+  --ds-text: var(--text, #ffffff);
+  --ds-text-secondary: var(--text-secondary, #6c7293);
+  --ds-radius: var(--radius, 8px);
+  --ds-radius-sm: var(--radius-sm, 4px);
+  --ds-radius-lg: var(--radius-lg, 12px);
+  --ds-transition: var(--transition, 200ms ease);
+  --ds-control-h: 34px;
+  --ds-gap-xs: 0.2rem;
+  --ds-gap-sm: 0.45rem;
+  --ds-gap-md: 0.6rem;
+  --ds-gap-lg: 0.9rem;
+  --ds-z-sticky: 100;
+}
+
+.ds-canvas {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin: -1.5rem -1.5rem -2rem;
+  padding: 0.9rem 1rem 1.25rem;
+  background:
+    radial-gradient(1100px 460px at 12% -12%, rgba(0, 144, 231, 0.07), transparent 60%),
+    radial-gradient(900px 400px at 100% 0%, rgba(143, 95, 232, 0.05), transparent 55%),
+    var(--ds-bg-base, #0b0d12);
+}
+
+.ds-page {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-gap-md, 0.6rem);
+}
+
+.ds-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .ds-canvas {
+    margin: -1.5rem -1.5rem -2rem;
+    padding: 0.7rem 0.6rem 1rem;
+  }
+}
