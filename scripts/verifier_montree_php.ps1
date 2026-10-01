@@ -20,12 +20,26 @@ param(
 $ErrorActionPreference = "Stop"
 $racine = Split-Path -Parent $PSScriptRoot
 $echecs = 0
+$prevus = 0
 
 function Verdict($nom, $ok, $detail) {
     $etat = if ($ok) { "OK  " } else { "ECHEC" }
     if (-not $ok) { $script:echecs++ }
     Write-Host ("[{0}] {1} : {2}" -f $etat, $nom, $detail) -ForegroundColor $(if ($ok) { "Green" } else { "Red" })
 }
+
+# Un controle non execute n'est PAS un controle reussi. Il est compte a part
+# et remonte dans le verdict final : sans cela, un rapport "tout est vert" peut
+# masquer une verification qui n'a jamais tourne.
+function Prevus($nom, $raison) {
+    $script:prevus++
+    Write-Host ("[SAUT] {0} : {1}" -f $nom, $raison) -ForegroundColor Yellow
+}
+
+# Les journaux doivent suivre le binaire teste, pas un chemin code en dur :
+# avec -PhpBin C:\xampp83\php\php.exe on lirait sinon les journaux de l'ancienne
+# installation et on validerait la mauvaise version.
+$phpRacine = Split-Path -Parent (Split-Path -Parent $PhpBin)
 
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  Verification montee PHP ($MinVersion+)" -ForegroundColor Cyan
@@ -107,63 +121,149 @@ if ($zipTest -eq "NO_TEMPLATE") {
 }
 
 # ---------- 5. Dependances Composer ----------
-$composer = Join-Path $racine "composer.phar"
-if (-not (Test-Path $composer)) { $composer = "composer" }
+# Le binaire est cherche explicitement. "Non trouve" doit produire un SAUT
+# visible, jamais un vert silencieux : c'est le controle qui garantit que les
+# extensions exigees par composer.json (vendor/) sont bien presentes.
+$candidats = @(
+    @{ Fichier = (Join-Path $racine "composer.phar"); Via = "php" },
+    @{ Fichier = (Join-Path $racine "composer.bat"); Via = "direct" }
+)
+$composerCmd = $null
+$composerArgs = @()
+$composerSource = $null
+foreach ($c in $candidats) {
+    if (Test-Path $c.Fichier -PathType Leaf) {
+        if ($c.Via -eq "php") {
+            # Un .phar n'est pas executable par le shell : il passe par le
+            # binaire PHP que l'on est en train de valider.
+            $composerCmd = $PhpBin
+            $composerArgs = @($c.Fichier)
+        } else {
+            $composerCmd = $c.Fichier
+            $composerArgs = @()
+        }
+        $composerSource = $c.Fichier
+        break
+    }
+}
+if (-not $composerCmd) {
+    $dansPath = Get-Command composer -ErrorAction SilentlyContinue
+    if ($dansPath) {
+        $composerCmd = $dansPath.Source
+        $composerSource = $dansPath.Source
+    }
+}
+
+Push-Location $racine
+# composer ecrit des avertissements sur stderr ; avec ErrorActionPreference=Stop
+# Windows PowerShell transforme cela en exception et le controle bascule a tort
+# en "NON EXECUTE". On assouplit le temps de l'appel natif, puis on juge sur le
+# code de sortie reel.
+$ErrorActionPreference = "Continue"
 try {
-    $reqs = & $composer check-platform-reqs --no-interaction 2>&1 | Out-String
-    $reqsOk = $LASTEXITCODE -eq 0
-    $manquants = ($reqs -split "`n" | Where-Object { $_ -match 'missing|failed' }) -join ' | '
-    Verdict "composer check-platform-reqs" $reqsOk $(if ($reqsOk) { "toutes les extensions requises sont presentes" } else { $manquants })
+    if (-not $composerCmd) {
+        Prevus "composer check-platform-reqs" "aucun binaire composer trouve (ni composer.phar, ni composer.bat, ni composer dans le PATH). Control NON EXECUTE."
+    } else {
+        $reqs = & $composerCmd @composerArgs check-platform-reqs --no-interaction 2>&1 | Out-String
+        $reqsOk = ($LASTEXITCODE -eq 0)
+        $manquants = ($reqs -split "`n" | Where-Object { $_ -match 'missing|failed' -and $_ -notmatch 'success' }) -join ' | '
+        Verdict "composer check-platform-reqs" $reqsOk $(if ($reqsOk) { "toutes les extensions requises sont presentes ($composerSource)" } else { $manquants })
+    }
 } catch {
-    Write-Host "[INFO] composer indisponible, verification des dependances ignoree." -ForegroundColor Yellow
+    Prevus "composer check-platform-reqs" "erreur d'execution : $($_.Exception.Message). Control NON EXECUTE."
+} finally {
+    Pop-Location
+    $ErrorActionPreference = "Stop"
 }
 
 # ---------- 6. Suite PHPUnit ----------
+# La sortie est conservee : c'est la source de deprecations la plus fiable,
+# presente quel que soit le php.ini (voir section 7).
+$sortiePhpunit = $null
 if ($SkipTests) {
     Write-Host "[INFO] Suite PHPUnit ignoree (-SkipTests)." -ForegroundColor Yellow
 } else {
     Push-Location $racine
     try {
-        $out = & $PhpBin "vendor\bin\phpunit" 2>&1 | Out-String
+        $sortiePhpunit = & $PhpBin "-d" "error_reporting=E_ALL" "-d" "display_errors=1" "vendor\bin\phpunit" 2>&1 | Out-String
         $testsOk = $LASTEXITCODE -eq 0
-        $resume = ($out -split "`n" | Where-Object { $_ -match '^(OK|Tests:|FAILURES|ERRORS)' }) -join ' | '
+        $resume = ($sortiePhpunit -split "`n" | Where-Object { $_ -match '^(OK|Tests:|FAILURES|ERRORS)' }) -join ' | '
         Verdict "Suite PHPUnit" $testsOk $resume.Trim()
-        if (-not $testsOk) { Write-Host $out -ForegroundColor DarkGray }
+        if (-not $testsOk) { Write-Host $sortiePhpunit -ForegroundColor DarkGray }
     } finally {
         Pop-Location
     }
 }
 
 # ---------- 7. Absence de nouvelles deprecations ----------
+# Strategie : la source principale est la sortie de PHPUnit (toujours disponible,
+# independante du php.ini). Les journaux sur disque ne servent qu'a corroborer,
+# et leur absence ne doit pas faire échouer la verification puisque la sortie de
+# PHPUnit couvre deja le code applicatif. Chemins derives du binaire teste.
 Write-Host ""
-Write-Host "--- Recherche de deprecations dans les journaux ---" -ForegroundColor Cyan
-$journaux = @(
-    @{ Nom = "php_error_log"; Chemin = "C:\xampp\php\logs\php_error_log" },
-    @{ Nom = "apache error.log"; Chemin = "C:\xampp\apache\logs\error.log" }
-)
-$trouve = 0
-foreach ($j in $journaux) {
-    if (-not (Test-Path $j.Chemin)) { continue }
-    $lignes = Get-Content $j.Chemin -Tail 2000 -ErrorAction SilentlyContinue
-    $dep = @($lignes | Select-String -Pattern "Deprecated:")
-    Write-Host ("       {0} : {1} deprecation(s) sur les 2000 dernieres lignes" -f $j.Nom, $dep.Count) -ForegroundColor Gray
-    if ($dep.Count -gt 0) {
-        $trouve += $dep.Count
-        $dep | Select-Object -Last 5 | ForEach-Object { Write-Host ("         " + $_.Line.Trim()) -ForegroundColor DarkYellow }
-    }
+Write-Host "--- Recherche de deprecations ---" -ForegroundColor Cyan
+
+$depPrincipales = @()
+if ($null -ne $sortiePhpunit) {
+    $depPrincipales = @($sortiePhpunit -split "`n" | Where-Object { $_ -match 'Deprecated:' })
+    Write-Host ("       sortie PHPUnit : {0} deprecation(s)" -f $depPrincipales.Count) -ForegroundColor Gray
+    $depPrincipales | Select-Object -Last 5 | ForEach-Object { Write-Host ("         " + $_.Trim()) -ForegroundColor DarkYellow }
+} else {
+    Prevus "deprecations (sortie PHPUnit)" "suite ignoree (-SkipTests) : aucune capture de sortie a analyser"
 }
-if ($trouve -eq 0) {
-    Write-Host "       Aucune deprecation detectee." -ForegroundColor Green
+
+$racinePhp = $phpRacine
+$journaux = @(
+    @{ Nom = "php_error_log"; Chemin = (Join-Path $racinePhp "php\logs\php_error_log") },
+    @{ Nom = "apache error.log"; Chemin = (Join-Path $racinePhp "apache\logs\error.log") }
+)
+Write-Host "       (journaux de $racinePhp, corroboration)" -ForegroundColor Gray
+$depJournaux = 0
+foreach ($j in $journaux) {
+    if (-not (Test-Path $j.Chemin -PathType Leaf)) {
+        Write-Host ("       {0} : absent, non analyse" -f $j.Nom) -ForegroundColor DarkGray
+        continue
+    }
+    $lignes = @(Get-Content $j.Chemin -Tail 2000 -ErrorAction SilentlyContinue)
+    if ($lignes.Count -eq 0) {
+        Write-Host ("       {0} : vide, non analyse" -f $j.Nom) -ForegroundColor DarkGray
+        continue
+    }
+    $dep = @($lignes | Select-String -Pattern "Deprecated:")
+    $depJournaux += $dep.Count
+    Write-Host ("       {0} : {1} deprecation(s) sur {2} lignes" -f $j.Nom, $dep.Count, $lignes.Count) -ForegroundColor Gray
+    $dep | Select-Object -Last 3 | ForEach-Object { Write-Host ("         " + $_.Line.Trim()) -ForegroundColor DarkYellow }
+}
+
+# Une deprecation remontee par la sortie de PHPUnit vient forcement du couple
+# (code, version) que l'on valide : elle bloque. Une deprecation lue dans un
+# journal peut dater de l'installation precedente : elle alerte sans bloquer,
+# sinon les journaux de l'ancienne version condamneraient la nouvelle.
+if ($depPrincipales.Count -gt 0) {
+    Verdict "Deprecations" $false "$($depPrincipales.Count) deprecation(s) dans la sortie PHPUnit - a corriger avant migration"
+} else {
+    Write-Host "       Aucune deprecation dans la sortie PHPUnit." -ForegroundColor Green
+}
+if ($depJournaux -gt 0) {
+    Write-Host ("       ATTENTION : $depJournaux deprecation(s) dans les journaux (a confirmer sur leur date).") -ForegroundColor Yellow
 }
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
-if ($echecs -eq 0) {
-    Write-Host "  RESULTAT : tout est vert." -ForegroundColor Green
-    Write-Host "  Rappeler dans TODO.md / docs/ROADMAP.md puis committer." -ForegroundColor Green
-} else {
+if ($echecs -gt 0) {
     Write-Host "  RESULTAT : $echecs verification(s) en echec." -ForegroundColor Red
     Write-Host "  Ne pas utiliser cette version : corriger ou revenir a l'ancienne." -ForegroundColor Red
+    $code = 1
+} elseif ($prevus -gt 0) {
+    Write-Host "  RESULTAT : aucun echec, mais $prevus verification(s) NON EXECUTEES." -ForegroundColor Yellow
+    Write-Host "  Le controle est incomplet : traiter les [SAUT] ci-dessus avant" -ForegroundColor Yellow
+    Write-Host "  de considerer cette version comme validee." -ForegroundColor Yellow
+    $code = 2
+} else {
+    Write-Host "  RESULTAT : tout est vert, aucun controle ignore." -ForegroundColor Green
+    Write-Host "  Rappeler dans docs/ROADMAP.md puis committer." -ForegroundColor Green
+    $code = 0
 }
 Write-Host "========================================" -ForegroundColor Cyan
-exit $echecs
+Write-Host "  Code de sortie : $code" -ForegroundColor Gray
+exit $code
