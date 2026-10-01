@@ -20,6 +20,13 @@ if (is_post() && $step === 7) {
             set_flash('error', 'Connexion MySQL indisponible.');
             redirect_to('pv_ago_wizard', ['step' => 7]);
         }
+
+        // Idem cession : seuls les PV AGO ouvrant une nouvelle societe creent
+        // une ligne `societes` et consomment donc un dossier du quota.
+        if (($wizard['mode'] ?? '') === 'nouvelle' && (int) ($wizard['societe_id'] ?? 0) <= 0) {
+            require_quota_disponible('dossiers', 'pv_ago_wizard', ['step' => 7]);
+        }
+
         try {
             $pdo->beginTransaction();
 

@@ -169,4 +169,54 @@ final class QuotaTest extends TestCase
         // Les deux colonnes de dossiers visent le meme compteur.
         $this->assertSame(['max_societes', 'max_dossiers'], $counters['dossiers']['columns']);
     }
+
+    /**
+     * `quota_state()` ne sert a rien si aucune creation ne la consulte. Les
+     * trois points d'INSERT dans `societes` doivent donc porter le garde AVANT
+     * l'insertion - verifier l'ordre et non la simple presence : un garde place
+     * apres le `beginTransaction` laisserait passer la ligne puis annulerait
+     * l'echec, donc autoriserait un dossier de plus.
+     */
+    public function testChaqueCreationDeDossierConsulteLeQuota(): void
+    {
+        $racine = dirname(__DIR__);
+
+        $points = [
+            'pages/dossiers/creation_steps/step_06_Generation.php' => null,
+            'pages/modification-juridique/cession/cession_steps/step_07_Generation.php' => "'nouvelle'",
+            'pages/modification-juridique/pv_ago/pv_ago_steps/step_07_Generation.php' => "'nouvelle'",
+        ];
+
+        foreach ($points as $chemin => $condition) {
+            $source = (string) file_get_contents($racine . '/' . $chemin);
+
+            $garde = strpos($source, "require_quota_disponible('dossiers'");
+            $insert = strpos($source, 'INSERT INTO societes');
+
+            $this->assertNotFalse($insert, $chemin . ' : plus aucun INSERT INTO societes');
+            $this->assertNotFalse($garde, $chemin . ' : le quota n\'est jamais consulte');
+            $this->assertLessThan(
+                $insert,
+                $garde,
+                $chemin . ' : le garde doit precede l\'INSERT, sinon le quota est contourne'
+            );
+
+            if ($condition !== null) {
+                $this->assertStringContainsString(
+                    $condition,
+                    $source,
+                    $chemin . ' : le garde doit rester conditionne au mode "nouvelle"'
+                );
+            }
+        }
+    }
+
+    /** Une formule du Centre n'a pas de cabinet : elle ne doit jamais bloquer. */
+    public function testUnCabinetSansFormuleNEstJamaisBloque(): void
+    {
+        $state = quota_state('dossiers', self::$pdo, 99999);
+
+        $this->assertNull($state['limite'], 'aucune formule = aucun plafond');
+        $this->assertFalse($state['atteint']);
+    }
 }

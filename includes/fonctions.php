@@ -2072,8 +2072,12 @@ function quota_depasse(string $type): bool
 /**
  * Refuse une creation qui depasse le quota : flash + retour a l'ecran des
  * dossiers plutot qu'une erreur SQL. Le Centre n'est jamais bloque.
+ *
+ * `$retourParams` permet de renvoyer l'utilisateur la ou il en etait (le
+ * wizard, pas la liste) : sans lui, un cabinet au plafond perdrait les six
+ * etapes deja saisies au clic final.
  */
-function require_quota_disponible(string $type, string $retourPage = 'societes'): void
+function require_quota_disponible(string $type, string $retourPage = 'societes', array $retourParams = []): void
 {
     $state = quota_state($type);
 
@@ -2086,7 +2090,7 @@ function require_quota_disponible(string $type, string $retourPage = 'societes')
         'Quota ' . $state['libelle'] . ' atteint (' . $state['utilise'] . '/' . (int) $state['limite']
         . '). Contactez le Centre pour modifier votre formule.'
     );
-    redirect_to($retourPage);
+    redirect_to($retourPage, $retourParams);
 }
 
 /* ---------------------------------------------------------------------------

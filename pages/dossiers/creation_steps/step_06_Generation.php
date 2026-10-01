@@ -16,6 +16,8 @@ if (is_post() && $step === 6) {
             redirect_to('creation', ['step' => 6]);
         }
 
+        require_quota_disponible('dossiers', 'creation', ['step' => 6]);
+
         try {
             $pdo->beginTransaction();
 

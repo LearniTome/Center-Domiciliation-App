@@ -18,6 +18,12 @@ if (is_post() && $step === 6) {
             redirect_to('cession', ['step' => 6]);
         }
 
+        // Une cession sur une societe existante ne cree aucune ligne `societes`,
+        // donc ne consomme aucun dossier : le garde ne doit pas la bloquer.
+        if (($wizard['mode'] ?? '') === 'nouvelle') {
+            require_quota_disponible('dossiers', 'cession', ['step' => 6]);
+        }
+
         try {
             $pdo->beginTransaction();
 
