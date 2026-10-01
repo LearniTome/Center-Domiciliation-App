@@ -41,6 +41,10 @@
 })();
 
 (function () {
+    var SECTIONS_KEY = 'nav_sections';
+    var SCROLL_KEY = 'sidebar_scroll';
+    var EDGE = 8;
+
     function saveState() {
         var state = {};
         document.querySelectorAll('.nav-section').forEach(function (s) {
@@ -49,24 +53,115 @@
                 state[btn.getAttribute('data-label')] = s.classList.contains('collapsed');
             }
         });
-        try { localStorage.setItem('nav_sections', JSON.stringify(state)); } catch (e) {}
+        try { localStorage.setItem(SECTIONS_KEY, JSON.stringify(state)); } catch (e) {}
+    }
+
+    function activeLink() {
+        return document.querySelector('[data-nav-link].active');
+    }
+
+    function scroller() {
+        return document.querySelector('.sidebar-scroll');
+    }
+
+    // La section qui porte la page courante reste deployee : sinon l'element actif
+    // est dans un sous-menu masque, et il n'y a rien a faire defiler.
+    function openActiveSection() {
+        var link = activeLink();
+        if (!link) return;
+        var section = link.closest('.nav-section');
+        if (section && section.classList.contains('collapsed')) {
+            section.classList.remove('collapsed');
+            saveState();
+        }
     }
 
     function restoreState() {
         try {
-            var raw = localStorage.getItem('nav_sections');
+            var raw = localStorage.getItem(SECTIONS_KEY);
             if (!raw) return;
             var state = JSON.parse(raw);
             document.querySelectorAll('.nav-section').forEach(function (s) {
                 var btn = s.querySelector('[data-nav-toggle]');
-                if (btn && state[btn.getAttribute('data-label')]) {
-                    s.classList.add('collapsed');
-                }
+                if (!btn || !state[btn.getAttribute('data-label')]) return;
+                if (s.querySelector('[data-nav-link].active')) return;
+                s.classList.add('collapsed');
             });
         } catch (e) {}
     }
 
+    // Position du defilement, en sessionStorage : c'est le contexte de navigation
+    // de l'onglet, qui survit aux changements de page et se vide a la fermeture.
+    function readScroll() {
+        try { return parseFloat(sessionStorage.getItem(SCROLL_KEY)) || 0; } catch (e) { return 0; }
+    }
+
+    function writeScroll(value) {
+        try { sessionStorage.setItem(SCROLL_KEY, String(Math.max(0, Math.round(value)))); } catch (e) {}
+    }
+
+    function restoreScroll() {
+        var box = scroller();
+        if (!box) return;
+        var saved = readScroll();
+        if (saved > 0) box.scrollTop = saved;
+    }
+
+    // Recale l'element actif uniquement s'il sort du cadre visible.
+    function revealActive() {
+        var box = scroller();
+        if (!box || box.scrollHeight <= box.clientHeight + 1) return;
+        var link = activeLink();
+        if (!link) return;
+        var boxRect = box.getBoundingClientRect();
+        var linkRect = link.getBoundingClientRect();
+        if (linkRect.top < boxRect.top + EDGE) {
+            box.scrollTop -= (boxRect.top + EDGE) - linkRect.top;
+        } else if (linkRect.bottom > boxRect.bottom - EDGE) {
+            box.scrollTop += linkRect.bottom - (boxRect.bottom - EDGE);
+        }
+    }
+
     restoreState();
+    openActiveSection();
+    restoreScroll();
+    revealActive();
+
+    var box = scroller();
+    if (box) {
+        var queued = false;
+        box.addEventListener('scroll', function () {
+            if (queued) return;
+            queued = true;
+            requestAnimationFrame(function () {
+                queued = false;
+                writeScroll(box.scrollTop);
+            });
+        });
+
+        // Rejoue la position avant de quitter la page : 'pagehide' ne couvre pas
+        // toutes les sorties (BFCache ignore, telechargements, navigation interne).
+        document.addEventListener('click', function (e) {
+            if (e.target && e.target.closest && e.target.closest('[data-nav-link]')) writeScroll(box.scrollTop);
+        }, true);
+        window.addEventListener('pagehide', function () { writeScroll(box.scrollTop); });
+        document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState === 'hidden') writeScroll(box.scrollTop);
+        });
+
+        // Barre reduite : '.sidebar-scroll' passe en overflow: visible, le scrollTop
+        // est alors perdu. La valeur reste en sessionStorage, on la rejoue a l'ouverture.
+        document.querySelectorAll('[data-sidebar-toggle]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                requestAnimationFrame(function () {
+                    if (!document.querySelector('.shell').classList.contains('collapsed')) {
+                        restoreScroll();
+                        revealActive();
+                    }
+                });
+            });
+        });
+    }
 
     document.querySelectorAll('[data-nav-toggle]').forEach(function (btn) {
         btn.addEventListener('click', function () {
