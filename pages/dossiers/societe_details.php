@@ -41,6 +41,14 @@ if (is_post() && isset($_POST['add_activite_ref']) && ($pdo ?? null) instanceof 
     exit;
 }
 
+// Destination du bouton « Retour ». Elle est fixee AVANT le controle
+// d'existence ci-dessous : la branche 404 s'en sert pour son lien, et
+// elle ne dispose d'aucune fiche pour choisir entre creations et
+// domiciliation — d'ou le repli sur la liste complete. Definie plus bas
+// (ligne de `$isCreation`), elle arrivait trop tard : `app_url(null)`
+// levait un TypeError fatal qui coupait la page 404 en plein milieu.
+$retourPage = 'societes';
+
 if (!$societe) {
     http_response_code(404);
     ?>
@@ -62,6 +70,7 @@ require_tenant_row($pdo ?? null, 'societes', $societeId);
 
 $typeGen = (string) ($societe['societe_type_generation'] ?? '');
 $isCreation = $typeGen === 'creation';
+// Fiche trouvee : le retour peut maintenant viser la liste du bon type.
 $retourPage = $isCreation ? 'creations' : 'domiciliations';
 $procLabels = ['normal' => 'Normale', 'acceleree' => 'Acceleree'];
 $depotLabels = ['depot_physique' => 'Depot Physique', 'depot_en_ligne' => 'Depot En Ligne'];
