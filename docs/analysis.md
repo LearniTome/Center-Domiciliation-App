@@ -2,6 +2,30 @@
 
 > Généré le 13/05/2026 — analyse complète frontend + backend
 
+> ⚠️ **Instantané obsolète — ce n'est pas une backlog.** Revue à froid le
+> 2026-10-01, la quasi-totalité des chiffres du § 1 est périmée et les todos du
+> § « Todo liste » ont été contournés par 5 mois de travaux. État réel :
+>
+> | Le doc dit | La réalité |
+> |---|---|
+> | 21 pages | **90** fichiers dans `pages/` |
+> | ~1116 lignes de CSS | **7178** lignes dans `assets/css/app.css` |
+> | ~638 lignes de JS | `assets/js/app.js` + `table-editor.js` + `ds.js` |
+> | — | **44 tables** en base (le doc ignore toute la couche SaaS) |
+> | — | **240 tests PHPUnit** / 17 fichiers de test |
+>
+> Ce qui est réellement fait depuis : **B-4** (`dashboard_count` whitelist),
+> **A-5** (config par variables d'environnement — `.env` + `includes/env.php`),
+> **A-3** (tests unitaires). Ce qui ne l'est toujours pas : **F-5**
+> (`document.execCommand()` — 7 occurrences), **B-8** (`logs/error.log` — le
+> dossier n'existe pas), **A-1** (autoload PSR-4 pour `src/` — absent de
+> `composer.json`), **A-2** (Docker). **B-7** (`filter_var`) n'est que partiel
+> (3 occurrences). Les 14 autres items n'ont pas été revérifiés un par un et ne
+> sont pas affinables depuis ce document.
+>
+> **Source de vérité des tâches en cours : `docs/ROADMAP.md`.** Toute reprise de
+> ce fichier suppose de le refaire à froid contre la base et le code actuels.
+
 ## Sommaire
 
 - [Architecture actuelle](#1-architecture-actuelle)

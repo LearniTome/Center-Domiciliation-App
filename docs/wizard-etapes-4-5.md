@@ -1,18 +1,35 @@
 # Ajout des étapes 4 et 5 à l'assistant de création
 
+> ⚠️ **Document périmé — ne pas exécuter tel quel.** Ce texte est la note de conception
+> qui a précédé le découpage du wizard en fichiers. Il décrit un passage de **3 à 5
+> étapes** dans un `pages/creation.php` monolithique ; l'implémentation réelle est
+> arrivée à **6 étapes**, chacune dans son propre fichier sous
+> `pages/dossiers/creation_steps/`, avec les gestionnaires de POST **par fichier**
+> (`_init.php` included par le contrôleur). Les todos ci-dessous sont donc
+> majoritairement caducs — notamment les items 100 (`#select-all-wizard`, jamais
+> implémenté sous ce nom) et 72/93 (`nav_action=finish`, remplacé par la mécanique
+> `step_06_Generation.php`).
+>
+> Ce qui est réellement livré : `step_04_Recap.php`, `step_05_Upload.php`,
+> `step_06_Generation.php`, `recap_pdf.php`, et
+> `DocumentRenderer::buildContextFromSession()`. La liste des étapes vivantes est
+> dans `AGENTS.md` (« Wizard »). Conservé pour l'historique, pas comme backlog.
+
 ## Architecture du wizard
 
 ```
-pages/creation.php   — Contrôleur principal du wizard (steps, POST handling, rendering)
-src/DocumentRenderer.php — Contexte templates (buildContextFromDb)
-assets/js/app.js     — JS dynamique (capital, associés, etc.)
+pages/dossiers/creation_steps/_main.php  — Contrôleur (étapes, POST, rendu)
+pages/dossiers/creation_steps/_init.php  — Dispatch POST + amorçage de session
+pages/dossiers/creation_steps/step_0N_*.php — Une étape = un fichier autonome
+src/rendu_document.php                    — Contexte templates
+assets/js/app.js                          — JS dynamique (capital, associés, etc.)
 ```
 
 ---
 
 ## Étape 4 — Récapitulatif complet avec modification
 
-**Fichier : `pages/creation.php`**
+**Fichier : `pages/dossiers/creation_steps/step_04_Recap.php`**
 
 ### Todo 4.1 — Étendre le wizard de 3 à 5 étapes
 

@@ -43,7 +43,21 @@
 - [x] `20260927_100002_saas_users.sql` — `users`, `user_roles`, `user_permissions` + backfill depuis `collaborateurs`
 - [x] `20260927_100003_saas_roles_permissions.sql` — `roles.scope` / `is_billable`, 6 rôles canoniques, 18 permissions SaaS, matrices
 - [x] `20260927_100004_saas_tenant_columns.sql` — `cabinet_id` + index sur les 12 tables métier
-- [ ] `database/schema.sql` — refléter le nouveau schéma (source de vérité des fresh installs)
+- [x] 2026-10-01 — `database/schema.sql` régénéré depuis la base réelle
+      (`mysqldump --no-data`, en-têtes `/*!40101` et `AUTO_INCREMENT=` retirés,
+      `CREATE TABLE IF NOT EXISTS` + `FOREIGN_KEY_CHECKS` enveloppants). Il était
+      en retard de **10 tables** (`cabinets`, `plans`, `abonnements`, `factures`,
+      `paiements`, `users`, `user_roles`, `user_permissions`,
+      `collaborateur_societes`, `ref_qualites_intermediaire`) et de **18 colonnes**
+      (`cabinet_id` sur les 14 tables métier, `societes.dossier_output_path` /
+      `dossier_output_nom`, `contrats.contrat_motif_resiliation` /
+      `contrat_date_resiliation`, `collaborateurs.qualite_intermediaire_id` /
+      `collaborateur_prenom`, `roles.scope` / `is_billable`). Un `fresh install`
+      produisait une base sans la couche SaaS — donc une app non fonctionnelle.
+      Validé par import réel dans une base jetable : 44 tables, 33 clés
+      étrangères, 164 index, et **0 divergence** colonne / type / nullabilité /
+      défaut / index / FK face à la base de dev. Réimportable sans erreur
+      (`IF NOT EXISTS`).
 
 #### Phase 2 — Couche authentification
 - [x] `current_user()` → lit `users`, expose `cabinet_id`, `scope`, `role_nom`
@@ -51,7 +65,9 @@
 - [x] `get_user_permissions()` → `user_roles` + `user_permissions` (suppression du shortcut `role_id === 1` au profit de `roles.is_system`)
 - [x] `pages/auth/connexion.php` + `includes/amorcage.php` (auto-login dev) → table `users`
 - [x] `user_sessions` : colonne `cabinet_id` + rattachement dans `update_user_session()`
-- [ ] `user_sessions` : purge à la déconnexion côté logout
+- [x] `user_sessions` : purge à la déconnexion côté logout — `deconnexion.php` appelle
+      `purge_user_session($pdo, session_id())` avant le `session_destroy()`, sans quoi
+      l'utilisateur restait « en ligne » jusqu'au purge automatique de 1 heure
 
 #### Phase 3 — Isolation des données
 - [x] Filtre tenant sur les listes (`fetch_all_documents`, `fetch_societes_options`, `associes_liste`, `cessions_liste`)
@@ -168,7 +184,26 @@ suspend, relance ou résilie.
   le rôle proposé est filtré sur `roles.scope = 'cabinet'` ; le mot de passe
   provisoire est affiché une seule fois, hashé en base, et
   `must_change_password` force son remplacement à la première connexion
-- [ ] Contrôle des quotas plan (`max_utilisateurs`, `max_societes`, `max_dossiers`) — les quotas sont **affichés** dans `mon_abonnement`, seul `max_utilisateurs` est appliqué à l'ouverture d'un accès
+- [x] 2026-10-01 — Contrôle des quotas plan (`max_utilisateurs`, `max_societes`,
+      `max_dossiers`) **câblé**. La machinery existait déjà (`quota_counters()`,
+      `cabinet_plan_reference()`, `quota_state()`, `quota_depasse()`,
+      `require_quota_disponible()`, `QuotaTest`) mais **`require_quota_disponible()`
+      n'était appelé nulle part** : les colonnes étaient affichées dans
+      `mon_abonnement` et lues par aucune décision — un cabinet adhérent pouvait
+      créer des dossiers sans fin en restant sous sa formule.
+      - `require_quota_disponible()` accepte désormais des `$retourParams` : sans
+        eux un cabinet au plafond perdait les six étapes déjà saisies au clic final.
+      - **Wizard Création** (`step_06`) : garde avant `beginTransaction()` — donc
+        avant l'INSERT, pas seulement présent dans le fichier.
+      - **Cessions** et **PV AGO** (`step_07`) : garde **conditionnée** au mode
+        « nouvelle ». Ces deux wizards n'INSERT une ligne `societes` que dans ce
+        mode ; un garde inconditionnel aurait bloqué à tort toute cession sur une
+        société existante, qui ne consomme aucun dossier.
+      - Le Centre n'est jamais bloqué : `cabinet_id` NULL → aucun plan de
+        référence → `limite = null` → `atteint = false`.
+      - `QuotaTest::testChaqueCreationDeDossierConsulteLeQuota` verrouille les
+        trois points d'entrée **et leur ordre** (garde avant INSERT) — vérifié
+        non-vide : le test échoue si on retire un garde.
 - [x] Statuts dérivés `expire` / `en_retard` calculés à l'affichage, jamais stockés (`abonnement_display_statut()`, `facture_display_statut()`)
 - [x] Numérotation de facture `FAC-YYYY-NNN` avec reprise sur collision (`next_facture_number()`)
 
@@ -210,22 +245,52 @@ autre chemin.
 
 #### Sécurité multi-tenancy
 - [ ] Toute requête métier passe par `tenant_scope_sql()` ou `assert_tenant_access()` — revue fichier par fichier (en cours)
-- [ ] Mot de passe obligatoire au premier login cabinet (`must_change_password`)
-- [ ] Rappel : `collaborateurs.password_hash` devient inutile, à purger en phase 5
+- [x] 2026-10-01 — Mot de passe obligatoire au premier login cabinet
+      (`must_change_password`) : posé à 1 par `creer_acces_cabinet()`, garde dans
+      `index.php` (redirige vers `mot_de_passe` avant tout rendu), contrôle dans
+      `connexion.php`, remise à 0 au changement. Couvert par
+      `MustChangePasswordTest` + `AccesCabinetTest::testMotDePasseProvisoire`
+- [ ] Rappel : `collaborateurs.password_hash` n'est **plus** utilisé pour
+      authentifier (tout est passé par `users`), mais `collaborateur_details.php`
+      l'écrit encore (l. 279-303). La purge n'est donc pas neutre : elle suppose
+      d'abord de retirer ces écritures.
 
 ### Backend / Dépendances
 - [ ] Installer XAMPP PHP 8.3+ (action manuelle) puis valider avec
       `scripts/verifier_montree_php.ps1` — procédure : `docs/MONTAJEE_PHP_83.md`
       (audit déjà fait : 0 blocage 8.3 ; canari CI 8.3/8.4 en place)
-- [ ] PHP 8.4 — corriger les 26 paramètres implicitement nullable
-      (`Type $x = null` → `?Type $x = null`) avant qu'ils ne deviennent des
-      erreurs. Emplacements listés dans `docs/MONTAJEE_PHP_83.md` § 1
+- [x] 2026-10-01 — PHP 8.4 — les 26 paramètres implicitement nullable **étaient
+      déjà corrigés** (`docs/MONTAJEE_PHP_83.md` § 1 datait d'avant le correctif).
+      Vérifié par tokenizer PHP sur les **207 fichiers** du projet hors `vendor/` :
+      `Type $x = null` sans `?` → **0 occurrence**. Les emplacements listés
+      (`config_tabs.php:92`, `naming_dossier.php:135,168`, `fonctions.php:21`,
+      `service_claude.php:7-8`…) portent tous `?Type $x = null`. Le palier 8.4 est
+      donc **levé** : il ne reste que l'installation de XAMPP, ci-dessus.
 
 ### Base de données
-- [ ] Aucune migration en attente — schéma synchronisé via le système auto-migration
+- [x] 2026-10-01 — Aucune migration en attente : 64 fichiers dans `database/migrations/`,
+      64 lignes dans `_migrations`, **0 fichier** non appliqué. Schéma synchronisé
+      via le système auto-migration.
+- [ ] `database/import.sql` — même dérive que `schema.sql` avant le correctif
+      (34 tables, 18 colonnes en retard). Non régénéré : à la différence de
+      `schema.sql` le fichier mélange **structure et données de démo**
+      (`societes`, `associes`, `collaborateurs`, `contrats` = le dossier « WIZARD
+      COMPLET TEST » du poste de dev). Il faut trancher ce que vaut une démo
+      versionnée avant de réexporter.
 
 ### Frontend / UI
-- [ ] RAS — charte appliquée (skills ui-design / awesome-design)
+- [x] 2026-10-01 — Lot « Design System », famille 1 (boutons) : hauteurs `--ds-control-h`,
+      bordure 1px, survols variante par variante (le bleu `#4a6cf7` survivait à `--primary`)
+- [x] 2026-10-01 — Lot « Design System », famille 2 (en-têtes) : `.page-header` empilé
+      (sous-titre + compteurs sous le titre, comme `.saas-form__sub`), `.section-header` /
+      `.section-title-row` ramenés à la densité `.ds-card__head` (0.72rem, capitales, 600) et
+      icône devient la pastille 24×24. **Bug corrigé au passage** : `index.php` inclut
+      `entete.php` AVANT la page, donc `$pageSubtitle` posé par une page était mort — le
+      sous-titre de « Journal d'activité » et d'« Analyse de couverture » ne s'affichait jamais.
+      Le corps de la page est désormais rendu dans un tampon avant `entete.php`.
+- [ ] Familles 3 à 6 du lot « Design System » : cartes (`.card` / `.info-grid`), tableaux,
+      formulaires (`.form-compact`), stats/badges — RAS en dehors, charte appliquée
+      (skills ui-design / awesome-design)
 
 ### Suivi administratif
 - [x] 2026-08-26 — Vue detail amelioree : stepper vertical, KPIs, auto-scroll vers etape courante
@@ -250,9 +315,20 @@ autre chemin.
       n'insérait jamais de ligne dans les listes (`<template data-row-template>` est un frère de `<table>`, `buildRow` ne le trouvait pas → toast de succès sans ligne visible) ;
       la branche liste recharge désormais la page, la branche `<select>` du wizard reste sans rechargement
 - [ ] Vérification manuelle avant commit : skill manual-test (à rejouer à chaque lot)
+- [x] 2026-10-01 — Famille 2 du lot « Design System » : `php -l` sur les 4 fichiers touchés,
+      240 tests PHPUnit verts (625 assertions), 41 pages parcourues via `fetch` sans aucun
+      `Warning`/`Notice`/`Fatal` et avec `</html>` properly fermé, contrôle des styles calculés
+      sur `.page-header` / `.section-header` / `.section-title-row` (1440px et 420px, aucun
+      débordement horizontal), 0 erreur console. **Second bug préexistant corrigé** :
+      `societe_details.php` utilisait `$retourPage` dans sa branche 404 alors qu'il ne le
+      définit que 15 lignes plus bas — `app_url(null)` levait un `TypeError` fatal qui coupait
+      la page 404 en plein milieu, sans `</html>`. Le repli est désormais fixé avant le test
+      d'existence, puis affiné dès que la fiche est connue.
 
 ## Tâches terminées
 
+- [x] 2026-10-01 — `$pageSubtitle` rendu vivant : tampon sur le corps de la page dans `index.php`, sinon `entete.php` (inclus avant) ne pouvait jamais voir la variable
+- [x] 2026-10-01 — Branche 404 de `societe_details.php` : `$retourPage` défini avant son usage (fatal `TypeError` sur `app_url(null)`)
 - [x] 2026-09-27 — Modale de création rapide : en-tête sticky (17 champs pour un collaborateur), icône + libellé de bouton paramétrable (`$quickCreateSubmitLabel`), astérisques sur les champs obligatoires, `role="dialog"` + `aria-modal` + `aria-labelledby`, focus sur le premier champ à l'ouverture et rendu à l'ouvreur à la fermeture
 - [x] 2026-09-27 — Erreurs de création rapide affichées **dans** la modale (`.qc-alert`) : le toast était peint sous l'overlay (z-index 2000 < 9999) donc illisible ; le message se masque à la frappe ou via la croix
 - [x] 2026-09-27 — `data-confirm-tone="primary"` : les confirmations non destructives (réinitialisation d'assistant, import Excel, rétablissement de contrat) ne sont plus affichées en rouge destructif

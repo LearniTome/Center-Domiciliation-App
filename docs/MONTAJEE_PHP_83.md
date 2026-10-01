@@ -17,13 +17,20 @@ Relevé sur les 110 fichiers PHP du projet (`pages/`, `includes/`, `src/`,
 | `create_function()` / `utf8_encode()` / `utf8_decode()` | supprimées en 8.0 | **0** |
 | `Reflection*` (signatures modifiées en 8.3) | — | **0** |
 | `ZipArchive` (libzip) | — | usage supported (TemplateAnalyzer) |
-| **Paramètre implicitement nullable** (`Type $x = null`) | déprécié en **8.4**, pas en 8.3 | **26** |
+| **Paramètre implicitement nullable** (`Type $x = null`) | déprécié en **8.4**, pas en 8.3 | **0** — corrigé depuis, voir § 1 |
 
 **Conclusion : aucun blocage pour 8.3.** Le pas 8.2 → 8.3 est sans risque
 fonctionnel ; le vrai palier est **8.4**, bloqué par les 26 paramètres
 implicitement nullable (PHP 8.4 les déprécie, PHP 9 les supprimera).
 
-Emplacements à corriger avant 8.4 :
+## 1. Emplacements à corriger avant 8.4 — ✅ CORRIGÉ
+
+> Re-vérifié le 2026-10-01 : les 26 emplacements ci-dessous portent **tous** déjà
+> `?Type $x = null`. Contrôle refait par tokenizer PHP sur les 207 fichiers hors
+> `vendor/` → **0 occurrence** de `Type $x = null` sans `?`. La liste est conservée
+> comme trace, pas comme travail à faire. **Le palier 8.4 est levé.**
+
+Emplacements (état au moment de l'audit, corrigés depuis) :
 
 ```
 includes/base_donnees.php:7          includes/fonctions.php:21
