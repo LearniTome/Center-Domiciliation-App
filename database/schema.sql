@@ -4,581 +4,798 @@ CREATE DATABASE IF NOT EXISTS `center_domiciliation`
 
 USE `center_domiciliation`;
 
-CREATE TABLE IF NOT EXISTS societes (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    societe_dossier_domiciliation_number VARCHAR(120) DEFAULT NULL COMMENT 'Numero de dossier domiciliation (DOM-YYYY-NNN)',
-    societe_dossier_creation_number VARCHAR(120) DEFAULT NULL COMMENT 'Numero de dossier creation (CRE-YYYY-NNN)',
-    societe_raison_sociale VARCHAR(255) NOT NULL,
-    societe_sigle VARCHAR(100) DEFAULT NULL,
-    den_ste VARCHAR(255) DEFAULT NULL,
-    societe_forme_juridique VARCHAR(120) DEFAULT NULL,
-    societe_source VARCHAR(20) DEFAULT 'creation' COMMENT 'creation|cession|augmentation_capital|transfert_siege',
-    societe_ice VARCHAR(100) DEFAULT NULL,
-    societe_date_ice DATE DEFAULT NULL,
-    societe_rc VARCHAR(100) DEFAULT NULL,
-    societe_if VARCHAR(100) DEFAULT NULL,
-    societe_tp VARCHAR(50) NOT NULL DEFAULT '',
-    societe_cnss VARCHAR(50) NOT NULL DEFAULT '',
-    societe_activites_statuts TEXT DEFAULT NULL,
-    societe_capital DECIMAL(15,2) DEFAULT NULL,
-    societe_activites_ompic TEXT DEFAULT NULL,
-    societe_part_social INT DEFAULT NULL,
-    societe_valeur_nominale DECIMAL(15,2) DEFAULT NULL,
-    societe_date_exp_cert_neg DATE DEFAULT NULL,
-    societe_adresse TEXT DEFAULT NULL,
-    societe_adresse_siege TEXT DEFAULT NULL,
-    societe_ville VARCHAR(120) DEFAULT NULL,
-    societe_tribunal VARCHAR(120) DEFAULT NULL,
-    societe_tribunal_type VARCHAR(60) DEFAULT NULL,
-    societe_email VARCHAR(190) DEFAULT NULL,
-    societe_telephone VARCHAR(60) DEFAULT NULL,
-    created_by INT UNSIGNED DEFAULT NULL,
-    societe_type_generation VARCHAR(120) DEFAULT NULL,
-    societe_procedure_creation VARCHAR(120) DEFAULT NULL,
-    societe_mode_depot VARCHAR(120) DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_societes_ice (societe_ice),
-    INDEX idx_societes_ville (societe_ville),
-    INDEX idx_created_by (created_by),
-    INDEX idx_societes_type_generation (societe_type_generation),
-    INDEX idx_societes_raison_sociale (societe_raison_sociale),
-    INDEX idx_societes_date_exp_cert_neg (societe_date_exp_cert_neg),
-    UNIQUE KEY uq_societes_dossier_domiciliation (societe_dossier_domiciliation_number),
-    UNIQUE KEY uq_societes_dossier_creation (societe_dossier_creation_number)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+SET FOREIGN_KEY_CHECKS = 0;
 
-CREATE TABLE IF NOT EXISTS associes (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    societe_id INT UNSIGNED NOT NULL,
-    associe_civilite VARCHAR(10) DEFAULT NULL,
-    associe_nom VARCHAR(120) DEFAULT NULL,
-    associe_prenom VARCHAR(120) DEFAULT NULL,
-    associe_nom_complet VARCHAR(255) NOT NULL,
-    associe_cin VARCHAR(100) DEFAULT NULL,
-    associe_date_validite_cin DATE DEFAULT NULL,
-    associe_date_naissance DATE DEFAULT NULL,
-    associe_lieu_naissance VARCHAR(120) DEFAULT NULL,
-    associe_nationalite VARCHAR(120) DEFAULT NULL,
-    associe_adresse TEXT DEFAULT NULL,
-    associe_telephone VARCHAR(60) DEFAULT NULL,
-    associe_email VARCHAR(190) DEFAULT NULL,
-    associe_qualite VARCHAR(150) DEFAULT NULL,
-    associe_parts INT DEFAULT NULL,
-    associe_capital_detenu DECIMAL(15,2) DEFAULT NULL,
-    associe_part_percent DECIMAL(7,2) DEFAULT NULL,
-    associe_est_gerant TINYINT(1) NOT NULL DEFAULT 0,
-    associe_duree_gerance VARCHAR(60) NOT NULL DEFAULT '',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_associes_societe
-        FOREIGN KEY (societe_id) REFERENCES societes(id)
-        ON DELETE CASCADE,
-    INDEX idx_associes_societe_id (societe_id),
-    INDEX idx_associes_nom_complet (associe_nom_complet),
-    INDEX idx_associes_date_validite_cin (associe_date_validite_cin),
-    INDEX idx_associes_cin (associe_cin)
+CREATE TABLE IF NOT EXISTS `_migrations` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `filename` varchar(255) NOT NULL,
+  `applied_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_migrations_filename` (`filename`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS contrats (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    societe_id INT UNSIGNED NOT NULL,
-    contrat_type VARCHAR(120) NOT NULL,
-    contrat_date DATE DEFAULT NULL,
-    contrat_duree_mois INT DEFAULT NULL,
-    contrat_type_domiciliation VARCHAR(120) DEFAULT NULL,
-    contrat_type_domiciliation_autre VARCHAR(190) DEFAULT NULL,
-    contrat_date_debut DATE DEFAULT NULL,
-    contrat_date_fin DATE DEFAULT NULL,
-    contrat_loyer_ttc DECIMAL(15,2) DEFAULT NULL,
-    contrat_frais_intermediaire DECIMAL(15,2) DEFAULT NULL,
-    contrat_caution DECIMAL(15,2) DEFAULT NULL,
-    contrat_tva_pourcent DECIMAL(7,2) DEFAULT NULL,
-    contrat_loyer_ht DECIMAL(15,2) DEFAULT NULL,
-    contrat_total_ht DECIMAL(15,2) DEFAULT NULL,
-    contrat_pack_montant_ttc DECIMAL(15,2) DEFAULT NULL,
-    contrat_pack_loyer_ttc DECIMAL(15,2) DEFAULT NULL,
-    contrat_type_renouvellement VARCHAR(120) DEFAULT NULL,
-    contrat_renouv_tva_pourcent DECIMAL(7,2) DEFAULT NULL,
-    contrat_renouv_loyer_ht DECIMAL(15,2) DEFAULT NULL,
-    contrat_renouv_total_ht DECIMAL(15,2) DEFAULT NULL,
-    contrat_renouv_loyer_ttc DECIMAL(15,2) DEFAULT NULL,
-    contrat_renouv_annuel_ttc DECIMAL(15,2) DEFAULT NULL,
-    contrat_statut VARCHAR(80) DEFAULT 'actif',
-    contrat_notes TEXT DEFAULT NULL,
-    contrat_mode_signature VARCHAR(120) DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_contrats_societe
-        FOREIGN KEY (societe_id) REFERENCES societes(id)
-        ON DELETE CASCADE,
-    INDEX idx_contrats_societe_id (societe_id),
-    INDEX idx_contrats_type (contrat_type),
-    INDEX idx_contrats_date_fin (contrat_date_fin),
-    INDEX idx_contrats_statut (contrat_statut)
+CREATE TABLE IF NOT EXISTS `abonnements` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `cabinet_id` int(10) unsigned NOT NULL,
+  `plan_id` int(10) unsigned DEFAULT NULL,
+  `date_debut` date NOT NULL,
+  `date_fin` date NOT NULL,
+  `statut` varchar(20) NOT NULL DEFAULT 'actif',
+  `prix_annuel_negocie` decimal(10,2) DEFAULT NULL,
+  `devise` varchar(3) NOT NULL DEFAULT 'MAD',
+  `auto_renew` tinyint(1) NOT NULL DEFAULT 1,
+  `notes` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_abonnements_cabinet` (`cabinet_id`),
+  KEY `idx_abonnements_statut` (`statut`),
+  KEY `idx_abonnements_fin` (`date_fin`),
+  KEY `fk_abonnements_plan` (`plan_id`),
+  CONSTRAINT `fk_abonnements_cabinet` FOREIGN KEY (`cabinet_id`) REFERENCES `cabinets` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_abonnements_plan` FOREIGN KEY (`plan_id`) REFERENCES `plans` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS collaborateurs (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    societe_id INT UNSIGNED DEFAULT NULL,
-    den_ste VARCHAR(255) DEFAULT NULL,
-    nom_complet VARCHAR(255) NOT NULL,
-    fonction VARCHAR(150) DEFAULT NULL,
-    collaborateur_type VARCHAR(120) DEFAULT NULL,
-    collaborateur_code VARCHAR(120) DEFAULT NULL,
-    collaborateur_nom VARCHAR(255) DEFAULT NULL,
-    collaborateur_ice VARCHAR(100) DEFAULT NULL,
-    collaborateur_tp VARCHAR(100) DEFAULT NULL,
-    collaborateur_rc VARCHAR(100) DEFAULT NULL,
-    collaborateur_if VARCHAR(100) DEFAULT NULL,
-    collaborateur_tel_fixe VARCHAR(60) DEFAULT NULL,
-    collaborateur_tel_mobile VARCHAR(60) DEFAULT NULL,
-    collaborateur_adresse TEXT DEFAULT NULL,
-    collaborateur_email VARCHAR(190) DEFAULT NULL,
-    email VARCHAR(190) DEFAULT NULL,
-    telephone VARCHAR(60) DEFAULT NULL,
-    date_debut DATE DEFAULT NULL,
-    statut VARCHAR(80) DEFAULT 'actif',
-    notes TEXT DEFAULT NULL,
-    password_hash VARCHAR(255) DEFAULT NULL,
-    role_id INT UNSIGNED DEFAULT NULL,
-    can_login TINYINT(1) NOT NULL DEFAULT 0,
-    last_login DATETIME DEFAULT NULL,
-    created_by INT UNSIGNED DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_collaborateurs_societe
-        FOREIGN KEY (societe_id) REFERENCES societes(id)
-        ON DELETE SET NULL,
-    INDEX fk_collaborateurs_societe (societe_id),
-    INDEX idx_collaborateurs_societe_id (societe_id),
-    INDEX idx_collaborateurs_nom (nom_complet),
-    INDEX idx_collaborateurs_role_id (role_id),
-    INDEX idx_collaborateurs_can_login (can_login),
-    INDEX idx_collaborateurs_collaborateur_email (collaborateur_email)
+CREATE TABLE IF NOT EXISTS `activity_logs` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `cabinet_id` int(10) unsigned DEFAULT NULL,
+  `user_id` int(10) unsigned DEFAULT NULL,
+  `user_nom` varchar(255) DEFAULT NULL,
+  `action` varchar(50) NOT NULL,
+  `entity_type` varchar(50) NOT NULL,
+  `entity_id` int(10) unsigned DEFAULT NULL,
+  `entity_label` varchar(255) DEFAULT NULL,
+  `details` text DEFAULT NULL,
+  `ip_address` varchar(45) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_user` (`user_id`),
+  KEY `idx_entity` (`entity_type`,`entity_id`),
+  KEY `idx_action` (`action`),
+  KEY `idx_created` (`created_at`),
+  KEY `idx_activity_logs_cabinet` (`cabinet_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS cessions (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    societe_id INT UNSIGNED NOT NULL,
-    cession_dossier VARCHAR(120) DEFAULT NULL,
-    cession_status VARCHAR(80) DEFAULT 'brouillon',
-    cession_date DATE DEFAULT NULL,
-    cession_motif TEXT DEFAULT NULL,
-    capital_avant DECIMAL(15,2) DEFAULT NULL,
-    parts_avant INT DEFAULT NULL,
-    notes TEXT DEFAULT NULL,
-    pv_resolutions TEXT DEFAULT NULL,
-    created_by INT UNSIGNED DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT cessions_ibfk_1
-        FOREIGN KEY (societe_id) REFERENCES societes(id)
-        ON DELETE CASCADE,
-    INDEX societe_id (societe_id)
+CREATE TABLE IF NOT EXISTS `associes` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `cabinet_id` int(10) unsigned DEFAULT NULL,
+  `societe_id` int(10) unsigned NOT NULL,
+  `associe_civilite` varchar(10) DEFAULT NULL,
+  `associe_nom` varchar(120) DEFAULT NULL,
+  `associe_prenom` varchar(120) DEFAULT NULL,
+  `associe_nom_complet` varchar(255) NOT NULL,
+  `associe_cin` varchar(100) DEFAULT NULL,
+  `associe_date_validite_cin` date DEFAULT NULL,
+  `associe_date_naissance` date DEFAULT NULL,
+  `associe_lieu_naissance` varchar(120) DEFAULT NULL,
+  `associe_nationalite` varchar(120) DEFAULT NULL,
+  `associe_adresse` text DEFAULT NULL,
+  `associe_telephone` varchar(60) DEFAULT NULL,
+  `associe_email` varchar(190) DEFAULT NULL,
+  `associe_qualite` varchar(150) DEFAULT NULL,
+  `associe_parts` int(11) DEFAULT NULL,
+  `associe_capital_detenu` decimal(15,2) DEFAULT NULL,
+  `associe_part_percent` decimal(7,2) DEFAULT NULL,
+  `associe_est_gerant` tinyint(1) NOT NULL DEFAULT 0,
+  `associe_duree_gerance` varchar(60) NOT NULL DEFAULT '',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_associes_societe_id` (`societe_id`),
+  KEY `idx_associes_nom_complet` (`associe_nom_complet`),
+  KEY `idx_associes_date_validite_cin` (`associe_date_validite_cin`),
+  KEY `idx_associes_cin` (`associe_cin`),
+  KEY `idx_associes_cabinet` (`cabinet_id`),
+  CONSTRAINT `fk_associes_societe` FOREIGN KEY (`societe_id`) REFERENCES `societes` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS cession_parts (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    cession_id INT UNSIGNED NOT NULL,
-    cedant_associe_id INT UNSIGNED DEFAULT NULL,
-    cedant_nom_complet VARCHAR(255) NOT NULL,
-    cedant_cin VARCHAR(100) DEFAULT NULL,
-    cedant_type VARCHAR(20) DEFAULT 'existant',
-    cessionnaire_associe_id INT UNSIGNED DEFAULT NULL,
-    cessionnaire_nom_complet VARCHAR(255) NOT NULL,
-    cessionnaire_cin VARCHAR(100) DEFAULT NULL,
-    cessionnaire_type VARCHAR(20) DEFAULT 'existant',
-    cessionnaire_civilite VARCHAR(10) DEFAULT NULL,
-    cessionnaire_date_naissance DATE DEFAULT NULL,
-    cessionnaire_lieu_naissance VARCHAR(120) DEFAULT NULL,
-    cessionnaire_nationalite VARCHAR(120) DEFAULT NULL,
-    cessionnaire_adresse TEXT DEFAULT NULL,
-    cessionnaire_telephone VARCHAR(20) NOT NULL DEFAULT '',
-    cessionnaire_email VARCHAR(120) NOT NULL DEFAULT '',
-    cessionnaire_qualite VARCHAR(80) NOT NULL DEFAULT '',
-    cessionnaire_parts INT UNSIGNED NOT NULL DEFAULT 0,
-    cessionnaire_capital_detenu DECIMAL(12,2) NOT NULL DEFAULT 0.00,
-    cessionnaire_est_gerant TINYINT(1) NOT NULL DEFAULT 0,
-    parts_cedees INT NOT NULL,
-    prix_unitaire DECIMAL(15,2) DEFAULT NULL,
-    prix_total DECIMAL(15,2) DEFAULT NULL,
-    pourcentage DECIMAL(7,2) DEFAULT NULL,
-    nommer_gerant TINYINT(1) NOT NULL DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT cession_parts_ibfk_1
-        FOREIGN KEY (cession_id) REFERENCES cessions(id)
-        ON DELETE CASCADE,
-    INDEX cession_id (cession_id)
+CREATE TABLE IF NOT EXISTS `cabinets` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `code` varchar(40) NOT NULL,
+  `type_cabinet` varchar(40) DEFAULT NULL,
+  `responsable_nom` varchar(150) DEFAULT NULL,
+  `responsable_fonction` varchar(120) DEFAULT NULL,
+  `responsable_email` varchar(190) DEFAULT NULL,
+  `responsable_telephone` varchar(40) DEFAULT NULL,
+  `nom` varchar(150) NOT NULL,
+  `raison_sociale` varchar(190) DEFAULT NULL,
+  `email` varchar(190) DEFAULT NULL,
+  `telephone` varchar(40) DEFAULT NULL,
+  `telephone_fixe` varchar(60) DEFAULT NULL,
+  `telephone_mobile` varchar(60) DEFAULT NULL,
+  `adresse` varchar(255) DEFAULT NULL,
+  `ville` varchar(120) DEFAULT NULL,
+  `ice` varchar(40) DEFAULT NULL,
+  `rc` varchar(60) DEFAULT NULL,
+  `identifiant_fiscal` varchar(100) DEFAULT NULL,
+  `taxe_professionnelle` varchar(100) DEFAULT NULL,
+  `statut` varchar(20) NOT NULL DEFAULT 'actif',
+  `notes` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_cabinets_code` (`code`),
+  KEY `idx_cabinets_statut` (`statut`),
+  KEY `idx_cabinets_email` (`email`),
+  KEY `idx_cabinets_type` (`type_cabinet`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS pv_ago (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    societe_id INT UNSIGNED NOT NULL,
-    dossier_numero VARCHAR(120) DEFAULT NULL,
-    statut VARCHAR(80) DEFAULT 'brouillon',
-    date_ago DATE DEFAULT NULL,
-    heure_ago VARCHAR(20) DEFAULT '10:00',
-    lieu_ago VARCHAR(255) DEFAULT 'au siege social',
-    president_nom VARCHAR(255) DEFAULT NULL,
-    president_qualite VARCHAR(100) DEFAULT 'Gerant',
-    exercice_clos VARCHAR(10) DEFAULT NULL,
-    total_parts INT UNSIGNED DEFAULT NULL,
-    parts_presentes INT UNSIGNED DEFAULT NULL,
-    resultat_net DECIMAL(15,2) DEFAULT NULL,
-    resultat_type ENUM('benefice','perte') DEFAULT NULL,
-    report_a_nouveau_debiteur DECIMAL(15,2) DEFAULT 0.00,
-    reserve_legale_existante DECIMAL(15,2) DEFAULT 0.00,
-    reserve_statutaire_existante DECIMAL(15,2) DEFAULT 0.00,
-    reserve_facultative_existante DECIMAL(15,2) DEFAULT 0.00,
-    capital_social DECIMAL(15,2) DEFAULT NULL,
-    affectation_option ENUM('profit_distribution','loss_carryforward','loss_reserves') DEFAULT NULL,
-    dividende_total DECIMAL(15,2) DEFAULT 0.00,
-    reserve_statutaire_dotation DECIMAL(15,2) DEFAULT 0.00,
-    reserve_facultative_dotation DECIMAL(15,2) DEFAULT 0.00,
-    perte_reserve_prelevement DECIMAL(15,2) DEFAULT 0.00,
-    resolutions LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(resolutions)),
-    created_by INT UNSIGNED DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT pv_ago_ibfk_1
-        FOREIGN KEY (societe_id) REFERENCES societes(id)
-        ON DELETE CASCADE,
-    CONSTRAINT pv_ago_ibfk_2
-        FOREIGN KEY (created_by) REFERENCES collaborateurs(id)
-        ON DELETE SET NULL,
-    KEY created_by (created_by),
-    INDEX idx_pv_ago_societe_id (societe_id),
-    INDEX idx_pv_ago_statut (statut),
-    INDEX idx_pv_ago_dossier_numero (dossier_numero)
+CREATE TABLE IF NOT EXISTS `centre_affaires` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `denomination` varchar(190) NOT NULL DEFAULT '',
+  `adresse` varchar(255) NOT NULL DEFAULT '',
+  `numero_if` varchar(50) NOT NULL DEFAULT '',
+  `numero_ice` varchar(50) NOT NULL DEFAULT '',
+  `numero_rc` varchar(50) NOT NULL DEFAULT '',
+  `numero_tp` varchar(50) NOT NULL DEFAULT '',
+  `numero_cnss` varchar(50) NOT NULL DEFAULT '',
+  `adresse_dgi` varchar(255) NOT NULL DEFAULT '',
+  `adresse_cnss` varchar(255) NOT NULL DEFAULT '',
+  `logo_path` varchar(255) NOT NULL DEFAULT '',
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS pv_resolutions_templates (
-    id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    title VARCHAR(255) NOT NULL,
-    content TEXT NOT NULL,
-    category VARCHAR(50) DEFAULT 'cession',
-    sort_order INT DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+CREATE TABLE IF NOT EXISTS `cession_parts` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `cabinet_id` int(10) unsigned DEFAULT NULL,
+  `cession_id` int(10) unsigned NOT NULL,
+  `cedant_associe_id` int(10) unsigned DEFAULT NULL,
+  `cedant_nom_complet` varchar(255) NOT NULL,
+  `cedant_cin` varchar(100) DEFAULT NULL,
+  `cedant_type` varchar(20) DEFAULT 'existant',
+  `cessionnaire_associe_id` int(10) unsigned DEFAULT NULL,
+  `cessionnaire_nom_complet` varchar(255) NOT NULL,
+  `cessionnaire_cin` varchar(100) DEFAULT NULL,
+  `cessionnaire_type` varchar(20) DEFAULT 'existant',
+  `cessionnaire_civilite` varchar(10) DEFAULT NULL,
+  `cessionnaire_date_naissance` date DEFAULT NULL,
+  `cessionnaire_lieu_naissance` varchar(120) DEFAULT NULL,
+  `cessionnaire_nationalite` varchar(120) DEFAULT NULL,
+  `cessionnaire_adresse` text DEFAULT NULL,
+  `cessionnaire_telephone` varchar(20) NOT NULL DEFAULT '',
+  `cessionnaire_email` varchar(120) NOT NULL DEFAULT '',
+  `cessionnaire_qualite` varchar(80) NOT NULL DEFAULT '',
+  `cessionnaire_parts` int(10) unsigned NOT NULL DEFAULT 0,
+  `cessionnaire_capital_detenu` decimal(12,2) NOT NULL DEFAULT 0.00,
+  `cessionnaire_est_gerant` tinyint(1) NOT NULL DEFAULT 0,
+  `parts_cedees` int(11) NOT NULL,
+  `prix_unitaire` decimal(15,2) DEFAULT NULL,
+  `prix_total` decimal(15,2) DEFAULT NULL,
+  `pourcentage` decimal(7,2) DEFAULT NULL,
+  `nommer_gerant` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `cession_id` (`cession_id`),
+  KEY `idx_cession_parts_cabinet` (`cabinet_id`),
+  CONSTRAINT `cession_parts_ibfk_1` FOREIGN KEY (`cession_id`) REFERENCES `cessions` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS documents_generes (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    societe_id INT UNSIGNED NOT NULL,
-    cession_id INT DEFAULT NULL,
-    pv_ago_id INT DEFAULT NULL,
-    template_source VARCHAR(255) DEFAULT NULL,
-    doc_type VARCHAR(100) DEFAULT NULL,
-    fichier_docx VARCHAR(500) NOT NULL,
-    fichier_pdf VARCHAR(500) DEFAULT NULL,
-    taille_ko DECIMAL(10,1) DEFAULT NULL,
-    valide TINYINT(1) NOT NULL DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_documents_societe
-        FOREIGN KEY (societe_id) REFERENCES societes(id)
-        ON DELETE CASCADE,
-    INDEX idx_documents_societe_id (societe_id),
-    INDEX idx_documents_doc_type (doc_type),
-    INDEX idx_documents_valide (valide),
-    INDEX idx_documents_generes_cession_id (cession_id),
-    INDEX idx_documents_generes_pv_ago_id (pv_ago_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS uploaded_docs (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    societe_id INT UNSIGNED NOT NULL,
-    doc_type VARCHAR(50) NOT NULL COMMENT 'certificat_negatif or cin_gerant',
-    associe_idx INT UNSIGNED DEFAULT NULL COMMENT 'Index in associes array for cin_gerant',
-    filename_original VARCHAR(255) NOT NULL,
-    filename_stored VARCHAR(255) NOT NULL,
-    filepath VARCHAR(500) NOT NULL,
-    taille_ko DECIMAL(10,1) DEFAULT NULL,
-    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_uploaded_docs_societe
-        FOREIGN KEY (societe_id) REFERENCES societes(id)
-        ON DELETE CASCADE,
-    INDEX idx_uploaded_docs_societe_id (societe_id),
-    INDEX idx_uploaded_docs_type (doc_type)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS notifications (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    target_user_id INT UNSIGNED DEFAULT NULL COMMENT 'NULL = non direct',
-    target_role_id INT UNSIGNED DEFAULT NULL COMMENT '1=super_admin, 2=admin, etc.',
-    target_type VARCHAR(50) DEFAULT NULL COMMENT 'interne|externe-pm|externe-pp|NULL=tous',
-    type VARCHAR(50) NOT NULL DEFAULT 'info' COMMENT 'info|warning|success|danger',
-    title VARCHAR(255) NOT NULL,
-    message TEXT DEFAULT NULL,
-    link VARCHAR(500) DEFAULT NULL,
-    entity_type VARCHAR(50) DEFAULT NULL,
-    entity_id INT UNSIGNED DEFAULT NULL,
-    is_read TINYINT(1) NOT NULL DEFAULT 0,
-    is_global TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'force pour tous',
-    created_by INT UNSIGNED DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    read_at DATETIME DEFAULT NULL,
-    INDEX idx_notif_user (target_user_id, is_read),
-    INDEX idx_notif_role (target_role_id, is_read),
-    INDEX idx_notif_type (target_type, is_read),
-    INDEX idx_notif_global (is_global, is_read),
-    INDEX idx_notif_created (created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS user_sessions (
-    id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    current_page VARCHAR(255) DEFAULT NULL,
-    ip_address VARCHAR(45) DEFAULT NULL,
-    user_agent VARCHAR(500) DEFAULT NULL,
-    session_id VARCHAR(128) DEFAULT NULL,
-    UNIQUE KEY uq_session_id (session_id),
-    INDEX idx_user_id (user_id),
-    INDEX idx_last_active (last_active)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS societe_suivi_etapes (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    societe_id INT UNSIGNED NOT NULL,
-    etape VARCHAR(80) NOT NULL,
-    ordre INT UNSIGNED NOT NULL DEFAULT 0,
-    statut ENUM('en_attente','en_cours','termine') NOT NULL DEFAULT 'en_attente',
-    date_debut DATE DEFAULT NULL,
-    date_fin DATE DEFAULT NULL,
-    notes TEXT DEFAULT NULL,
-    created_by INT UNSIGNED DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT societe_suivi_etapes_ibfk_1
-        FOREIGN KEY (societe_id) REFERENCES societes(id)
-        ON DELETE CASCADE,
-    INDEX societe_id (societe_id)
+CREATE TABLE IF NOT EXISTS `cession_suivi_documents` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `etape_id` int(10) unsigned NOT NULL,
+  `cabinet_id` int(10) unsigned DEFAULT NULL,
+  `nom` varchar(255) NOT NULL,
+  `fichier` varchar(255) NOT NULL,
+  `uploaded_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `etape_id` (`etape_id`),
+  KEY `idx_csd_cabinet` (`cabinet_id`),
+  CONSTRAINT `cession_suivi_documents_ibfk_1` FOREIGN KEY (`etape_id`) REFERENCES `cession_suivi_etapes` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
-CREATE TABLE IF NOT EXISTS societe_suivi_documents (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    etape_id INT UNSIGNED NOT NULL,
-    nom VARCHAR(255) NOT NULL,
-    fichier VARCHAR(255) NOT NULL,
-    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT societe_suivi_documents_ibfk_1
-        FOREIGN KEY (etape_id) REFERENCES societe_suivi_etapes(id)
-        ON DELETE CASCADE,
-    INDEX etape_id (etape_id)
+CREATE TABLE IF NOT EXISTS `cession_suivi_etapes` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `cession_id` int(10) unsigned NOT NULL,
+  `cabinet_id` int(10) unsigned DEFAULT NULL,
+  `etape` varchar(80) NOT NULL,
+  `ordre` int(10) unsigned NOT NULL DEFAULT 0,
+  `statut` enum('en_attente','en_cours','termine') NOT NULL DEFAULT 'en_attente',
+  `date_debut` date DEFAULT NULL,
+  `date_fin` date DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `created_by` int(10) unsigned DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `cession_id` (`cession_id`),
+  KEY `idx_cse_cabinet` (`cabinet_id`),
+  CONSTRAINT `cession_suivi_etapes_ibfk_1` FOREIGN KEY (`cession_id`) REFERENCES `cessions` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
-CREATE TABLE IF NOT EXISTS cession_suivi_etapes (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    cession_id INT UNSIGNED NOT NULL,
-    etape VARCHAR(80) NOT NULL,
-    ordre INT UNSIGNED NOT NULL DEFAULT 0,
-    statut ENUM('en_attente','en_cours','termine') NOT NULL DEFAULT 'en_attente',
-    date_debut DATE DEFAULT NULL,
-    date_fin DATE DEFAULT NULL,
-    notes TEXT DEFAULT NULL,
-    created_by INT UNSIGNED DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT cession_suivi_etapes_ibfk_1
-        FOREIGN KEY (cession_id) REFERENCES cessions(id)
-        ON DELETE CASCADE,
-    INDEX cession_id (cession_id)
+CREATE TABLE IF NOT EXISTS `cessions` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `cabinet_id` int(10) unsigned DEFAULT NULL,
+  `societe_id` int(10) unsigned NOT NULL,
+  `cession_dossier` varchar(120) DEFAULT NULL,
+  `cession_status` varchar(80) DEFAULT 'brouillon',
+  `cession_date` date DEFAULT NULL,
+  `cession_motif` text DEFAULT NULL,
+  `capital_avant` decimal(15,2) DEFAULT NULL,
+  `parts_avant` int(11) DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `pv_resolutions` text DEFAULT NULL,
+  `created_by` int(10) unsigned DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `societe_id` (`societe_id`),
+  KEY `idx_cessions_cabinet` (`cabinet_id`),
+  CONSTRAINT `cessions_ibfk_1` FOREIGN KEY (`societe_id`) REFERENCES `societes` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS `collaborateur_permissions` (
+  `collaborateur_id` int(10) unsigned NOT NULL,
+  `permission_id` int(10) unsigned NOT NULL,
+  `granted` tinyint(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`collaborateur_id`,`permission_id`),
+  KEY `fk_cp_permission` (`permission_id`),
+  CONSTRAINT `fk_cp_collaborateur` FOREIGN KEY (`collaborateur_id`) REFERENCES `collaborateurs` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_cp_permission` FOREIGN KEY (`permission_id`) REFERENCES `permissions` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS `collaborateur_societes` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `collaborateur_id` int(10) unsigned NOT NULL,
+  `societe_id` int(10) unsigned NOT NULL,
+  `role_dossier` varchar(150) DEFAULT NULL COMMENT 'Fonction du collaborateur sur ce dossier (ex. comptable, coursier)',
+  `is_principal` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Collaborateur responsable du dossier',
+  `date_debut` date DEFAULT NULL,
+  `date_fin` date DEFAULT NULL COMMENT 'Fin de la mission ; NULL tant que le suivi est actif',
+  `notes` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_collaborateur_societe` (`collaborateur_id`,`societe_id`),
+  KEY `idx_cs_collaborateur` (`collaborateur_id`),
+  KEY `idx_cs_societe` (`societe_id`),
+  KEY `idx_cs_societe_principal` (`societe_id`,`is_principal`),
+  CONSTRAINT `fk_cs_collaborateur` FOREIGN KEY (`collaborateur_id`) REFERENCES `collaborateurs` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_cs_societe` FOREIGN KEY (`societe_id`) REFERENCES `societes` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS `collaborateurs` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `cabinet_id` int(10) unsigned DEFAULT NULL,
+  `societe_id` int(10) unsigned DEFAULT NULL,
+  `den_ste` varchar(255) DEFAULT NULL,
+  `nom_complet` varchar(255) NOT NULL,
+  `fonction` varchar(150) DEFAULT NULL,
+  `collaborateur_type` varchar(120) DEFAULT NULL,
+  `qualite_intermediaire_id` int(10) unsigned DEFAULT NULL COMMENT 'FK ref_qualites_intermediaire (CPT-*, COU-*, CLT-*)',
+  `collaborateur_code` varchar(40) DEFAULT NULL,
+  `collaborateur_nom` varchar(255) DEFAULT NULL,
+  `collaborateur_prenom` varchar(120) DEFAULT NULL,
+  `collaborateur_ice` varchar(100) DEFAULT NULL,
+  `collaborateur_tp` varchar(100) DEFAULT NULL,
+  `collaborateur_rc` varchar(100) DEFAULT NULL,
+  `collaborateur_if` varchar(100) DEFAULT NULL,
+  `collaborateur_tel_fixe` varchar(60) DEFAULT NULL,
+  `collaborateur_tel_mobile` varchar(60) DEFAULT NULL,
+  `collaborateur_adresse` text DEFAULT NULL,
+  `collaborateur_email` varchar(190) DEFAULT NULL,
+  `email` varchar(190) DEFAULT NULL,
+  `telephone` varchar(60) DEFAULT NULL,
+  `date_debut` date DEFAULT NULL,
+  `statut` varchar(80) DEFAULT 'actif',
+  `notes` text DEFAULT NULL,
+  `password_hash` varchar(255) DEFAULT NULL,
+  `role_id` int(10) unsigned DEFAULT NULL,
+  `can_login` tinyint(1) NOT NULL DEFAULT 0,
+  `last_login` datetime DEFAULT NULL,
+  `created_by` int(10) unsigned DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_collaborateur_code` (`collaborateur_code`),
+  KEY `fk_collaborateurs_societe` (`societe_id`),
+  KEY `idx_collaborateurs_nom` (`nom_complet`),
+  KEY `idx_collaborateurs_role_id` (`role_id`),
+  KEY `idx_collaborateurs_can_login` (`can_login`),
+  KEY `idx_collaborateurs_societe_id` (`societe_id`),
+  KEY `idx_collaborateurs_collaborateur_email` (`collaborateur_email`),
+  KEY `idx_collaborateurs_qualite` (`qualite_intermediaire_id`),
+  KEY `idx_collaborateurs_cabinet` (`cabinet_id`),
+  CONSTRAINT `fk_collaborateurs_qualite` FOREIGN KEY (`qualite_intermediaire_id`) REFERENCES `ref_qualites_intermediaire` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `fk_collaborateurs_societe` FOREIGN KEY (`societe_id`) REFERENCES `societes` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS `contrats` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `cabinet_id` int(10) unsigned DEFAULT NULL,
+  `societe_id` int(10) unsigned NOT NULL,
+  `contrat_type` varchar(120) NOT NULL,
+  `contrat_date` date DEFAULT NULL,
+  `contrat_duree_mois` int(11) DEFAULT NULL,
+  `contrat_type_domiciliation` varchar(120) DEFAULT NULL,
+  `contrat_type_domiciliation_autre` varchar(190) DEFAULT NULL,
+  `contrat_date_debut` date DEFAULT NULL,
+  `contrat_date_fin` date DEFAULT NULL,
+  `contrat_loyer_ttc` decimal(15,2) DEFAULT NULL,
+  `contrat_frais_intermediaire` decimal(15,2) DEFAULT NULL,
+  `contrat_caution` decimal(15,2) DEFAULT NULL,
+  `contrat_tva_pourcent` decimal(7,2) DEFAULT NULL,
+  `contrat_loyer_ht` decimal(15,2) DEFAULT NULL,
+  `contrat_total_ht` decimal(15,2) DEFAULT NULL,
+  `contrat_pack_montant_ttc` decimal(15,2) DEFAULT NULL,
+  `contrat_pack_loyer_ttc` decimal(15,2) DEFAULT NULL,
+  `contrat_type_renouvellement` varchar(120) DEFAULT NULL,
+  `contrat_renouv_tva_pourcent` decimal(7,2) DEFAULT NULL,
+  `contrat_renouv_loyer_ht` decimal(15,2) DEFAULT NULL,
+  `contrat_renouv_total_ht` decimal(15,2) DEFAULT NULL,
+  `contrat_renouv_loyer_ttc` decimal(15,2) DEFAULT NULL,
+  `contrat_renouv_annuel_ttc` decimal(15,2) DEFAULT NULL,
+  `contrat_statut` varchar(80) DEFAULT 'actif',
+  `contrat_motif_resiliation` varchar(255) DEFAULT NULL COMMENT 'Raison de la resiliation (demande client, defaut, litige...)',
+  `contrat_date_resiliation` date DEFAULT NULL COMMENT 'Date effective de resiliation ; NULL tant que non resilie',
+  `contrat_notes` text DEFAULT NULL,
+  `contrat_mode_signature` varchar(120) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_contrats_societe_id` (`societe_id`),
+  KEY `idx_contrats_type` (`contrat_type`),
+  KEY `idx_contrats_date_fin` (`contrat_date_fin`),
+  KEY `idx_contrats_statut` (`contrat_statut`),
+  KEY `idx_contrats_suivi` (`contrat_statut`,`contrat_date_fin`),
+  KEY `idx_contrats_cabinet` (`cabinet_id`),
+  CONSTRAINT `fk_contrats_societe` FOREIGN KEY (`societe_id`) REFERENCES `societes` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS `documents_generes` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `cabinet_id` int(10) unsigned DEFAULT NULL,
+  `societe_id` int(10) unsigned NOT NULL,
+  `cession_id` int(11) DEFAULT NULL,
+  `pv_ago_id` int(11) DEFAULT NULL,
+  `template_source` varchar(255) DEFAULT NULL,
+  `doc_type` varchar(100) DEFAULT NULL,
+  `fichier_docx` varchar(500) NOT NULL,
+  `fichier_pdf` varchar(500) DEFAULT NULL,
+  `taille_ko` decimal(10,1) DEFAULT NULL,
+  `valide` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_documents_societe_id` (`societe_id`),
+  KEY `idx_documents_doc_type` (`doc_type`),
+  KEY `idx_documents_valide` (`valide`),
+  KEY `idx_documents_generes_cession_id` (`cession_id`),
+  KEY `idx_documents_generes_pv_ago_id` (`pv_ago_id`),
+  KEY `idx_documents_generes_cabinet` (`cabinet_id`),
+  CONSTRAINT `fk_documents_societe` FOREIGN KEY (`societe_id`) REFERENCES `societes` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS `factures` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `numero` varchar(40) NOT NULL,
+  `cabinet_id` int(10) unsigned NOT NULL,
+  `abonnement_id` int(10) unsigned DEFAULT NULL,
+  `paiement_id` int(10) unsigned DEFAULT NULL,
+  `date_emission` date NOT NULL,
+  `date_echeance` date DEFAULT NULL,
+  `montant_ht` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `tva_pct` decimal(5,2) NOT NULL DEFAULT 0.00,
+  `montant_ttc` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `statut` varchar(20) NOT NULL DEFAULT 'brouillon',
+  `notes` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_factures_numero` (`numero`),
+  KEY `idx_factures_cabinet` (`cabinet_id`),
+  KEY `idx_factures_abonnement` (`abonnement_id`),
+  KEY `idx_factures_statut` (`statut`),
+  KEY `idx_factures_echeance` (`date_echeance`),
+  KEY `fk_factures_paiement` (`paiement_id`),
+  CONSTRAINT `fk_factures_abonnement` FOREIGN KEY (`abonnement_id`) REFERENCES `abonnements` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_factures_cabinet` FOREIGN KEY (`cabinet_id`) REFERENCES `cabinets` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_factures_paiement` FOREIGN KEY (`paiement_id`) REFERENCES `paiements` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS `login_attempts` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `email` varchar(190) NOT NULL,
+  `ip_address` varchar(45) NOT NULL,
+  `attempted_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_login_attempts_email_time` (`email`,`attempted_at`),
+  KEY `idx_login_attempts_ip_time` (`ip_address`,`attempted_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS `notifications` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `cabinet_id` int(10) unsigned DEFAULT NULL,
+  `target_user_id` int(10) unsigned DEFAULT NULL COMMENT 'NULL = non direct',
+  `target_role_id` int(10) unsigned DEFAULT NULL COMMENT '1=super_admin, 2=admin, etc.',
+  `target_type` varchar(50) DEFAULT NULL COMMENT 'interne|externe-pm|externe-pp|NULL=tous',
+  `type` varchar(50) NOT NULL DEFAULT 'info' COMMENT 'info|warning|success|danger',
+  `title` varchar(255) NOT NULL,
+  `message` text DEFAULT NULL,
+  `link` varchar(500) DEFAULT NULL,
+  `entity_type` varchar(50) DEFAULT NULL,
+  `entity_id` int(10) unsigned DEFAULT NULL,
+  `is_read` tinyint(1) NOT NULL DEFAULT 0,
+  `is_global` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'force pour tous',
+  `created_by` int(10) unsigned DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `read_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_notif_user` (`target_user_id`,`is_read`),
+  KEY `idx_notif_role` (`target_role_id`,`is_read`),
+  KEY `idx_notif_type` (`target_type`,`is_read`),
+  KEY `idx_notif_global` (`is_global`,`is_read`),
+  KEY `idx_notif_created` (`created_at`),
+  KEY `idx_notifications_cabinet` (`cabinet_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS `paiements` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `abonnement_id` int(10) unsigned DEFAULT NULL,
+  `cabinet_id` int(10) unsigned DEFAULT NULL,
+  `montant` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `devise` varchar(3) NOT NULL DEFAULT 'MAD',
+  `mode` varchar(30) NOT NULL DEFAULT 'virement',
+  `reference` varchar(120) DEFAULT NULL,
+  `date_paiement` date NOT NULL,
+  `periode_debut` date DEFAULT NULL,
+  `periode_fin` date DEFAULT NULL,
+  `statut` varchar(20) NOT NULL DEFAULT 'encaisse',
+  `notes` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_paiements_cabinet` (`cabinet_id`),
+  KEY `idx_paiements_abonnement` (`abonnement_id`),
+  KEY `idx_paiements_statut` (`statut`),
+  KEY `idx_paiements_date` (`date_paiement`),
+  CONSTRAINT `fk_paiements_abonnement` FOREIGN KEY (`abonnement_id`) REFERENCES `abonnements` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_paiements_cabinet` FOREIGN KEY (`cabinet_id`) REFERENCES `cabinets` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS `permissions` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `nom` varchar(150) NOT NULL,
+  `permission_key` varchar(100) NOT NULL,
+  `category` varchar(50) DEFAULT NULL,
+  `description` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_permissions_key` (`permission_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS `plans` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `code` varchar(40) NOT NULL,
+  `nom` varchar(120) NOT NULL,
+  `description` varchar(255) DEFAULT NULL,
+  `prix_annuel` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `devise` varchar(3) NOT NULL DEFAULT 'MAD',
+  `max_utilisateurs` int(11) DEFAULT NULL,
+  `max_societes` int(11) DEFAULT NULL,
+  `max_dossiers` int(11) DEFAULT NULL,
+  `trial_jours` int(11) NOT NULL DEFAULT 0,
+  `auto_renew` tinyint(1) NOT NULL DEFAULT 1,
+  `actif` tinyint(1) NOT NULL DEFAULT 1,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_plans_code` (`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS `pv_ago` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `cabinet_id` int(10) unsigned DEFAULT NULL,
+  `societe_id` int(10) unsigned NOT NULL,
+  `dossier_numero` varchar(120) DEFAULT NULL,
+  `statut` varchar(80) DEFAULT 'brouillon',
+  `date_ago` date DEFAULT NULL,
+  `heure_ago` varchar(20) DEFAULT '10:00',
+  `lieu_ago` varchar(255) DEFAULT 'au siege social',
+  `president_nom` varchar(255) DEFAULT NULL,
+  `president_qualite` varchar(100) DEFAULT 'Gerant',
+  `exercice_clos` varchar(10) DEFAULT NULL,
+  `total_parts` int(10) unsigned DEFAULT NULL,
+  `parts_presentes` int(10) unsigned DEFAULT NULL,
+  `resultat_net` decimal(15,2) DEFAULT NULL,
+  `resultat_type` enum('benefice','perte') DEFAULT NULL,
+  `report_a_nouveau_debiteur` decimal(15,2) DEFAULT 0.00,
+  `reserve_legale_existante` decimal(15,2) DEFAULT 0.00,
+  `reserve_statutaire_existante` decimal(15,2) DEFAULT 0.00,
+  `reserve_facultative_existante` decimal(15,2) DEFAULT 0.00,
+  `capital_social` decimal(15,2) DEFAULT NULL,
+  `affectation_option` enum('profit_distribution','loss_carryforward','loss_reserves') DEFAULT NULL,
+  `dividende_total` decimal(15,2) DEFAULT 0.00,
+  `reserve_statutaire_dotation` decimal(15,2) DEFAULT 0.00,
+  `reserve_facultative_dotation` decimal(15,2) DEFAULT 0.00,
+  `perte_reserve_prelevement` decimal(15,2) DEFAULT 0.00,
+  `resolutions` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`resolutions`)),
+  `created_by` int(10) unsigned DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `created_by` (`created_by`),
+  KEY `idx_pv_ago_societe_id` (`societe_id`),
+  KEY `idx_pv_ago_statut` (`statut`),
+  KEY `idx_pv_ago_dossier_numero` (`dossier_numero`),
+  KEY `idx_pv_ago_cabinet` (`cabinet_id`),
+  CONSTRAINT `pv_ago_ibfk_1` FOREIGN KEY (`societe_id`) REFERENCES `societes` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `pv_ago_ibfk_2` FOREIGN KEY (`created_by`) REFERENCES `collaborateurs` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS `pv_resolutions_templates` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `title` varchar(255) NOT NULL,
+  `content` text NOT NULL,
+  `category` varchar(50) DEFAULT 'cession',
+  `sort_order` int(11) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS `ref_activites_ompic` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `code` varchar(20) NOT NULL,
+  `libelle` varchar(255) NOT NULL,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_ref_activites_ompic_code` (`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS `ref_activites_statuts` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `activite` varchar(190) NOT NULL,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_ref_activites_statuts` (`activite`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS `ref_fonctions` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `fonction` varchar(150) NOT NULL,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_ref_fonctions` (`fonction`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS `ref_formes_juridiques` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `forme_juridique` varchar(120) NOT NULL,
+  `template_folder` varchar(120) NOT NULL DEFAULT '',
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_ref_formes_juridiques` (`forme_juridique`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS `ref_lieux_naissance` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `lieu_naissance` varchar(120) NOT NULL,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_ref_lieux_naissance` (`lieu_naissance`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS `ref_nationalites` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `nationalite` varchar(120) NOT NULL,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_ref_nationalites` (`nationalite`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS `ref_qualites_associe` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `qualite_associe` varchar(150) NOT NULL,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_ref_qualites_associe` (`qualite_associe`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS `ref_qualites_intermediaire` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `code` varchar(20) NOT NULL COMMENT 'Ex. CPT-EXP, COU-AGR, CLT-DIR',
+  `axe_mode` varchar(20) NOT NULL COMMENT 'direct | coursier | client',
+  `axe_qualif` varchar(20) DEFAULT NULL COMMENT 'expert | agre | independant | NULL',
+  `libelle` varchar(120) NOT NULL,
+  `icon` varchar(40) DEFAULT NULL COMMENT 'Nom Material Symbols pour l affichage',
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  `is_system` tinyint(4) NOT NULL DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_ref_qualites_code` (`code`),
+  KEY `idx_ref_qualites_axe` (`axe_mode`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS `ref_ste_adresses` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `ste_adresse` varchar(255) NOT NULL,
+  `ville` varchar(100) NOT NULL DEFAULT '',
+  `code_postal` varchar(20) DEFAULT NULL,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_ref_ste_adresses` (`ste_adresse`,`ville`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS `ref_tribunaux` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `tribunal` varchar(120) NOT NULL,
+  `tribunal_type` varchar(60) DEFAULT NULL,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_ref_tribunaux` (`tribunal`,`tribunal_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS `ref_villes` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `ville` varchar(120) NOT NULL,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_ref_villes` (`ville`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS `role_permissions` (
+  `role_id` int(10) unsigned NOT NULL,
+  `permission_id` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`role_id`,`permission_id`),
+  KEY `fk_rp_permission` (`permission_id`),
+  CONSTRAINT `fk_rp_permission` FOREIGN KEY (`permission_id`) REFERENCES `permissions` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_rp_role` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS `roles` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `nom` varchar(120) NOT NULL,
+  `description` varchar(255) DEFAULT NULL,
+  `is_internal` tinyint(1) NOT NULL DEFAULT 0,
+  `is_system` tinyint(1) NOT NULL DEFAULT 0,
+  `scope` varchar(20) NOT NULL DEFAULT 'centre',
+  `is_billable` tinyint(1) NOT NULL DEFAULT 0,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_roles_nom` (`nom`),
+  KEY `idx_roles_scope` (`scope`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS `societe_suivi_documents` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `cabinet_id` int(10) unsigned DEFAULT NULL,
+  `etape_id` int(10) unsigned NOT NULL,
+  `nom` varchar(255) NOT NULL,
+  `fichier` varchar(255) NOT NULL,
+  `uploaded_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `etape_id` (`etape_id`),
+  KEY `idx_soc_suivi_docs_cabinet` (`cabinet_id`),
+  CONSTRAINT `societe_suivi_documents_ibfk_1` FOREIGN KEY (`etape_id`) REFERENCES `societe_suivi_etapes` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
-CREATE TABLE IF NOT EXISTS cession_suivi_documents (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    etape_id INT UNSIGNED NOT NULL,
-    nom VARCHAR(255) NOT NULL,
-    fichier VARCHAR(255) NOT NULL,
-    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT cession_suivi_documents_ibfk_1
-        FOREIGN KEY (etape_id) REFERENCES cession_suivi_etapes(id)
-        ON DELETE CASCADE,
-    INDEX etape_id (etape_id)
+CREATE TABLE IF NOT EXISTS `societe_suivi_etapes` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `cabinet_id` int(10) unsigned DEFAULT NULL,
+  `societe_id` int(10) unsigned NOT NULL,
+  `etape` varchar(80) NOT NULL,
+  `ordre` int(10) unsigned NOT NULL DEFAULT 0,
+  `statut` enum('en_attente','en_cours','termine') NOT NULL DEFAULT 'en_attente',
+  `date_debut` date DEFAULT NULL,
+  `date_fin` date DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `created_by` int(10) unsigned DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `societe_id` (`societe_id`),
+  KEY `idx_soc_suivi_etapes_cabinet` (`cabinet_id`),
+  CONSTRAINT `societe_suivi_etapes_ibfk_1` FOREIGN KEY (`societe_id`) REFERENCES `societes` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
-CREATE TABLE IF NOT EXISTS centre_affaires (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    denomination VARCHAR(190) NOT NULL DEFAULT '',
-    adresse VARCHAR(255) NOT NULL DEFAULT '',
-    numero_if VARCHAR(50) NOT NULL DEFAULT '',
-    numero_ice VARCHAR(50) NOT NULL DEFAULT '',
-    numero_rc VARCHAR(50) NOT NULL DEFAULT '',
-    numero_tp VARCHAR(50) NOT NULL DEFAULT '',
-    numero_cnss VARCHAR(50) NOT NULL DEFAULT '',
-    adresse_dgi VARCHAR(255) NOT NULL DEFAULT '',
-    adresse_cnss VARCHAR(255) NOT NULL DEFAULT '',
-    logo_path VARCHAR(255) NOT NULL DEFAULT '',
-    created_at DATETIME DEFAULT NULL,
-    updated_at DATETIME DEFAULT NULL
+CREATE TABLE IF NOT EXISTS `societes` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `cabinet_id` int(10) unsigned DEFAULT NULL,
+  `societe_dossier_domiciliation_number` varchar(120) DEFAULT NULL COMMENT 'Numero de dossier domiciliation (DOM-YYYY-NNN)',
+  `societe_dossier_creation_number` varchar(120) DEFAULT NULL COMMENT 'Numero de dossier creation (CRE-YYYY-NNN)',
+  `dossier_output_path` varchar(500) DEFAULT NULL,
+  `dossier_output_nom` varchar(160) DEFAULT NULL,
+  `societe_raison_sociale` varchar(255) NOT NULL,
+  `societe_sigle` varchar(100) DEFAULT NULL,
+  `den_ste` varchar(255) DEFAULT NULL,
+  `societe_forme_juridique` varchar(120) DEFAULT NULL,
+  `societe_source` varchar(20) DEFAULT 'creation' COMMENT 'creation|cession|augmentation_capital|transfert_siege',
+  `societe_ice` varchar(100) DEFAULT NULL,
+  `societe_date_ice` date DEFAULT NULL,
+  `societe_rc` varchar(100) DEFAULT NULL,
+  `societe_if` varchar(100) DEFAULT NULL,
+  `societe_tp` varchar(50) NOT NULL DEFAULT '',
+  `societe_cnss` varchar(50) NOT NULL DEFAULT '',
+  `societe_activites_statuts` text DEFAULT NULL,
+  `societe_capital` decimal(15,2) DEFAULT NULL,
+  `societe_activites_ompic` text DEFAULT NULL,
+  `societe_part_social` int(11) DEFAULT NULL,
+  `societe_valeur_nominale` decimal(15,2) DEFAULT NULL,
+  `societe_date_exp_cert_neg` date DEFAULT NULL,
+  `societe_adresse` text DEFAULT NULL,
+  `societe_adresse_siege` text DEFAULT NULL,
+  `societe_ville` varchar(120) DEFAULT NULL,
+  `societe_tribunal` varchar(120) DEFAULT NULL,
+  `societe_tribunal_type` varchar(60) DEFAULT NULL,
+  `societe_email` varchar(190) DEFAULT NULL,
+  `societe_telephone` varchar(60) DEFAULT NULL,
+  `created_by` int(10) unsigned DEFAULT NULL,
+  `societe_type_generation` varchar(120) DEFAULT NULL,
+  `societe_procedure_creation` varchar(120) DEFAULT NULL,
+  `societe_mode_depot` varchar(120) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_societes_dossier_domiciliation` (`societe_dossier_domiciliation_number`),
+  UNIQUE KEY `uq_societes_dossier_creation` (`societe_dossier_creation_number`),
+  KEY `idx_societes_ice` (`societe_ice`),
+  KEY `idx_societes_ville` (`societe_ville`),
+  KEY `idx_created_by` (`created_by`),
+  KEY `idx_societes_type_generation` (`societe_type_generation`),
+  KEY `idx_societes_raison_sociale` (`societe_raison_sociale`),
+  KEY `idx_societes_date_exp_cert_neg` (`societe_date_exp_cert_neg`),
+  KEY `idx_societes_cabinet` (`cabinet_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS `uploaded_docs` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `cabinet_id` int(10) unsigned DEFAULT NULL,
+  `societe_id` int(10) unsigned NOT NULL,
+  `doc_type` varchar(50) NOT NULL COMMENT 'certificat_negatif or cin_gerant',
+  `associe_idx` int(10) unsigned DEFAULT NULL COMMENT 'Index in associes array for cin_gerant',
+  `filename_original` varchar(255) NOT NULL,
+  `filename_stored` varchar(255) NOT NULL,
+  `filepath` varchar(500) NOT NULL,
+  `taille_ko` decimal(10,1) DEFAULT NULL,
+  `uploaded_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_uploaded_docs_societe_id` (`societe_id`),
+  KEY `idx_uploaded_docs_type` (`doc_type`),
+  KEY `idx_uploaded_docs_cabinet` (`cabinet_id`),
+  CONSTRAINT `fk_uploaded_docs_societe` FOREIGN KEY (`societe_id`) REFERENCES `societes` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS `user_permissions` (
+  `user_id` int(10) unsigned NOT NULL,
+  `permission_id` int(10) unsigned NOT NULL,
+  `granted` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`user_id`,`permission_id`),
+  KEY `idx_up_permission` (`permission_id`),
+  CONSTRAINT `fk_up_permission` FOREIGN KEY (`permission_id`) REFERENCES `permissions` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_up_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS `user_roles` (
+  `user_id` int(10) unsigned NOT NULL,
+  `role_id` int(10) unsigned NOT NULL,
+  `is_primary` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`user_id`,`role_id`),
+  KEY `idx_user_roles_role` (`role_id`),
+  CONSTRAINT `fk_ur_role` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_ur_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS `user_sessions` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `cabinet_id` int(10) unsigned DEFAULT NULL,
+  `last_active` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `current_page` varchar(255) DEFAULT NULL,
+  `ip_address` varchar(45) DEFAULT NULL,
+  `user_agent` varchar(500) DEFAULT NULL,
+  `session_id` varchar(128) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_session_id` (`session_id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_last_active` (`last_active`),
+  KEY `idx_user_sessions_cabinet` (`cabinet_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS `users` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `nom_complet` varchar(190) NOT NULL,
+  `email` varchar(190) NOT NULL,
+  `password_hash` varchar(255) DEFAULT NULL,
+  `cabinet_id` int(10) unsigned DEFAULT NULL,
+  `collaborateur_id` int(10) unsigned DEFAULT NULL,
+  `role_id` int(10) unsigned DEFAULT NULL,
+  `statut` varchar(20) NOT NULL DEFAULT 'actif',
+  `telephone` varchar(40) DEFAULT NULL,
+  `must_change_password` tinyint(1) NOT NULL DEFAULT 0,
+  `last_login` datetime DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_users_email` (`email`),
+  KEY `idx_users_cabinet` (`cabinet_id`),
+  KEY `idx_users_role` (`role_id`),
+  KEY `idx_users_statut` (`statut`),
+  KEY `idx_users_collaborateur` (`collaborateur_id`),
+  CONSTRAINT `fk_users_cabinet` FOREIGN KEY (`cabinet_id`) REFERENCES `cabinets` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_users_role` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS ref_formes_juridiques (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    forme_juridique VARCHAR(120) NOT NULL,
-    template_folder VARCHAR(120) DEFAULT '' NOT NULL,
-    sort_order INT NOT NULL DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_ref_formes_juridiques (forme_juridique)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS ref_ste_adresses (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    ste_adresse VARCHAR(255) NOT NULL,
-    ville VARCHAR(100) NOT NULL DEFAULT '',
-    code_postal VARCHAR(20) DEFAULT NULL,
-    sort_order INT NOT NULL DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_ref_ste_adresses (ste_adresse, ville)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS ref_villes (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    ville VARCHAR(120) NOT NULL,
-    sort_order INT NOT NULL DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_ref_villes (ville)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS ref_tribunaux (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    tribunal VARCHAR(120) NOT NULL,
-    tribunal_type VARCHAR(60) DEFAULT NULL,
-    sort_order INT NOT NULL DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_ref_tribunaux (tribunal, tribunal_type)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS ref_activites_statuts (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    activite VARCHAR(190) NOT NULL,
-    sort_order INT NOT NULL DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_ref_activites_statuts (activite)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS ref_activites_ompic (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    code VARCHAR(20) NOT NULL,
-    libelle VARCHAR(255) NOT NULL,
-    sort_order INT NOT NULL DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_ref_activites_ompic_code (code)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS ref_nationalites (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    nationalite VARCHAR(120) NOT NULL,
-    sort_order INT NOT NULL DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_ref_nationalites (nationalite)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS ref_lieux_naissance (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    lieu_naissance VARCHAR(120) NOT NULL,
-    sort_order INT NOT NULL DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_ref_lieux_naissance (lieu_naissance)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS ref_qualites_associe (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    qualite_associe VARCHAR(150) NOT NULL,
-    sort_order INT NOT NULL DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_ref_qualites_associe (qualite_associe)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS ref_fonctions (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    fonction VARCHAR(150) NOT NULL,
-    sort_order INT NOT NULL DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_ref_fonctions (fonction)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS roles (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    nom VARCHAR(120) NOT NULL,
-    description VARCHAR(255) DEFAULT NULL,
-    is_internal TINYINT(1) NOT NULL DEFAULT 0,
-    is_system TINYINT(1) NOT NULL DEFAULT 0,
-    sort_order INT NOT NULL DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_roles_nom (nom)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS permissions (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    nom VARCHAR(150) NOT NULL,
-    permission_key VARCHAR(100) NOT NULL,
-    category VARCHAR(50) DEFAULT NULL,
-    description VARCHAR(255) DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_permissions_key (permission_key)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS role_permissions (
-    role_id INT UNSIGNED NOT NULL,
-    permission_id INT UNSIGNED NOT NULL,
-    PRIMARY KEY (role_id, permission_id),
-    CONSTRAINT fk_rp_role FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE,
-    CONSTRAINT fk_rp_permission FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE,
-    KEY fk_rp_permission (permission_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS collaborateur_permissions (
-    collaborateur_id INT UNSIGNED NOT NULL,
-    permission_id INT UNSIGNED NOT NULL,
-    granted TINYINT(1) NOT NULL DEFAULT 1,
-    PRIMARY KEY (collaborateur_id, permission_id),
-    CONSTRAINT fk_cp_collaborateur FOREIGN KEY (collaborateur_id) REFERENCES collaborateurs(id) ON DELETE CASCADE,
-    CONSTRAINT fk_cp_permission FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE,
-    KEY fk_cp_permission (permission_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS activity_logs (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id INT UNSIGNED DEFAULT NULL,
-    user_nom VARCHAR(255) DEFAULT NULL,
-    action VARCHAR(50) NOT NULL,
-    entity_type VARCHAR(50) NOT NULL,
-    entity_id INT UNSIGNED DEFAULT NULL,
-    entity_label VARCHAR(255) DEFAULT NULL,
-    details TEXT DEFAULT NULL,
-    ip_address VARCHAR(45) DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_user (user_id),
-    INDEX idx_entity (entity_type, entity_id),
-    INDEX idx_action (action),
-    INDEX idx_created (created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS login_attempts (
-    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    email VARCHAR(190) NOT NULL,
-    ip_address VARCHAR(45) NOT NULL,
-    attempted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id),
-    KEY idx_login_attempts_email_time (email, attempted_at),
-    KEY idx_login_attempts_ip_time (ip_address, attempted_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS _migrations (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    filename VARCHAR(255) NOT NULL,
-    applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_migrations_filename (filename)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+SET FOREIGN_KEY_CHECKS = 1;
