@@ -206,8 +206,8 @@ $errMsg = static function (string $field) use ($fieldErrors): string {
 <section class="card stack" data-centre-page>
     <div class="section-title-row">
         <h3><span class="material-symbols-outlined">apartment</span> Informations du centre</h3>
-        <p class="help-text" style="margin:0">Ces informations apparaissent dans l'application et les documents generes.</p>
     </div>
+    <p class="help-text centre-section-desc">Ces informations apparaissent dans l'application et les documents generes.</p>
 
     <form id="centre-form" method="post" class="stack">
         <?= csrf_input() ?>
@@ -236,31 +236,26 @@ $errMsg = static function (string $field) use ($fieldErrors): string {
             <label class="field<?= $errClass('numero_if') ?>">
                 <span>IF</span>
                 <input name="numero_if" value="<?= e((string) $centre['numero_if']) ?>" inputmode="numeric" maxlength="50" placeholder="Numéro IF..."<?= $errInvalid('numero_if') ?>>
-                <small class="help-text centre-field-help">Identifiant Fiscal (DGI), chiffres uniquement.</small>
                 <?= $errMsg('numero_if') ?>
             </label>
             <label class="field<?= $errClass('numero_ice') ?>">
                 <span>ICE</span>
                 <input name="numero_ice" value="<?= e((string) $centre['numero_ice']) ?>" inputmode="numeric" maxlength="15" placeholder="15 chiffres"<?= $errInvalid('numero_ice') ?>>
-                <small class="help-text centre-field-help">Identifiant Commun de l'Entreprise : 15 chiffres.</small>
                 <?= $errMsg('numero_ice') ?>
             </label>
             <label class="field<?= $errClass('numero_rc') ?>">
                 <span>RC</span>
                 <input name="numero_rc" value="<?= e((string) $centre['numero_rc']) ?>" inputmode="numeric" maxlength="50" placeholder="Registre de commerce..."<?= $errInvalid('numero_rc') ?>>
-                <small class="help-text centre-field-help">Numéro du Registre de Commerce, chiffres uniquement.</small>
                 <?= $errMsg('numero_rc') ?>
             </label>
             <label class="field<?= $errClass('numero_tp') ?>">
                 <span>Taxe professionnelle</span>
                 <input name="numero_tp" value="<?= e((string) $centre['numero_tp']) ?>" inputmode="numeric" maxlength="50" placeholder="N° Taxe professionnelle..."<?= $errInvalid('numero_tp') ?>>
-                <small class="help-text centre-field-help">Numéro de la taxe professionnelle (patente), chiffres uniquement.</small>
                 <?= $errMsg('numero_tp') ?>
             </label>
             <label class="field full<?= $errClass('adresse_dgi') ?>">
-                <span>Adresse DGI compétent</span>
+                <span>Adresse DGI compétente</span>
                 <input name="adresse_dgi" value="<?= e((string) $centre['adresse_dgi']) ?>" maxlength="255" placeholder="Direction des Impôts..."<?= $errInvalid('adresse_dgi') ?>>
-                <small class="help-text centre-field-help">Adresse de la Direction des Impôts de rattachement.</small>
                 <?= $errMsg('adresse_dgi') ?>
             </label>
         </div>
@@ -269,16 +264,14 @@ $errMsg = static function (string $field) use ($fieldErrors): string {
             <h3><span class="material-symbols-outlined">groups</span> Informations sociales</h3>
         </div>
         <div class="centre-grid">
-            <label class="field<?= $errClass('numero_cnss') ?>">
+            <label class="field centre-half<?= $errClass('numero_cnss') ?>">
                 <span>CNSS</span>
                 <input name="numero_cnss" value="<?= e((string) $centre['numero_cnss']) ?>" inputmode="numeric" maxlength="50" placeholder="N° CNSS..."<?= $errInvalid('numero_cnss') ?>>
-                <small class="help-text centre-field-help">Numéro d'affiliation à la CNSS, chiffres uniquement.</small>
                 <?= $errMsg('numero_cnss') ?>
             </label>
-            <label class="field full<?= $errClass('adresse_cnss') ?>">
+            <label class="field centre-half<?= $errClass('adresse_cnss') ?>">
                 <span>Adresse CNSS compétente</span>
                 <input name="adresse_cnss" value="<?= e((string) $centre['adresse_cnss']) ?>" maxlength="255" placeholder="Agence CNSS..."<?= $errInvalid('adresse_cnss') ?>>
-                <small class="help-text centre-field-help">Agence CNSS compétente pour le centre.</small>
                 <?= $errMsg('adresse_cnss') ?>
             </label>
         </div>
@@ -288,9 +281,8 @@ $errMsg = static function (string $field) use ($fieldErrors): string {
         <?php endif; ?>
     </form>
 
-    <div class="section-title-row" style="margin-top:8px;border-top:1px solid var(--line);padding-top:14px">
+    <div class="section-title-row centre-section-sep">
         <h3><span class="material-symbols-outlined">image</span> Logo</h3>
-        <p class="help-text" style="margin:0">PNG, JPG ou WebP — 2 Mo max. Affiché sur la barre supérieure et la page de connexion.</p>
     </div>
 
     <div class="centre-logo">
@@ -331,6 +323,7 @@ $errMsg = static function (string $field) use ($fieldErrors): string {
             <?php endif; ?>
         </div>
     </div>
+    <small class="help-text centre-logo-hint">PNG, JPG ou WebP — 2 Mo max.</small>
 </section>
 
 <script>

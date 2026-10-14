@@ -324,6 +324,17 @@ autre chemin.
       `assets/css/app.css`.
       Validé : POST invalide → 200 + erreurs, POST valide → 302 + DB, upload PNG OK / fichier
       non-image rejeté / suppression OK, en-tête inline, mobile 1 colonne sans débordement.
+- [x] 2026-10-14 — Centre d'affaires : **mise en page affinée** — description de tête placée
+      **sous le titre** (à gauche), grille `.centre-grid` à **4 colonnes égales + `align-items: start`**
+      (repli 2 col ≤1100px, 1 col ≤768px) pour un alignement parfait des champs IF/ICE/RC/TP, paire
+      CNSS / Adresse CNSS en `.centre-half` (2 colonnes) au lieu d'une zone vide, texte
+      « PNG, JPG ou WebP — 2 Mo max. » (`.centre-logo-hint`) déplacé près des contrôles du logo,
+      overlay `edit` étendu à toute la surface (clic n'importe où sur le logo ouvre le sélecteur),
+      rythme vertical uniforme entre sections. **Section Fiscale : textes d'aide supprimés**
+      (libellés, champs et placeholders conservés). Aucun changement PHP/DB/permissions ;
+      fichiers : `pages/configuration/centre.php`, `assets/css/app.css`.
+      Validé CDP : inputs IF/ICE/RC/TP alignés (top identique), 4→2→1 colonnes sans débordement,
+      0 texte d'aide dans la section fiscale.
 
 ### Suivi administratif
 - [x] 2026-08-26 — Vue detail amelioree : stepper vertical, KPIs, auto-scroll vers etape courante
