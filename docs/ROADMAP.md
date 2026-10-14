@@ -306,6 +306,24 @@ autre chemin.
       prouvée par fixture
 - [ ] Familles 5 à 6 du lot « Design System » : formulaires (`.form-compact`),
       stats/badges — RAS en dehors, charte appliquée (skills ui-design / awesome-design)
+- [x] 2026-10-14 — Page « Centre d'affaires » (`page=centre`) refondue : 4 sections
+      (Générales / Fiscales / Sociales / Logo), aides sous IF/ICE/RC/TP/CNSS, validation
+      serveur stricte (dénomination obligatoire ≤190, ICE **exactement 15 chiffres**,
+      IF/RC/TP/CNSS chiffres seuls, adresses ≤255 → **re-rendu avec les valeurs saisies, pas
+      de redirect**), logo sécurisé (PNG/JPG/WebP ≤2 Mo, `finfo` **et** `getimagesize()`,
+      aperçu live `URL.createObjectURL`), boutons Retour / Annuler (`type=reset`) / Enregistrer
+      (`type=submit`) remontés dans l'en-tête (`$pageActions`, pilotage hors `<form>` via
+      `form="centre-form"`), garde `beforeunload`, CSS **scopé** `.centre-*` dans `app.css`.
+- [x] 2026-10-14 — Centre d'affaires : **section Logo sur une seule ligne** (aperçu +
+      Choisir un fichier + Téléverser + Supprimer, centrés verticalement) et **icône `edit`
+      superposée** au logo (pastille circulaire semi-transparente toujours visible,
+      `aria-label="Modifier le logo"`, ouvre le sélecteur via `for="centre-logo-input"`).
+      Overlay placé hors de `[data-logo-preview]` pour survivre au reset de l'aperçu JS ;
+      Supprimer reste `.btn-danger` séparé (bordure gauche → haute sous 768px). Aucun
+      changement PHP/DB/permissions ; fichiers : `pages/configuration/centre.php`,
+      `assets/css/app.css`.
+      Validé : POST invalide → 200 + erreurs, POST valide → 302 + DB, upload PNG OK / fichier
+      non-image rejeté / suppression OK, en-tête inline, mobile 1 colonne sans débordement.
 
 ### Suivi administratif
 - [x] 2026-08-26 — Vue detail amelioree : stepper vertical, KPIs, auto-scroll vers etape courante

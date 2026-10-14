@@ -308,6 +308,18 @@ if (function_exists('has_permission')) {
     if ($page === 'factures' && has_permission('factures.create')) {
         $pageActions = '<a class="btn btn-next" href="' . e(app_url('factures', ['action' => 'new'])) . '"><span class="material-symbols-outlined">add</span> Nouvelle facture</a>';
     }
+    if ($page === 'centre') {
+        // Retour, Annuler (reset), Enregistrer (submit) — les deux derniers
+        // pilotent le formulaire `#centre-form` depuis l'en-tete via l'attribut
+        // `form` (le bouton est hors du <form>, qui est rendu plus bas).
+        $pageActions = '<div class="centre-actions">';
+        $pageActions .= '<a class="btn btn-back" href="' . e(app_url('configuration')) . '"><span class="material-symbols-outlined">arrow_back</span> Retour</a>';
+        if (has_permission('configuration.edit')) {
+            $pageActions .= '<button type="reset" form="centre-form" class="btn btn-cancel"><span class="material-symbols-outlined">close</span> Annuler</button>';
+            $pageActions .= '<button type="submit" form="centre-form" class="btn btn-next"><span class="material-symbols-outlined">check</span> Enregistrer</button>';
+        }
+        $pageActions .= '</div>';
+    }
     if ($page === 'cession') {
         $pageActions = '<a class="btn btn-cancel" href="' . e(app_url('cessions')) . '"><span class="material-symbols-outlined">close</span> Annuler</a>';
         $pageActions .= '<a class="btn btn-back" href="' . e(app_url('cession', ['reset' => '1'])) . '" data-confirm="Reinitialiser l assistant ?" data-confirm-title="Reinitialiser l assistant" data-confirm-ok="Reinitialiser" data-confirm-tone="primary"><span class="material-symbols-outlined">restart_alt</span> Reinitialiser</a>';
