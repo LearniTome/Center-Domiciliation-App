@@ -288,9 +288,24 @@ autre chemin.
       `entete.php` AVANT la page, donc `$pageSubtitle` posé par une page était mort — le
       sous-titre de « Journal d'activité » et d'« Analyse de couverture » ne s'affichait jamais.
       Le corps de la page est désormais rendu dans un tampon avant `entete.php`.
-- [ ] Familles 3 à 6 du lot « Design System » : cartes (`.card` / `.info-grid`), tableaux,
-      formulaires (`.form-compact`), stats/badges — RAS en dehors, charte appliquée
-      (skills ui-design / awesome-design)
+- [x] 2026-10-14 — Famille 3 du lot « Design System » (cartes `.card` / `.info-grid`) : fond
+      `--ds-bg-strong` (#1f2430, au lieu de `--panel` indistinct du fond), densité
+      `0.55/0.6/0.65rem`, libellé/valeur de `.info-grid` à l'échelle de la référence ;
+      inversions de rôles `.info-card` et fuite `uppercase` traitées ; garde-fou
+      `[class*="saas-"]`. **Déjà livrée par `6c25c24`** — doc resynchronisée. Validé au
+      navigateur (styles calculés sur `page=societe` : `#1f2430`, padding, `text-transform`
+      de la valeur neutralisé)
+- [x] 2026-10-14 — Famille 4 du lot « Design System » (tableaux `table[data-sortable]`) :
+      densité seule (`th, td` → `padding-top/bottom 0.3rem`, `font-size 0.75rem`, ≡ `.ds-table`) ;
+      couleur/survol/filet/en-tête collant déjà communs, non redécrits. Enroulement de la
+      référence **non adopté** (whitelist `nth-child` propre à sa liste de 11 colonnes ; les
+      tableaux historiques reposent sur nowrap + `.table-scroll`). Cible scopée
+      `.card:not([class*="saas-"]) table[data-sortable]`. Validé au navigateur : `creations` /
+      `societes` / `associes` → padding `4.8px`, `font-size 12px`, `nowrap` conservé, ligne
+      24→30px ; `dashboard` (`.dash-table` non triable) inchangé ; exclusion de la référence
+      prouvée par fixture
+- [ ] Familles 5 à 6 du lot « Design System » : formulaires (`.form-compact`),
+      stats/badges — RAS en dehors, charte appliquée (skills ui-design / awesome-design)
 
 ### Suivi administratif
 - [x] 2026-08-26 — Vue detail amelioree : stepper vertical, KPIs, auto-scroll vers etape courante

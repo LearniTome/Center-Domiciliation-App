@@ -456,3 +456,54 @@ button[type="submit"] {
         grid-template-columns: 1fr;
     }
 }
+
+/* =========================================================
+   FAMILLE 4 — TABLEAUX  (`table[data-sortable]` dans une `.card`)
+   ---------------------------------------------------------
+   Reference : `.ds-table` ≡ `.saas-table` de `cabinets.php`, valeurs
+   relevees dans `app.css` (bloc `.saas-table`, l. 7652) et portees a
+   l'identique dans `ds-components.css` (`.ds-table`, l. 91) :
+
+     th, td   padding-top/bottom 0.3rem
+     th, td   font-size 0.75rem
+
+   Ce que la reference impose : une ligne plus AEREE que la ligne
+   historique et une chasse plus petite. `app.css` pose `th, td` a
+   `padding: 1px 4px` et `font-size: 0.8125rem` (13px) pour tout le
+   document ; sur une liste de dix-huit colonnes la ligne respire mal
+   et le texte pese plus lourd que celui de la reference. On aligne
+   donc la hauteur et le corps de cellule sur le tableau de reference,
+   sans toucher ni a la couleur, ni au survol, ni au filet, ni a
+   l'en-tete collant : ces traits sont deja communs aux deux (l'onglet
+   global `table/th/td` d'`app.css`, l. 1216) et n'ont pas a etre
+   redecrits.
+
+   PERIMETRE VOLONTAIREMENT REDUIT — la densite SEULE.
+   La reference fait DEUX choses : elle densifie la ligne (ci-dessus)
+   et elle ENROULE les colonnes textuelles (`td { white-space: normal }`
+   + une liste `nth-child(1,7,8,9,10,11)` qui rend la ligne aux seules
+   colonnes courtes). Le second point est ce qui lui permet de rentrer
+   dans la largeur sans barre de defilement. Il n'est PAS adopte ici :
+     - sa liste `nth-child` est propre a la liste d'ONZE colonnes de la
+       reference ; la recopier sur d'autres listes (18 colonnes, cessions,
+       documents) figerait les mauvaises colonnes ;
+     - les tableaux historiques s'appuient sur `white-space: nowrap` +
+       `.table-scroll` (defilement horizontal) ; passer a l'enroulement
+       changerait un COMPORTEMENT, pas seulement une densite.
+   Les tableaux gardent donc nowrap + defilement horizontal. L'enroulement
+   se traitera tableau par tableau, avec sa propre liste de colonnes.
+
+   PROTECTION DE LA REFERENCE. Comme en F3, la page de reference reutilise
+   `<article class="card saas-table">` pour sa propre liste. On scope donc
+   sur `.card:not([class*="saas-"])` : le tableau de reference garde ses
+   valeurs, quelle que soit l'evolution de cette feuille. `:not()` ne
+   remonte pas aux ancetres — c'est pourquoi le garde-fou se pose sur la
+   carte porteuse, et non sur la `<table>` elle-meme.
+   ========================================================= */
+
+.card:not([class*="saas-"]) table[data-sortable] th,
+.card:not([class*="saas-"]) table[data-sortable] td {
+    padding-top: 0.3rem;
+    padding-bottom: 0.3rem;
+    font-size: 0.75rem;
+}
