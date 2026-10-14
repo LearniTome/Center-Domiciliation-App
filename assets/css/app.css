@@ -7795,13 +7795,6 @@ button[type="submit"].auth-submit:active {
     border-color: var(--danger);
 }
 
-.centre-field-help {
-    margin-top: 3px;
-    line-height: 1.35;
-    font-size: 0.72rem;
-    color: rgba(108, 114, 147, 0.82);
-}
-
 /* Rythme vertical uniforme des sections : c'est le `.stack` de la page qui
    fournit l'espacement, on neutralise les marges propres aux en-têtes pour
    éviter les cumuls irréguliers. */
