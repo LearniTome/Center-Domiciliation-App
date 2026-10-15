@@ -300,6 +300,74 @@ final class TenantScopeTest extends TestCase
         $this->assertSame(['a' => 1], $requete['params']);
     }
 
+    /**
+     * La branche « sans recherche » de `societes_liste.php` doit EXECUTER le
+     * predicat de `list_scope()`, pas en ecrire un de son cru.
+     *
+     * Le defaut corrige : le `WHERE` etait rebati a la main avec
+     * `created_by = :user_id` alors que les valeurs liees venaient de
+     * `$userParams` (`:scope_cabinet` pour un adherent,
+     * `:scope_collaborateur` pour un employe du Centre sans
+     * `dossiers.view_all`). MySQL levait alors HY093 « Invalid parameter
+     * number » et la page entiere tombait en FATAL — societes, creations et
+     * domiciliations comprises, car elles partagent ce fichier. L'administrateur
+     * du Centre ne voyait rien : son perimetre est vide, donc la branche
+     * fautive n'etait jamais atteinte.
+     *
+     * `testChaqueAppelantAjouteLeAnd` ne pouvait pas le detecter : il verifie
+     * une expression reguliere sur le TEXTE du source, il n'execute rien. Ici
+     * la page est reellement incluse et la requete reellement preparee, ce qui
+     * est le seul verdict qui compte.
+     */
+    public function testLaListeSocietesSansRechercheExecuteLeVraiPerimetre(): void
+    {
+        $pdo = $this->connexionNative();
+        if ($pdo === null) {
+            $this->markTestSkipped('Base de developpement injoignable.');
+        }
+
+        // La page est incluse hors de `index.php` : les deux globals que le
+        // rendu attend sont donc poses ici. Sans `$config`, `app_url()` lit un
+        // `base_url` sur null et PHP emet un avertissement que
+        // `failOnWarning="true"` transforme en echec.
+        $GLOBALS['pdo'] = $pdo;
+        $GLOBALS['config'] = ['base_url' => 'http://localhost/index.php'];
+
+        // Utilisateur cloisonne : adherent rattache a un cabinet. Son
+        // perimetre est `cabinet_id = :scope_cabinet`, pas un `created_by`.
+        // `_permissions_cache` est vide pour que `has_permission()` ne declenche
+        // pas de requete supplementaire.
+        $_SESSION = [
+            'user_id' => 0,
+            '_user_cache' => [
+                'id' => 0, 'cabinet_id' => 1, 'collaborateur_id' => null,
+                'role_is_system' => 0, 'must_change_password' => 0,
+            ],
+            '_permissions_cache' => [],
+        ];
+        $_GET = ['page' => 'societes'];
+        $_POST = [];
+
+        // `societes_liste.php` est parametrable : ces deux variables sont
+        // normalement posees par index.php ou par un wrapper.
+        $listeType = null;
+        $listePage = 'societes';
+
+        ob_start();
+        try {
+            require dirname(__DIR__) . '/pages/dossiers/societes_liste.php';
+        } catch (Throwable $e) {
+            ob_end_clean();
+            $this->fail(
+                'societes_liste.php sans recherche a echoue pour un utilisateur '
+                . 'cloisonne : ' . $e::class . ' — ' . $e->getMessage()
+            );
+        }
+        $html = (string) ob_get_clean();
+
+        $this->assertNotSame('', $html, 'la page n a rien rendu : le test ne prouve pas que la requete a abouti');
+    }
+
     private function connexionNative(): ?PDO
     {
         try {

@@ -84,7 +84,14 @@ if (($pdo ?? null) instanceof PDO) {
         $sql = 'SELECT * FROM societes';
         $where = [];
         if ($userFilter) {
-            $where[] = 'created_by = :user_id';
+            // Le predicat vient de `list_scope()`, jamais d'une colonne codee
+            // en dur : il vaut `cabinet_id = :scope_cabinet` pour un adherent,
+            // `created_by = :scope_collaborateur` pour un employe du Centre
+            // sans `dossiers.view_all`. Ecrire ici `created_by = :user_id`
+            // desaccordait le nom du parametre de `$userParams` et MySQL levait
+            // HY093 sur la page entiere (listes societes, creations,
+            // domiciliations) des le premier utilisateur cloisonne.
+            $where[] = $scope['sql'];
         }
         if ($typeFilter) {
             $where[] = substr($typeFilter, 4); // enlève le ' AND '
