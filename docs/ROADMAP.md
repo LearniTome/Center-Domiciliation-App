@@ -213,7 +213,8 @@ suspend, relance ou résilie.
 - [x] Menu : section « Administration » (Super Admin), entrée « Mon abonnement » (adhérent)
 - [x] Bandeau d'état abonnement dans l'entête (essai J−5 / actif J−30 / expiré / suspendu / absent), **informatif**
 - [x] `mon_abonnement` en lecture seule, cloisonné par `current_cabinet_id()` — aucun paramètre d'URL n'élargit le périmètre
-- [ ] Pages `users` / `user` / `parametres` (non traitées : la gestion des comptes passe encore par la configuration)
+- [x] Pages `utilisateurs` / `utilisateur` — gestion des comptes (liste + recherche + filtres portée/statut/cabinet, création, édition login/nom/rôle/statut/cabinet, définition et réinitialisation du mot de passe affiché **une seule fois**, suppression, export CSV). Permission `users.view` requis à l'entrée, `users.create` / `users.edit` / `users.delete` tranchées dans la page. Cloisonnement : un admin cabinet n'agit que sur son cabinet et ne peut attribuer que des rôles `scope = 'cabinet'` ; les rôles système restent réservés au Centre. Les liens morts d'`abonnements.php` (lignes 411 et 776) résolvent désormais.
+- [ ] Page `parametres` (non traitée) — les réglages de compte restent dans la configuration
 
 Encaissements : intégrés à `factures.php` plutôt qu'une page `paiements` séparée —
 un paiement n'existe que pour solder une facture, et une facture payée est

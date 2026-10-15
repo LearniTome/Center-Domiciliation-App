@@ -2306,6 +2306,39 @@ function fetch_comptes_cabinet(?PDO $pdo, int $cabinetId): array
 }
 
 /**
+ * Initiales affichees dans l'avatar de la liste des comptes.
+ *
+ * « Alami Youssef » -> « AY », un nom unique -> ses deux premieres lettres.
+ * Hors portee de `role.php` (qui porte `user_initials()`) : les deux pages ne
+ * se chargent jamais ensemble, mais deux declarations globales homonymes
+ * rendraient l'application fatale si une autre page les incluait toutes les deux.
+ */
+function compte_initials(string $nom): string
+{
+    $nom = trim($nom);
+    if ($nom === '') {
+        return '?';
+    }
+
+    $parties = preg_split('/\s+/', $nom) ?: [];
+    if (count($parties) >= 2) {
+        $dernier = $parties[count($parties) - 1];
+
+        return mb_strtoupper(mb_substr($parties[0], 0, 1) . mb_substr($dernier, 0, 1));
+    }
+
+    return mb_strtoupper(mb_substr($nom, 0, 2));
+}
+
+/** Teinte d'avatar deterministe : le meme nom obtient toujours la meme couleur. */
+function compte_avatar_color(string $nom): string
+{
+    $teintes = ['avatar-info', 'avatar-success', 'avatar-warning', 'avatar-danger', 'avatar-secondary'];
+
+    return $teintes[abs(crc32(trim($nom))) % count($teintes)];
+}
+
+/**
  * Cree le compte administrateur d'un cabinet abonne.
  *
  * Le compte est rattache au cabinet de l'abonnement (jamais choisi par le
@@ -2757,6 +2790,12 @@ function get_page_permission(string $page): ?string
 
         'roles' => 'roles.manage',
         'role' => 'roles.manage',
+
+        // La garde de page est `users.view` : creation, edition et suppression
+        // sont tranchees dans la page (users.create / users.edit / users.delete),
+        // car les deux pages partagent la meme porte d'entree.
+        'utilisateurs' => 'users.view',
+        'utilisateur' => 'users.view',
 
         'activite' => 'roles.manage',
 

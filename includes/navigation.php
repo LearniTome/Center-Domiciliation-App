@@ -31,6 +31,7 @@ $navPermissions = [
     'ai-assistant' => 'ai.use',
     'roles' => 'roles.manage',
     'activite' => 'roles.manage',
+    'utilisateurs' => 'users.view',
     'formes-juridiques' => 'configuration.view',
     'centre' => 'configuration.view',
     'tribunaux' => 'configuration.view',
@@ -125,6 +126,7 @@ $navSections = [
         'items' => [
             ['page' => 'centre', 'label' => "Centre d'affaires", 'icon' => 'apartment'],
             ['page' => 'roles', 'label' => 'Accès & audit', 'icon' => 'admin_panel_settings'],
+            ['page' => 'utilisateurs', 'label' => 'Utilisateurs', 'icon' => 'manage_accounts'],
             ['page' => 'formes-juridiques', 'label' => 'Référentiels', 'icon' => 'database'],
         ],
     ],

@@ -24,6 +24,7 @@ $configGroups = [
         'pages' => [
             'roles' => ['Gestion des rôles', 'admin_panel_settings', 'roles.manage', false],
             'activite' => ["Journal d'activité", 'history', 'roles.manage', false],
+            'utilisateurs' => ['Utilisateurs', 'manage_accounts', 'users.view', false],
             'notifications-manage' => ['Gestion des notifications', 'notifications', 'roles.manage', true],
         ],
     ],

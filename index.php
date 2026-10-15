@@ -21,6 +21,7 @@ $allowedPages = [
     'convert-word-pdf', 'ai-assistant', 'import-modele',
     'setup', 'connexion', 'deconnexion', 'mot_de_passe',
     'roles', 'role', 'activite',
+    'utilisateurs', 'utilisateur',
     'notifications', 'notifications-manage', 'notif-ajax',
     'modifications', 'cessions', 'cession', 'cession_dossier', 'cession_suivi',
     'pv_ago', 'pv_ago_wizard',
@@ -97,6 +98,8 @@ $pageDir = [
     'roles' => 'configuration',
     'role' => 'configuration',
     'activite' => 'configuration',
+    'utilisateurs' => 'configuration',
+    'utilisateur' => 'configuration',
     'notifications-manage' => 'configuration',
     'notif-ajax' => 'configuration',
     'setup' => 'configuration',
@@ -220,6 +223,8 @@ $pageTitleMap = [
     'roles' => 'Gestion des roles',
     'role' => 'Fiche role',
     'activite' => 'Journal d\'activite',
+    'utilisateurs' => 'Gestion des utilisateurs',
+    'utilisateur' => 'Fiche utilisateur',
     'notifications' => 'Notifications',
     'notifications-manage' => 'Gestion des notifications',
     'modifications' => 'Modifications juridiques',
@@ -293,6 +298,9 @@ if (function_exists('has_permission')) {
     }
     if ($page === 'roles' && has_permission('roles.create')) {
         $pageActions = '<a class="btn btn-next" href="' . e(app_url('role')) . '"><span class="material-symbols-outlined">add</span> Nouveau role</a>';
+    }
+    if ($page === 'utilisateurs' && has_permission('users.create')) {
+        $pageActions = '<a class="btn btn-next" href="' . e(app_url('utilisateur', ['action' => 'new'])) . '"><span class="material-symbols-outlined">person_add</span> Nouvel utilisateur</a>';
     }
     if ($page === 'cabinets' && has_permission('cabinets.create')) {
         $pageActions = '<a class="btn btn-next" href="' . e(app_url('cabinets', ['action' => 'new'])) . '"><span class="material-symbols-outlined">add</span> Nouveau cabinet</a>';
