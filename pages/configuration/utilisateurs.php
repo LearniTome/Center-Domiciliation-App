@@ -378,22 +378,24 @@ $etats = [
                                     <?php endif; ?>
                                 </td>
                                 <td style="font-size:0.78rem;color:var(--text-secondary)"><?= e($derniere) ?></td>
-                                <td class="table-actions">
-                                    <?php if (has_permission('users.edit') || $uid === $monId): ?>
-                                        <a class="btn-icon info" href="<?= e(app_url('utilisateur', ['id' => $uid])) ?>"
-                                           title="Voir / modifier"><span class="material-symbols-outlined">edit</span></a>
-                                    <?php endif; ?>
-                                    <?php if ($canDelete && $uid !== $monId): ?>
-                                        <form method="post" style="display:inline">
-                                            <?= csrf_input() ?>
-                                            <input type="hidden" name="action" value="delete">
-                                            <input type="hidden" name="id" value="<?= e((string) $uid) ?>">
-                                            <button class="btn-icon danger" type="submit" title="Supprimer"
-                                                    data-confirm="Supprimer le compte &quot;<?= e((string) $c['nom_complet']) ?>&quot; ? Il perdra immédiatement l'accès à l'application.">
-                                                <span class="material-symbols-outlined">delete</span>
-                                            </button>
-                                        </form>
-                                    <?php endif; ?>
+                                <td>
+                                    <div class="table-actions">
+                                        <?php if (has_permission('users.edit') || $uid === $monId): ?>
+                                            <a class="btn-icon info" href="<?= e(app_url('utilisateur', ['id' => $uid])) ?>"
+                                               title="Voir / modifier"><span class="material-symbols-outlined">edit</span></a>
+                                        <?php endif; ?>
+                                        <?php if ($canDelete && $uid !== $monId): ?>
+                                            <form method="post" style="display:inline">
+                                                <?= csrf_input() ?>
+                                                <input type="hidden" name="action" value="delete">
+                                                <input type="hidden" name="id" value="<?= e((string) $uid) ?>">
+                                                <button class="btn-icon danger" type="submit" title="Supprimer"
+                                                        data-confirm="Supprimer le compte &quot;<?= e((string) $c['nom_complet']) ?>&quot; ? Il perdra immédiatement l'accès à l'application.">
+                                                    <span class="material-symbols-outlined">delete</span>
+                                                </button>
+                                            </form>
+                                        <?php endif; ?>
+                                    </div>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

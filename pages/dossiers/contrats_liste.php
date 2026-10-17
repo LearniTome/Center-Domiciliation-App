@@ -217,15 +217,17 @@ if (($pdo ?? null) instanceof PDO) {
                         <td<?= $canEdit ? ' data-editable="contrat_statut" data-editable-options="' . $contratStatutJson . '"' : '' ?>><span class="statut-badge <?= e($contrat['contrat_statut']) ?>"><?= e(contrat_statut_libelle($contrat['contrat_statut'])) ?></span></td>
                         <td><?= e(date('d/m/Y', strtotime((string) $contrat['created_at']))) ?></td>
                         <td><?= e(date('d/m/Y', strtotime((string) $contrat['updated_at']))) ?></td>
-                        <td class="table-actions">
-                            <a class="btn-icon primary" href="<?= e(app_url('contrat', ['id' => (int) $contrat['id']])) ?>" title="Voir"><span class="material-symbols-outlined">visibility</span></a>
-                            <a class="btn-icon info" href="<?= e(app_url('contrat', ['id' => (int) $contrat['id'], 'edit' => '1'])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
-                            <form method="post">
-                                <?= csrf_input() ?>
-                                <input type="hidden" name="action" value="delete">
-                                <input type="hidden" name="id" value="<?= e((string) $contrat['id']) ?>">
-                                <button class="btn-icon danger" type="submit" data-confirm="Supprimer ce contrat ?" title="Supprimer"><span class="material-symbols-outlined">delete</span></button>
-                            </form>
+                        <td>
+                            <div class="table-actions">
+                                <a class="btn-icon primary" href="<?= e(app_url('contrat', ['id' => (int) $contrat['id']])) ?>" title="Voir"><span class="material-symbols-outlined">visibility</span></a>
+                                <a class="btn-icon info" href="<?= e(app_url('contrat', ['id' => (int) $contrat['id'], 'edit' => '1'])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
+                                <form method="post">
+                                    <?= csrf_input() ?>
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="id" value="<?= e((string) $contrat['id']) ?>">
+                                    <button class="btn-icon danger" type="submit" data-confirm="Supprimer ce contrat ?" title="Supprimer"><span class="material-symbols-outlined">delete</span></button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 <?php endforeach; ?>

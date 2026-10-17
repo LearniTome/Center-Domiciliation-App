@@ -204,9 +204,11 @@ $iconesCompteur = [
                                     </span>
                                 <?php endif; ?>
                             </td>
-                            <td class="table-actions">
-                                <a class="btn-icon primary" href="<?= e(app_url('contrat', ['id' => (int) $c['id']])) ?>" title="Voir le contrat"><span class="material-symbols-outlined">visibility</span></a>
-                                <a class="btn-icon info" href="<?= e(app_url('societe', ['id' => (int) $c['societe_id']])) ?>" title="Voir la société"><span class="material-symbols-outlined">domain</span></a>
+                            <td>
+                                <div class="table-actions">
+                                    <a class="btn-icon primary" href="<?= e(app_url('contrat', ['id' => (int) $c['id']])) ?>" title="Voir le contrat"><span class="material-symbols-outlined">visibility</span></a>
+                                    <a class="btn-icon info" href="<?= e(app_url('societe', ['id' => (int) $c['societe_id']])) ?>" title="Voir la société"><span class="material-symbols-outlined">domain</span></a>
+                                </div>
                             </td>
                         </tr>
                     <?php endforeach; ?>

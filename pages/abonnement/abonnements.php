@@ -1215,42 +1215,44 @@ if ($db && $abonnements !== []) {
                             <td><span class="badge <?= e(abonnement_statut_tone($display)) ?>"><?= e(abonnement_statut_label($display)) ?></span></td>
                             <td><?= e(number_format((float) ($abo['prix_annuel_negocie'] ?? 0), 2, ',', ' ')) ?> <?= e((string) $abo['devise']) ?></td>
                             <td><?= (int) $abo['auto_renew'] === 1 ? 'Auto' : 'Manuel' ?></td>
-                            <td class="table-actions">
-                                <?php /* L'action n'apparait que sur un abonnement
-                                        qui autorise l'accès ET pour un cabinet sans
-                                        compte : c'est la troisième et dernière étape
-                                        de la souscription, elle n'a plus d'objet une
-                                        fois le compte ouvert. */ ?>
-                                <?php if ($canCreateAccess && !$accesOuvert): ?>
-                                    <?php
-                                    $accesAutorise = abonnement_autorise_acces([
-                                        'statut' => $display === 'expire' ? 'actif' : (string) $abo['statut'],
-                                        'jours_restants' => $jours,
-                                    ]);
-                                    $peutCreerAcces = $accesAutorise
-                                        && !isset($cabinetsAvecCompte[(int) $abo['cabinet_id']]);
-                                    ?>
-                                    <?php if ($peutCreerAcces): ?>
-                                        <a class="btn-icon primary" href="<?= e(app_url('abonnements', ['acces' => (int) $abo['id']])) ?>" title="Créer le compte de ce cabinet"><span class="material-symbols-outlined">person_add</span></a>
+                            <td>
+                                <div class="table-actions">
+                                    <?php /* L'action n'apparait que sur un abonnement
+                                            qui autorise l'accès ET pour un cabinet sans
+                                            compte : c'est la troisième et dernière étape
+                                            de la souscription, elle n'a plus d'objet une
+                                            fois le compte ouvert. */ ?>
+                                    <?php if ($canCreateAccess && !$accesOuvert): ?>
+                                        <?php
+                                        $accesAutorise = abonnement_autorise_acces([
+                                            'statut' => $display === 'expire' ? 'actif' : (string) $abo['statut'],
+                                            'jours_restants' => $jours,
+                                        ]);
+                                        $peutCreerAcces = $accesAutorise
+                                            && !isset($cabinetsAvecCompte[(int) $abo['cabinet_id']]);
+                                        ?>
+                                        <?php if ($peutCreerAcces): ?>
+                                            <a class="btn-icon primary" href="<?= e(app_url('abonnements', ['acces' => (int) $abo['id']])) ?>" title="Créer le compte de ce cabinet"><span class="material-symbols-outlined">person_add</span></a>
+                                        <?php endif; ?>
                                     <?php endif; ?>
-                                <?php endif; ?>
-                                <?php if ($canEdit): ?>
-                                    <form method="post">
-                                        <?= csrf_input() ?>
-                                        <input type="hidden" name="action" value="renew">
-                                        <input type="hidden" name="id" value="<?= e((string) $abo['id']) ?>">
-                                        <button class="btn-icon primary" type="submit" data-confirm="Prolonger cet abonnement d'un an ?" data-confirm-title="Renouveler l'abonnement" data-confirm-ok="Renouveler" data-confirm-tone="primary" title="Renouveler d'un an"><span class="material-symbols-outlined">autorenew</span></button>
-                                    </form>
-                                    <a class="btn-icon info" href="<?= e(app_url('abonnements', ['edit' => (int) $abo['id']])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
-                                <?php endif; ?>
-                                <?php if ($canDelete): ?>
-                                    <form method="post">
-                                        <?= csrf_input() ?>
-                                        <input type="hidden" name="action" value="delete">
-                                        <input type="hidden" name="id" value="<?= e((string) $abo['id']) ?>">
-                                        <button class="btn-icon danger" type="submit" data-confirm="Supprimer cet abonnement ?" data-confirm-title="Supprimer l'abonnement" data-confirm-ok="Supprimer" title="Supprimer"><span class="material-symbols-outlined">delete</span></button>
-                                    </form>
-                                <?php endif; ?>
+                                    <?php if ($canEdit): ?>
+                                        <form method="post">
+                                            <?= csrf_input() ?>
+                                            <input type="hidden" name="action" value="renew">
+                                            <input type="hidden" name="id" value="<?= e((string) $abo['id']) ?>">
+                                            <button class="btn-icon primary" type="submit" data-confirm="Prolonger cet abonnement d'un an ?" data-confirm-title="Renouveler l'abonnement" data-confirm-ok="Renouveler" data-confirm-tone="primary" title="Renouveler d'un an"><span class="material-symbols-outlined">autorenew</span></button>
+                                        </form>
+                                        <a class="btn-icon info" href="<?= e(app_url('abonnements', ['edit' => (int) $abo['id']])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
+                                    <?php endif; ?>
+                                    <?php if ($canDelete): ?>
+                                        <form method="post">
+                                            <?= csrf_input() ?>
+                                            <input type="hidden" name="action" value="delete">
+                                            <input type="hidden" name="id" value="<?= e((string) $abo['id']) ?>">
+                                            <button class="btn-icon danger" type="submit" data-confirm="Supprimer cet abonnement ?" data-confirm-title="Supprimer l'abonnement" data-confirm-ok="Supprimer" title="Supprimer"><span class="material-symbols-outlined">delete</span></button>
+                                        </form>
+                                    <?php endif; ?>
+                                </div>
                             </td>
                         </tr>
                     <?php endforeach; ?>

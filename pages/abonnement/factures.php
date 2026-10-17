@@ -615,21 +615,23 @@ foreach (paiement_mode_options() as $m) {
                             <td><?= e(number_format((float) $fact['tva_pct'], 2, ',', ' ')) ?> %</td>
                             <td><strong><?= e(number_format((float) $fact['montant_ttc'], 2, ',', ' ')) ?></strong></td>
                             <td><span class="badge <?= e(facture_statut_tone($fact)) ?>"><?= e(facture_display_statut_label($fact)) ?></span></td>
-                            <td class="table-actions">
-                                <?php if ($canPay && $fact['paiement_id'] === null && in_array((string) $fact['statut'], ['brouillon', 'emise'], true)): ?>
-                                    <a class="btn-icon primary" href="<?= e(app_url('factures', ['encaisser' => (int) $fact['id']])) ?>" title="Encaisser"><span class="material-symbols-outlined">payments</span></a>
-                                <?php endif; ?>
-                                <?php if ($canEdit): ?>
-                                    <a class="btn-icon info" href="<?= e(app_url('factures', ['edit' => (int) $fact['id']])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
-                                <?php endif; ?>
-                                <?php if ($canDelete): ?>
-                                    <form method="post">
-                                        <?= csrf_input() ?>
-                                        <input type="hidden" name="action" value="delete">
-                                        <input type="hidden" name="id" value="<?= e((string) $fact['id']) ?>">
-                                        <button class="btn-icon danger" type="submit" data-confirm="Supprimer la facture <?= e((string) $fact['numero']) ?> ?" data-confirm-title="Supprimer la facture" data-confirm-ok="Supprimer" title="Supprimer"><span class="material-symbols-outlined">delete</span></button>
-                                    </form>
-                                <?php endif; ?>
+                            <td>
+                                <div class="table-actions">
+                                    <?php if ($canPay && $fact['paiement_id'] === null && in_array((string) $fact['statut'], ['brouillon', 'emise'], true)): ?>
+                                        <a class="btn-icon primary" href="<?= e(app_url('factures', ['encaisser' => (int) $fact['id']])) ?>" title="Encaisser"><span class="material-symbols-outlined">payments</span></a>
+                                    <?php endif; ?>
+                                    <?php if ($canEdit): ?>
+                                        <a class="btn-icon info" href="<?= e(app_url('factures', ['edit' => (int) $fact['id']])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
+                                    <?php endif; ?>
+                                    <?php if ($canDelete): ?>
+                                        <form method="post">
+                                            <?= csrf_input() ?>
+                                            <input type="hidden" name="action" value="delete">
+                                            <input type="hidden" name="id" value="<?= e((string) $fact['id']) ?>">
+                                            <button class="btn-icon danger" type="submit" data-confirm="Supprimer la facture <?= e((string) $fact['numero']) ?> ?" data-confirm-title="Supprimer la facture" data-confirm-ok="Supprimer" title="Supprimer"><span class="material-symbols-outlined">delete</span></button>
+                                        </form>
+                                    <?php endif; ?>
+                                </div>
                             </td>
                         </tr>
                     <?php endforeach; ?>

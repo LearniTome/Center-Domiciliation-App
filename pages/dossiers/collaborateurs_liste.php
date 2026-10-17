@@ -238,15 +238,17 @@ if (($pdo ?? null) instanceof PDO) {
                         <td<?= $canEdit ? ' data-editable="statut" data-editable-options="' . $collabStatutJson . '"' : '' ?>><?= e($c['statut']) ?></td>
                         <td><?= e(date('d/m/Y', strtotime((string) $c['created_at']))) ?></td>
                         <td><?= e($c['last_login'] ? date('d/m/Y H:i', strtotime($c['last_login'])) : '-') ?></td>
-                        <td class="table-actions">
-                            <a class="btn-icon primary" href="<?= e(app_url('collaborateur', ['id' => (int) $c['id']])) ?>" title="Voir"><span class="material-symbols-outlined">visibility</span></a>
-                            <a class="btn-icon info" href="<?= e(app_url('collaborateur', ['id' => (int) $c['id']])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
-                            <form method="post">
-                                <?= csrf_input() ?>
-                                <input type="hidden" name="action" value="delete">
-                                <input type="hidden" name="id" value="<?= e((string) $c['id']) ?>">
-                                <button class="btn-icon danger" type="submit" data-confirm="Supprimer ce collaborateur ?" title="Supprimer"><span class="material-symbols-outlined">delete</span></button>
-                            </form>
+                        <td>
+                            <div class="table-actions">
+                                <a class="btn-icon primary" href="<?= e(app_url('collaborateur', ['id' => (int) $c['id']])) ?>" title="Voir"><span class="material-symbols-outlined">visibility</span></a>
+                                <a class="btn-icon info" href="<?= e(app_url('collaborateur', ['id' => (int) $c['id']])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
+                                <form method="post">
+                                    <?= csrf_input() ?>
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="id" value="<?= e((string) $c['id']) ?>">
+                                    <button class="btn-icon danger" type="submit" data-confirm="Supprimer ce collaborateur ?" title="Supprimer"><span class="material-symbols-outlined">delete</span></button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 <?php endforeach; ?>

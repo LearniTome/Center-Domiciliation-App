@@ -112,16 +112,18 @@ $totalAvecCompte = array_reduce($roles, fn($c, $r) => $c + (int) ($r['nb_collabo
                                     <span class="badge">—</span>
                                 <?php endif; ?>
                             </td>
-                            <td class="table-actions">
-                                <a class="btn-icon info" href="<?= e(app_url('role', ['id' => (int) $r['id']])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
-                                <?php if (!(int) ($r['is_system'] ?? 0)): ?>
-                                <form method="post" style="display:inline">
-                                    <?= csrf_input() ?>
-                                    <input type="hidden" name="action" value="delete">
-                                    <input type="hidden" name="id" value="<?= e((string) $r['id']) ?>">
-                                    <button class="btn-icon danger" type="submit" data-confirm="Supprimer le role &quot;<?= e($r['nom']) ?>&quot; ? Les collaborateurs avec ce role perdront leur acces." title="Supprimer"><span class="material-symbols-outlined">delete</span></button>
-                                </form>
-                                <?php endif; ?>
+                            <td>
+                                <div class="table-actions">
+                                    <a class="btn-icon info" href="<?= e(app_url('role', ['id' => (int) $r['id']])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
+                                    <?php if (!(int) ($r['is_system'] ?? 0)): ?>
+                                    <form method="post" style="display:inline">
+                                        <?= csrf_input() ?>
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="id" value="<?= e((string) $r['id']) ?>">
+                                        <button class="btn-icon danger" type="submit" data-confirm="Supprimer le role &quot;<?= e($r['nom']) ?>&quot; ? Les collaborateurs avec ce role perdront leur acces." title="Supprimer"><span class="material-symbols-outlined">delete</span></button>
+                                    </form>
+                                    <?php endif; ?>
+                                </div>
                             </td>
                         </tr>
                     <?php endforeach; ?>

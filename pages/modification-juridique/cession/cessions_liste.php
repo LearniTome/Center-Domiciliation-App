@@ -169,19 +169,21 @@ if (($pdo ?? null) instanceof PDO) {
                         </td>
                         <td><?= (int) ($cession['nb_lignes'] ?? 0) ?></td>
                         <td><?= (int) ($cession['total_parts'] ?? 0) ?></td>
-                        <td class="table-actions">
-                            <a class="btn-icon primary" href="<?= e(app_url('cession_dossier', ['id' => (int) $cession['id']])) ?>" title="Voir"><span class="material-symbols-outlined">visibility</span></a>
-                            <?php if (has_permission('cessions.edit')): ?>
-                            <a class="btn-icon info" href="<?= e(app_url('cession', ['id' => (int) $cession['id'], 'edit' => '1'])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
-                            <?php endif; ?>
-                            <?php if (has_permission('cessions.delete')): ?>
-                            <form method="post">
-                                <?= csrf_input() ?>
-                                <input type="hidden" name="action" value="delete">
-                                <input type="hidden" name="id" value="<?= e((string) $cession['id']) ?>">
-                                <button class="btn-icon danger" type="submit" data-confirm="Supprimer cette cession ?" title="Supprimer"><span class="material-symbols-outlined">delete</span></button>
-                            </form>
-                            <?php endif; ?>
+                        <td>
+                            <div class="table-actions">
+                                <a class="btn-icon primary" href="<?= e(app_url('cession_dossier', ['id' => (int) $cession['id']])) ?>" title="Voir"><span class="material-symbols-outlined">visibility</span></a>
+                                <?php if (has_permission('cessions.edit')): ?>
+                                <a class="btn-icon info" href="<?= e(app_url('cession', ['id' => (int) $cession['id'], 'edit' => '1'])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
+                                <?php endif; ?>
+                                <?php if (has_permission('cessions.delete')): ?>
+                                <form method="post">
+                                    <?= csrf_input() ?>
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="id" value="<?= e((string) $cession['id']) ?>">
+                                    <button class="btn-icon danger" type="submit" data-confirm="Supprimer cette cession ?" title="Supprimer"><span class="material-symbols-outlined">delete</span></button>
+                                </form>
+                                <?php endif; ?>
+                            </div>
                         </td>
                     </tr>
                 <?php endforeach; ?>

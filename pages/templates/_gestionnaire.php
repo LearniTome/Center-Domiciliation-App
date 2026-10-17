@@ -393,17 +393,19 @@ if ($leftovers !== []) {
                                     <td><?= e((string) count($tpl['variables'])) ?> vars</td>
                                     <td><?= e(number_format($tpl['size'] / 1024, 1)) ?> KB</td>
                                     <td><?= e(date('d/m/Y H:i', $tpl['modified'])) ?></td>
-                                    <td class="table-actions">
-                                        <a class="btn-icon primary" href="<?= e(app_url('templates', ['action' => 'inspecteur', 'path' => $tpl['path']])) ?>" title="Voir"><span class="material-symbols-outlined">visibility</span></a>
-                                        <?php if (has_permission('templates.edit')): ?>
-                                        <a class="btn-icon primary" href="<?= e(app_url('templates', ['action' => 'editeur', 'path' => $tpl['path']])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
-                                        <?php endif; ?>
-                                        <form method="post">
-                                            <?= csrf_input() ?>
-                                            <input type="hidden" name="action" value="delete">
-                                            <input type="hidden" name="path" value="<?= e($tpl['path']) ?>">
-                                            <button class="btn-icon danger" type="submit" data-confirm="Supprimer ce template ?" title="Supprimer"><span class="material-symbols-outlined">delete</span></button>
-                                        </form>
+                                    <td>
+                                        <div class="table-actions">
+                                            <a class="btn-icon primary" href="<?= e(app_url('templates', ['action' => 'inspecteur', 'path' => $tpl['path']])) ?>" title="Voir"><span class="material-symbols-outlined">visibility</span></a>
+                                            <?php if (has_permission('templates.edit')): ?>
+                                            <a class="btn-icon primary" href="<?= e(app_url('templates', ['action' => 'editeur', 'path' => $tpl['path']])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
+                                            <?php endif; ?>
+                                            <form method="post">
+                                                <?= csrf_input() ?>
+                                                <input type="hidden" name="action" value="delete">
+                                                <input type="hidden" name="path" value="<?= e($tpl['path']) ?>">
+                                                <button class="btn-icon danger" type="submit" data-confirm="Supprimer ce template ?" title="Supprimer"><span class="material-symbols-outlined">delete</span></button>
+                                            </form>
+                                        </div>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>

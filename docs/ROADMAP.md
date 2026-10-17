@@ -305,6 +305,27 @@ autre chemin.
       `societes` / `associes` → padding `4.8px`, `font-size 12px`, `nowrap` conservé, ligne
       24→30px ; `dashboard` (`.dash-table` non triable) inchangé ; exclusion de la référence
       prouvée par fixture
+- [x] 2026-10-17 — Liste des cabinets clients (`pages/abonnement/cabinets.php`) : colonne
+      « Actions » alignée verticalement. **Cause** : `.table-actions` déclare `display: flex`, or
+      flexer un `<td>` le **blockifie** — il n'est plus une `table-cell`, cesse de s'étirer sur la
+      hauteur de la ligne et n'applique donc plus le `vertical-align: middle` global (`th, td`
+      d'`app.css`) ; ses icônes restent collées en haut dès que la ligne fait plusieurs lignes.
+      **Pourquoi seule la liste des cabinets** : les cellules Contact et Identifiants y sont
+      construites avec des `<br>` (adresse + fixes/mobiles, ICE/RC/IF empilés), donc la ligne monte
+      à ~55 px — le défaut est invisible sur les listes mono-ligne (~29 px), où la cellule flexée
+      (27 px) fait à peu près la hauteur de ligne. Ni `.saas-table` ni `white-space: normal` n'entrent
+      en jeu ici : la table des cabinets n'a aucune classe (`<table data-sortable data-table>`).
+      **Correctif minimal, zéro HTML touché** (la structure `<td class="table-actions">` reste
+      identique à `societes_liste` / `associes_liste` / `abonnements`) : `app.css` ajoute
+      `td.table-actions { display: table-cell }` (le `<td>` redevient une cellule, donc s'étire et
+      centre), aligne ses enfants en ligne (`td.table-actions > * { display: inline-flex;
+      vertical-align: middle }`) et remplace le `gap` du flex, inopérant en contexte inline, par
+      `td.table-actions > * + * { margin-left: 6px }`. Le `white-space: nowrap` de `.table-actions`
+      est conservé → aucune icône ne se replie. Le `<div class="table-actions">` des en-têtes
+      (`.section-header`) garde `display: flex` : seule la variante posée sur un `<td>` change.
+      Vérifié au navigateur (styles calculés) : cabinets `display: table-cell`, icônes centrées à
+      **0 px** de l'écart sur une ligne de 55 px ; `societes` (29 px), `abonnements` (40 px) et
+      `utilisateurs` (41 px) → écart ≤ 0,5 px, `table-cell` partout. Aucun autre tableau impacté.
 - [ ] Familles 5 à 6 du lot « Design System » : formulaires (`.form-compact`),
       stats/badges — RAS en dehors, charte appliquée (skills ui-design / awesome-design)
 - [x] 2026-10-14 — Page « Centre d'affaires » (`page=centre`) refondue : 4 sections

@@ -1292,6 +1292,30 @@ tbody tr:hover:nth-child(even) {
     white-space: nowrap;
     position: relative;
 }
+
+/* `.table-actions` pose sur un `<td>` : `display:flex` blockifie la cellule,
+   qui sort alors du tableau et perd le `vertical-align: middle` global. Elle
+   ne s'etire plus a la hauteur de la ligne et son contenu reste colle en
+   haut des que la ligne fait plusieurs lignes (colonne Contact / Identifiants
+   de la liste des cabinets, par exemple). Invisible sur les listes dont toutes
+   les cellules sont `nowrap` (ligne d'une seule ligne), visible partout ailleurs.
+   On rend donc au TD son role de cellule - il s'etire et centre son contenu via
+   le `vertical-align: middle` global - et on aligne ses enfants en ligne a la
+   place du flex. Le `gap` ne s'applique pas aux boites inline : on le remplace
+   par une marge. Le `white-space: nowrap` de `.table-actions` est conserve, donc
+   les icones ne se replient jamais sur deux lignes. */
+td.table-actions {
+    display: table-cell;
+}
+
+td.table-actions > * {
+    display: inline-flex;
+    vertical-align: middle;
+}
+
+td.table-actions > * + * {
+    margin-left: 6px;
+}
 .footer-actions {
     display: flex;
     gap: 8px;

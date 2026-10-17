@@ -483,7 +483,25 @@ node scripts/mysql-mcp.mjs
 
 ## Erreur `Cannot connect to API: The socket connection was closed unexpectedly`
 
-Erreur **Bun** (`fetch()`), affichée par l'UI opencode avec `[retrying in Ns attempt #M]`. Diagnostic posé le 27/09/2026 sur la session `ses_f2339246effesX13U7zdCBh5Xt` (« Git fetch and rebase »).
+Erreur **Bun** (`fetch()`), affichée par l'UI opencode avec `[retrying in Ns attempt #M]`. Diagnostic initial posé le 27/09/2026 sur la session `ses_f2339246effesX13U7zdCBh5Xt` (« Git fetch and rebase »), **résolu le 17/10/2026**.
+
+### Résolution (17/10/2026) — passage à OpenCode V2
+
+Deux causes cumulées, toutes deux côté **V1** :
+
+1. **Branche/architecture V1** : toutes les rafales d'erreurs provenaient de `opencode-ai` (V1). Depuis le passage à **`@opencode/cli` 2.0.32** (V2, un **service partagé unique** via `opencode serve --service`), **plus aucune erreur de stream** (vérifié dans `opencode.log`).
+2. **Config projet trop stricte** : `opencode.json` utilisait l'ancienne clé V1 `provider.opencode.options` avec **`chunkTimeout: 90000`** (90 s) et `timeout: 600000` (10 min). Le schéma V2 documente un défaut de **`chunkTimeout` = 300000 ms (5 min)** : *« si aucun chunk n'arrive dans cette fenêtre, la requête est interrompue »*. À **90 s**, la moindre pause du provider (long raisonnement `big-pickle`, charge Zen API) coupait le `fetch()` → erreur « socket closed ».
+
+**Correctif appliqué :**
+- `model` **et** `small_model` = `opencode/big-pickle` (global + projet). Confirmé par la config normalisée V2 : `model` et `agents.title.model` (`small_model` est déprécié mais migré vers l'agent `title`).
+- `opencode.json` (projet) modernisé en V2-natif : `provider.opencode.options` → **`providers.opencode.settings`**, `chunkTimeout` **90000 → 300000**, `timeout` retiré (défaut V2 = non borné).
+- Plugin global `~/.config/opencode/plugins/rtk.ts` migré de l'API plugin **V1 → V2** (`Plugin.define` + `ctx.shell.hook("create.before")`, `node:child_process` au lieu du shell Bun `$`) — il plantait au chargement en V2 (`Plugin must export a default definition…`). Sauvegarde : `rtk.ts.v1.bak`. Vérif : `opencode api get /api/plugin` → `rtk` en `"status":"active"`.
+- **Chaîne VS Code** : l'extension `sst-dev.opencode` **1.0.0** est un simple lanceur — elle ouvre un terminal intégré et exécute `opencode` avec `OPENCODE_CALLER=vscode` (elle ne spawne **pas** de serveur `--port`). `opencode` → `@opencode/cli` 2.0.32 → service V2 → `opencode/big-pickle`.
+- **Diagnostic rapide** : `opencode service status` puis `opencode api get /api/info` (doit répondre en JSON). Résidus V1 nettoyés le 17/10 : dossier npm orphelin `.opencode-ai-*` (172 Mo) et extension dupliquée `sst-dev.opencode-0.0.13`.
+
+### Ancien diagnostic (27/09, V1 — conservé pour mémoire)
+
+Erreur **Bun** (`fetch()`), affichée par l'UI opencode avec `[retrying in Ns attempt #M]`.
 
 - **Ce n'est PAS un problème réseau, ni VS Code, ni le fournisseur** — preuves vérifiées :
   - DNS sain (`opencode.ai` → 172.65.90.20-23 via 1.1.1.1/8.8.8.8), aucun `HTTP_PROXY`/`HTTPS_PROXY`, `Invoke-WebRequest` vers `https://opencode.ai/zen/v1/models` renvoie **200** pendant les rafales, aucun événement réseau Windows.
@@ -493,8 +511,8 @@ Erreur **Bun** (`fetch()`), affichée par l'UI opencode avec `[retrying in Ns at
   - L'URL fautive est lisible dans le payload de l'erreur persistée : `error.metadata.url`.
 - **Cause réelle** : état serveur corrompu **au niveau de la session** (défaut OpenCode). Chaque tentative est coupée ~150 ms après le `stream`, puis réessayée ~66 s. La session est en erreur depuis le 26/09 ; les retries renvoient le même état, donc ils ne peuvent pas aboutir.
 - **Correctif** : `/compact` sur la session concernée ; si l'erreur persiste, **ouvrir une nouvelle session** (même dossier, même `cwd`). Ne pas insister sur les retries.
-- **À la fermeture de VS Code**, tout stream en cours est coupé → cette erreur-là est normale et bénigne. L'extension `sst-dev.opencode` lance `opencode --port <aléatoire>` dans un terminal intégré et son `deactivate()` est vide, donc le process survit à la fermeture.
-- **Hygiène des processus** : `scripts/opencode-cleanup.ps1`, lancé à l'ouverture du dossier par le task `opencode: nettoyer les serveurs orphelins` (`.vscode/tasks.json`, `runOn: folderOpen`). Ne cible **que** `opencode-ai\bin\opencode.exe` (jamais l'app desktop `OpenCode.exe`) et ne tue un serveur que si son port n'a **plus aucune connexion client établie** — le serveur de la fenêtre courante est donc toujours préservé. Ce script ne corrige pas l'erreur ci-dessus.
+- **À la fermeture de VS Code**, tout stream en cours est coupé → cette erreur-là est normale et bénigne. L'extension `sst-dev.opencode` **0.0.13** (V1) lançait `opencode --port <aléatoire>` dans un terminal intégré et son `deactivate()` est vide, donc le process survivait à la fermeture. En **V2** (extension **1.0.0**), elle exécute simplement `opencode` (TUI) qui se rattache au **service partagé** ; c'est ce service qu'il faut surveiller/redémarrer (`opencode service status|restart`), pas un serveur par fenêtre.
+- **Hygiène des processus** : `scripts/opencode-cleanup.ps1`, lancé à l'ouverture du dossier par le task `opencode: nettoyer les serveurs orphelins` (`.vscode/tasks.json`, `runOn: folderOpen`). Il ne cible **que** les binaires CLI (jamais l'app desktop `OpenCode.exe`) et ne tue un serveur que si son port n'a **plus aucune connexion client établie**. **Attention V1/V2** : son marqueur porte sur `opencode-ai\bin\opencode.exe` (chemin V1) — en V2 le CLI est `@opencode\cli\bin\opencode.exe` et il n'y a plus de serveur par fenêtre (service partagé), donc le script ne matche plus rien et se contente d'afficher « Aucun serveur opencode CLI en cours ». À reprendre (marqueur + cible service) ou retirer lors de la prochaine revue ; ce script ne corrige pas l'erreur ci-dessus.
   - `.\scripts\opencode-cleanup.ps1` — tue les orphelins
   - `-DryRun` — affiche sans rien arrêter
   - `-Force` — tue tous les serveurs CLI, même ceux qui ont un client connecté

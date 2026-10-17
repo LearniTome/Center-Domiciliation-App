@@ -174,22 +174,24 @@ if (($pdo ?? null) instanceof PDO) {
                             <?php endif; ?>
                         </td>
                         <td><?= (int) ($row['nb_lignes'] ?? 0) ?></td>
-                        <td class="table-actions">
-                            <?php if ($row['mod_type'] === 'cession'): ?>
-                            <a class="btn-icon primary" href="<?= e(app_url('cession_dossier', ['id' => (int) $row['id']])) ?>" title="Voir"><span class="material-symbols-outlined">visibility</span></a>
-                            <?php if (has_permission('cessions.edit')): ?>
-                            <a class="btn-icon info" href="<?= e(app_url('cession', ['id' => (int) $row['id'], 'edit' => '1'])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
-                            <?php endif; ?>
-                            <?php if (has_permission('cessions.delete')): ?>
-                            <form method="post">
-                                <?= csrf_input() ?>
-                                <input type="hidden" name="action" value="delete">
-                                <input type="hidden" name="mod_type" value="cession">
-                                <input type="hidden" name="id" value="<?= e((string) $row['id']) ?>">
-                                <button class="btn-icon danger" type="submit" data-confirm="Supprimer cette modification ?" title="Supprimer"><span class="material-symbols-outlined">delete</span></button>
-                            </form>
-                            <?php endif; ?>
-                            <?php endif; ?>
+                        <td>
+                            <div class="table-actions">
+                                <?php if ($row['mod_type'] === 'cession'): ?>
+                                <a class="btn-icon primary" href="<?= e(app_url('cession_dossier', ['id' => (int) $row['id']])) ?>" title="Voir"><span class="material-symbols-outlined">visibility</span></a>
+                                <?php if (has_permission('cessions.edit')): ?>
+                                <a class="btn-icon info" href="<?= e(app_url('cession', ['id' => (int) $row['id'], 'edit' => '1'])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
+                                <?php endif; ?>
+                                <?php if (has_permission('cessions.delete')): ?>
+                                <form method="post">
+                                    <?= csrf_input() ?>
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="mod_type" value="cession">
+                                    <input type="hidden" name="id" value="<?= e((string) $row['id']) ?>">
+                                    <button class="btn-icon danger" type="submit" data-confirm="Supprimer cette modification ?" title="Supprimer"><span class="material-symbols-outlined">delete</span></button>
+                                </form>
+                                <?php endif; ?>
+                                <?php endif; ?>
+                            </div>
                         </td>
                     </tr>
                 <?php endforeach; ?>

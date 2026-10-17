@@ -186,15 +186,17 @@ if (($pdo ?? null) instanceof PDO) {
                         <td<?= $canEdit ? ' data-editable="associe_capital_detenu"' : '' ?>><?= $associe['associe_capital_detenu'] !== null ? e(number_format((float) $associe['associe_capital_detenu'], 2, ',', ' ') . ' DH') : '-' ?></td>
                         <td><?= e(date('d/m/Y', strtotime((string) $associe['created_at']))) ?></td>
                         <td><?= e(date('d/m/Y', strtotime((string) $associe['updated_at']))) ?></td>
-                        <td class="table-actions">
-                            <a class="btn-icon primary" href="<?= e(app_url('associe', ['id' => (int) $associe['id']])) ?>" title="Voir"><span class="material-symbols-outlined">visibility</span></a>
-                            <a class="btn-icon info" href="<?= e(app_url('associe', ['id' => (int) $associe['id'], 'edit' => '1'])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
-                            <form method="post">
-                                <?= csrf_input() ?>
-                                <input type="hidden" name="action" value="delete">
-                                <input type="hidden" name="id" value="<?= e((string) $associe['id']) ?>">
-                                <button class="btn-icon danger" type="submit" data-confirm="Supprimer cet associe ?" title="Supprimer"><span class="material-symbols-outlined">delete</span></button>
-                            </form>
+                        <td>
+                            <div class="table-actions">
+                                <a class="btn-icon primary" href="<?= e(app_url('associe', ['id' => (int) $associe['id']])) ?>" title="Voir"><span class="material-symbols-outlined">visibility</span></a>
+                                <a class="btn-icon info" href="<?= e(app_url('associe', ['id' => (int) $associe['id'], 'edit' => '1'])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
+                                <form method="post">
+                                    <?= csrf_input() ?>
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="id" value="<?= e((string) $associe['id']) ?>">
+                                    <button class="btn-icon danger" type="submit" data-confirm="Supprimer cet associe ?" title="Supprimer"><span class="material-symbols-outlined">delete</span></button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 <?php endforeach; ?>

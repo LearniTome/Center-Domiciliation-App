@@ -232,15 +232,17 @@ if ($pdo) {
                                 </td>
                                 <td><?= $readCount ?></td>
                                 <td><?= e($n['creator_name'] ?? '-') ?></td>
-                                <td class="table-actions">
-                                    <form method="post" style="display:inline" onsubmit="return confirm('Supprimer cette notification ?')">
-                                        <?= csrf_input() ?>
-                                        <input type="hidden" name="action" value="delete">
-                                        <input type="hidden" name="id" value="<?= (int) $n['id'] ?>">
-                                        <button type="submit" class="btn-icon danger">
-                                            <span class="material-symbols-outlined">delete</span>
-                                        </button>
-                                    </form>
+                                <td>
+                                    <div class="table-actions">
+                                        <form method="post" style="display:inline" onsubmit="return confirm('Supprimer cette notification ?')">
+                                            <?= csrf_input() ?>
+                                            <input type="hidden" name="action" value="delete">
+                                            <input type="hidden" name="id" value="<?= (int) $n['id'] ?>">
+                                            <button type="submit" class="btn-icon danger">
+                                                <span class="material-symbols-outlined">delete</span>
+                                            </button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

@@ -240,15 +240,17 @@ if (($pdo ?? null) instanceof PDO) {
                         <td<?= $canEdit ? ' data-editable="societe_email"' : '' ?>><?= e($societe['societe_email'] ?? '-') ?></td>
                         <td><?= e(date('d/m/Y', strtotime((string) $societe['created_at']))) ?></td>
                         <td><?= e(date('d/m/Y', strtotime((string) $societe['updated_at']))) ?></td>
-                        <td class="table-actions">
-                            <a class="btn-icon primary" href="<?= e(app_url('societe', ['id' => (int) $societe['id']])) ?>" title="Voir"><span class="material-symbols-outlined">visibility</span></a>
-                            <a class="btn-icon info" href="<?= e(app_url('societe', ['id' => (int) $societe['id'], 'edit' => '1'])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
-                            <form method="post">
-                                <?= csrf_input() ?>
-                                <input type="hidden" name="action" value="delete">
-                                <input type="hidden" name="id" value="<?= e((string) $societe['id']) ?>">
-                                <button class="btn-icon danger" type="submit" data-confirm="Supprimer cette societe ?" title="Supprimer"><span class="material-symbols-outlined">delete</span></button>
-                            </form>
+                        <td>
+                            <div class="table-actions">
+                                <a class="btn-icon primary" href="<?= e(app_url('societe', ['id' => (int) $societe['id']])) ?>" title="Voir"><span class="material-symbols-outlined">visibility</span></a>
+                                <a class="btn-icon info" href="<?= e(app_url('societe', ['id' => (int) $societe['id'], 'edit' => '1'])) ?>" title="Modifier"><span class="material-symbols-outlined">edit</span></a>
+                                <form method="post">
+                                    <?= csrf_input() ?>
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="id" value="<?= e((string) $societe['id']) ?>">
+                                    <button class="btn-icon danger" type="submit" data-confirm="Supprimer cette societe ?" title="Supprimer"><span class="material-symbols-outlined">delete</span></button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 <?php endforeach; ?>
