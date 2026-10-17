@@ -92,43 +92,12 @@ if ($editingId > 0 && ($pdo ?? null) instanceof PDO) {
     $rolePermIds = $stmt->fetchAll(\PDO::FETCH_COLUMN);
 }
 
-$categoryLabels = [
-    'dashboard' => 'Tableau de bord',
-    'societes' => 'Societes',
-    'associes' => 'Associes',
-    'contrats' => 'Contrats',
-    'collaborateurs' => 'Collaborateurs',
-    'wizard' => 'Assistant de creation',
-    'templates' => 'Templates',
-    'generation' => 'Generation',
-    'documents' => 'Documents',
-    'configuration' => 'Configuration',
-    'analyse' => 'Analyse de couverture',
-    'variables' => 'Variables',
-    'defaults' => 'Valeurs par defaut',
-    'convert' => 'Conversion Word→PDF',
-    'ai' => 'Assistant IA',
-    'roles' => 'Gestion des roles',
-];
-
-$categoryIcons = [
-    'dashboard' => 'dashboard',
-    'societes' => 'business',
-    'associes' => 'group',
-    'contrats' => 'description',
-    'collaborateurs' => 'work',
-    'wizard' => 'note_add',
-    'templates' => 'edit_note',
-    'generation' => 'sync',
-    'documents' => 'article',
-    'configuration' => 'settings',
-    'analyse' => 'bar_chart',
-    'variables' => 'code',
-    'defaults' => 'tune',
-    'convert' => 'picture_as_pdf',
-    'ai' => 'smart_toy',
-    'roles' => 'admin_panel_settings',
-];
+// Habillage des categories partage avec la fiche utilisateur
+// (`permission_category_meta()` dans includes/fonctions.php) : libelles et
+// icones ont une seule source, les deux ecrans nomment les categories pareil.
+$categoryMeta = permission_category_meta();
+$categoryLabels = array_map(static fn (array $m): string => $m['label'], $categoryMeta);
+$categoryIcons = array_map(static fn (array $m): string => $m['icon'], $categoryMeta);
 
 $totalPerms = array_sum(array_map('count', $permissionsByCategory));
 $selectedCount = count($rolePermIds);

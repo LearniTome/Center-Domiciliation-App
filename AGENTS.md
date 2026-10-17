@@ -164,6 +164,19 @@ Vanilla PHP 8.x procedural app for managing company domiciliation dossiers. No f
 - Rendu du champ « Activités (Statuts) » : un `<input type="search" data-ompic-filter class="activite-search">` devant chaque `<select name="societe_activites_statuts[]">`, y compris dans les `<template data-activite-template>` — dans `creation_steps/step_01_Societe.php`, `societe_details.php` et `cession/cession_steps/step_01_Societe.php`. Toute valeur historique absente de la liste reste affichée grâce à l'<option selected>` de repli.
 - Onglets Configuration : `activites_statuts` (`ref_activites_statuts`, page `pages/configuration/activites_statuts.php`) et `activites-ompic` (`ref_activites_ompic`).
 
+## Rôles & permissions (RBAC) — droits effectifs
+- **Modèle** : `roles` (`is_system` = Super Admin, `scope` `centre|cabinet`), `permissions` + `role_permissions`, surcharges `user_permissions` (`granted` : 1 accorde, 0 refuse — **le refus l'emporte**), rôle porté par `users.role_id` (principal) **∪** `user_roles` (pivot multi-rôles).
+- **Moteur** : `has_permission()` court-circuite tout si `roles.is_system = 1` (Super Admin = accès total, tous cabinets) ; sinon permissions des rôles puis surcharges. `is_centre_admin()` ≡ `is_system`. Un compte de cabinet (`users.cabinet_id != NULL`) est cloisonné par `tenant_scope()` / `assert_tenant_access()`.
+- **Helpers de calcul (ne pas dupliquer)** — `includes/fonctions.php` :
+  - `permission_keys_from_roles(?PDO, int $userId)` : union `user_roles` + `users.role_id`.
+  - `user_permission_overrides(?PDO, int $userId)` + `apply_permission_overrides(array, array)` : surcharges, refus prioritaire.
+  - `get_user_permissions()` : droits du compte **connecté** (cache session) — **sans** le contournement Super Admin (sémantique d'origine conservée).
+  - `user_is_super_admin(?PDO, int $userId)` : lit le **rôle primaire** (`users.role_id`), miroir exact de `has_permission()` (un `is_system` présent seulement dans le pivot n'active pas le contournement — c'est le comportement réel, on le reflète, on ne le corrige pas).
+  - `user_permission_details(?PDO, int $userId)` : droits **effectifs** d'un compte arbitraire — `super_admin` + `from_roles` / `granted` / `revoked` / `effective`. Super Admin → toutes les permissions du catalogue.
+  - `permission_category_meta()` : libellés/icônes de catégories, **source unique** partagée par `pages/configuration/role.php` (matrice) et `utilisateur.php` (fiche).
+- **Fiche utilisateur** (`pages/configuration/utilisateur.php`) : carte **« Permissions effectives »** (compte existant uniquement) — bandeau de portée (Super Admin / cabinet / Centre), rôles porteurs, surcharges individuelles, détail groupé par catégorie. Rappels de règles si l'éditeur est un admin cabinet (gère son cabinet ; ne modifie ni rôles ni permissions, même son propre compte ; ne promeut pas en Super Admin). CSS scopé `.compte-perm-*`.
+- **Invariant vérifié** : pour un compte donné, `in_array($k, user_permission_details(...)['effective'])` ⇔ `has_permission($k)` — prouvé sur les 84 clés pour Super Admin / Administrateur Cabinet / Lecture seule.
+
 ## Template Patterns
 - Layout: `<section class="grid two">` for two-column, `<section class="card">` for single
 - Tables: wrapped in `<article class="card">` with `<div class="section-header">`

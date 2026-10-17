@@ -457,6 +457,69 @@ $roleIncoherent = $roleIdCourant > 0
     && $roleCourantPortee !== null
     && $roleCourantPortee !== $porteeFormulaire;
 
+/* ---------------------------------------------------------------------------
+ * Permissions effectives du compte affiche.
+ *
+ * Le calcul est celui du moteur d'acces (`user_permission_details()`), jamais
+ * une matrice recomposee : role systeme => toutes les permissions ; sinon
+ * permissions des roles (principal + secondaires), puis surcharges
+ * individuelles (le refuse l'emporte).
+ * ------------------------------------------------------------------------ */
+$permDetails = $creation
+    ? ['super_admin' => false, 'from_roles' => [], 'granted' => [], 'revoked' => [], 'effective' => []]
+    : user_permission_details($db, $editingId);
+
+// Catalogue des permissions (libelle + categorie), dedoublonne par cle : la
+// table `permissions` contient des doublons historiques (memes permission_key).
+$permCatalog = [];
+if ($db) {
+    try {
+        foreach ($db->query('SELECT permission_key, nom, category FROM permissions') as $row) {
+            $permCatalog[(string) $row['permission_key']] = [
+                'nom' => (string) $row['nom'],
+                'category' => (string) ($row['category'] ?? 'autres'),
+            ];
+        }
+    } catch (PDOException) {
+        $permCatalog = [];
+    }
+}
+
+$permCatMeta = permission_category_meta();
+$permCatOrder = array_flip(array_keys($permCatMeta));
+
+$permsParCategorie = [];
+foreach ($permDetails['effective'] as $cle) {
+    $cat = $permCatalog[$cle]['category'] ?? 'autres';
+    $permsParCategorie[$cat][] = $cle;
+}
+uksort(
+    $permsParCategorie,
+    static fn (string $a, string $b): int => ($permCatOrder[$a] ?? PHP_INT_MAX) <=> ($permCatOrder[$b] ?? PHP_INT_MAX)
+);
+
+// Roles reellement portes par le compte : role primaire (`users.role_id`) et
+// pivot multi-roles (`user_roles`), exactement les deux sources de l'union.
+$rolesDuCompte = [];
+if (!$creation && $db) {
+    try {
+        $stRoles = $db->prepare('
+            SELECT r.id, r.nom, r.scope, r.is_system
+            FROM roles r
+            WHERE r.id = (SELECT role_id FROM users WHERE id = :uid_primary)
+               OR r.id IN (SELECT role_id FROM user_roles WHERE user_id = :uid_roles)
+            ORDER BY r.is_system DESC, r.nom ASC
+        ');
+        $stRoles->execute(['uid_primary' => $editingId, 'uid_roles' => $editingId]);
+        $rolesDuCompte = $stRoles->fetchAll();
+    } catch (PDOException) {
+        $rolesDuCompte = [];
+    }
+}
+
+$nbPermsEffectives = count($permDetails['effective']);
+$nbPermsCatalogue = count($permCatalog);
+
 $erreurResume = $fieldErrors;
 
 /* ---------------------------------------------------------------------------
@@ -577,6 +640,85 @@ if ($creation ? $canCreate : $canEdit) {
     margin-top: 0.75rem;
 }
 
+/* --- Carte « Permissions effectives » ------------------------------------ */
+.compte-perm-roles {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+}
+.compte-perm-roles-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    margin-right: 2px;
+}
+.compte-perm-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+}
+.compte-perm-cat {
+    background: var(--panel-strong, var(--panel));
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 10px 12px;
+}
+.compte-perm-cat-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+}
+.compte-perm-cat-head .material-symbols-outlined {
+    font-size: 1rem;
+    color: var(--primary);
+}
+.compte-perm-cat-head .badge {
+    margin-left: auto;
+}
+.compte-perm-cat-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 8px;
+}
+.compte-perm-chip {
+    font-size: 0.72rem;
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 2px 7px;
+    white-space: nowrap;
+}
+.compte-perm-rules {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+    display: grid;
+    gap: 6px;
+}
+.compte-perm-rules li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: var(--text);
+}
+.compte-perm-rules li .material-symbols-outlined {
+    font-size: 1rem;
+    flex: 0 0 auto;
+}
+
 @media (max-width: 768px) {
     .compte-grid {
         grid-template-columns: 1fr;
@@ -681,7 +823,7 @@ if ($creation ? $canCreate : $canEdit) {
                             <option value="<?= e((string) $rid) ?>"
                                 data-portee="<?= e($r['portee']) ?>"
                                 <?= $roleIdCourant === $rid ? 'selected' : '' ?>>
-                                <?= e($r['nom']) ?><?= $r['systeme'] === 1 ? ' (système)' : '' ?>
+                                <?= e($r['nom']) ?><?= $r['systeme'] === 1 ? ' (système)' : '' ?> — <?= $r['portee'] === 'cabinet' ? 'cabinet' : 'Centre' ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
@@ -689,6 +831,8 @@ if ($creation ? $canCreate : $canEdit) {
                         <small class="field-error"><?= e($fieldErrors['role_id']) ?></small>
                     <?php elseif ($roleIncoherent): ?>
                         <small class="field-error">Le rôle sélectionné n'appartient pas au périmètre choisi.</small>
+                    <?php elseif (!$creation && $editingId === $monId): ?>
+                        <small class="help-text">Vous ne pouvez pas modifier votre propre rôle, votre statut ni votre périmètre.</small>
                     <?php else: ?>
                         <small class="help-text">Le rôle détermine les pages et les actions autorisées.</small>
                     <?php endif; ?>
@@ -766,6 +910,139 @@ if ($creation ? $canCreate : $canEdit) {
             </p>
         <?php endif; ?>
     </form>
+
+    <?php if (!$creation): ?>
+        <article class="card">
+            <div class="section-header">
+                <h2><span class="material-symbols-outlined">verified_user</span> Permissions effectives</h2>
+                <div class="table-actions">
+                    <?php if ($permDetails['super_admin']): ?>
+                        <span class="badge badge-warning">Super Admin — accès total</span>
+                    <?php else: ?>
+                        <span class="badge badge-info"><?= $nbPermsEffectives ?> / <?= $nbPermsCatalogue ?> permissions</span>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <p class="help-text compte-help">
+                Droits réellement calculés pour ce compte par le moteur d'accès : permissions de ses
+                rôles (principal et secondaires), puis surcharges individuelles — un refus l'emporte.
+                Il s'agit des droits effectifs, pas d'une liste statique.
+            </p>
+
+            <?php /* --- Portée effective du compte ------------------------------ */ ?>
+            <?php if ($permDetails['super_admin']): ?>
+                <div style="background:rgba(0,184,148,0.08);border:1px solid rgba(0,184,148,0.25);border-radius:6px;padding:12px 16px;display:flex;align-items:flex-start;gap:10px;color:var(--success);font-size:0.8rem;">
+                    <span class="material-symbols-outlined" style="font-size:1.1rem">shield_person</span>
+                    <div>
+                        <strong>Super Admin — accès total à la plateforme et à tous les cabinets.</strong>
+                        <span style="display:block;margin-top:4px;color:var(--text)">Le rôle système court-circuite toute vérification de permission : les <?= $nbPermsCatalogue ?> permissions de la plateforme sont accordées, et aucun cloisonnement par cabinet ne s'applique.</span>
+                    </div>
+                </div>
+            <?php elseif ($compte['cabinet_id'] !== null): ?>
+                <div style="background:rgba(74,108,247,0.08);border:1px solid rgba(74,108,247,0.25);border-radius:6px;padding:12px 16px;display:flex;align-items:flex-start;gap:10px;color:var(--primary);font-size:0.8rem;">
+                    <span class="material-symbols-outlined" style="font-size:1.1rem">apartment</span>
+                    <div>
+                        <strong>Accès limité au cabinet <?= e((string) ($compte['cabinet_code'] ?: $compte['cabinet_nom'])) ?>.</strong>
+                        <span style="display:block;margin-top:4px;color:var(--text)">Les dossiers, sociétés et comptes d'un autre cabinet ne sont ni visibles ni modifiables, quelles que soient les permissions ci-dessous.</span>
+                    </div>
+                </div>
+            <?php else: ?>
+                <div style="background:rgba(74,108,247,0.08);border:1px solid rgba(74,108,247,0.25);border-radius:6px;padding:12px 16px;display:flex;align-items:flex-start;gap:10px;color:var(--primary);font-size:0.8rem;">
+                    <span class="material-symbols-outlined" style="font-size:1.1rem">domain</span>
+                    <div>
+                        <strong>Compte interne du Centre — accès transversal.</strong>
+                        <span style="display:block;margin-top:4px;color:var(--text)">Aucun cloisonnement par cabinet : les données de tous les cabinets sont accessibles dans la limite des permissions ci-dessous.</span>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($permDetails['super_admin'] && count($permDetails['from_roles']) < $nbPermsCatalogue): ?>
+                <p class="help-text" style="margin-top:10px">
+                    <span class="material-symbols-outlined" style="font-size:0.9rem;vertical-align:-2px">info</span>
+                    La matrice du rôle ne liste que <?= count($permDetails['from_roles']) ?> permission(s) sur <?= $nbPermsCatalogue ?>,
+                    mais le contournement « rôle système » accorde les <?= $nbPermsCatalogue ?>. Le total ci-dessus est le droit réel.
+                </p>
+            <?php endif; ?>
+
+            <?php /* --- Rôles porteurs ----------------------------------------- */ ?>
+            <div class="compte-perm-roles">
+                <span class="compte-perm-roles-label">Rôles porteurs</span>
+                <?php if ($rolesDuCompte === []): ?>
+                    <span class="badge badge-danger">Aucun rôle — compte sans droit</span>
+                <?php else: ?>
+                    <?php foreach ($rolesDuCompte as $r): ?>
+                        <span class="badge <?= (int) $r['is_system'] === 1 ? 'badge-warning' : 'badge-info' ?>">
+                            <?= e((string) $r['nom']) ?><?= (int) $r['is_system'] === 1 ? ' (système)' : '' ?>
+                        </span>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+
+            <?php /* --- Surcharges individuelles -------------------------------- */ ?>
+            <?php if ($permDetails['granted'] !== [] || $permDetails['revoked'] !== []): ?>
+                <div style="margin-top:12px">
+                    <span class="compte-perm-roles-label">Surcharges individuelles</span>
+                    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">
+                        <?php foreach ($permDetails['granted'] as $cle): ?>
+                            <span class="badge badge-success" title="Accordée individuellement">+ <?= e($permCatalog[$cle]['nom'] ?? $cle) ?></span>
+                        <?php endforeach; ?>
+                        <?php foreach ($permDetails['revoked'] as $cle): ?>
+                            <span class="badge badge-danger" title="Refusée individuellement">&minus; <?= e($permCatalog[$cle]['nom'] ?? $cle) ?></span>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <?php /* --- Détail par catégorie ----------------------------------- */ ?>
+            <?php if ($permsParCategorie === []): ?>
+                <p class="table-empty" style="margin-top:12px">
+                    Aucune permission effective : ce compte ne peut atteindre aucune page de l'application.
+                </p>
+            <?php else: ?>
+                <div class="compte-perm-grid">
+                    <?php foreach ($permsParCategorie as $cat => $cles): ?>
+                        <?php $meta = $permCatMeta[$cat] ?? ['label' => $cat, 'icon' => '']; ?>
+                        <div class="compte-perm-cat">
+                            <div class="compte-perm-cat-head">
+                                <?php if ($meta['icon'] !== ''): ?>
+                                    <span class="material-symbols-outlined"><?= e($meta['icon']) ?></span>
+                                <?php endif; ?>
+                                <span><?= e($meta['label']) ?></span>
+                                <span class="badge badge-info"><?= count($cles) ?></span>
+                            </div>
+                            <div class="compte-perm-cat-list">
+                                <?php foreach ($cles as $cle): ?>
+                                    <span class="compte-perm-chip" title="<?= e($cle) ?>"><?= e($permCatalog[$cle]['nom'] ?? $cle) ?></span>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <?php /* --- Rappels des règles, pour un administrateur de cabinet -- */ ?>
+            <?php if ($monCabinetId !== null): ?>
+                <div style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px">
+                    <span class="compte-perm-roles-label">Règles appliquées à votre compte</span>
+                    <ul class="compte-perm-rules">
+                        <li>
+                            <span class="material-symbols-outlined" style="color:var(--success)">check_circle</span>
+                            <span>Vous gérez les comptes et les collaborateurs de votre cabinet, dans la limite des permissions accordées à votre rôle.</span>
+                        </li>
+                        <li>
+                            <span class="material-symbols-outlined" style="color:var(--danger)">block</span>
+                            <span>Vous ne pouvez pas modifier les rôles ni les permissions, y compris pour votre propre compte.</span>
+                        </li>
+                        <li>
+                            <span class="material-symbols-outlined" style="color:var(--danger)">block</span>
+                            <span>Vous ne pouvez ni promouvoir un compte en Super Admin, ni lui accorder des privilèges supplémentaires.</span>
+                        </li>
+                    </ul>
+                </div>
+            <?php endif; ?>
+        </article>
+    <?php endif; ?>
 
     <?php if (!$creation && ($canEdit || $editingId === $monId)): ?>
         <article class="card">

@@ -1281,6 +1281,111 @@ function login_throttle_clear(?PDO $pdo, string $email, string $ip): void
     $stmt->execute(['email' => $email, 'ip' => $ip]);
 }
 
+/**
+ * Permissions portees par les ROLES d'un compte (sans les surcharges
+ * individuelles), reunion de deux sources :
+ *  - `user_roles` : le pivot multi-roles, source de reference ;
+ *  - `users.role_id` : le role primaire denormalise.
+ *
+ * `role_id` est consulte meme quand le pivot existe deja : la migration
+ * d'installation (20260927_100003) l'a recopie une seule fois, a une epoque
+ * ou il n'y avait qu'un role par compte. Depuis, tout compte cree avec
+ * seulement `role_id` (creation d'utilisateur Phase 5, import, saisie
+ * directe) n'a AUCUNE ligne de pivot, donc ZERO permission.
+ *
+ * L'effet est un verrouillage total et silencieux : `require_permission()`
+ * renvoie l'utilisateur vers `dashboard`, qui exige `dashboard.view`, que
+ * l'utilisateur n'a pas non plus. Le garde refuse donc `dashboard` et y
+ * renvoie a nouveau : boucle de redirection (ERR_TOO_MANY_REDIRECTS) sur le
+ * dashboard, sans aucun message. Aucune page n'est plus accessible.
+ *
+ * L'union rend le provisionnement tolerant aux deux ecritures : un compte
+ * peut etre cree via `role_id`, via le pivot, ou par les deux.
+ *
+ * @return list<string> cles de permissions (permission_key)
+ */
+function permission_keys_from_roles(?PDO $pdo, int $userId): array
+{
+    if (!$pdo instanceof PDO || $userId <= 0) {
+        return [];
+    }
+
+    $stmt = $pdo->prepare('
+        SELECT DISTINCT p.permission_key
+        FROM permissions p
+        JOIN role_permissions rp ON rp.permission_id = p.id
+        WHERE rp.role_id IN (
+            SELECT role_id FROM user_roles WHERE user_id = :uid_roles
+            UNION
+            SELECT role_id FROM users WHERE id = :uid_primary AND role_id IS NOT NULL
+        )
+    ');
+    $stmt->execute([
+        'uid_roles' => $userId,
+        'uid_primary' => $userId,
+    ]);
+
+    return $stmt->fetchAll(\PDO::FETCH_COLUMN);
+}
+
+/**
+ * Surcharges individuelles d'un compte (`user_permissions`), telles que le
+ * moteur d'acces les applique : `granted = 1` accorde, `granted = 0` refuse.
+ *
+ * @return list<array{permission_key: string, granted: mixed}>
+ */
+function user_permission_overrides(?PDO $pdo, int $userId): array
+{
+    if (!$pdo instanceof PDO || $userId <= 0) {
+        return [];
+    }
+
+    $stmt = $pdo->prepare('
+        SELECT p.permission_key, up.granted
+        FROM user_permissions up
+        JOIN permissions p ON p.id = up.permission_id
+        WHERE up.user_id = :uid
+    ');
+    $stmt->execute(['uid' => $userId]);
+
+    return $stmt->fetchAll();
+}
+
+/**
+ * Applique les surcharges a une liste de permissions : `granted = 1` ajoute la
+ * cle si absente, `granted = 0` la retire. Le refuse l'emporte.
+ *
+ * @param list<string> $perms
+ * @param list<array{permission_key: string, granted: mixed}> $overrides
+ * @return list<string>
+ */
+function apply_permission_overrides(array $perms, array $overrides): array
+{
+    foreach ($overrides as $ov) {
+        $cle = (string) $ov['permission_key'];
+        if ((int) $ov['granted'] === 1) {
+            if (!in_array($cle, $perms, true)) {
+                $perms[] = $cle;
+            }
+        } else {
+            $perms = array_values(array_filter($perms, static fn(string $k): bool => $k !== $cle));
+        }
+    }
+
+    return $perms;
+}
+
+/**
+ * Permissions EFFECTIVES du compte CONNECTE (union des roles, puis surcharges
+ * individuelles). Resultat mis en cache en session pour la duree de la requete.
+ *
+ * Ce raccourci ne porte PAS le contournement Super Admin : `has_permission()`
+ * l'applique separement, en tete, sur `roles.is_system`. Pour un compte
+ * arbitraire (et un resultat incluant ce contournement), utiliser
+ * `user_permission_details()`.
+ *
+ * @return list<string>
+ */
 function get_user_permissions(): array
 {
     if (!empty($_SESSION['_permissions_cache']) && is_array($_SESSION['_permissions_cache'])) {
@@ -1298,63 +1403,145 @@ function get_user_permissions(): array
         return [];
     }
 
-    // Permissions de TOUS les roles portes par le compte, reunion de deux
-    // sources :
-    //  - `user_roles` : le pivot multi-roles, source de reference ;
-    //  - `users.role_id` : le role primaire denormalise.
-    //
-    // `role_id` est consulte meme quand le pivot existe deja : la migration
-    // d'installation (20260927_100003) l'a recopie une seule fois, a une
-    // epoque ou il n'y avait qu'un role par compte. Depuis, tout compte cree
-    // avec seulement `role_id` (creation d'utilisateur Phase 5, import,
-    // saisie directe) n'a AUCUNE ligne de pivot, donc ZERO permission.
-    //
-    // L'effet est un verrouillage total et silencieux : `require_permission()`
-    // renvoie l'utilisateur vers `dashboard`, qui exige `dashboard.view`,
-    // que l'utilisateur n'a pas non plus. Le garde refuse donc `dashboard` et
-    // y renvoie a nouveau : boucle de redirection (ERR_TOO_MANY_REDIRECTS) sur
-    // le dashboard, sans aucun message. Aucune page n'est plus accessible.
-    //
-    // L'union rend le provisionnement tolerant aux deux ecritures : un compte
-    // peut etre cree via `role_id`, via le pivot, ou par les deux.
-    $stmt = $pdo->prepare('
-        SELECT DISTINCT p.permission_key
-        FROM permissions p
-        JOIN role_permissions rp ON rp.permission_id = p.id
-        WHERE rp.role_id IN (
-            SELECT role_id FROM user_roles WHERE user_id = :uid_roles
-            UNION
-            SELECT role_id FROM users WHERE id = :uid_primary AND role_id IS NOT NULL
-        )
-    ');
-    $stmt->execute([
-        'uid_roles' => (int) $user['id'],
-        'uid_primary' => (int) $user['id'],
-    ]);
-    $perms = $stmt->fetchAll(\PDO::FETCH_COLUMN);
-
-    // Surcharges individuelles (grant/refuse) : le refuse l'emporte.
-    $stmt = $pdo->prepare('
-        SELECT p.permission_key, up.granted
-        FROM user_permissions up
-        JOIN permissions p ON p.id = up.permission_id
-        WHERE up.user_id = :uid
-    ');
-    $stmt->execute(['uid' => (int) $user['id']]);
-    $overrides = $stmt->fetchAll();
-
-    foreach ($overrides as $ov) {
-        if ((int) $ov['granted'] === 1) {
-            if (!in_array($ov['permission_key'], $perms, true)) {
-                $perms[] = $ov['permission_key'];
-            }
-        } else {
-            $perms = array_values(array_filter($perms, static fn(string $k) => $k !== $ov['permission_key']));
-        }
-    }
+    $perms = apply_permission_overrides(
+        permission_keys_from_roles($pdo, (int) $user['id']),
+        user_permission_overrides($pdo, (int) $user['id'])
+    );
 
     $_SESSION['_permissions_cache'] = $perms;
     return $perms;
+}
+
+/**
+ * Le compte cible est-il Super Admin ?
+ *
+ * Miroir exact de `current_user()` + `has_permission()` : le contournement est
+ * lu sur le ROLE PRIMAIRE (`users.role_id`), et non sur le pivot `user_roles`.
+ * Un role systeme present seulement dans le pivot n'active donc PAS le
+ * contournement - c'est le comportement reel du moteur d'acces, on ne le
+ * corrige pas ici, on le reflete.
+ */
+function user_is_super_admin(?PDO $pdo, int $userId): bool
+{
+    if (!$pdo instanceof PDO || $userId <= 0) {
+        return false;
+    }
+
+    $stmt = $pdo->prepare('
+        SELECT r.is_system
+        FROM users u
+        LEFT JOIN roles r ON r.id = u.role_id
+        WHERE u.id = :id
+        LIMIT 1
+    ');
+    $stmt->execute(['id' => $userId]);
+    $value = $stmt->fetchColumn();
+
+    return $value !== false && $value !== null && (int) $value === 1;
+}
+
+/**
+ * Detail des droits EFFECTIFS d'un compte, tel que le moteur d'acces les
+ * applique reellement :
+ *  - role systeme (Super Admin) : TOUTES les permissions de la plateforme,
+ *    le contournement de `has_permission()` s'appliquant avant toute lecture ;
+ *  - sinon : permissions des roles, puis surcharges individuelles (le refuse
+ *    l'emporte).
+ *
+ * Aucune matrice n'est recalculee : la fonction s'appuie sur les memes requetes
+ * que `get_user_permissions()`.
+ *
+ * @return array{
+ *     super_admin: bool,
+ *     from_roles: list<string>,
+ *     granted: list<string>,
+ *     revoked: list<string>,
+ *     effective: list<string>
+ * }
+ */
+function user_permission_details(?PDO $pdo, int $userId): array
+{
+    $vide = [
+        'super_admin' => false,
+        'from_roles' => [],
+        'granted' => [],
+        'revoked' => [],
+        'effective' => [],
+    ];
+
+    if (!$pdo instanceof PDO || $userId <= 0) {
+        return $vide;
+    }
+
+    $fromRoles = permission_keys_from_roles($pdo, $userId);
+    $overrides = user_permission_overrides($pdo, $userId);
+    $granted = [];
+    $revoked = [];
+    foreach ($overrides as $ov) {
+        if ((int) $ov['granted'] === 1) {
+            $granted[] = (string) $ov['permission_key'];
+        } else {
+            $revoked[] = (string) $ov['permission_key'];
+        }
+    }
+
+    if (user_is_super_admin($pdo, $userId)) {
+        // Contournement total : toutes les permissions, sans exception.
+        $toutes = $pdo->query('SELECT permission_key FROM permissions')->fetchAll(\PDO::FETCH_COLUMN);
+        $toutes = array_values(array_unique(array_map('strval', $toutes)));
+
+        return [
+            'super_admin' => true,
+            'from_roles' => $fromRoles,
+            'granted' => [],
+            'revoked' => [],
+            'effective' => $toutes,
+        ];
+    }
+
+    return [
+        'super_admin' => false,
+        'from_roles' => $fromRoles,
+        'granted' => $granted,
+        'revoked' => $revoked,
+        'effective' => apply_permission_overrides($fromRoles, $overrides),
+    ];
+}
+
+/**
+ * Habillage des categories de permissions (libelle francais + icone Material
+ * Symbols), partage par la matrice de role et la fiche utilisateur pour que les
+ * deux ecrans nomment les categories de la meme facon.
+ *
+ * @return array<string, array{label: string, icon: string}>
+ */
+function permission_category_meta(): array
+{
+    return [
+        'dashboard' => ['label' => 'Tableau de bord', 'icon' => 'dashboard'],
+        'societes' => ['label' => 'Societes', 'icon' => 'business'],
+        'associes' => ['label' => 'Associes', 'icon' => 'group'],
+        'contrats' => ['label' => 'Contrats', 'icon' => 'description'],
+        'collaborateurs' => ['label' => 'Collaborateurs', 'icon' => 'work'],
+        'wizard' => ['label' => 'Assistant de creation', 'icon' => 'note_add'],
+        'templates' => ['label' => 'Templates', 'icon' => 'edit_note'],
+        'generation' => ['label' => 'Generation', 'icon' => 'sync'],
+        'documents' => ['label' => 'Documents', 'icon' => 'article'],
+        'configuration' => ['label' => 'Configuration', 'icon' => 'settings'],
+        'analyse' => ['label' => 'Analyse de couverture', 'icon' => 'bar_chart'],
+        'variables' => ['label' => 'Variables', 'icon' => 'code'],
+        'defaults' => ['label' => 'Valeurs par defaut', 'icon' => 'tune'],
+        'convert' => ['label' => 'Conversion Word->PDF', 'icon' => 'picture_as_pdf'],
+        'ai' => ['label' => 'Assistant IA', 'icon' => 'smart_toy'],
+        'roles' => ['label' => 'Gestion des roles', 'icon' => 'admin_panel_settings'],
+        'cabinets' => ['label' => 'Cabinets', 'icon' => 'business_center'],
+        'plans' => ['label' => 'Plans', 'icon' => 'sell'],
+        'abonnements' => ['label' => 'Abonnements', 'icon' => 'card_membership'],
+        'paiements' => ['label' => 'Paiements', 'icon' => 'payments'],
+        'factures' => ['label' => 'Factures', 'icon' => 'receipt_long'],
+        'users' => ['label' => 'Utilisateurs', 'icon' => 'manage_accounts'],
+        'parametres' => ['label' => 'Parametres', 'icon' => 'settings'],
+    ];
 }
 
 function has_permission(string $key): bool
